@@ -81,9 +81,7 @@ public class TlsBlockCipher implements TlsCipher
         int blocksize = encryptCipher.getBlockSize();
         int padding_length = blocksize - 1 - ((len + writeMac.getSize()) % blocksize);
 
-        boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (isTls)
+        if (!context.getServerVersion().isSSL())
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blocksize;
@@ -165,9 +163,7 @@ public class TlsBlockCipher implements TlsCipher
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if ((!isTls && totalPad > blockSize) || (macSize + totalPad > len))
+        if ((context.getServerVersion().isSSL() && totalPad > blockSize) || (macSize + totalPad > len))
         {
             totalPad = 0;
         }

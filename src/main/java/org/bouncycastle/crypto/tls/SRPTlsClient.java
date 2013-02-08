@@ -7,8 +7,7 @@ import java.util.Hashtable;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
-public abstract class SRPTlsClient
-    implements TlsClient
+public abstract class SRPTlsClient implements TlsClient
 {
     public static final Integer EXT_SRP = Integers.valueOf(ExtensionType.srp);
 

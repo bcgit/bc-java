@@ -38,43 +38,41 @@ public class TlsMac
 
         this.secret = Arrays.clone(param.getKey());
 
-        boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (isTls)
+        if (context.getServerVersion().isSSL())
         {
-            this.mac = new HMac(digest);
+            this.mac = new SSL3Mac(digest);
         }
         else
         {
-            this.mac = new SSL3Mac(digest);
+            this.mac = new HMac(digest);
         }
 
         this.mac.init(param);
     }
 
-	/**
-	 * @return the MAC write secret
-	 */
-	public byte[] getMACSecret()
-	{
-		return this.secret;
-	}
+    /**
+     * @return the MAC write secret
+     */
+    public byte[] getMACSecret()
+    {
+	return this.secret;
+    }
 
-	/**
-	 * @return the current write sequence number
-	 */
-	public long getSequenceNumber()
-	{
-		return this.seqNo;
-	}
+    /**
+     * @return the current write sequence number
+     */
+    public long getSequenceNumber()
+    {
+	return this.seqNo;
+    }
 
-	/**
-	 * Increment the current write sequence number
-	 */
-	public void incSequenceNumber()
-	{
-		this.seqNo++;
-	}
+    /**
+     * Increment the current write sequence number
+     */
+    public void incSequenceNumber()
+    {
+	this.seqNo++;
+    }
 
     /**
      * @return The Keysize of the mac.
@@ -85,7 +83,7 @@ public class TlsMac
     }
 
     /**
-     * Calculate the mac for some given data.
+     * Calculate the MAC for some given data.
      * <p/>
      * TlsMac will keep track of the sequence number internally.
      * 
@@ -93,20 +91,20 @@ public class TlsMac
      * @param message A byte-buffer containing the message.
      * @param offset The number of bytes to skip, before the message starts.
      * @param len The length of the message.
-     * @return A new byte-buffer containing the mac value.
+     * @return A new byte-buffer containing the MAC value.
      */
     public byte[] calculateMac(short type, byte[] message, int offset, int len)
     {
         ProtocolVersion serverVersion = context.getServerVersion();
-        boolean isTls = serverVersion.getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
+        boolean isSSL = serverVersion.isSSL();
 
-        ByteArrayOutputStream bosMac = new ByteArrayOutputStream(isTls ? 13 : 11);
+        ByteArrayOutputStream bosMac = new ByteArrayOutputStream(isSSL ? 11 : 13);
         try
         {
             TlsUtils.writeUint64(seqNo++, bosMac);
             TlsUtils.writeUint8(type, bosMac);
 
-            if (isTls)
+            if (!isSSL)
             {
                 TlsUtils.writeVersion(serverVersion, bosMac);
             }
@@ -133,11 +131,8 @@ public class TlsMac
         // Actual MAC only calculated on 'len' bytes
         byte[] result = calculateMac(type, message, offset, len);
 
-        ProtocolVersion serverVersion = context.getServerVersion();
-        boolean isTls = serverVersion.getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
         // ...but ensure a constant number of complete digest blocks are processed (per 'fullLength')
-        if (isTls)
+        if (!context.getServerVersion().isSSL())
         {
             // TODO Currently all TLS digests use a block size of 64, a suffix (length field) of 8, and padding (1+)
             int db = 64, ds = 8;

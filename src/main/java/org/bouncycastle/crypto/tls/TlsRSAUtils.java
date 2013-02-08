@@ -26,16 +26,15 @@ public class TlsRSAUtils
 
         try
         {
-            boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
             byte[] keData = encoding.processBlock(premasterSecret, 0, premasterSecret.length);
 
-            if (isTls)
+            if (context.getServerVersion().isSSL())
             {
-                TlsUtils.writeOpaque16(keData, os);
+                os.write(keData);
             }
             else
             {
-                os.write(keData);
+                TlsUtils.writeOpaque16(keData, os);
             }
         }
         catch (InvalidCipherTextException e)

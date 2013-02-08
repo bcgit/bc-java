@@ -132,9 +132,7 @@ class RecordStream
     {
         Digest d = new CombinedHash(hash);
 
-        boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (!isTls)
+        if (context.getServerVersion().isSSL())
         {
             if (sender != null)
             {

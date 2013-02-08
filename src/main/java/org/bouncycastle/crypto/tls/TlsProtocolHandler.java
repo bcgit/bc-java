@@ -238,9 +238,7 @@ public class TlsProtocolHandler
                          * Read the checksum from the finished message, it has always 12
                          * bytes for TLS 1.0 and 36 for SSLv3.
                          */
-                        boolean isTls = tlsClientContext.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-                        int checksumLength = isTls ? 12 : 36;
+                        int checksumLength = tlsClientContext.getServerVersion().isSSL() ? 36 : 12;
                         byte[] serverVerifyData = new byte[checksumLength];
                         TlsUtils.readFully(serverVerifyData, is);
 
@@ -489,15 +487,13 @@ public class TlsProtocolHandler
                             {
                                 this.keyExchange.skipClientCredentials();
 
-                                boolean isTls = tlsClientContext.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-                                if (isTls)
+                                if (tlsClientContext.getServerVersion().isSSL())
                                 {
-                                    sendClientCertificate(Certificate.EMPTY_CHAIN);
+                                    sendAlert(AlertLevel.warning, AlertDescription.no_certificate);
                                 }
                                 else
                                 {
-                                    sendAlert(AlertLevel.warning, AlertDescription.no_certificate);
+                                    sendClientCertificate(Certificate.EMPTY_CHAIN);
                                 }
                             }
                             else
@@ -674,6 +670,7 @@ public class TlsProtocolHandler
             case HandshakeType.client_key_exchange:
             case HandshakeType.certificate_verify:
             case HandshakeType.client_hello:
+            case HandshakeType.hello_verify_request:
             default:
                 // We do not support this!
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);

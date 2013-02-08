@@ -321,13 +321,10 @@ public class TlsUtils
     
     static byte[] calculateKeyBlock(TlsClientContext context, int size)
     {
-        ProtocolVersion pv = context.getServerVersion();
         SecurityParameters sp = context.getSecurityParameters();
         byte[] random = concat(sp.serverRandom, sp.clientRandom);
 
-        boolean isTls = pv.getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (isTls)
+        if (!context.getServerVersion().isSSL())
         {
             return PRF(sp.masterSecret, "key expansion", random, size);
         }
@@ -363,13 +360,10 @@ public class TlsUtils
 
     static byte[] calculateMasterSecret(TlsClientContext context, byte[] pms)
     {
-        ProtocolVersion pv = context.getServerVersion();
         SecurityParameters sp = context.getSecurityParameters();
         byte[] random = concat(sp.clientRandom, sp.serverRandom);
 
-        boolean isTls = pv.getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (isTls)
+        if (!context.getServerVersion().isSSL())
         {
             return PRF(pms, "master secret", random, 48);
         }
@@ -403,17 +397,14 @@ public class TlsUtils
 
     static byte[] calculateVerifyData(TlsClientContext context, String asciiLabel, byte[] handshakeHash)
     {
-        ProtocolVersion pv = context.getServerVersion();
+	if (context.getServerVersion().isSSL())
+	{
+	    return handshakeHash;
+	}
+
         SecurityParameters sp = context.getSecurityParameters();
 
-        boolean isTls = pv.getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-
-        if (isTls)
-        {
-            return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
-        }
-
-        return handshakeHash;
+	return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
     }
 
     static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };

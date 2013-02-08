@@ -72,15 +72,10 @@ class CombinedHash implements Digest
      */
     public int doFinal(byte[] out, int outOff)
     {
-        if (context != null)
+        if (context != null && context.getServerVersion().isSSL())
         {
-            boolean isTls = context.getServerVersion().getFullVersion() >= ProtocolVersion.TLSv10.getFullVersion();
-    
-            if (!isTls)
-            {
-                ssl3Complete(md5, SSL3Mac.MD5_IPAD, SSL3Mac.MD5_OPAD);
-                ssl3Complete(sha1, SSL3Mac.SHA1_IPAD, SSL3Mac.SHA1_OPAD);
-            }
+            ssl3Complete(md5, SSL3Mac.MD5_IPAD, SSL3Mac.MD5_OPAD);
+            ssl3Complete(sha1, SSL3Mac.SHA1_IPAD, SSL3Mac.SHA1_OPAD);
         }
 
         int i1 = md5.doFinal(out, outOff);

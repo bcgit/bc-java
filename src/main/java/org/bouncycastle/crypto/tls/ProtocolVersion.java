@@ -8,6 +8,8 @@ public class ProtocolVersion
     public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301);
     public static final ProtocolVersion TLSv11 = new ProtocolVersion(0x0302);
     public static final ProtocolVersion TLSv12 = new ProtocolVersion(0x0303);
+    public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF);
+    public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD);
 
     private int version;
 
@@ -31,6 +33,21 @@ public class ProtocolVersion
         return version & 0xff;
     }
 
+    public boolean isDTLS()
+    {
+	return getMajorVersion() == 0xFE;
+    }
+
+    public boolean isSSL()
+    {
+	return this == SSLv3;
+    }
+
+    public boolean isTLS()
+    {
+	return getMajorVersion() == 0x03 && !isSSL();
+    }
+
     public boolean equals(Object obj)
     {
         return this == obj;
@@ -45,17 +62,25 @@ public class ProtocolVersion
     {
         switch (major)
         {
-            case 3:
+            case 0x03:
                 switch (minor)
                 {
-                    case 0:
+                    case 0x00:
                         return SSLv3;
-                    case 1:
+                    case 0x01:
                         return TLSv10;
-                    case 2:
+                    case 0x02:
                         return TLSv11;
-                    case 3:
+                    case 0x03:
                         return TLSv12;
+                }
+            case 0xFE:
+                switch (minor)
+                {
+                    case 0xFF:
+                        return DTLSv10;
+                    case 0xFD:
+                        return DTLSv12;
                 }
         }
 
