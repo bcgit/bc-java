@@ -1,0 +1,633 @@
+package org.bouncycastle.crypto.digests;
+
+import java.io.IOException;
+
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.util.ASN1Dump;
+import org.bouncycastle.util.Arrays;
+
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.encoders.Hex;
+
+/**
+ * implementation of SHA-3 based on Keccak-simple.c from http://keccak.noekeon.org/
+ * <p/>
+ * Following the naming conventions used in the C source code to enable easy review of the implementation.
+ */
+public class SHA3Digest
+    implements ExtendedDigest
+{
+
+    private static final int cKeccakB = 1600;
+    private static final int cKeccakR = 1024;
+    private static final int cKeccakR_SizeInBytes = (cKeccakR / 8); // 128
+    private static final int crypto_hash_BYTES = cKeccakR_SizeInBytes;
+    private static final int cKeccakNumberOfRounds = 24;
+
+    private static final int cKeccakLaneSizeInBits = 64;            // size of a long
+    private static final int sizeofKeccakLane = 8;
+
+    private static final long[] KeccakF_RoundConstants = {
+        0x0000000000000001L,
+        0x0000000000008082L,
+        0x800000000000808aL,
+        0x8000000080008000L,
+        0x000000000000808bL,
+        0x0000000080000001L,
+        0x8000000080008081L,
+        0x8000000000008009L,
+        0x000000000000008aL,
+        0x0000000000000088L,
+        0x0000000080008009L,
+        0x000000008000000aL,
+        0x000000008000808bL,
+        0x800000000000008bL,
+        0x8000000000008089L,
+        0x8000000000008003L,
+        0x8000000000008002L,
+        0x8000000000000080L,
+        0x000000000000800aL,
+        0x800000008000000aL,
+        0x8000000080008081L,
+        0x8000000000008080L,
+        0x0000000080000001L,
+        0x8000000080008008L};
+
+    private final int DIGEST_LENGTH;
+    private final int LANE_COUNT;
+
+    //
+    // registers
+    //
+
+    //
+    // input buffer, used for processing a whole block
+    //
+    private long[] _x = new long[cKeccakR_SizeInBytes];
+    private int _xOff = 0;
+
+    // input buffer, used to create a block to be processed
+    private byte[] _buf = new byte[sizeofKeccakLane];
+    private int _bufOff = 0;
+
+    private long _byteCount = 0;
+    private final int rate;
+    private final int capacity;
+
+    private long  fixedOutputLength = 0;
+    private int   bitsInQueue = 0;
+    private int   squeezing = 0;
+    private int   bitsAvailableForSqueezing = 0;
+    private byte[] state = new byte[1600/8];
+    private byte[] dataQueue = new byte[(1536/8)];
+
+    private long[] _state = new long[state.length / 8];
+
+    /**
+     * Default parameters -
+     */
+    public SHA3Digest()
+    {
+        this(1024, 576);
+    }
+
+    public SHA3Digest(int bitLength)
+    {
+        this(1600 - 2 * bitLength, bitLength * 2);
+    }
+
+    private SHA3Digest(int rate, int capacity)
+    {
+        if (rate+capacity != 1600)
+        {
+            throw new IllegalArgumentException("rate/capacity mismatch - must add to 1600");
+        }
+
+        if ((rate <= 0) || (rate >= 1600) || ((rate % 64) != 0))
+        {
+            throw new IllegalArgumentException("invalid rate value - bitLength must be on of 224, 256, 384, or 512");
+        }
+
+        KeccakInitializeRoundConstants();
+        KeccakInitializeRhoOffsets();
+
+        this.rate = rate;
+        this.capacity = capacity;
+
+        this.LANE_COUNT = rate / 8;
+        this._x = new long[LANE_COUNT];
+        this._state = new long[LANE_COUNT];
+        this.state = new byte[_state.length * 8];
+        this.DIGEST_LENGTH = capacity / 2 / 8;
+
+        fixedOutputLength = 0;
+        bitsInQueue = 0;
+        squeezing = 0;
+        bitsAvailableForSqueezing = 0;
+    }
+
+    /**
+     * Copy constructor. This will copy the state of the provided message digest.
+     */
+    public SHA3Digest(SHA3Digest t)
+    {
+        throw new IllegalStateException("Not yet implemented");
+    }
+
+    public String getAlgorithmName()
+    {
+        return "SHA3";
+    }
+
+    public int getDigestSize()
+    {
+        return capacity / 2 / 8;
+    }
+
+    private long[] KeccakRoundConstants = new long[24];
+
+    void KeccakInitializeRoundConstants()
+    {
+        int LFSRstate = 0x01;
+        int i, j, bitPosition;
+
+        for (i = 0; i < 24; i++)
+        {
+            KeccakRoundConstants[i] = 0;
+            for (j = 0; j < 7; j++)
+            {
+                bitPosition = (1 << j) - 1;
+                boolean result = (LFSRstate & 0x01) != 0;
+                if ((LFSRstate & 0x80) != 0)
+                {
+                    LFSRstate = (LFSRstate << 1) ^ 0x71;
+                }
+                else
+                {
+                    LFSRstate <<= 1;
+                }
+                if (result)
+                {
+                    KeccakRoundConstants[i] ^= 1 << bitPosition;
+                }
+            }
+        }
+    }
+
+    private int[] KeccakRhoOffsets = new int[25];
+
+    void KeccakInitializeRhoOffsets()
+    {
+        int x, y, t, newX, newY;
+
+        KeccakRhoOffsets[(((0) % 5) + 5 * ((0) % 5))] = 0;
+        x = 1;
+        y = 0;
+        for (t = 0; t < 24; t++)
+        {
+            KeccakRhoOffsets[(((x) % 5) + 5 * ((y) % 5))] = ((t + 1) * (t + 2) / 2) % 64;
+            newX = (0 * x + 1 * y) % 5;
+            newY = (2 * x + 3 * y) % 5;
+            x = newX;
+            y = newY;
+        }
+    }
+
+void AbsorbQueue()
+{
+        KeccakAbsorb(dataQueue, rate/64);
+    bitsInQueue = 0;
+}
+
+int Absorb(long[] data, long databitlen)
+{
+//    unsigned long long i, j, wholeBlocks;
+//    unsigned int partialBlock, partialByte;
+//    const unsigned char *curData;
+//
+//    if ((bitsInQueue % 8) != 0)
+//        throw new IllegalStateException();
+//    if (squeezing != 0)
+//        throw new IllegalStateException();
+//
+//    i = 0;
+//    while(i < databitlen) {
+//        if ((bitsInQueue == 0) && (databitlen >= rate) && (i <= (databitlen-rate)))
+//        {
+//            wholeBlocks = (databitlen-i)/rate;
+//            curData = data+i/8;
+//
+//            for(j=0; j<wholeBlocks; j++, curData+=rate/8)
+//            {
+//                KeccakAbsorb(state, curData, rate / 8);
+//            }
+//
+//            i += wholeBlocks*rate;
+//        }
+//        else {
+//            partialBlock = (unsigned int)(databitlen - i);
+//            if (partialBlock+state->bitsInQueue > state->rate)
+//                partialBlock = state->rate-state->bitsInQueue;
+//            partialByte = partialBlock % 8;
+//            partialBlock -= partialByte;
+//            memcpy(state->dataQueue+state->bitsInQueue/8, data+i/8, partialBlock/8);
+//            state->bitsInQueue += partialBlock;
+//            i += partialBlock;
+//            if (bitsInQueue == rate)
+//                AbsorbQueue(state);
+//            if (partialByte > 0) {
+//                char mask = (1 << partialByte)-1;
+//                state->dataQueue[state->bitsInQueue/8] = data[i/8] & mask;
+//                state->bitsInQueue += partialByte;
+//                i += partialByte;
+//            }
+//        }
+//    }
+    return 0;
+}
+
+void PadAndSwitchToSqueezingPhase()
+{
+    if (bitsInQueue + 1 == rate)
+    {
+        dataQueue[bitsInQueue/8] |= 1 << (bitsInQueue % 8);
+        AbsorbQueue();
+        Arrays.fill(dataQueue, (byte)0);
+    }
+    else
+    {
+        //memset(state->dataQueue + (state->bitsInQueue+7)/8, 0, state->rate/8 - (state->bitsInQueue+7)/8);
+        dataQueue[bitsInQueue/8 ] |= 1 << (bitsInQueue % 8);
+    }
+    dataQueue[(rate-1)/8] |= 1 << ((rate-1) % 8);
+    AbsorbQueue();
+
+    if (rate == 1024)
+    {
+        KeccakExtract1024bits(dataQueue);
+        bitsAvailableForSqueezing = 1024;
+    }
+    else
+    {
+        KeccakExtract(dataQueue, rate/64);
+        bitsAvailableForSqueezing = rate;
+    }
+
+    squeezing = 1;
+}
+
+
+int Squeeze(byte[] output, long outputLength)
+{
+    long i;
+    int partialBlock;
+
+    if (squeezing != 0)
+        PadAndSwitchToSqueezingPhase();
+    if ((outputLength % 8) != 0)
+        return 1;
+
+    i = 0;
+    while (i < outputLength)
+    {
+        if (bitsAvailableForSqueezing == 0)
+        {
+            KeccakPermutation();
+
+            KeccakExtract(dataQueue, rate/8);
+
+            bitsAvailableForSqueezing = rate;
+        }
+        partialBlock = bitsAvailableForSqueezing;
+        if (partialBlock > outputLength - i)
+            partialBlock = (int)(outputLength - i);
+        System.arraycopy(dataQueue, (rate-bitsAvailableForSqueezing)/8, output, (int)(i/8), partialBlock/8);
+
+        bitsAvailableForSqueezing -= partialBlock;
+        i += partialBlock;
+    }
+    return 0;
+}
+
+//void fromBytesToWords(UINT64 *stateAsWords, const unsigned char *state)
+//{
+//    unsigned int i, j;
+//
+//    for(i=0; i<(1600/64); i++) {
+//        stateAsWords[i] = 0;
+//        for(j=0; j<(64/8); j++)
+//            stateAsWords[i] |= (UINT64)(state[i*(64/8)+j]) << (8*j);
+//    }
+//}
+//
+//void fromWordsToBytes(unsigned char *state, const UINT64 *stateAsWords)
+//{
+//    unsigned int i, j;
+//
+//    for(i=0; i<(1600/64); i++)
+//        for(j=0; j<(64/8); j++)
+//            state[i*(64/8)+j] = (stateAsWords[i] >> (8*j)) & 0xFF;
+//}
+
+void KeccakPermutation()
+{
+    KeccakPermutationOnWords();
+}
+
+void KeccakPermutationAfterXor(byte[] data, int dataLengthInBytes)
+{
+    int i;
+
+    for(i=0; i<dataLengthInBytes; i++)
+        state[i] ^= data[i];
+    KeccakPermutation();
+}
+
+void KeccakPermutationOnWords()
+{
+
+    for (int i = 0; i != _state.length; i++)
+    {
+        _state[i] = packWord(state, i * 8);
+    }
+
+    for(int i=0; i<24; i++) {
+
+        theta(_state);
+
+        rho(_state);
+
+        pi(_state);
+
+        chi(_state);
+
+        iota(_state, i);
+    }
+
+    for (int i = 0; i != _state.length; i++)
+    {
+        unpackWord(_state[i], state, i * 8);
+    }
+}
+
+
+
+
+void theta(long[] A)
+{
+    int x, y;
+    long[] C = new long[5];
+    long[] D = new long[5];
+
+    for(x=0; x<5; x++) {
+        C[x] = 0;
+        for(y=0; y<5; y++)
+            C[x] ^= A[(((x)%5)+5*((y)%5))];
+    }
+    for(x=0; x<5; x++)
+        D[x] = ((1 != 0) ? (((C[(x+1)%5]) << 1) ^ ((C[(x+1)%5]) >>> (64-1))) : C[(x+1)%5]) ^ C[(x+4)%5];
+    for(x=0; x<5; x++)
+        for(y=0; y<5; y++)
+            A[(((x)%5)+5*((y)%5))] ^= D[x];
+}
+
+void rho(long[] A)
+{
+    int x, y;
+
+    for(x=0; x<5; x++) for(y=0; y<5; y++)
+        A[(((x)%5)+5*((y)%5))] = ((KeccakRhoOffsets[(((x)%5)+5*((y)%5))] != 0) ? (((A[(((x)%5)+5*((y)%5))]) << KeccakRhoOffsets[(((x)%5)+5*((y)%5))]) ^ ((A[(((x)%5)+5*((y)%5))]) >>> (64-KeccakRhoOffsets[(((x)%5)+5*((y)%5))]))) : A[(((x)%5)+5*((y)%5))]);
+}
+
+void pi(long[]A)
+{
+    int x, y;
+    long[] tempA = new long[25];
+
+    for(x=0; x<5; x++) for(y=0; y<5; y++)
+        tempA[(((x)%5)+5*((y)%5))] = A[(((x)%5)+5*((y)%5))];
+    for(x=0; x<5; x++) for(y=0; y<5; y++)
+        A[(((0*x+1*y)%5)+5*((2*x+3*y)%5))] = tempA[(((x)%5)+5*((y)%5))];
+}
+
+void chi(long[] A)
+{
+    int x, y;
+    long[] C = new long[5];
+
+    for(y=0; y<5; y++) {
+        for(x=0; x<5; x++)
+            C[x] = A[(((x)%5)+5*((y)%5))] ^ ((~A[(((x+1)%5)+5*((y)%5))]) & A[(((x+2)%5)+5*((y)%5))]);
+        for(x=0; x<5; x++)
+            A[(((x)%5)+5*((y)%5))] = C[x];
+    }
+}
+
+void iota(long[] A, int indexRound)
+{
+    A[(((0)%5)+5*((0)%5))] ^= KeccakRoundConstants[indexRound];
+}
+
+
+void KeccakInitialize()
+{
+    KeccakInitializeRoundConstants();
+    KeccakInitializeRhoOffsets();
+}
+
+void KeccakAbsorb(byte[] data, int laneCount)
+{
+    KeccakPermutationAfterXor(data, laneCount*8);
+}
+
+
+void KeccakExtract1024bits(byte[] data)
+{
+   //memcpy(data, state, 128);
+}
+
+
+void KeccakExtract(byte[] data, int laneCount)
+{
+    System.arraycopy(state, 0, data, 0, laneCount);
+}
+
+    private void createInputState(byte[] b, int off)
+    {
+        _x[_xOff++] = ((long)(b[off + 7] & 0xff) << 56) | ((long)(b[off + 6] & 0xff) << 48)
+            | ((long)(b[off + 5] & 0xff) << 40) | ((long)(b[off + 4] & 0xff) << 32)
+            | ((long)(b[off + 3] & 0xff) << 24) | ((long)(b[off + 2] & 0xff) << 16)
+            | ((long)(b[off + 1] & 0xff) << 8) | ((b[off + 0] & 0xff));
+
+        if (_xOff == _x.length)
+        {
+            Absorb(_x, LANE_COUNT);
+        }
+        _bufOff = 0;
+    }
+
+    public void update(byte in)
+    {
+        _buf[_bufOff++] = in;
+
+        if (_bufOff == _buf.length)
+        {
+            createInputState(_buf, 0);
+        }
+
+        _byteCount++;
+    }
+
+    public void update(byte[] in, int inOff, int len)
+    {
+        //
+        // fill the current state
+        //
+        while ((_bufOff != 0) && (len > 0))
+        {
+            update(in[inOff]);
+
+            inOff++;
+            len--;
+        }
+
+        //
+        // process whole words.
+        //
+        while (len > 8)
+        {
+            createInputState(in, inOff);
+
+            inOff += 8;
+            len -= 8;
+            _byteCount += 8;
+        }
+
+        //
+        // load in the remainder.
+        //
+        while (len > 0)
+        {
+            update(in[inOff]);
+
+            inOff++;
+            len--;
+        }
+    }
+
+    // yes I know these 2 are the same, but for the ease of debugging i want the
+    // processBlock methods to look as much like the reference implementation as possible
+    private final long ROL(long a, int offset)
+    {
+        return ((a << ((offset) % cKeccakLaneSizeInBits)) ^ (a >> (cKeccakLaneSizeInBits - ((offset) % cKeccakLaneSizeInBits))));
+    }
+
+    private final long ROL_mult8(long a, int offset)
+    {
+        return ((a << ((offset) % cKeccakLaneSizeInBits)) ^ (a >> (cKeccakLaneSizeInBits - ((offset) % cKeccakLaneSizeInBits))));
+    }
+
+    public long packWord(byte[] out, int outOff)
+    {
+        return ((out[outOff + 7] & 0xff) << 56)
+                | ((out[outOff + 6] & 0xff) << 48)
+                | ((out[outOff + 5] & 0xff) << 40)
+                | ((out[outOff + 4] & 0xff) << 32)
+                | ((out[outOff + 3] & 0xff) << 24)
+                | ((out[outOff + 2] & 0xff) << 16)
+                | ((out[outOff + 1] & 0xff) << 8)
+                | ((out[outOff] & 0xff));
+    }
+
+    public void unpackWord(long r, byte[] out, int outOff)
+    {
+        out[outOff + 7] = (byte)(r >> 56);
+        out[outOff + 6] = (byte)(r >> 48);
+        out[outOff + 5] = (byte)(r >> 40);
+        out[outOff + 4] = (byte)(r >> 32);
+        out[outOff + 3] = (byte)(r >> 24);
+        out[outOff + 2] = (byte)(r >> 16);
+        out[outOff + 1] = (byte)(r >> 8);
+        out[outOff] = (byte)r;
+    }
+
+    private void processLength(long bitLength)
+    {
+
+    }
+
+    private void finish()
+    {
+        long bitLength = (_byteCount << 3);
+
+        update((byte)0x01);
+
+        while (_bufOff != 0)
+        {
+            update((byte)0);
+        }
+
+        processLength(bitLength);
+
+
+    }
+
+    public int doFinal(byte[] out, int outOff)
+    {
+        Squeeze(out, out.length);
+
+        // for (int i=0;i<_state.length;i++) {
+//        for (int i = 0; i < DIGEST_LENGTH / 8; i++)
+//        {
+//            unpackWord(_state[i], out, outOff + (8 * i));
+//        }
+
+        reset();
+
+        return DIGEST_LENGTH;
+    }
+
+    /**
+     * reset the variables
+     */
+    public void reset()
+    {
+        _xOff = 0;
+        for (int i = 0; i != _x.length; i++)
+        {
+            _x[i] = 0;
+        }
+
+        _bufOff = 0;
+        for (int i = 0; i != _buf.length; i++)
+        {
+            _buf[i] = 0;
+        }
+
+        for (int i = 0; i != _state.length; i++)
+        {
+            _state[i] = 0;
+        }
+
+        _byteCount = 0;
+    }
+
+    /**
+     * Return the size of block that the compression function is applied to in bytes.
+     *
+     * @return internal byte length of a block.
+     */
+    public int getByteLength()
+    {
+        return _x.length * 8;
+    }
+
+    public static void main(String[] args)
+        throws IOException
+    {
+        byte[] x = Hex.decode("308006092A864886F70D010703A08030800201003181F13081EE02010030573051310F300D060355040A0C066D686175636B313E303C06035504030C356D686175636B20526F6F74204341202864663832373030342D346338352D346336342D616466652D3031373365356663663361392902022B26300D06092A864886F70D01010105000481802BFFAE02B20D5E543894C66D8C1DC3449A970E1B07E79AFA8BCBEA46FB1C50C347A95A89C8D962F3391506798C882214F41D171F269572248EE03F24741E08430F2AB4A5483C4A260EA8A453A5DDD5DF174BBD23EE3C3D5E101CFADDFA28A2AE7A6254324B8759BF5360D04C966397777EA5DEAC9318969FC1E15355D22900FA308006092A864886F70D010701301406082A864886F70D03070408CB8B5980DACAC831A080048201E0067B335E9EC1EB66BE006D95447141B2FB066F28AC10040F43AA2BB806EEC8B5FCEE5E579A4850D77E10829114B90C171C0761AF9B4F52A0DCBCFE6031A7E920F2E0CA04E81A625A747BCF51F50E0006A89E510060B3D3A67A74AD51CF004F3E94B47581D4F627B89DFE37281D0867A6C2F9B32B7C509BC5A3ECC9D8BAB87BA038BAA2E3724728B2F43B5624C971E0955B727224AD3A6A1CD9C4D3D43C5C89BD048E5B18DF8CA5D321F5CF5C42D48B134ED052CDA6BE2A9198F42F48B553F26A831872BBCD45A6A8CA95AC1EAC25462C59CBB4FE0F2097E1FE4218AA0D271A684522360D24C1EA13DFAD4C63BB365821ECC94FEE4C53C11BE8369DE23513C57CD3AC2CB4B284196753845B1008ECD7D9786344F28102C27CC352AF11EB2FC93F02C232BD3DE2BE8E33D3F7BFAA4F370200ABD92D9FAF96F795FC3FB74CC9ED229DAE9C8D4DEDDCEA5DFD6D36C8C8ABEBDE8F6A763C6CC4A127289B42333603F9142662B3B23FA45D2CD9DAD46984BB32F68F399C954754DD4CA5F7DFEF64739993744B339DA491BCF10D2E2FAFF08550CACA3643B56BD7C1276BDA691157D59C4C0F85E1E9F914AA886B5C9ED2C7AD4A3C46F769194D2A4326B2D6B2962751AFF5226FB2DAA3303923C7E70F30AC41D88ADF99BB1047EFCEC2E2AFD3142D93D90408C1939AFC7151840100000000000000000000");
+
+        System.out.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(x)));
+    }
+}
