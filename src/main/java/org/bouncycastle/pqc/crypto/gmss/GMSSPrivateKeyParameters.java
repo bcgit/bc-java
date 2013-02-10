@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.gmss;
 
-import java.security.SignatureException;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
@@ -441,13 +440,7 @@ public class GMSSPrivateKeyParameters
                 gmssRandom.nextSeed(currentSeeds[layer]);
 
                 // last step of distributed signature calculation
-                try
-                {
-                    nextRootSig[layer - 1].updateSign();
-                }
-                catch (SignatureException se)
-                {
-                }
+                nextRootSig[layer - 1].updateSign();
 
                 // last step of distributed leaf calculation for nextNextLeaf
                 if (layer > 1)
@@ -659,13 +652,7 @@ public class GMSSPrivateKeyParameters
 
             // compute (partial) the signature of ROOT+ (RootSig+) (not on top
             // layer)
-            try
-            {
-                nextRootSig[layer - 1].updateSign();
-            }
-            catch (SignatureException se)
-            {
-            }
+            nextRootSig[layer - 1].updateSign();
 
             // compute (partial) AUTHPATH++ & ROOT++ (not on top layer)
             if (index[layer] == 1)

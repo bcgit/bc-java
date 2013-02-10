@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.gmss.util;
 
-import java.security.SignatureException;
-
 import org.bouncycastle.crypto.Digest;
 
 /**
@@ -56,9 +54,7 @@ public class WinternitzOTSVerify
      * @param message   the message
      * @param signature the one-time signature
      * @return The public OTS key
-     * @throws SignatureException
      */
-
     public byte[] Verify(byte[] message, byte[] signature)
     {
 

@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.gmss;
 
-import java.security.SignatureException;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.crypto.gmss.util.GMSSRandom;
 import org.bouncycastle.util.encoders.Hex;
@@ -351,10 +349,8 @@ public class GMSSRootSig
      * calculaion
      *
      * @return true if signature is generated completly, else false
-     * @throws SignatureException
      */
     public boolean updateSign()
-        throws SignatureException
     {
         // steps times do
 
@@ -388,7 +384,6 @@ public class GMSSRootSig
      * @return The one-time signature of the message, generated step by step
      */
     private void oneStep()
-        throws SignatureException
     {
         // -------- if (8 % w == 0) ----------
         if (8 % w == 0)
