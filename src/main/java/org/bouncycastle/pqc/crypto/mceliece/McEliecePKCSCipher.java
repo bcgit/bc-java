@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
-import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -83,11 +82,9 @@ public class McEliecePKCSCipher
      *
      * @param key the McElieceKeyParameters object
      * @return the keysize of the given key object
-     * @throws InvalidKeyException if the key is invalid
      */
 
     public int getKeySize(McElieceKeyParameters key)
-        throws InvalidKeyException
     {
 
         if (key instanceof McEliecePublicKeyParameters)
@@ -99,7 +96,7 @@ public class McEliecePKCSCipher
         {
             return ((McEliecePrivateKeyParameters)key).getN();
         }
-        throw new InvalidKeyException("unsupported type");
+        throw new IllegalArgumentException("unsupported type");
 
     }
 

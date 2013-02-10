@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.gmss;
 
-import java.security.InvalidParameterException;
-
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -42,14 +40,14 @@ public class GMSSParameters
      * @param K                   parameter for authpath computation
      */
     public GMSSParameters(int layers, int[] heightOfTrees, int[] winternitzParameter, int[] K)
-        throws InvalidParameterException
+        throws IllegalArgumentException
     {
         init(layers, heightOfTrees, winternitzParameter, K);
     }
 
     private void init(int layers, int[] heightOfTrees,
                       int[] winternitzParameter, int[] K)
-        throws InvalidParameterException
+        throws IllegalArgumentException
     {
         boolean valid = true;
         String errMsg = "";
@@ -84,12 +82,12 @@ public class GMSSParameters
         }
         else
         {
-            throw new InvalidParameterException(errMsg);
+            throw new IllegalArgumentException(errMsg);
         }
     }
 
     public GMSSParameters(int keySize)
-        throws InvalidParameterException
+        throws IllegalArgumentException
     {
         if (keySize <= 10)
         { // create 2^10 keys

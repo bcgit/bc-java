@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
 import java.math.BigInteger;
-import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 
 /**
@@ -148,7 +147,7 @@ public final class IntegerFunctions
      * @throws NoQuadraticResidueException if <tt>a</tt> is a quadratic non-residue modulo <tt>p</tt>
      */
     public static BigInteger ressol(BigInteger a, BigInteger p)
-        throws InvalidParameterException
+        throws IllegalArgumentException
     {
 
         BigInteger v = null;
@@ -178,7 +177,7 @@ public final class IntegerFunctions
                 return a.modPow(v, p); // return a^v mod p
                 // return --> a^((p+1)/4) mod p
             }
-            throw new InvalidParameterException("No quadratic residue: " + a + ", " + p);
+            throw new IllegalArgumentException("No quadratic residue: " + a + ", " + p);
         }
 
         long t = 0;
@@ -238,7 +237,7 @@ public final class IntegerFunctions
             t -= s; // t = t - s
             if (t == 0)
             {
-                throw new InvalidParameterException("No quadratic residue: " + a + ", " + p);
+                throw new IllegalArgumentException("No quadratic residue: " + a + ", " + p);
             }
 
             v = ONE;
