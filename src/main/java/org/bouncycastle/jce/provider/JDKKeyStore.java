@@ -498,7 +498,7 @@ public class JDKKeyStore
 
         if (entry == null)
         {
-            throw new KeyStoreException("no such entry as " + alias);
+            return;
         }
 
         table.remove(alias);
