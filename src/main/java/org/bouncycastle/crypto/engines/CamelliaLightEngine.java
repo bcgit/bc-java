@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -572,7 +573,7 @@ public class CamelliaLightEngine
 
         if ((outOff + BLOCK_SIZE) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
         
         if (_keyis128)

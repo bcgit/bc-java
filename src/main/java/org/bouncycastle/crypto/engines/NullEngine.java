@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 
 /**
  * The no-op engine that just copies bytes through, irrespective of whether encrypting and decrypting.
@@ -63,7 +64,7 @@ public class NullEngine implements BlockCipher
 
             if ((outOff + BLOCK_SIZE) > out.length)
             {
-                throw new DataLengthException("output buffer too short");
+                throw new OutputLengthException("output buffer too short");
             }
             
             for (int i = 0; i < BLOCK_SIZE; ++i)

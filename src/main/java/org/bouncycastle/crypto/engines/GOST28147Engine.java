@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.util.Arrays;
@@ -221,7 +222,7 @@ public class GOST28147Engine
 
         if ((outOff + BLOCK_SIZE) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         GOST28147Func(workingKey, in, inOff, out, outOff);

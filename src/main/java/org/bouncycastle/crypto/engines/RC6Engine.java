@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -98,7 +99,7 @@ public class RC6Engine
         }
         if ((outOff + blockSize) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         return (forEncryption)
@@ -113,7 +114,7 @@ public class RC6Engine
     /**
      * Re-key the cipher.
      * <p>
-     * @param  inKey  the key to be used
+     * @param  key  the key to be used
      */
     private void setKey(
         byte[]      key)

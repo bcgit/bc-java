@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -365,7 +366,7 @@ public class CAST5Engine
 
         if ((outOff + blockSize) > out.length)
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new OutputLengthException("Output buffer too short");
         }
 
         if (_encrypting)

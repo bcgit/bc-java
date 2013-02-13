@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RC2Parameters;
 
@@ -174,7 +175,7 @@ public class RC2Engine
 
         if ((outOff + BLOCK_SIZE) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         if (encrypting)
