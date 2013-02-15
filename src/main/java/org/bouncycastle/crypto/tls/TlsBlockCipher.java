@@ -78,15 +78,28 @@ public class TlsBlockCipher implements TlsCipher
 
     public byte[] encodePlaintext(short type, byte[] plaintext, int offset, int len)
     {
-        int blocksize = encryptCipher.getBlockSize();
-        int padding_length = blocksize - 1 - ((len + writeMac.getSize()) % blocksize);
+        int blockSize = encryptCipher.getBlockSize();
+        
+        ProtocolVersion version = context.getServerVersion();
 
-        if (!context.getServerVersion().isSSL())
+        int padding_length = blockSize - 1 - ((len + writeMac.getSize()) % blockSize);
+
+        if (!version.isSSL())
         {
+            SecureRandom secureRandom = context.getSecureRandom();
+
             // Add a random number of extra blocks worth of padding
-            int maxExtraPadBlocks = (255 - padding_length) / blocksize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
-            padding_length += actualExtraPadBlocks * blocksize;
+            int maxExtraPadBlocks = (255 - padding_length) / blockSize;
+	    int actualExtraPadBlocks = chooseExtraPadBlocks(secureRandom, maxExtraPadBlocks);
+            padding_length += actualExtraPadBlocks * blockSize;
+
+            if (!version.equals(ProtocolVersion.TLSv10))
+            {
+        	byte[] explicitIV = new byte[blockSize];
+        	secureRandom.nextBytes(explicitIV);
+
+        	encryptCipher.init(true, new ParametersWithIV(null, explicitIV));
+            }
         }
 
         int totalsize = len + writeMac.getSize() + padding_length + 1;
@@ -99,7 +112,7 @@ public class TlsBlockCipher implements TlsCipher
         {
             outbuf[i + paddoffset] = (byte)padding_length;
         }
-        for (int i = 0; i < totalsize; i += blocksize)
+        for (int i = 0; i < totalsize; i += blockSize)
         {
             encryptCipher.processBlock(outbuf, i, outbuf, i);
         }
@@ -112,12 +125,15 @@ public class TlsBlockCipher implements TlsCipher
         int blockSize = decryptCipher.getBlockSize();
         int macSize = readMac.getSize();
 
-        /*
-         *  TODO[TLS 1.1] Explicit IV implies minLen = blockSize + max(blockSize, macSize + 1),
-         *  and will need further changes to offset and plen variables below.
-         */
+        ProtocolVersion version = context.getServerVersion();
+        boolean expectExplicitIV = !version.isSSL() && !version.equals(ProtocolVersion.TLSv10);
 
         int minLen = Math.max(blockSize, macSize + 1);
+        if (expectExplicitIV)
+        {
+            minLen += blockSize;
+        }
+
         if (len < minLen)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -134,6 +150,14 @@ public class TlsBlockCipher implements TlsCipher
         }
 
         int plen = len;
+
+        if (expectExplicitIV)
+        {
+            decryptCipher.init(false, new ParametersWithIV(null, ciphertext, offset, blockSize));
+
+            offset += blockSize;
+            plen -= blockSize;
+        }
 
         // If there's anything wrong with the padding, this will return zero
         int totalPad = checkPaddingConstantTime(ciphertext, offset, plen, blockSize, macSize);
