@@ -86,33 +86,45 @@ public class TlsBlockCipher implements TlsCipher
 
         if (!version.isSSL())
         {
-            SecureRandom secureRandom = context.getSecureRandom();
-
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-	    int actualExtraPadBlocks = chooseExtraPadBlocks(secureRandom, maxExtraPadBlocks);
+	    int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
-
-            if (!version.equals(ProtocolVersion.TLSv10))
-            {
-        	byte[] explicitIV = new byte[blockSize];
-        	secureRandom.nextBytes(explicitIV);
-
-        	encryptCipher.init(true, new ParametersWithIV(null, explicitIV));
-            }
         }
 
-        int totalsize = len + writeMac.getSize() + padding_length + 1;
-        byte[] outbuf = new byte[totalsize];
-        System.arraycopy(plaintext, offset, outbuf, 0, len);
+        boolean useExplicitIV = !version.isSSL() && !version.equals(ProtocolVersion.TLSv10);
+
+        int totalSize = len + writeMac.getSize() + padding_length + 1;
+        if (useExplicitIV)
+        {
+            totalSize += blockSize;
+        }
+
+        byte[] outbuf = new byte[totalSize];
+        int outOff = 0;
+
+        if (useExplicitIV)
+        {
+	    byte[] explicitIV = new byte[blockSize];
+	    context.getSecureRandom().nextBytes(explicitIV);
+
+	    encryptCipher.init(true, new ParametersWithIV(null, explicitIV));
+
+	    System.arraycopy(explicitIV, 0, outbuf, outOff, blockSize);
+	    outOff += blockSize;
+        }
+
         byte[] mac = writeMac.calculateMac(type, plaintext, offset, len);
-        System.arraycopy(mac, 0, outbuf, len, mac.length);
-        int paddoffset = len + mac.length;
+
+        System.arraycopy(plaintext, offset, outbuf, outOff, len);
+        System.arraycopy(mac, 0, outbuf, outOff + len, mac.length);
+
+        int padOffset = outOff + len + mac.length;
         for (int i = 0; i <= padding_length; i++)
         {
-            outbuf[i + paddoffset] = (byte)padding_length;
+            outbuf[i + padOffset] = (byte)padding_length;
         }
-        for (int i = 0; i < totalsize; i += blockSize)
+        for (int i = outOff; i < totalSize; i += blockSize)
         {
             encryptCipher.processBlock(outbuf, i, outbuf, i);
         }
@@ -144,28 +156,26 @@ public class TlsBlockCipher implements TlsCipher
             throw new TlsFatalAlert(AlertDescription.decryption_failed);
         }
 
-        for (int i = 0; i < len; i += blockSize)
-        {
-            decryptCipher.processBlock(ciphertext, offset + i, ciphertext, offset + i);
-        }
-
-        int plen = len;
-
         if (expectExplicitIV)
         {
             decryptCipher.init(false, new ParametersWithIV(null, ciphertext, offset, blockSize));
 
             offset += blockSize;
-            plen -= blockSize;
+            len -= blockSize;
+        }
+
+        for (int i = 0; i < len; i += blockSize)
+        {
+            decryptCipher.processBlock(ciphertext, offset + i, ciphertext, offset + i);
         }
 
         // If there's anything wrong with the padding, this will return zero
-        int totalPad = checkPaddingConstantTime(ciphertext, offset, plen, blockSize, macSize);
+        int totalPad = checkPaddingConstantTime(ciphertext, offset, len, blockSize, macSize);
 
-        int macInputLen = plen - totalPad - macSize;
+        int macInputLen = len - totalPad - macSize;
 
         byte[] decryptedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset + macInputLen + macSize);
-        byte[] calculatedMac = readMac.calculateMacConstantTime(type, ciphertext, offset, macInputLen, plen - macSize, randomData);
+        byte[] calculatedMac = readMac.calculateMacConstantTime(type, ciphertext, offset, macInputLen, len - macSize, randomData);
 
         boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, decryptedMac);
 

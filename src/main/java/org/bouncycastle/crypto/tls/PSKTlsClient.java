@@ -26,7 +26,7 @@ public abstract class PSKTlsClient implements TlsClient
 
     public ProtocolVersion getClientVersion()
     {
-        return ProtocolVersion.TLSv10;
+        return ProtocolVersion.TLSv11;
     }
 
     public void init(TlsClientContext context)
@@ -64,7 +64,8 @@ public abstract class PSKTlsClient implements TlsClient
 
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        if (!ProtocolVersion.TLSv10.equals(serverVersion))
+        if (!ProtocolVersion.TLSv10.equals(serverVersion)
+            && !ProtocolVersion.TLSv11.equals(serverVersion))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
