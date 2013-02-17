@@ -23,7 +23,9 @@ class RecordStream
 
     private TlsClientContext context = null;
     private CombinedHash hash = null;
-    
+
+    private ProtocolVersion discoveredServerVersion = null;
+
     RecordStream(TlsProtocolHandler handler, InputStream is, OutputStream os)
     {
         this.handler = handler;
@@ -39,6 +41,11 @@ class RecordStream
     {
         this.context = context;
         this.hash = new CombinedHash(context);
+    }
+
+    ProtocolVersion getDiscoveredServerVersion()
+    {
+	return discoveredServerVersion;
     }
 
     void clientCipherSpecDecided(TlsCompression tlsCompression, TlsCipher tlsCipher)
@@ -57,9 +64,12 @@ class RecordStream
     {
         short type = TlsUtils.readUint8(is);
 
-        // TODO In light of versioning and SSLv3, what should we expect here?
-        ProtocolVersion expectedVersion = context.getServerVersion();
-        if (!expectedVersion.equals(TlsUtils.readVersion(is)))
+        ProtocolVersion version = TlsUtils.readVersion(is);
+        if (discoveredServerVersion == null)
+        {
+            discoveredServerVersion = version;
+        }
+        else if (!version.equals(discoveredServerVersion))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -111,9 +121,8 @@ class RecordStream
 
         byte[] writeMessage = new byte[ciphertext.length + 5];
         TlsUtils.writeUint8(type, writeMessage, 0);
-        // TODO In light of versioning, what should we send here?
-//        TlsUtils.writeVersion(context.getServerVersion(), writeMessage, 1);
-        TlsUtils.writeVersion(ProtocolVersion.TLSv11, writeMessage, 1);
+        ProtocolVersion version = discoveredServerVersion != null ? discoveredServerVersion : context.getClientVersion();
+	TlsUtils.writeVersion(version, writeMessage, 1);
         TlsUtils.writeUint16(ciphertext.length, writeMessage, 3);
         System.arraycopy(ciphertext, 0, writeMessage, 5, ciphertext.length);
         os.write(writeMessage);

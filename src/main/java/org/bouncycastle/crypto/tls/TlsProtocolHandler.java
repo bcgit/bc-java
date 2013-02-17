@@ -280,6 +280,13 @@ public class TlsProtocolHandler
                          * Read the server hello message
                          */
                         ProtocolVersion server_version = TlsUtils.readVersion(is);
+                        
+                        // Check that this matches what the server is sending in the record layer
+                        if (!server_version.equals(rs.getDiscoveredServerVersion()))
+                        {
+                            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+                        }
+
                         ProtocolVersion client_version = this.tlsClientContext.getClientVersion();
 
                         // TODO[DTLS] This comparison needs to allow for DTLS (with decreasing minor version numbers)
@@ -881,8 +888,6 @@ public class TlsProtocolHandler
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
         this.tlsClientContext.setClientVersion(client_version);
-        // TODO For SSLv3 support, server version needs to be set to ProtocolVersion.SSLv3
-        this.tlsClientContext.setServerVersion(client_version);
         TlsUtils.writeVersion(client_version, os);
 
         os.write(securityParameters.clientRandom);
