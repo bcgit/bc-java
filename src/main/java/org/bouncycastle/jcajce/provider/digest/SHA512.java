@@ -5,9 +5,10 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.macs.OldHMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class SHA512
 {
@@ -31,11 +32,23 @@ public class SHA512
     }
 
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {
             super(new HMac(new SHA512Digest()));
+        }
+    }
+
+    /**
+     * SHA-512 HMac
+     */
+    public static class OldSHA512
+        extends BaseMac
+    {
+        public OldSHA512()
+        {
+            super(new OldHMac(new SHA512Digest()));
         }
     }
 
@@ -65,6 +78,7 @@ public class SHA512
             provider.addAlgorithm("MessageDigest.SHA-512", PREFIX + "$Digest");
             provider.addAlgorithm("Alg.Alias.MessageDigest.SHA512", "SHA-512");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha512, "SHA-512");
+            provider.addAlgorithm("Mac.OLDHMACSHA512", PREFIX + "$OldSHA512");
 
             addHMACAlgorithm(provider, "SHA512", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA512", PKCSObjectIdentifiers.id_hmacWithSHA512);

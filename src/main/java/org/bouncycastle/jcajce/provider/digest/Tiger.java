@@ -6,7 +6,8 @@ import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class Tiger
 {
@@ -33,7 +34,7 @@ public class Tiger
      * Tiger HMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {
@@ -47,6 +48,42 @@ public class Tiger
         public KeyGenerator()
         {
             super("HMACTIGER", 192, new CipherKeyGenerator());
+        }
+    }
+
+    /**
+     * Tiger HMac
+     */
+    public static class TigerHmac
+        extends BaseMac
+    {
+        public TigerHmac()
+        {
+            super(new HMac(new TigerDigest()));
+        }
+    }
+
+    /**
+     * PBEWithHmacTiger
+     */
+    public static class PBEWithMacKeyFactory
+        extends PBESecretKeyFactory
+    {
+        public PBEWithMacKeyFactory()
+        {
+            super("PBEwithHmacTiger", null, false, PKCS12, TIGER, 192, 0);
+        }
+    }
+
+    /**
+     * PBEWithHmacTiger
+     */
+    public static class PBEWithHashMac
+        extends BaseMac
+    {
+        public PBEWithHashMac()
+        {
+            super(new HMac(new TigerDigest()), PKCS12, TIGER, 192);
         }
     }
 
@@ -66,6 +103,8 @@ public class Tiger
 
             addHMACAlgorithm(provider, "TIGER", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "TIGER", IANAObjectIdentifiers.hmacTIGER);
+
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACTIGER", PREFIX + "$PBEWithMacKeyFactory");
         }
     }
 }

@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class GOST3411
 {
@@ -33,7 +33,7 @@ public class GOST3411
      * GOST3411 HMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {

@@ -35,7 +35,6 @@ import org.bouncycastle.jce.interfaces.ElGamalKey;
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.ElGamalUtil;
 import org.bouncycastle.util.Strings;
 
 public class CipherSpi

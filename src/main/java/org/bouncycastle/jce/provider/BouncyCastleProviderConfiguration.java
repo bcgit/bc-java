@@ -4,7 +4,7 @@ import java.security.Permission;
 
 import javax.crypto.spec.DHParameterSpec;
 
-import org.bouncycastle.jcajce.provider.asymmetric.ec.EC5Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.config.ProviderConfigurationPermission;

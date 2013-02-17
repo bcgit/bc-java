@@ -36,7 +36,6 @@ public class DH
             provider.addAlgorithm("Cipher.DHIESwithAES", PREFIX + "IESCipher$IESwithAES");
             provider.addAlgorithm("Cipher.DHIESWITHAES", PREFIX + "IESCipher$IESwithAES");
             provider.addAlgorithm("Cipher.DHIESWITHDESEDE", PREFIX + "IESCipher$IESwithDESede");
-            provider.addAlgorithm("KeyPairGenerator.IES", PREFIX + "KeyPairGeneratorSpi");
         }
     }
 }

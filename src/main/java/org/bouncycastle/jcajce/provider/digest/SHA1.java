@@ -1,14 +1,24 @@
 package org.bouncycastle.jcajce.provider.digest;
 
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.PBEKeySpec;
+
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA1
 {
@@ -35,7 +45,7 @@ public class SHA1
      * SHA1 HMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {
@@ -49,6 +59,94 @@ public class SHA1
         public KeyGenerator()
         {
             super("HMACSHA1", 160, new CipherKeyGenerator());
+        }
+    }
+
+    /**
+     * SHA1 HMac
+     */
+    public static class SHA1Mac
+        extends BaseMac
+    {
+        public SHA1Mac()
+        {
+            super(new HMac(new SHA1Digest()));
+        }
+    }
+
+    /**
+     * PBEWithHmacSHA
+     */
+    public static class PBEWithSHA
+        extends PBESecretKeyFactory
+    {
+        public PBEWithSHA()
+        {
+            super("PBEwithHmacSHA", null, false, PKCS12, SHA1, 160, 0);
+        }
+    }
+
+    /**
+     * PBEWithHmacSHA
+     */
+    public static class PBEWithMacKeyFactory
+        extends PBESecretKeyFactory
+    {
+        public PBEWithMacKeyFactory()
+        {
+            super("PBEwithHmacSHA", null, false, PKCS12, SHA1, 160, 0);
+        }
+    }
+
+
+    public static class PBKDF2WithHmacSHA1
+        extends BaseSecretKeyFactory
+    {
+        public PBKDF2WithHmacSHA1()
+        {
+            super("PBKDF2WithHmacSHA1", PKCSObjectIdentifiers.id_PBKDF2);
+        }
+
+        protected SecretKey engineGenerateSecret(
+            KeySpec keySpec)
+            throws InvalidKeySpecException
+        {
+            if (keySpec instanceof PBEKeySpec)
+            {
+                PBEKeySpec pbeSpec = (PBEKeySpec)keySpec;
+
+                if (pbeSpec.getSalt() == null)
+                {
+                    throw new InvalidKeySpecException("missing required salt");
+                }
+
+                if (pbeSpec.getIterationCount() <= 0)
+                {
+                    throw new InvalidKeySpecException("positive iteration count required: "
+                        + pbeSpec.getIterationCount());
+                }
+
+                if (pbeSpec.getKeyLength() <= 0)
+                {
+                    throw new InvalidKeySpecException("positive key length required: "
+                        + pbeSpec.getKeyLength());
+                }
+
+                if (pbeSpec.getPassword().length == 0)
+                {
+                    throw new IllegalArgumentException("password empty");
+                }
+
+                int scheme = PKCS5S2;
+                int digest = SHA1;
+                int keySize = pbeSpec.getKeyLength();
+                int ivSize = -1;
+                CipherParameters param = Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+
+                return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
+            }
+
+            throw new InvalidKeySpecException("Invalid KeySpec");
         }
     }
 
@@ -71,6 +169,15 @@ public class SHA1
             addHMACAlgorithm(provider, "SHA1", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA1", PKCSObjectIdentifiers.id_hmacWithSHA1);
             addHMACAlias(provider, "SHA1", IANAObjectIdentifiers.hmacSHA1);
+
+            provider.addAlgorithm("Mac.PBEWITHHMACSHA", PREFIX + "$SHA1Mac");
+            provider.addAlgorithm("Mac.PBEWITHHMACSHA1", PREFIX + "$SHA1Mac");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHHMACSHA", "PBEWITHHMACSHA1");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + OIWObjectIdentifiers.idSHA1, "PBEWITHHMACSHA1");
+            provider.addAlgorithm("Alg.Alias.Mac." + OIWObjectIdentifiers.idSHA1, "PBEWITHHMACSHA");
+
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACSHA1", PREFIX + "$PBEWithMacKeyFactory");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WithHmacSHA1", PREFIX + "$PBKDF2WithHmacSHA1");
         }
     }
 }

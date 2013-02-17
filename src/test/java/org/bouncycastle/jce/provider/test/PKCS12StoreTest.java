@@ -34,6 +34,7 @@ import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.SafeBag;
+import org.bouncycastle.jcajce.provider.config.PKCS12StoreParameter;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -41,6 +42,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
@@ -565,10 +567,7 @@ public class PKCS12StoreTest
         //
         bOut = new ByteArrayOutputStream();
 
-        JDKPKCS12StoreParameter storeParam = new JDKPKCS12StoreParameter();
-        storeParam.setOutputStream(bOut);
-        storeParam.setPassword(passwd);
-        storeParam.setUseDEREncoding(true);
+        PKCS12StoreParameter storeParam = new PKCS12StoreParameter(bOut, passwd, true);
 
         store.store(storeParam);
 
@@ -585,6 +584,36 @@ public class PKCS12StoreTest
         }
 
         ASN1Encodable outer = new ASN1StreamParser(data).readObject();
+        if (!(outer instanceof DERSequenceParser))
+        {
+            fail("Failed DER encoding test.");
+        }
+
+        //
+        // save test using LoadStoreParameter
+        //
+        bOut = new ByteArrayOutputStream();
+
+        JDKPKCS12StoreParameter oldParam = new JDKPKCS12StoreParameter();
+        oldParam.setOutputStream(bOut);
+        oldParam.setPassword(passwd);
+        oldParam.setUseDEREncoding(true);
+
+        store.store(oldParam);
+
+        data = bOut.toByteArray();
+
+        stream = new ByteArrayInputStream(data);
+        store.load(stream, passwd);
+
+        key = (PrivateKey)store.getKey(pName, null);
+
+        if (!((RSAPrivateKey)key).getModulus().equals(mod))
+        {
+            fail("Modulus doesn't match.");
+        }
+
+        outer = new ASN1StreamParser(data).readObject();
         if (!(outer instanceof DERSequenceParser))
         {
             fail("Failed DER encoding test.");
