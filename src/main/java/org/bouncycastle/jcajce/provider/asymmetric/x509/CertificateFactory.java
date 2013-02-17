@@ -24,8 +24,6 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.CertificateList;
-import org.bouncycastle.jce.provider.X509CRLObject;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 
 /**
  * class for dealing with X509 certificates.
