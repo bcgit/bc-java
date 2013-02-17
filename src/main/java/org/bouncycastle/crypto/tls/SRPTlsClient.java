@@ -74,10 +74,9 @@ public abstract class SRPTlsClient implements TlsClient
 
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        if (!ProtocolVersion.TLSv10.equals(serverVersion)
-            && !ProtocolVersion.TLSv11.equals(serverVersion))
+	if (serverVersion.getFullVersion() < ProtocolVersion.TLSv10.getFullVersion())
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
     }
 
