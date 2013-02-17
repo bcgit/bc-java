@@ -14,6 +14,8 @@ public class UDPTransport implements DatagramTransport {
             throw new IllegalArgumentException("'socket' must be bound and connected");
         }
         this.socket = socket;
+        
+        // NOTE: As of JDK 1.6, can use NetworkInterface.getMTU
         this.mtu = mtu;
     }
 
