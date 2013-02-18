@@ -3,12 +3,15 @@ package org.bouncycastle.pkcs;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -18,9 +21,32 @@ public class PKCS12PfxPdu
 {
     private Pfx pfx;
 
+    private static Pfx parseBytes(byte[] pfxEncoding)
+        throws IOException
+    {
+        try
+        {
+            return Pfx.getInstance(ASN1Primitive.fromByteArray(pfxEncoding));
+        }
+        catch (ClassCastException e)
+        {
+            throw new CertIOException("malformed data: " + e.getMessage(), e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CertIOException("malformed data: " + e.getMessage(), e);
+        }
+    }
+
     public PKCS12PfxPdu(Pfx pfx)
     {
         this.pfx = pfx;
+    }
+
+    public PKCS12PfxPdu(byte[] pfx)
+        throws IOException
+    {
+        this(parseBytes(pfx));
     }
 
     /**

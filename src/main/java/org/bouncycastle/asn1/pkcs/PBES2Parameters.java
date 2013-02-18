@@ -13,26 +13,25 @@ public class PBES2Parameters
     extends ASN1Object
     implements PKCSObjectIdentifiers
 {
-    private KeyDerivationFunc   func;
-    private EncryptionScheme    scheme;
+    private KeyDerivationFunc func;
+    private EncryptionScheme scheme;
 
     public static PBES2Parameters getInstance(
         Object  obj)
     {
-        if (obj== null || obj instanceof PBES2Parameters)
+        if (obj instanceof PBES2Parameters)
         {
             return (PBES2Parameters)obj;
         }
-
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new PBES2Parameters((ASN1Sequence)obj);
+            return new PBES2Parameters(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
+        return null;
     }
 
-    public PBES2Parameters(
+    private PBES2Parameters(
         ASN1Sequence  obj)
     {
         Enumeration e = obj.getObjects();
@@ -44,10 +43,10 @@ public class PBES2Parameters
         }
         else
         {
-            func = new KeyDerivationFunc(funcSeq);
+            func = KeyDerivationFunc.getInstance(funcSeq);
         }
 
-        scheme = (EncryptionScheme)EncryptionScheme.getInstance(e.nextElement());
+        scheme = EncryptionScheme.getInstance(e.nextElement());
     }
 
     public KeyDerivationFunc getKeyDerivationFunc()

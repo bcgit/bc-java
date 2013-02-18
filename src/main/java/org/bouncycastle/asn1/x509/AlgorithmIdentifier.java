@@ -101,6 +101,10 @@ public class AlgorithmIdentifier
         this.parameters = parameters;
     }
 
+    /**
+     * @deprecated use AlgorithmIdentifier.getInstance()
+     * @param seq
+     */
     public AlgorithmIdentifier(
         ASN1Sequence   seq)
     {

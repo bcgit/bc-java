@@ -22,7 +22,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
@@ -147,7 +146,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
             try
             {
-                EncryptionScheme scheme = new EncryptionScheme(algOID, ASN1Primitive.fromByteArray(params.getEncoded()));
+                KeyDerivationFunc scheme = new KeyDerivationFunc(algOID, ASN1Primitive.fromByteArray(params.getEncoded()));
                 KeyDerivationFunc func = new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount));
 
                 ASN1EncodableVector v = new ASN1EncodableVector();
@@ -155,7 +154,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
                 v.add(func);
                 v.add(scheme);
 
-                algID = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, new PBES2Parameters(new DERSequence(v)));
+                algID = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, PBES2Parameters.getInstance(new DERSequence(v)));
             }
             catch (IOException e)
             {
