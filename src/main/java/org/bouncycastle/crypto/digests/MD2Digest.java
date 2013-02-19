@@ -228,9 +228,9 @@ public class MD2Digest
       (byte)159,(byte)17,(byte)131,(byte)20
     };
 
-   public int getByteLength() 
+   public int getByteLength()
    {
-      return 16;
+      return 64;
    }
 }
 
