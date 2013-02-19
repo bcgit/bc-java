@@ -92,7 +92,7 @@ public class SHA512
     {
         public HashMacT256()
         {
-            super(new HMac(new SHA512tDigest(224)));
+            super(new HMac(new SHA512tDigest(256)));
         }
     }
 

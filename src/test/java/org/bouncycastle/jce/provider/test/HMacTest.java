@@ -33,7 +33,7 @@ public class HMacTest
     static byte[]   output384 = Hex.decode("afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59cfaea9ea9076ede7f4af152e8b2fa9cb6");
     static byte[]   output512 = Hex.decode("87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cdedaa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854");
     static byte[]   output512_224 = Hex.decode("b244ba01307c0e7a8ccaad13b1067a4cf6b961fe0c6a20bda3d92039");
-    static byte[]   output512_256 = Hex.decode("b244ba01307c0e7a8ccaad13b1067a4cf6b961fe0c6a20bda3d92039");
+    static byte[]   output512_256 = Hex.decode("9f9126c3d9c3c330d760425ca8a217e31feae31bfe70196ff81642b868402eab");
     static byte[]   outputRipeMD128 = Hex.decode("fda5717fb7e20cf05d30bb286a44b05d");
     static byte[]   outputRipeMD160 = Hex.decode("24cb4bd67d20fc1a5d2ed7732dcc39377f0a5668");
     static byte[]   outputTiger = Hex.decode("1d7a658c75f8f004916e7b07e2a2e10aec7de2ae124d3647");
