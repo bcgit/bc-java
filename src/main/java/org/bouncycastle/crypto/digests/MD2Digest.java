@@ -230,7 +230,7 @@ public class MD2Digest
 
    public int getByteLength()
    {
-      return 64;
+      return 16;
    }
 }
 
