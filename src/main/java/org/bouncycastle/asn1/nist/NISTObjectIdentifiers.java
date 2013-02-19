@@ -11,13 +11,17 @@ public interface NISTObjectIdentifiers
     //
     // nistalgorithms(4)
     //
-    static final ASN1ObjectIdentifier    nistAlgorithm          = new ASN1ObjectIdentifier("2.16.840.1.101.3.4");
+    static final ASN1ObjectIdentifier    nistAlgorithm           = new ASN1ObjectIdentifier("2.16.840.1.101.3.4");
 
-    static final ASN1ObjectIdentifier    id_sha256               = nistAlgorithm.branch("2.1");
-    static final ASN1ObjectIdentifier    id_sha384               = nistAlgorithm.branch("2.2");
-    static final ASN1ObjectIdentifier    id_sha512               = nistAlgorithm.branch("2.3");
-    static final ASN1ObjectIdentifier    id_sha224               = nistAlgorithm.branch("2.4");
-    
+    static final ASN1ObjectIdentifier    hashAlgs                = nistAlgorithm.branch("2");
+
+    static final ASN1ObjectIdentifier    id_sha256               = hashAlgs.branch("1");
+    static final ASN1ObjectIdentifier    id_sha384               = hashAlgs.branch("2");
+    static final ASN1ObjectIdentifier    id_sha512               = hashAlgs.branch("3");
+    static final ASN1ObjectIdentifier    id_sha224               = hashAlgs.branch("4");
+    static final ASN1ObjectIdentifier    id_sha512_224           = hashAlgs.branch("5");
+    static final ASN1ObjectIdentifier    id_sha512_256           = hashAlgs.branch("6");
+
     static final ASN1ObjectIdentifier    aes                     =  nistAlgorithm.branch("1");
     
     static final ASN1ObjectIdentifier    id_aes128_ECB           = aes.branch("1"); 

@@ -32,6 +32,8 @@ public class HMacTest
     static byte[]   output256 = Hex.decode("b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
     static byte[]   output384 = Hex.decode("afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59cfaea9ea9076ede7f4af152e8b2fa9cb6");
     static byte[]   output512 = Hex.decode("87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cdedaa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854");
+    static byte[]   output512_224 = Hex.decode("b244ba01307c0e7a8ccaad13b1067a4cf6b961fe0c6a20bda3d92039");
+    static byte[]   output512_256 = Hex.decode("b244ba01307c0e7a8ccaad13b1067a4cf6b961fe0c6a20bda3d92039");
     static byte[]   outputRipeMD128 = Hex.decode("fda5717fb7e20cf05d30bb286a44b05d");
     static byte[]   outputRipeMD160 = Hex.decode("24cb4bd67d20fc1a5d2ed7732dcc39377f0a5668");
     static byte[]   outputTiger = Hex.decode("1d7a658c75f8f004916e7b07e2a2e10aec7de2ae124d3647");
@@ -135,6 +137,8 @@ public class HMacTest
         testHMac("HMac-SHA256", output256);
         testHMac("HMac-SHA384", output384);
         testHMac("HMac-SHA512", output512);
+        testHMac("HMac-SHA512/224", output512_224);
+        testHMac("HMac-SHA512/256", output512_256);
         testHMac("HMac-RIPEMD128", outputRipeMD128);
         testHMac("HMac-RIPEMD160", outputRipeMD160);
         testHMac("HMac-TIGER", outputTiger);
