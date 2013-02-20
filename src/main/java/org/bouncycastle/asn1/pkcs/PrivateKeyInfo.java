@@ -67,6 +67,10 @@ public class PrivateKeyInfo
         this.attributes = attributes;
     }
 
+    /**
+     * @deprectaed use PrivateKeyInfo.getInstance()
+     * @param seq
+     */
     public PrivateKeyInfo(
         ASN1Sequence  seq)
     {

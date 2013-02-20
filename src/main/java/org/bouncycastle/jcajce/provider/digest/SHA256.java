@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.digest;
 
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -8,6 +9,7 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA256
 {
@@ -40,6 +42,18 @@ public class SHA256
     }
 
     /**
+     * PBEWithHmacSHA
+     */
+    public static class PBEWithMacKeyFactory
+        extends PBESecretKeyFactory
+    {
+        public PBEWithMacKeyFactory()
+        {
+            super("PBEwithHmacSHA256", null, false, PKCS12, SHA256, 256, 0);
+        }
+    }
+
+    /**
      * HMACSHA256
      */
     public static class KeyGenerator
@@ -66,8 +80,13 @@ public class SHA256
             provider.addAlgorithm("Alg.Alias.MessageDigest.SHA256", "SHA-256");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha256, "SHA-256");
 
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACSHA256", PREFIX + "$PBEWithMacKeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHHMACSHA-256", "PBEWITHHMACSHA256");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_sha256, "PBEWITHHMACSHA256");
+
             addHMACAlgorithm(provider, "SHA256", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA256", PKCSObjectIdentifiers.id_hmacWithSHA256);
+            addHMACAlias(provider, "SHA256", NISTObjectIdentifiers.id_sha256);
         }
     }
 }

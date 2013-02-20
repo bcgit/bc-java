@@ -33,23 +33,20 @@ public class AlgorithmIdentifier
         {
             return (AlgorithmIdentifier)obj;
         }
-        
+
+        // TODO: delete
         if (obj instanceof ASN1ObjectIdentifier)
         {
             return new AlgorithmIdentifier((ASN1ObjectIdentifier)obj);
         }
 
+        // TODO: delete
         if (obj instanceof String)
         {
             return new AlgorithmIdentifier((String)obj);
         }
 
-        if (obj instanceof ASN1Sequence || obj instanceof ASN1SequenceParser)
-        {
-            return new AlgorithmIdentifier(ASN1Sequence.getInstance(obj));
-        }
-
-        throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
+        return new AlgorithmIdentifier(ASN1Sequence.getInstance(obj));
     }
 
     public AlgorithmIdentifier(
@@ -101,6 +98,10 @@ public class AlgorithmIdentifier
         this.parameters = parameters;
     }
 
+    /**
+     * @deprecated use AlgorithmIdentifier.getInstance()
+     * @param seq
+     */
     public AlgorithmIdentifier(
         ASN1Sequence   seq)
     {

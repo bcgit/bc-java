@@ -17,7 +17,7 @@ public class PBES2Algorithms
 {
     private ASN1ObjectIdentifier objectId;
     private KeyDerivationFunc   func;
-    private EncryptionScheme    scheme;
+    private EncryptionScheme scheme;
 
     public PBES2Algorithms(
         ASN1Sequence  obj)
@@ -40,10 +40,10 @@ public class PBES2Algorithms
         }
         else
         {
-            func = new KeyDerivationFunc(funcSeq);
+            func = KeyDerivationFunc.getInstance(funcSeq);
         }
 
-        scheme = new EncryptionScheme((ASN1Sequence)e.nextElement());
+        scheme = EncryptionScheme.getInstance(e.nextElement());
     }
 
     public ASN1ObjectIdentifier getObjectId()

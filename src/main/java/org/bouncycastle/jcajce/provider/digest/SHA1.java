@@ -77,18 +77,6 @@ public class SHA1
     /**
      * PBEWithHmacSHA
      */
-    public static class PBEWithSHA
-        extends PBESecretKeyFactory
-    {
-        public PBEWithSHA()
-        {
-            super("PBEwithHmacSHA", null, false, PKCS12, SHA1, 160, 0);
-        }
-    }
-
-    /**
-     * PBEWithHmacSHA
-     */
     public static class PBEWithMacKeyFactory
         extends PBESecretKeyFactory
     {
@@ -178,6 +166,7 @@ public class SHA1
 
             provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACSHA1", PREFIX + "$PBEWithMacKeyFactory");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WithHmacSHA1", PREFIX + "$PBKDF2WithHmacSHA1");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2WithHmacSHA1");
         }
     }
 }
