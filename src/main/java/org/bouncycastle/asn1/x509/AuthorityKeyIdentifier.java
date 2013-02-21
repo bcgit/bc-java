@@ -150,7 +150,7 @@ public class AuthorityKeyIdentifier
     }
 
     /**
-      * create an AuthorityKeyIdentifier with a precomupted key identifier
+      * create an AuthorityKeyIdentifier with a precomputed key identifier
       */
      public AuthorityKeyIdentifier(
          byte[]                  keyIdentifier)
@@ -161,7 +161,7 @@ public class AuthorityKeyIdentifier
      }
 
     /**
-     * create an AuthorityKeyIdentifier with a precomupted key identifier
+     * create an AuthorityKeyIdentifier with a precomputed key identifier
      * and the GeneralNames tag and the serial number provided as well.
      */
     public AuthorityKeyIdentifier(
