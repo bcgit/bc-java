@@ -57,37 +57,19 @@ public class X509NameTokenizer
                 {
                     quoted = !quoted;
                 }
-                else
-                {
-                    if (c == '#' && buf.charAt(buf.length() - 1) == '=')
-                    {
-                        buf.append('\\');
-                    }
-                    else if (c == '+' && separator != '+')
-                    {
-                        buf.append('\\');
-                    }
-                    buf.append(c);
-                }
+                buf.append(c);
                 escaped = false;
             }
             else
             {
                 if (escaped || quoted)
                 {
-                    if (c == '#' && buf.charAt(buf.length() - 1) == '=')
-                    {
-                        buf.append('\\');
-                    }
-                    else if (c == '+' && separator != '+')
-                    {
-                        buf.append('\\');
-                    }
                     buf.append(c);
                     escaped = false;
                 }
                 else if (c == '\\')
                 {
+                    buf.append(c);
                     escaped = true;
                 }
                 else if (c == separator)
@@ -103,6 +85,7 @@ public class X509NameTokenizer
         }
 
         index = end;
-        return buf.toString().trim();
+
+        return buf.toString();
     }
 }

@@ -398,6 +398,7 @@ public class X509Name
      * Constructor from ASN1Sequence
      *
      * the principal will be a list of constructed sets, each containing an (OID, String) pair.
+     * @deprecated use X500Name.getInstance()
      */
     public X509Name(
         ASN1Sequence  seq)
@@ -493,6 +494,7 @@ public class X509Name
      * <p>
      * The passed in converter will be used to convert the strings into their
      * ASN.1 counterparts.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         Vector                   ordering,
@@ -535,6 +537,7 @@ public class X509Name
 
     /**
      * Takes two vectors one of the oids and the other of the values.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         Vector  oids,
@@ -548,6 +551,7 @@ public class X509Name
      * <p>
      * The passed in converter will be used to convert the strings into their
      * ASN.1 counterparts.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         Vector                  oids,
@@ -582,6 +586,7 @@ public class X509Name
     /**
      * Takes an X509 dir name as a string of the format "C=AU, ST=Victoria", or
      * some such, converting it into an ordered set of name attributes.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         String  dirName)
@@ -594,6 +599,7 @@ public class X509Name
      * some such, converting it into an ordered set of name attributes with each
      * string value being converted to its associated ASN.1 type using the passed
      * in converter.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         String                  dirName,
@@ -607,6 +613,7 @@ public class X509Name
      * some such, converting it into an ordered set of name attributes. If reverse
      * is true, create the encoded version of the sequence starting from the
      * last element in the string.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         boolean reverse,
@@ -621,6 +628,7 @@ public class X509Name
      * string value being converted to its associated ASN.1 type using the passed
      * in converter. If reverse is true the ASN.1 sequence representing the DN will
      * be built by starting at the end of the string, rather than the start.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         boolean                 reverse,
@@ -642,6 +650,7 @@ public class X509Name
      * @param reverse true if we should start scanning from the end (RFC 2553).
      * @param lookUp table of names and their oids.
      * @param dirName the X.500 string to be parsed.
+     * @deprecated use X500Name, X500NameBuilder
      */
     public X509Name(
         boolean     reverse,
@@ -655,6 +664,7 @@ public class X509Name
         String      name,
         Hashtable   lookUp)
     {
+        name = name.trim();
         if (Strings.toUpperCase(name).startsWith("OID."))
         {
             return new ASN1ObjectIdentifier(name.substring(4));
@@ -671,6 +681,81 @@ public class X509Name
         }
 
         return oid;
+    }
+
+    private String unescape(String elt)
+    {
+        if (elt.length() == 0 || (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0))
+        {
+            return elt.trim();
+        }
+
+        char[] elts = elt.toCharArray();
+        boolean escaped = false;
+        boolean quoted = false;
+        StringBuffer buf = new StringBuffer(elt.length());
+        int start = 0;
+
+        // if it's an escaped hash string and not an actual encoding in string form
+        // we need to leave it escaped.
+        if (elts[0] == '\\')
+        {
+            if (elts[1] == '#')
+            {
+                start = 2;
+                buf.append("\\#");
+            }
+        }
+
+        boolean nonWhiteSpaceEncountered = false;
+        int     lastEscaped = 0;
+
+        for (int i = start; i != elts.length; i++)
+        {
+            char c = elts[i];
+
+            if (c != ' ')
+            {
+                nonWhiteSpaceEncountered = true;
+            }
+
+            if (c == '"')
+            {
+                if (!escaped)
+                {
+                    quoted = !quoted;
+                }
+                else
+                {
+                    buf.append(c);
+                }
+                escaped = false;
+            }
+            else if (c == '\\' && !(escaped || quoted))
+            {
+                escaped = true;
+                lastEscaped = buf.length();
+            }
+            else
+            {
+                if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
+                {
+                    continue;
+                }
+                buf.append(c);
+                escaped = false;
+            }
+        }
+
+        if (buf.length() > 0)
+        {
+            while (buf.charAt(buf.length() - 1) == ' ' && lastEscaped != (buf.length() - 1))
+            {
+                buf.deleteCharAt(buf.length() - 1);
+            }
+        }
+
+        return buf.toString();
     }
 
     /**
@@ -698,43 +783,21 @@ public class X509Name
         while (nTok.hasMoreTokens())
         {
             String  token = nTok.nextToken();
-            int     index = token.indexOf('=');
 
-            if (index == -1)
+            if (token.indexOf('+') > 0)
             {
-                throw new IllegalArgumentException("badly formatted directory string");
-            }
+                X509NameTokenizer   pTok = new X509NameTokenizer(token, '+');
 
-            String              name = token.substring(0, index);
-            String              value = token.substring(index + 1);
-            ASN1ObjectIdentifier oid = decodeOID(name, lookUp);
+                addEntry(lookUp, pTok.nextToken(), FALSE);
 
-            if (value.indexOf('+') > 0)
-            {
-                X509NameTokenizer   vTok = new X509NameTokenizer(value, '+');
-                String  v = vTok.nextToken();
-
-                this.ordering.addElement(oid);
-                this.values.addElement(v);
-                this.added.addElement(FALSE);
-
-                while (vTok.hasMoreTokens())
+                while (pTok.hasMoreTokens())
                 {
-                    String  sv = vTok.nextToken();
-                    int     ndx = sv.indexOf('=');
-
-                    String  nm = sv.substring(0, ndx);
-                    String  vl = sv.substring(ndx + 1);
-                    this.ordering.addElement(decodeOID(nm, lookUp));
-                    this.values.addElement(vl);
-                    this.added.addElement(TRUE);
+                    addEntry(lookUp, pTok.nextToken(), TRUE);
                 }
             }
             else
             {
-                this.ordering.addElement(oid);
-                this.values.addElement(value);
-                this.added.addElement(FALSE);
+                addEntry(lookUp, token, FALSE);
             }
         }
 
@@ -768,6 +831,29 @@ public class X509Name
             this.values = v;
             this.added = a;
         }
+    }
+
+    private void addEntry(Hashtable lookUp, String token, Boolean isAdded)
+    {
+        X509NameTokenizer vTok;
+        String name;
+        String value;ASN1ObjectIdentifier oid;
+        vTok = new X509NameTokenizer(token, '=');
+
+        name = vTok.nextToken();
+
+        if (!vTok.hasMoreTokens())
+        {
+           throw new IllegalArgumentException("badly formatted directory string");
+        }
+
+        value = vTok.nextToken();
+
+        oid = decodeOID(name, lookUp);
+
+        this.ordering.addElement(oid);
+        this.values.addElement(unescape(value));
+        this.added.addElement(isAdded);
     }
 
     /**
@@ -1153,7 +1239,8 @@ public class X509Name
         buf.append('=');
 
         int     index = buf.length();
-        
+        int     start = index;
+
         buf.append(value);
 
         int     end = buf.length();
@@ -1180,6 +1267,20 @@ public class X509Name
             }
 
             index++;
+        }
+
+        while (buf.charAt(start) == ' ')
+        {
+            buf.insert(start, "\\");
+            start += 2;
+        }
+
+        int endBuf = buf.length() - 1;
+
+        while (endBuf >= 0 && buf.charAt(endBuf) == ' ')
+        {
+            buf.insert(endBuf, '\\');
+            endBuf--;
         }
     }
 
