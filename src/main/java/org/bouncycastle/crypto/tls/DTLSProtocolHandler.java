@@ -45,8 +45,12 @@ public class DTLSProtocolHandler {
 
         DTLSReliableHandshake.Message serverHello = handshake.receiveMessage();
         if (serverHello.getType() == HandshakeType.hello_verify_request) {
-            // TODO Actually, need to extract the cookie and add it here the second time
-            handshake.sendMessage(HandshakeType.client_hello, clientHello);
+
+            // TODO Extract the cookie from the HelloVerifyRequest
+            byte[] cookie = EMPTY_BYTES;
+
+            byte[] patched = patchClientHelloWithCookie(clientHello, cookie);
+            handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverHello = handshake.receiveMessage();
         }
@@ -172,5 +176,23 @@ public class DTLSProtocolHandler {
         }
 
         return buf.toByteArray();
+    }
+
+    private byte[] patchClientHelloWithCookie(byte[] clientHello, byte[] cookie) throws IOException {
+
+        int sessionIDPos = 34;
+        int sessionIDLength = TlsUtils.readUint8(clientHello, sessionIDPos);
+
+        int patchPos = sessionIDPos + 1 + sessionIDLength;
+        int patchLength = 1 + cookie.length;
+
+        byte[] patched = new byte[clientHello.length + patchLength];
+        System.arraycopy(clientHello, 0, patched, 0, patchPos);
+        TlsUtils.writeUint8((short) cookie.length, patched, patchPos);
+        System.arraycopy(cookie, 0, patched, patchPos + 1, cookie.length);
+        System.arraycopy(clientHello, patchPos, patched, patchPos + patchLength, clientHello.length
+            - patchPos);
+
+        return patched;
     }
 }
