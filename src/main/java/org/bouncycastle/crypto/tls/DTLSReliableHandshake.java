@@ -2,12 +2,16 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Hashtable;
 import java.util.Vector;
 
 class DTLSReliableHandshake {
 
+    private final static int MAX_RECEIVE_AHEAD = 10;
+
     private final DatagramTransport transport;
 
+    private Hashtable incomingQueue;
     private Vector flight = new Vector();
     private boolean sending = true;
 
@@ -19,8 +23,7 @@ class DTLSReliableHandshake {
 
     void sendMessage(short msg_type, byte[] body) throws IOException {
 
-        if (!sending)
-        {
+        if (!sending) {
             sending = true;
             flight.clear();
         }
@@ -36,22 +39,66 @@ class DTLSReliableHandshake {
 
         sending = false;
 
+        // Check if we already have the next message waiting
+        {
+            DTLSReassembler next = (DTLSReassembler)incomingQueue.get(Integer.valueOf(next_receive_seq));
+            if (next != null)
+            {
+                byte[] body = next.getBodyIfComplete();
+                if (body != null) {
+                    incomingQueue.remove(Integer.valueOf(next_receive_seq));
+                    return new Message(next_receive_seq++, next.getType(), body);
+                }
+            }
+        }
+
         byte[] buf = null;
         int readTimeoutMillis = 1000;
 
-        for (;;)
-        {
+        for (;;) {
+
             int receiveLimit = transport.getReceiveLimit();
             if (buf == null || buf.length < receiveLimit) {
                 buf = new byte[receiveLimit];
             }
 
             try {
-                int length = transport.receive(buf, 0, receiveLimit, readTimeoutMillis);
+                for (;;) {
+                    int received = transport.receive(buf, 0, receiveLimit, readTimeoutMillis);
+                    if (received < 12) {
+                        // TODO What kind of exception?
+                    }
+                    int fragment_length = TlsUtils.readUint24(buf, 9);
+                    if (received != (fragment_length + 12)) {
+                        // TODO What kind of exception?
+                    }
 
-                // TODO We have received a fragment, need to assemble them until we get a full message
-            }
-            catch (IOException e) {
+                    int seq = TlsUtils.readUint16(buf, 5);
+                    if (seq < next_receive_seq || seq > (next_receive_seq + MAX_RECEIVE_AHEAD)) {
+                        continue;
+                    }
+
+                    short msg_type = TlsUtils.readUint8(buf, 0);
+                    int length = TlsUtils.readUint24(buf, 1);
+                    int fragment_offset = TlsUtils.readUint24(buf, 6);
+
+                    DTLSReassembler reassembler = (DTLSReassembler)incomingQueue.get(Integer.valueOf(seq));
+                    if (reassembler == null) {
+                        reassembler = new DTLSReassembler(msg_type, length);
+                        incomingQueue.put(Integer.valueOf(seq), reassembler);
+                    }
+
+                    reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset, fragment_length);
+
+                    if (seq == next_receive_seq) {
+                        byte[] body = reassembler.getBodyIfComplete();
+                        if (body != null) {
+                            incomingQueue.remove(Integer.valueOf(next_receive_seq));
+                            return new Message(next_receive_seq++, reassembler.getType(), body);
+                        }
+                    }
+                }
+            } catch (IOException e) {
                 // NOTE: Assume this is a timeout for the moment
             }
 
@@ -61,10 +108,9 @@ class DTLSReliableHandshake {
         }
     }
 
-    private void resendFlight() throws IOException
-    {
+    private void resendFlight() throws IOException {
         for (int i = 0; i < flight.size(); ++i) {
-            writeMessage((Message)flight.elementAt(i));
+            writeMessage((Message) flight.elementAt(i));
         }
     }
 
@@ -82,13 +128,11 @@ class DTLSReliableHandshake {
 
         // NOTE: Must still send a fragment if body is empty
         int fragment_offset = 0;
-        do
-        {
+        do {
             int fragment_length = Math.min(length - fragment_offset, fragmentLimit);
             writeHandshakeFragment(message, fragment_offset, fragment_length);
             fragment_offset += fragment_length;
-        }
-        while (fragment_offset < length);
+        } while (fragment_offset < length);
     }
 
     private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length)
