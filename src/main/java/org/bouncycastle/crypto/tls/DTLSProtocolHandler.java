@@ -30,9 +30,10 @@ public class DTLSProtocolHandler {
 
         client.init(clientContext);
 
-        byte[] clientHello = generateClientHello(client, clientContext, EMPTY_BYTES);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, clientContext, ContentType.handshake);
 
-        sendHandshakeMessage(transport, 0, HandshakeType.client_hello, clientHello);
+        byte[] clientHello = generateClientHello(client, clientContext, EMPTY_BYTES);
+        sendHandshakeMessage(recordLayer, 0, HandshakeType.client_hello, clientHello);
 
         return new DTLSTransport(transport);
 
@@ -185,7 +186,6 @@ public class DTLSProtocolHandler {
 
         byte[] fragment = buf.toByteArray();
 
-        // TODO Of course, no record layer in place yet, no where to specify ContentType.handshake
         transport.send(fragment, 0, fragment.length);
     }
 }
