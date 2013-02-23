@@ -19,7 +19,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * Some helper fuctions for MicroTLS.
+ * Some helper functions for MicroTLS.
  */
 public class TlsUtils
 {
@@ -75,6 +75,16 @@ public class TlsUtils
         buf[offset + 3] = (byte)(i);
     }
 
+    protected static void writeUint48(long i, byte[] buf, int offset)
+    {
+        buf[offset] = (byte)(i >> 40);
+        buf[offset + 1] = (byte)(i >> 32);
+        buf[offset + 2] = (byte)(i >> 24);
+        buf[offset + 3] = (byte)(i >> 16);
+        buf[offset + 4] = (byte)(i >> 8);
+        buf[offset + 5] = (byte)(i);
+    }
+
     protected static void writeUint64(long i, OutputStream os) throws IOException
     {
         os.write((int)(i >> 56));
@@ -86,7 +96,6 @@ public class TlsUtils
         os.write((int)(i >> 8));
         os.write((int)(i));
     }
-
 
     protected static void writeUint64(long i, byte[] buf, int offset)
     {
@@ -178,6 +187,21 @@ public class TlsUtils
             throw new EOFException();
         }
         return (((long)i1) << 24) | (((long)i2) << 16) | (((long)i3) << 8) | ((long)i4);
+    }
+
+    protected static long readUint48(InputStream is) throws IOException
+    {
+        int i1 = is.read();
+        int i2 = is.read();
+        int i3 = is.read();
+        int i4 = is.read();
+        int i5 = is.read();
+        int i6 = is.read();
+        if (i6 < 0)
+        {
+            throw new EOFException();
+        }
+        return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8)  | ((long)i6);
     }
 
     protected static void readFully(byte[] buf, InputStream is) throws IOException
