@@ -28,10 +28,11 @@ public class UDPTransport implements DatagramTransport {
         return getReceiveLimit();
     }
 
-    public void receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
+    public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
         socket.setSoTimeout(waitMillis);
         DatagramPacket packet = new DatagramPacket(buf, off, len);
         socket.receive(packet);
+        return packet.getLength();
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {

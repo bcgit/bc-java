@@ -8,7 +8,7 @@ public interface DatagramTransport {
 
     int getSendLimit() throws IOException;
 
-    void receive(byte[] buf, int off, int len, int waitMillis) throws IOException;
+    int receive(byte[] buf, int off, int len, int waitMillis) throws IOException;
 
     void send(byte[] buf, int off, int len) throws IOException;
 }

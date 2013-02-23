@@ -18,8 +18,8 @@ public class DTLSTransport implements DatagramTransport {
         return transport.getSendLimit();
     }
 
-    public void receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
-        transport.receive(buf, off, len, waitMillis);
+    public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
+        return transport.receive(buf, off, len, waitMillis);
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {

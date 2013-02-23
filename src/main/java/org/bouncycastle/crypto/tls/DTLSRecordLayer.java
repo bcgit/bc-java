@@ -28,9 +28,9 @@ class DTLSRecordLayer implements DatagramTransport {
         return transport.getSendLimit() - 13;
     }
 
-    public void receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
+    public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
 
-        transport.receive(buf, off, len, waitMillis);
+        return transport.receive(buf, off, len, waitMillis);
 
         // TODO Process record format, anti-replay, decrypt, decompress
         
