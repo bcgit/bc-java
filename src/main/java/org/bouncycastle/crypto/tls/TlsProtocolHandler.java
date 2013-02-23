@@ -1255,7 +1255,7 @@ public class TlsProtocolHandler
         return buf.toByteArray();
     }
 
-    private static void writeExtension(OutputStream output, Integer extType, byte[] extValue)
+    static void writeExtension(OutputStream output, Integer extType, byte[] extValue)
         throws IOException
     {
         TlsUtils.writeUint16(extType.intValue(), output);
