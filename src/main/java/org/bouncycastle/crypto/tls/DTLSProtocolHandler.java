@@ -31,9 +31,23 @@ public class DTLSProtocolHandler {
         client.init(clientContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, clientContext, ContentType.handshake);
-
+        DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
+        
         byte[] clientHello = generateClientHello(client, clientContext, EMPTY_BYTES);
-        sendHandshakeMessage(recordLayer, 0, HandshakeType.client_hello, clientHello);
+        handshake.sendMessage(HandshakeType.client_hello, clientHello);
+
+        DTLSReliableHandshake.Message serverHello = handshake.receiveMessage();
+        if (serverHello.getType() == HandshakeType.hello_verify_request)
+        {
+            // TODO Actually, need to extract the cookie and add it here the second time
+            handshake.sendMessage(HandshakeType.client_hello, clientHello);
+
+            serverHello = handshake.receiveMessage();
+        }
+
+        if (serverHello.getType() != HandshakeType.server_hello) {
+            // TODO Alert
+        }
 
         return new DTLSTransport(transport);
 
@@ -148,44 +162,5 @@ public class DTLSProtocolHandler {
         }
 
         return buf.toByteArray();
-    }
-
-    private void sendHandshakeMessage(DatagramTransport transport, int message_seq,
-        short handshakeType, byte[] body) throws IOException {
-
-        int sendLimit = transport.getSendLimit();
-        int fragmentLimit = sendLimit - 12;
-
-        // TODO Support a higher minimum fragment size?
-        if (fragmentLimit < 1) {
-            // TODO What kind of exception to throw?
-        }
-
-        // NOTE: Must still send a fragment if body is empty
-        int fragment_offset = 0;
-        do
-        {
-            int fragment_length = Math.min(body.length - fragment_offset, fragmentLimit);
-            sendHandshakeFragment(transport, message_seq, handshakeType, body, fragment_offset, fragment_length);
-            fragment_offset += fragment_length;
-        }
-        while (fragment_offset < body.length);
-    }
-
-    private void sendHandshakeFragment(DatagramTransport transport, int message_seq,
-        short handshakeType, byte[] body, int fragment_offset, int fragment_length)
-        throws IOException {
-
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(handshakeType, buf);
-        TlsUtils.writeUint24(body.length, buf);
-        TlsUtils.writeUint16(message_seq, buf);
-        TlsUtils.writeUint24(fragment_offset, buf);
-        TlsUtils.writeUint24(fragment_length, buf);
-        buf.write(body, fragment_offset, fragment_length);
-
-        byte[] fragment = buf.toByteArray();
-
-        transport.send(fragment, 0, fragment.length);
     }
 }
