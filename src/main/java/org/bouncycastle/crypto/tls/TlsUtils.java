@@ -224,6 +224,13 @@ public class TlsUtils
         return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8)  | ((long)i6);
     }
 
+    protected static long readUint48(byte[] buf, int offset)
+    {
+        int hi = readUint24(buf, offset);
+        int lo = readUint24(buf, offset + 3);
+        return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
+    }
+
     protected static void readFully(byte[] buf, InputStream is) throws IOException
     {
         if (Streams.readFully(is, buf) != buf.length)
@@ -251,6 +258,11 @@ public class TlsUtils
     static ProtocolVersion readVersion(byte[] buf) throws IOException
     {
         return ProtocolVersion.get(buf[0], buf[1]);
+    }
+
+    static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
+    {
+        return ProtocolVersion.get(buf[offset], buf[offset + 1]);
     }
 
     static ProtocolVersion readVersion(InputStream is) throws IOException
