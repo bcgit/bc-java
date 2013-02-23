@@ -18,27 +18,33 @@ public class DTLSProtocolHandler {
     private final SecureRandom secureRandom;
 
     public DTLSProtocolHandler(SecureRandom secureRandom) {
+
+        if (secureRandom == null)
+            throw new IllegalArgumentException("'secureRandom' cannot be null");
+
         this.secureRandom = secureRandom;
     }
 
     public DTLSTransport connect(TlsClient client, DatagramTransport transport) throws IOException {
 
         if (client == null)
-            throw new IllegalArgumentException("'tlsClient' cannot be null");
+            throw new IllegalArgumentException("'client' cannot be null");
+        if (transport == null)
+            throw new IllegalArgumentException("'transport' cannot be null");
 
         TlsClientContextImpl clientContext = createClientContext();
 
         client.init(clientContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, clientContext, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, clientContext,
+            ContentType.handshake);
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
-        
+
         byte[] clientHello = generateClientHello(client, clientContext, EMPTY_BYTES);
         handshake.sendMessage(HandshakeType.client_hello, clientHello);
 
         DTLSReliableHandshake.Message serverHello = handshake.receiveMessage();
-        if (serverHello.getType() == HandshakeType.hello_verify_request)
-        {
+        if (serverHello.getType() == HandshakeType.hello_verify_request) {
             // TODO Actually, need to extract the cookie and add it here the second time
             handshake.sendMessage(HandshakeType.client_hello, clientHello);
 
@@ -87,8 +93,8 @@ public class DTLSProtocolHandler {
         return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 
-    private byte[] generateClientHello(TlsClient client, TlsClientContextImpl clientContext, byte[] cookie)
-        throws IOException {
+    private byte[] generateClientHello(TlsClient client, TlsClientContextImpl clientContext,
+        byte[] cookie) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -103,9 +109,8 @@ public class DTLSProtocolHandler {
          */
         TlsUtils.writeUint8((short) 0, buf);
 
-        if (cookie != null)
-        {
-            TlsUtils.writeUint8((short)cookie.length, buf);
+        if (cookie != null) {
+            TlsUtils.writeUint8((short) cookie.length, buf);
             buf.write(cookie, 0, cookie.length);
         }
 
