@@ -55,7 +55,12 @@ public class DTLSProtocolHandler {
             // TODO Alert
         }
 
-        return new DTLSTransport(transport);
+        // TODO Lots more handshake messages...
+
+        handshake.finish();
+
+        // TODO Needs to be attached to the record layer using ContentType.application_data
+        return new DTLSTransport(recordLayer);
 
         // if (client_version.isDTLS())
         // {

@@ -108,6 +108,16 @@ class DTLSReliableHandshake {
         }
     }
 
+    void finish()
+    {
+        sending = true;
+        flight.clear();
+
+        if (!incomingQueue.isEmpty()) {
+            // TODO Throw exception - unexpected message!
+        }
+    }
+
     private void resendFlight() throws IOException {
         for (int i = 0; i < flight.size(); ++i) {
             writeMessage((Message) flight.elementAt(i));
