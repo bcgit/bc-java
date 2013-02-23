@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4347 4.1.2.5 Anti-replay
+ * 
+ * Support fast rejection of duplicate records by maintaining a sliding receive window
  */
 class DTLSReplayWindow {
 
@@ -12,6 +14,12 @@ class DTLSReplayWindow {
     private long latestConfirmedSeq = -1;
     private long bitmap = 0;
 
+    /**
+     * Check whether a received record with the given sequence number should be rejected as a duplicate.
+     * 
+     * @param seq the 48-bit DTLSPlainText.sequence_number field of a received record. 
+     * @return true if the record should be discarded without further processing.
+     */
     boolean shouldDiscard(long seq)
     {
         if ((seq & VALID_SEQ_MASK) != seq)
@@ -29,6 +37,11 @@ class DTLSReplayWindow {
         return false;
     }
 
+    /**
+     * Report that a received record with the given sequence number passed authentication checks.
+     * 
+     * @param seq the 48-bit DTLSPlainText.sequence_number field of an authenticated record.
+     */
     void reportAuthenticated(long seq)
     {
         if ((seq & VALID_SEQ_MASK) != seq)
