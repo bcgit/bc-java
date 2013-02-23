@@ -76,7 +76,7 @@ public class TlsBlockCipher implements TlsCipher
         cipher.init(forEncryption, parameters_with_iv);
     }
 
-    public byte[] encodePlaintext(short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         int blockSize = encryptCipher.getBlockSize();
         
@@ -114,7 +114,7 @@ public class TlsBlockCipher implements TlsCipher
 	    outOff += blockSize;
         }
 
-        byte[] mac = writeMac.calculateMac(type, plaintext, offset, len);
+        byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
 
         System.arraycopy(plaintext, offset, outbuf, outOff, len);
         System.arraycopy(mac, 0, outbuf, outOff + len, mac.length);
@@ -131,7 +131,7 @@ public class TlsBlockCipher implements TlsCipher
         return outbuf;
     }
 
-    public byte[] decodeCiphertext(short type, byte[] ciphertext, int offset, int len)
+    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
         throws IOException
     {
         int blockSize = decryptCipher.getBlockSize();
@@ -175,7 +175,7 @@ public class TlsBlockCipher implements TlsCipher
         int macInputLen = len - totalPad - macSize;
 
         byte[] decryptedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset + macInputLen + macSize);
-        byte[] calculatedMac = readMac.calculateMacConstantTime(type, ciphertext, offset, macInputLen, len - macSize, randomData);
+        byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, macInputLen, len - macSize, randomData);
 
         boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, decryptedMac);
 

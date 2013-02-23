@@ -15,10 +15,9 @@ class RecordStream
     private TlsProtocolHandler handler;
     private InputStream is;
     private OutputStream os;
-    private TlsCompression readCompression = null;
-    private TlsCompression writeCompression = null;
-    private TlsCipher readCipher = null;
-    private TlsCipher writeCipher = null;
+    private TlsCompression readCompression = null, writeCompression = null;
+    private TlsCipher readCipher = null, writeCipher = null;
+    private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsClientContext context = null;
@@ -45,19 +44,21 @@ class RecordStream
 
     ProtocolVersion getDiscoveredServerVersion()
     {
-	return discoveredServerVersion;
+        return discoveredServerVersion;
     }
 
     void clientCipherSpecDecided(TlsCompression tlsCompression, TlsCipher tlsCipher)
     {
         this.writeCompression = tlsCompression;
         this.writeCipher = tlsCipher;
+        this.writeSeqNo = 0;
     }
 
     void serverClientSpecReceived()
     {
         this.readCompression = this.writeCompression;
         this.readCipher = this.writeCipher;
+        this.readSeqNo = 0;
     }
 
     public void readData() throws IOException
@@ -83,7 +84,7 @@ class RecordStream
     {
         byte[] buf = new byte[len];
         TlsUtils.readFully(buf, is);
-        byte[] decoded = readCipher.decodeCiphertext(type, buf, 0, buf.length);
+        byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
         OutputStream cOut = readCompression.decompress(buffer);
 
@@ -109,20 +110,20 @@ class RecordStream
         byte[] ciphertext;
         if (cOut == buffer)
         {
-            ciphertext = writeCipher.encodePlaintext(type, message, offset, len);
+            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, message, offset, len);
         }
         else
         {
             cOut.write(message, offset, len);
             cOut.flush();
             byte[] compressed = getBufferContents();
-            ciphertext = writeCipher.encodePlaintext(type, compressed, 0, compressed.length);
+            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, compressed, 0, compressed.length);
         }
 
         byte[] writeMessage = new byte[ciphertext.length + 5];
         TlsUtils.writeUint8(type, writeMessage, 0);
         ProtocolVersion version = discoveredServerVersion != null ? discoveredServerVersion : context.getClientVersion();
-	TlsUtils.writeVersion(version, writeMessage, 1);
+        TlsUtils.writeVersion(version, writeMessage, 1);
         TlsUtils.writeUint16(ciphertext.length, writeMessage, 3);
         System.arraycopy(ciphertext, 0, writeMessage, 5, ciphertext.length);
         os.write(writeMessage);

@@ -57,9 +57,9 @@ public class TlsStreamCipher implements TlsCipher
         decryptCipher.init(true, decryptKey);
     }
 
-    public byte[] encodePlaintext(short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
-        byte[] mac = writeMac.calculateMac(type, plaintext, offset, len);
+        byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
 
         byte[] outbuf = new byte[len + mac.length];
 
@@ -69,7 +69,7 @@ public class TlsStreamCipher implements TlsCipher
         return outbuf;
     }
 
-    public byte[] decodeCiphertext(short type, byte[] ciphertext, int offset, int len)
+    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
         throws IOException
     {
         byte[] deciphered = new byte[len];
@@ -79,7 +79,7 @@ public class TlsStreamCipher implements TlsCipher
         byte[] plainText = copyData(deciphered, 0, plaintextSize);
 
         byte[] receivedMac = copyData(deciphered, plaintextSize, readMac.getSize());
-        byte[] computedMac = readMac.calculateMac(type, plainText, 0, plainText.length);
+        byte[] computedMac = readMac.calculateMac(seqNo, type, plainText, 0, plainText.length);
 
         if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
         {

@@ -5,12 +5,12 @@ package org.bouncycastle.crypto.tls;
  */
 public class TlsNullCipher implements TlsCipher
 {
-    public byte[] encodePlaintext(short type, byte[] plaintext, int offset, int len)
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         return copyData(plaintext, offset, len);
     }
 
-    public byte[] decodeCiphertext(short type, byte[] ciphertext, int offset, int len)
+    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
     {
         return copyData(ciphertext, offset, len);
     }

@@ -16,7 +16,6 @@ import org.bouncycastle.util.Arrays;
 public class TlsMac
 {
     protected TlsClientContext context;
-    protected long seqNo;
     protected byte[] secret;
     protected Mac mac;
 
@@ -32,7 +31,6 @@ public class TlsMac
     public TlsMac(TlsClientContext context, Digest digest, byte[] key_block, int offset, int len)
     {
         this.context = context;
-        this.seqNo = 0;
 
         KeyParameter param = new KeyParameter(key_block, offset, len);
 
@@ -59,22 +57,6 @@ public class TlsMac
     }
 
     /**
-     * @return the current write sequence number
-     */
-    public long getSequenceNumber()
-    {
-	return this.seqNo;
-    }
-
-    /**
-     * Increment the current write sequence number
-     */
-    public void incSequenceNumber()
-    {
-	this.seqNo++;
-    }
-
-    /**
      * @return The Keysize of the mac.
      */
     public int getSize()
@@ -84,16 +66,14 @@ public class TlsMac
 
     /**
      * Calculate the MAC for some given data.
-     * <p/>
-     * TlsMac will keep track of the sequence number internally.
-     * 
+
      * @param type The message type of the message.
      * @param message A byte-buffer containing the message.
      * @param offset The number of bytes to skip, before the message starts.
      * @param len The length of the message.
      * @return A new byte-buffer containing the MAC value.
      */
-    public byte[] calculateMac(short type, byte[] message, int offset, int len)
+    public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int len)
     {
         ProtocolVersion serverVersion = context.getServerVersion();
         boolean isSSL = serverVersion.isSSL();
@@ -101,7 +81,7 @@ public class TlsMac
         ByteArrayOutputStream bosMac = new ByteArrayOutputStream(isSSL ? 11 : 13);
         try
         {
-            TlsUtils.writeUint64(seqNo++, bosMac);
+            TlsUtils.writeUint64(seqNo, bosMac);
             TlsUtils.writeUint8(type, bosMac);
 
             if (!isSSL)
@@ -126,10 +106,10 @@ public class TlsMac
         return result;
     }
 
-    public byte[] calculateMacConstantTime(short type, byte[] message, int offset, int len, int fullLength, byte[] dummyData)
+    public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int len, int fullLength, byte[] dummyData)
     {
         // Actual MAC only calculated on 'len' bytes
-        byte[] result = calculateMac(type, message, offset, len);
+        byte[] result = calculateMac(seqNo, type, message, offset, len);
 
         // ...but ensure a constant number of complete digest blocks are processed (per 'fullLength')
         if (!context.getServerVersion().isSSL())
