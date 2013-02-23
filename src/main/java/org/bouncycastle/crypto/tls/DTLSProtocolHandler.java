@@ -10,9 +10,17 @@ public class DTLSProtocolHandler {
         this.secureRandom = secureRandom;
     }
 
-    public DTLSTransport connect(DatagramTransport transport) {
+    public DTLSTransport connect(TlsClient client, DatagramTransport transport) {
+
+        if (client == null)
+            throw new IllegalArgumentException("'tlsClient' cannot be null");
+
+        TlsClientContextImpl clientContext = createClientContext();
+
+        client.init(clientContext);
+
         return new DTLSTransport(transport);
-        
+
 //        if (client_version.isDTLS())
 //        {
 //            for (int cipherSuite : offeredCipherSuites)
@@ -36,5 +44,16 @@ public class DTLSProtocolHandler {
 //                }
 //            }
 //        }
+    }
+    
+    private TlsClientContextImpl createClientContext()
+    {
+        SecurityParameters securityParameters = new SecurityParameters();
+
+        securityParameters.clientRandom = new byte[32];
+        secureRandom.nextBytes(securityParameters.clientRandom);
+        TlsUtils.writeGMTUnixTime(securityParameters.clientRandom, 0);
+
+        return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 }
