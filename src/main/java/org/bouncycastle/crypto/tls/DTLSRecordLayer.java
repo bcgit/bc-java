@@ -45,6 +45,8 @@ class DTLSRecordLayer implements DatagramTransport {
                 record = new byte[receiveLimit];
             }
 
+            // TODO Handle datagrams containing multiple records
+
             try {
                 int received = transport.receive(record, 0, receiveLimit, waitMillis);
                 if (received < 13) {
