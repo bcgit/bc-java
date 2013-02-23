@@ -153,6 +153,11 @@ public class TlsUtils
         return (short)i;
     }
 
+    protected static short readUint8(byte[] buf, int offset)
+    {
+        return (short)buf[offset];
+    }
+
     protected static int readUint16(InputStream is) throws IOException
     {
         int i1 = is.read();
@@ -162,6 +167,13 @@ public class TlsUtils
             throw new EOFException();
         }
         return i1 << 8 | i2;
+    }
+
+    protected static int readUint16(byte[] buf, int offset)
+    {
+        int n = (buf[offset] & 0xff) << 8;
+        n |= (buf[++offset] & 0xff);
+        return n;
     }
 
     protected static int readUint24(InputStream is) throws IOException
@@ -174,6 +186,14 @@ public class TlsUtils
             throw new EOFException();
         }
         return (i1 << 16) | (i2 << 8) | i3;
+    }
+
+    protected static int readUint24(byte[] buf, int offset)
+    {
+        int n = (buf[offset] & 0xff) << 16;
+        n |= (buf[++offset] & 0xff) << 8;
+        n |= (buf[++offset] & 0xff);
+        return n;
     }
 
     protected static long readUint32(InputStream is) throws IOException
