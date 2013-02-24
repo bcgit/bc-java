@@ -1223,7 +1223,7 @@ public class TlsProtocolHandler
         rs.flush();
     }
 
-    private static boolean arrayContains(short[] a, short n)
+    static boolean arrayContains(short[] a, short n)
     {
         for (int i = 0; i < a.length; ++i)
         {
@@ -1235,7 +1235,7 @@ public class TlsProtocolHandler
         return false;
     }
 
-    private static boolean arrayContains(int[] a, int n)
+    static boolean arrayContains(int[] a, int n)
     {
         for (int i = 0; i < a.length; ++i)
         {
@@ -1247,7 +1247,7 @@ public class TlsProtocolHandler
         return false;
     }
 
-    private static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
+    static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();

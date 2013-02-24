@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 public class DTLSProtocolHandler {
@@ -69,11 +70,18 @@ public class DTLSProtocolHandler {
             // TODO Alert
         }
 
+        parseServerHello(clientContext, client, serverMessage.getBody());
+
         while (serverMessage.getType() != HandshakeType.server_hello_done) {
 
             // TODO Process serverMessage
 
             serverMessage = handshake.receiveMessage();
+        }
+
+        // ServerHelloDone should have empty body
+        if (serverMessage.getBody().length != 0) {
+            // TODO Alert
         }
 
         // TODO Lots more handshake messages...
@@ -217,6 +225,144 @@ public class DTLSProtocolHandler {
         }
 
         return cookie;
+    }
+
+    private void parseServerHello(TlsClientContextImpl clientContext, TlsClient client, byte[] body)
+        throws IOException {
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        if (!server_version.equals(clientContext.getServerVersion())) {
+            // TODO Alert
+        }
+
+        byte[] server_random = new byte[32];
+        TlsUtils.readFully(server_random, buf);
+        clientContext.getSecurityParameters().serverRandom = server_random;
+
+        byte[] sessionID = TlsUtils.readOpaque8(buf);
+        if (sessionID.length > 32) {
+            // TODO Alert
+        }
+        client.notifySessionID(sessionID);
+
+        // TODO Store this somewhere when generating the ClientHello
+        int[] offeredCipherSuites = new int[0];
+
+        int selectedCipherSuite = TlsUtils.readUint16(buf);
+        if (!TlsProtocolHandler.arrayContains(offeredCipherSuites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+            // TODO Alert
+        }
+        client.notifySelectedCipherSuite(selectedCipherSuite);
+
+        // TODO Store this somewhere when generating the ClientHello
+        short[] offeredCompressionMethods = new short[0];
+
+        short selectedCompressionMethod = TlsUtils.readUint8(buf);
+        if (!TlsProtocolHandler.arrayContains(offeredCompressionMethods, selectedCompressionMethod)) {
+            // TODO Alert
+        }
+        client.notifySelectedCompressionMethod(selectedCompressionMethod);
+
+        /*
+         * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
+         * hello message when the client has requested extended functionality via the extended
+         * client hello message specified in Section 2.1. ... Note that the extended server hello
+         * message is only sent in response to an extended client hello message. This prevents the
+         * possibility that the extended server hello message could "break" existing TLS 1.0
+         * clients.
+         */
+
+        /*
+         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
+         * extensions appearing in the client hello, and send a server hello containing no
+         * extensions.
+         */
+
+        // TODO Store this somewhere when generating the ClientHello
+        Hashtable clientExtensions = null;
+
+        // Integer -> byte[]
+        Hashtable serverExtensions = new Hashtable();
+
+        if (buf.available() > 0) {
+            // Process extensions from extended server hello
+            byte[] extBytes = TlsUtils.readOpaque16(buf);
+
+            ByteArrayInputStream ext = new ByteArrayInputStream(extBytes);
+            while (ext.available() > 0) {
+                Integer extType = Integers.valueOf(TlsUtils.readUint16(ext));
+                byte[] extValue = TlsUtils.readOpaque16(ext);
+
+                /*
+                 * RFC 5746 Note that sending a "renegotiation_info" extension in response to a
+                 * ClientHello containing only the SCSV is an explicit exception to the prohibition
+                 * in RFC 5246, Section 7.4.1.4, on the server sending unsolicited extensions and is
+                 * only allowed because the client is signaling its willingness to receive the
+                 * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. TLS implementations
+                 * MUST continue to comply with Section 7.4.1.4 for all other extensions.
+                 */
+
+                if (!extType.equals(EXT_RenegotiationInfo) && clientExtensions.get(extType) == null) {
+                    /*
+                     * RFC 3546 2.3 Note that for all extension types (including those defined in
+                     * future), the extension type MUST NOT appear in the extended server hello
+                     * unless the same extension type appeared in the corresponding client hello.
+                     * Thus clients MUST abort the handshake if they receive an extension type in
+                     * the extended server hello that they did not request in the associated
+                     * (extended) client hello.
+                     */
+                    // TODO Alert
+                }
+
+                if (serverExtensions.containsKey(extType)) {
+                    /*
+                     * RFC 3546 2.3 Also note that when multiple extensions of different types are
+                     * present in the extended client hello or the extended server hello, the
+                     * extensions may appear in any order. There MUST NOT be more than one extension
+                     * of the same type.
+                     */
+                    // TODO Alert
+                }
+
+                serverExtensions.put(extType, extValue);
+            }
+        }
+
+        assertEmpty(buf);
+
+        /*
+         * RFC 5746 3.4. When a ServerHello is received, the client MUST check if it includes the
+         * "renegotiation_info" extension:
+         */
+        {
+            boolean secure_negotiation = serverExtensions.containsKey(EXT_RenegotiationInfo);
+
+            /*
+             * If the extension is present, set the secure_renegotiation flag to TRUE. The client
+             * MUST then verify that the length of the "renegotiated_connection" field is zero, and
+             * if it is not, MUST abort the handshake (by sending a fatal handshake_failure alert).
+             */
+            if (secure_negotiation) {
+                byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
+
+                if (!Arrays.constantTimeAreEqual(renegExtValue,
+                    TlsProtocolHandler.createRenegotiationInfo(EMPTY_BYTES))) {
+                    // TODO Alert
+                }
+            }
+
+            client.notifySecureRenegotiation(secure_negotiation);
+        }
+
+        if (clientExtensions != null) {
+            client.processServerExtensions(serverExtensions);
+        }
+
+        // TODO Need to store this somewhere
+        TlsKeyExchange keyExchange = client.getKeyExchange();
     }
 
     private byte[] patchClientHelloWithCookie(byte[] clientHello, byte[] cookie) throws IOException {
