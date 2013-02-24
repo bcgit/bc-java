@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Arrays;
+
 class DTLSReliableHandshake {
 
     private final static int MAX_RECEIVE_AHEAD = 10;
@@ -81,11 +83,17 @@ class DTLSReliableHandshake {
                     short msg_type = TlsUtils.readUint8(buf, 0);
                     int length = TlsUtils.readUint24(buf, 1);
                     int fragment_offset = TlsUtils.readUint24(buf, 6);
-
-                    // TODO Add fast path for next_receive_seq and for single-fragment messages
+                    
+                    if (fragment_offset + fragment_length > length) {
+                        // TODO What kind of exception?
+                    }
 
                     DTLSReassembler reassembler = (DTLSReassembler)incomingQueue.get(Integer.valueOf(seq));
                     if (reassembler == null) {
+                        if (seq == next_receive_seq && fragment_length == length) {
+                            byte[] body = Arrays.copyOfRange(buf, 12, received);
+                            return new Message(next_receive_seq++, msg_type, body);
+                        }
                         reassembler = new DTLSReassembler(msg_type, length);
                         incomingQueue.put(Integer.valueOf(seq), reassembler);
                     }
