@@ -64,6 +64,7 @@ class DTLSReplayWindow {
                 bitmap <<= diff;
                 bitmap |= 1;
             }
+            latestConfirmedSeq = seq;
         }
     }
 }
