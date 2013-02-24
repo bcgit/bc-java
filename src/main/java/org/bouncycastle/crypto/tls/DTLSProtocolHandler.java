@@ -217,15 +217,15 @@ public class DTLSProtocolHandler {
         int sessionIDPos = 34;
         int sessionIDLength = TlsUtils.readUint8(clientHello, sessionIDPos);
 
-        int patchPos = sessionIDPos + 1 + sessionIDLength;
-        int patchLength = 1 + cookie.length;
+        int cookieLengthPos = sessionIDPos + 1 + sessionIDLength;
+        int cookiePos = cookieLengthPos + 1;
 
-        byte[] patched = new byte[clientHello.length + patchLength];
-        System.arraycopy(clientHello, 0, patched, 0, patchPos);
-        TlsUtils.writeUint8((short) cookie.length, patched, patchPos);
-        System.arraycopy(cookie, 0, patched, patchPos + 1, cookie.length);
-        System.arraycopy(clientHello, patchPos, patched, patchPos + patchLength, clientHello.length
-            - patchPos);
+        byte[] patched = new byte[clientHello.length + cookie.length];
+        System.arraycopy(clientHello, 0, patched, 0, cookieLengthPos);
+        TlsUtils.writeUint8((short) cookie.length, patched, cookieLengthPos);
+        System.arraycopy(cookie, 0, patched, cookiePos, cookie.length);
+        System.arraycopy(clientHello, cookiePos, patched, cookiePos + cookie.length,
+            clientHello.length - cookiePos);
 
         return patched;
     }
