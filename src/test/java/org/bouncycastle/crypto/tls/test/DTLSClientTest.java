@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DTLSProtocolHandler;
+import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
@@ -27,10 +28,14 @@ public class DTLSClientTest {
         UDPTransport transport = new UDPTransport(socket, 2048, 1024);
 
         SecureRandom secureRandom = new SecureRandom();
-        DTLSProtocolHandler dtls = new DTLSProtocolHandler(secureRandom);
+        DTLSProtocolHandler protocol = new DTLSProtocolHandler(secureRandom);
 
         DTLSClient client = new DTLSClient();
-        dtls.connect(client, transport);
+        DatagramTransport dtls = protocol.connect(client, transport);
+
+        // TODO Send/receive packets (assuming an echo server)
+
+        socket.close();
     }
 
     static class DTLSClient extends DefaultTlsClient {
