@@ -44,7 +44,7 @@ public class DTLSProtocolHandler {
         byte[] clientHello = generateClientHello(clientContext, client);
         handshake.sendMessage(HandshakeType.client_hello, clientHello);
 
-        DTLSReliableHandshake.Message serverHello = handshake.receiveMessage();
+        DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
         // NOTE: After receiving a record from the server, we discover the version it chose
         ProtocolVersion server_version = recordLayer.getDiscoveredServerVersion();
@@ -55,18 +55,25 @@ public class DTLSProtocolHandler {
         clientContext.setServerVersion(server_version);
         client.notifyServerVersion(server_version);
 
-        if (serverHello.getType() == HandshakeType.hello_verify_request) {
+        if (serverMessage.getType() == HandshakeType.hello_verify_request) {
 
-            byte[] cookie = parseHelloVerifyRequest(clientContext, serverHello.getBody());
+            byte[] cookie = parseHelloVerifyRequest(clientContext, serverMessage.getBody());
 
             byte[] patched = patchClientHelloWithCookie(clientHello, cookie);
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
-            serverHello = handshake.receiveMessage();
+            serverMessage = handshake.receiveMessage();
         }
 
-        if (serverHello.getType() != HandshakeType.server_hello) {
+        if (serverMessage.getType() != HandshakeType.server_hello) {
             // TODO Alert
+        }
+
+        while (serverMessage.getType() != HandshakeType.server_hello_done) {
+
+            // TODO Process serverMessage
+
+            serverMessage = handshake.receiveMessage();
         }
 
         // TODO Lots more handshake messages...
