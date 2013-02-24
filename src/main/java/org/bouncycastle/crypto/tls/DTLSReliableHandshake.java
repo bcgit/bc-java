@@ -73,7 +73,7 @@ class DTLSReliableHandshake {
                         // TODO What kind of exception?
                     }
 
-                    int seq = TlsUtils.readUint16(buf, 5);
+                    int seq = TlsUtils.readUint16(buf, 4);
                     if (seq < next_receive_seq || seq > (next_receive_seq + MAX_RECEIVE_AHEAD)) {
                         continue;
                     }
