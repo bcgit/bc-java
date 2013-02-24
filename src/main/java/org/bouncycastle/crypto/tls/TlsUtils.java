@@ -255,14 +255,9 @@ public class TlsUtils
         return value;
     }
 
-    static ProtocolVersion readVersion(byte[] buf) throws IOException
-    {
-        return ProtocolVersion.get(buf[0], buf[1]);
-    }
-
     static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
     {
-        return ProtocolVersion.get(buf[offset], buf[offset + 1]);
+        return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
     }
 
     static ProtocolVersion readVersion(InputStream is) throws IOException
