@@ -39,7 +39,9 @@ class DTLSReassembler {
 
         for (int i = 0; i < missing.size(); ++i) {
             Range range = (Range) missing.get(i);
-            if (range.getStart() < fragment_end && range.getEnd() > fragment_offset) {
+            if (range.getStart() >= fragment_end)
+                break;
+            if (range.getEnd() > fragment_offset) {
 
                 int copyStart = Math.max(range.getStart(), fragment_offset);
                 int copyEnd = Math.min(range.getEnd(), fragment_end);
