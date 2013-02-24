@@ -9,6 +9,6 @@ Instructions for setting up a GnuTLS server for use with DTLSClientTest
 // TODO Add commands for creating keys and certificates for CA and server
 
 - Start GnuTLS server:
-    gnutls-serv --echo --udp --mtu=1500 --debug=9999 --priority="NORMAL" --x509cafile=x509-ca.pem --x509keyfile=x509-server-key.pem --x509certfile=x509-server.pem
+    gnutls-serv --echo --udp --mtu 1500 --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
 
 - Further information in GnuTLS documentation at http://www.gnutls.org/documentation.html
