@@ -75,37 +75,11 @@ public class DTLSProtocolHandler {
 
         // TODO Needs to be attached to the record layer using ContentType.application_data
         return new DTLSTransport(recordLayer);
-
-        // if (client_version.isDTLS())
-        // {
-        // for (int cipherSuite : offeredCipherSuites)
-        // {
-        // switch (cipherSuite)
-        // {
-        // case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
-        // case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
-        // case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_DH_anon_EXPORT_WITH_RC4_40_MD5:
-        // case CipherSuite.TLS_DH_anon_WITH_RC4_128_MD5:
-        // case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
-        // case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
-        // throw new
-        // IllegalStateException("Client offered an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
-        // }
-        // }
-        // }
     }
 
-    private void assertEmpty(ByteArrayInputStream is) throws IOException
-    {
+    private void assertEmpty(ByteArrayInputStream is) throws IOException {
         if (is.available() > 0) {
-//            throw new TlsFatalAlert(AlertDescription.decode_error);
+            // throw new TlsFatalAlert(AlertDescription.decode_error);
             // TODO ALert
         }
     }
@@ -120,7 +94,8 @@ public class DTLSProtocolHandler {
         return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 
-    private byte[] generateClientHello(TlsClientContextImpl clientContext, TlsClient client) throws IOException {
+    private byte[] generateClientHello(TlsClientContextImpl clientContext, TlsClient client)
+        throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -144,6 +119,27 @@ public class DTLSProtocolHandler {
          * Cipher suites
          */
         int[] offeredCipherSuites = client.getCipherSuites();
+
+        for (int cipherSuite : offeredCipherSuites) {
+            switch (cipherSuite) {
+            case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
+            case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
+            case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_DH_anon_EXPORT_WITH_RC4_40_MD5:
+            case CipherSuite.TLS_DH_anon_WITH_RC4_128_MD5:
+            case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
+                // TODO Alert
+                throw new IllegalStateException(
+                    "Client offered an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
+            }
+        }
 
         // Integer -> byte[]
         Hashtable clientExtensions = client.getClientExtensions();
@@ -195,8 +191,9 @@ public class DTLSProtocolHandler {
         return buf.toByteArray();
     }
 
-    private byte[] parseHelloVerifyRequest(TlsClientContextImpl clientContext, byte[] body) throws IOException {
-        
+    private byte[] parseHelloVerifyRequest(TlsClientContextImpl clientContext, byte[] body)
+        throws IOException {
+
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
