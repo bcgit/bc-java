@@ -82,6 +82,8 @@ class DTLSReliableHandshake {
                     int length = TlsUtils.readUint24(buf, 1);
                     int fragment_offset = TlsUtils.readUint24(buf, 6);
 
+                    // TODO Add fast path for next_receive_seq and for single-fragment messages
+
                     DTLSReassembler reassembler = (DTLSReassembler)incomingQueue.get(Integer.valueOf(seq));
                     if (reassembler == null) {
                         reassembler = new DTLSReassembler(msg_type, length);
