@@ -83,6 +83,7 @@ class DTLSRecordLayer implements DatagramTransport {
                 }
             } catch (IOException e) {
                 // NOTE: Assume this is a timeout for the moment
+                throw e;
             }
         }
     }
