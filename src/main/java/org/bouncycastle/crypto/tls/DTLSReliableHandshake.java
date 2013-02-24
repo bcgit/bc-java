@@ -11,7 +11,7 @@ class DTLSReliableHandshake {
 
     private final DatagramTransport transport;
 
-    private Hashtable incomingQueue;
+    private Hashtable incomingQueue = new Hashtable();
     private Vector flight = new Vector();
     private boolean sending = true;
 
