@@ -152,6 +152,11 @@ public class JcaPGPKeyConverter
     public PrivateKey getPrivateKey(PGPPrivateKey privKey)
         throws PGPException
     {
+        if (privKey instanceof JcaPGPPrivateKey)
+        {
+            return ((JcaPGPPrivateKey)privKey).getPrivateKey();
+        }
+
         PublicKeyPacket pubPk = privKey.getPublicKeyPacket();
         BCPGKey privPk = privKey.getPrivateKeyDataPacket();
 

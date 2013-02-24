@@ -76,7 +76,14 @@ public class JcaPGPContentSignerBuilder
     public PGPContentSigner build(final int signatureType, PGPPrivateKey privateKey)
         throws PGPException
     {
-        return build(signatureType, privateKey.getKeyID(), keyConverter.getPrivateKey(privateKey));
+        if (privateKey instanceof JcaPGPPrivateKey)
+        {
+            return build(signatureType, privateKey.getKeyID(), ((JcaPGPPrivateKey)privateKey).getPrivateKey());
+        }
+        else
+        {
+            return build(signatureType, privateKey.getKeyID(), keyConverter.getPrivateKey(privateKey));
+        }
     }
 
     public PGPContentSigner build(final int signatureType, final long keyID, final PrivateKey privateKey)

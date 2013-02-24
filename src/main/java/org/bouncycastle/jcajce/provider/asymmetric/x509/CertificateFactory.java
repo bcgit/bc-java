@@ -332,7 +332,7 @@ public class CertificateFactory
 
     public Iterator engineGetCertPathEncodings()
     {
-        return null; // TODO: PKIXCertPath.certPathEncodings.iterator();
+        return PKIXCertPath.certPathEncodings.iterator();
     }
 
     public CertPath engineGenerateCertPath(
