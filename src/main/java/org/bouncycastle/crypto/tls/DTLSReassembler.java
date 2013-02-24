@@ -12,7 +12,10 @@ class DTLSReassembler {
     DTLSReassembler(short msg_type, int length) {
         this.msg_type = msg_type;
         this.body = new byte[length];
-        this.missing.add(new Range(0, length));
+
+        if (length > 0) {
+            this.missing.add(new Range(0, length));
+        }
     }
 
     short getType()
