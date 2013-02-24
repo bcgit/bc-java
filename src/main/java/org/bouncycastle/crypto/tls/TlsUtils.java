@@ -5,10 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -357,10 +355,9 @@ public class TlsUtils
         Extensions exts = c.getTBSCertificate().getExtensions();
         if (exts != null)
         {
-            Extension ext = exts.getExtension(X509Extension.keyUsage);
-            if (ext != null)
+            KeyUsage ku = KeyUsage.fromExtensions(exts);
+            if (ku != null)
             {
-                KeyUsage ku = KeyUsage.getInstance(ext);
                 int bits = ku.getBytes()[0] & 0xff;
                 if ((bits & keyUsageBits) != keyUsageBits)
                 {
