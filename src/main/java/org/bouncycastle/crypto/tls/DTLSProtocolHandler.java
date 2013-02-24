@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -40,14 +41,23 @@ public class DTLSProtocolHandler {
             ContentType.handshake);
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
 
-        byte[] clientHello = generateClientHello(client, clientContext, EMPTY_BYTES);
+        byte[] clientHello = generateClientHello(clientContext, client);
         handshake.sendMessage(HandshakeType.client_hello, clientHello);
 
         DTLSReliableHandshake.Message serverHello = handshake.receiveMessage();
+
+        // NOTE: After receiving a record from the server, we discover the version it chose
+        ProtocolVersion server_version = recordLayer.getDiscoveredServerVersion();
+        if (server_version.getFullVersion() < clientContext.getClientVersion().getFullVersion()) {
+            // TODO Alert
+        }
+
+        clientContext.setServerVersion(server_version);
+        client.notifyServerVersion(server_version);
+
         if (serverHello.getType() == HandshakeType.hello_verify_request) {
 
-            // TODO Extract the cookie from the HelloVerifyRequest
-            byte[] cookie = EMPTY_BYTES;
+            byte[] cookie = parseHelloVerifyRequest(clientContext, serverHello.getBody());
 
             byte[] patched = patchClientHelloWithCookie(clientHello, cookie);
             handshake.sendMessage(HandshakeType.client_hello, patched);
@@ -92,6 +102,14 @@ public class DTLSProtocolHandler {
         // }
     }
 
+    private void assertEmpty(ByteArrayInputStream is) throws IOException
+    {
+        if (is.available() > 0) {
+//            throw new TlsFatalAlert(AlertDescription.decode_error);
+            // TODO ALert
+        }
+    }
+
     private TlsClientContextImpl createClientContext() {
         SecurityParameters securityParameters = new SecurityParameters();
 
@@ -102,26 +120,25 @@ public class DTLSProtocolHandler {
         return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 
-    private byte[] generateClientHello(TlsClient client, TlsClientContextImpl clientContext,
-        byte[] cookie) throws IOException {
+    private byte[] generateClientHello(TlsClientContextImpl clientContext, TlsClient client) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         ProtocolVersion client_version = client.getClientVersion();
+        if (!client_version.isDTLS()) {
+            // TODO Alert
+        }
+
         clientContext.setClientVersion(client_version);
         TlsUtils.writeVersion(client_version, buf);
 
         buf.write(clientContext.getSecurityParameters().getClientRandom());
 
-        /*
-         * Length of Session id
-         */
+        // Length of Session id
         TlsUtils.writeUint8((short) 0, buf);
 
-        if (cookie != null) {
-            TlsUtils.writeUint8((short) cookie.length, buf);
-            buf.write(cookie, 0, cookie.length);
-        }
+        // Length of cookie
+        TlsUtils.writeUint8((short) 0, buf);
 
         /*
          * Cipher suites
@@ -176,6 +193,26 @@ public class DTLSProtocolHandler {
         }
 
         return buf.toByteArray();
+    }
+
+    private byte[] parseHelloVerifyRequest(TlsClientContextImpl clientContext, byte[] body) throws IOException {
+        
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        if (!server_version.equals(clientContext.getServerVersion())) {
+            // TODO Alert
+        }
+
+        byte[] cookie = TlsUtils.readOpaque8(buf);
+
+        assertEmpty(buf);
+
+        if (cookie.length < 1 || cookie.length > 32) {
+            // TODO Alert
+        }
+
+        return cookie;
     }
 
     private byte[] patchClientHelloWithCookie(byte[] clientHello, byte[] cookie) throws IOException {
