@@ -174,6 +174,12 @@ public class ECNRSigner
         // calculate P using Bouncy math
         ECPoint P = ECAlgorithms.sumOfTwoMultiplies(G, s, W, r);
 
+        // components must be bogus.
+        if (P.isInfinity())
+        {
+            return false;
+        }
+
         BigInteger x = P.getX().toBigInteger();
         BigInteger t = r.subtract(x).mod(n);
 

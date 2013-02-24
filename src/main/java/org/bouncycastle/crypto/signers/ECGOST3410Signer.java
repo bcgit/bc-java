@@ -145,6 +145,12 @@ public class ECGOST3410Signer
 
         ECPoint point = ECAlgorithms.sumOfTwoMultiplies(G, z1, Q, z2);
 
+        // components must be bogus.
+        if (point.isInfinity())
+        {
+            return false;
+        }
+
         BigInteger R = point.getX().toBigInteger().mod(n);
 
         return R.equals(r);
