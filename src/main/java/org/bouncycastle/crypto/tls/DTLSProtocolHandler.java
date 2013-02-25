@@ -66,6 +66,8 @@ public class DTLSProtocolHandler {
         if (serverMessage.getType() == HandshakeType.hello_verify_request) {
             byte[] cookie = parseHelloVerifyRequest(state.clientContext, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
+
+            handshake.resetHash();
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();
@@ -147,8 +149,7 @@ public class DTLSProtocolHandler {
         if (state.clientCredentials instanceof TlsSignerCredentials) {
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials) state.clientCredentials;
 
-            // TODO We need the handshake message hash to make this correct
-            byte[] md5andsha1 = new byte[36]; // rs.getCurrentHash(null);
+            byte[] md5andsha1 = handshake.getCurrentHash();
             byte[] signature = signerCredentials.generateCertificateSignature(md5andsha1);
 
             byte[] certificateVerifyBody = generateCertificateVerify(state, signature);

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.util.Arrays;
 
 class DTLSReliableHandshake {
@@ -13,7 +15,11 @@ class DTLSReliableHandshake {
 
     private final DatagramTransport transport;
 
+    private CombinedHash hash = new CombinedHash();
+    private DigestOutputStream hashStream = new DigestOutputStream(hash);
+
     private Hashtable incomingQueue = new Hashtable();
+    // TODO The ChangeCipherSpec message has to be included in the flight (with Finished message)
     private Vector flight = new Vector();
     private boolean sending = true;
 
@@ -21,6 +27,13 @@ class DTLSReliableHandshake {
 
     DTLSReliableHandshake(DatagramTransport transport) {
         this.transport = transport;
+    }
+
+    byte[] getCurrentHash() {
+        Digest copyOfHash = new CombinedHash(hash);
+        byte[] result = new byte[copyOfHash.getDigestSize()];
+        copyOfHash.doFinal(result, 0);
+        return result;
     }
 
     void sendMessage(short msg_type, byte[] body) throws IOException {
@@ -35,6 +48,7 @@ class DTLSReliableHandshake {
         flight.addElement(message);
 
         writeMessage(message);
+        updateHash(message);
     }
 
     Message receiveMessage() throws IOException {
@@ -43,13 +57,13 @@ class DTLSReliableHandshake {
 
         // Check if we already have the next message waiting
         {
-            DTLSReassembler next = (DTLSReassembler)incomingQueue.get(Integer.valueOf(next_receive_seq));
-            if (next != null)
-            {
+            DTLSReassembler next = (DTLSReassembler) incomingQueue.get(Integer
+                .valueOf(next_receive_seq));
+            if (next != null) {
                 byte[] body = next.getBodyIfComplete();
                 if (body != null) {
                     incomingQueue.remove(Integer.valueOf(next_receive_seq));
-                    return new Message(next_receive_seq++, next.getType(), body);
+                    return updateHash(new Message(next_receive_seq++, next.getType(), body));
                 }
             }
         }
@@ -85,28 +99,31 @@ class DTLSReliableHandshake {
                     short msg_type = TlsUtils.readUint8(buf, 0);
                     int length = TlsUtils.readUint24(buf, 1);
                     int fragment_offset = TlsUtils.readUint24(buf, 6);
-                    
+
                     if (fragment_offset + fragment_length > length) {
                         // TODO What kind of exception?
                     }
 
-                    DTLSReassembler reassembler = (DTLSReassembler)incomingQueue.get(Integer.valueOf(seq));
+                    DTLSReassembler reassembler = (DTLSReassembler) incomingQueue.get(Integer
+                        .valueOf(seq));
                     if (reassembler == null) {
                         if (seq == next_receive_seq && fragment_length == length) {
                             byte[] body = Arrays.copyOfRange(buf, 12, received);
-                            return new Message(next_receive_seq++, msg_type, body);
+                            return updateHash(new Message(next_receive_seq++, msg_type, body));
                         }
                         reassembler = new DTLSReassembler(msg_type, length);
                         incomingQueue.put(Integer.valueOf(seq), reassembler);
                     }
 
-                    reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset, fragment_length);
+                    reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset,
+                        fragment_length);
 
                     if (seq == next_receive_seq) {
                         byte[] body = reassembler.getBodyIfComplete();
                         if (body != null) {
                             incomingQueue.remove(Integer.valueOf(next_receive_seq));
-                            return new Message(next_receive_seq++, reassembler.getType(), body);
+                            return updateHash(new Message(next_receive_seq++,
+                                reassembler.getType(), body));
                         }
                     }
                 }
@@ -116,12 +133,13 @@ class DTLSReliableHandshake {
 
             resendFlight();
 
+            // TODO
+            // "DTLS implementations SHOULD back off handshake packet size during the retransmit backoff"
             readTimeoutMillis = Math.min(readTimeoutMillis * 2, 60000);
         }
     }
 
-    void finish()
-    {
+    void finish() {
         sending = true;
         flight.clear();
 
@@ -130,10 +148,26 @@ class DTLSReliableHandshake {
         }
     }
 
+    void resetHash() {
+        hash.reset();
+    }
+
     private void resendFlight() throws IOException {
         for (int i = 0; i < flight.size(); ++i) {
             writeMessage((Message) flight.elementAt(i));
         }
+    }
+
+    private Message updateHash(Message message) throws IOException {
+        // TODO Ensure this doesn't include the ChangeCipherSpec message when it's in place
+        int length = message.getBody().length;
+        TlsUtils.writeUint8(message.getType(), hashStream);
+        TlsUtils.writeUint24(length, hashStream);
+        TlsUtils.writeUint16(message.getSeq(), hashStream);
+        TlsUtils.writeUint24(0, hashStream);
+        TlsUtils.writeUint24(length, hashStream);
+        hashStream.write(message.getBody(), 0, length);
+        return message;
     }
 
     private void writeMessage(Message message) throws IOException {
