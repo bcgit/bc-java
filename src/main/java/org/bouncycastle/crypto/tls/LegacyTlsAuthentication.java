@@ -7,7 +7,7 @@ import java.io.IOException;
  * 
  * @deprecated
  */
-public class LegacyTlsAuthentication implements TlsAuthentication
+public class LegacyTlsAuthentication extends ServerOnlyTlsAuthentication
 {
     protected CertificateVerifyer verifyer;
 
@@ -22,11 +22,5 @@ public class LegacyTlsAuthentication implements TlsAuthentication
         {
             throw new TlsFatalAlert(AlertDescription.user_canceled);
         }
-    }
-
-    public TlsCredentials getClientCredentials(CertificateRequest certificateRequest)
-        throws IOException
-    {
-        return null;
     }
 }
