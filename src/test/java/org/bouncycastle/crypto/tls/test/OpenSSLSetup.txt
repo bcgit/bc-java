@@ -1,0 +1,13 @@
+-------------------------------------------------------------------------
+Instructions for setting up an OpenSSL server for use with DTLSClientTest
+-------------------------------------------------------------------------
+
+- Download and Install OpenSSL (exercise for the reader)
+
+- Make a working folder somewhere and copy the x509-*.pem from this package to there.
+
+- Go to working folder and start OpenSSL server:
+    openssl s_server -accept 5556 -mtu 1500 -debug -msg -state -dtls1 -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem
+
+NOTE: This is mainly of use to test the handshake. There doesn't appear to be an 'echo server' option,
+      but you could try -www to get some application data from the server.

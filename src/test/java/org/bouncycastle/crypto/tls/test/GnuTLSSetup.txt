@@ -6,9 +6,10 @@ Instructions for setting up a GnuTLS server for use with DTLSClientTest
 
 - Unpack to folder and add ${GNUTLS_HOME}/bin to PATH
 
-// TODO Add commands for creating keys and certificates for CA and server
+- Make a working folder somewhere and copy the x509-*.pem from this package to there.
 
-- Start GnuTLS server:
+- Go to working folder and start GnuTLS server (defaults to port 5556):
     gnutls-serv --echo --udp --mtu 1500 --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
 
 - Further information in GnuTLS documentation at http://www.gnutls.org/documentation.html
+    see "7.2. Invoking gnutls-serv", section titled "gnutls-serv Examples" if you want to generate your own keys and certificates.
