@@ -64,6 +64,8 @@ class DTLSReliableHandshake {
                 buf = new byte[receiveLimit];
             }
 
+            // TODO Handle records containing multiple handshake messages
+
             try {
                 for (;;) {
                     int received = transport.receive(buf, 0, receiveLimit, readTimeoutMillis);
