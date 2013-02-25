@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -35,60 +38,126 @@ public class DTLSProtocolHandler {
             throw new IllegalArgumentException("'transport' cannot be null");
 
         HandshakeState state = new HandshakeState();
-        TlsClientContextImpl clientContext = createClientContext();
+        state.client = client;
+        state.clientContext = createClientContext();
 
-        client.init(clientContext);
+        client.init(state.clientContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, clientContext,
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext,
             ContentType.handshake);
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
 
-        byte[] clientHello = generateClientHello(state, clientContext, client);
-        handshake.sendMessage(HandshakeType.client_hello, clientHello);
+        byte[] clientHelloBody = generateClientHello(state, client);
+        handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
         // NOTE: After receiving a record from the server, we discover the version it chose
         ProtocolVersion server_version = recordLayer.getDiscoveredServerVersion();
-        if (server_version.getFullVersion() < clientContext.getClientVersion().getFullVersion()) {
+        ProtocolVersion client_version = state.clientContext.getClientVersion();
+
+        if (server_version.getFullVersion() < client_version.getFullVersion()) {
             // TODO Alert
         }
 
-        clientContext.setServerVersion(server_version);
+        state.clientContext.setServerVersion(server_version);
         client.notifyServerVersion(server_version);
 
         if (serverMessage.getType() == HandshakeType.hello_verify_request) {
-
-            byte[] cookie = parseHelloVerifyRequest(clientContext, serverMessage.getBody());
-
-            byte[] patched = patchClientHelloWithCookie(clientHello, cookie);
+            byte[] cookie = parseHelloVerifyRequest(state.clientContext, serverMessage.getBody());
+            byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();
+        } else {
+            // Okay, HelloVerifyRequest is optional
         }
 
-        if (serverMessage.getType() != HandshakeType.server_hello) {
-            // TODO Alert
-        }
-
-        parseServerHello(state, clientContext, client, serverMessage.getBody());
-
-        short previousMessageType = HandshakeType.server_hello;
-
-        while (serverMessage.getType() != HandshakeType.server_hello_done) {
-            
-            // TODO Process server message
-
-            previousMessageType = serverMessage.getType();
+        if (serverMessage.getType() == HandshakeType.server_hello) {
+            processServerHello(state, serverMessage.getBody());
             serverMessage = handshake.receiveMessage();
-        }
-
-        // ServerHelloDone should have empty body
-        if (serverMessage.getBody().length != 0) {
+        } else {
             // TODO Alert
         }
 
-        // TODO Lots more handshake messages...
+        if (serverMessage.getType() == HandshakeType.certificate) {
+            processCertificate(state, serverMessage.getBody());
+            serverMessage = handshake.receiveMessage();
+        } else {
+            // Okay, Certificate is optional
+            state.keyExchange.skipServerCertificate();
+        }
+
+        if (serverMessage.getType() == HandshakeType.server_key_exchange) {
+            processServerKeyExchange(state, serverMessage.getBody());
+            serverMessage = handshake.receiveMessage();
+        } else {
+            // Okay, ServerKeyExchange is optional
+            state.keyExchange.skipServerKeyExchange();
+        }
+
+        if (serverMessage.getType() == HandshakeType.certificate_request) {
+            processCertificateRequest(state, serverMessage.getBody());
+            serverMessage = handshake.receiveMessage();
+        } else {
+            // Okay, CertificateRequest is optional
+        }
+
+        if (serverMessage.getType() == HandshakeType.server_hello_done) {
+            if (serverMessage.getBody().length != 0) {
+                // TODO Alert
+            }
+        } else {
+            // TODO Alert
+        }
+
+        if (state.certificateRequest != null) {
+            state.clientCredentials = state.authentication
+                .getClientCredentials(state.certificateRequest);
+
+            Certificate clientCertificate = Certificate.EMPTY_CHAIN;
+            if (state.clientCredentials != null) {
+                clientCertificate = state.clientCredentials.getCertificate();
+            }
+
+            byte[] certificateBody = generateCertificate(clientCertificate);
+            handshake.sendMessage(HandshakeType.certificate, certificateBody);
+        }
+
+        if (state.clientCredentials != null) {
+            state.keyExchange.processClientCredentials(state.clientCredentials);
+        } else {
+            state.keyExchange.skipClientCredentials();
+        }
+
+        byte[] clientKeyExchangeBody = generateClientKeyExchange(state);
+        handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
+
+        // Calculate the master_secret
+        {
+            byte[] pms = state.keyExchange.generatePremasterSecret();
+
+            state.clientContext.getSecurityParameters().masterSecret = TlsUtils
+                .calculateMasterSecret(state.clientContext, pms);
+
+            // TODO Is there a way to ensure the data is really overwritten?
+            Arrays.fill(pms, (byte) 0);
+        }
+
+        if (state.clientCredentials instanceof TlsSignerCredentials) {
+            TlsSignerCredentials signerCredentials = (TlsSignerCredentials) state.clientCredentials;
+
+            // TODO We need the handshake message hash to make this correct
+            byte[] md5andsha1 = new byte[36]; // rs.getCurrentHash(null);
+            byte[] signature = signerCredentials.generateCertificateSignature(md5andsha1);
+
+            byte[] certificateVerifyBody = generateCertificateVerify(state, signature);
+            handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
+        }
+
+        // TODO Change cipher state
+
+        // TODO Send Finished message
 
         handshake.finish();
 
@@ -113,8 +182,22 @@ public class DTLSProtocolHandler {
         return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 
-    private byte[] generateClientHello(HandshakeState state, TlsClientContextImpl clientContext,
-        TlsClient client) throws IOException {
+    private byte[] generateCertificate(Certificate clientCertificate) throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        clientCertificate.encode(buf);
+        return buf.toByteArray();
+    }
+
+    private byte[] generateCertificateVerify(HandshakeState state, byte[] signature)
+        throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeOpaque16(signature, buf);
+        return buf.toByteArray();
+    }
+
+    private byte[] generateClientHello(HandshakeState state, TlsClient client) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -123,10 +206,10 @@ public class DTLSProtocolHandler {
             // TODO Alert
         }
 
-        clientContext.setClientVersion(client_version);
+        state.clientContext.setClientVersion(client_version);
         TlsUtils.writeVersion(client_version, buf);
 
-        buf.write(clientContext.getSecurityParameters().getClientRandom());
+        buf.write(state.clientContext.getSecurityParameters().getClientRandom());
 
         // Length of Session id
         TlsUtils.writeUint8((short) 0, buf);
@@ -210,6 +293,13 @@ public class DTLSProtocolHandler {
         return buf.toByteArray();
     }
 
+    private byte[] generateClientKeyExchange(HandshakeState state) throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        state.keyExchange.generateClientKeyExchange(buf);
+        return buf.toByteArray();
+    }
+
     private byte[] parseHelloVerifyRequest(TlsClientContextImpl clientContext, byte[] body)
         throws IOException {
 
@@ -231,39 +321,100 @@ public class DTLSProtocolHandler {
         return cookie;
     }
 
-    private void parseServerHello(HandshakeState state, TlsClientContextImpl clientContext,
-        TlsClient client, byte[] body) throws IOException {
+    private byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie)
+        throws IOException {
+
+        int sessionIDPos = 34;
+        int sessionIDLength = TlsUtils.readUint8(clientHelloBody, sessionIDPos);
+
+        int cookieLengthPos = sessionIDPos + 1 + sessionIDLength;
+        int cookiePos = cookieLengthPos + 1;
+
+        byte[] patched = new byte[clientHelloBody.length + cookie.length];
+        System.arraycopy(clientHelloBody, 0, patched, 0, cookieLengthPos);
+        TlsUtils.writeUint8((short) cookie.length, patched, cookieLengthPos);
+        System.arraycopy(cookie, 0, patched, cookiePos, cookie.length);
+        System.arraycopy(clientHelloBody, cookiePos, patched, cookiePos + cookie.length,
+            clientHelloBody.length - cookiePos);
+
+        return patched;
+    }
+
+    private void processCertificate(HandshakeState state, byte[] body) throws IOException {
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        Certificate serverCertificate = Certificate.parse(buf);
+
+        assertEmpty(buf);
+
+        state.keyExchange.processServerCertificate(serverCertificate);
+        state.authentication = state.client.getAuthentication();
+        state.authentication.notifyServerCertificate(serverCertificate);
+    }
+
+    private void processCertificateRequest(HandshakeState state, byte[] body) throws IOException {
+
+        if (state.authentication == null) {
+            // TODO Alert
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        int numTypes = TlsUtils.readUint8(buf);
+        short[] certificateTypes = new short[numTypes];
+        for (int i = 0; i < numTypes; ++i) {
+            certificateTypes[i] = TlsUtils.readUint8(buf);
+        }
+
+        byte[] authorities = TlsUtils.readOpaque16(buf);
+
+        assertEmpty(buf);
+
+        Vector authorityDNs = new Vector();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(authorities);
+        while (bis.available() > 0) {
+            byte[] dnBytes = TlsUtils.readOpaque16(bis);
+            authorityDNs.addElement(X500Name.getInstance(ASN1Primitive.fromByteArray(dnBytes)));
+        }
+
+        state.certificateRequest = new CertificateRequest(certificateTypes, authorityDNs);
+        state.keyExchange.validateCertificateRequest(state.certificateRequest);
+    }
+
+    private void processServerHello(HandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        if (!server_version.equals(clientContext.getServerVersion())) {
+        if (!server_version.equals(state.clientContext.getServerVersion())) {
             // TODO Alert
         }
 
         byte[] server_random = new byte[32];
         TlsUtils.readFully(server_random, buf);
-        clientContext.getSecurityParameters().serverRandom = server_random;
+        state.clientContext.getSecurityParameters().serverRandom = server_random;
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
             // TODO Alert
         }
-        client.notifySessionID(sessionID);
+        state.client.notifySessionID(sessionID);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!TlsProtocolHandler.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
-        client.notifySelectedCipherSuite(selectedCipherSuite);
+        state.client.notifySelectedCipherSuite(selectedCipherSuite);
 
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (!TlsProtocolHandler.arrayContains(state.offeredCompressionMethods,
             selectedCompressionMethod)) {
             // TODO Alert
         }
-        client.notifySelectedCompressionMethod(selectedCompressionMethod);
+        state.client.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
          * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
@@ -351,38 +502,34 @@ public class DTLSProtocolHandler {
                 }
             }
 
-            client.notifySecureRenegotiation(secure_negotiation);
+            state.client.notifySecureRenegotiation(secure_negotiation);
         }
 
         if (state.clientExtensions != null) {
-            client.processServerExtensions(serverExtensions);
+            state.client.processServerExtensions(serverExtensions);
         }
 
-        state.keyExchange = client.getKeyExchange();
+        state.keyExchange = state.client.getKeyExchange();
     }
 
-    private byte[] patchClientHelloWithCookie(byte[] clientHello, byte[] cookie) throws IOException {
+    private void processServerKeyExchange(HandshakeState state, byte[] body) throws IOException {
 
-        int sessionIDPos = 34;
-        int sessionIDLength = TlsUtils.readUint8(clientHello, sessionIDPos);
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        int cookieLengthPos = sessionIDPos + 1 + sessionIDLength;
-        int cookiePos = cookieLengthPos + 1;
+        state.keyExchange.processServerKeyExchange(buf);
 
-        byte[] patched = new byte[clientHello.length + cookie.length];
-        System.arraycopy(clientHello, 0, patched, 0, cookieLengthPos);
-        TlsUtils.writeUint8((short) cookie.length, patched, cookieLengthPos);
-        System.arraycopy(cookie, 0, patched, cookiePos, cookie.length);
-        System.arraycopy(clientHello, cookiePos, patched, cookiePos + cookie.length,
-            clientHello.length - cookiePos);
-
-        return patched;
+        assertEmpty(buf);
     }
 
     private static class HandshakeState {
+        TlsClient client = null;
+        TlsClientContextImpl clientContext = null;
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         short[] offeredCompressionMethods = null;
         TlsKeyExchange keyExchange = null;
+        TlsAuthentication authentication = null;
+        CertificateRequest certificateRequest = null;
+        TlsCredentials clientCredentials = null;
     }
 }
