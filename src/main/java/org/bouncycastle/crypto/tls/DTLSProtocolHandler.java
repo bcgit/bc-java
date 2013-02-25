@@ -34,6 +34,7 @@ public class DTLSProtocolHandler {
         if (transport == null)
             throw new IllegalArgumentException("'transport' cannot be null");
 
+        HandshakeState state = new HandshakeState();
         TlsClientContextImpl clientContext = createClientContext();
 
         client.init(clientContext);
@@ -42,7 +43,7 @@ public class DTLSProtocolHandler {
             ContentType.handshake);
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
 
-        byte[] clientHello = generateClientHello(clientContext, client);
+        byte[] clientHello = generateClientHello(state, clientContext, client);
         handshake.sendMessage(HandshakeType.client_hello, clientHello);
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
@@ -70,12 +71,15 @@ public class DTLSProtocolHandler {
             // TODO Alert
         }
 
-        parseServerHello(clientContext, client, serverMessage.getBody());
+        parseServerHello(state, clientContext, client, serverMessage.getBody());
+
+        short previousMessageType = HandshakeType.server_hello;
 
         while (serverMessage.getType() != HandshakeType.server_hello_done) {
+            
+            // TODO Process server message
 
-            // TODO Process serverMessage
-
+            previousMessageType = serverMessage.getType();
             serverMessage = handshake.receiveMessage();
         }
 
@@ -109,8 +113,8 @@ public class DTLSProtocolHandler {
         return new TlsClientContextImpl(secureRandom, securityParameters);
     }
 
-    private byte[] generateClientHello(TlsClientContextImpl clientContext, TlsClient client)
-        throws IOException {
+    private byte[] generateClientHello(HandshakeState state, TlsClientContextImpl clientContext,
+        TlsClient client) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -133,9 +137,9 @@ public class DTLSProtocolHandler {
         /*
          * Cipher suites
          */
-        int[] offeredCipherSuites = client.getCipherSuites();
+        state.offeredCipherSuites = client.getCipherSuites();
 
-        for (int cipherSuite : offeredCipherSuites) {
+        for (int cipherSuite : state.offeredCipherSuites) {
             switch (cipherSuite) {
             case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
             case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
@@ -157,7 +161,7 @@ public class DTLSProtocolHandler {
         }
 
         // Integer -> byte[]
-        Hashtable clientExtensions = client.getClientExtensions();
+        state.clientExtensions = client.getClientExtensions();
 
         // Cipher Suites (and SCSV)
         {
@@ -166,17 +170,17 @@ public class DTLSProtocolHandler {
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = clientExtensions == null
-                || clientExtensions.get(EXT_RenegotiationInfo) == null;
+            boolean noRenegExt = state.clientExtensions == null
+                || state.clientExtensions.get(EXT_RenegotiationInfo) == null;
 
-            int count = offeredCipherSuites.length;
+            int count = state.offeredCipherSuites.length;
             if (noRenegExt) {
                 // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
                 ++count;
             }
 
             TlsUtils.writeUint16(2 * count, buf);
-            TlsUtils.writeUint16Array(offeredCipherSuites, buf);
+            TlsUtils.writeUint16Array(state.offeredCipherSuites, buf);
 
             if (noRenegExt) {
                 TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, buf);
@@ -184,20 +188,20 @@ public class DTLSProtocolHandler {
         }
 
         // Compression methods
-        short[] offeredCompressionMethods = client.getCompressionMethods();
+        state.offeredCompressionMethods = client.getCompressionMethods();
 
-        TlsUtils.writeUint8((short) offeredCompressionMethods.length, buf);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, buf);
+        TlsUtils.writeUint8((short) state.offeredCompressionMethods.length, buf);
+        TlsUtils.writeUint8Array(state.offeredCompressionMethods, buf);
 
         // Extensions
-        if (clientExtensions != null) {
+        if (state.clientExtensions != null) {
             ByteArrayOutputStream ext = new ByteArrayOutputStream();
 
-            Enumeration keys = clientExtensions.keys();
+            Enumeration keys = state.clientExtensions.keys();
             while (keys.hasMoreElements()) {
                 Integer extType = (Integer) keys.nextElement();
                 TlsProtocolHandler.writeExtension(ext, extType,
-                    (byte[]) clientExtensions.get(extType));
+                    (byte[]) state.clientExtensions.get(extType));
             }
 
             TlsUtils.writeOpaque16(ext.toByteArray(), buf);
@@ -227,8 +231,8 @@ public class DTLSProtocolHandler {
         return cookie;
     }
 
-    private void parseServerHello(TlsClientContextImpl clientContext, TlsClient client, byte[] body)
-        throws IOException {
+    private void parseServerHello(HandshakeState state, TlsClientContextImpl clientContext,
+        TlsClient client, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -247,21 +251,16 @@ public class DTLSProtocolHandler {
         }
         client.notifySessionID(sessionID);
 
-        // TODO Store this somewhere when generating the ClientHello
-        int[] offeredCipherSuites = new int[0];
-
         int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!TlsProtocolHandler.arrayContains(offeredCipherSuites, selectedCipherSuite)
+        if (!TlsProtocolHandler.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
         client.notifySelectedCipherSuite(selectedCipherSuite);
 
-        // TODO Store this somewhere when generating the ClientHello
-        short[] offeredCompressionMethods = new short[0];
-
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocolHandler.arrayContains(offeredCompressionMethods, selectedCompressionMethod)) {
+        if (!TlsProtocolHandler.arrayContains(state.offeredCompressionMethods,
+            selectedCompressionMethod)) {
             // TODO Alert
         }
         client.notifySelectedCompressionMethod(selectedCompressionMethod);
@@ -280,9 +279,6 @@ public class DTLSProtocolHandler {
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-
-        // TODO Store this somewhere when generating the ClientHello
-        Hashtable clientExtensions = null;
 
         // Integer -> byte[]
         Hashtable serverExtensions = new Hashtable();
@@ -305,7 +301,8 @@ public class DTLSProtocolHandler {
                  * MUST continue to comply with Section 7.4.1.4 for all other extensions.
                  */
 
-                if (!extType.equals(EXT_RenegotiationInfo) && clientExtensions.get(extType) == null) {
+                if (!extType.equals(EXT_RenegotiationInfo)
+                    && state.clientExtensions.get(extType) == null) {
                     /*
                      * RFC 3546 2.3 Note that for all extension types (including those defined in
                      * future), the extension type MUST NOT appear in the extended server hello
@@ -357,12 +354,11 @@ public class DTLSProtocolHandler {
             client.notifySecureRenegotiation(secure_negotiation);
         }
 
-        if (clientExtensions != null) {
+        if (state.clientExtensions != null) {
             client.processServerExtensions(serverExtensions);
         }
 
-        // TODO Need to store this somewhere
-        TlsKeyExchange keyExchange = client.getKeyExchange();
+        state.keyExchange = client.getKeyExchange();
     }
 
     private byte[] patchClientHelloWithCookie(byte[] clientHello, byte[] cookie) throws IOException {
@@ -381,5 +377,12 @@ public class DTLSProtocolHandler {
             clientHello.length - cookiePos);
 
         return patched;
+    }
+
+    private static class HandshakeState {
+        int[] offeredCipherSuites = null;
+        Hashtable clientExtensions = null;
+        short[] offeredCompressionMethods = null;
+        TlsKeyExchange keyExchange = null;
     }
 }
