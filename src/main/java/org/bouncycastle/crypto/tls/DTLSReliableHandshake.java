@@ -32,7 +32,7 @@ class DTLSReliableHandshake {
 
         Message message = new Message(message_seq++, msg_type, body);
 
-        flight.add(message);
+        flight.addElement(message);
 
         writeMessage(message);
     }

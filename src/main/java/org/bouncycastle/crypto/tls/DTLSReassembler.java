@@ -14,7 +14,7 @@ class DTLSReassembler {
         this.body = new byte[length];
 
         if (length > 0) {
-            this.missing.add(new Range(0, length));
+            this.missing.addElement(new Range(0, length));
         }
     }
 
