@@ -30,7 +30,8 @@ public class DTLSClientTest {
         DatagramSocket socket = new DatagramSocket();
         socket.connect(InetAddress.getLocalHost(), 5556);
 
-        UDPTransport transport = new UDPTransport(socket, 2048, 1024);
+        int mtu = 1500;
+        UDPTransport transport = new UDPTransport(socket, mtu);
 
         SecureRandom secureRandom = new SecureRandom();
         DTLSProtocolHandler protocol = new DTLSProtocolHandler(secureRandom);

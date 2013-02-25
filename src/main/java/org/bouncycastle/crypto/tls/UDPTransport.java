@@ -6,18 +6,25 @@ import java.net.DatagramSocket;
 
 public class UDPTransport implements DatagramTransport {
 
+    private final static int MIN_IP_OVERHEAD = 20;
+    private final static int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
+    private final static int UDP_OVERHEAD = 8;
+
     private final DatagramSocket socket;
     private final int receiveLimit, sendLimit;
 
-    public UDPTransport(DatagramSocket socket, int receiveLimit, int sendLimit) throws IOException {
+    public UDPTransport(DatagramSocket socket, int mtu) throws IOException {
+
         if (!socket.isBound() || !socket.isConnected()) {
             throw new IllegalArgumentException("'socket' must be bound and connected");
         }
+
         this.socket = socket;
-        
+
         // NOTE: As of JDK 1.6, can use NetworkInterface.getMTU
-        this.receiveLimit = receiveLimit;
-        this.sendLimit = sendLimit;
+
+        this.receiveLimit = mtu - MIN_IP_OVERHEAD - UDP_OVERHEAD;
+        this.sendLimit = mtu - MAX_IP_OVERHEAD - UDP_OVERHEAD;
     }
 
     public int getReceiveLimit() {
@@ -25,7 +32,7 @@ public class UDPTransport implements DatagramTransport {
     }
 
     public int getSendLimit() {
-        // TODO[DTLS] Maybe use a more conservative number, or implement Path-MTU discovery?
+        // TODO[DTLS] Implement Path-MTU discovery?
         return sendLimit;
     }
 
