@@ -92,7 +92,12 @@ class DTLSReliableHandshake {
                     }
 
                     int seq = TlsUtils.readUint16(buf, 4);
-                    if (seq < next_receive_seq || seq > (next_receive_seq + MAX_RECEIVE_AHEAD)) {
+                    if (seq > (next_receive_seq + MAX_RECEIVE_AHEAD)) {
+                        continue;
+                    }
+                    if (seq < next_receive_seq) {
+                        // TODO We should be tracking the previous flight of incoming messages
+                        // and if we receive it in full again, retransmitting our last flight
                         continue;
                     }
 
