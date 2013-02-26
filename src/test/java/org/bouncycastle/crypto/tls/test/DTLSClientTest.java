@@ -31,7 +31,9 @@ public class DTLSClientTest {
         socket.connect(InetAddress.getLocalHost(), 5556);
 
         int mtu = 1500;
-        UDPTransport transport = new UDPTransport(socket, mtu);
+        DatagramTransport transport = new UDPTransport(socket, mtu);
+
+        transport = new LoggingDatagramTransport(transport, System.out);
 
         SecureRandom secureRandom = new SecureRandom();
         DTLSProtocolHandler protocol = new DTLSProtocolHandler(secureRandom);
@@ -61,8 +63,8 @@ public class DTLSClientTest {
                 public void notifyServerCertificate(
                     org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
                     Certificate[] chain = serverCertificate.getCerts();
-                    System.out.println("Received server certificate chain with " + chain.length
-                        + " entries");
+                    System.out.println("Received server certificate chain of length "
+                        + chain.length);
                     for (Certificate entry : chain) {
                         System.out.println("    " + entry.getSubject());
                     }
