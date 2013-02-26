@@ -39,22 +39,24 @@ public class LoggingDatagramTransport implements DatagramTransport {
     }
 
     private void dumpDatagram(String verb, byte[] buf, int off, int len) throws IOException {
-        output.print(verb + " " + len + " byte datagram:");
+        StringBuffer sb = new StringBuffer(verb + " " + len + " byte datagram:");
         for (int pos = 0; pos < len; ++pos) {
             if (pos % 16 == 0) {
-                output.println();
-                output.print("    ");
-            }
-            else if (pos % 16 == 8) {
-                output.print('-');
-            }
-            else {
-                output.print(' ');
+                sb.append(System.lineSeparator());
+                sb.append("    ");
+            } else if (pos % 16 == 8) {
+                sb.append('-');
+            } else {
+                sb.append(' ');
             }
             int val = buf[off + pos] & 0xFF;
-            output.print(HEX_CHARS.charAt(val >> 4));
-            output.print(HEX_CHARS.charAt(val & 0xF));
+            sb.append(HEX_CHARS.charAt(val >> 4));
+            sb.append(HEX_CHARS.charAt(val & 0xF));
         }
-        output.println();
+        dump(sb.toString());
+    }
+
+    private synchronized void dump(String s) {
+        output.println(s);
     }
 }
