@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.params.NTRUSigningKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyGenerationParameters;
 
 public class NTRUSignatureParametersTest
     extends TestCase
