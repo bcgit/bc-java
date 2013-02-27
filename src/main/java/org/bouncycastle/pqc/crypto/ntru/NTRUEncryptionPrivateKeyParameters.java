@@ -1,15 +1,15 @@
-package org.bouncycastle.crypto.params;
+package org.bouncycastle.pqc.crypto.ntru;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.math.ntru.polynomial.DenseTernaryPolynomial;
-import org.bouncycastle.math.ntru.polynomial.IntegerPolynomial;
-import org.bouncycastle.math.ntru.polynomial.Polynomial;
-import org.bouncycastle.math.ntru.polynomial.ProductFormPolynomial;
-import org.bouncycastle.math.ntru.polynomial.SparseTernaryPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.ProductFormPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.SparseTernaryPolynomial;
 
 /**
  * A NtruEncrypt private key is essentially a polynomial named <code>f</code>

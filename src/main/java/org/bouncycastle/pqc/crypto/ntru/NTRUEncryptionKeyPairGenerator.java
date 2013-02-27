@@ -1,17 +1,13 @@
-package org.bouncycastle.crypto.generators;
+package org.bouncycastle.pqc.crypto.ntru;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.params.NTRUEncryptionKeyGenerationParameters;
-import org.bouncycastle.crypto.params.NTRUEncryptionPrivateKeyParameters;
-import org.bouncycastle.crypto.params.NTRUEncryptionPublicKeyParameters;
-import org.bouncycastle.crypto.params.NTRUParameters;
-import org.bouncycastle.math.ntru.polynomial.DenseTernaryPolynomial;
-import org.bouncycastle.math.ntru.polynomial.IntegerPolynomial;
-import org.bouncycastle.math.ntru.polynomial.Polynomial;
-import org.bouncycastle.math.ntru.polynomial.ProductFormPolynomial;
-import org.bouncycastle.math.ntru.util.Util;
+import org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.ProductFormPolynomial;
+import org.bouncycastle.pqc.math.ntru.util.Util;
 
 /**
  * Generates key pairs.<br/>

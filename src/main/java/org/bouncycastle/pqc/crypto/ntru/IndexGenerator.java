@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.ntru;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.params.NTRUEncryptionParameters;
 import org.bouncycastle.util.Arrays;
 
 /**

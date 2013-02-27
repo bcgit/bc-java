@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.params;
+package org.bouncycastle.pqc.crypto.ntru;
 
 public class NTRUParameters
 {

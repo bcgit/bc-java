@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.generators;
+package org.bouncycastle.pqc.crypto.ntru;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,18 +13,14 @@ import java.util.concurrent.Future;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.params.NTRUParameters;
-import org.bouncycastle.crypto.params.NTRUSigningKeyGenerationParameters;
-import org.bouncycastle.crypto.params.NTRUSigningPrivateKeyParameters;
-import org.bouncycastle.crypto.params.NTRUSigningPublicKeyParameters;
-import org.bouncycastle.math.ntru.euclid.BigIntEuclidean;
-import org.bouncycastle.math.ntru.polynomial.BigDecimalPolynomial;
-import org.bouncycastle.math.ntru.polynomial.BigIntPolynomial;
-import org.bouncycastle.math.ntru.polynomial.DenseTernaryPolynomial;
-import org.bouncycastle.math.ntru.polynomial.IntegerPolynomial;
-import org.bouncycastle.math.ntru.polynomial.Polynomial;
-import org.bouncycastle.math.ntru.polynomial.ProductFormPolynomial;
-import org.bouncycastle.math.ntru.polynomial.Resultant;
+import org.bouncycastle.pqc.math.ntru.euclid.BigIntEuclidean;
+import org.bouncycastle.pqc.math.ntru.polynomial.BigDecimalPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.BigIntPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.ProductFormPolynomial;
+import org.bouncycastle.pqc.math.ntru.polynomial.Resultant;
 
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;

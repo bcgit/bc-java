@@ -4,9 +4,6 @@ import java.nio.ByteBuffer;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.params.NTRUSigningParameters;
-import org.bouncycastle.crypto.params.NTRUSigningPrivateKeyParameters;
-import org.bouncycastle.crypto.params.NTRUSigningPublicKeyParameters;
 import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
 import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
 
