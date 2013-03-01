@@ -2,7 +2,14 @@ package org.bouncycastle.crypto.tls.test;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlwaysValidVerifyer;
+import org.bouncycastle.crypto.tls.Certificate;
+import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.crypto.tls.LegacyTlsClient;
+import org.bouncycastle.crypto.tls.TlsClient;
+import org.bouncycastle.crypto.tls.TlsFatalAlert;
+import org.bouncycastle.crypto.tls.TlsKeyExchange;
 import org.bouncycastle.crypto.tls.TlsProtocolHandler;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -54,7 +61,7 @@ public class BasicTlsTest
         
 //        long time = System.currentTimeMillis();
         TlsProtocolHandler handler = new TlsProtocolHandler(s.getInputStream(), s.getOutputStream());
-        handler.connect(verifyer);
+        handler.connect(new LegacyTlsClient(verifyer));
         InputStream is = handler.getInputStream();
         OutputStream os = handler.getOutputStream();
 
@@ -80,6 +87,50 @@ public class BasicTlsTest
         byte[] tmp = new byte[expected.length];
         System.arraycopy(buf, 0, tmp, 0, total);
         assertTrue(Arrays.areEqual(expected, tmp));
+    }
+
+    public void testRSAConnectionClient()
+        throws Exception
+    {
+        TestTlsClient client = new TestTlsClient(null);
+
+        checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, TlsTestUtils.rsaCertData);
+        checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, TlsTestUtils.rsaCertData);
+        checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA, TlsTestUtils.rsaCertData);
+        checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_RC4_128_SHA, TlsTestUtils.rsaCertData);
+
+        try
+        {
+            checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, TlsTestUtils.dudRsaCertData);
+
+            fail("dud certificate not caught");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.certificate_unknown, e.getAlertDescription());
+        }
+
+        try
+        {
+            checkConnectionClient(client, CipherSuite.TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA, TlsTestUtils.rsaCertData);
+
+            fail("wrong certificate not caught");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+        }
+    }
+
+    private void checkConnectionClient(TlsClient client, int cipherSuite, byte[] encCert)
+        throws Exception
+    {
+        client.notifySelectedCipherSuite(cipherSuite);
+
+        TlsKeyExchange keyExchange = client.getKeyExchange();
+
+        keyExchange.processServerCertificate(new Certificate(new org.bouncycastle.asn1.x509.Certificate[] {
+                    org.bouncycastle.asn1.x509.Certificate.getInstance(encCert) }));
     }
 
     public static TestSuite suite()
