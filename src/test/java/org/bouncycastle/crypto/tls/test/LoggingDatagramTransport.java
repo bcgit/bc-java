@@ -11,10 +11,12 @@ public class LoggingDatagramTransport implements DatagramTransport {
 
     private final DatagramTransport transport;
     private final PrintStream output;
+    private final long launchTimestamp;
 
     public LoggingDatagramTransport(DatagramTransport transport, PrintStream output) {
         this.transport = transport;
         this.output = output;
+        this.launchTimestamp = System.currentTimeMillis();
     }
 
     public int getReceiveLimit() throws IOException {
@@ -34,12 +36,13 @@ public class LoggingDatagramTransport implements DatagramTransport {
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
-        dumpDatagram("Sent", buf, off, len);
+        dumpDatagram("Sending", buf, off, len);
         transport.send(buf, off, len);
     }
 
     private void dumpDatagram(String verb, byte[] buf, int off, int len) throws IOException {
-        StringBuffer sb = new StringBuffer(verb + " " + len + " byte datagram:");
+        long timestamp = System.currentTimeMillis() - launchTimestamp;
+        StringBuffer sb = new StringBuffer("(+" + timestamp + "ms) " + verb + " " + len + " byte datagram:");
         for (int pos = 0; pos < len; ++pos) {
             if (pos % 16 == 0) {
                 sb.append(System.lineSeparator());
