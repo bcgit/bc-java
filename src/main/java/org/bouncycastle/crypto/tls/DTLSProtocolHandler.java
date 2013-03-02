@@ -160,6 +160,8 @@ public class DTLSProtocolHandler {
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
+        recordLayer.setPendingCipher(state.client.getCipher());
+
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
             "client finished", handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
@@ -286,8 +288,10 @@ public class DTLSProtocolHandler {
             }
         }
 
+        // TODO Add support for compression
         // Compression methods
-        state.offeredCompressionMethods = client.getCompressionMethods();
+        // state.offeredCompressionMethods = client.getCompressionMethods();
+        state.offeredCompressionMethods = new short[] { CompressionMethod.NULL };
 
         TlsUtils.writeUint8((short) state.offeredCompressionMethods.length, buf);
         TlsUtils.writeUint8Array(state.offeredCompressionMethods, buf);

@@ -181,25 +181,6 @@ class DTLSReliableHandshake {
 
     private void writeMessage(Message message) throws IOException {
 
-        if (message.getType() == HandshakeType.finished) {
-            // Need to implicitly send change_cipher_spec first
-
-            // /*
-            // * Now, we send change cipher state
-            // */
-            // byte[] cmessage = new byte[1];
-            // cmessage[0] = 1;
-            // rs.writeMessage(ContentType.change_cipher_spec, cmessage, 0,
-            // cmessage.length);
-            //
-            // connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC_SEND;
-            //
-            // /*
-            // * Initialize our cipher suite
-            // */
-            // rs.clientCipherSpecDecided(tlsClient.getCompression(), tlsClient.getCipher());
-        }
-
         int sendLimit = transport.getSendLimit();
         int fragmentLimit = sendLimit - 12;
 
