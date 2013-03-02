@@ -580,7 +580,8 @@ public class TlsProtocolHandler
 
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         TlsUtils.writeUint8(HandshakeType.finished, bos);
-                        TlsUtils.writeOpaque24(clientVerifyData, bos);
+                        TlsUtils.writeUint24(clientVerifyData.length, bos);
+                        bos.write(clientVerifyData);
                         byte[] message = bos.toByteArray();
 
                         rs.writeMessage(ContentType.handshake, message, 0, message.length);
