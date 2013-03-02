@@ -151,6 +151,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
                 // Implicitly send change_cipher_spec and change to pending cipher state
 
+                // TODO Send change_cipher_spec and finished records in single datagram?
                 byte[] data = new byte[] { 1 };
                 sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
 
