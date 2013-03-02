@@ -139,11 +139,15 @@ public class DTLSProtocolHandler {
         {
             byte[] pms = state.keyExchange.generatePremasterSecret();
 
-            state.clientContext.getSecurityParameters().masterSecret = TlsUtils
-                .calculateMasterSecret(state.clientContext, pms);
-
-            // TODO Is there a way to ensure the data is really overwritten?
-            Arrays.fill(pms, (byte) 0);
+            try {
+                state.clientContext.getSecurityParameters().masterSecret = TlsUtils
+                    .calculateMasterSecret(state.clientContext, pms);
+            } finally {
+                // TODO Is there a way to ensure the data is really overwritten?
+                if (pms != null) {
+                    Arrays.fill(pms, (byte) 0);
+                }
+            }
         }
 
         if (state.clientCredentials instanceof TlsSignerCredentials) {
