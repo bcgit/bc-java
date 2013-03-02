@@ -67,4 +67,13 @@ class DTLSReplayWindow {
             latestConfirmedSeq = seq;
         }
     }
+
+    /**
+     * When a new epoch begins, sequence numbers begin again at 0
+     */
+    void reset()
+    {
+        latestConfirmedSeq = -1;
+        bitmap = 0;
+    }
 }
