@@ -189,11 +189,6 @@ class DTLSRecordLayer implements DatagramTransport {
         }
 
         int received = transport.receive(buf, off, len, waitMillis);
-        if (received >= 1) {
-            if (TlsUtils.readUint8(buf, off) == ContentType.change_cipher_spec) {
-                boolean debug = true;
-            }
-        }
         if (received >= RECORD_HEADER_LENGTH) {
             int fragmentLength = TlsUtils.readUint16(buf, off + 11);
             int recordLength = RECORD_HEADER_LENGTH + fragmentLength;
