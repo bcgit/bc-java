@@ -48,7 +48,7 @@ class DTLSReliableHandshake {
         flight.addElement(message);
 
         writeMessage(message);
-        updateHash(message);
+        updateHandshakeMessagesDigest(message);
     }
 
     Message receiveMessage() throws IOException {
@@ -63,7 +63,8 @@ class DTLSReliableHandshake {
                 byte[] body = next.getBodyIfComplete();
                 if (body != null) {
                     incomingQueue.remove(Integer.valueOf(next_receive_seq));
-                    return updateHash(new Message(next_receive_seq++, next.getType(), body));
+                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
+                        next.getType(), body));
                 }
             }
         }
@@ -114,7 +115,8 @@ class DTLSReliableHandshake {
                     if (reassembler == null) {
                         if (seq == next_receive_seq && fragment_length == length) {
                             byte[] body = Arrays.copyOfRange(buf, 12, received);
-                            return updateHash(new Message(next_receive_seq++, msg_type, body));
+                            return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
+                                msg_type, body));
                         }
                         reassembler = new DTLSReassembler(msg_type, length);
                         incomingQueue.put(Integer.valueOf(seq), reassembler);
@@ -127,7 +129,7 @@ class DTLSReliableHandshake {
                         byte[] body = reassembler.getBodyIfComplete();
                         if (body != null) {
                             incomingQueue.remove(Integer.valueOf(next_receive_seq));
-                            return updateHash(new Message(next_receive_seq++,
+                            return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
                                 reassembler.getType(), body));
                         }
                     }
@@ -153,7 +155,7 @@ class DTLSReliableHandshake {
         }
     }
 
-    void resetHash() {
+    void resetHandshakeMessagesDigest() {
         hash.reset();
     }
 
@@ -163,19 +165,40 @@ class DTLSReliableHandshake {
         }
     }
 
-    private Message updateHash(Message message) throws IOException {
-        // TODO Ensure this doesn't include the ChangeCipherSpec message when it's in place
-        int length = message.getBody().length;
-        TlsUtils.writeUint8(message.getType(), hashStream);
-        TlsUtils.writeUint24(length, hashStream);
-        TlsUtils.writeUint16(message.getSeq(), hashStream);
-        TlsUtils.writeUint24(0, hashStream);
-        TlsUtils.writeUint24(length, hashStream);
-        hashStream.write(message.getBody(), 0, length);
+    private Message updateHandshakeMessagesDigest(Message message) throws IOException {
+        if (message.getType() != HandshakeType.hello_request) {
+            // TODO Ensure this doesn't include the ChangeCipherSpec message when it's in place
+            int length = message.getBody().length;
+            TlsUtils.writeUint8(message.getType(), hashStream);
+            TlsUtils.writeUint24(length, hashStream);
+            TlsUtils.writeUint16(message.getSeq(), hashStream);
+            TlsUtils.writeUint24(0, hashStream);
+            TlsUtils.writeUint24(length, hashStream);
+            hashStream.write(message.getBody(), 0, length);
+        }
         return message;
     }
 
     private void writeMessage(Message message) throws IOException {
+
+        if (message.getType() == HandshakeType.finished) {
+            // Need to implicitly send change_cipher_spec first
+
+            // /*
+            // * Now, we send change cipher state
+            // */
+            // byte[] cmessage = new byte[1];
+            // cmessage[0] = 1;
+            // rs.writeMessage(ContentType.change_cipher_spec, cmessage, 0,
+            // cmessage.length);
+            //
+            // connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC_SEND;
+            //
+            // /*
+            // * Initialize our cipher suite
+            // */
+            // rs.clientCipherSpecDecided(tlsClient.getCompression(), tlsClient.getCipher());
+        }
 
         int sendLimit = transport.getSendLimit();
         int fragmentLimit = sendLimit - 12;

@@ -67,7 +67,7 @@ public class DTLSProtocolHandler {
             byte[] cookie = parseHelloVerifyRequest(state.clientContext, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
-            handshake.resetHash();
+            handshake.resetHandshakeMessagesDigest();
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();
@@ -160,9 +160,20 @@ public class DTLSProtocolHandler {
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
-        // TODO Change cipher state
+        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+            "client finished", handshake.getCurrentHash());
+        handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
-        // TODO Send Finished message
+        // NOTE: Calculated exclusive of the actual Finished message from the server
+        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+            "server finished", handshake.getCurrentHash());
+        serverMessage = handshake.receiveMessage();
+
+        if (serverMessage.getType() == HandshakeType.finished) {
+            processFinished(state, serverMessage.getBody(), expectedServerVerifyData);
+        } else {
+            // TODO Alert
+        }
 
         handshake.finish();
 
@@ -386,6 +397,22 @@ public class DTLSProtocolHandler {
 
         state.certificateRequest = new CertificateRequest(certificateTypes, authorityDNs);
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
+    }
+
+    private void processFinished(HandshakeState state, byte[] body, byte[] verify_data)
+        throws IOException {
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        byte[] serverVerifyData = new byte[12];
+        TlsUtils.readFully(serverVerifyData, buf);
+
+        assertEmpty(buf);
+
+        if (!Arrays.constantTimeAreEqual(verify_data, serverVerifyData)) {
+            // TODO Alert
+            // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+        }
     }
 
     private void processServerHello(HandshakeState state, byte[] body) throws IOException {
