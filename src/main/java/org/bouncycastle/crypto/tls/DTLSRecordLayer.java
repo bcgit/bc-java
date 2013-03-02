@@ -15,7 +15,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private int epoch_read = 0, epoch_write = 0;
     private long sequence_number = 0;
-    private ProtocolVersion discoveredServerVersion = null;
+    private volatile ProtocolVersion discoveredServerVersion = null;
     private TlsCipher activeReadCipher, activeWriteCipher, pendingReadCipher, pendingWriteCipher;
 
     DTLSRecordLayer(DatagramTransport transport, TlsClientContext clientContext, short contentType) {
@@ -59,44 +59,80 @@ class DTLSRecordLayer implements DatagramTransport {
                 record = new byte[receiveLimit];
             }
 
-            // TODO Handle datagrams containing multiple records
-
             try {
                 int received = receiveRecord(record, 0, receiveLimit, waitMillis);
                 if (received < RECORD_HEADER_LENGTH) {
                     // TODO What kind of exception?
+                    continue;
                 }
                 int length = TlsUtils.readUint16(record, 11);
                 if (received != (length + RECORD_HEADER_LENGTH)) {
                     // TODO What kind of exception?
+                    continue;
                 }
                 int epoch = TlsUtils.readUint16(record, 3);
                 if (epoch != epoch_read) {
                     // TODO What kind of exception?
+                    continue;
                 }
 
                 long seq = TlsUtils.readUint48(record, 5);
-                if (!replayWindow.shouldDiscard(seq)) {
+                if (replayWindow.shouldDiscard(seq))
+                    continue;
 
-                    ProtocolVersion version = TlsUtils.readVersion(record, 1);
-                    if (discoveredServerVersion != null && !discoveredServerVersion.equals(version)) {
-                        // TODO What exception?
-                        // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                    }
+                // TODO Validate contentType
+                short type = TlsUtils.readUint8(record, 0);
 
-                    // TODO Decrypt, decompress
-                    System.arraycopy(record, RECORD_HEADER_LENGTH, buf, off, length);
-
-                    replayWindow.reportAuthenticated(seq);
-
-                    if (discoveredServerVersion == null) {
-                        discoveredServerVersion = version;
-                    }
-
-                    // TODO Implicitly handle ChangeCipherSpec here
-
-                    return length;
+                ProtocolVersion version = TlsUtils.readVersion(record, 1);
+                if (discoveredServerVersion != null && !discoveredServerVersion.equals(version)) {
+                    // TODO What exception?
+                    // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
+
+                byte[] plaintext = activeReadCipher.decodeCiphertext(getMacSequenceNumber(epoch_read, seq), type,
+                    record, RECORD_HEADER_LENGTH, received - RECORD_HEADER_LENGTH);
+
+                replayWindow.reportAuthenticated(seq);
+
+                if (discoveredServerVersion == null) {
+                    discoveredServerVersion = version;
+                }
+
+                if (type == ContentType.alert) {
+                    // TODO Figure out approach to sending/receiving alerts
+                }
+
+                if (type == ContentType.change_cipher_spec) {
+                    // Implicitly receive change_cipher_spec and change to pending cipher state
+
+                    if (plaintext.length != 1 || plaintext[0] != 1) {
+                        // TODO What exception?
+                        continue;
+                    }
+
+                    if (pendingReadCipher == null) {
+                        // TODO Exception?
+                    }
+
+                    /*
+                     * TODO "In order to ensure that any given sequence/epoch pair is unique,
+                     * implementations MUST NOT allow the same epoch value to be reused within two times
+                     * the TCP maximum segment lifetime."
+                     */
+
+                    // TODO Check for overflow
+                    ++epoch_read;
+
+                    replayWindow.reset();
+
+                    activeReadCipher = pendingReadCipher;
+                    pendingReadCipher = null;
+
+                    continue;
+                }
+
+                System.arraycopy(plaintext, 0, buf, off, plaintext.length);
+                return plaintext.length;
             } catch (IOException e) {
                 // NOTE: Assume this is a timeout for the moment
                 throw e;
@@ -129,8 +165,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
                 sequence_number = 0;
 
-                this.activeWriteCipher = this.pendingWriteCipher;
-                this.pendingWriteCipher = null;
+                activeWriteCipher = pendingWriteCipher;
+                pendingWriteCipher = null;
             }
         }
 
@@ -153,6 +189,11 @@ class DTLSRecordLayer implements DatagramTransport {
         }
 
         int received = transport.receive(buf, off, len, waitMillis);
+        if (received >= 1) {
+            if (TlsUtils.readUint8(buf, off) == ContentType.change_cipher_spec) {
+                boolean debug = true;
+            }
+        }
         if (received >= RECORD_HEADER_LENGTH) {
             int fragmentLength = TlsUtils.readUint16(buf, off + 11);
             int recordLength = RECORD_HEADER_LENGTH + fragmentLength;
