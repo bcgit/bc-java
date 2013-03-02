@@ -84,7 +84,8 @@ public class TlsBlockCipher implements TlsCipher
 
         int padding_length = blockSize - 1 - ((len + writeMac.getSize()) % blockSize);
 
-        if (!version.isSSL())
+        // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
+        if (version.isTLS())
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
