@@ -5,6 +5,7 @@ import java.io.IOException;
 class DTLSRecordLayer implements DatagramTransport {
 
     private static final int RECORD_HEADER_LENGTH = 13;
+    private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
 
     private final DatagramTransport transport;
     private final TlsClientContext clientContext;
@@ -43,11 +44,13 @@ class DTLSRecordLayer implements DatagramTransport {
     }
 
     public int getReceiveLimit() throws IOException {
-        return activeReadCipher.getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH);
+        return Math.min(MAX_FRAGMENT_LENGTH,
+            activeReadCipher.getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int getSendLimit() throws IOException {
-        return activeWriteCipher.getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH);
+        return Math.min(MAX_FRAGMENT_LENGTH,
+            activeWriteCipher.getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
@@ -244,6 +247,10 @@ class DTLSRecordLayer implements DatagramTransport {
 
         byte[] ciphertext = activeWriteCipher.encodePlaintext(
             getMacSequenceNumber(epoch_write, recordSequenceNumber), contentType, buf, off, len);
+
+        if (ciphertext.length > MAX_FRAGMENT_LENGTH) {
+            // TODO Exception
+        }
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);

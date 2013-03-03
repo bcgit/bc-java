@@ -44,6 +44,15 @@ public class UDPTransport implements DatagramTransport {
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
+        if (len > getSendLimit()) {
+            /*
+             * RFC 4347 4.1.1. "If the application attempts to send a record larger than the MTU,
+             * the DTLS implementation SHOULD generate an error, thus avoiding sending a packet
+             * which will be fragmented."
+             */
+            // TODO Exception
+        }
+
         DatagramPacket packet = new DatagramPacket(buf, off, len);
         socket.send(packet);
     }
