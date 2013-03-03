@@ -41,7 +41,19 @@ public class DTLSClientTest {
         DTLSClient client = new DTLSClient();
         DatagramTransport dtls = protocol.connect(client, transport);
 
-        // TODO Send/receive packets (assuming an echo server)
+        System.out.println("Receive limit: " + dtls.getReceiveLimit());
+        System.out.println("Send limit: " + dtls.getSendLimit());
+
+        // Send and hopefully receive a packet backet
+
+        byte[] request = "Hello World!\n".getBytes("UTF-8");
+        dtls.send(request, 0, request.length);
+
+        byte[] response = new byte[dtls.getReceiveLimit()];
+        int received = dtls.receive(response, 0, response.length, 30000);
+        if (received >= 0) {
+            System.out.println(new String(response, 0, received, "UTF-8"));
+        }
 
         socket.close();
     }

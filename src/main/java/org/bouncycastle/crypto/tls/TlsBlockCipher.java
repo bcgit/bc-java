@@ -76,26 +76,44 @@ public class TlsBlockCipher implements TlsCipher
         cipher.init(forEncryption, parameters_with_iv);
     }
 
+    public int getPlaintextLimit(int ciphertextLimit)
+    {
+        int blockSize = encryptCipher.getBlockSize();
+        int macSize = writeMac.getSize();
+
+        ProtocolVersion version = context.getServerVersion();
+        boolean useExplicitIV = !version.isSSL() && !version.equals(ProtocolVersion.TLSv10);
+
+        int result = ciphertextLimit - (ciphertextLimit % blockSize) - macSize - 1;
+        if (useExplicitIV)
+        {
+            result -= blockSize;
+        }
+        
+        return result;
+    }
+
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         int blockSize = encryptCipher.getBlockSize();
-        
+        int macSize = writeMac.getSize();
+
         ProtocolVersion version = context.getServerVersion();
 
-        int padding_length = blockSize - 1 - ((len + writeMac.getSize()) % blockSize);
+        int padding_length = blockSize - 1 - ((len + macSize) % blockSize);
 
         // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
         if (version.isTLS())
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-	    int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
+            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
         boolean useExplicitIV = !version.isSSL() && !version.equals(ProtocolVersion.TLSv10);
 
-        int totalSize = len + writeMac.getSize() + padding_length + 1;
+        int totalSize = len + macSize + padding_length + 1;
         if (useExplicitIV)
         {
             totalSize += blockSize;

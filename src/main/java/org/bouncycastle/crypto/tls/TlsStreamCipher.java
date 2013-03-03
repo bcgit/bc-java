@@ -57,6 +57,11 @@ public class TlsStreamCipher implements TlsCipher
         decryptCipher.init(true, decryptKey);
     }
 
+    public int getPlaintextLimit(int ciphertextLimit)
+    {
+        return ciphertextLimit - writeMac.getSize();
+    }
+
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);

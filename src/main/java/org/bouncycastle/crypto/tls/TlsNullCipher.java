@@ -5,6 +5,11 @@ package org.bouncycastle.crypto.tls;
  */
 public class TlsNullCipher implements TlsCipher
 {
+    public int getPlaintextLimit(int ciphertextLimit)
+    {
+        return ciphertextLimit;
+    }
+
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         return copyData(plaintext, offset, len);

@@ -8,7 +8,6 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private final DatagramTransport transport;
     private final TlsClientContext clientContext;
-    private final short contentType;
 
     private final ByteQueue recordQueue = new ByteQueue();
     private final DTLSReplayWindow replayWindow = new DTLSReplayWindow();
@@ -16,13 +15,14 @@ class DTLSRecordLayer implements DatagramTransport {
     private int epoch_read = 0, epoch_write = 0;
     private long sequence_number = 0;
     private volatile ProtocolVersion discoveredServerVersion = null;
+    private volatile boolean inHandshake;
     private TlsCipher activeReadCipher, activeWriteCipher, pendingReadCipher, pendingWriteCipher;
 
     DTLSRecordLayer(DatagramTransport transport, TlsClientContext clientContext, short contentType) {
         this.transport = transport;
         this.clientContext = clientContext;
-        this.contentType = contentType;
 
+        this.inHandshake = true;
         this.activeReadCipher = new TlsNullCipher();
         this.activeWriteCipher = this.activeReadCipher;
         this.pendingReadCipher = null;
@@ -38,14 +38,16 @@ class DTLSRecordLayer implements DatagramTransport {
         this.pendingWriteCipher = pendingCipher;
     }
 
+    void handshakeSuccessful() {
+        this.inHandshake = false;
+    }
+
     public int getReceiveLimit() throws IOException {
-        // TODO Needs to be adjusted for possible block-alignment once cipher is in place
-        return transport.getReceiveLimit() - RECORD_HEADER_LENGTH;
+        return activeReadCipher.getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH);
     }
 
     public int getSendLimit() throws IOException {
-        // TODO Needs to be adjusted for possible block-alignment once cipher is in place
-        return transport.getSendLimit() - RECORD_HEADER_LENGTH;
+        return activeWriteCipher.getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH);
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
@@ -80,8 +82,19 @@ class DTLSRecordLayer implements DatagramTransport {
                 if (replayWindow.shouldDiscard(seq))
                     continue;
 
-                // TODO Validate contentType
                 short type = TlsUtils.readUint8(record, 0);
+
+                // TODO Support user-specified custom protocols?
+                switch (type) {
+                case ContentType.alert:
+                case ContentType.application_data:
+                case ContentType.change_cipher_spec:
+                case ContentType.handshake:
+                    break;
+                default:
+                    // TODO Exception?
+                    continue;
+                }
 
                 ProtocolVersion version = TlsUtils.readVersion(record, 1);
                 if (discoveredServerVersion != null && !discoveredServerVersion.equals(version)) {
@@ -89,8 +102,9 @@ class DTLSRecordLayer implements DatagramTransport {
                     // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
-                byte[] plaintext = activeReadCipher.decodeCiphertext(getMacSequenceNumber(epoch_read, seq), type,
-                    record, RECORD_HEADER_LENGTH, received - RECORD_HEADER_LENGTH);
+                byte[] plaintext = activeReadCipher.decodeCiphertext(
+                    getMacSequenceNumber(epoch_read, seq), type, record, RECORD_HEADER_LENGTH,
+                    received - RECORD_HEADER_LENGTH);
 
                 replayWindow.reportAuthenticated(seq);
 
@@ -98,11 +112,20 @@ class DTLSRecordLayer implements DatagramTransport {
                     discoveredServerVersion = version;
                 }
 
-                if (type == ContentType.alert) {
+                switch (type) {
+                case ContentType.alert: {
                     // TODO Figure out approach to sending/receiving alerts
+                    break;
                 }
-
-                if (type == ContentType.change_cipher_spec) {
+                case ContentType.application_data: {
+                    if (inHandshake) {
+                        // TODO Consider buffering application data for new epoch that arrives
+                        // out-of-order with the Finished message
+                        continue;
+                    }
+                    break;
+                }
+                case ContentType.change_cipher_spec: {
                     // Implicitly receive change_cipher_spec and change to pending cipher state
 
                     if (plaintext.length != 1 || plaintext[0] != 1) {
@@ -116,8 +139,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
                     /*
                      * TODO "In order to ensure that any given sequence/epoch pair is unique,
-                     * implementations MUST NOT allow the same epoch value to be reused within two times
-                     * the TCP maximum segment lifetime."
+                     * implementations MUST NOT allow the same epoch value to be reused within two
+                     * times the TCP maximum segment lifetime."
                      */
 
                     // TODO Check for overflow
@@ -129,6 +152,13 @@ class DTLSRecordLayer implements DatagramTransport {
                     pendingReadCipher = null;
 
                     continue;
+                }
+                case ContentType.handshake: {
+                    if (!inHandshake) {
+                        // TODO Consider support for HelloRequest
+                        continue;
+                    }
+                }
                 }
 
                 System.arraycopy(plaintext, 0, buf, off, plaintext.length);
@@ -142,7 +172,12 @@ class DTLSRecordLayer implements DatagramTransport {
 
     public void send(byte[] buf, int off, int len) throws IOException {
 
-        if (this.contentType == ContentType.handshake) {
+        short contentType = ContentType.application_data;
+
+        if (this.inHandshake) {
+
+            contentType = ContentType.handshake;
+
             short handshakeType = TlsUtils.readUint8(buf, off);
             if (handshakeType == HandshakeType.finished) {
                 if (pendingWriteCipher == null) {
@@ -171,7 +206,7 @@ class DTLSRecordLayer implements DatagramTransport {
             }
         }
 
-        sendRecord(this.contentType, buf, off, len);
+        sendRecord(contentType, buf, off, len);
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis) throws IOException {

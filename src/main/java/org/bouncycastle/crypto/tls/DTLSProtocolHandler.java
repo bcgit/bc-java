@@ -179,7 +179,8 @@ public class DTLSProtocolHandler {
 
         handshake.finish();
 
-        // TODO Needs to be attached to the record layer using ContentType.application_data
+        recordLayer.handshakeSuccessful();
+
         return new DTLSTransport(recordLayer);
     }
 
