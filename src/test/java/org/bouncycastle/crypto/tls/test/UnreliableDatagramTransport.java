@@ -11,7 +11,8 @@ public class UnreliableDatagramTransport implements DatagramTransport {
     private final Random random;
     private int percentPacketLoss;
 
-    public UnreliableDatagramTransport(DatagramTransport transport, Random random, int percentPacketLoss) {
+    public UnreliableDatagramTransport(DatagramTransport transport, Random random,
+        int percentPacketLoss) {
         if (percentPacketLoss < 0 || percentPacketLoss > 100)
             throw new IllegalArgumentException("'percentPacketLoss' out of range");
 
@@ -41,12 +42,11 @@ public class UnreliableDatagramTransport implements DatagramTransport {
 
     public void send(byte[] buf, int off, int len) throws IOException {
         if (!lostPacket()) {
-        transport.send(buf, off, len);
+            transport.send(buf, off, len);
         }
     }
 
-    private boolean lostPacket()
-    {
+    private boolean lostPacket() {
         return random.nextInt(100) < percentPacketLoss;
     }
 }
