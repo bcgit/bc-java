@@ -12,5 +12,5 @@ TLS:
 DTLS:
     openssl s_server -accept 5556 -mtu 1500 -debug -msg -state -dtls1 -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem
 
-NOTE: This is mainly of use to test the handshake. There doesn't appear to be an 'echo server' option,
-      but you could try the -www option with DTLS too, to get some application data from the server.
+NOTE: This is mainly of use to test the handshake. There doesn't appear to be an 'echo server' option with DTLS, but it will print
+      to stdout anything you send it, and lines you type into stdin (at the server) will be sent to the client.
