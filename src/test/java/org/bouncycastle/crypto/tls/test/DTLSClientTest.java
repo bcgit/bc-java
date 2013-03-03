@@ -27,15 +27,19 @@ public class DTLSClientTest {
 
     public static void main(String[] args) throws Exception {
 
+        SecureRandom secureRandom = new SecureRandom();
+
         DatagramSocket socket = new DatagramSocket();
         socket.connect(InetAddress.getLocalHost(), 5556);
 
         int mtu = 1500;
         DatagramTransport transport = new UDPTransport(socket, mtu);
 
+        int percentPacketLoss = 0;
+        transport = new UnreliableDatagramTransport(transport, secureRandom, percentPacketLoss);
+
         transport = new LoggingDatagramTransport(transport, System.out);
 
-        SecureRandom secureRandom = new SecureRandom();
         DTLSProtocolHandler protocol = new DTLSProtocolHandler(secureRandom);
 
         DTLSClient client = new DTLSClient();
