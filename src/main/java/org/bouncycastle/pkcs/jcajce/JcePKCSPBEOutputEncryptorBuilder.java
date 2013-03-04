@@ -3,7 +3,6 @@ package org.bouncycastle.pkcs.jcajce;
 import java.io.OutputStream;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
@@ -27,10 +26,11 @@ import org.bouncycastle.jcajce.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.JcaJceHelper;
 import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
-import org.bouncycastle.operator.DefaultSecretKeyTables;
+import org.bouncycastle.operator.DefaultSecretKeyProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 
 public class JcePKCSPBEOutputEncryptorBuilder
 {
@@ -38,7 +38,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private ASN1ObjectIdentifier algorithm;
     private ASN1ObjectIdentifier keyEncAlgorithm;
     private SecureRandom random;
-    private Map keySizeTable = DefaultSecretKeyTables.KEY_SIZES;
+    private SecretKeySizeProvider keySizeProvider = DefaultSecretKeyProvider.INSTANCE;
 
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier algorithm)
     {
@@ -64,6 +64,21 @@ public class JcePKCSPBEOutputEncryptorBuilder
     public JcePKCSPBEOutputEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new NamedJcaJceHelper(providerName);
+
+        return this;
+    }
+
+    /**
+     * Set the lookup provider of AlgorithmIdentifier returning key_size_in_bits used to
+     * handle PKCS5 decryption.
+     *
+     * @param keySizeProvider  a provider of integer secret key sizes.
+     *
+     * @return the current builder.
+     */
+    public JcePKCSPBEOutputEncryptorBuilder setKeySizeProvider(SecretKeySizeProvider keySizeProvider)
+    {
+        this.keySizeProvider = keySizeProvider;
 
         return this;
     }
@@ -107,7 +122,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
             {
                 SecretKeyFactory keyFact = helper.createSecretKeyFactory(PKCSObjectIdentifiers.id_PBKDF2.getId());
 
-                key = keyFact.generateSecret(new PBEKeySpec(password, salt, iterationCount, getKeySize(keyEncAlgorithm)));
+                key = keyFact.generateSecret(new PBEKeySpec(password, salt, iterationCount, keySizeProvider.getKeySize(new AlgorithmIdentifier(keyEncAlgorithm))));
 
                 cipher = helper.createCipher(keyEncAlgorithm.getId());
 
@@ -153,20 +168,6 @@ public class JcePKCSPBEOutputEncryptorBuilder
         {
             throw new OperatorCreationException("unable to create OutputEncryptor: " + e.getMessage(), e);
         }
-
-
-    }
-
-    private int getKeySize(ASN1ObjectIdentifier alg)
-    {
-        Integer size =((Integer)keySizeTable.get(alg));
-
-        if (size != null)
-        {
-            return size;
-        }
-
-        return -1;
     }
 
     private boolean isPKCS12(ASN1ObjectIdentifier algorithm)

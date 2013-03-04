@@ -24,18 +24,19 @@ import org.bouncycastle.jcajce.JcaJceHelper;
 import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
-import org.bouncycastle.operator.DefaultSecretKeyTables;
+import org.bouncycastle.operator.DefaultSecretKeyProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
 
 public class JcePKCSPBEInputDecryptorProviderBuilder
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
     private boolean      wrongPKCS12Zero = false;
-    private Map          keySizeTable = DefaultSecretKeyTables.KEY_SIZES;
+    private SecretKeySizeProvider keySizeProvider = DefaultSecretKeyProvider.INSTANCE;
 
     public JcePKCSPBEInputDecryptorProviderBuilder()
     {
@@ -63,16 +64,16 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
     }
 
     /**
-     * Set the lookup table of ASN1ObjectIdentifier_of_algorithm, key_size_in_bits used to
+     * Set the lookup provider of AlgorithmIdentifier returning key_size_in_bits used to
      * handle PKCS5 decryption.
      *
-     * @param keySizeTable  a Map of (ASN1ObjectIdentifier, Integer)
+     * @param keySizeProvider  a provider of integer secret key sizes.
      *
      * @return the current builder.
      */
-    public JcePKCSPBEInputDecryptorProviderBuilder setKeySizeTable(Map keySizeTable)
+    public JcePKCSPBEInputDecryptorProviderBuilder setKeySizeProvider(SecretKeySizeProvider keySizeProvider)
     {
-        this.keySizeTable = keySizeTable;
+        this.keySizeProvider = keySizeProvider;
 
         return this;
     }
@@ -121,10 +122,11 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                     {
                         PBES2Parameters alg = PBES2Parameters.getInstance(algorithmIdentifier.getParameters());
                         PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
+                        AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
                         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
 
-                        key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), getKeySize(alg)));
+                        key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
 
                         cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());
 
@@ -157,17 +159,5 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                 };
             }
         };
-    }
-
-    private int getKeySize(PBES2Parameters alg)
-    {
-        Integer size =((Integer)keySizeTable.get(alg.getEncryptionScheme().getAlgorithm()));
-
-        if (size != null)
-        {
-            return size;
-        }
-
-        return -1;
     }
 }

@@ -8,11 +8,15 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.Integers;
 
-public class DefaultSecretKeyTables
+public class DefaultSecretKeyProvider
+    implements SecretKeySizeProvider
 {
-    public static final Map KEY_SIZES;
+    public static final SecretKeySizeProvider INSTANCE = new DefaultSecretKeyProvider();
+
+    private static final Map KEY_SIZES;
 
     static
     {
@@ -32,4 +36,19 @@ public class DefaultSecretKeyTables
 
         KEY_SIZES = Collections.unmodifiableMap(keySizes);
     }
+
+    public int getKeySize(AlgorithmIdentifier algorithmIdentifier)
+    {
+        // TODO: not all ciphers/oid relationships are this simple.
+        Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
+
+        if (keySize != null)
+        {
+            return keySize.intValue();
+        }
+
+        return -1;
+    }
+
+
 }
