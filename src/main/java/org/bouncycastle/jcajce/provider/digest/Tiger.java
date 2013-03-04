@@ -11,6 +11,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class Tiger
 {
+    private Tiger()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

@@ -12,6 +12,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class RIPEMD160
 {
+    private RIPEMD160()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

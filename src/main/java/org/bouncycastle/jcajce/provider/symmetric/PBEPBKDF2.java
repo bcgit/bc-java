@@ -16,6 +16,11 @@ import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 public class PBEPBKDF2
 {
+    private PBEPBKDF2()
+    {
+
+    }
+
     public static class AlgParams
         extends BaseAlgorithmParameters
     {

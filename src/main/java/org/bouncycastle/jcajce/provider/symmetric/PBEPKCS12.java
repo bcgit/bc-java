@@ -15,6 +15,11 @@ import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 public class PBEPKCS12
 {
+    private PBEPKCS12()
+    {
+
+    }
+
     public static class AlgParams
         extends BaseAlgorithmParameters
     {

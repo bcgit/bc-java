@@ -10,6 +10,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class MD2
 {
+    private MD2()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

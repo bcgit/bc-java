@@ -22,6 +22,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA1
 {
+    private SHA1()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

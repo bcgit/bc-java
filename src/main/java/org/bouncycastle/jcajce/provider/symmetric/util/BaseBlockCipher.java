@@ -389,7 +389,6 @@ public class BaseBlockCipher
             if (k.getParam() != null)
             {
                 param = k.getParam();
-                pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
                 if (params instanceof IvParameterSpec)
                 {
                     IvParameterSpec iv = (IvParameterSpec)params;
