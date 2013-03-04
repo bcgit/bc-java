@@ -2,6 +2,8 @@ package org.bouncycastle.pkcs;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -119,5 +121,27 @@ public class PKCS12PfxPdu
     public Pfx toASN1Structure()
     {
         return pfx;
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return toASN1Structure().getEncoded();
+    }
+
+    /**
+     * Return a Pfx with the outer wrapper encoded as asked for. For example, Pfx is a usually
+     * a BER encoded object, to get one with DefiniteLength encoding use:
+     * <pre>
+     * getEncoded(ASN1Encoding.DL)
+     * </pre>
+     * @param encoding encoding style (ASN1Encoding.DER, ASN1Encoding.DL, ASN1Encoding.BER)
+     * @return a byte array containing the encoded object.
+     * @throws IOException
+     */
+    public byte[] getEncoded(String encoding)
+        throws IOException
+    {
+        return toASN1Structure().getEncoded(encoding);
     }
 }

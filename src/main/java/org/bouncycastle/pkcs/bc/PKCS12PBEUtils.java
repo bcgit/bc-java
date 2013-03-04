@@ -122,7 +122,7 @@ class PKCS12PBEUtils
 
             public GenericKey getKey()
             {
-                return new GenericKey(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
+                return new GenericKey(getAlgorithmIdentifier(), PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
             }
         };
     }

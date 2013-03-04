@@ -106,7 +106,10 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
 
                         key = keyFact.generateSecret(pbeSpec);
 
-                        ((BCPBEKey)key).setTryWrongPKCS12Zero(wrongPKCS12Zero);
+                        if (key instanceof BCPBEKey)
+                        {
+                            ((BCPBEKey)key).setTryWrongPKCS12Zero(wrongPKCS12Zero);
+                        }
 
                         cipher = helper.createCipher(algorithm.getId());
 
@@ -154,7 +157,6 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                 };
             }
         };
-
     }
 
     private int getKeySize(PBES2Parameters alg)
