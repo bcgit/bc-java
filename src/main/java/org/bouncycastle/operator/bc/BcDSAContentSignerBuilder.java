@@ -18,7 +18,7 @@ public class BcDSAContentSignerBuilder
     protected Signer createSigner(AlgorithmIdentifier sigAlgId, AlgorithmIdentifier digAlgId)
         throws OperatorCreationException
     {
-        Digest dig = BcUtil.createDigest(digAlgId);
+        Digest dig = digestProvider.get(digAlgId);
 
         return new DSADigestSigner(new DSASigner(), dig);
     }

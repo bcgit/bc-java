@@ -19,7 +19,6 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERBMPString;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
@@ -29,7 +28,6 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
@@ -41,13 +39,13 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC2Engine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS12PfxPdu;
 import org.bouncycastle.pkcs.PKCS12PfxPduBuilder;
@@ -58,16 +56,16 @@ import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilder;
-import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProviderBuilder;
+import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProvider;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEOutputEncryptorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilderProvider;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
 public class PfxPduTest
@@ -672,8 +670,8 @@ public class PfxPduTest
         PKCS12PfxPdu pfx = createPfx(privKey, pubKey, chain);
 
         assertTrue(pfx.hasMac());
-        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProviderBuilder(), passwd));
-        assertFalse(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProviderBuilder(), "not right".toCharArray()));
+        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE), passwd));
+        assertFalse(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE), "not right".toCharArray()));
     }
 
     public void testBcEncryptedPrivateKeyInfo()
@@ -738,7 +736,7 @@ public class PfxPduTest
 
         PKCS12PfxPdu pfx = builder.build(new BcPKCS12MacCalculatorBuilder(), passwd);
         assertTrue(pfx.hasMac());
-        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProviderBuilder(), passwd));
+        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE), passwd));
 
         ContentInfo[] infos = pfx.getContentInfos();
 
@@ -956,7 +954,7 @@ public class PfxPduTest
         PKCS12PfxPdu pfx = builder.build(new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256), passwd);
 
         assertTrue(pfx.hasMac());
-        assertTrue(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProviderBuilder(new SHA256Digest(), new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE)), passwd));
+        assertTrue(pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), passwd));
 
         InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
                                                               .setProvider("BC").build(passwd);
@@ -1002,8 +1000,6 @@ public class PfxPduTest
         ks.load(new ByteArrayInputStream(pfx.getEncoded(ASN1Encoding.DL)), passwd);
 
         assertTrue(ks.containsAlias("Eric's Key"));
-
-        char[] asciiPass = Strings.asCharArray(Base64.encode(Strings.toUTF8ByteArray(passwd)));
     }
 
     public void testPKCS5()

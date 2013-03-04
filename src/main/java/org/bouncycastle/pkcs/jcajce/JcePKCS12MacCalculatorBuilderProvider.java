@@ -25,23 +25,23 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.PKCS12MacCalculatorBuilderProvider;
 
-public class JcePKCS12MacCalculatorBuilderProviderBuilder
+public class JcePKCS12MacCalculatorBuilderProvider
     implements PKCS12MacCalculatorBuilderProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
-    public JcePKCS12MacCalculatorBuilderProviderBuilder()
+    public JcePKCS12MacCalculatorBuilderProvider()
     {
     }
 
-    public JcePKCS12MacCalculatorBuilderProviderBuilder setProvider(Provider provider)
+    public JcePKCS12MacCalculatorBuilderProvider setProvider(Provider provider)
     {
         this.helper = new ProviderJcaJceHelper(provider);
 
         return this;
     }
 
-    public JcePKCS12MacCalculatorBuilderProviderBuilder setProvider(String providerName)
+    public JcePKCS12MacCalculatorBuilderProvider setProvider(String providerName)
     {
         this.helper = new NamedJcaJceHelper(providerName);
 

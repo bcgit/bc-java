@@ -26,7 +26,7 @@ public class BcRSAContentVerifierProviderBuilder
         throws OperatorCreationException
     {
         AlgorithmIdentifier digAlg = digestAlgorithmFinder.find(sigAlgId);
-        Digest dig = BcUtil.createDigest(digAlg);
+        Digest dig = digestProvider.get(digAlg);
 
         return new RSADigestSigner(dig);
     }

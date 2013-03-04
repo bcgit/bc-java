@@ -2,6 +2,7 @@ package org.bouncycastle.pkcs;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -74,6 +75,23 @@ public class PKCS12PfxPdu
     public boolean hasMac()
     {
         return pfx.getMacData() != null;
+    }
+
+    /**
+     * Return the algorithm identifier describing the MAC algorithm
+     *
+     * @return the AlgorithmIdentifier representing the MAC algorithm, null if none present.
+     */
+    public AlgorithmIdentifier getMacAlgorithmID()
+    {
+        MacData md = pfx.getMacData();
+
+        if (md != null)
+        {
+            return md.getMac().getAlgorithmId();
+        }
+
+        return null;
     }
 
     /**

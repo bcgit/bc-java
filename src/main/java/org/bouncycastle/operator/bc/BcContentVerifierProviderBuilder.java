@@ -14,8 +14,11 @@ import org.bouncycastle.operator.OperatorCreationException;
 
 public abstract class BcContentVerifierProviderBuilder
 {
+    protected BcDigestProvider digestProvider;
+
     public BcContentVerifierProviderBuilder()
     {
+        this.digestProvider = BcDefaultDigestProvider.INSTANCE;
     }
 
     public ContentVerifierProvider build(final X509CertificateHolder certHolder)

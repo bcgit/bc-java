@@ -27,7 +27,7 @@ public class BcDSAContentVerifierProviderBuilder
         throws OperatorCreationException
     {
         AlgorithmIdentifier digAlg = digestAlgorithmFinder.find(sigAlgId);
-        Digest dig = BcUtil.createDigest(digAlg);
+        Digest dig = digestProvider.get(digAlg);
 
         return new DSADigestSigner(new DSASigner(), dig);
     }
