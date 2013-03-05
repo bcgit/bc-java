@@ -34,6 +34,7 @@ public class UnreliableDatagramTransport implements DatagramTransport {
         if (length >= 0) {
             if (lostPacket()) {
                 // TODO Better to keep waiting if time left
+                System.out.println("PACKET LOSS (" + length + " byte packet not received)");
                 return -1;
             }
         }
@@ -41,7 +42,9 @@ public class UnreliableDatagramTransport implements DatagramTransport {
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
-        if (!lostPacket()) {
+        if (lostPacket()) {
+            System.out.println("PACKET LOSS (" + len + " byte packet not sent)");
+        } else {
             transport.send(buf, off, len);
         }
     }
