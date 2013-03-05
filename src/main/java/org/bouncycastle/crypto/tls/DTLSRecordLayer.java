@@ -14,7 +14,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private volatile ProtocolVersion discoveredServerVersion = null;
     private volatile boolean inHandshake;
-    private DTLSEpoch readingEpoch, pendingEpoch, writingEpoch;
+    private DTLSEpoch currentEpoch, pendingEpoch;
+    private DTLSEpoch readEpoch, writeEpoch;
 
     DTLSRecordLayer(DatagramTransport transport, TlsClientContext clientContext, short contentType) {
         this.transport = transport;
@@ -22,47 +23,57 @@ class DTLSRecordLayer implements DatagramTransport {
 
         this.inHandshake = true;
 
-        this.readingEpoch = new DTLSEpoch(0, new TlsNullCipher());
+        this.currentEpoch = new DTLSEpoch(0, new TlsNullCipher());
         this.pendingEpoch = null;
-        this.writingEpoch = readingEpoch;
+        this.readEpoch = currentEpoch;
+        this.writeEpoch = currentEpoch;
     }
 
     ProtocolVersion getDiscoveredServerVersion() {
         return discoveredServerVersion;
     }
 
-    void setPendingCipher(TlsCipher pendingCipher) {
+    void initPendingEpoch(TlsCipher pendingCipher) {
         if (pendingEpoch != null) {
             // TODO
             throw new IllegalStateException();
         }
 
         /*
-         * TODO "In order to ensure that any given sequence/epoch pair is unique,
-         * implementations MUST NOT allow the same epoch value to be reused within two
-         * times the TCP maximum segment lifetime."
+         * TODO "In order to ensure that any given sequence/epoch pair is unique, implementations
+         * MUST NOT allow the same epoch value to be reused within two times the TCP maximum segment
+         * lifetime."
          */
 
         // TODO Check for overflow
-        this.pendingEpoch = new DTLSEpoch(writingEpoch.getEpoch() + 1, pendingCipher);
+        this.pendingEpoch = new DTLSEpoch(writeEpoch.getEpoch() + 1, pendingCipher);
     }
 
     void handshakeSuccessful() {
+        if (readEpoch == currentEpoch || writeEpoch == currentEpoch) {
+            // TODO
+            throw new IllegalStateException();
+        }
         this.inHandshake = false;
+        this.currentEpoch = pendingEpoch;
         this.pendingEpoch = null;
+    }
+
+    void resetWriteEpoch() {
+        this.writeEpoch = currentEpoch;
     }
 
     public int getReceiveLimit() throws IOException {
         return Math.min(
             MAX_FRAGMENT_LENGTH,
-            readingEpoch.getCipher().getPlaintextLimit(
+            readEpoch.getCipher().getPlaintextLimit(
                 transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int getSendLimit() throws IOException {
         return Math.min(
             MAX_FRAGMENT_LENGTH,
-            writingEpoch.getCipher().getPlaintextLimit(
+            writeEpoch.getCipher().getPlaintextLimit(
                 transport.getSendLimit() - RECORD_HEADER_LENGTH));
     }
 
@@ -89,13 +100,13 @@ class DTLSRecordLayer implements DatagramTransport {
                     continue;
                 }
                 int epoch = TlsUtils.readUint16(record, 3);
-                if (epoch != readingEpoch.getEpoch()) {
+                if (epoch != readEpoch.getEpoch()) {
                     // TODO What kind of exception?
                     continue;
                 }
 
                 long seq = TlsUtils.readUint48(record, 5);
-                if (readingEpoch.getReplayWindow().shouldDiscard(seq))
+                if (readEpoch.getReplayWindow().shouldDiscard(seq))
                     continue;
 
                 short type = TlsUtils.readUint8(record, 0);
@@ -118,11 +129,11 @@ class DTLSRecordLayer implements DatagramTransport {
                     // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
-                byte[] plaintext = readingEpoch.getCipher().decodeCiphertext(
-                    getMacSequenceNumber(readingEpoch.getEpoch(), seq), type, record,
+                byte[] plaintext = readEpoch.getCipher().decodeCiphertext(
+                    getMacSequenceNumber(readEpoch.getEpoch(), seq), type, record,
                     RECORD_HEADER_LENGTH, received - RECORD_HEADER_LENGTH);
 
-                readingEpoch.getReplayWindow().reportAuthenticated(seq);
+                readEpoch.getReplayWindow().reportAuthenticated(seq);
 
                 if (discoveredServerVersion == null) {
                     discoveredServerVersion = version;
@@ -154,7 +165,7 @@ class DTLSRecordLayer implements DatagramTransport {
                         // TODO Exception?
                     }
 
-                    readingEpoch = pendingEpoch;
+                    readEpoch = pendingEpoch;
 
                     continue;
                 }
@@ -195,7 +206,7 @@ class DTLSRecordLayer implements DatagramTransport {
                 byte[] data = new byte[] { 1 };
                 sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
 
-                writingEpoch = pendingEpoch;
+                writeEpoch = pendingEpoch;
             }
         }
 
@@ -232,10 +243,10 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private void sendRecord(short contentType, byte[] buf, int off, int len) throws IOException {
 
-        int recordEpoch = writingEpoch.getEpoch();
-        long recordSequenceNumber = writingEpoch.allocateSequenceNumber();
+        int recordEpoch = writeEpoch.getEpoch();
+        long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
 
-        byte[] ciphertext = writingEpoch.getCipher().encodePlaintext(
+        byte[] ciphertext = writeEpoch.getCipher().encodePlaintext(
             getMacSequenceNumber(recordEpoch, recordSequenceNumber), contentType, buf, off, len);
 
         if (ciphertext.length > MAX_FRAGMENT_LENGTH) {

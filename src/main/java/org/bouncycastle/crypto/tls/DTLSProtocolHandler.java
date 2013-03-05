@@ -160,7 +160,7 @@ public class DTLSProtocolHandler {
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
-        recordLayer.setPendingCipher(state.client.getCipher());
+        recordLayer.initPendingEpoch(state.client.getCipher());
 
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
             "client finished", handshake.getCurrentHash());

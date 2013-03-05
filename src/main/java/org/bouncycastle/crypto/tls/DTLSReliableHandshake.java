@@ -13,7 +13,7 @@ class DTLSReliableHandshake {
 
     private final static int MAX_RECEIVE_AHEAD = 10;
 
-    private final DatagramTransport transport;
+    private final DTLSRecordLayer recordLayer;
 
     private CombinedHash hash = new CombinedHash();
     private DigestOutputStream hashStream = new DigestOutputStream(hash);
@@ -25,8 +25,8 @@ class DTLSReliableHandshake {
 
     private int message_seq = 0, next_receive_seq = 0;
 
-    DTLSReliableHandshake(DatagramTransport transport) {
-        this.transport = transport;
+    DTLSReliableHandshake(DTLSRecordLayer transport) {
+        this.recordLayer = transport;
     }
 
     byte[] getCurrentHash() {
@@ -74,7 +74,7 @@ class DTLSReliableHandshake {
 
         for (;;) {
 
-            int receiveLimit = transport.getReceiveLimit();
+            int receiveLimit = recordLayer.getReceiveLimit();
             if (buf == null || buf.length < receiveLimit) {
                 buf = new byte[receiveLimit];
             }
@@ -83,7 +83,7 @@ class DTLSReliableHandshake {
 
             try {
                 for (;;) {
-                    int received = transport.receive(buf, 0, receiveLimit, readTimeoutMillis);
+                    int received = recordLayer.receive(buf, 0, receiveLimit, readTimeoutMillis);
                     if (received < 12) {
                         // TODO What kind of exception?
                     }
@@ -160,6 +160,7 @@ class DTLSReliableHandshake {
     }
 
     private void resendFlight() throws IOException {
+        recordLayer.resetWriteEpoch();
         for (int i = 0; i < flight.size(); ++i) {
             writeMessage((Message) flight.elementAt(i));
         }
@@ -181,7 +182,7 @@ class DTLSReliableHandshake {
 
     private void writeMessage(Message message) throws IOException {
 
-        int sendLimit = transport.getSendLimit();
+        int sendLimit = recordLayer.getSendLimit();
         int fragmentLimit = sendLimit - 12;
 
         // TODO Support a higher minimum fragment size?
@@ -213,7 +214,7 @@ class DTLSReliableHandshake {
 
         byte[] fragment = buf.toByteArray();
 
-        transport.send(fragment, 0, fragment.length);
+        recordLayer.send(fragment, 0, fragment.length);
     }
 
     static class Message {
