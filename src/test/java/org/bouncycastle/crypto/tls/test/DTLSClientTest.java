@@ -48,7 +48,7 @@ public class DTLSClientTest {
         System.out.println("Receive limit: " + dtls.getReceiveLimit());
         System.out.println("Send limit: " + dtls.getSendLimit());
 
-        // Send and hopefully receive a packet backet
+        // Send and hopefully receive a packet back
 
         byte[] request = "Hello World!\n".getBytes("UTF-8");
         dtls.send(request, 0, request.length);
