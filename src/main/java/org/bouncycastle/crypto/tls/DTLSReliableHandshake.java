@@ -39,13 +39,9 @@ class DTLSReliableHandshake {
     void sendMessage(short msg_type, byte[] body) throws IOException {
 
         if (!sending) {
+            checkInboundFlight();
             sending = true;
             outboundFlight.clear();
-
-            // TODO Not quite right; should only move old sequence numbers
-            resetAll(currentInboundFlight);
-            previousInboundFlight = currentInboundFlight;
-            currentInboundFlight = new Hashtable();
         }
 
         Message message = new Message(message_seq++, msg_type, body);
@@ -58,7 +54,10 @@ class DTLSReliableHandshake {
 
     Message receiveMessage() throws IOException {
 
-        sending = false;
+        if (sending) {
+            sending = false;
+            prepareInboundFlight();
+        }
 
         // Check if we already have the next message waiting
         {
@@ -168,7 +167,6 @@ class DTLSReliableHandshake {
                 // NOTE: Assume this is a timeout for the moment
             }
 
-            System.err.println("Resending due to timeout");
             resendOutboundFlight();
 
             /*
@@ -180,16 +178,35 @@ class DTLSReliableHandshake {
     }
 
     void finish() {
-        if (!currentInboundFlight.isEmpty()) {
-            // TODO Throw exception - unexpected message!
+        if (sending) {
+            // TODO Support case when this side sends the final handshake message
         }
-
-        sending = true;
-        outboundFlight.clear();
+        else {
+            checkInboundFlight();
+        }
     }
 
     void resetHandshakeMessagesDigest() {
         hash.reset();
+    }
+
+    /**
+     * Check that there are no "extra" messages left in the current inbound flight
+     */
+    private void checkInboundFlight() {
+        Enumeration e = currentInboundFlight.keys();
+        while (e.hasMoreElements()) {
+            Integer key = (Integer) e.nextElement();
+            if (key.intValue() >= next_receive_seq) {
+                // TODO Exception
+            }
+        }
+    }
+
+    private void prepareInboundFlight() {
+        resetAll(currentInboundFlight);
+        previousInboundFlight = currentInboundFlight;
+        currentInboundFlight = new Hashtable();
     }
 
     private void resendOutboundFlight() throws IOException {
