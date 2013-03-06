@@ -19,8 +19,7 @@ class DTLSReliableHandshake {
     private DigestOutputStream hashStream = new DigestOutputStream(hash);
 
     private Hashtable incomingQueue = new Hashtable();
-    // TODO The ChangeCipherSpec message has to be included in the flight (with Finished message)
-    private Vector flight = new Vector();
+    private Vector outboundFlight = new Vector();
     private boolean sending = true;
 
     private int message_seq = 0, next_receive_seq = 0;
@@ -40,12 +39,12 @@ class DTLSReliableHandshake {
 
         if (!sending) {
             sending = true;
-            flight.clear();
+            outboundFlight.clear();
         }
 
         Message message = new Message(message_seq++, msg_type, body);
 
-        flight.addElement(message);
+        outboundFlight.addElement(message);
 
         writeMessage(message);
         updateHandshakeMessagesDigest(message);
@@ -148,7 +147,7 @@ class DTLSReliableHandshake {
 
     void finish() {
         sending = true;
-        flight.clear();
+        outboundFlight.clear();
 
         if (!incomingQueue.isEmpty()) {
             // TODO Throw exception - unexpected message!
@@ -161,14 +160,13 @@ class DTLSReliableHandshake {
 
     private void resendFlight() throws IOException {
         recordLayer.resetWriteEpoch();
-        for (int i = 0; i < flight.size(); ++i) {
-            writeMessage((Message) flight.elementAt(i));
+        for (int i = 0; i < outboundFlight.size(); ++i) {
+            writeMessage((Message) outboundFlight.elementAt(i));
         }
     }
 
     private Message updateHandshakeMessagesDigest(Message message) throws IOException {
         if (message.getType() != HandshakeType.hello_request) {
-            // TODO Ensure this doesn't include the ChangeCipherSpec message when it's in place
             int length = message.getBody().length;
             TlsUtils.writeUint8(message.getType(), hashStream);
             TlsUtils.writeUint24(length, hashStream);
