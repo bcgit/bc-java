@@ -12,10 +12,7 @@ class DTLSReassembler {
     DTLSReassembler(short msg_type, int length) {
         this.msg_type = msg_type;
         this.body = new byte[length];
-
-        if (length > 0) {
-            this.missing.addElement(new Range(0, length));
-        }
+        this.missing.addElement(new Range(0, length));
     }
 
     short getType()
@@ -35,10 +32,19 @@ class DTLSReassembler {
 
         if (this.msg_type != msg_type || this.body.length != length || fragment_end > length) {
             // TODO Throw exception?
+            return;
         }
 
-        if (fragment_length == 0)
+        if (fragment_length == 0) {
+            // NOTE: Empty messages still require an empty fragment to complete it
+            if (fragment_offset == 0 && !missing.isEmpty()) {
+                Range firstRange = (Range)missing.firstElement();
+                if (firstRange.getEnd() == 0) {
+                    missing.removeElementAt(0);
+                }
+            }
             return;
+        }
 
         for (int i = 0; i < missing.size(); ++i) {
             Range range = (Range) missing.get(i);
@@ -72,6 +78,12 @@ class DTLSReassembler {
                 }
             }
         }
+    }
+
+    void reset()
+    {
+        this.missing.clear();
+        this.missing.addElement(new Range(0, body.length));
     }
 
     private static class Range {
