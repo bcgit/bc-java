@@ -16,7 +16,8 @@ public class BC
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("KeyStore.BKS", PREFIX + "BcKeyStoreSpi");
+            provider.addAlgorithm("KeyStore.BKS", PREFIX + "BcKeyStoreSpi$Std");
+            provider.addAlgorithm("KeyStore.BKS-V1", PREFIX + "BcKeyStoreSpi$Version1");
             provider.addAlgorithm("KeyStore.BouncyCastle", PREFIX + "BcKeyStoreSpi$BouncyCastleStore");
             provider.addAlgorithm("Alg.Alias.KeyStore.UBER", "BouncyCastle");
             provider.addAlgorithm("Alg.Alias.KeyStore.BOUNCYCASTLE", "BouncyCastle");

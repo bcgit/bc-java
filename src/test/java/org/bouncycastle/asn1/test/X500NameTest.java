@@ -107,6 +107,19 @@ public class X500NameTest
         }
     }
 
+    private void testEncodingUTF8String(ASN1ObjectIdentifier oid, String value)
+        throws IOException
+    {
+        ASN1Encodable converted = createEntryValue(oid, value);
+        if (!(converted instanceof DERUTF8String))
+        {
+            fail("encoding for " + oid + " not IA5String");
+        }
+        if (!value.equals((DERUTF8String.getInstance(converted.toASN1Primitive().getEncoded()).getString())))
+        {
+            fail("decoding not correct");
+        }
+    }
 
     private void testEncodingGeneralizedTime(ASN1ObjectIdentifier oid, String value)
     {
@@ -132,8 +145,9 @@ public class X500NameTest
         testEncodingIA5String(BCStyle.DC, "test");
         // correct encoding
         testEncodingGeneralizedTime(BCStyle.DATE_OF_BIRTH, "#180F32303032303132323132323232305A");
-        // compatability encoding
+        // compatibility encoding
         testEncodingGeneralizedTime(BCStyle.DATE_OF_BIRTH, "20020122122220Z");
+        testEncodingUTF8String(BCStyle.CN, "Mörsky");
 
         //
         // composite
