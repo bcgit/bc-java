@@ -9,7 +9,7 @@ public class AllTests
 {
     public static void main (String[] args)
     {
-        junit.textui.TestRunner.run(suite());
+        junit.textui.TestRunner.run(new BCTestSetup(suite()));
     }
     
     public static Test suite()
@@ -17,6 +17,7 @@ public class AllTests
         TestSuite suite = new TestSuite("PKCS Tests");
         
         suite.addTestSuite(PfxPduTest.class);
+        suite.addTestSuite(PKCS10Test.class);
 
         return suite;
     }

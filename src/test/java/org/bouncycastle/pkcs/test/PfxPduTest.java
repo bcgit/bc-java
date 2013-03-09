@@ -8,7 +8,6 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -609,11 +608,6 @@ public class PfxPduTest
         X509CertificateHolder cert = v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(caPrivKey));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
-    }
-
-    public void setUp()
-    {
-        Security.addProvider(new BouncyCastleProvider());
     }
 
     public void testPfxPdu()
