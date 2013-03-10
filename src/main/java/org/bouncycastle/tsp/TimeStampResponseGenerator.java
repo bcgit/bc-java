@@ -26,6 +26,26 @@ import org.bouncycastle.asn1.tsp.TimeStampResp;
 
 /**
  * Generator for RFC 3161 Time Stamp Responses.
+ * <p>
+ * New generate methods have been introduced to give people more control over what ends up in the message.
+ * Unfortunately it turns out that in some cases fields like statusString must be left out otherwise a an
+ * otherwise valid timestamp will be rejected.
+ * </p>
+ * The cleanest way of generating a response now is to use:
+ * <pre>
+ *    TimeStampResponse tsResp;
+ *
+ *    try
+ *    {
+ *       tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
+ *    }
+ *    catch (TSPException e)
+ *    {
+ *        tsResp = tsRespGen.generateRejectedResponse(e);
+ *    }
+ * </pre>
+ * It should be pointed out that generateRejectedResponse() may also, on very rare occasions throw a TSPException.
+ * In the event that happens, there's a serious internal problem with your responder.
  */
 public class TimeStampResponseGenerator
 {
@@ -201,8 +221,8 @@ public class TimeStampResponseGenerator
      * @param serialNumber serial number for the response token.
      * @param genTime generation time for the response token.
      * @return
-     * @throws NoSuchAlgorithmException
      * @throws TSPException
+     * @deprecated use generateGranted/generateFailed
      */
     public TimeStampResponse generate(
         TimeStampRequest    request,
@@ -264,16 +284,131 @@ public class TimeStampResponseGenerator
         }
     }
 
-    class FailInfo extends DERBitString
+    /**
+     * Return a granted response, if the passed in request passes validation.
+     * <p>
+     * If genTime is null a timeNotAvailable or a validation exception occurs a TSPValidationException will
+     * be thrown. The parent TSPException will only occur on some sort of system failure.
+     * </p>
+     * @param request the request this response is for.
+     * @param serialNumber serial number for the response token.
+     * @param genTime generation time for the response token.
+     * @return  the TimeStampResponse with a status of  PKIStatus.GRANTED
+     * @throws TSPException on validation exception or internal error.
+     */
+    public TimeStampResponse generateGrantedResponse(
+        TimeStampRequest    request,
+        BigInteger          serialNumber,
+        Date                genTime)
+        throws TSPException
     {
-        FailInfo(int failInfoValue)
+        return generateGrantedResponse(request, serialNumber, genTime, null);
+    }
+
+    /**
+     * Return a granted response, if the passed in request passes validation with the passed in status string.
+     * <p>
+     * If genTime is null a timeNotAvailable or a validation exception occurs a TSPValidationException will
+     * be thrown. The parent TSPException will only occur on some sort of system failure.
+     * </p>
+     * @param request the request this response is for.
+     * @param serialNumber serial number for the response token.
+     * @param genTime generation time for the response token.
+     * @return  the TimeStampResponse with a status of  PKIStatus.GRANTED
+     * @throws TSPException on validation exception or internal error.
+     */
+    public TimeStampResponse generateGrantedResponse(
+        TimeStampRequest    request,
+        BigInteger          serialNumber,
+        Date                genTime,
+        String              statusString)
+        throws TSPException
+    {
+        if (genTime == null)
         {
-            super(getBytes(failInfoValue), getPadBits(failInfoValue));
+            throw new TSPValidationException("The time source is not available.", PKIFailureInfo.timeNotAvailable);
+        }
+
+        request.validate(acceptedAlgorithms, acceptedPolicies, acceptedExtensions);
+
+        status = PKIStatus.GRANTED;
+
+        statusStrings = new ASN1EncodableVector();
+
+        if (statusString != null)
+        {
+            this.addStatusString(statusString);
+        }
+
+        PKIStatusInfo pkiStatusInfo = getPKIStatusInfo();
+
+        ContentInfo tstTokenContentInfo;
+        try
+        {
+            tstTokenContentInfo = tokenGenerator.generate(request, serialNumber, genTime).toCMSSignedData().toASN1Structure();
+        }
+        catch (TSPException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new TSPException(
+                    "Timestamp token received cannot be converted to ContentInfo", e);
+        }
+
+        TimeStampResp resp = new TimeStampResp(pkiStatusInfo, tstTokenContentInfo);
+
+        try
+        {
+            return new TimeStampResponse(resp);
+        }
+        catch (IOException e)
+        {
+            throw new TSPException("created badly formatted response!");
         }
     }
 
     /**
-     * Generate a TimeStampResponse with chosen status and FailInfoField.
+     * Generate a generic rejection response based on a TSPValidationException
+     *
+     * @param exception the exception thrown on validating the request.
+     * @return a TimeStampResponse.
+     * @throws TSPException
+     */
+    public TimeStampResponse generateRejectedResponse(TSPException exception)
+        throws TSPException
+    {
+        status = PKIStatus.REJECTION;
+        statusStrings = new ASN1EncodableVector();
+
+        if (exception instanceof TSPValidationException)
+        {
+            this.setFailInfoField(((TSPValidationException)exception).getFailureCode());
+        }
+        else
+        {
+            this.setFailInfoField(PKIFailureInfo.systemFailure);
+        }
+
+        this.addStatusString(exception.getMessage());
+
+        PKIStatusInfo pkiStatusInfo = getPKIStatusInfo();
+
+        TimeStampResp resp = new TimeStampResp(pkiStatusInfo, null);
+
+        try
+        {
+            return new TimeStampResponse(resp);
+        }
+        catch (IOException e)
+        {
+            throw new TSPException("created badly formatted response!");
+        }
+    }
+
+    /**
+     * Generate a rejection TimeStampResponse with chosen status and FailInfoField.
      * 
      * @param status the PKIStatus to set.
      * @param failInfoField the FailInfoField to set.
@@ -285,6 +420,7 @@ public class TimeStampResponseGenerator
         throws TSPException
     {
         this.status = status;
+        this.statusStrings = new ASN1EncodableVector();
 
         this.setFailInfoField(failInfoField);
 
@@ -331,5 +467,13 @@ public class TimeStampResponseGenerator
         }
 
         return con;
+    }
+
+    class FailInfo extends DERBitString
+    {
+        FailInfo(int failInfoValue)
+        {
+            super(getBytes(failInfoValue), getPadBits(failInfoValue));
+        }
     }
 }

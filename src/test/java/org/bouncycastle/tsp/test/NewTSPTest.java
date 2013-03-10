@@ -26,6 +26,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.tsp.GenTimeAccuracy;
 import org.bouncycastle.tsp.TSPAlgorithms;
+import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TSPValidationException;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
@@ -305,7 +306,16 @@ public class NewTSPTest
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
-        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), null);
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), null);
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
 
         tsResp = new TimeStampResponse(tsResp.getEncoded());
 
@@ -349,7 +359,16 @@ public class NewTSPTest
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED, new HashSet());
 
-        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
 
         tsResp = new TimeStampResponse(tsResp.getEncoded());
 
@@ -396,7 +415,7 @@ public class NewTSPTest
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
-        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+        TimeStampResponse tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
         
         tsResp = new TimeStampResponse(tsResp.getEncoded());
 
@@ -545,7 +564,16 @@ public class NewTSPTest
         
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
-        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
 
         tsResp = new TimeStampResponse(tsResp.getEncoded());
 
