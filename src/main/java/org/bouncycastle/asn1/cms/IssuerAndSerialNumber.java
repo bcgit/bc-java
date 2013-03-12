@@ -34,6 +34,10 @@ public class IssuerAndSerialNumber
         return null;
     }
 
+    /**
+     * @deprecated  use getInstance() method.
+     * @param seq
+     */
     public IssuerAndSerialNumber(
         ASN1Sequence    seq)
     {

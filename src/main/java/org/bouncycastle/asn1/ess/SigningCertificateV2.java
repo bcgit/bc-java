@@ -45,6 +45,12 @@ public class SigningCertificateV2
     }
 
     public SigningCertificateV2(
+        ESSCertIDv2 cert)
+    {
+        this.certs = new DERSequence(cert);
+    }
+
+    public SigningCertificateV2(
         ESSCertIDv2[] certs)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
