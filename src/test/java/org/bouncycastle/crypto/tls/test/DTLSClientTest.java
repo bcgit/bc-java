@@ -35,8 +35,7 @@ public class DTLSClientTest {
         int mtu = 1500;
         DatagramTransport transport = new UDPTransport(socket, mtu);
 
-        int percentPacketLoss = 0;
-        transport = new UnreliableDatagramTransport(transport, secureRandom, percentPacketLoss);
+        transport = new UnreliableDatagramTransport(transport, secureRandom, 0, 0);
 
         transport = new LoggingDatagramTransport(transport, System.out);
 
