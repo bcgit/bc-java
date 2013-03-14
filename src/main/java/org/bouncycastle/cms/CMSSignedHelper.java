@@ -1,15 +1,9 @@
 package org.bouncycastle.cms;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CRLException;
-import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
