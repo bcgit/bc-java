@@ -29,8 +29,9 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
@@ -40,9 +41,9 @@ import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509AttributeCertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
-import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
@@ -471,11 +472,40 @@ public class NewSignedDataTest
      + "V1i+MzzS4zz4DxT4lwUYkWfHaDtZADUyTD5lnP3Pf+t/ScpBEGkEtI7hDqOO"
      + "zE0WfkBshTx5B/uxDibc/jqjQpSYSz5cvBTgpocIalbqsErOkDYF1QP6UgaV"
      + "ZoVGwvGYIuIrFgWqgk08NsPHVVjYseTEhUDwkI1KSxU=");
-    /*
-     *
-     *  INFRASTRUCTURE
-     *
-     */
+
+    byte[] successResp = Base64.decode(
+          "MIIFnAoBAKCCBZUwggWRBgkrBgEFBQcwAQEEggWCMIIFfjCCARehgZ8wgZwx"
+        + "CzAJBgNVBAYTAklOMRcwFQYDVQQIEw5BbmRocmEgcHJhZGVzaDESMBAGA1UE"
+        + "BxMJSHlkZXJhYmFkMQwwCgYDVQQKEwNUQ1MxDDAKBgNVBAsTA0FUQzEeMBwG"
+        + "A1UEAxMVVENTLUNBIE9DU1AgUmVzcG9uZGVyMSQwIgYJKoZIhvcNAQkBFhVv"
+        + "Y3NwQHRjcy1jYS50Y3MuY28uaW4YDzIwMDMwNDAyMTIzNDU4WjBiMGAwOjAJ"
+        + "BgUrDgMCGgUABBRs07IuoCWNmcEl1oHwIak1BPnX8QQUtGyl/iL9WJ1VxjxF"
+        + "j0hAwJ/s1AcCAQKhERgPMjAwMjA4MjkwNzA5MjZaGA8yMDAzMDQwMjEyMzQ1"
+        + "OFowDQYJKoZIhvcNAQEFBQADgYEAfbN0TCRFKdhsmvOdUoiJ+qvygGBzDxD/"
+        + "VWhXYA+16AphHLIWNABR3CgHB3zWtdy2j7DJmQ/R7qKj7dUhWLSqclAiPgFt"
+        + "QQ1YvSJAYfEIdyHkxv4NP0LSogxrumANcDyC9yt/W9yHjD2ICPBIqCsZLuLk"
+        + "OHYi5DlwWe9Zm9VFwCGgggPMMIIDyDCCA8QwggKsoAMCAQICAQYwDQYJKoZI"
+        + "hvcNAQEFBQAwgZQxFDASBgNVBAMTC1RDUy1DQSBPQ1NQMSYwJAYJKoZIhvcN"
+        + "AQkBFhd0Y3MtY2FAdGNzLWNhLnRjcy5jby5pbjEMMAoGA1UEChMDVENTMQww"
+        + "CgYDVQQLEwNBVEMxEjAQBgNVBAcTCUh5ZGVyYWJhZDEXMBUGA1UECBMOQW5k"
+        + "aHJhIHByYWRlc2gxCzAJBgNVBAYTAklOMB4XDTAyMDgyOTA3MTE0M1oXDTAz"
+        + "MDgyOTA3MTE0M1owgZwxCzAJBgNVBAYTAklOMRcwFQYDVQQIEw5BbmRocmEg"
+        + "cHJhZGVzaDESMBAGA1UEBxMJSHlkZXJhYmFkMQwwCgYDVQQKEwNUQ1MxDDAK"
+        + "BgNVBAsTA0FUQzEeMBwGA1UEAxMVVENTLUNBIE9DU1AgUmVzcG9uZGVyMSQw"
+        + "IgYJKoZIhvcNAQkBFhVvY3NwQHRjcy1jYS50Y3MuY28uaW4wgZ8wDQYJKoZI"
+        + "hvcNAQEBBQADgY0AMIGJAoGBAM+XWW4caMRv46D7L6Bv8iwtKgmQu0SAybmF"
+        + "RJiz12qXzdvTLt8C75OdgmUomxp0+gW/4XlTPUqOMQWv463aZRv9Ust4f8MH"
+        + "EJh4ekP/NS9+d8vEO3P40ntQkmSMcFmtA9E1koUtQ3MSJlcs441JjbgUaVnm"
+        + "jDmmniQnZY4bU3tVAgMBAAGjgZowgZcwDAYDVR0TAQH/BAIwADALBgNVHQ8E"
+        + "BAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwkwNgYIKwYBBQUHAQEEKjAoMCYG"
+        + "CCsGAQUFBzABhhpodHRwOi8vMTcyLjE5LjQwLjExMDo3NzAwLzAtBgNVHR8E"
+        + "JjAkMCKgIKAehhxodHRwOi8vMTcyLjE5LjQwLjExMC9jcmwuY3JsMA0GCSqG"
+        + "SIb3DQEBBQUAA4IBAQB6FovM3B4VDDZ15o12gnADZsIk9fTAczLlcrmXLNN4"
+        + "PgmqgnwF0Ymj3bD5SavDOXxbA65AZJ7rBNAguLUo+xVkgxmoBH7R2sBxjTCc"
+        + "r07NEadxM3HQkt0aX5XYEl8eRoifwqYAI9h0ziZfTNes8elNfb3DoPPjqq6V"
+        + "mMg0f0iMS4W8LjNPorjRB+kIosa1deAGPhq0eJ8yr0/s2QR2/WFD5P4aXc8I"
+        + "KWleklnIImS3zqiPrq6tl2Bm8DZj7vXlTOwmraSQxUwzCKwYob1yGvNOUQTq"
+        + "pG6jxn7jgDawHU1+WjWQe4Q34/pWeGLysxTraMa+Ug9kPe+jy/qRX2xwvKBZ");
 
     public NewSignedDataTest(String name)
     {
@@ -808,7 +838,7 @@ public class NewSignedDataTest
         verifySignatures(s, md.digest("Hello world!".getBytes()));
     }
 
-    public void testSHA1WithRSAViaConfig()
+    public void testSHA1WithRSAAndOtherRevocation()
         throws Exception
     {
         List              certList = new ArrayList();
@@ -819,12 +849,6 @@ public class NewSignedDataTest
 
         Store           certs = new JcaCertStore(certList);
 
-        // set some bogus mappings.
-        TestCMSSignatureAlgorithmNameGenerator sigAlgNameGen = new TestCMSSignatureAlgorithmNameGenerator();
-
-        sigAlgNameGen.setEncryptionAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "XXXX");
-        sigAlgNameGen.setDigestAlgorithmMapping(OIWObjectIdentifiers.idSHA1, "YYYY");
-
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
 
         ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
@@ -833,28 +857,21 @@ public class NewSignedDataTest
 
         gen.addCertificates(certs);
 
+        List otherInfo = new ArrayList();
+        OCSPResp response = new OCSPResp(successResp);
+
+        otherInfo.add(response.toASN1Structure());
+
+        gen.addOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response, otherInfo);
+
         CMSSignedData s;
 
-        try
-        {
-            // try the bogus mappings
-            s = gen.generate(msg, false);
-        }
-        catch (CMSException e)
-        {
-            if (!e.getMessage().startsWith("no such algorithm: YYYYwithXXXX"))
-            {
-                throw e;
-            }
-        }
-        finally
-        {
-            // reset to the real ones
-            sigAlgNameGen.setEncryptionAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA");
-            sigAlgNameGen.setDigestAlgorithmMapping(OIWObjectIdentifiers.idSHA1, "SHA1");
-        }
-
         s = gen.generate(msg, false);
+
+        //
+        // check version
+        //
+        assertEquals(5, s.getVersion());
 
         //
         // compute expected content digest
@@ -862,6 +879,14 @@ public class NewSignedDataTest
         MessageDigest md = MessageDigest.getInstance("SHA1", BC);
 
         verifySignatures(s, md.digest("Hello world!".getBytes()));
+
+        Store dataOtherInfo = s.getOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response);
+
+        assertEquals(1, dataOtherInfo.getMatches(null).size());
+
+        OCSPResp dataResponse = new OCSPResp(OCSPResponse.getInstance(dataOtherInfo.getMatches(null).iterator().next()));
+
+        assertEquals(response, dataResponse);
     }
 
     public void testSHA1WithRSAAndAttributeTableSimple()

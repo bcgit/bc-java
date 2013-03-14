@@ -210,6 +210,13 @@ public class CMSSignedGenerator
         certs.addAll(CMSUtils.getAttributeCertificatesFromStore(attrStore));
     }
 
+    public void addOtherRevocationInfo(
+        ASN1ObjectIdentifier   otherRevocationInfoFormat,
+        List                   otherRevocationInfos)
+    {
+        crls.addAll(CMSUtils.getOthersFromList(otherRevocationInfoFormat, otherRevocationInfos));
+    }
+
     /**
      * Add the attribute certificates contained in the passed in store to the
      * generator.

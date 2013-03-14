@@ -44,7 +44,6 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
 public class CMSTestUtil
 {
-    
     public static SecureRandom     rand;
     public static KeyPairGenerator kpg;
     public static KeyPairGenerator gostKpg;

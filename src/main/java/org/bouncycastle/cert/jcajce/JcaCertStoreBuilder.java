@@ -1,6 +1,9 @@
 package org.bouncycastle.cert.jcajce;
 
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.cert.CRLException;
 import java.security.cert.CertStore;
@@ -24,6 +27,7 @@ public class JcaCertStoreBuilder
     private Object provider;
     private JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
     private JcaX509CRLConverter crlConverter = new JcaX509CRLConverter();
+    private String type = "Collection";
 
     /**
      *  Add a store full of X509CertificateHolder objects.
@@ -73,7 +77,6 @@ public class JcaCertStoreBuilder
     }
 
     public JcaCertStoreBuilder setProvider(String providerName)
-        throws GeneralSecurityException
     {
         certificateConverter.setProvider(providerName);
         crlConverter.setProvider(providerName);
@@ -83,11 +86,23 @@ public class JcaCertStoreBuilder
     }
 
     public JcaCertStoreBuilder setProvider(Provider provider)
-        throws GeneralSecurityException
     {
         certificateConverter.setProvider(provider);
         crlConverter.setProvider(provider);
         this.provider = provider;
+
+        return this;
+    }
+
+    /**
+     * Set the type of the CertStore generated. By default it is "Collection".
+     *
+     * @param type type of CertStore passed to CertStore.getInstance().
+     * @return the current builder.
+     */
+    public JcaCertStoreBuilder setType(String type)
+    {
+        this.type = type;
 
         return this;
     }
@@ -105,15 +120,15 @@ public class JcaCertStoreBuilder
 
         if (provider instanceof String)
         {
-            return CertStore.getInstance("Collection", params, (String)provider);
+            return CertStore.getInstance(type, params, (String)provider);
         }
 
         if (provider instanceof Provider)
         {
-            return CertStore.getInstance("Collection", params, (Provider)provider);
+            return CertStore.getInstance(type, params, (Provider)provider);
         }
 
-        return CertStore.getInstance("Collection", params);
+        return CertStore.getInstance(type, params);
     }
 
     private CollectionCertStoreParameters convertHolders(JcaX509CertificateConverter certificateConverter, JcaX509CRLConverter crlConverter)

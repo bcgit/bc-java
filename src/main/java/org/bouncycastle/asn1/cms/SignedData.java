@@ -21,6 +21,11 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class SignedData
     extends ASN1Object
 {
+    private static final ASN1Integer VERSION_1 = new ASN1Integer(1);
+    private static final ASN1Integer VERSION_3 = new ASN1Integer(3);
+    private static final ASN1Integer VERSION_4 = new ASN1Integer(4);
+    private static final ASN1Integer VERSION_5 = new ASN1Integer(5);
+
     private ASN1Integer version;
     private ASN1Set     digestAlgorithms;
     private ContentInfo contentInfo;
@@ -136,30 +141,30 @@ public class SignedData
 
         if (otherCrl)
         {
-            return new ASN1Integer(5);
+            return VERSION_5;
         }
 
         if (attrCertV2Found)
         {
-            return new ASN1Integer(4);
+            return VERSION_4;
         }
 
         if (attrCertV1Found)
         {
-            return new ASN1Integer(3);
+            return VERSION_3;
         }
 
         if (checkForVersion3(signerInfs))
         {
-            return new ASN1Integer(3);
+            return VERSION_3;
         }
 
         if (!CMSObjectIdentifiers.data.equals(contentOid))
         {
-            return new ASN1Integer(3);
+            return VERSION_3;
         }
 
-        return new ASN1Integer(1);
+        return VERSION_1;
     }
 
     private boolean checkForVersion3(ASN1Set signerInfs)

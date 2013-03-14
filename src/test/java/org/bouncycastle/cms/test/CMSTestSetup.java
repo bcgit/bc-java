@@ -1,4 +1,3 @@
-// Copyright (c) 2005 The Legion Of The Bouncy Castle (http://www.bouncycastle.org)
 package org.bouncycastle.cms.test;
 
 import junit.extensions.TestSetup;
@@ -22,5 +21,4 @@ class CMSTestSetup extends TestSetup
     {
         Security.removeProvider("BC");
     }
-
 }

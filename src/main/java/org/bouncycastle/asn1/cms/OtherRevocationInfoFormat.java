@@ -9,33 +9,29 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
-public class OtherRecipientInfo
+public class OtherRevocationInfoFormat
     extends ASN1Object
 {
-    private ASN1ObjectIdentifier    oriType;
-    private ASN1Encodable           oriValue;
+    private ASN1ObjectIdentifier otherRevInfoFormat;
+    private ASN1Encodable otherRevInfo;
 
-    public OtherRecipientInfo(
-        ASN1ObjectIdentifier     oriType,
-        ASN1Encodable            oriValue)
+    public OtherRevocationInfoFormat(
+        ASN1ObjectIdentifier otherRevInfoFormat,
+        ASN1Encodable otherRevInfo)
     {
-        this.oriType = oriType;
-        this.oriValue = oriValue;
+        this.otherRevInfoFormat = otherRevInfoFormat;
+        this.otherRevInfo = otherRevInfo;
     }
 
-    /**
-     * @deprecated use getInstance().
-     * @param seq
-     */
-    public OtherRecipientInfo(
+    private OtherRevocationInfoFormat(
         ASN1Sequence seq)
     {
-        oriType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
-        oriValue = seq.getObjectAt(1);
+        otherRevInfoFormat = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        otherRevInfo = seq.getObjectAt(1);
     }
 
     /**
-     * return a OtherRecipientInfo object from a tagged object.
+     * return a OtherRevocationInfoFormat object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -43,7 +39,7 @@ public class OtherRecipientInfo
      * @exception IllegalArgumentException if the object held by the
      *          tagged object cannot be converted.
      */
-    public static OtherRecipientInfo getInstance(
+    public static OtherRevocationInfoFormat getInstance(
         ASN1TaggedObject    obj,
         boolean             explicit)
     {
@@ -51,51 +47,51 @@ public class OtherRecipientInfo
     }
     
     /**
-     * return a OtherRecipientInfo object from the given object.
+     * return a OtherRevocationInfoFormat object from the given object.
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static OtherRecipientInfo getInstance(
+    public static OtherRevocationInfoFormat getInstance(
         Object obj)
     {
-        if (obj instanceof OtherRecipientInfo)
+        if (obj instanceof OtherRevocationInfoFormat)
         {
-            return (OtherRecipientInfo)obj;
+            return (OtherRevocationInfoFormat)obj;
         }
         
         if (obj != null)
         {
-            return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
+            return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
         }
         
         return null;
     }
 
-    public ASN1ObjectIdentifier getType()
+    public ASN1ObjectIdentifier getInfoFormat()
     {
-        return oriType;
+        return otherRevInfoFormat;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getInfo()
     {
-        return oriValue;
+        return otherRevInfo;
     }
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
      * <pre>
-     * OtherRecipientInfo ::= SEQUENCE {
-     *    oriType OBJECT IDENTIFIER,
-     *    oriValue ANY DEFINED BY oriType }
+     * OtherRevocationInfoFormat ::= SEQUENCE {
+     *      otherRevInfoFormat OBJECT IDENTIFIER,
+     *      otherRevInfo ANY DEFINED BY otherRevInfoFormat }
      * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector  v = new ASN1EncodableVector();
 
-        v.add(oriType);
-        v.add(oriValue);
+        v.add(otherRevInfoFormat);
+        v.add(otherRevInfo);
 
         return new DERSequence(v);
     }

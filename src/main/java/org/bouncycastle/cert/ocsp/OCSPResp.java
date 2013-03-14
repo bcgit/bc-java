@@ -1,48 +1,49 @@
-package org.bouncycastle.cert.ocsp;
+package org.bouncycastle.ocsp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Exception;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.ResponseBytes;
-import org.bouncycastle.cert.CertIOException;
 
+/**
+ * @deprecated use classes in org.bouncycastle.cert.ocsp.
+ */
 public class OCSPResp
 {
-    public static final int SUCCESSFUL = 0;  // Response has valid confirmations
-    public static final int MALFORMED_REQUEST = 1;  // Illegal confirmation request
-    public static final int INTERNAL_ERROR = 2;  // Internal error in issuer
-    public static final int TRY_LATER = 3;  // Try again later
-    // (4) is not used
-    public static final int SIG_REQUIRED = 5;  // Must sign the request
-    public static final int UNAUTHORIZED = 6;  // Request unauthorized
-
     private OCSPResponse    resp;
 
+    /**
+     * @deprecated use classes in org.bouncycastle.cert.ocsp.
+     */
     public OCSPResp(
         OCSPResponse    resp)
     {
         this.resp = resp;
     }
 
+    /**
+     * @deprecated use classes in org.bouncycastle.cert.ocsp.
+     */
     public OCSPResp(
         byte[]          resp)
         throws IOException
     {
-        this(new ByteArrayInputStream(resp));
+        this(new ASN1InputStream(resp));
     }
 
+    /**
+     * @deprecated use classes in org.bouncycastle.cert.ocsp.
+     */
     public OCSPResp(
-        InputStream resp)
+        InputStream     in)
         throws IOException
     {
-        this(new ASN1InputStream(resp));
+        this(new ASN1InputStream(in));
     }
 
     private OCSPResp(
@@ -55,15 +56,11 @@ public class OCSPResp
         }
         catch (IllegalArgumentException e)
         {
-            throw new CertIOException("malformed response: " + e.getMessage(), e);
+            throw new IOException("malformed response: " + e.getMessage());
         }
         catch (ClassCastException e)
         {
-            throw new CertIOException("malformed response: " + e.getMessage(), e);
-        }
-        catch (ASN1Exception e)
-        {
-            throw new CertIOException("malformed response: " + e.getMessage(), e);
+            throw new IOException("malformed response: " + e.getMessage());
         }
     }
 

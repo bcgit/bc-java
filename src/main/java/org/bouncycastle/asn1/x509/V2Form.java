@@ -25,24 +25,51 @@ public class V2Form
     public static V2Form getInstance(
         Object  obj)
     {
-        if (obj == null || obj instanceof V2Form)
+        if (obj instanceof V2Form)
         {
             return (V2Form)obj;
         }
-        else if (obj instanceof ASN1Sequence)
+        else if (obj != null)
         {
-            return new V2Form((ASN1Sequence)obj);
+            return new V2Form(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
+        return null;
     }
     
     public V2Form(
         GeneralNames    issuerName)
     {
-        this.issuerName = issuerName;
+        this(issuerName, null, null);
     }
-    
+
+    public V2Form(
+        GeneralNames    issuerName,
+        IssuerSerial    baseCertificateID)
+    {
+        this(issuerName, baseCertificateID, null);
+    }
+
+    public V2Form(
+        GeneralNames    issuerName,
+        ObjectDigestInfo objectDigestInfo)
+    {
+        this(issuerName, null, objectDigestInfo);
+    }
+
+    public V2Form(
+        GeneralNames    issuerName,
+        IssuerSerial    baseCertificateID,
+        ObjectDigestInfo objectDigestInfo)
+    {
+        this.issuerName = issuerName;
+        this.baseCertificateID = baseCertificateID;
+        this.objectDigestInfo = objectDigestInfo;
+    }
+
+    /**
+     * @deprecated use getInstance().
+     */
     public V2Form(
         ASN1Sequence seq)
     {
