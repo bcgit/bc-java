@@ -1,10 +1,7 @@
 package org.bouncycastle.crypto.test;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.prng.BasicEntropySource;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.prng.DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.HashDerivationFunction;
@@ -40,26 +37,25 @@ public class DRBGTest extends SimpleTest
 
     public void performTest() throws Exception
     {
-        Digest digest = new SHA512Digest();
-        HashDerivationFunction hf = new HashDerivationFunction(digest, 888);
-        EntropySource entropySource = new BasicEntropySource(new SecureRandom(), false);
-        byte[] nonce = new byte[0];
+        Digest digest = new SHA1Digest();
+        HashDerivationFunction hf = new HashDerivationFunction(digest, 440);
+        EntropySource tes = new TestEntropySource(Hex.decode("a37a3e08d8393feb01c4d78cb6a4d1e210c288c89e9838176bc78946745f1c5bea44cf15e061601bfd45f7b3b95be924"), true);
+        byte[] nonce = Hex.decode("8243299805c0877e");
         byte[] personalisationString = new byte[0];
         int securityStrength = 128;
-        DRBG d = new SP800DRBG(hf, entropySource, nonce, personalisationString, securityStrength);
+        DRBG d = new SP800DRBG(hf, tes, nonce, personalisationString, securityStrength);
         
-        byte[] output = new byte[10];
+        byte[] output = new byte[20];
         
-        int rv = d.generate(output, null, 0, 0);
+        int rv = d.generate(output, null, true);
         String out = new String(Hex.encode(output));
+        
         System.out.println(out);
-        for (int i=out.length()-1;i>=0;i--) 
-        {
-            if (out.charAt(i) != '0') 
-            {
-                System.out.println(i);
-                return;
-            }
-        }
+
+        rv = d.generate(output, null, true);
+        out = new String(Hex.encode(output));
+        
+        System.out.println(out);
+
     }
 }

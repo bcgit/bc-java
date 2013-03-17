@@ -59,9 +59,6 @@ public class HashDerivationFunction implements DRBGDerivationFunction
 
         for (int i = 0; i <= len; i++)
         {
-            digest.update((byte)(counter >> 24));
-            digest.update((byte)(counter >> 16));
-            digest.update((byte)(counter >> 8));
             digest.update((byte)counter);
 
             digest.update((byte)(bitLength >> 24));

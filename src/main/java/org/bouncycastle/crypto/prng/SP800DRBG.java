@@ -1,11 +1,15 @@
 package org.bouncycastle.crypto.prng;
 
+import org.bouncycastle.util.encoders.Hex;
+
 public class SP800DRBG implements DRBG
 {
     private DRBGDerivationFunction _function;
     private byte[]                 _V;
     private byte[]                 _C;
     private int                    _reseedCounter;
+    private EntropySource          _entropySource;
+    private int                    _securityStrength;
 
     public SP800DRBG(DRBGDerivationFunction function, EntropySource entropySource, byte[] nonce,
             byte[] personalisationString, int securityStrength)
@@ -16,6 +20,8 @@ public class SP800DRBG implements DRBG
                     "Security strength is not supported by the derivation function");
         }
         _function = function;
+        _entropySource = entropySource;
+        _securityStrength = securityStrength;
         // 1. seed_material = entropy_input || nonce || personalization_string.
         // 2. seed = Hash_df (seed_material, seedlen).
         // 3. V = seed.
@@ -25,26 +31,35 @@ public class SP800DRBG implements DRBG
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
         int entropyLengthInBytes = securityStrength;
-        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes);
+        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes/8);
+        
+        System.out.println("Entropy: "+ new String(Hex.encode(entropy)));
+        
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
+        
         System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
         System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
         System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length,
                 personalisationString.length);
 
+        System.out.println("SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
+
         byte[] seed = function.getDFBytes(seedMaterial, function.getSeedlength());
+        
+        System.out.println("Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subV, 1, _V.length);
         _C = function.getDFBytes(subV, function.getSeedlength());
         _reseedCounter = 1;
+        
+        System.out.println("C: "+ new String(Hex.encode(_C)));
 
     }
 
     // 1. If reseed_counter > reseed_interval, then return an indication that a
-    // reseed is
-    // required.
+    // reseed is required.
     // 2. If (additional_input != Null), then do
     // 2.1 w = Hash (0x02 || V || additional_input).
     // 2.2 V = (V + w) mod 2^seedlen
@@ -56,13 +71,13 @@ public class SP800DRBG implements DRBG
     // 6. reseed_counter = reseed_counter + 1.
     // 7. Return SUCCESS, returned_bits, and the new values of V, C, and
     // reseed_counter for the new_working_state.
-    public int generate(byte[] output, byte[] additionalInput, int inOff, int inLen)
+    public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
         int numberOfBits = output.length*8;
         
-        if (_reseedCounter > 10) // so lame:: TODO
+        if (predictionResistant) 
         {
-            return 0;
+            reseed(additionalInput);
         }
 
         // 2.
@@ -101,6 +116,8 @@ public class SP800DRBG implements DRBG
         _reseedCounter++;
 
         System.arraycopy(rv, 0, output, 0, output.length);
+        System.out.println("V: "+ new String(Hex.encode(_V)));
+
         return numberOfBits;
     }
 
@@ -124,9 +141,52 @@ public class SP800DRBG implements DRBG
             longer[longer.length-i] = (byte)res;
         }
     }
-    
+
+    // 1. seed_material = 0x01 || V || entropy_input || additional_input.
+    //
+    // 2. seed = Hash_df (seed_material, seedlen).
+    //
+    // 3. V = seed.
+    //
+    // 4. C = Hash_df ((0x00 || V), seedlen).
+    //
+    // 5. reseed_counter = 1.
+    //
+    // 6. Return V, C, and reseed_counter for the new_working_state.
+    //
+    // Comment: Preceed with a byte of all
+    // zeros.
     public void reseed(byte[] additionalInput)
     {
-    }
+        if (additionalInput == null) 
+        {
+            additionalInput = new byte[0];
+        }
+        int entropyLengthInBytes = _securityStrength;
+        byte[] entropy = _entropySource.getEntropy(entropyLengthInBytes/8);
+        
+        System.out.println("Entropy: "+ new String(Hex.encode(entropy)));
+        
+        byte[] seedMaterial = new byte[1+ _V.length + entropy.length + additionalInput.length];
+        
+        seedMaterial[0] = 0x01;
+        System.arraycopy(_V, 0, seedMaterial, 1, _V.length);
+        System.arraycopy(entropy, 0, seedMaterial, 1+_V.length, entropy.length);
+        System.arraycopy(additionalInput, 0, seedMaterial, 1+_V.length+entropy.length,additionalInput.length);
 
+        System.out.println("SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
+
+        byte[] seed = _function.getDFBytes(seedMaterial, _function.getSeedlength());
+        
+        System.out.println("Seed: "+ new String(Hex.encode(seed)));
+
+        _V = seed;
+        byte[] subV = new byte[_V.length + 1];
+        subV[0] = 0x00;
+        System.arraycopy(_V, 0, subV, 1, _V.length);
+        _C = _function.getDFBytes(subV, _function.getSeedlength());
+        _reseedCounter = 1;
+        
+        System.out.println("C: "+ new String(Hex.encode(_C)));
+    }
 }
