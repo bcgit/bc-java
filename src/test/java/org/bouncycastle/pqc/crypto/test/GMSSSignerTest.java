@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.gmss.GMSSDigestProvider;
 import org.bouncycastle.pqc.crypto.gmss.GMSSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.gmss.GMSSKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.gmss.GMSSParameters;
+import org.bouncycastle.pqc.crypto.gmss.GMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.gmss.GMSSSigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -71,6 +72,11 @@ public class GMSSSignerTest
         if (!gmssSigner.verifySignature(sig))
         {
             fail("verification fails");
+        }
+
+        if (!((GMSSPrivateKeyParameters)pair.getPrivate()).isUsed())
+        {
+            fail("private key not marked as used");
         }
     }
 

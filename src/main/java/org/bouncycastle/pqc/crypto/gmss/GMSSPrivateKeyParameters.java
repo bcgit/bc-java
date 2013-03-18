@@ -5,6 +5,7 @@ import java.util.Vector;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.crypto.gmss.util.GMSSRandom;
 import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSignature;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -13,7 +14,6 @@ import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSignature;
 public class GMSSPrivateKeyParameters
     extends GMSSKeyParameters
 {
-
     private int[] index;
 
     private byte[][] currentSeeds;
@@ -49,6 +49,7 @@ public class GMSSPrivateKeyParameters
 
     private GMSSDigestProvider digestProvider;
 
+    private boolean used = false;
 
     /**
      * An array of the heights of the authentication trees of each layer
@@ -110,8 +111,6 @@ public class GMSSPrivateKeyParameters
      * @param nextRoot         the roots of the next subtree
      * @param currentRootSig   array of signatures of the roots of the current subtrees
      * @param gmssParameterset the GMSS Parameterset
-     * @param digest           An array of strings, containing the name of the used hash
-     *                         function and the name of the corresponding provider
      * @see org.bouncycastle.pqc.crypto.gmss.GMSSKeyPairGenerator
      */
 
@@ -133,12 +132,6 @@ public class GMSSPrivateKeyParameters
      * /**
      *
      * @param index             tree indices
-     * @param currentSeed       seed for the generation of private OTS keys for the
-     *                          current subtrees (TREE)
-     * @param nextNextSeed      seed for the generation of private OTS keys for the
-     *                          subtrees after next (TREE++)
-     * @param currentAuthPath   array of current authentication paths (AUTHPATH)
-     * @param nextAuthPath      array of next authentication paths (AUTHPATH+)
      * @param keep              keep array for the authPath algorithm
      * @param currentTreehash   treehash for authPath algorithm of current tree
      * @param nextTreehash      treehash for authPath algorithm of next tree (TREE+)
@@ -158,8 +151,6 @@ public class GMSSPrivateKeyParameters
      * @param nextRootSig       array of signatures of the roots of the next subtree
      *                          (SIG+)
      * @param gmssParameterset  the GMSS Parameterset
-     * @param digestClass       An array of strings, containing the name of the used hash
-     *                          function and the name of the corresponding provider
      */
     public GMSSPrivateKeyParameters(int[] index, byte[][] currentSeeds,
                                     byte[][] nextNextSeeds, byte[][][] currentAuthPaths,
@@ -295,8 +286,7 @@ public class GMSSPrivateKeyParameters
                 this.nextNextLeaf = new GMSSLeaf[numLayer - 2];
                 for (int i = 0; i < numLayer - 2; i++)
                 {
-                    this.nextNextLeaf[i] = new GMSSLeaf(digestProvider.get(), otsIndex[i + 1], numLeafs[i + 2]);
-                    this.nextNextLeaf[i].initLeafCalc(this.nextNextSeeds[i]);
+                    this.nextNextLeaf[i] = new GMSSLeaf(digestProvider.get(), otsIndex[i + 1], numLeafs[i + 2], this.nextNextSeeds[i]);
                 }
             }
             else
@@ -317,8 +307,7 @@ public class GMSSPrivateKeyParameters
             for (int i = 0; i < numLayer - 1; i++)
             {
                 this.upperLeaf[i] = new GMSSLeaf(digestProvider.get(), otsIndex[i],
-                    numLeafs[i + 1]);
-                this.upperLeaf[i].initLeafCalc(this.currentSeeds[i]);
+                    numLeafs[i + 1], this.currentSeeds[i]);
             }
         }
         else
@@ -333,8 +322,7 @@ public class GMSSPrivateKeyParameters
             this.upperTreehashLeaf = new GMSSLeaf[numLayer - 1];
             for (int i = 0; i < numLayer - 1; i++)
             {
-                this.upperTreehashLeaf[i] = new GMSSLeaf(digestProvider.get(), otsIndex[i],
-                    numLeafs[i + 1]);
+                this.upperTreehashLeaf[i] = new GMSSLeaf(digestProvider.get(), otsIndex[i], numLeafs[i + 1]);
             }
         }
         else
@@ -377,12 +365,68 @@ public class GMSSPrivateKeyParameters
         }
     }
 
+    // we assume this only gets called from nextKey so used is never copied.
+    private GMSSPrivateKeyParameters(GMSSPrivateKeyParameters original)
+    {
+        super(true, original.getParameters());
+
+        this.index = Arrays.clone(original.index);
+        this.currentSeeds = Arrays.clone(original.currentSeeds);
+        this.nextNextSeeds = Arrays.clone(original.nextNextSeeds);
+        this.currentAuthPaths = Arrays.clone(original.currentAuthPaths);
+        this.nextAuthPaths = Arrays.clone(original.nextAuthPaths);
+        this.currentTreehash = original.currentTreehash;
+        this.nextTreehash = original.nextTreehash;
+        this.currentStack = original.currentStack;
+        this.nextStack = original.nextStack;
+        this.currentRetain = original.currentRetain;
+        this.nextRetain = original.nextRetain;
+        this.keep = Arrays.clone(original.keep);
+        this.nextNextLeaf = original.nextNextLeaf;
+        this.upperLeaf = original.upperLeaf;
+        this.upperTreehashLeaf = original.upperTreehashLeaf;
+        this.minTreehash = original.minTreehash;
+        this.gmssPS = original.gmssPS;
+        this.nextRoot = Arrays.clone(original.nextRoot);
+        this.nextNextRoot = original.nextNextRoot;
+        this.currentRootSig = original.currentRootSig;
+        this.nextRootSig = original.nextRootSig;
+        this.digestProvider = original.digestProvider;
+        this.heightOfTrees = original.heightOfTrees;
+        this.otsIndex = original.otsIndex;
+        this.K = original.K;
+        this.numLayer = original.numLayer;
+        this.messDigestTrees = original.messDigestTrees;
+        this.mdLength = original.mdLength;
+        this.gmssRandom = original.gmssRandom;
+        this.numLeafs = original.numLeafs;
+    }
+
+    public boolean isUsed()
+    {
+        return this.used;
+    }
+
+    public void markUsed()
+    {
+        this.used = true;
+    }
+
+    public GMSSPrivateKeyParameters nextKey()
+    {
+        GMSSPrivateKeyParameters nKey = new GMSSPrivateKeyParameters(this);
+
+        nKey.nextKey(gmssPS.getNumOfLayers() - 1);
+
+        return nKey;
+    }
+
     /**
      * This method updates the GMSS private key for the next signature
      *
      * @param layer the layer where the next key is processed
      */
-    public void nextKey(int layer)
+    private void nextKey(int layer)
     {
         // only for lowest layer ( other layers indices are raised in nextTree()
         // method )
@@ -445,17 +489,17 @@ public class GMSSPrivateKeyParameters
                 // last step of distributed leaf calculation for nextNextLeaf
                 if (layer > 1)
                 {
-                    nextNextLeaf[layer - 1 - 1].updateLeafCalc();
+                    nextNextLeaf[layer - 1 - 1] = nextNextLeaf[layer - 1 - 1].nextLeaf();
                 }
 
                 // last step of distributed leaf calculation for upper leaf
-                upperLeaf[layer - 1].updateLeafCalc();
+                upperLeaf[layer - 1] = upperLeaf[layer - 1].nextLeaf();
 
                 // last step of distributed leaf calculation for all treehashs
 
                 if (minTreehash[layer - 1] >= 0)
                 {
-                    this.upperTreehashLeaf[layer - 1].updateLeafCalc();
+                    upperTreehashLeaf[layer - 1] = upperTreehashLeaf[layer - 1].nextLeaf();
                     byte[] leaf = this.upperTreehashLeaf[layer - 1].getLeaf();
                     // if update is required use the precomputed leaf to update
                     // treehash
@@ -573,11 +617,11 @@ public class GMSSPrivateKeyParameters
             // compute (partial) next leaf on TREE++ (not on layer 1 and 0)
             if (layer > 1)
             {
-                nextNextLeaf[layer - 1 - 1].updateLeafCalc();
+                nextNextLeaf[layer - 1 - 1] = nextNextLeaf[layer - 1 - 1].nextLeaf();
             }
 
             // compute (partial) next leaf on tree above (not on layer 0)
-            upperLeaf[layer - 1].updateLeafCalc();
+            upperLeaf[layer - 1] = upperLeaf[layer - 1].nextLeaf();
 
             // compute (partial) next leaf for all treehashs on tree above (not
             // on layer 0)
@@ -630,9 +674,8 @@ public class GMSSPrivateKeyParameters
                     byte[] seed = this.currentTreehash[layer - 1][this.minTreehash[layer - 1]]
                         .getSeedActive();
                     this.upperTreehashLeaf[layer - 1] = new GMSSLeaf(
-                        this.digestProvider.get(), this.otsIndex[layer - 1], t);
-                    this.upperTreehashLeaf[layer - 1].initLeafCalc(seed);
-                    this.upperTreehashLeaf[layer - 1].updateLeafCalc();
+                        this.digestProvider.get(), this.otsIndex[layer - 1], t, seed);
+                    this.upperTreehashLeaf[layer - 1] = this.upperTreehashLeaf[layer - 1].nextLeaf();
                     // System.out.println("restarted treehashleaf (" + (layer -
                     // 1) + "," + this.minTreehash[layer - 1] + ")");
                 }
@@ -644,7 +687,7 @@ public class GMSSPrivateKeyParameters
                 // update the upper leaf for the treehash one step
                 if (this.minTreehash[layer - 1] >= 0)
                 {
-                    this.upperTreehashLeaf[layer - 1].updateLeafCalc();
+                    this.upperTreehashLeaf[layer - 1] = this.upperTreehashLeaf[layer - 1].nextLeaf();
                     // if (minTreehash[layer - 1] > 3)
                     // System.out.print("#");
                 }
@@ -946,8 +989,7 @@ public class GMSSPrivateKeyParameters
         }
         else
         { // other layers use the precomputed leafs in nextNextLeaf
-            this.nextNextRoot[layer - 1].update(nextNextSeeds[layer - 1],
-                nextNextLeaf[layer - 1].getLeaf());
+            this.nextNextRoot[layer - 1].update(nextNextSeeds[layer - 1], nextNextLeaf[layer - 1].getLeaf());
             this.nextNextLeaf[layer - 1].initLeafCalc(nextNextSeeds[layer - 1]);
         }
     }
@@ -967,97 +1009,12 @@ public class GMSSPrivateKeyParameters
 
     public byte[][] getCurrentSeeds()
     {
-        return currentSeeds;
-    }
-
-    public byte[][] getNextNextSeeds()
-    {
-        return nextNextSeeds;
+        return Arrays.clone(currentSeeds);
     }
 
     public byte[][][] getCurrentAuthPaths()
     {
-        return currentAuthPaths;
-    }
-
-    public byte[][][] getNextAuthPaths()
-    {
-        return nextAuthPaths;
-    }
-
-    public Treehash[][] getCurrentTreehash()
-    {
-        return currentTreehash;
-    }
-
-    public Treehash[][] getNextTreehash()
-    {
-        return nextTreehash;
-    }
-
-    public byte[][][] getKeep()
-    {
-        return keep;
-    }
-
-    public Vector[] getCurrentStack()
-    {
-        return currentStack;
-    }
-
-    public Vector[] getNextStack()
-    {
-        return nextStack;
-    }
-
-    public Vector[][] getCurrentRetain()
-    {
-        return currentRetain;
-    }
-
-    public Vector[][] getNextRetain()
-    {
-        return nextRetain;
-    }
-
-    public GMSSLeaf[] getNextNextLeaf()
-    {
-        return nextNextLeaf;
-    }
-
-    public GMSSLeaf[] getUpperLeaf()
-    {
-        return upperLeaf;
-    }
-
-    public GMSSLeaf[] getUpperTreehashLeaf()
-    {
-        return upperTreehashLeaf;
-    }
-
-    public int[] getMinTreehash()
-    {
-        return minTreehash;
-    }
-
-    public GMSSRootSig[] getNextRootSig()
-    {
-        return nextRootSig;
-    }
-
-    public byte[][] getNextRoot()
-    {
-        return nextRoot;
-    }
-
-    public GMSSRootCalc[] getNextNextRoot()
-    {
-        return nextNextRoot;
-    }
-
-    public byte[][] getCurrentRootSig()
-    {
-        return currentRootSig;
+        return Arrays.clone(currentAuthPaths);
     }
 
     /**
@@ -1080,13 +1037,5 @@ public class GMSSPrivateKeyParameters
     public int getNumLeafs(int i)
     {
         return numLeafs[i];
-    }
-
-    /**
-     * @return The array of number of leafs of a tree of each layer
-     */
-    public int[] getNumLeafs()
-    {
-        return numLeafs;
     }
 }

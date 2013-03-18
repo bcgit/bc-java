@@ -153,16 +153,20 @@ public class GMSSSigner
      */
     private void initSign()
     {
-
         messDigestTrees.reset();
         // set private key and take from it ots key, auth, tree and key
         // counter, rootSign
         GMSSPrivateKeyParameters gmssPrivateKey = (GMSSPrivateKeyParameters)key;
 
+        if (gmssPrivateKey.isUsed())
+        {
+            throw new IllegalStateException("Private key already used");
+        }
+
         // check if last signature has been generated
         if (gmssPrivateKey.getIndex(0) >= gmssPrivateKey.getNumLeafs(0))
         {
-            throw new RuntimeException("No more signatures can be generated");
+            throw new IllegalStateException("No more signatures can be generated");
         }
 
         // get Parameterset
@@ -205,10 +209,7 @@ public class GMSSSigner
             System.arraycopy(helpSubtreeRootSig, 0, subtreeRootSig[i], 0, helpSubtreeRootSig.length);
         }
 
-        // change private key for next signature
-        gmssPrivateKey.nextKey(numLayer - 1);
-
-
+        gmssPrivateKey.markUsed();
     }
 
     /**
