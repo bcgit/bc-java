@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.params.NTRUSigningKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyGenerationParameters;
 import org.bouncycastle.pqc.math.ntru.polynomial.BigIntPolynomial;
 import org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial;
 import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
