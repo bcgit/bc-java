@@ -4,9 +4,9 @@ import java.io.ByteArrayInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
+import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -135,7 +135,7 @@ public class PKCS5Test
                 fail("failed construction - exception " + e.toString(), e);
             }
 
-            PBES2Parameters         alg = new PBES2Parameters((ASN1Sequence)info.getEncryptionAlgorithm().getParameters());
+            PBES2Parameters         alg = PBES2Parameters.getInstance(info.getEncryptionAlgorithm().getParameters());
             PBKDF2Params            func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
             EncryptionScheme        scheme = alg.getEncryptionScheme();
     
@@ -156,14 +156,14 @@ public class PKCS5Test
     
             if (scheme.getAlgorithm().equals(PKCSObjectIdentifiers.RC2_CBC))
             {
-                RC2CBCParameter rc2Params = RC2CBCParameter.getInstance(scheme.getObject());
+                RC2CBCParameter rc2Params = RC2CBCParameter.getInstance(scheme.getParameters());
                 byte[]  iv = rc2Params.getIV();
     
                 param = new ParametersWithIV(generator.generateDerivedParameters(keySize), iv);
             }
             else
             {
-                byte[]  iv = ((ASN1OctetString)scheme.getObject()).getOctets();
+                byte[]  iv = ASN1OctetString.getInstance(scheme.getParameters()).getOctets();
 
                 param = new ParametersWithIV(generator.generateDerivedParameters(keySize), iv);
             }
