@@ -63,10 +63,23 @@ public class ESSCertIDv2
     }
 
     public ESSCertIDv2(
+        byte[]              certHash)
+    {
+        this(null, certHash, null);
+    }
+
+    public ESSCertIDv2(
         AlgorithmIdentifier algId,
         byte[]              certHash)
     {
         this(algId, certHash, null);
+    }
+
+    public ESSCertIDv2(
+        byte[]              certHash,
+        IssuerSerial        issuerSerial)
+    {
+        this(null, certHash, issuerSerial);
     }
 
     public ESSCertIDv2(

@@ -13,6 +13,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA256
 {
+    private SHA256()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

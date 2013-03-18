@@ -9,6 +9,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class Whirlpool
 {
+    private Whirlpool()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

@@ -31,6 +31,12 @@ public class PBES2Parameters
         return null;
     }
 
+    public PBES2Parameters(KeyDerivationFunc keyDevFunc, EncryptionScheme encScheme)
+    {
+        this.func = keyDevFunc;
+        this.scheme = encScheme;
+    }
+
     private PBES2Parameters(
         ASN1Sequence  obj)
     {

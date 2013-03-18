@@ -8,38 +8,37 @@ import org.bouncycastle.crypto.params.ISO18033KDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 
 /**
- * Basic KDF generator for derived keys and ivs as defined by IEEE P1363a/ISO 18033
- * <br>
+ * Basic KDF generator for derived keys and ivs as defined by IEEE P1363a/ISO
+ * 18033 <br>
  * This implementation is based on ISO 18033/P1363a.
  */
-public class BaseKDFBytesGenerator
-    implements DerivationFunction
+public class BaseKDFBytesGenerator implements DerivationFunction
 {
-    private int     counterStart;
-    private Digest  digest;
-    private byte[]  shared;
-    private byte[]  iv;
+    private int    counterStart;
+    private Digest digest;
+    private byte[] shared;
+    private byte[] iv;
 
     /**
      * Construct a KDF Parameters generator.
      * <p>
-     * @param counterStart value of counter.
-     * @param digest the digest to be used as the source of derived keys.
+     * 
+     * @param counterStart
+     *            value of counter.
+     * @param digest
+     *            the digest to be used as the source of derived keys.
      */
-    protected BaseKDFBytesGenerator(
-        int     counterStart,
-        Digest  digest)
+    protected BaseKDFBytesGenerator(int counterStart, Digest digest)
     {
         this.counterStart = counterStart;
         this.digest = digest;
     }
 
-    public void init(
-        DerivationParameters    param)
+    public void init(DerivationParameters param)
     {
         if (param instanceof KDFParameters)
         {
-            KDFParameters   p = (KDFParameters)param;
+            KDFParameters p = (KDFParameters)param;
 
             shared = p.getSharedSecret();
             iv = p.getIV();
@@ -47,7 +46,7 @@ public class BaseKDFBytesGenerator
         else if (param instanceof ISO18033KDFParameters)
         {
             ISO18033KDFParameters p = (ISO18033KDFParameters)param;
-            
+
             shared = p.getSeed();
             iv = null;
         }
@@ -66,25 +65,24 @@ public class BaseKDFBytesGenerator
     }
 
     /**
-     * fill len bytes of the output buffer with bytes generated from
-     * the derivation function.
-     *
-     * @throws IllegalArgumentException if the size of the request will cause an overflow.
-     * @throws DataLengthException if the out buffer is too small.
+     * fill len bytes of the output buffer with bytes generated from the
+     * derivation function.
+     * 
+     * @throws IllegalArgumentException
+     *             if the size of the request will cause an overflow.
+     * @throws DataLengthException
+     *             if the out buffer is too small.
      */
-    public int generateBytes(
-        byte[]  out,
-        int     outOff,
-        int     len)
-        throws DataLengthException, IllegalArgumentException
+    public int generateBytes(byte[] out, int outOff, int len) throws DataLengthException,
+            IllegalArgumentException
     {
         if ((out.length - len) < outOff)
         {
             throw new DataLengthException("output buffer too small");
         }
 
-        long    oBytes = len;
-        int     outLen = digest.getDigestSize(); 
+        long oBytes = len;
+        int outLen = digest.getDigestSize();
 
         //
         // this is at odds with the standard implementation, the
@@ -104,7 +102,7 @@ public class BaseKDFBytesGenerator
         dig = new byte[digest.getDigestSize()];
 
         int counter = counterStart;
-        
+
         for (int i = 0; i < cThreshold; i++)
         {
             digest.update(shared, 0, shared.length);
@@ -113,7 +111,7 @@ public class BaseKDFBytesGenerator
             digest.update((byte)(counter >> 16));
             digest.update((byte)(counter >> 8));
             digest.update((byte)counter);
-            
+
             if (iv != null)
             {
                 digest.update(iv, 0, iv.length);
@@ -131,10 +129,10 @@ public class BaseKDFBytesGenerator
             {
                 System.arraycopy(dig, 0, out, outOff, len);
             }
-            
+
             counter++;
         }
-    
+
         digest.reset();
 
         return len;

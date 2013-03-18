@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 
 /**

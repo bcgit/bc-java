@@ -1,9 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.util.encoders.Hex;
-
-
 /**
  * FIPS 180-4 implementation of SHA-512/t
  */
@@ -177,31 +173,11 @@ public class SHA512tDigest
 
     private static void intToBigEndian(int n, byte[] bs, int off, int max)
     {
-        if (max >= 4)
+        int num = Math.min(4, max);
+        while (--num >= 0)
         {
-            bs[  off] = (byte)(n >>> 24);
-            bs[++off] = (byte)(n >>> 16);
-            bs[++off] = (byte)(n >>>  8);
-            bs[++off] = (byte)(n       );
-        }
-        else
-        {
-            if (max == 3)
-            {
-                bs[  off] = (byte)(n >>> 24);
-                bs[++off] = (byte)(n >>> 16);
-                bs[++off] = (byte)(n >>>  8);
-            }
-            else if (max == 2)
-            {
-                bs[  off] = (byte)(n >>> 24);
-                bs[++off] = (byte)(n >>> 16);
-            }
-            else
-            {
-                bs[  off] = (byte)(n >>> 24);
-            }
+            int shift = 8 * (3 - num);
+            bs[off + num] = (byte)(n >>> shift);
         }
     }
 }
-

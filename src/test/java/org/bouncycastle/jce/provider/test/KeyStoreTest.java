@@ -328,6 +328,9 @@ public class KeyStoreTest
         checkStore(KeyStore.getInstance("BKS", "BC"), v2BKS);
         checkStore(KeyStore.getInstance("UBER", "BC"), v1UBER);
         checkStore(KeyStore.getInstance("UBER", "BC"), v2UBER);
+
+        checkOldStore(KeyStore.getInstance("BKS-V1", "BC"), v1BKS);
+        checkOldStore(KeyStore.getInstance("BKS-V1", "BC"), v2BKS);
     }
 
     private void checkStore(KeyStore ks, byte[] data)
@@ -349,6 +352,32 @@ public class KeyStoreTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         ks.store(bOut, oldStorePass);
+    }
+
+    private void checkOldStore(KeyStore ks, byte[] data)
+        throws Exception
+    {
+        ks.load(new ByteArrayInputStream(data), oldStorePass);
+
+        if (!ks.containsAlias("android"))
+        {
+            fail("cannot find alias");
+        }
+
+        Key key = ks.getKey("android", oldStorePass);
+        if (key == null)
+        {
+            fail("cannot find key");
+        }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        ks.store(bOut, oldStorePass);
+
+        if (data.length != bOut.toByteArray().length)
+        {
+            fail("Old version key store write incorrect");
+        }
     }
 
     private void checkException()
@@ -379,6 +408,7 @@ public class KeyStoreTest
     {
         keyStoreTest("BKS");
         keyStoreTest("UBER");
+        keyStoreTest("BKS-V1");
         ecStoreTest("BKS");
         oldStoreTest();
         checkException();

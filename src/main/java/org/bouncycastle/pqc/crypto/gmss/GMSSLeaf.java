@@ -30,7 +30,7 @@ public class GMSSLeaf
     private GMSSRandom gmssRandom;
 
     /**
-     * Byte array for distributed coputation of the upcoming leaf
+     * Byte array for distributed computation of the upcoming leaf
      */
     private byte[] leaf;
 
@@ -120,7 +120,7 @@ public class GMSSLeaf
      * @param numLeafs the number of leafs of the tree from where the distributed
      *                 computation is called
      */
-    public GMSSLeaf(Digest digest, int w, int numLeafs)
+    GMSSLeaf(Digest digest, int w, int numLeafs)
     {
         this.w = w;
 
@@ -150,13 +150,63 @@ public class GMSSLeaf
         this.concHashs = new byte[mdsize * keysize];
     }
 
+    public GMSSLeaf(Digest digest, int w, int numLeafs, byte[] seed0)
+    {
+        this.w = w;
+
+        messDigestOTS = digest;
+
+        gmssRandom = new GMSSRandom(messDigestOTS);
+
+        // calulate keysize for private key and the help array
+        mdsize = messDigestOTS.getDigestSize();
+        int mdsizeBit = mdsize << 3;
+        int messagesize = (int)Math.ceil((double)(mdsizeBit) / (double)w);
+        int checksumsize = getLog((messagesize << w) + 1);
+        this.keysize = messagesize
+            + (int)Math.ceil((double)checksumsize / (double)w);
+        this.two_power_w = 1 << w;
+
+        // calculate steps
+        // ((2^w)-1)*keysize + keysize + 1 / (2^h -1)
+        this.steps = (int)Math
+            .ceil((double)(((1 << w) - 1) * keysize + 1 + keysize)
+                / (double)(numLeafs));
+
+        // initialize arrays
+        this.seed = new byte[mdsize];
+        this.leaf = new byte[mdsize];
+        this.privateKeyOTS = new byte[mdsize];
+        this.concHashs = new byte[mdsize * keysize];
+
+        initLeafCalc(seed0);
+    }
+
+    private GMSSLeaf(GMSSLeaf original)
+    {
+        this.messDigestOTS = original.messDigestOTS;
+        this.mdsize = original.mdsize;
+        this.keysize = original.keysize;
+        this.gmssRandom = original.gmssRandom;
+        this.leaf = Arrays.clone(original.leaf);
+        this.concHashs = Arrays.clone(original.concHashs);
+        this.i = original.i;
+        this.j = original.j;
+        this.two_power_w = original.two_power_w;
+        this.w = original.w;
+        this.steps = original.steps;
+        this.seed = Arrays.clone(original.seed);
+        this.privateKeyOTS = Arrays.clone(original.privateKeyOTS);
+    }
+
     /**
      * initialize the distributed leaf calculation reset i,j and compute OTSseed
      * with seed0
      *
      * @param seed0 the starting seed
      */
-    public void initLeafCalc(byte[] seed0)
+    // TODO: this really looks like it should be either always called from a constructor or nextLeaf.
+    void initLeafCalc(byte[] seed0)
     {
         this.i = 0;
         this.j = 0;
@@ -165,24 +215,36 @@ public class GMSSLeaf
         this.seed = gmssRandom.nextSeed(dummy);
     }
 
+    GMSSLeaf nextLeaf()
+    {
+        GMSSLeaf nextLeaf = new GMSSLeaf(this);
+
+        nextLeaf.updateLeafCalc();
+
+        return nextLeaf;
+    }
+
     /**
      * Processes <code>steps</code> steps of distributed leaf calculation
      *
      * @return true if leaf is completed, else false
      */
-    public boolean updateLeafCalc()
+    private void updateLeafCalc()
     {
-        // steps times do
-        for (int s = 0; s < steps; s++)
-        {
+         byte[] buf = new byte[messDigestOTS.getDigestSize()];
 
+        // steps times do
+        // TODO: this really needs to be looked at, the 10000 has been added as
+        // prior to this the leaf value always ended up as zeros.
+        for (int s = 0; s < steps + 10000; s++)
+        {
             if (i == keysize && j == two_power_w - 1)
             { // [3] at last hash the
                 // concatenation
                 messDigestOTS.update(concHashs, 0, concHashs.length);
                 leaf = new byte[messDigestOTS.getDigestSize()];
                 messDigestOTS.doFinal(leaf, 0);
-                return true; // leaf fineshed
+                return;
             }
             else if (i == 0 || j == two_power_w - 1)
             { // [1] at the
@@ -199,7 +261,7 @@ public class GMSSLeaf
             else
             { // [2] hash the privKey part
                 messDigestOTS.update(privateKeyOTS, 0, privateKeyOTS.length);
-                privateKeyOTS = new byte[messDigestOTS.getDigestSize()];
+                privateKeyOTS = buf;
                 messDigestOTS.doFinal(privateKeyOTS, 0);
                 j++;
                 if (j == two_power_w - 1)
@@ -211,7 +273,7 @@ public class GMSSLeaf
             }
         }
 
-        return false; // leaf not finished yet
+       throw new IllegalStateException("unable to updateLeaf in steps: " + steps + " " + i + " " + j);
     }
 
     /**
@@ -311,5 +373,4 @@ public class GMSSLeaf
         }
         return out;
     }
-
 }

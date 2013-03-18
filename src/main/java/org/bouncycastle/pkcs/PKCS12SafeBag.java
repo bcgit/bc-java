@@ -17,6 +17,9 @@ import org.bouncycastle.cert.X509CertificateHolder;
 
 public class PKCS12SafeBag
 {
+    public static final ASN1ObjectIdentifier friendlyNameAttribute = PKCSObjectIdentifiers.pkcs_9_at_friendlyName;
+    public static final ASN1ObjectIdentifier localKeyIdAttribute = PKCSObjectIdentifiers.pkcs_9_at_localKeyId;
+
     private SafeBag safeBag;
 
     public PKCS12SafeBag(SafeBag safeBag)

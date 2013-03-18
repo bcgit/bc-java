@@ -13,6 +13,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class SHA512
 {
+    private SHA512()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

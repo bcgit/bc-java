@@ -86,8 +86,11 @@ public class BcKeyStoreSpi
 
     protected SecureRandom    random = new SecureRandom();
 
-    public BcKeyStoreSpi()
+    protected int              version;
+
+    public BcKeyStoreSpi(int version)
     {
+        this.version = version;
     }
 
     private class StoreEntry
@@ -880,7 +883,7 @@ public class BcKeyStoreSpi
 
         random.nextBytes(salt);
 
-        dOut.writeInt(STORE_VERSION);
+        dOut.writeInt(version);
         dOut.writeInt(salt.length);
         dOut.write(salt);
         dOut.writeInt(iterationCount);
@@ -892,7 +895,14 @@ public class BcKeyStoreSpi
 
         pbeGen.init(passKey, salt, iterationCount);
 
-        hMac.init(pbeGen.generateDerivedMacParameters(hMac.getMacSize() * 8));
+        if (version < 2)
+        {
+            hMac.init(pbeGen.generateDerivedMacParameters(hMac.getMacSize()));
+        }
+        else
+        {
+            hMac.init(pbeGen.generateDerivedMacParameters(hMac.getMacSize() * 8));
+        }
 
         for (int i = 0; i != passKey.length; i++)
         {
@@ -923,6 +933,11 @@ public class BcKeyStoreSpi
     public static class BouncyCastleStore
         extends BcKeyStoreSpi
     {
+        public BouncyCastleStore()
+        {
+            super(1);
+        }
+
         public void engineLoad(
             InputStream stream,
             char[]      password) 
@@ -1006,7 +1021,7 @@ public class BcKeyStoreSpi
     
             random.nextBytes(salt);
     
-            dOut.writeInt(STORE_VERSION);
+            dOut.writeInt(version);
             dOut.writeInt(salt.length);
             dOut.write(salt);
             dOut.writeInt(iterationCount);
@@ -1023,6 +1038,24 @@ public class BcKeyStoreSpi
             cOut.write(dig);
     
             cOut.close();
+        }
+    }
+
+    public static class Std
+       extends BcKeyStoreSpi
+    {
+        public Std()
+        {
+            super(STORE_VERSION);
+        }
+    }
+
+    public static class Version1
+        extends BcKeyStoreSpi
+    {
+        public Version1()
+        {
+            super(1);
         }
     }
 }

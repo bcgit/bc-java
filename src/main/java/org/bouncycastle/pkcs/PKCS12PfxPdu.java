@@ -2,6 +2,7 @@ package org.bouncycastle.pkcs;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -10,7 +11,6 @@ import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.util.Arrays;
 
@@ -78,6 +78,23 @@ public class PKCS12PfxPdu
     }
 
     /**
+     * Return the algorithm identifier describing the MAC algorithm
+     *
+     * @return the AlgorithmIdentifier representing the MAC algorithm, null if none present.
+     */
+    public AlgorithmIdentifier getMacAlgorithmID()
+    {
+        MacData md = pfx.getMacData();
+
+        if (md != null)
+        {
+            return md.getMac().getAlgorithmId();
+        }
+
+        return null;
+    }
+
+    /**
      * Verify the MacData attached to the PFX is consistent with what is expected.
      *
      * @param macCalcProviderBuilder provider builder for the calculator for the MAC
@@ -119,5 +136,27 @@ public class PKCS12PfxPdu
     public Pfx toASN1Structure()
     {
         return pfx;
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return toASN1Structure().getEncoded();
+    }
+
+    /**
+     * Return a Pfx with the outer wrapper encoded as asked for. For example, Pfx is a usually
+     * a BER encoded object, to get one with DefiniteLength encoding use:
+     * <pre>
+     * getEncoded(ASN1Encoding.DL)
+     * </pre>
+     * @param encoding encoding style (ASN1Encoding.DER, ASN1Encoding.DL, ASN1Encoding.BER)
+     * @return a byte array containing the encoded object.
+     * @throws IOException
+     */
+    public byte[] getEncoded(String encoding)
+        throws IOException
+    {
+        return toASN1Structure().getEncoded(encoding);
     }
 }

@@ -9,6 +9,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class SHA3
 {
+    private SHA3()
+    {
+
+    }
+
     static public class DigestSHA3
         extends BCMessageDigest
         implements Cloneable

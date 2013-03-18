@@ -48,6 +48,7 @@ public class PKCS10CertificationRequestBuilder
     private SubjectPublicKeyInfo publicKeyInfo;
     private X500Name subject;
     private List attributes = new ArrayList();
+    private boolean leaveOffEmpty = false;
 
     /**
      * Basic constructor.
@@ -90,6 +91,20 @@ public class PKCS10CertificationRequestBuilder
     }
 
     /**
+     * The attributes field in PKCS10 should encoded to an empty tagged set if there are
+     * no attributes. Some CAs will reject requests with the attribute field present.
+     *
+     * @param leaveOffEmpty true if empty attributes should be left out of the encoding false otherwise.
+     * @return this builder object.
+     */
+    public PKCS10CertificationRequestBuilder setLeaveOffEmptyAttributes(boolean leaveOffEmpty)
+    {
+        this.leaveOffEmpty = leaveOffEmpty;
+
+        return this;
+    }
+
+    /**
      * Generate an PKCS#10 request based on the past in signer.
      *
      * @param signer the content signer to be used to generate the signature validating the certificate.
@@ -102,7 +117,14 @@ public class PKCS10CertificationRequestBuilder
 
         if (attributes.isEmpty())
         {
-            info = new CertificationRequestInfo(subject, publicKeyInfo, null);
+            if (leaveOffEmpty)
+            {
+                info = new CertificationRequestInfo(subject, publicKeyInfo, null);
+            }
+            else
+            {
+                info = new CertificationRequestInfo(subject, publicKeyInfo, new DERSet());
+            }
         }
         else
         {

@@ -32,6 +32,16 @@ public class ContentInfo
         return null;
     }
 
+    public static ContentInfo getInstance(
+        ASN1TaggedObject obj,
+        boolean explicit)
+    {
+        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+    }
+
+    /**
+     * @deprecated use getInstance()
+     */
     public ContentInfo(
         ASN1Sequence  seq)
     {

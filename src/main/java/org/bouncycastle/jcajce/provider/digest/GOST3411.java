@@ -10,6 +10,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class GOST3411
 {
+    private GOST3411()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

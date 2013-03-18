@@ -53,6 +53,19 @@ public class CertificationRequestInfo
         return null;
     }
 
+    /**
+     * Basic constructor.
+     * <p>
+     * Note: Early on a lot of CAs would only accept messages with attributes missing. As the ASN.1 def shows
+     * the attributes field is not optional so should always at least contain an empty set. If a fully compliant
+     * request is required, pass in an empty set, the class will otherwise interpret a null as it should
+     * encode the request with the field missing.
+     * </p>
+     *
+     * @param subject subject to be associated with the public key
+     * @param pkInfo public key to be associated with subject
+     * @param attributes any attributes to be associated with the request.
+     */
     public CertificationRequestInfo(
         X500Name subject,
         SubjectPublicKeyInfo    pkInfo,
@@ -86,6 +99,9 @@ public class CertificationRequestInfo
         }
     }
 
+    /**
+     * @deprecated use getInstance().
+     */
     public CertificationRequestInfo(
         ASN1Sequence  seq)
     {

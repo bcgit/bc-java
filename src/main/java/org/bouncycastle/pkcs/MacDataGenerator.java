@@ -22,22 +22,24 @@ class MacDataGenerator
     public MacData build(char[] password, byte[] data)
         throws PKCSException
     {
-        MacCalculator     macCalculator = builder.build(password);
-
-        AlgorithmIdentifier algId = macCalculator.getAlgorithmIdentifier();
-
-        OutputStream out = macCalculator.getOutputStream();
+        MacCalculator     macCalculator;
 
         try
         {
+            macCalculator = builder.build(password);
+
+            OutputStream out = macCalculator.getOutputStream();
+
             out.write(data);
 
             out.close();
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new PKCSException("unable to process data: " + e.getMessage(), e);
         }
+
+        AlgorithmIdentifier algId = macCalculator.getAlgorithmIdentifier();
 
         DigestInfo dInfo = new DigestInfo(builder.getDigestAlgorithmIdentifier(), macCalculator.getMac());
         PKCS12PBEParams params = PKCS12PBEParams.getInstance(algId.getParameters());

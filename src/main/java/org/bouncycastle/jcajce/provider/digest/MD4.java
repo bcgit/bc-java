@@ -10,6 +10,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class MD4
 {
+    private MD4()
+    {
+
+    }
+
     /**
      * MD4 HashMac
      */

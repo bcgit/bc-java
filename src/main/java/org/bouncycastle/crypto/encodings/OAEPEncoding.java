@@ -252,13 +252,21 @@ public class OAEPEncoding
 
         //
         // check the hash of the encoding params.
+        // long check to try to avoid this been a source of a timing attack.
         //
+        boolean defHashWrong = false;
+
         for (int i = 0; i != defHash.length; i++)
         {
             if (defHash[i] != block[defHash.length + i])
             {
-                throw new InvalidCipherTextException("data hash wrong");
+                defHashWrong = true;
             }
+        }
+
+        if (defHashWrong)
+        {
+            throw new InvalidCipherTextException("data hash wrong");
         }
 
         //

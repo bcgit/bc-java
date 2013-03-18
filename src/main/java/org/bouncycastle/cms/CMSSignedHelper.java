@@ -1,18 +1,14 @@
 package org.bouncycastle.cms;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CRLException;
-import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +19,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -30,8 +27,18 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.AttributeCertificate;
+import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
+import org.bouncycastle.cert.X509CRLHolder;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.x509.NoSuchStoreException;
 import org.bouncycastle.x509.X509CollectionStoreParameters;
 import org.bouncycastle.x509.X509Store;
@@ -154,49 +161,30 @@ class CMSSignedHelper
         return encryptionAlgOID;
     }
 
-
     X509Store createAttributeStore(
         String type,
         Provider provider,
-        ASN1Set certSet)
+        Store certStore)
         throws NoSuchStoreException, CMSException
     {
-        List certs = new ArrayList();
-
-        if (certSet != null)
-        {
-            Enumeration e = certSet.getObjects();
-
-            while (e.hasMoreElements())
-            {
-                try
-                {
-                    ASN1Primitive obj = ((ASN1Encodable)e.nextElement()).toASN1Primitive();
-
-                    if (obj instanceof ASN1TaggedObject)
-                    {
-                        ASN1TaggedObject tagged = (ASN1TaggedObject)obj;
-
-                        if (tagged.getTagNo() == 2)
-                        {
-                            certs.add(new X509V2AttributeCertificate(ASN1Sequence.getInstance(tagged, false).getEncoded()));
-                        }
-                    }
-                }
-                catch (IOException ex)
-                {
-                    throw new CMSException(
-                            "can't re-encode attribute certificate!", ex);
-                }
-            }
-        }
-
         try
         {
+            Collection certHldrs = certStore.getMatches(null);
+            List       certs = new ArrayList(certHldrs.size());
+
+            for (Iterator it = certHldrs.iterator(); it.hasNext();)
+            {
+                certs.add(new X509V2AttributeCertificate(((X509AttributeCertificateHolder)it.next()).getEncoded()));
+            }
+
             return X509Store.getInstance(
                          "AttributeCertificate/" +type, new X509CollectionStoreParameters(certs), provider);
         }
         catch (IllegalArgumentException e)
+        {
+            throw new CMSException("can't setup the X509Store", e);
+        }
+        catch (IOException e)
         {
             throw new CMSException("can't setup the X509Store", e);
         }
@@ -205,22 +193,28 @@ class CMSSignedHelper
     X509Store createCertificateStore(
         String type,
         Provider provider,
-        ASN1Set certSet)
+        Store certStore)
         throws NoSuchStoreException, CMSException
     {
-        List certs = new ArrayList();
-
-        if (certSet != null)
-        {
-            addCertsFromSet(certs, certSet, provider);
-        }
-
         try
         {
+            JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider(provider);
+            Collection certHldrs = certStore.getMatches(null);
+            List       certs = new ArrayList(certHldrs.size());
+
+            for (Iterator it = certHldrs.iterator(); it.hasNext();)
+            {
+                certs.add(converter.getCertificate((X509CertificateHolder)it.next()));
+            }
+
             return X509Store.getInstance(
                          "Certificate/" +type, new X509CollectionStoreParameters(certs), provider);
         }
         catch (IllegalArgumentException e)
+        {
+            throw new CMSException("can't setup the X509Store", e);
+        }
+        catch (CertificateException e)
         {
             throw new CMSException("can't setup the X509Store", e);
         }
@@ -229,18 +223,20 @@ class CMSSignedHelper
     X509Store createCRLsStore(
         String type,
         Provider provider,
-        ASN1Set crlSet)
+        Store    crlStore)
         throws NoSuchStoreException, CMSException
     {
-        List crls = new ArrayList();
-
-        if (crlSet != null)
-        {
-            addCRLsFromSet(crls, crlSet, provider);
-        }
-
         try
         {
+            JcaX509CRLConverter converter = new JcaX509CRLConverter().setProvider(provider);
+            Collection crlHldrs = crlStore.getMatches(null);
+            List       crls = new ArrayList(crlHldrs.size());
+
+            for (Iterator it = crlHldrs.iterator(); it.hasNext();)
+            {
+                crls.add(converter.getCRL((X509CRLHolder)it.next()));
+            }
+
             return X509Store.getInstance(
                          "CRL/" +type, new X509CollectionStoreParameters(crls), provider);
         }
@@ -248,134 +244,9 @@ class CMSSignedHelper
         {
             throw new CMSException("can't setup the X509Store", e);
         }
-    }
-
-    CertStore createCertStore(
-        String type,
-        Provider provider,
-        ASN1Set certSet,
-        ASN1Set crlSet)
-        throws CMSException, NoSuchAlgorithmException
-    {
-        List certsAndcrls = new ArrayList();
-
-        //
-        // load the certificates and revocation lists if we have any
-        //
-
-        if (certSet != null)
+        catch (CRLException e)
         {
-            addCertsFromSet(certsAndcrls, certSet, provider);
-        }
-
-        if (crlSet != null)
-        {
-            addCRLsFromSet(certsAndcrls, crlSet, provider);
-        }
-
-        try
-        {
-            if (provider != null)
-            {
-                return CertStore.getInstance(type, new CollectionCertStoreParameters(certsAndcrls), provider);
-            }
-            else
-            {
-                return CertStore.getInstance(type, new CollectionCertStoreParameters(certsAndcrls));
-            }
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            throw new CMSException("can't setup the CertStore", e);
-        }
-    }
-
-    private void addCertsFromSet(List certs, ASN1Set certSet, Provider provider)
-        throws CMSException
-    {
-        CertificateFactory cf;
-
-        try
-        {
-            if (provider != null)
-            {
-                cf = CertificateFactory.getInstance("X.509", provider);
-            }
-            else
-            {
-                cf = CertificateFactory.getInstance("X.509");
-            }
-        }
-        catch (CertificateException ex)
-        {
-            throw new CMSException("can't get certificate factory.", ex);
-        }
-        Enumeration e = certSet.getObjects();
-
-        while (e.hasMoreElements())
-        {
-            try
-            {
-                ASN1Primitive obj = ((ASN1Encodable)e.nextElement()).toASN1Primitive();
-
-                if (obj instanceof ASN1Sequence)
-                {
-                    certs.add(cf.generateCertificate(
-                        new ByteArrayInputStream(obj.getEncoded())));
-                }
-            }
-            catch (IOException ex)
-            {
-                throw new CMSException(
-                        "can't re-encode certificate!", ex);
-            }
-            catch (CertificateException ex)
-            {
-                throw new CMSException(
-                        "can't re-encode certificate!", ex);
-            }
-        }
-    }
-
-    private void addCRLsFromSet(List crls, ASN1Set certSet, Provider provider)
-        throws CMSException
-    {
-        CertificateFactory cf;
-
-        try
-        {
-            if (provider != null)
-            {
-                cf = CertificateFactory.getInstance("X.509", provider);
-            }
-            else
-            {
-                cf = CertificateFactory.getInstance("X.509");
-            }
-        }
-        catch (CertificateException ex)
-        {
-            throw new CMSException("can't get certificate factory.", ex);
-        }
-        Enumeration e = certSet.getObjects();
-
-        while (e.hasMoreElements())
-        {
-            try
-            {
-                ASN1Primitive obj = ((ASN1Encodable)e.nextElement()).toASN1Primitive();
-
-                crls.add(cf.generateCRL(
-                    new ByteArrayInputStream(obj.getEncoded())));
-            }
-            catch (IOException ex)
-            {
-                throw new CMSException("can't re-encode CRL!", ex);
-            }
-            catch (CRLException ex)
-            {
-                throw new CMSException("can't re-encode CRL!", ex);
-            }
+            throw new CMSException("can't setup the X509Store", e);
         }
     }
 
@@ -397,5 +268,103 @@ class CMSSignedHelper
     void setSigningDigestAlgorithmMapping(ASN1ObjectIdentifier oid, String algorithmName)
     {
         digestAlgs.put(oid.getId(), algorithmName);
+    }
+
+    Store getCertificates(ASN1Set certSet)
+    {
+        if (certSet != null)
+        {
+            List certList = new ArrayList(certSet.size());
+
+            for (Enumeration en = certSet.getObjects(); en.hasMoreElements();)
+            {
+                ASN1Primitive obj = ((ASN1Encodable)en.nextElement()).toASN1Primitive();
+
+                if (obj instanceof ASN1Sequence)
+                {
+                    certList.add(new X509CertificateHolder(Certificate.getInstance(obj)));
+                }
+            }
+
+            return new CollectionStore(certList);
+        }
+
+        return new CollectionStore(new ArrayList());
+    }
+
+    Store getAttributeCertificates(ASN1Set certSet)
+    {
+        if (certSet != null)
+        {
+            List certList = new ArrayList(certSet.size());
+
+            for (Enumeration en = certSet.getObjects(); en.hasMoreElements();)
+            {
+                ASN1Primitive obj = ((ASN1Encodable)en.nextElement()).toASN1Primitive();
+
+                if (obj instanceof ASN1TaggedObject)
+                {
+                    certList.add(new X509AttributeCertificateHolder(AttributeCertificate.getInstance(((ASN1TaggedObject)obj).getObject())));
+                }
+            }
+
+            return new CollectionStore(certList);
+        }
+
+        return new CollectionStore(new ArrayList());
+    }
+
+    Store getCRLs(ASN1Set crlSet)
+    {
+        if (crlSet != null)
+        {
+            List crlList = new ArrayList(crlSet.size());
+
+            for (Enumeration en = crlSet.getObjects(); en.hasMoreElements();)
+            {
+                ASN1Primitive obj = ((ASN1Encodable)en.nextElement()).toASN1Primitive();
+
+                if (obj instanceof ASN1Sequence)
+                {
+                    crlList.add(new X509CRLHolder(CertificateList.getInstance(obj)));
+                }
+            }
+
+            return new CollectionStore(crlList);
+        }
+
+        return new CollectionStore(new ArrayList());
+    }
+
+    Store getOtherRevocationInfo(ASN1ObjectIdentifier otherRevocationInfoFormat, ASN1Set crlSet)
+    {
+        if (crlSet != null)
+        {
+            List    crlList = new ArrayList(crlSet.size());
+
+            for (Enumeration en = crlSet.getObjects(); en.hasMoreElements();)
+            {
+                ASN1Primitive obj = ((ASN1Encodable)en.nextElement()).toASN1Primitive();
+
+                if (obj instanceof ASN1TaggedObject)
+                {
+                    ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(obj);
+
+                    if (tObj.getTagNo() == 1)
+                    {
+                        OtherRevocationInfoFormat other = OtherRevocationInfoFormat.getInstance(tObj, false);
+
+                        if (otherRevocationInfoFormat.equals(other.getInfoFormat()))
+                        {
+                            crlList.add(other.getInfo());
+                        }
+                    }
+                }
+            }
+
+            return new CollectionStore(crlList);
+        }
+
+        return new CollectionStore(new ArrayList());
     }
 }

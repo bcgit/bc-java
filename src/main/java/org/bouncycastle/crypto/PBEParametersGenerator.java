@@ -130,7 +130,14 @@ public abstract class PBEParametersGenerator
     public static byte[] PKCS5PasswordToUTF8Bytes(
         char[]  password)
     {
-        return Strings.toUTF8ByteArray(password);
+        if (password != null)
+        {
+            return Strings.toUTF8ByteArray(password);
+        }
+        else
+        {
+            return new byte[0];
+        }
     }
 
     /**

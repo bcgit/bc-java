@@ -423,6 +423,40 @@ public final class Arrays
         return copy;
     }
 
+    public static byte[][] clone(byte[][] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+
+        byte[][] copy = new byte[data.length][];
+
+        for (int i = 0; i != copy.length; i++)
+        {
+            copy[i] = clone(data[i]);
+        }
+
+        return copy;
+    }
+
+    public static byte[][][] clone(byte[][][] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+
+        byte[][][] copy = new byte[data.length][][];
+
+        for (int i = 0; i != copy.length; i++)
+        {
+            copy[i] = clone(data[i]);
+        }
+
+        return copy;
+    }
+
     public static int[] clone(int[] data)
     {
         if (data == null)

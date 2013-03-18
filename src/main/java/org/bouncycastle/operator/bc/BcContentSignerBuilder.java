@@ -2,6 +2,7 @@ package org.bouncycastle.operator.bc;
 
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Map;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CryptoException;
@@ -18,10 +19,13 @@ public abstract class BcContentSignerBuilder
     private AlgorithmIdentifier sigAlgId;
     private AlgorithmIdentifier digAlgId;
 
+    protected BcDigestProvider                digestProvider;
+
     public BcContentSignerBuilder(AlgorithmIdentifier sigAlgId, AlgorithmIdentifier digAlgId)
     {
         this.sigAlgId = sigAlgId;
         this.digAlgId = digAlgId;
+        this.digestProvider = BcDefaultDigestProvider.INSTANCE;
     }
 
     public BcContentSignerBuilder setSecureRandom(SecureRandom random)

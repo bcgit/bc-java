@@ -22,7 +22,11 @@ public class OtherRecipientInfo
         this.oriType = oriType;
         this.oriValue = oriValue;
     }
-    
+
+    /**
+     * @deprecated use getInstance().
+     * @param seq
+     */
     public OtherRecipientInfo(
         ASN1Sequence seq)
     {
@@ -55,17 +59,17 @@ public class OtherRecipientInfo
     public static OtherRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof OtherRecipientInfo)
+        if (obj instanceof OtherRecipientInfo)
         {
             return (OtherRecipientInfo)obj;
         }
         
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new OtherRecipientInfo((ASN1Sequence)obj);
+            return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException("Invalid OtherRecipientInfo: " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1ObjectIdentifier getType()

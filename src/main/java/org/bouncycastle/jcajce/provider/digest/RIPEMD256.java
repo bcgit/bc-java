@@ -10,6 +10,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class RIPEMD256
 {
+    private RIPEMD256()
+    {
+
+    }
+
     static public class Digest
         extends BCMessageDigest
         implements Cloneable

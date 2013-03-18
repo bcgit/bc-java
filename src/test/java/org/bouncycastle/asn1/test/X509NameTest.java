@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERObjectIdentifier;
@@ -118,6 +119,20 @@ public class X509NameTest
     }
 
 
+    private void testEncodingUTF8String(DERObjectIdentifier oid, String value)
+        throws IOException
+    {
+        ASN1Encodable converted = createEntryValue(oid, value);
+        if (!(converted instanceof DERUTF8String))
+        {
+            fail("encoding for " + oid + " not IA5String");
+        }
+        if (!value.equals((DERUTF8String.getInstance(converted.toASN1Primitive().getEncoded()).getString())))
+        {
+            fail("decoding not correct");
+        }
+    }
+
     private void testEncodingGeneralizedTime(DERObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
@@ -142,9 +157,9 @@ public class X509NameTest
         testEncodingIA5String(X509Name.DC, "test");
         // correct encoding
         testEncodingGeneralizedTime(X509Name.DATE_OF_BIRTH, "#180F32303032303132323132323232305A");
-        // compatability encoding
+        // compatibility encoding
         testEncodingGeneralizedTime(X509Name.DATE_OF_BIRTH, "20020122122220Z");
-
+        testEncodingUTF8String(X509Name.CN, "Mörsky");
         //
         // composite
         //

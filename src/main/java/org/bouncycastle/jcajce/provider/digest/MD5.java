@@ -11,6 +11,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class MD5
 {
+    private MD5()
+    {
+
+    }
+
     /**
      * MD5 HashMac
      */

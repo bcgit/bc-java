@@ -146,6 +146,7 @@ public class CMSSignedDataGenerator
     /**
      * constructor allowing specific source of randomness
      * @param rand instance of SecureRandom to use
+     * @deprecated  rand ignored in new API, use base constructor.
      */
     public CMSSignedDataGenerator(
         SecureRandom rand)
@@ -479,6 +480,7 @@ public class CMSSignedDataGenerator
      * addDefaultAttributes indicates whether or not a default set of signed attributes
      * need to be added automatically. If the argument is set to false, no
      * attributes will get added at all.
+     * @deprecated use setDirectSignature() on SignerInformationGenerator.
      */
     public CMSSignedData generate(
         String                  eContentType,
