@@ -64,7 +64,7 @@ public class DERBoolean
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      */
-    public static DERBoolean getInstance(
+    public static ASN1Boolean getInstance(
         ASN1TaggedObject obj,
         boolean          explicit)
     {

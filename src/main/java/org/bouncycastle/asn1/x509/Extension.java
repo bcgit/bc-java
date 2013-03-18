@@ -4,15 +4,20 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 
 /**
  * an object for the elements in the X.509 V3 extension block.
  */
 public class Extension
+    extends ASN1Object
 {
     /**
      * Subject Directory Attributes
@@ -170,9 +175,8 @@ public class Extension
     public static final ASN1ObjectIdentifier targetInformation = new ASN1ObjectIdentifier("2.5.29.55");
 
     private ASN1ObjectIdentifier extnId;
-
-    boolean             critical;
-    ASN1OctetString      value;
+    private boolean             critical;
+    private ASN1OctetString      value;
 
     public Extension(
         ASN1ObjectIdentifier extnId,
@@ -200,6 +204,40 @@ public class Extension
         this.value = value;
     }
 
+    private Extension(ASN1Sequence seq)
+    {
+        if (seq.size() == 2)
+        {
+            this.extnId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+            this.critical = false;
+            this.value = ASN1OctetString.getInstance(seq.getObjectAt(1));
+        }
+        else if (seq.size() == 3)
+        {
+            this.extnId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+            this.critical = ASN1Boolean.getInstance(seq.getObjectAt(1)).isTrue();
+            this.value = ASN1OctetString.getInstance(seq.getObjectAt(2));
+        }
+        else
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+    }
+
+    public static Extension getInstance(Object obj)
+    {
+        if (obj instanceof Extension)
+        {
+            return (Extension)obj;
+        }
+        else if (obj != null)
+        {
+            return new Extension(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
+    }
+
     public ASN1ObjectIdentifier getExtnId()
     {
         return extnId;
@@ -224,10 +262,10 @@ public class Extension
     {
         if (this.isCritical())
         {
-            return this.getExtnValue().hashCode();
+            return this.getExtnValue().hashCode() ^ this.getExtnId().hashCode();
         }
 
-        return ~this.getExtnValue().hashCode();
+        return ~(this.getExtnValue().hashCode() ^ this.getExtnId().hashCode());
     }
 
     public boolean equals(
@@ -240,8 +278,25 @@ public class Extension
 
         Extension other = (Extension)o;
 
-        return other.getExtnValue().equals(this.getExtnValue())
+        return other.getExtnId().equals(this.getExtnId())
+            && other.getExtnValue().equals(this.getExtnValue())
             && (other.isCritical() == this.isCritical());
+    }
+
+    public ASN1Primitive toASN1Primitive()
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(extnId);
+
+        if (critical)
+        {
+            v.add(ASN1Boolean.getInstance(true));
+        }
+
+        v.add(value);
+
+        return new DERSequence(v);
     }
 
     /**

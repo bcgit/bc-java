@@ -55,22 +55,10 @@ public class Extensions
 
         while (e.hasMoreElements())
         {
-            ASN1Sequence            s = ASN1Sequence.getInstance(e.nextElement());
+            Extension            ext = Extension.getInstance(e.nextElement());
 
-            if (s.size() == 3)
-            {
-                extensions.put(s.getObjectAt(0), new Extension(ASN1ObjectIdentifier.getInstance(s.getObjectAt(0)), ASN1Boolean.getInstance(s.getObjectAt(1)), ASN1OctetString.getInstance(s.getObjectAt(2))));
-            }
-            else if (s.size() == 2)
-            {
-                extensions.put(s.getObjectAt(0), new Extension(ASN1ObjectIdentifier.getInstance(s.getObjectAt(0)), false, ASN1OctetString.getInstance(s.getObjectAt(1))));
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad sequence size: " + s.size());
-            }
-
-            ordering.addElement(s.getObjectAt(0));
+            extensions.put(ext.getExtnId(), ext);
+            ordering.addElement(ext.getExtnId());
         }
     }
 
@@ -160,18 +148,8 @@ public class Extensions
         {
             ASN1ObjectIdentifier     oid = (ASN1ObjectIdentifier)e.nextElement();
             Extension ext = (Extension)extensions.get(oid);
-            ASN1EncodableVector v = new ASN1EncodableVector();
 
-            v.add(oid);
-
-            if (ext.isCritical())
-            {
-                v.add(ASN1Boolean.getInstance(true));
-            }
-
-            v.add(ext.getExtnValue());
-
-            vec.add(new DERSequence(v));
+            vec.add(ext);
         }
 
         return new DERSequence(vec);
