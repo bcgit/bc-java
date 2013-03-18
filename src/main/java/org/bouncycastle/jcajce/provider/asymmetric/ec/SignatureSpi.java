@@ -27,6 +27,7 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.ECNRSigner;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSAEncoder;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 
 public class SignatureSpi
     extends DSABase

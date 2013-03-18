@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class SHA3
 {
@@ -68,7 +68,7 @@ public class SHA3
      * SHA3 HMac
      */
     public static class HashMac224
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac224()
         {
@@ -77,7 +77,7 @@ public class SHA3
     }
     
     public static class HashMac256
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac256() {
             super(new HMac(new SHA3Digest(256)));
@@ -85,7 +85,7 @@ public class SHA3
     }
         
     public static class HashMac384
-    extends JCEMac
+    extends BaseMac
     {
         public HashMac384() {
             super(new HMac(new SHA3Digest(384)));
@@ -93,7 +93,7 @@ public class SHA3
     }
 
     public static class HashMac512
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac512() {
             super(new HMac(new SHA3Digest(512)));

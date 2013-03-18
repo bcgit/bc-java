@@ -1,55 +1,56 @@
 package org.bouncycastle.asn1.pkcs;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 public class EncryptionScheme
-    extends AlgorithmIdentifier
+    extends ASN1Object
 {
+    private AlgorithmIdentifier algId;
+
     public EncryptionScheme(
         ASN1ObjectIdentifier objectId,
         ASN1Encodable parameters)
     {
-        super(objectId, parameters);
+        this.algId = new AlgorithmIdentifier(objectId, parameters);
     }
 
-    EncryptionScheme(
+    private EncryptionScheme(
         ASN1Sequence  seq)
     {   
-        this((ASN1ObjectIdentifier)seq.getObjectAt(0), seq.getObjectAt(1));
+        this.algId = AlgorithmIdentifier.getInstance(seq);
     }
 
-    public static final AlgorithmIdentifier getInstance(Object obj)
+    public static final EncryptionScheme getInstance(Object obj)
     {
         if (obj instanceof EncryptionScheme)
         {
             return (EncryptionScheme)obj;
         }
-        else if (obj instanceof ASN1Sequence)
+        else if (obj != null)
         {
-            return new EncryptionScheme((ASN1Sequence)obj);
+            return new EncryptionScheme(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
+        return null;
     }
 
-    public ASN1Primitive getObject()
+    public ASN1ObjectIdentifier getAlgorithm()
     {
-        return (ASN1Primitive)getParameters();
+        return algId.getAlgorithm();
     }
 
-    public ASN1Primitive getASN1Primitive()
+    public ASN1Encodable getParameters()
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        return algId.getParameters();
+    }
 
-        v.add(getObjectId());
-        v.add(getParameters());
-
-        return new DERSequence(v);
+    public ASN1Primitive toASN1Primitive()
+    {
+        return algId.toASN1Primitive();
     }
 }

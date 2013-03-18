@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.digests.RIPEMD128Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class RIPEMD128
 {
@@ -30,10 +30,10 @@ public class RIPEMD128
     }
 
     /**
-     * RIPEMD128 HMac
+     * RIPEMD128 HashMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {

@@ -10,10 +10,13 @@ import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
@@ -21,15 +24,21 @@ import org.bouncycastle.crypto.generators.DESKeyGenerator;
 import org.bouncycastle.crypto.macs.CBCBlockCipherMac;
 import org.bouncycastle.crypto.macs.CFBBlockCipherMac;
 import org.bouncycastle.crypto.macs.CMac;
+import org.bouncycastle.crypto.macs.ISO9797Alg3Mac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.ISO7816d4Padding;
+import org.bouncycastle.crypto.params.DESParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -108,6 +117,30 @@ public final class DES
         public CMAC()
         {
             super(new CMac(new DESEngine()));
+        }
+    }
+
+    /**
+     * DES9797Alg3with7816-4Padding
+     */
+    public static class DES9797Alg3with7816d4
+        extends BaseMac
+    {
+        public DES9797Alg3with7816d4()
+        {
+            super(new ISO9797Alg3Mac(new DESEngine(), new ISO7816d4Padding()));
+        }
+    }
+
+    /**
+     * DES9797Alg3
+     */
+    public static class DES9797Alg3
+        extends BaseMac
+    {
+        public DES9797Alg3()
+        {
+            super(new ISO9797Alg3Mac(new DESEngine()));
         }
     }
 
@@ -249,6 +282,147 @@ public final class DES
         }
     }
 
+    static public class DESPBEKeyFactory
+        extends BaseSecretKeyFactory
+    {
+        private boolean forCipher;
+        private int     scheme;
+        private int     digest;
+        private int     keySize;
+        private int     ivSize;
+
+        public DESPBEKeyFactory(
+            String              algorithm,
+            ASN1ObjectIdentifier oid,
+            boolean             forCipher,
+            int                 scheme,
+            int                 digest,
+            int                 keySize,
+            int                 ivSize)
+        {
+            super(algorithm, oid);
+
+            this.forCipher = forCipher;
+            this.scheme = scheme;
+            this.digest = digest;
+            this.keySize = keySize;
+            this.ivSize = ivSize;
+        }
+
+        protected SecretKey engineGenerateSecret(
+            KeySpec keySpec)
+        throws InvalidKeySpecException
+        {
+            if (keySpec instanceof PBEKeySpec)
+            {
+                PBEKeySpec pbeSpec = (PBEKeySpec)keySpec;
+                CipherParameters param;
+
+                if (pbeSpec.getSalt() == null)
+                {
+                    return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, null);
+                }
+
+                if (forCipher)
+                {
+                    param = PBE.Util.makePBEParameters(pbeSpec, scheme, digest, keySize, ivSize);
+                }
+                else
+                {
+                    param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+                }
+
+                KeyParameter kParam;
+                if (param instanceof ParametersWithIV)
+                {
+                    kParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+                }
+                else
+                {
+                    kParam = (KeyParameter)param;
+                }
+
+                DESParameters.setOddParity(kParam.getKey());
+
+                return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
+            }
+
+            throw new InvalidKeySpecException("Invalid KeySpec");
+        }
+    }
+
+    /**
+     * PBEWithMD2AndDES
+     */
+    static public class PBEWithMD2KeyFactory
+        extends DESPBEKeyFactory
+    {
+        public PBEWithMD2KeyFactory()
+        {
+            super("PBEwithMD2andDES", PKCSObjectIdentifiers.pbeWithMD2AndDES_CBC, true, PKCS5S1, MD2, 64, 64);
+        }
+    }
+
+    /**
+     * PBEWithMD5AndDES
+     */
+    static public class PBEWithMD5KeyFactory
+        extends DESPBEKeyFactory
+    {
+        public PBEWithMD5KeyFactory()
+        {
+            super("PBEwithMD5andDES", PKCSObjectIdentifiers.pbeWithMD5AndDES_CBC, true, PKCS5S1, MD5, 64, 64);
+        }
+    }
+
+    /**
+     * PBEWithSHA1AndDES
+     */
+    static public class PBEWithSHA1KeyFactory
+        extends DESPBEKeyFactory
+    {
+        public PBEWithSHA1KeyFactory()
+        {
+            super("PBEwithSHA1andDES", PKCSObjectIdentifiers.pbeWithSHA1AndDES_CBC, true, PKCS5S1, SHA1, 64, 64);
+        }
+    }
+
+    /**
+     * PBEWithMD2AndDES
+     */
+    static public class PBEWithMD2
+        extends BaseBlockCipher
+    {
+        public PBEWithMD2()
+        {
+            super(new CBCBlockCipher(new DESEngine()));
+        }
+    }
+
+    /**
+     * PBEWithMD5AndDES
+     */
+    static public class PBEWithMD5
+        extends BaseBlockCipher
+    {
+        public PBEWithMD5()
+        {
+            super(new CBCBlockCipher(new DESEngine()));
+        }
+    }
+
+    /**
+     * PBEWithSHA1AndDES
+     */
+    static public class PBEWithSHA1
+        extends BaseBlockCipher
+    {
+        public PBEWithSHA1()
+        {
+            super(new CBCBlockCipher(new DESEngine()));
+        }
+    }
+    
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -288,11 +462,38 @@ public final class DES
             provider.addAlgorithm("Alg.Alias.Mac.DESISO9797ALG1MACWITHISO7816-4PADDING", "DESMAC64WITHISO7816-4PADDING");
             provider.addAlgorithm("Alg.Alias.Mac.DESISO9797ALG1WITHISO7816-4PADDING", "DESMAC64WITHISO7816-4PADDING");
 
+            provider.addAlgorithm("Mac.DESWITHISO9797", PREFIX + "$DES9797Alg3");
+            provider.addAlgorithm("Alg.Alias.Mac.DESISO9797MAC", "DESWITHISO9797");
+
+            provider.addAlgorithm("Mac.ISO9797ALG3MAC", PREFIX + "$DES9797Alg3");
+            provider.addAlgorithm("Alg.Alias.Mac.ISO9797ALG3", "ISO9797ALG3MAC");
+            provider.addAlgorithm("Mac.ISO9797ALG3WITHISO7816-4PADDING", PREFIX + "$DES9797Alg3with7816d4");
+            provider.addAlgorithm("Alg.Alias.Mac.ISO9797ALG3MACWITHISO7816-4PADDING", "ISO9797ALG3WITHISO7816-4PADDING");
+
             provider.addAlgorithm("AlgorithmParameters.DES", PACKAGE + ".util.IvAlgorithmParameters");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + OIWObjectIdentifiers.desCBC, "DES");
 
             provider.addAlgorithm("AlgorithmParameterGenerator.DES",  PREFIX + "$AlgParamGen");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + OIWObjectIdentifiers.desCBC, "DES");
+
+            provider.addAlgorithm("Cipher.PBEWITHMD2ANDDES", PREFIX + "$PBEWithMD2");
+            provider.addAlgorithm("Cipher.PBEWITHMD5ANDDES", PREFIX + "$PBEWithMD5");
+            provider.addAlgorithm("Cipher.PBEWITHSHA1ANDDES", PREFIX + "$PBEWithSHA1");
+            
+            provider.addAlgorithm("Alg.Alias.Cipher." + PKCSObjectIdentifiers.pbeWithMD2AndDES_CBC, "PBEWITHMD2ANDDES");
+            provider.addAlgorithm("Alg.Alias.Cipher." + PKCSObjectIdentifiers.pbeWithMD5AndDES_CBC, "PBEWITHMD5ANDDES");
+            provider.addAlgorithm("Alg.Alias.Cipher." + PKCSObjectIdentifiers.pbeWithSHA1AndDES_CBC, "PBEWITHSHA1ANDDES");
+            
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHMD2ANDDES", PREFIX + "$PBEWithMD2KeyFactory");
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHMD5ANDDES", PREFIX + "$PBEWithMD5KeyFactory");
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHSHA1ANDDES", PREFIX + "$PBEWithSHA1KeyFactory");
+
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHMD2ANDDES-CBC", "PBEWITHMD2ANDDES");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHMD5ANDDES-CBC", "PBEWITHMD5ANDDES");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHSHA1ANDDES-CBC", "PBEWITHSHA1ANDDES");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.pbeWithMD2AndDES_CBC, "PBEWITHMD2ANDDES");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.pbeWithMD5AndDES_CBC, "PBEWITHMD5ANDDES");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.pbeWithSHA1AndDES_CBC, "PBEWITHSHA1ANDDES");
         }
 
         private void addAlias(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)

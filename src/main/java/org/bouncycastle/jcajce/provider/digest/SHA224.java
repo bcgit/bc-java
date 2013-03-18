@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class SHA224
 {
@@ -31,7 +31,7 @@ public class SHA224
     }
 
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {

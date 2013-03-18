@@ -56,6 +56,8 @@ public class RegressionTest
         new SHA256DigestTest(),
         new SHA384DigestTest(),
         new SHA512DigestTest(),
+        new SHA512t224DigestTest(),
+        new SHA512t256DigestTest(),
         new SHA3DigestTest(),
         new RIPEMD128DigestTest(),
         new RIPEMD160DigestTest(),

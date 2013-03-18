@@ -106,6 +106,13 @@ public class DSTU4145Signer
         }
 
         ECPoint R = ECAlgorithms.sumOfTwoMultiplies(key.getParameters().getG(), s, ((ECPublicKeyParameters)key).getQ(), r);
+
+        // components must be bogus.
+        if (R.isInfinity())
+        {
+            return false;
+        }
+
         ECFieldElement y = h.multiply(R.getX());
         return fieldElement2Integer(key.getParameters().getN(), y).compareTo(r) == 0;
     }

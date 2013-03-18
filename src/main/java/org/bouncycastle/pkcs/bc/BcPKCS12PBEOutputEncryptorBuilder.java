@@ -70,7 +70,7 @@ public class BcPKCS12PBEOutputEncryptorBuilder
 
             public GenericKey getKey()
             {
-                return new GenericKey(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
+                return new GenericKey(new AlgorithmIdentifier(algorithm, pbeParams), PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
             }
         };
     }

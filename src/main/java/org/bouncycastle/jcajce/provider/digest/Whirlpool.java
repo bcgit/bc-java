@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public class Whirlpool
 {
@@ -32,7 +32,7 @@ public class Whirlpool
      * Tiger HMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {

@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.asymmetric.ec;
+package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;

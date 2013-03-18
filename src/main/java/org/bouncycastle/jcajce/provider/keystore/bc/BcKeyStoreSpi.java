@@ -1,4 +1,4 @@
-package org.bouncycastle.jce.provider;
+package org.bouncycastle.jcajce.provider.keystore.bc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,11 +47,12 @@ import org.bouncycastle.crypto.io.MacInputStream;
 import org.bouncycastle.crypto.io.MacOutputStream;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeOutputStream;
 
-public class JDKKeyStore
+public class BcKeyStoreSpi
     extends KeyStoreSpi
     implements BCKeyStore
 {
@@ -85,7 +86,7 @@ public class JDKKeyStore
 
     protected SecureRandom    random = new SecureRandom();
 
-    public JDKKeyStore()
+    public BcKeyStoreSpi()
     {
     }
 
@@ -920,7 +921,7 @@ public class JDKKeyStore
      * Also referred to by the alias UBER.
      */
     public static class BouncyCastleStore
-        extends JDKKeyStore
+        extends BcKeyStoreSpi
     {
         public void engineLoad(
             InputStream stream,

@@ -7,7 +7,8 @@ import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jce.provider.JCEMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class RIPEMD160
 {
@@ -34,7 +35,7 @@ public class RIPEMD160
      * RIPEMD160 HMac
      */
     public static class HashMac
-        extends JCEMac
+        extends BaseMac
     {
         public HashMac()
         {
@@ -48,6 +49,37 @@ public class RIPEMD160
         public KeyGenerator()
         {
             super("HMACRIPEMD160", 160, new CipherKeyGenerator());
+        }
+    }
+
+
+    //
+    // PKCS12 states that the same algorithm should be used
+    // for the key generation as is used in the HMAC, so that
+    // is what we do here.
+    //
+
+    /**
+     * PBEWithHmacRIPEMD160
+     */
+    public static class PBEWithHmac
+        extends BaseMac
+    {
+        public PBEWithHmac()
+        {
+            super(new HMac(new RIPEMD160Digest()), PKCS12, RIPEMD160, 160);
+        }
+    }
+
+    /**
+     * PBEWithHmacRIPEMD160
+     */
+    public static class PBEWithHmacKeyFactory
+        extends PBESecretKeyFactory
+    {
+        public PBEWithHmacKeyFactory()
+        {
+            super("PBEwithHmacRIPEMD160", null, false, PKCS12, RIPEMD160, 160, 0);
         }
     }
 
@@ -67,6 +99,10 @@ public class RIPEMD160
 
             addHMACAlgorithm(provider, "RIPEMD160", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "RIPEMD160", IANAObjectIdentifiers.hmacRIPEMD160);
+
+
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACRIPEMD160", PREFIX + "$PBEWithHmacKeyFactory");
+            provider.addAlgorithm("Mac.PBEWITHHMACRIPEMD160", PREFIX + "$PBEWithHmac");
         }
     }
 }

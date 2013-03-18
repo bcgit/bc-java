@@ -5,6 +5,9 @@ import java.security.KeyStore;
 import java.security.KeyStore.LoadStoreParameter;
 import java.security.KeyStore.ProtectionParameter;
 
+/**
+ * @deprecated use org.bouncycastle.jcajce.config.PKCS12StoreParameter
+ */
 public class JDKPKCS12StoreParameter implements LoadStoreParameter
 {
     private OutputStream outputStream;

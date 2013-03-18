@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.asymmetric.ec;
+package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import java.math.BigInteger;
 import java.security.spec.ECField;

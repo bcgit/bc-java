@@ -38,6 +38,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -261,7 +262,7 @@ public class IESCipher
 		{
 			if (key instanceof ECPublicKey)
 			{
-				this.key = ECUtil.generatePublicKeyParameter((PublicKey) key);
+				this.key = ECUtil.generatePublicKeyParameter((PublicKey)key);
 			}
             else if (key instanceof IESKey)
             {

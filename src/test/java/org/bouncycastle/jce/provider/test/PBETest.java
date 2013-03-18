@@ -292,7 +292,8 @@ public class PBETest
     
     private byte[] hMac1 = Hex.decode("bcc42174ccb04f425d9a5c8c4a95d6fd7c372911");
     private byte[] hMac2 = Hex.decode("cb1d8bdb6aca9e3fa8980d6eb41ab28a7eb2cfd6");
-    
+    private byte[] hMac3 = Hex.decode("514aa173a302c770689269aac08eb8698e5879ac");
+
     private Cipher makePBECipherUsingParam(
         String  algorithm,
         int     mode,
@@ -374,6 +375,49 @@ public class PBETest
         }
     }
 
+    public void testPBEonSecretKeyHmac(
+        String  hmacName,
+        byte[]  output)
+    {
+        SecretKey           key;
+        byte[]              out;
+        Mac                 mac;
+
+        try
+        {
+            SecretKeyFactory    fact = SecretKeyFactory.getInstance(hmacName, "BC");
+
+            key = fact.generateSecret(new PBEKeySpec("hello".toCharArray(), new byte[20], 100, 160));
+
+            mac = Mac.getInstance("HMAC-SHA1", "BC");
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        try
+        {
+            mac.init(key);
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        mac.reset();
+
+        mac.update(message, 0, message.length);
+
+        out = mac.doFinal();
+
+        if (!Arrays.areEqual(out, output))
+        {
+            fail("Failed - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(out)));
+        }
+    }
 
     private void testCipherNameWithWrap(String name, String simpleName)
         throws Exception
@@ -557,6 +601,8 @@ public class PBETest
 
         testPBEHMac("PBEWithHMacSHA1", hMac1);
         testPBEHMac("PBEWithHMacRIPEMD160", hMac2);
+
+        testPBEonSecretKeyHmac("PBKDF2WithHmacSHA1", hMac3);
 
         testCipherNameWithWrap("PBEWITHSHA256AND128BITAES-CBC-BC", "AES/CBC/PKCS5Padding");
         testCipherNameWithWrap("PBEWITHSHAAND40BITRC4", "RC4");

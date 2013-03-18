@@ -17,12 +17,12 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.GOST3410Signer;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.ECUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.GOST3410Key;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.GOST3410Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 
 public class SignatureSpi
     extends java.security.SignatureSpi

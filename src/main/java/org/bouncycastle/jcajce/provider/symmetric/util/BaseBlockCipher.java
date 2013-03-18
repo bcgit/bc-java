@@ -390,6 +390,12 @@ public class BaseBlockCipher
             {
                 param = k.getParam();
                 pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
+                if (params instanceof IvParameterSpec)
+                {
+                    IvParameterSpec iv = (IvParameterSpec)params;
+
+                    param = new ParametersWithIV(param, iv.getIV());
+                }
             }
             else if (params instanceof PBEParameterSpec)
             {

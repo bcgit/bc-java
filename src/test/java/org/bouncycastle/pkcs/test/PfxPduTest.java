@@ -57,7 +57,9 @@ import org.bouncycastle.pkcs.bc.BcPKCS12PBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEOutputEncryptorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS8EncryptedPrivateKeyInfoBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Base64;
 
 public class PfxPduTest
     extends TestCase
@@ -117,6 +119,158 @@ public class PfxPduTest
         new BigInteger("6c929e4e81672fef49d9c825163fec97c4b7ba7acb26c0824638ac22605d7201c94625770984f78a56e6e25904fe7db407099cad9b14588841b94f5ab498dded", 16),
         new BigInteger("dae7651ee69ad1d081ec5e7188ae126f6004ff39556bde90e0b870962fa7b926d070686d8244fe5a9aa709a95686a104614834b0ada4b10f53197a5cb4c97339", 16));
 
+    //
+    // pkcs-12 pfx-pdu
+    //
+    private String pkcs12Pass = "hello world";
+
+    private byte[]  pkcs12 = Base64.decode(
+          "MIACAQMwgAYJKoZIhvcNAQcBoIAkgAQBMAQBgAQBMAQBgAQBBgQBCQQJKoZI"
+        + "hvcNAQcBBAGgBAGABAEkBAGABAEEBAEBBAEwBAEEBAEDBAOCAzQEAQQEAQEE"
+        + "ATAEAQQEAQMEA4IDMAQBBAQBAQQBBgQBBAQBAQQBCwQBBAQBCwQLKoZIhvcN"
+        + "AQwKAQIEAQQEAQEEAaAEAQQEAQMEA4ICpQQBBAQBAQQBMAQBBAQBAwQDggKh"
+        + "BAEEBAEBBAEwBAEEBAEBBAEbBAEEBAEBBAEGBAEEBAEBBAEKBAEEBAEKBAoq"
+        + "hkiG9w0BDAEDBAEEBAEPBA8wDQQIoagiwNZPJR4CAQEEAQQEAQEEAQQEAQQE"
+        + "AQMEA4ICgAQBBAQDggKABIICgEPG0XlhMFyrs4ZWDrvEzl51ICfXd6K2ql2l"
+        + "nnxhszUbigtSj6x49VEx4PfOB9fQFeidc5L5An+nKp646NBMIY0UwXGs8BLQ"
+        + "au59jtOs987+l7QYIvl6fdGUIuLPhVSnZZDyqD+HQjU/0/ccKFHRif4tlEQq"
+        + "aErvZbFeH0pg4ijf1HfgX6gBJGRKdO+msa4qKGnZdHCSLZehyyxvxAmURetg"
+        + "yhtEl7RmedTB+4TDs7atekqxkNlD9tfwDUX6sb0IH6qbEA6P/DlVMdaD54Cl"
+        + "QDxRzOfIIjklZhv5OMFWtPK0aYPcqyxzLpw1qRAyoTVXpidkj/hpIpgCVBP/"
+        + "k5s2+WdGbLgA/4/zSrF6feRCE5llzM2IGxiHVq4oPzzngl3R+Fi5VCPDMcuW"
+        + "NRuIOzJA+RNV2NPOE/P3knThDnwiImq+rfxmvZ1u6T06s20RmWK6cxp7fTEw"
+        + "lQ9BOsv+mmyV8dr6cYJq4IlRzHdFOyEUBDwfHThyribNKKobO50xh2f93xYj"
+        + "Rn5UMOQBJIe3b7OKZt5HOIMrJSZO02IZgvImi9yQWi96PnWa419D1cAsLWvM"
+        + "xiN0HqZMbDFfxVM2BZmsxiexLhkHWKwLqfQDzRjJfmVww8fnXpWZhFXKyut9"
+        + "gMGEyCNoba4RU3QI/wHKWYaK74qtJpsucuLWBH6UcsHsCry6VZkwRxWwC0lb"
+        + "/F3Bm5UKHax5n9JHJ2amQm9zW3WJ0S5stpPObfmg5ArhbPY+pVOsTqBRlop1"
+        + "bYJLD/X8Qbs468Bwzej0FhoEU59ZxFrbjLSBsMUYrVrwD83JE9kEazMLVchc"
+        + "uCB9WT1g0hxYb7VA0BhOrWhL8F5ZH72RMCYLPI0EAQQEAQEEATEEAQQEAQEE"
+        + "AXgEAQQEAQEEATAEAQQEAQEEAVEEAQQEAQEEAQYEAQQEAQEEAQkEAQQEAQkE"
+        + "CSqGSIb3DQEJFAQBBAQBAQQBMQQBBAQBAQQBRAQBBAQBAQQBHgQBBAQBAQQB"
+        + "QgQBBAQBQgRCAEQAYQB2AGkAZAAgAEcALgAgAEgAbwBvAGsAJwBzACAAVgBl"
+        + "AHIAaQBTAGkAZwBuACwAIABJAG4AYwAuACAASQBEBAEEBAEBBAEwBAEEBAEB"
+        + "BAEjBAEEBAEBBAEGBAEEBAEBBAEJBAEEBAEJBAkqhkiG9w0BCRUEAQQEAQEE"
+        + "ATEEAQQEAQEEARYEAQQEAQEEAQQEAQQEAQEEARQEAQQEARQEFKEcMJ798oZL"
+        + "FkH0OnpbUBnrTLgWBAIAAAQCAAAEAgAABAEwBAGABAEGBAEJBAkqhkiG9w0B"
+        + "BwYEAaAEAYAEATAEAYAEAQIEAQEEAQAEATAEAYAEAQYEAQkECSqGSIb3DQEH"
+        + "AQQBMAQBGwQBBgQBCgQKKoZIhvcNAQwBBgQPMA0ECEE7euvmxxwYAgEBBAGg"
+        + "BAGABAEEBAEIBAgQIWDGlBWxnwQBBAQBCAQI2WsMhavhSCcEAQQEAQgECPol"
+        + "uHJy9bm/BAEEBAEQBBCiRxtllKXkJS2anKD2q3FHBAEEBAEIBAjKy6BRFysf"
+        + "7gQBBAQDggMwBIIDMJWRGu2ZLZild3oz7UBdpBDUVMOA6eSoWiRIfVTo4++l"
+        + "RUBm8TpmmGrVkV32PEoLkoV+reqlyWCvqqSjRzi3epQiVwPQ6PV+ccLqxDhV"
+        + "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");
+
+    private String sha256Pass = "D317F8D5191F2602C527F8E6E0E8855C4517EC9512F7A06A7A588ACF0B3A6325";
+
+    private byte[] sha256Pfx = Base64.decode(
+              "MIIFvwIBAzCCBXEGCSqGSIb3DQEHAaCCBWIEggVeMIIFWjCCBVYGCSqGSIb3"
+            + "DQEHAaCCBUcEggVDMIIFPzCCBTsGCyqGSIb3DQEMCgECoIIFKjCCBSYwUAYJ"
+            + "KoZIhvcNAQUNMEMwIgYJKoZIhvcNAQUMMBUEEFEZik5RaSrwXtrWCnaLzAQC"
+            + "AQEwHQYJYIZIAWUDBAEqBBBTqY5oFOjZxnBBtWchzf0TBIIE0Pcvwtwthm8d"
+            + "yR16f5yqtofxGzJ0aAbCF7JJ+XsL9QhNuqndTtnXits+E2WgNwwm24XyRhPA"
+            + "obAwqz+DvH+gdUbKoN/gCEp+/6xhlwMQZyjyqi5ePznwLQ/bJueqmXZDT+pO"
+            + "zTIeMXMF0YaSjcZZ4FJnZtBX7XQDEAPmialrknhcSZI5RoLjOzFv51FgYd9+"
+            + "nWdtWlRINS9LrGCVL+y8wwHp55tWEoCR2/o9YWFMYNrUkVUUzImHCN1fkbIH"
+            + "XQxPp5fUqP00kwYY4288JZrzHGWGmSVYm54ok5YRLpCs0yhB0ve//iH/fNNO"
+            + "esShfBTUcRCc086skxgoCVWBZERyVJHWkKl/Q4RVzYt70k2/Qfq/xBNwVCrw"
+            + "YiOB0TwSQJKpvRbtufPx2vODfAmhIKes08ZLJHsMJ+O3p99O2rWZslNY7nfx"
+            + "1vWXYLVkHg0q79ThgbP4p0qQQziIVZoF9ViisJTJWzZbfJLdaKPeHcduvXsR"
+            + "lRvfEpR6/lifcxvkloxjpYtM6JEjtvT1x442VRKJWZofkjCohpLSmEDt77FM"
+            + "ENvra7B9ojlY+0DkwNV34FlSRrwi/nVl2XhebI11DfQFEUN+krNoZ3U4n5Sb"
+            + "g0Heibg5mILPwVS5Zh2vEybXzFY6b1XPA7TlGQATm6xBaU+BNFiACp+7+6CZ"
+            + "PxofFKKlWq0+Apx43JDATerwlPBKxLqxxgo0xTJUtL8OKnt6oSFX4P6O6AgX"
+            + "D9Pz3dzdWW9ga65N2qEmqpeIsd6SB4eGRJ1Vf1ePDgdVBUD9DG/eWfpn8l1T"
+            + "neg7wsQOGDrX00uDfio/WrjRBOw37IfToqJ/j6y/Ybggg5tldvCNoxq/42rC"
+            + "RvP0GJH+LJAHgB9sOWbksR7tKizWeFEyHwrAQfYc8aIZocApObtsZp8O5nuI"
+            + "MNcSCc77WZfVacrJzssKki1YHPoZeTYb9q4DRm0F6Rk+bqyvd7vs2DyLN7jT"
+            + "bkWoSoyCw8PAOuc8Q/+X3jhs18RQGzsEpeTOHoYJWeTUxgPrPqDFNKNLhD+L"
+            + "7mvDM7EvB08tVfLTSMeVBY+RUW6eFCbdlHfqszvp9pFZPNxQHtgbAYplwK6J"
+            + "i24gCH2UMF+BNzdcN2Fw9vP3nao+mzjtY1HuYebDDNNxgBAEoUFS4jr1YLoa"
+            + "+li3A9T/NqSf+J5OwASsSsp0YttAJQ+VU19amwJ141U+04kVc2bUIvSxEyxu"
+            + "UzWfFs26J1FhKzacirtpNv21iH78NHWOgS3jlEZMirpCHtHDbwF0z3V0upJ7"
+            + "cZzMwHJPQIGP4Nk8ei20dEogc/D2ijXHGRKdRjstzi89YXs4iLWjy2lEqhlK"
+            + "IvmlbF/snra1He2En/TFYv7m1zMuEPtS/+DTcwzqoe10Lko+2bNlOikW58u/"
+            + "OdAlteo1IissecMjL6743ttt8SAwx9gpAn6XHaIfFL1jiGKUQPJ5Mx9RUzfB"
+            + "lsKzHLNWmrDCZtR4BC4A21aRUueDGgRbtiOCYLbVtoiTc2XWM5juahaWCNKm"
+            + "4+ENQNOPrB4rJUeWJquNOj9+Brhe6pWWfi4EYVBuWlbTQB7u3uP9lnYvQHSo"
+            + "nOjkhjwEhPZneaKctEqXx2LoYc8arY1LSSpaXORcOJc/LkgVCq3bBEDNCJrZ"
+            + "DBOUpcPXDj43MEUwMTANBglghkgBZQMEAgEFAAQgdWQUVEirOjgax8qJhjqC"
+            + "bArDHuZQQvCmtrjqyhWbI4MEENBoJ4T1+xY5fmdiwmoXPPM=");
 
     /**
      * we generate the CA's certificate
@@ -471,6 +625,78 @@ public class PfxPduTest
         catch (IllegalArgumentException e)
         {
 
+        }
+    }
+
+    public void testBasicPKCS12()
+        throws Exception
+    {
+        InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                                                              .setProvider("BC").build(pkcs12Pass.toCharArray());
+        PKCS12PfxPdu pfx = new PKCS12PfxPdu(pkcs12);
+
+        ContentInfo[] infos = pfx.getContentInfos();
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                // TODO: finish!
+//                assertEquals(3, bags.length);
+//                assertEquals(PKCSObjectIdentifiers.certBag, bags[0].getType());
+            }
+            else
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                assertEquals(1, bags.length);
+                assertEquals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag, bags[0].getType());
+
+                PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
+                PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+            }
+        }
+    }
+
+    public void testSHA256withPKCS5()
+        throws Exception
+    {
+        InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                                                              .setProvider("BC").build(sha256Pass.toCharArray());
+        PKCS12PfxPdu pfx = new PKCS12PfxPdu(sha256Pfx);
+
+        ContentInfo[] infos = pfx.getContentInfos();
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                // TODO: finish!
+//                assertEquals(3, bags.length);
+//                assertEquals(PKCSObjectIdentifiers.certBag, bags[0].getType());
+            }
+            else
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                assertEquals(1, bags.length);
+                assertEquals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag, bags[0].getType());
+
+                PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
+                PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+            }
         }
     }
 

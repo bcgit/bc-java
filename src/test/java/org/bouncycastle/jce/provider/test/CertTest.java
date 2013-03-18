@@ -2776,6 +2776,32 @@ public class CertTest
         bcCRL.verify(bcIssuer.getPublicKey());
     }
 
+    private void testCertPathEncAvailableTest()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Iterator it = certFact.getCertPathEncodings();
+
+        if (!"PkiPath".equals(it.next()))
+        {
+            fail("available enc 1 wrong");
+        }
+        if (!"PEM".equals(it.next()))
+        {
+            fail("available enc 2 wrong");
+        }
+        if (!"PKCS7".equals(it.next()))
+        {
+            fail("available enc 3 wrong");
+        }
+
+        if (it.hasNext())
+        {
+            fail("wrong number of encodings");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -2851,6 +2877,8 @@ public class CertTest
         testNullDerNullCert();
 
         checkCertificate(18, emptyDNCert);
+
+        testCertPathEncAvailableTest();
     }
 
     public static void main(

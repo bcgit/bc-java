@@ -137,6 +137,12 @@ public class ECDSASigner
 
         ECPoint point = ECAlgorithms.sumOfTwoMultiplies(G, u1, Q, u2);
 
+        // components must be bogus.
+        if (point.isInfinity())
+        {
+            return false;
+        }
+
         BigInteger v = point.getX().toBigInteger().mod(n);
 
         return v.equals(r);

@@ -19,6 +19,81 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class IETFUtils
 {
+    private static String unescape(String elt)
+    {
+        if (elt.length() == 0 || (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0))
+        {
+            return elt.trim();
+        }
+
+        char[] elts = elt.toCharArray();
+        boolean escaped = false;
+        boolean quoted = false;
+        StringBuffer buf = new StringBuffer(elt.length());
+        int start = 0;
+
+        // if it's an escaped hash string and not an actual encoding in string form
+        // we need to leave it escaped.
+        if (elts[0] == '\\')
+        {
+            if (elts[1] == '#')
+            {
+                start = 2;
+                buf.append("\\#");
+            }
+        }
+
+        boolean nonWhiteSpaceEncountered = false;
+        int     lastEscaped = 0;
+
+        for (int i = start; i != elts.length; i++)
+        {
+            char c = elts[i];
+
+            if (c != ' ')
+            {
+                nonWhiteSpaceEncountered = true;
+            }
+
+            if (c == '"')
+            {
+                if (!escaped)
+                {
+                    quoted = !quoted;
+                }
+                else
+                {
+                    buf.append(c);
+                }
+                escaped = false;
+            }
+            else if (c == '\\' && !(escaped || quoted))
+            {
+                escaped = true;
+                lastEscaped = buf.length();
+            }
+            else
+            {
+                if (c == ' ' && !escaped && !nonWhiteSpaceEncountered)
+                {
+                    continue;
+                }
+                buf.append(c);
+                escaped = false;
+            }
+        }
+
+        if (buf.length() > 0)
+        {
+            while (buf.charAt(buf.length() - 1) == ' ' && lastEscaped != (buf.length() - 1))
+            {
+                buf.deleteCharAt(buf.length() - 1);
+            }
+        }
+
+        return buf.toString();
+    }
+
     public static RDN[] rDNsFromString(String name, X500NameStyle x500Style)
     {
         X500NameTokenizer nTok = new X500NameTokenizer(name);
@@ -27,45 +102,71 @@ public class IETFUtils
         while (nTok.hasMoreTokens())
         {
             String  token = nTok.nextToken();
-            int     index = token.indexOf('=');
 
-            if (index == -1)
+            if (token.indexOf('+') > 0)
             {
-                throw new IllegalArgumentException("badly formated directory string");
-            }
+                X500NameTokenizer   pTok = new X500NameTokenizer(token, '+');
+                X500NameTokenizer   vTok = new X500NameTokenizer(pTok.nextToken(), '=');
 
-            String               attr = token.substring(0, index);
-            String               value = token.substring(index + 1);
-            ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr);
+                String              attr = vTok.nextToken();
 
-            if (value.indexOf('+') > 0)
-            {
-                X500NameTokenizer   vTok = new X500NameTokenizer(value, '+');
-                String  v = vTok.nextToken();
-
-                Vector oids = new Vector();
-                Vector values = new Vector();
-
-                oids.addElement(oid);
-                values.addElement(v);
-
-                while (vTok.hasMoreTokens())
+                if (!vTok.hasMoreTokens())
                 {
-                    String  sv = vTok.nextToken();
-                    int     ndx = sv.indexOf('=');
-
-                    String  nm = sv.substring(0, ndx);
-                    String  vl = sv.substring(ndx + 1);
-
-                    oids.addElement(x500Style.attrNameToOID(nm));
-                    values.addElement(vl);
+                    throw new IllegalArgumentException("badly formatted directory string");
                 }
 
-                builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
+                String               value = vTok.nextToken();
+                ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
+
+                if (pTok.hasMoreTokens())
+                {
+                    Vector oids = new Vector();
+                    Vector values = new Vector();
+
+                    oids.addElement(oid);
+                    values.addElement(unescape(value));
+
+                    while (pTok.hasMoreTokens())
+                    {
+                        vTok = new X500NameTokenizer(pTok.nextToken(), '=');
+
+                        attr = vTok.nextToken();
+
+                        if (!vTok.hasMoreTokens())
+                        {
+                            throw new IllegalArgumentException("badly formatted directory string");
+                        }
+
+                        value = vTok.nextToken();
+                        oid = x500Style.attrNameToOID(attr.trim());
+
+
+                        oids.addElement(oid);
+                        values.addElement(unescape(value));
+                    }
+
+                    builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
+                }
+                else
+                {
+                    builder.addRDN(oid, unescape(value));
+                }
             }
             else
             {
-                builder.addRDN(oid, value);
+                X500NameTokenizer   vTok = new X500NameTokenizer(token, '=');
+
+                String              attr = vTok.nextToken();
+
+                if (!vTok.hasMoreTokens())
+                {
+                    throw new IllegalArgumentException("badly formatted directory string");
+                }
+
+                String               value = vTok.nextToken();
+                ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
+
+                builder.addRDN(oid, unescape(value));
             }
         }
 
@@ -255,6 +356,24 @@ public class IETFUtils
             }
 
             index++;
+        }
+
+        int start = 0;
+        if (vBuf.length() > 0)
+        {
+            while (vBuf.charAt(start) == ' ')
+            {
+                vBuf.insert(start, "\\");
+                start += 2;
+            }
+        }
+
+        int endBuf = vBuf.length() - 1;
+
+        while (endBuf >= 0 && vBuf.charAt(endBuf) == ' ')
+        {
+            vBuf.insert(endBuf, '\\');
+            endBuf--;
         }
 
         return vBuf.toString();

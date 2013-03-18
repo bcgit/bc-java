@@ -1,4 +1,4 @@
-package org.bouncycastle.jce.provider;
+package org.bouncycastle.jcajce.provider.asymmetric.ies;
 
 import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
@@ -10,7 +10,6 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -18,19 +17,21 @@ import javax.crypto.interfaces.DHPrivateKey;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.IESParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.ECUtil;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 
-public class JCEIESCipher extends CipherSpi
+public class CipherSpi
+    extends javax.crypto.CipherSpi
 {
     private IESEngine cipher;
     private int                     state = -1;
@@ -46,7 +47,7 @@ public class JCEIESCipher extends CipherSpi
                                         IESParameterSpec.class
                                     };
 
-    public JCEIESCipher(
+    public CipherSpi(
         IESEngine engine)
     {
         cipher = engine;
@@ -348,35 +349,8 @@ public class JCEIESCipher extends CipherSpi
         }
     }
 
-    /**
-     * classes that inherit from us.
-     */
-    static public class BrokenECIES
-        extends JCEIESCipher
-    {
-        public BrokenECIES()
-        {
-            super(new IESEngine(
-                   new ECDHBasicAgreement(),
-                   new BrokenKDF2BytesGenerator(new SHA1Digest()),
-                   new HMac(new SHA1Digest())));
-        }
-    }
-
-    static public class BrokenIES
-        extends JCEIESCipher
-    {
-        public BrokenIES()
-        {
-            super(new IESEngine(
-                   new DHBasicAgreement(),
-                   new BrokenKDF2BytesGenerator(new SHA1Digest()),
-                   new HMac(new SHA1Digest())));
-        }
-    }
-
     static public class IES
-        extends JCEIESCipher
+        extends CipherSpi
     {
         public IES()
         {
