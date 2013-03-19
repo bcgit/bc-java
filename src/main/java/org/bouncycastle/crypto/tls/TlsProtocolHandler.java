@@ -357,7 +357,11 @@ public class TlsProtocolHandler
                         // Integer -> byte[]
                         Hashtable serverExtensions = new Hashtable();
 
-                        if (is.available() > 0)
+                        /*
+                         * RFC 3546 2.2 Note that the extended server hello message is only sent in response
+                         * to an extended client hello message.
+                         */
+                        if (clientExtensions != null && is.available() > 0)
                         {
                             // Process extensions from extended server hello
                             byte[] extBytes = TlsUtils.readOpaque16(is);
