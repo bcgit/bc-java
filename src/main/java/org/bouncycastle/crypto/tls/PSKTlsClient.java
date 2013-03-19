@@ -1,37 +1,21 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
-import java.util.Hashtable;
 
-public abstract class PSKTlsClient implements TlsClient
+public abstract class PSKTlsClient extends AbstractTlsClient
 {
-    protected TlsCipherFactory cipherFactory;
     protected TlsPSKIdentity pskIdentity;
-
-    protected TlsClientContext context;
-
-    protected int selectedCompressionMethod;
-    protected int selectedCipherSuite;
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        this(new DefaultTlsCipherFactory(), pskIdentity);
+        super();
+        this.pskIdentity = pskIdentity;
     }
 
     public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)
     {
-        this.cipherFactory = cipherFactory;
+        super(cipherFactory);
         this.pskIdentity = pskIdentity;
-    }
-
-    public ProtocolVersion getClientVersion()
-    {
-        return ProtocolVersion.TLSv11;
-    }
-
-    public void init(TlsClientContext context)
-    {
-        this.context = context;
     }
 
     public int[] getCipherSuites()
@@ -50,57 +34,6 @@ public abstract class PSKTlsClient implements TlsClient
             CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA,
             CipherSuite.TLS_PSK_WITH_RC4_128_SHA,
         };
-    }
-
-    public Hashtable getClientExtensions() throws IOException
-    {
-        return null;
-    }
-
-    public short[] getCompressionMethods()
-    {
-        return new short[] { CompressionMethod.NULL };
-    }
-
-    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
-    {
-	if (serverVersion.getFullVersion() < ProtocolVersion.TLSv10.getFullVersion())
-        {
-            throw new TlsFatalAlert(AlertDescription.protocol_version);
-        }
-    }
-
-    public void notifySessionID(byte[] sessionID)
-    {
-        // Currently ignored 
-    }
-
-    public void notifySelectedCipherSuite(int selectedCipherSuite)
-    {
-        this.selectedCipherSuite = selectedCipherSuite;
-    }
-
-    public void notifySelectedCompressionMethod(short selectedCompressionMethod)
-    {
-        this.selectedCompressionMethod = selectedCompressionMethod;
-    }
-
-    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException
-    {
-        if (!secureRenegotiation)
-        {
-            /*
-             * RFC 5746 3.4. If the extension is not present, the server does not support
-             * secure renegotiation; set secure_renegotiation flag to FALSE. In this case,
-             * some clients may want to terminate the handshake instead of continuing; see
-             * Section 4.1 for discussion.
-             */
-//            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-    }
-
-    public void processServerExtensions(Hashtable serverExtensions)
-    {
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException
@@ -130,24 +63,6 @@ public abstract class PSKTlsClient implements TlsClient
                  * Note: internal error here; the TlsProtocolHandler verifies that the
                  * server-selected cipher suite was in the list of client-offered cipher
                  * suites, so if we now can't produce an implementation, we shouldn't have
-                 * offered it!
-                 */
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    public TlsCompression getCompression() throws IOException
-    {
-        switch (selectedCompressionMethod)
-        {
-            case CompressionMethod.NULL:
-                return new TlsNullCompression();
-
-            default:
-                /*
-                 * Note: internal error here; the TlsProtocolHandler verifies that the
-                 * server-selected compression method was in the list of client-offered compression
-                 * methods, so if we now can't produce an implementation, we shouldn't have
                  * offered it!
                  */
                 throw new TlsFatalAlert(AlertDescription.internal_error);

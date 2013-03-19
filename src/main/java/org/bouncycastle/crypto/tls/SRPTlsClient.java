@@ -7,39 +7,25 @@ import java.util.Hashtable;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
-public abstract class SRPTlsClient implements TlsClient
+public abstract class SRPTlsClient extends AbstractTlsClient
 {
     public static final Integer EXT_SRP = Integers.valueOf(ExtensionType.srp);
 
-    protected TlsCipherFactory cipherFactory;
     protected byte[] identity;
     protected byte[] password;
 
-    protected TlsClientContext context;
-
-    protected int selectedCompressionMethod;
-    protected int selectedCipherSuite;
-
     public SRPTlsClient(byte[] identity, byte[] password)
     {
-        this(new DefaultTlsCipherFactory(), identity, password);
-    }
-
-    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
-    {
-        this.cipherFactory = cipherFactory;
+        super();
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
     }
 
-    public void init(TlsClientContext context)
+    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
     {
-        this.context = context;
-    }
-
-    public ProtocolVersion getClientVersion()
-    {
-        return ProtocolVersion.TLSv11;
+        super(cipherFactory);
+        this.identity = Arrays.clone(identity);
+        this.password = Arrays.clone(password);
     }
 
     public int[] getCipherSuites()
@@ -67,51 +53,9 @@ public abstract class SRPTlsClient implements TlsClient
         return clientExtensions;
     }
 
-    public short[] getCompressionMethods()
-    {
-        return new short[] { CompressionMethod.NULL };
-    }
-
-    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
-    {
-	if (serverVersion.getFullVersion() < ProtocolVersion.TLSv10.getFullVersion())
-        {
-            throw new TlsFatalAlert(AlertDescription.protocol_version);
-        }
-    }
-
-    public void notifySessionID(byte[] sessionID)
-    {
-        // Currently ignored 
-    }
-
-    public void notifySelectedCipherSuite(int selectedCipherSuite)
-    {
-        this.selectedCipherSuite = selectedCipherSuite;
-    }
-
-    public void notifySelectedCompressionMethod(short selectedCompressionMethod)
-    {
-        this.selectedCompressionMethod = selectedCompressionMethod;
-    }
-
-    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException
-    {
-        if (!secureRenegotiation)
-        {
-            /*
-             * RFC 5746 3.4. If the extension is not present, the server does not support
-             * secure renegotiation; set secure_renegotiation flag to FALSE. In this case,
-             * some clients may want to terminate the handshake instead of continuing; see
-             * Section 4.1 for discussion.
-             */
-//            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-    }
-
     public void processServerExtensions(Hashtable serverExtensions)
     {
-        // There is no server response for the SRP extension
+        // TODO Check there is no server response to the SRP extension
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException
@@ -138,24 +82,6 @@ public abstract class SRPTlsClient implements TlsClient
                  * Note: internal error here; the TlsProtocolHandler verifies that the
                  * server-selected cipher suite was in the list of client-offered cipher
                  * suites, so if we now can't produce an implementation, we shouldn't have
-                 * offered it!
-                 */
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    public TlsCompression getCompression() throws IOException
-    {
-        switch (selectedCompressionMethod)
-        {
-            case CompressionMethod.NULL:
-                return new TlsNullCompression();
-
-            default:
-                /*
-                 * Note: internal error here; the TlsProtocolHandler verifies that the
-                 * server-selected compression method was in the list of client-offered compression
-                 * methods, so if we now can't produce an implementation, we shouldn't have
                  * offered it!
                  */
                 throw new TlsFatalAlert(AlertDescription.internal_error);
