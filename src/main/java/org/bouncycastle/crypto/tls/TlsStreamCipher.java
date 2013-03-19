@@ -21,6 +21,8 @@ public class TlsStreamCipher implements TlsCipher
         StreamCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
         throws IOException
     {
+        boolean isServer = context.isServer();
+
         this.context = context;
 
         this.encryptCipher = encryptCipher;
@@ -34,20 +36,36 @@ public class TlsStreamCipher implements TlsCipher
         int offset = 0;
 
         // Init MACs
-        writeMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
+        TlsMac clientWriteMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
         offset += writeDigest.getDigestSize();
-        readMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
+        TlsMac serverWriteMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
         offset += readDigest.getDigestSize();
 
         // Build keys
-        KeyParameter encryptKey = new KeyParameter(key_block, offset, cipherKeySize);
+        KeyParameter clientWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        KeyParameter decryptKey = new KeyParameter(key_block, offset, cipherKeySize);
+        KeyParameter serverWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
         if (offset != key_block_size)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        KeyParameter encryptKey, decryptKey;
+        if (isServer)
+        {
+            writeMac = serverWriteMac;
+            readMac = clientWriteMac;
+            encryptKey = serverWriteKey;
+            decryptKey = clientWriteKey;
+        }
+        else
+        {
+            writeMac = clientWriteMac;
+            readMac = serverWriteMac;
+            encryptKey = clientWriteKey;
+            decryptKey = serverWriteKey;
         }
 
         encryptCipher.init(true, encryptKey);
@@ -74,27 +92,25 @@ public class TlsStreamCipher implements TlsCipher
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
         throws IOException
     {
+        int macSize = readMac.getSize();
+        if (len < macSize)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
         byte[] deciphered = new byte[len];
         decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
 
-        int plaintextSize = deciphered.length - readMac.getSize();
-        byte[] plainText = copyData(deciphered, 0, plaintextSize);
+        int macInputLen = len - macSize;
 
-        byte[] receivedMac = copyData(deciphered, plaintextSize, readMac.getSize());
-        byte[] computedMac = readMac.calculateMac(seqNo, type, plainText, 0, plainText.length);
+        byte[] receivedMac = Arrays.copyOfRange(deciphered, macInputLen, len);
+        byte[] computedMac = readMac.calculateMac(seqNo, type, deciphered, 0, macInputLen);
 
         if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        return plainText;
-    }
-
-    protected byte[] copyData(byte[] text, int offset, int len)
-    {
-        byte[] result = new byte[len];
-        System.arraycopy(text, offset, result, 0, len);
-        return result;
+        return Arrays.copyOfRange(deciphered, 0, macInputLen);
     }
 }
