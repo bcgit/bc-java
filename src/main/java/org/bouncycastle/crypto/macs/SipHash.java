@@ -102,7 +102,7 @@ public class SipHash implements Mac {
 
         processMessageWord();
 
-        v2 ^= 0x000000ffL;
+        v2 ^= 0xffL;
 
         applySipRounds(d);
 
