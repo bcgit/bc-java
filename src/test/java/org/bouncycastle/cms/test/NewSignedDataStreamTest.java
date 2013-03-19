@@ -478,7 +478,7 @@ public class NewSignedDataStreamTest
 
         otherInfo.add(response.toASN1Structure());
 
-        gen.addOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response, otherInfo);
+        gen.addOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response, new CollectionStore(otherInfo));
 
         OutputStream sigOut = gen.open(bOut, true);
 
