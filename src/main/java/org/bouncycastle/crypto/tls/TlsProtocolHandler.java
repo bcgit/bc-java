@@ -868,7 +868,7 @@ public class TlsProtocolHandler
     }
 
     /**
-     * Connects to the remote system using client authentication
+     * Initiates a TLS handshake in the of client
      * 
      * @param tlsClient
      * @throws IOException If handshake was not successful.
