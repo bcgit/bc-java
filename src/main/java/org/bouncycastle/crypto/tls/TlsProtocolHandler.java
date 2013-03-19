@@ -360,8 +360,10 @@ public class TlsProtocolHandler
                         /*
                          * RFC 3546 2.2 Note that the extended server hello message is only sent in response
                          * to an extended client hello message.
+                         * However, see RFC 5746 exception below. We always include the SCSV, so an
+                         * Extended Server Hello is always allowed.
                          */
-                        if (clientExtensions != null && is.available() > 0)
+                        if (is.available() > 0)
                         {
                             // Process extensions from extended server hello
                             byte[] extBytes = TlsUtils.readOpaque16(is);
