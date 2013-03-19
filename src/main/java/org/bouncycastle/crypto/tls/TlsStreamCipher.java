@@ -22,39 +22,36 @@ public class TlsStreamCipher implements TlsCipher
         throws IOException
     {
         this.context = context;
+
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 
-        int prfSize = (2 * cipherKeySize) + writeDigest.getDigestSize()
+        int key_block_size = (2 * cipherKeySize) + writeDigest.getDigestSize()
             + readDigest.getDigestSize();
 
-        SecurityParameters securityParameters = context.getSecurityParameters();
-
-        byte[] keyBlock = TlsUtils.PRF(securityParameters.masterSecret, "key expansion",
-            TlsUtils.concat(securityParameters.serverRandom, securityParameters.clientRandom),
-            prfSize);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
         // Init MACs
-        writeMac = new TlsMac(context, writeDigest, keyBlock, offset, writeDigest.getDigestSize());
+        writeMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
         offset += writeDigest.getDigestSize();
-        readMac = new TlsMac(context, readDigest, keyBlock, offset, readDigest.getDigestSize());
+        readMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
         offset += readDigest.getDigestSize();
 
         // Build keys
-        KeyParameter encryptKey = new KeyParameter(keyBlock, offset, cipherKeySize);
+        KeyParameter encryptKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        KeyParameter decryptKey = new KeyParameter(keyBlock, offset, cipherKeySize);
+        KeyParameter decryptKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        if (offset != prfSize)
+        if (offset != key_block_size)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         encryptCipher.init(true, encryptKey);
-        decryptCipher.init(true, decryptKey);
+        decryptCipher.init(false, decryptKey);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
