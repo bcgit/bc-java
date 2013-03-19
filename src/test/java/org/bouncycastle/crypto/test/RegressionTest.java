@@ -110,7 +110,8 @@ public class RegressionTest
         new SCryptTest(),
         new ResetTest(),
         new NullTest(),
-        new DSTU4145Test()
+        new DSTU4145Test(),
+        new SipHashTest()
     };
 
     public static void main(
