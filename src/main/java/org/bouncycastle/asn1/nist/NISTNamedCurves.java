@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.util.Strings;
 
 /**
- * Utility class for fetching curves using their NIST names as published in FIPS-PUB 186-2
+ * Utility class for fetching curves using their NIST names as published in FIPS-PUB 186-3
  */
 public class NISTNamedCurves
 {
@@ -25,13 +25,16 @@ public class NISTNamedCurves
 
     static
     {
-        // TODO Missing the "K-" curves
-
         defineCurve("B-571", SECObjectIdentifiers.sect571r1);
         defineCurve("B-409", SECObjectIdentifiers.sect409r1);
         defineCurve("B-283", SECObjectIdentifiers.sect283r1);
         defineCurve("B-233", SECObjectIdentifiers.sect233r1);
         defineCurve("B-163", SECObjectIdentifiers.sect163r2);
+        defineCurve("K-571", SECObjectIdentifiers.sect571k1);
+        defineCurve("K-409", SECObjectIdentifiers.sect409k1);
+        defineCurve("K-283", SECObjectIdentifiers.sect283k1);
+        defineCurve("K-233", SECObjectIdentifiers.sect233k1);
+        defineCurve("K-163", SECObjectIdentifiers.sect163k1);
         defineCurve("P-521", SECObjectIdentifiers.secp521r1);
         defineCurve("P-384", SECObjectIdentifiers.secp384r1);
         defineCurve("P-256", SECObjectIdentifiers.secp256r1);
