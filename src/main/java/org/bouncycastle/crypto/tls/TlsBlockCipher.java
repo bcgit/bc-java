@@ -35,7 +35,7 @@ public class TlsBlockCipher implements TlsCipher
     }
 
     public TlsBlockCipher(TlsContext context, BlockCipher encryptCipher,
-        BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
+        BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize) throws IOException
     {
         boolean isServer = context.isServer();
 
@@ -84,6 +84,12 @@ public class TlsBlockCipher implements TlsCipher
         key_offset += cipherKeySize;
         iv_offset += clientWriteCipher.getBlockSize();
         this.initCipher(isServer, serverWriteCipher, key_block, cipherKeySize, key_offset, iv_offset);
+        iv_offset += serverWriteCipher.getBlockSize();
+
+        if (iv_offset != key_block_size)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     protected void initCipher(boolean forEncryption, BlockCipher cipher, byte[] key_block,
