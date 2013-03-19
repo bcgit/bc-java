@@ -17,7 +17,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 class TlsPSKKeyExchange implements TlsKeyExchange
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected int keyExchange;
     protected TlsPSKIdentity pskIdentity;
 
@@ -30,7 +30,7 @@ class TlsPSKKeyExchange implements TlsKeyExchange
     protected RSAKeyParameters rsaServerPublicKey = null;
     protected byte[] premasterSecret;
 
-    TlsPSKKeyExchange(TlsClientContext context, int keyExchange, TlsPSKIdentity pskIdentity)
+    TlsPSKKeyExchange(TlsContext context, int keyExchange, TlsPSKIdentity pskIdentity)
     {
         switch (keyExchange)
         {

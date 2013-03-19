@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 
 public class TlsRSAUtils
 {
-    public static byte[] generateEncryptedPreMasterSecret(TlsClientContext context,
+    public static byte[] generateEncryptedPreMasterSecret(TlsContext context,
         RSAKeyParameters rsaServerPublicKey, OutputStream os) throws IOException
     {
         /*

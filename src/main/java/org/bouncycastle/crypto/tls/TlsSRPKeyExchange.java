@@ -22,7 +22,7 @@ import org.bouncycastle.util.BigIntegers;
  */
 class TlsSRPKeyExchange implements TlsKeyExchange
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
     protected byte[] identity;
@@ -34,7 +34,7 @@ class TlsSRPKeyExchange implements TlsKeyExchange
     protected BigInteger B = null;
     protected SRP6Client srpClient = new SRP6Client();
 
-    TlsSRPKeyExchange(TlsClientContext context, int keyExchange, byte[] identity, byte[] password)
+    TlsSRPKeyExchange(TlsContext context, int keyExchange, byte[] identity, byte[] password)
     {
         switch (keyExchange)
         {

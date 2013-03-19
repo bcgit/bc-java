@@ -20,7 +20,7 @@ class RecordStream
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    private TlsClientContext context = null;
+    private TlsContext context = null;
     private CombinedHash hash = null;
 
     private ProtocolVersion discoveredPeerVersion = null;
@@ -36,7 +36,7 @@ class RecordStream
         this.writeCipher = this.readCipher;
     }
 
-    void init(TlsClientContext context)
+    void init(TlsContext context)
     {
         this.context = context;
         this.hash = new CombinedHash(context);

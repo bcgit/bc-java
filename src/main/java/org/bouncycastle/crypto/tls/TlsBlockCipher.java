@@ -10,12 +10,12 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0 / SSLv3 block cipher.
+ * A generic TLS 1.0-1.1 / SSLv3 block cipher.
  * This can be used for AES or 3DES for example.
  */
 public class TlsBlockCipher implements TlsCipher
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected byte[] randomData;
 
     protected BlockCipher encryptCipher;
@@ -34,19 +34,11 @@ public class TlsBlockCipher implements TlsCipher
         return readMac;
     }
 
-    /**
-     * @deprecated use version with explicit 'isServer' parameter 
-     */
-    public TlsBlockCipher(TlsClientContext context, BlockCipher encryptCipher,
+    public TlsBlockCipher(TlsContext context, BlockCipher encryptCipher,
         BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
     {
-        this(false, context, encryptCipher, decryptCipher, writeDigest, readDigest, cipherKeySize);
-    }
+        boolean isServer = context.isServer();
 
-    // TODO Perhaps the isServer argument should be available from the context?
-    public TlsBlockCipher(boolean isServer, TlsClientContext context, BlockCipher encryptCipher,
-        BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
-    {
         this.context = context;
 
         this.randomData = new byte[256];

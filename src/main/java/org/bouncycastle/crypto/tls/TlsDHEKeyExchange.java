@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
 class TlsDHEKeyExchange extends TlsDHKeyExchange
 {
-    TlsDHEKeyExchange(TlsClientContext context, int keyExchange)
+    TlsDHEKeyExchange(TlsContext context, int keyExchange)
     {
         super(context, keyExchange);
     }

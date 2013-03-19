@@ -3,8 +3,8 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.util.Hashtable;
 
-public interface TlsClient
-{
+public interface TlsClient {
+
     void init(TlsClientContext context);
 
     ProtocolVersion getClientVersion();

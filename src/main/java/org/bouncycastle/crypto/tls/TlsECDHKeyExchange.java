@@ -23,7 +23,7 @@ import org.bouncycastle.util.BigIntegers;
  */
 class TlsECDHKeyExchange implements TlsKeyExchange
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
 
@@ -32,7 +32,7 @@ class TlsECDHKeyExchange implements TlsKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected ECPrivateKeyParameters ecAgreeClientPrivateKey = null;
 
-    TlsECDHKeyExchange(TlsClientContext context, int keyExchange)
+    TlsECDHKeyExchange(TlsContext context, int keyExchange)
     {
         switch (keyExchange)
         {

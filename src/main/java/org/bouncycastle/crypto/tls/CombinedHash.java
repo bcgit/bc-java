@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
  */
 class CombinedHash implements Digest
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected MD5Digest md5;
     protected SHA1Digest sha1;
 
@@ -19,7 +19,7 @@ class CombinedHash implements Digest
         this.sha1 = new SHA1Digest();
     }
 
-    CombinedHash(TlsClientContext context)
+    CombinedHash(TlsContext context)
     {
         this.context = context;
         this.md5 = new MD5Digest();

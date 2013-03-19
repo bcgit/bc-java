@@ -367,7 +367,7 @@ public class TlsUtils
         }
     }
     
-    static byte[] calculateKeyBlock(TlsClientContext context, int size)
+    static byte[] calculateKeyBlock(TlsContext context, int size)
     {
         SecurityParameters sp = context.getSecurityParameters();
         byte[] random = concat(sp.serverRandom, sp.clientRandom);
@@ -406,7 +406,7 @@ public class TlsUtils
         return rval;
     }
 
-    static byte[] calculateMasterSecret(TlsClientContext context, byte[] pms)
+    static byte[] calculateMasterSecret(TlsContext context, byte[] pms)
     {
         SecurityParameters sp = context.getSecurityParameters();
         byte[] random = concat(sp.clientRandom, sp.serverRandom);
@@ -443,16 +443,16 @@ public class TlsUtils
         return rval;
     }
 
-    static byte[] calculateVerifyData(TlsClientContext context, String asciiLabel, byte[] handshakeHash)
+    static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
     {
-	if (context.getServerVersion().isSSL())
-	{
-	    return handshakeHash;
-	}
+    	if (context.getServerVersion().isSSL())
+    	{
+    	    return handshakeHash;
+    	}
 
         SecurityParameters sp = context.getSecurityParameters();
 
-	return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
+        return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
     }
 
     static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };

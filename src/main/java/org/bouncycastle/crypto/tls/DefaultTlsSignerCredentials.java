@@ -10,13 +10,13 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 
 public class DefaultTlsSignerCredentials implements TlsSignerCredentials
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected Certificate clientCert;
     protected AsymmetricKeyParameter clientPrivateKey;
 
     protected TlsSigner clientSigner;
 
-    public DefaultTlsSignerCredentials(TlsClientContext context, Certificate clientCertificate,
+    public DefaultTlsSignerCredentials(TlsContext context, Certificate clientCertificate,
         AsymmetricKeyParameter clientPrivateKey)
     {
         if (clientCertificate == null)

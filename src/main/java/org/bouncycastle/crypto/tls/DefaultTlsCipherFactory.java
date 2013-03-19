@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 
 public class DefaultTlsCipherFactory implements TlsCipherFactory
 {
-    public TlsCipher createCipher(TlsClientContext context, int encryptionAlgorithm, int digestAlgorithm) throws IOException
+    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int digestAlgorithm) throws IOException
     {
         switch (encryptionAlgorithm)
         {
@@ -33,19 +33,19 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
         }
     }
 
-    protected TlsCipher createAESCipher(TlsClientContext context, int cipherKeySize, int digestAlgorithm) throws IOException
+    protected TlsCipher createAESCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
     {
         return new TlsBlockCipher(context, createAESBlockCipher(),
             createAESBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createRC4Cipher(TlsClientContext context, int cipherKeySize, int digestAlgorithm) throws IOException
+    protected TlsCipher createRC4Cipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
     {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
             createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createDESedeCipher(TlsClientContext context, int cipherKeySize, int digestAlgorithm) throws IOException
+    protected TlsCipher createDESedeCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
     {
         return new TlsBlockCipher(context, createDESedeBlockCipher(),
             createDESedeBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);

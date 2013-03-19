@@ -22,7 +22,7 @@ class TlsDHKeyExchange implements TlsKeyExchange
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
 
@@ -31,7 +31,7 @@ class TlsDHKeyExchange implements TlsKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected DHPrivateKeyParameters dhAgreeClientPrivateKey = null;
 
-    TlsDHKeyExchange(TlsClientContext context, int keyExchange)
+    TlsDHKeyExchange(TlsContext context, int keyExchange)
     {
         switch (keyExchange)
         {

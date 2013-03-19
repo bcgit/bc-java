@@ -10,12 +10,11 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS MAC implementation, which can be used with any kind of Digest to act as
- * an HMAC.
+ * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
 public class TlsMac
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
     protected byte[] secret;
     protected Mac mac;
 
@@ -28,7 +27,7 @@ public class TlsMac
      * @param offset The number of bytes to skip, before the key starts in the buffer.
      * @param len The length of the key.
      */
-    public TlsMac(TlsClientContext context, Digest digest, byte[] key_block, int offset, int len)
+    public TlsMac(TlsContext context, Digest digest, byte[] key_block, int offset, int len)
     {
         this.context = context;
 

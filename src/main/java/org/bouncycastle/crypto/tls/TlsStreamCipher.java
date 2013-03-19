@@ -9,7 +9,7 @@ import org.bouncycastle.util.Arrays;
 
 public class TlsStreamCipher implements TlsCipher
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
 
     protected StreamCipher encryptCipher;
     protected StreamCipher decryptCipher;
@@ -17,7 +17,7 @@ public class TlsStreamCipher implements TlsCipher
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    public TlsStreamCipher(TlsClientContext context, StreamCipher encryptCipher,
+    public TlsStreamCipher(TlsContext context, StreamCipher encryptCipher,
         StreamCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
         throws IOException
     {

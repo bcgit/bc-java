@@ -8,7 +8,7 @@ class DTLSRecordLayer implements DatagramTransport {
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
 
     private final DatagramTransport transport;
-    private final TlsClientContext clientContext;
+    private final TlsContext context;
 
     private final ByteQueue recordQueue = new ByteQueue();
 
@@ -17,9 +17,9 @@ class DTLSRecordLayer implements DatagramTransport {
     private DTLSEpoch currentEpoch, pendingEpoch;
     private DTLSEpoch readEpoch, writeEpoch;
 
-    DTLSRecordLayer(DatagramTransport transport, TlsClientContext clientContext, short contentType) {
+    DTLSRecordLayer(DatagramTransport transport, TlsContext context, short contentType) {
         this.transport = transport;
-        this.clientContext = clientContext;
+        this.context = context;
 
         this.inHandshake = true;
 
@@ -256,7 +256,7 @@ class DTLSRecordLayer implements DatagramTransport {
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
         ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion
-            : clientContext.getClientVersion();
+            : context.getClientVersion();
         TlsUtils.writeVersion(version, record, 1);
         TlsUtils.writeUint16(recordEpoch, record, 3);
         TlsUtils.writeUint48(recordSequenceNumber, record, 5);

@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
  */
 class TlsRSAKeyExchange implements TlsKeyExchange
 {
-    protected TlsClientContext context;
+    protected TlsContext context;
 
     protected AsymmetricKeyParameter serverPublicKey = null;
 
@@ -23,7 +23,7 @@ class TlsRSAKeyExchange implements TlsKeyExchange
 
     protected byte[] premasterSecret;
 
-    TlsRSAKeyExchange(TlsClientContext context)
+    TlsRSAKeyExchange(TlsContext context)
     {
         this.context = context;
     }
