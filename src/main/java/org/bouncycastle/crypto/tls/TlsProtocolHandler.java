@@ -17,7 +17,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 /**
- * An implementation of all high level protocols in TLS 1.0.
+ * An implementation of all high level protocols in TLS 1.0/1.1.
  */
 public class TlsProtocolHandler
 {
