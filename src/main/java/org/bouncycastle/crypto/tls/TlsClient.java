@@ -27,7 +27,7 @@ public interface TlsClient
     void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
 
     // Hashtable is (Integer -> byte[])
-    void processServerExtensions(Hashtable serverExtensions);
+    void processServerExtensions(Hashtable serverExtensions) throws IOException;
 
     TlsKeyExchange getKeyExchange() throws IOException;
 

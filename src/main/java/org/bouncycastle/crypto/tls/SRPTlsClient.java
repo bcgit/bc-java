@@ -53,9 +53,14 @@ public abstract class SRPTlsClient extends AbstractTlsClient
         return clientExtensions;
     }
 
-    public void processServerExtensions(Hashtable serverExtensions)
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException
     {
-        // TODO Check there is no server response to the SRP extension
+        // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
+        byte[] extValue = (byte[])serverExtensions.get(EXT_SRP);
+        if (extValue != null && extValue.length > 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException

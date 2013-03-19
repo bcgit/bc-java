@@ -67,10 +67,10 @@ public abstract class AbstractTlsClient implements TlsClient {
         }
     }
 
-    public void processServerExtensions(Hashtable serverExtensions) {
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException {
         /*
          * TlsProtocolHandler validates that any server extensions received correspond to client
-         * extensions sent. By default, we don't send any, so nothing to do here.
+         * extensions sent. By default, we don't send any, and this method is not called.
          */
     }
 
