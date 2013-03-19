@@ -862,7 +862,7 @@ public class NewSignedDataTest
 
         otherInfo.add(response.toASN1Structure());
 
-        gen.addOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response, otherInfo);
+        gen.addOtherRevocationInfo(CMSObjectIdentifiers.id_ri_ocsp_response, new CollectionStore(otherInfo));
 
         CMSSignedData s;
 

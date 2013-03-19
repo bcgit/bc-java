@@ -190,11 +190,11 @@ class CMSUtils
         }
     }
 
-    static Collection getOthersFromList(ASN1ObjectIdentifier otherRevocationInfoFormat, List otherRevocationInfos)
+    static Collection getOthersFromStore(ASN1ObjectIdentifier otherRevocationInfoFormat, Store otherRevocationInfos)
     {
         List others = new ArrayList();
 
-        for (Iterator it = otherRevocationInfos.iterator(); it.hasNext();)
+        for (Iterator it = otherRevocationInfos.getMatches(null).iterator(); it.hasNext();)
         {
             ASN1Encodable info = (ASN1Encodable)it.next();
 
