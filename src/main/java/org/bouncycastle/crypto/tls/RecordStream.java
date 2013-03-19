@@ -23,7 +23,7 @@ class RecordStream
     private TlsClientContext context = null;
     private CombinedHash hash = null;
 
-    private ProtocolVersion discoveredServerVersion = null;
+    private ProtocolVersion discoveredPeerVersion = null;
 
     RecordStream(TlsProtocolHandler handler, InputStream is, OutputStream os)
     {
@@ -42,9 +42,9 @@ class RecordStream
         this.hash = new CombinedHash(context);
     }
 
-    ProtocolVersion getDiscoveredServerVersion()
+    ProtocolVersion getDiscoveredPeerVersion()
     {
-        return discoveredServerVersion;
+        return discoveredPeerVersion;
     }
 
     void clientCipherSpecDecided(TlsCompression tlsCompression, TlsCipher tlsCipher)
@@ -66,11 +66,11 @@ class RecordStream
         short type = TlsUtils.readUint8(is);
 
         ProtocolVersion version = TlsUtils.readVersion(is);
-        if (discoveredServerVersion == null)
+        if (discoveredPeerVersion == null)
         {
-            discoveredServerVersion = version;
+            discoveredPeerVersion = version;
         }
-        else if (!version.equals(discoveredServerVersion))
+        else if (!version.equals(discoveredPeerVersion))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -122,7 +122,7 @@ class RecordStream
 
         byte[] writeMessage = new byte[ciphertext.length + 5];
         TlsUtils.writeUint8(type, writeMessage, 0);
-        ProtocolVersion version = discoveredServerVersion != null ? discoveredServerVersion : context.getClientVersion();
+        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion : context.getClientVersion();
         TlsUtils.writeVersion(version, writeMessage, 1);
         TlsUtils.writeUint16(ciphertext.length, writeMessage, 3);
         System.arraycopy(ciphertext, 0, writeMessage, 5, ciphertext.length);

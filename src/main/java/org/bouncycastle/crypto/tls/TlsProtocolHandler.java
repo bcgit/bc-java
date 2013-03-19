@@ -282,7 +282,7 @@ public class TlsProtocolHandler
                         ProtocolVersion server_version = TlsUtils.readVersion(is);
                         
                         // Check that this matches what the server is sending in the record layer
-                        if (!server_version.equals(rs.getDiscoveredServerVersion()))
+                        if (!server_version.equals(rs.getDiscoveredPeerVersion()))
                         {
                             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
                         }

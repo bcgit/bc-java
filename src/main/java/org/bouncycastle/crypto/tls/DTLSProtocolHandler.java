@@ -53,7 +53,7 @@ public class DTLSProtocolHandler {
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
         // NOTE: After receiving a record from the server, we discover the version it chose
-        ProtocolVersion server_version = recordLayer.getDiscoveredServerVersion();
+        ProtocolVersion server_version = recordLayer.getDiscoveredPeerVersion();
         ProtocolVersion client_version = state.clientContext.getClientVersion();
 
         if (server_version.getFullVersion() < client_version.getFullVersion()) {

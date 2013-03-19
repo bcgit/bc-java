@@ -12,7 +12,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private final ByteQueue recordQueue = new ByteQueue();
 
-    private volatile ProtocolVersion discoveredServerVersion = null;
+    private volatile ProtocolVersion discoveredPeerVersion = null;
     private volatile boolean inHandshake;
     private DTLSEpoch currentEpoch, pendingEpoch;
     private DTLSEpoch readEpoch, writeEpoch;
@@ -29,8 +29,8 @@ class DTLSRecordLayer implements DatagramTransport {
         this.writeEpoch = currentEpoch;
     }
 
-    ProtocolVersion getDiscoveredServerVersion() {
-        return discoveredServerVersion;
+    ProtocolVersion getDiscoveredPeerVersion() {
+        return discoveredPeerVersion;
     }
 
     void initPendingEpoch(TlsCipher pendingCipher) {
@@ -124,7 +124,7 @@ class DTLSRecordLayer implements DatagramTransport {
                 }
 
                 ProtocolVersion version = TlsUtils.readVersion(record, 1);
-                if (discoveredServerVersion != null && !discoveredServerVersion.equals(version)) {
+                if (discoveredPeerVersion != null && !discoveredPeerVersion.equals(version)) {
                     // TODO What exception?
                     // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
@@ -135,8 +135,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
                 readEpoch.getReplayWindow().reportAuthenticated(seq);
 
-                if (discoveredServerVersion == null) {
-                    discoveredServerVersion = version;
+                if (discoveredPeerVersion == null) {
+                    discoveredPeerVersion = version;
                 }
 
                 switch (type) {
@@ -255,7 +255,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
-        ProtocolVersion version = discoveredServerVersion != null ? discoveredServerVersion
+        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion
             : clientContext.getClientVersion();
         TlsUtils.writeVersion(version, record, 1);
         TlsUtils.writeUint16(recordEpoch, record, 3);
