@@ -34,7 +34,17 @@ public class TlsBlockCipher implements TlsCipher
         return readMac;
     }
 
+    /**
+     * @deprecated use version with explicit 'isServer' parameter 
+     */
     public TlsBlockCipher(TlsClientContext context, BlockCipher encryptCipher,
+        BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
+    {
+        this(false, context, encryptCipher, decryptCipher, writeDigest, readDigest, cipherKeySize);
+    }
+
+    // TODO Perhaps the isServer argument should be available from the context?
+    public TlsBlockCipher(boolean isServer, TlsClientContext context, BlockCipher encryptCipher,
         BlockCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
     {
         this.context = context;
@@ -54,17 +64,34 @@ public class TlsBlockCipher implements TlsCipher
         int offset = 0;
 
         // Init MACs
-        writeMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
+        TlsMac clientWriteMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
         offset += writeDigest.getDigestSize();
-        readMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
+        TlsMac serverWriteMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
         offset += readDigest.getDigestSize();
 
+        BlockCipher clientWriteCipher, serverWriteCipher;
+        if (isServer)
+        {
+            writeMac = serverWriteMac;
+            readMac = clientWriteMac;
+            clientWriteCipher = decryptCipher;
+            serverWriteCipher = encryptCipher;
+        }
+        else
+        {
+            writeMac = clientWriteMac;
+            readMac = serverWriteMac;
+            clientWriteCipher = encryptCipher;
+            serverWriteCipher = decryptCipher;
+        }
+
         // Init Ciphers
-        this.initCipher(true, encryptCipher, key_block, cipherKeySize, offset, offset
-            + (cipherKeySize * 2));
-        offset += cipherKeySize;
-        this.initCipher(false, decryptCipher, key_block, cipherKeySize, offset, offset
-            + cipherKeySize + encryptCipher.getBlockSize());
+        int key_offset = offset;
+        int iv_offset = key_offset + (cipherKeySize * 2);
+        this.initCipher(!isServer, clientWriteCipher, key_block, cipherKeySize, key_offset, iv_offset);
+        key_offset += cipherKeySize;
+        iv_offset += clientWriteCipher.getBlockSize();
+        this.initCipher(isServer, serverWriteCipher, key_block, cipherKeySize, key_offset, iv_offset);
     }
 
     protected void initCipher(boolean forEncryption, BlockCipher cipher, byte[] key_block,
