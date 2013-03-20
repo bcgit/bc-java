@@ -382,25 +382,10 @@ public abstract class DTLSProtocol {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        int numTypes = TlsUtils.readUint8(buf);
-        short[] certificateTypes = new short[numTypes];
-        for (int i = 0; i < numTypes; ++i) {
-            certificateTypes[i] = TlsUtils.readUint8(buf);
-        }
-
-        byte[] authorities = TlsUtils.readOpaque16(buf);
+        state.certificateRequest = CertificateRequest.parse(buf);
 
         assertEmpty(buf);
 
-        Vector authorityDNs = new Vector();
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(authorities);
-        while (bis.available() > 0) {
-            byte[] dnBytes = TlsUtils.readOpaque16(bis);
-            authorityDNs.addElement(X500Name.getInstance(ASN1Primitive.fromByteArray(dnBytes)));
-        }
-
-        state.certificateRequest = new CertificateRequest(certificateTypes, authorityDNs);
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
     }
 

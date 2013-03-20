@@ -427,12 +427,12 @@ public class TlsClientProtocol extends TlsProtocol {
                         if (tlsClientContext.getServerVersion().isSSL()) {
                             sendAlert(AlertLevel.warning, AlertDescription.no_certificate);
                         } else {
-                            sendClientCertificate(Certificate.EMPTY_CHAIN);
+                            sendCertificateMessage(Certificate.EMPTY_CHAIN);
                         }
                     } else {
                         this.keyExchange.processClientCredentials(clientCreds);
 
-                        sendClientCertificate(clientCreds.getCertificate());
+                        sendCertificateMessage(clientCreds.getCertificate());
                     }
                 }
 
@@ -442,7 +442,7 @@ public class TlsClientProtocol extends TlsProtocol {
                  * Send the client key exchange message, depending on the key exchange we are using
                  * in our CipherSuite.
                  */
-                sendClientKeyExchange();
+                sendClientKeyExchangeMessage();
 
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
@@ -472,12 +472,12 @@ public class TlsClientProtocol extends TlsProtocol {
                     byte[] md5andsha1 = rs.getCurrentHash(null);
                     byte[] clientCertificateSignature = signerCreds
                         .generateCertificateSignature(md5andsha1);
-                    sendCertificateVerify(clientCertificateSignature);
+                    sendCertificateVerifyMessage(clientCertificateSignature);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
 
-                sendChangeCipherSpec();
+                sendChangeCipherSpecMessage();
                 this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
 
                 /*
@@ -534,26 +534,10 @@ public class TlsClientProtocol extends TlsProtocol {
                     this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
 
-                int numTypes = TlsUtils.readUint8(buf);
-                short[] certificateTypes = new short[numTypes];
-                for (int i = 0; i < numTypes; ++i) {
-                    certificateTypes[i] = TlsUtils.readUint8(buf);
-                }
-
-                byte[] authorities = TlsUtils.readOpaque16(buf);
+                this.certificateRequest = CertificateRequest.parse(buf);
 
                 assertEmpty(buf);
 
-                Vector authorityDNs = new Vector();
-
-                ByteArrayInputStream bis = new ByteArrayInputStream(authorities);
-                while (bis.available() > 0) {
-                    byte[] dnBytes = TlsUtils.readOpaque16(bis);
-                    authorityDNs.addElement(X500Name.getInstance(ASN1Primitive
-                        .fromByteArray(dnBytes)));
-                }
-
-                this.certificateRequest = new CertificateRequest(certificateTypes, authorityDNs);
                 this.keyExchange.validateCertificateRequest(this.certificateRequest);
 
                 break;
@@ -588,23 +572,7 @@ public class TlsClientProtocol extends TlsProtocol {
         }
     }
 
-    protected void sendClientCertificate(Certificate clientCert) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate, bos);
-
-        // Reserve space for length
-        TlsUtils.writeUint24(0, bos);
-
-        clientCert.encode(bos);
-        byte[] message = bos.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
-    }
-
-    protected void sendClientKeyExchange() throws IOException {
+    protected void sendClientKeyExchangeMessage() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         TlsUtils.writeUint8(HandshakeType.client_key_exchange, bos);
@@ -621,7 +589,7 @@ public class TlsClientProtocol extends TlsProtocol {
         rs.writeMessage(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendCertificateVerify(byte[] data) throws IOException {
+    protected void sendCertificateVerifyMessage(byte[] data) throws IOException {
         /*
          * Send signature of handshake messages so far to prove we are the owner of the cert See RFC
          * 2246 sections 4.7, 7.4.3 and 7.4.8

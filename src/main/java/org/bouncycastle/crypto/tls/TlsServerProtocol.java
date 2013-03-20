@@ -1,17 +1,18 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 
-import org.bouncycastle.util.Arrays;
-
 public class TlsServerProtocol extends TlsProtocol {
 
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
+
+    protected TlsKeyExchange keyExchange = null;
 
     public TlsServerProtocol(InputStream is, OutputStream os, SecureRandom sr) {
         super(is, os, sr);
@@ -92,17 +93,36 @@ public class TlsServerProtocol extends TlsProtocol {
 
                 // TODO Send ServerHello
                 this.connection_state = CS_SERVER_HELLO;
-                
-                // TODO Send Certificate
+
+                // TODO Will probably need to be moved
+                this.keyExchange = tlsServer.getKeyExchange();
+
+                TlsCredentials serverCredentials = tlsServer.getCredentials();
+                if (serverCredentials == null) {
+                    this.keyExchange.skipServerCertificate();
+                }
+                else
+                {
+                    Certificate serverCertificate = serverCredentials.getCertificate();
+                    this.keyExchange.processServerCertificate(serverCertificate);
+                    sendCertificateMessage(serverCertificate);
+                }
                 this.connection_state = CS_SERVER_CERTIFICATE;
                 
                 // TODO Send ServerKeyExchange
                 this.connection_state = CS_SERVER_KEY_EXCHANGE;
-                
-                // TODO Send CertificateRequest
+
+                if (serverCredentials != null)
+                {
+                    CertificateRequest certificateRequest = tlsServer.getCertificateRequest();
+                    if (certificateRequest != null) {
+                        this.keyExchange.validateCertificateRequest(certificateRequest);
+                        sendCertificateRequestMessage(certificateRequest);
+                    }
+                }
                 this.connection_state = CS_CERTIFICATE_REQUEST;
 
-                sendServerHelloDone();
+                sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
                 break;
@@ -162,7 +182,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 processFinishedMessage(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                sendChangeCipherSpec();
+                sendChangeCipherSpecMessage();
                 this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
 
                 sendFinishedMessage();
@@ -183,6 +203,20 @@ public class TlsServerProtocol extends TlsProtocol {
             // We do not support this!
             this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             break;
+        }
+    }
+
+    protected void processWarningMessage(short description) {
+        switch (description) {
+        case AlertDescription.no_certificate: {
+            if (tlsServerContext.getServerVersion().isSSL()) {
+                // TODO In SSLv3, this is an alternative to client Certificate message
+            }
+            break;
+        }
+        default: {
+            super.processWarningMessage(description);
+        }
         }
     }
 
@@ -213,7 +247,23 @@ public class TlsServerProtocol extends TlsProtocol {
         assertEmpty(buf);
     }
 
-    protected void sendServerHelloDone() throws IOException {
+    protected void sendCertificateRequestMessage(CertificateRequest certificateRequest) throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
+        certificateRequest.encode(buf);
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
+
+        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendServerHelloDoneMessage() throws IOException {
 
         byte[] message = new byte[4];
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);

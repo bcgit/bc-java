@@ -82,6 +82,10 @@ public abstract class TlsProtocol {
 
     protected abstract void processHandshakeMessage(short type, byte[] buf) throws IOException;
 
+    protected void processWarningMessage(short description) {
+        
+    }
+
     protected void enableApplicationData() {
         /*
          * We are now ready to send and receive application data.
@@ -223,6 +227,7 @@ public abstract class TlsProtocol {
                 /*
                  * If it is just a warning, we continue.
                  */
+                processWarningMessage(description);
             }
         }
     }
@@ -469,7 +474,23 @@ public abstract class TlsProtocol {
         rs.writeMessage(ContentType.alert, error, 0, 2);
     }
 
-    protected void sendChangeCipherSpec() throws IOException {
+    protected void sendCertificateMessage(Certificate certificate) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.certificate, bos);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, bos);
+
+        certificate.encode(bos);
+        byte[] message = bos.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
+
+        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendChangeCipherSpecMessage() throws IOException {
         byte[] message = new byte[] { 1 };
         rs.writeMessage(ContentType.change_cipher_spec, message, 0, message.length);
     }
