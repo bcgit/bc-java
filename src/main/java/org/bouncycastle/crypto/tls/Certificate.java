@@ -23,13 +23,13 @@ public class Certificate
     protected org.bouncycastle.asn1.x509.Certificate[] certs;
 
     /**
-     * Parse the ServerCertificate message.
+     * Parse a Certificate message.
      * 
      * @param is The stream where to parse from.
      * @return A Certificate object with the certs, the server has sended.
      * @throws IOException If something goes wrong during parsing.
      */
-    protected static Certificate parse(InputStream is) throws IOException
+    public static Certificate parse(InputStream is) throws IOException
     {
         org.bouncycastle.asn1.x509.Certificate[] certs;
         int left = TlsUtils.readUint24(is);
@@ -68,7 +68,7 @@ public class Certificate
      * @param os stream to write the message to
      * @throws IOException If something goes wrong
      */
-    protected void encode(OutputStream os) throws IOException
+    public void encode(OutputStream os) throws IOException
     {
         Vector encCerts = new Vector(this.certs.length);
         int totalLength = 0;
