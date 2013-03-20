@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 
 public class TlsServerProtocol extends TlsProtocol {
 
@@ -229,7 +230,7 @@ public class TlsServerProtocol extends TlsProtocol {
         assertEmpty(buf);
 
         // TODO
-//        this.keyExchange.processClientCredentials(clientCredentials);
+        // this.keyExchange.processClientCredentials(clientCredentials);
     }
 
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf) throws IOException {
@@ -239,9 +240,64 @@ public class TlsServerProtocol extends TlsProtocol {
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {
-        // TODO
 
-        assertEmpty(buf);
+        ProtocolVersion client_version = TlsUtils.readVersion(buf);
+
+        /*
+         * Read the client random
+         */
+        byte[] random = new byte[32];
+        TlsUtils.readFully(random, buf);
+
+        byte[] sessionID = TlsUtils.readOpaque8(buf);
+        if (sessionID.length > 32) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+        }
+
+        int cipher_suites_length = TlsUtils.readUint16(buf);
+        if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+        }
+
+        /*
+         * NOTE: "If the session_id field is not empty (implying a session resumption request) this
+         * vector must include at least the cipher_suite from that session."
+         */
+        int[] cipher_suites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
+
+        int compression_methods_length = TlsUtils.readUint8(buf);
+        if (cipher_suites_length < 1) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+        }
+
+        short[] compression_methods = TlsUtils.readUint8Array(compression_methods_length, buf);
+
+        /*
+         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
+         * extensions appearing in the client hello, and send a server hello containing no
+         * extensions.
+         */
+        Hashtable clientExtensions = readExtensions(buf);
+
+        /*
+         * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
+         * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
+         * ClientHello. Including both is NOT RECOMMENDED.
+         */
+
+        tlsServerContext.setClientVersion(client_version);
+
+        securityParameters.clientRandom = random;
+
+        // TODO
+        // tlsServer.notifyClientVersion(client_version);
+        // tlsServer.notifyOfferedCipherSuites(cipher_suites);
+        // tlsServer.notifyOfferedCompressionMethod(compression_methods);
+
+        if (clientExtensions != null) {
+            // TODO
+            // tlsServer.notifyClientExtensions(clientExtensions);
+        }
     }
 
     protected void receiveClientKeyExchangeMessage(ByteArrayInputStream buf) throws IOException {
