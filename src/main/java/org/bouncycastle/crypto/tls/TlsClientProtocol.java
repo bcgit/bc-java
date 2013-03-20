@@ -156,8 +156,6 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 ProtocolVersion client_version = this.tlsClientContext.getClientVersion();
 
-                // TODO[DTLS] This comparison needs to allow for DTLS (with decreasing minor version
-                // numbers)
                 if (server_version.getFullVersion() > client_version.getFullVersion()) {
                     this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
                 }
