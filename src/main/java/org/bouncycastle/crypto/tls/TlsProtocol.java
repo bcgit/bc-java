@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -77,7 +79,7 @@ public abstract class TlsProtocol {
     protected abstract void handleHandshakeMessage(short type, byte[] buf) throws IOException;
 
     protected void handleWarningMessage(short description) {
-        
+
     }
 
     protected void enableApplicationData() {
@@ -92,7 +94,8 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void processRecord(short protocol, byte[] buf, int offset, int len) throws IOException {
+    protected void processRecord(short protocol, byte[] buf, int offset, int len)
+        throws IOException {
         /*
          * Have a look at the protocol type, and add it to the correct queue.
          */
@@ -435,8 +438,8 @@ public abstract class TlsProtocol {
         TlsContext context = getContext();
 
         /*
-         * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0
-         * and 36 for SSLv3.
+         * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0 and 36
+         * for SSLv3.
          */
         int checksumLength = context.getServerVersion().isSSL() ? 36 : 12;
         byte[] verify_data = new byte[checksumLength];
@@ -510,7 +513,7 @@ public abstract class TlsProtocol {
         }
 
         return TlsUtils.calculateVerifyData(context, "client finished",
-                rs.getCurrentHash(TlsUtils.SSL_CLIENT));
+            rs.getCurrentHash(TlsUtils.SSL_CLIENT));
     }
 
     /**
@@ -567,9 +570,47 @@ public abstract class TlsProtocol {
         return buf.toByteArray();
     }
 
-    static void writeExtension(OutputStream output, Integer extType, byte[] extValue)
-        throws IOException {
-        TlsUtils.writeUint16(extType.intValue(), output);
-        TlsUtils.writeOpaque16(extValue, output);
+    static Hashtable readExtensions(ByteArrayInputStream buf) throws IOException {
+
+        if (buf.available() < 1) {
+            return null;
+        }
+
+        byte[] extBytes = TlsUtils.readOpaque16(buf);
+
+        // Integer -> byte[]
+        Hashtable extensions = new Hashtable();
+
+        ByteArrayInputStream ext = new ByteArrayInputStream(extBytes);
+        while (ext.available() > 0) {
+            Integer extType = Integers.valueOf(TlsUtils.readUint16(ext));
+            byte[] extValue = TlsUtils.readOpaque16(ext);
+
+            /*
+             * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
+             */
+            if (extensions.containsKey(extType)) {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            extensions.put(extType, extValue);
+        }
+
+        return extensions;
+    }
+
+    static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        Enumeration keys = extensions.keys();
+        while (keys.hasMoreElements()) {
+            Integer extType = (Integer) keys.nextElement();
+            byte[] extValue = (byte[]) extensions.get(extType);
+
+            TlsUtils.writeUint16(extType.intValue(), output);
+            TlsUtils.writeOpaque16(extValue, buf);
+        }
+
+        TlsUtils.writeOpaque16(buf.toByteArray(), output);
     }
 }
