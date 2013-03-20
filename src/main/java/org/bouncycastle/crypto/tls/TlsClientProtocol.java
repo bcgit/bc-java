@@ -18,22 +18,6 @@ import org.bouncycastle.util.Integers;
 
 public class TlsClientProtocol extends TlsProtocol {
 
-    /*
-     * Our Connection states
-     */
-    protected static final short CS_CLIENT_HELLO_SEND = 1;
-    protected static final short CS_SERVER_HELLO_RECEIVED = 2;
-    protected static final short CS_SERVER_CERTIFICATE_RECEIVED = 3;
-    protected static final short CS_SERVER_KEY_EXCHANGE_RECEIVED = 4;
-    protected static final short CS_CERTIFICATE_REQUEST_RECEIVED = 5;
-    protected static final short CS_SERVER_HELLO_DONE_RECEIVED = 6;
-    protected static final short CS_CLIENT_KEY_EXCHANGE_SEND = 7;
-    protected static final short CS_CERTIFICATE_VERIFY_SEND = 8;
-    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC_SEND = 9;
-    protected static final short CS_CLIENT_FINISHED_SEND = 10;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC_RECEIVED = 11;
-    protected static final short CS_DONE = 12;
-
     private Hashtable clientExtensions;
     private TlsClientContextImpl tlsClientContext = null;
     private TlsClient tlsClient = null;
@@ -171,12 +155,12 @@ public class TlsClientProtocol extends TlsProtocol {
 
         safeWriteMessage(ContentType.handshake, message, 0, message.length);
 
-        connection_state = CS_CLIENT_HELLO_SEND;
+        connection_state = CS_CLIENT_HELLO;
 
         /*
          * We will now read data, until we have completed the handshake.
          */
-        while (connection_state != CS_DONE) {
+        while (connection_state != CS_SERVER_FINISHED) {
             safeReadData();
         }
 
@@ -187,13 +171,13 @@ public class TlsClientProtocol extends TlsProtocol {
         /*
          * Check if we are in the correct connection state.
          */
-        if (this.connection_state != CS_CLIENT_FINISHED_SEND) {
+        if (this.connection_state != CS_CLIENT_FINISHED) {
             this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
         }
 
-        rs.serverClientSpecReceived();
+        rs.receivedReadCipherSpec();
 
-        this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC_RECEIVED;
+        this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
     }
 
     protected void processHandshakeMessage(short type, byte[] buf) throws IOException {
@@ -202,7 +186,7 @@ public class TlsClientProtocol extends TlsProtocol {
         switch (type) {
         case HandshakeType.certificate: {
             switch (connection_state) {
-            case CS_SERVER_HELLO_RECEIVED: {
+            case CS_SERVER_HELLO: {
                 // Parse the Certificate message and send to cipher suite
 
                 Certificate serverCertificate = Certificate.parse(is);
@@ -220,12 +204,12 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
 
-            connection_state = CS_SERVER_CERTIFICATE_RECEIVED;
+            connection_state = CS_SERVER_CERTIFICATE;
             break;
         }
         case HandshakeType.finished:
             switch (connection_state) {
-            case CS_SERVER_CHANGE_CIPHER_SPEC_RECEIVED:
+            case CS_SERVER_CHANGE_CIPHER_SPEC:
                 /*
                  * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0
                  * and 36 for SSLv3.
@@ -252,7 +236,7 @@ public class TlsClientProtocol extends TlsProtocol {
                     this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
 
-                connection_state = CS_DONE;
+                connection_state = CS_SERVER_FINISHED;
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
@@ -260,7 +244,7 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         case HandshakeType.server_hello:
             switch (connection_state) {
-            case CS_CLIENT_HELLO_SEND:
+            case CS_CLIENT_HELLO:
                 /*
                  * Read the server hello message
                  */
@@ -422,7 +406,7 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 this.keyExchange = tlsClient.getKeyExchange();
 
-                connection_state = CS_SERVER_HELLO_RECEIVED;
+                connection_state = CS_SERVER_HELLO;
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
@@ -430,7 +414,7 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         case HandshakeType.server_hello_done:
             switch (connection_state) {
-            case CS_SERVER_HELLO_RECEIVED:
+            case CS_SERVER_HELLO:
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCertificate();
@@ -438,19 +422,19 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 // NB: Fall through to next case label
 
-            case CS_SERVER_CERTIFICATE_RECEIVED:
+            case CS_SERVER_CERTIFICATE:
 
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
 
-            case CS_SERVER_KEY_EXCHANGE_RECEIVED:
-            case CS_CERTIFICATE_REQUEST_RECEIVED:
+            case CS_SERVER_KEY_EXCHANGE:
+            case CS_CERTIFICATE_REQUEST:
 
                 assertEmpty(is);
 
-                connection_state = CS_SERVER_HELLO_DONE_RECEIVED;
+                connection_state = CS_SERVER_HELLO_DONE;
 
                 TlsCredentials clientCreds = null;
                 if (certificateRequest == null) {
@@ -479,7 +463,7 @@ public class TlsClientProtocol extends TlsProtocol {
                  */
                 sendClientKeyExchange();
 
-                connection_state = CS_CLIENT_KEY_EXCHANGE_SEND;
+                connection_state = CS_CLIENT_KEY_EXCHANGE;
 
                 /*
                  * Calculate the master_secret
@@ -509,7 +493,7 @@ public class TlsClientProtocol extends TlsProtocol {
                         .generateCertificateSignature(md5andsha1);
                     sendCertificateVerify(clientCertificateSignature);
 
-                    connection_state = CS_CERTIFICATE_VERIFY_SEND;
+                    connection_state = CS_CERTIFICATE_VERIFY;
                 }
 
                 /*
@@ -519,12 +503,12 @@ public class TlsClientProtocol extends TlsProtocol {
                 cmessage[0] = 1;
                 rs.writeMessage(ContentType.change_cipher_spec, cmessage, 0, cmessage.length);
 
-                connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC_SEND;
+                connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
 
                 /*
                  * Initialize our cipher suite
                  */
-                rs.clientCipherSpecDecided(tlsClient.getCompression(), tlsClient.getCipher());
+                rs.decidedWriteCipherSpec(tlsClient.getCompression(), tlsClient.getCipher());
 
                 /*
                  * Send our finished message.
@@ -540,7 +524,7 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 rs.writeMessage(ContentType.handshake, message, 0, message.length);
 
-                this.connection_state = CS_CLIENT_FINISHED_SEND;
+                this.connection_state = CS_CLIENT_FINISHED;
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
@@ -548,7 +532,7 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         case HandshakeType.server_key_exchange: {
             switch (connection_state) {
-            case CS_SERVER_HELLO_RECEIVED:
+            case CS_SERVER_HELLO:
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCertificate();
@@ -556,7 +540,7 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 // NB: Fall through to next case label
 
-            case CS_SERVER_CERTIFICATE_RECEIVED:
+            case CS_SERVER_CERTIFICATE:
 
                 this.keyExchange.processServerKeyExchange(is);
 
@@ -567,19 +551,19 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
 
-            this.connection_state = CS_SERVER_KEY_EXCHANGE_RECEIVED;
+            this.connection_state = CS_SERVER_KEY_EXCHANGE;
             break;
         }
         case HandshakeType.certificate_request: {
             switch (connection_state) {
-            case CS_SERVER_CERTIFICATE_RECEIVED:
+            case CS_SERVER_CERTIFICATE:
 
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
 
-            case CS_SERVER_KEY_EXCHANGE_RECEIVED: {
+            case CS_SERVER_KEY_EXCHANGE: {
                 if (this.authentication == null) {
                     /*
                      * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
@@ -616,7 +600,7 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
 
-            this.connection_state = CS_CERTIFICATE_REQUEST_RECEIVED;
+            this.connection_state = CS_CERTIFICATE_REQUEST;
             break;
         }
         case HandshakeType.hello_request:
@@ -626,7 +610,7 @@ public class TlsClientProtocol extends TlsProtocol {
              * if it does not wish to renegotiate a session, or the client may, if it wishes,
              * respond with a no_renegotiation alert.
              */
-            if (connection_state == CS_DONE) {
+            if (connection_state == CS_SERVER_FINISHED) {
                 // Renegotiation not supported yet
                 sendAlert(AlertLevel.warning, AlertDescription.no_renegotiation);
             }

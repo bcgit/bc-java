@@ -47,14 +47,14 @@ class RecordStream
         return discoveredPeerVersion;
     }
 
-    void clientCipherSpecDecided(TlsCompression tlsCompression, TlsCipher tlsCipher)
+    void decidedWriteCipherSpec(TlsCompression tlsCompression, TlsCipher tlsCipher)
     {
         this.writeCompression = tlsCompression;
         this.writeCipher = tlsCipher;
         this.writeSeqNo = 0;
     }
 
-    void serverClientSpecReceived()
+    void receivedReadCipherSpec()
     {
         this.readCompression = this.writeCompression;
         this.readCipher = this.writeCipher;
