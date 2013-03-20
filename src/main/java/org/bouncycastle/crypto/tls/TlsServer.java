@@ -11,4 +11,8 @@ public interface TlsServer {
     TlsKeyExchange getKeyExchange() throws IOException;
 
     CertificateRequest getCertificateRequest();
+
+    TlsCompression getCompression() throws IOException;
+
+    TlsCipher getCipher() throws IOException;
 }

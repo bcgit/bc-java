@@ -13,6 +13,7 @@ public class TlsServerProtocol extends TlsProtocol {
     protected TlsServerContextImpl tlsServerContext = null;
 
     protected TlsKeyExchange keyExchange = null;
+    protected CertificateRequest certificateRequest = null;
 
     public TlsServerProtocol(InputStream is, OutputStream os, SecureRandom sr) {
         super(is, os, sr);
@@ -49,7 +50,7 @@ public class TlsServerProtocol extends TlsProtocol {
          * We will now read data, until we have completed the handshake.
          */
         while (this.connection_state != CS_SERVER_FINISHED) {
-            safeReadData();
+            safeReadRecord();
         }
 
         enableApplicationData();
@@ -59,7 +60,7 @@ public class TlsServerProtocol extends TlsProtocol {
         return tlsServerContext;
     }
 
-    protected void processChangeCipherSpecMessage() throws IOException {
+    protected void handleChangeCipherSpecMessage() throws IOException {
 
         switch (this.connection_state) {
         case CS_CLIENT_KEY_EXCHANGE: {
@@ -80,7 +81,7 @@ public class TlsServerProtocol extends TlsProtocol {
         }
     }
 
-    protected void processHandshakeMessage(short type, byte[] data) throws IOException {
+    protected void handleHandshakeMessage(short type, byte[] data) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
 
@@ -88,7 +89,7 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.client_hello: {
             switch (this.connection_state) {
             case CS_START: {
-                processClientHelloMessage(buf);
+                receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
 
                 // TODO Send ServerHello
@@ -100,22 +101,19 @@ public class TlsServerProtocol extends TlsProtocol {
                 TlsCredentials serverCredentials = tlsServer.getCredentials();
                 if (serverCredentials == null) {
                     this.keyExchange.skipServerCertificate();
-                }
-                else
-                {
+                } else {
                     Certificate serverCertificate = serverCredentials.getCertificate();
                     this.keyExchange.processServerCertificate(serverCertificate);
                     sendCertificateMessage(serverCertificate);
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
-                
+
                 // TODO Send ServerKeyExchange
                 this.connection_state = CS_SERVER_KEY_EXCHANGE;
 
-                if (serverCredentials != null)
-                {
-                    CertificateRequest certificateRequest = tlsServer.getCertificateRequest();
-                    if (certificateRequest != null) {
+                if (serverCredentials != null) {
+                    this.certificateRequest = tlsServer.getCertificateRequest();
+                    if (this.certificateRequest != null) {
                         this.keyExchange.validateCertificateRequest(certificateRequest);
                         sendCertificateRequestMessage(certificateRequest);
                     }
@@ -136,7 +134,10 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.certificate: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO_DONE: {
-                processCertificateMessage(buf);
+                if (this.certificateRequest == null) {
+                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                }
+                receiveCertificateMessage(buf);
                 this.connection_state = CS_CLIENT_CERTIFICATE;
                 break;
             }
@@ -149,11 +150,11 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.client_key_exchange: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO_DONE: {
-                skipCertificateMessage();
+                this.keyExchange.skipClientCredentials();
                 // NB: Fall through to next case label
             }
             case CS_CLIENT_CERTIFICATE: {
-                processClientKeyExchangeMessage(buf);
+                receiveClientKeyExchangeMessage(buf);
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
                 break;
             }
@@ -166,7 +167,8 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.certificate_verify: {
             switch (this.connection_state) {
             case CS_CLIENT_KEY_EXCHANGE: {
-                processCertificateVerifyMessage(buf);
+                // TODO Check there is a client Certificate with signing capability
+                receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
                 break;
             }
@@ -206,7 +208,7 @@ public class TlsServerProtocol extends TlsProtocol {
         }
     }
 
-    protected void processWarningMessage(short description) {
+    protected void handleWarningMessage(short description) {
         switch (description) {
         case AlertDescription.no_certificate: {
             if (tlsServerContext.getServerVersion().isSSL()) {
@@ -215,39 +217,41 @@ public class TlsServerProtocol extends TlsProtocol {
             break;
         }
         default: {
-            super.processWarningMessage(description);
+            super.handleWarningMessage(description);
         }
         }
     }
 
-    protected void processCertificateMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveCertificateMessage(ByteArrayInputStream buf) throws IOException {
 
         Certificate clientCertificate = Certificate.parse(buf);
 
         assertEmpty(buf);
 
         // TODO
+//        this.keyExchange.processClientCredentials(clientCredentials);
     }
 
-    protected void processCertificateVerifyMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf) throws IOException {
         // TODO
 
         assertEmpty(buf);
     }
 
-    protected void processClientHelloMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {
         // TODO
 
         assertEmpty(buf);
     }
 
-    protected void processClientKeyExchangeMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveClientKeyExchangeMessage(ByteArrayInputStream buf) throws IOException {
         // TODO
 
         assertEmpty(buf);
     }
 
-    protected void sendCertificateRequestMessage(CertificateRequest certificateRequest) throws IOException {
+    protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
+        throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
 
@@ -260,7 +264,7 @@ public class TlsServerProtocol extends TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendServerHelloDoneMessage() throws IOException {
@@ -269,11 +273,7 @@ public class TlsServerProtocol extends TlsProtocol {
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
         TlsUtils.writeUint24(0, message, 1);
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
-    }
-
-    protected void skipCertificateMessage() {
-        // TODO
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void skipCertificateVerifyMessage() {

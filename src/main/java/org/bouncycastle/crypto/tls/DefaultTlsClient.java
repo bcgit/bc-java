@@ -86,7 +86,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
 
             default:
                 /*
-                 * Note: internal error here; the TlsProtocolHandler verifies that the
+                 * Note: internal error here; the TlsProtocol implementation verifies that the
                  * server-selected cipher suite was in the list of client-offered cipher
                  * suites, so if we now can't produce an implementation, we shouldn't have
                  * offered it!
@@ -141,7 +141,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
 
             default:
                 /*
-                 * Note: internal error here; the TlsProtocolHandler verifies that the
+                 * Note: internal error here; the TlsProtocol implementation verifies that the
                  * server-selected cipher suite was in the list of client-offered cipher
                  * suites, so if we now can't produce an implementation, we shouldn't have
                  * offered it!

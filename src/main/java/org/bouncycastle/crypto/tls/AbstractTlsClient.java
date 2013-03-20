@@ -69,8 +69,8 @@ public abstract class AbstractTlsClient implements TlsClient {
 
     public void processServerExtensions(Hashtable serverExtensions) throws IOException {
         /*
-         * TlsProtocolHandler validates that any server extensions received correspond to client
-         * extensions sent. By default, we don't send any, and this method is not called.
+         * TlsProtocol implementation validates that any server extensions received correspond to
+         * client extensions sent. By default, we don't send any, and this method is not called.
          */
     }
 
@@ -81,9 +81,9 @@ public abstract class AbstractTlsClient implements TlsClient {
 
         default:
             /*
-             * Note: internal error here; the TlsProtocolHandler verifies that the server-selected
-             * compression method was in the list of client-offered compression methods, so if we
-             * now can't produce an implementation, we shouldn't have offered it!
+             * Note: internal error here; the TlsProtocol implementation verifies that the
+             * server-selected compression method was in the list of client-offered compression
+             * methods, so if we now can't produce an implementation, we shouldn't have offered it!
              */
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

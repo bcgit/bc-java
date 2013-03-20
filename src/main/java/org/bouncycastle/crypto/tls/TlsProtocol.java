@@ -72,11 +72,11 @@ public abstract class TlsProtocol {
 
     protected abstract TlsContext getContext();
 
-    protected abstract void processChangeCipherSpecMessage() throws IOException;
+    protected abstract void handleChangeCipherSpecMessage() throws IOException;
 
-    protected abstract void processHandshakeMessage(short type, byte[] buf) throws IOException;
+    protected abstract void handleHandshakeMessage(short type, byte[] buf) throws IOException;
 
-    protected void processWarningMessage(short description) {
+    protected void handleWarningMessage(short description) {
         
     }
 
@@ -92,7 +92,7 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void processData(short protocol, byte[] buf, int offset, int len) throws IOException {
+    protected void processRecord(short protocol, byte[] buf, int offset, int len) throws IOException {
         /*
          * Have a look at the protocol type, and add it to the correct queue.
          */
@@ -168,7 +168,7 @@ public abstract class TlsProtocol {
                     /*
                      * Now, parse the message.
                      */
-                    processHandshakeMessage(type, buf);
+                    handleHandshakeMessage(type, buf);
                     read = true;
                 }
             }
@@ -221,7 +221,7 @@ public abstract class TlsProtocol {
                 /*
                  * If it is just a warning, we continue.
                  */
-                processWarningMessage(description);
+                handleWarningMessage(description);
             }
         }
     }
@@ -248,7 +248,7 @@ public abstract class TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
 
-            processChangeCipherSpecMessage();
+            handleChangeCipherSpecMessage();
         }
     }
 
@@ -285,7 +285,7 @@ public abstract class TlsProtocol {
                 return -1;
             }
 
-            safeReadData();
+            safeReadRecord();
         }
         len = Math.min(len, applicationDataQueue.size());
         applicationDataQueue.read(buf, offset, len, 0);
@@ -293,9 +293,9 @@ public abstract class TlsProtocol {
         return len;
     }
 
-    protected void safeReadData() throws IOException {
+    protected void safeReadRecord() throws IOException {
         try {
-            rs.readData();
+            rs.readRecord();
         } catch (TlsFatalAlert e) {
             if (!this.closed) {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -314,9 +314,9 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void safeWriteMessage(short type, byte[] buf, int offset, int len) throws IOException {
+    protected void safeWriteRecord(short type, byte[] buf, int offset, int len) throws IOException {
         try {
-            rs.writeMessage(type, buf, offset, len);
+            rs.writeRecord(type, buf, offset, len);
         } catch (TlsFatalAlert e) {
             if (!this.closed) {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -363,7 +363,7 @@ public abstract class TlsProtocol {
          * 
          * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
          */
-        safeWriteMessage(ContentType.application_data, emptybuf, 0, 0);
+        safeWriteRecord(ContentType.application_data, emptybuf, 0, 0);
 
         do {
             /*
@@ -371,7 +371,7 @@ public abstract class TlsProtocol {
              */
             int toWrite = Math.min(len, 1 << 14);
 
-            safeWriteMessage(ContentType.application_data, buf, offset, toWrite);
+            safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
 
             offset += toWrite;
             len -= toWrite;
@@ -465,7 +465,7 @@ public abstract class TlsProtocol {
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
-        safeWriteMessage(ContentType.alert, error, 0, 2);
+        safeWriteRecord(ContentType.alert, error, 0, 2);
     }
 
     protected void sendCertificateMessage(Certificate certificate) throws IOException {
@@ -481,12 +481,12 @@ public abstract class TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendChangeCipherSpecMessage() throws IOException {
         byte[] message = new byte[] { 1 };
-        safeWriteMessage(ContentType.change_cipher_spec, message, 0, message.length);
+        safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
     }
 
     protected void sendFinishedMessage() throws IOException {
@@ -498,7 +498,7 @@ public abstract class TlsProtocol {
         bos.write(verify_data);
         byte[] message = bos.toByteArray();
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected byte[] createVerifyData(boolean isServer) {

@@ -47,7 +47,7 @@ class RecordStream
         return discoveredPeerVersion;
     }
 
-    void decidedWriteCipherSpec(TlsCompression tlsCompression, TlsCipher tlsCipher)
+    void sentWriteCipherSpec(TlsCompression tlsCompression, TlsCipher tlsCipher)
     {
         this.writeCompression = tlsCompression;
         this.writeCipher = tlsCipher;
@@ -61,7 +61,7 @@ class RecordStream
         this.readSeqNo = 0;
     }
 
-    public void readData() throws IOException
+    public void readRecord() throws IOException
     {
         short type = TlsUtils.readUint8(is);
 
@@ -77,7 +77,7 @@ class RecordStream
 
         int size = TlsUtils.readUint16(is);
         byte[] buf = decodeAndVerify(type, is, size);
-        handler.processData(type, buf, 0, buf.length);
+        handler.processRecord(type, buf, 0, buf.length);
     }
 
     protected byte[] decodeAndVerify(short type, InputStream is, int len) throws IOException
@@ -98,7 +98,7 @@ class RecordStream
         return getBufferContents();
     }
 
-    protected void writeMessage(short type, byte[] message, int offset, int len) throws IOException
+    protected void writeRecord(short type, byte[] message, int offset, int len) throws IOException
     {
         if (type == ContentType.handshake)
         {

@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.tls.AbstractTlsServer;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
+import org.bouncycastle.crypto.tls.TlsCipher;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsKeyExchange;
@@ -30,15 +31,17 @@ public class TlsProtocolTest extends TestCase {
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
         PipedOutputStream serverWrite = new PipedOutputStream(clientRead);
 
-        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite, secureRandom);
-        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite, secureRandom);
+        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite,
+            secureRandom);
+        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite,
+            secureRandom);
 
         ServerThread serverThread = new ServerThread(serverProtocol);
         serverThread.start();
 
         MyTlsClient client = new MyTlsClient();
         clientProtocol.connect(client);
-        
+
         byte[] data = new byte[64];
         secureRandom.nextBytes(data);
 
@@ -82,6 +85,11 @@ public class TlsProtocolTest extends TestCase {
     }
 
     static class MyTlsServer extends AbstractTlsServer {
+
+        public TlsCipher getCipher() throws IOException {
+            // TODO
+            return null;
+        }
 
         public TlsCredentials getCredentials() {
             // TODO

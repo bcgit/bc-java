@@ -81,7 +81,7 @@ public class TlsClientProtocol extends TlsProtocol {
          * We will now read data, until we have completed the handshake.
          */
         while (this.connection_state != CS_SERVER_FINISHED) {
-            safeReadData();
+            safeReadRecord();
         }
 
         enableApplicationData();
@@ -91,7 +91,7 @@ public class TlsClientProtocol extends TlsProtocol {
         return tlsClientContext;
     }
 
-    protected void processChangeCipherSpecMessage() throws IOException {
+    protected void handleChangeCipherSpecMessage() throws IOException {
         /*
          * Check if we are in the correct connection state.
          */
@@ -104,7 +104,7 @@ public class TlsClientProtocol extends TlsProtocol {
         this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
     }
 
-    protected void processHandshakeMessage(short type, byte[] data) throws IOException {
+    protected void handleHandshakeMessage(short type, byte[] data) throws IOException {
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
 
         switch (type) {
@@ -403,7 +403,7 @@ public class TlsClientProtocol extends TlsProtocol {
                 /*
                  * Initialize our cipher suite
                  */
-                rs.decidedWriteCipherSpec(tlsClient.getCompression(), tlsClient.getCipher());
+                rs.sentWriteCipherSpec(tlsClient.getCompression(), tlsClient.getCipher());
 
                 sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
@@ -503,7 +503,7 @@ public class TlsClientProtocol extends TlsProtocol {
         TlsUtils.writeOpaque16(data, bos);
         byte[] message = bos.toByteArray();
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendClientHelloMessage() throws IOException {
@@ -578,7 +578,7 @@ public class TlsClientProtocol extends TlsProtocol {
         bos.write(os.toByteArray());
         byte[] message = bos.toByteArray();
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendClientKeyExchangeMessage() throws IOException {
@@ -595,6 +595,6 @@ public class TlsClientProtocol extends TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 }
