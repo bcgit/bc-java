@@ -144,7 +144,7 @@ public class TlsUtils
     protected static short readUint8(InputStream is) throws IOException
     {
         int i = is.read();
-        if (i == -1)
+        if (i < 0)
         {
             throw new EOFException();
         }
@@ -160,7 +160,7 @@ public class TlsUtils
     {
         int i1 = is.read();
         int i2 = is.read();
-        if ((i1 | i2) < 0)
+        if (i2 < 0)
         {
             throw new EOFException();
         }
@@ -179,7 +179,7 @@ public class TlsUtils
         int i1 = is.read();
         int i2 = is.read();
         int i3 = is.read();
-        if ((i1 | i2 | i3) < 0)
+        if (i3 < 0)
         {
             throw new EOFException();
         }
@@ -200,7 +200,7 @@ public class TlsUtils
         int i2 = is.read();
         int i3 = is.read();
         int i4 = is.read();
-        if ((i1 | i2 | i3 | i4) < 0)
+        if (i4 < 0)
         {
             throw new EOFException();
         }
@@ -251,6 +251,26 @@ public class TlsUtils
         byte[] value = new byte[length];
         readFully(value, is);
         return value;
+    }
+
+    protected static short[] readUint8Array(int count, InputStream is) throws IOException
+    {
+        short[] uints = new short[count];
+        for (int i = 0; i < count; ++i)
+        {
+            uints[i] = readUint8(is);
+        }
+        return uints;
+    }
+
+    protected static int[] readUint16Array(int count, InputStream is) throws IOException
+    {
+        int[] uints = new int[count];
+        for (int i = 0; i < count; ++i)
+        {
+            uints[i] = readUint16(is);
+        }
+        return uints;
     }
 
     static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
