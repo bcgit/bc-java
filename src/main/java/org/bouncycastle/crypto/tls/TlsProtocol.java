@@ -6,13 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -471,7 +465,7 @@ public abstract class TlsProtocol {
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
-        rs.writeMessage(ContentType.alert, error, 0, 2);
+        safeWriteMessage(ContentType.alert, error, 0, 2);
     }
 
     protected void sendCertificateMessage(Certificate certificate) throws IOException {
@@ -487,12 +481,12 @@ public abstract class TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendChangeCipherSpecMessage() throws IOException {
         byte[] message = new byte[] { 1 };
-        rs.writeMessage(ContentType.change_cipher_spec, message, 0, message.length);
+        safeWriteMessage(ContentType.change_cipher_spec, message, 0, message.length);
     }
 
     protected void sendFinishedMessage() throws IOException {
@@ -504,7 +498,7 @@ public abstract class TlsProtocol {
         bos.write(verify_data);
         byte[] message = bos.toByteArray();
 
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
     }
 
     protected byte[] createVerifyData(boolean isServer) {

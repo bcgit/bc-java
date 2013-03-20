@@ -8,10 +8,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -66,95 +63,18 @@ public class TlsClientProtocol extends TlsProtocol {
             throw new IllegalStateException("connect can only be called once");
         }
 
-        /*
-         * Send Client hello
-         * 
-         * First, generate some random data.
-         */
+        this.tlsClient = tlsClient;
+
         this.securityParameters = new SecurityParameters();
         this.securityParameters.clientRandom = new byte[32];
         random.nextBytes(securityParameters.clientRandom);
         TlsUtils.writeGMTUnixTime(securityParameters.clientRandom, 0);
 
         this.tlsClientContext = new TlsClientContextImpl(random, securityParameters);
-
+        this.tlsClient.init(tlsClientContext);
         this.rs.init(tlsClientContext);
 
-        this.tlsClient = tlsClient;
-        this.tlsClient.init(tlsClientContext);
-
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-        ProtocolVersion client_version = this.tlsClient.getClientVersion();
-        this.tlsClientContext.setClientVersion(client_version);
-        TlsUtils.writeVersion(client_version, os);
-
-        os.write(securityParameters.clientRandom);
-
-        /*
-         * Length of Session id
-         */
-        TlsUtils.writeUint8((short) 0, os);
-
-        /*
-         * Cipher suites
-         */
-        this.offeredCipherSuites = this.tlsClient.getCipherSuites();
-
-        // Integer -> byte[]
-        this.clientExtensions = this.tlsClient.getClientExtensions();
-
-        // Cipher Suites (and SCSV)
-        {
-            /*
-             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
-             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
-             * ClientHello. Including both is NOT RECOMMENDED.
-             */
-            boolean noRenegExt = clientExtensions == null
-                || clientExtensions.get(EXT_RenegotiationInfo) == null;
-
-            int count = offeredCipherSuites.length;
-            if (noRenegExt) {
-                // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-                ++count;
-            }
-
-            TlsUtils.writeUint16(2 * count, os);
-            TlsUtils.writeUint16Array(offeredCipherSuites, os);
-
-            if (noRenegExt) {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, os);
-            }
-        }
-
-        // Compression methods
-        this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
-
-        TlsUtils.writeUint8((short) offeredCompressionMethods.length, os);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, os);
-
-        // Extensions
-        if (clientExtensions != null) {
-            ByteArrayOutputStream ext = new ByteArrayOutputStream();
-
-            Enumeration keys = clientExtensions.keys();
-            while (keys.hasMoreElements()) {
-                Integer extType = (Integer) keys.nextElement();
-                writeExtension(ext, extType, (byte[]) clientExtensions.get(extType));
-            }
-
-            TlsUtils.writeOpaque16(ext.toByteArray(), os);
-        }
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.client_hello, bos);
-        TlsUtils.writeUint24(os.size(), bos);
-        bos.write(os.toByteArray());
-        byte[] message = bos.toByteArray();
-
-        safeWriteMessage(ContentType.handshake, message, 0, message.length);
-
+        sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
         /*
@@ -572,6 +492,95 @@ public class TlsClientProtocol extends TlsProtocol {
         }
     }
 
+    protected void sendCertificateVerifyMessage(byte[] data) throws IOException {
+        /*
+         * Send signature of handshake messages so far to prove we are the owner of the cert See RFC
+         * 2246 sections 4.7, 7.4.3 and 7.4.8
+         */
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.certificate_verify, bos);
+        TlsUtils.writeUint24(data.length + 2, bos);
+        TlsUtils.writeOpaque16(data, bos);
+        byte[] message = bos.toByteArray();
+
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendClientHelloMessage() throws IOException {
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        ProtocolVersion client_version = this.tlsClient.getClientVersion();
+        this.tlsClientContext.setClientVersion(client_version);
+        TlsUtils.writeVersion(client_version, os);
+
+        os.write(securityParameters.clientRandom);
+
+        /*
+         * Length of Session id
+         */
+        TlsUtils.writeUint8((short) 0, os);
+
+        /*
+         * Cipher suites
+         */
+        this.offeredCipherSuites = this.tlsClient.getCipherSuites();
+
+        // Integer -> byte[]
+        this.clientExtensions = this.tlsClient.getClientExtensions();
+
+        // Cipher Suites (and SCSV)
+        {
+            /*
+             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
+             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
+             * ClientHello. Including both is NOT RECOMMENDED.
+             */
+            boolean noRenegExt = clientExtensions == null
+                || clientExtensions.get(EXT_RenegotiationInfo) == null;
+
+            int count = offeredCipherSuites.length;
+            if (noRenegExt) {
+                // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+                ++count;
+            }
+
+            TlsUtils.writeUint16(2 * count, os);
+            TlsUtils.writeUint16Array(offeredCipherSuites, os);
+
+            if (noRenegExt) {
+                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, os);
+            }
+        }
+
+        // Compression methods
+        this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
+
+        TlsUtils.writeUint8((short) offeredCompressionMethods.length, os);
+        TlsUtils.writeUint8Array(offeredCompressionMethods, os);
+
+        // Extensions
+        if (clientExtensions != null) {
+            ByteArrayOutputStream ext = new ByteArrayOutputStream();
+
+            Enumeration keys = clientExtensions.keys();
+            while (keys.hasMoreElements()) {
+                Integer extType = (Integer) keys.nextElement();
+                writeExtension(ext, extType, (byte[]) clientExtensions.get(extType));
+            }
+
+            TlsUtils.writeOpaque16(ext.toByteArray(), os);
+        }
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.client_hello, bos);
+        TlsUtils.writeUint24(os.size(), bos);
+        bos.write(os.toByteArray());
+        byte[] message = bos.toByteArray();
+
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
+    }
+
     protected void sendClientKeyExchangeMessage() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -586,20 +595,6 @@ public class TlsClientProtocol extends TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
-    }
-
-    protected void sendCertificateVerifyMessage(byte[] data) throws IOException {
-        /*
-         * Send signature of handshake messages so far to prove we are the owner of the cert See RFC
-         * 2246 sections 4.7, 7.4.3 and 7.4.8
-         */
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate_verify, bos);
-        TlsUtils.writeUint24(data.length + 2, bos);
-        TlsUtils.writeOpaque16(data, bos);
-        byte[] message = bos.toByteArray();
-
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
     }
 }

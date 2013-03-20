@@ -42,8 +42,8 @@ public class TlsServerProtocol extends TlsProtocol {
         TlsUtils.writeGMTUnixTime(securityParameters.serverRandom, 0);
 
         this.tlsServerContext = new TlsServerContextImpl(random, securityParameters);
-        this.rs.init(tlsServerContext);
         this.tlsServer.init(tlsServerContext);
+        this.rs.init(tlsServerContext);
 
         /*
          * We will now read data, until we have completed the handshake.
@@ -260,7 +260,7 @@ public class TlsServerProtocol extends TlsProtocol {
         // Patch actual length back in
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendServerHelloDoneMessage() throws IOException {
@@ -269,7 +269,7 @@ public class TlsServerProtocol extends TlsProtocol {
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
         TlsUtils.writeUint24(0, message, 1);
 
-        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+        safeWriteMessage(ContentType.handshake, message, 0, message.length);
     }
 
     protected void skipCertificateMessage() {
