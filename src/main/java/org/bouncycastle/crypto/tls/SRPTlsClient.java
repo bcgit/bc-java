@@ -56,10 +56,13 @@ public abstract class SRPTlsClient extends AbstractTlsClient
     public void processServerExtensions(Hashtable serverExtensions) throws IOException
     {
         // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
-        byte[] extValue = (byte[])serverExtensions.get(EXT_SRP);
-        if (extValue != null && extValue.length > 0)
+        if (serverExtensions != null)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            byte[] extValue = (byte[])serverExtensions.get(EXT_SRP);
+            if (extValue != null && extValue.length > 0)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
     }
 
