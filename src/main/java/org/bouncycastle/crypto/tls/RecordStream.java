@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.Digest;
  */
 class RecordStream
 {
-    private TlsProtocolHandler handler;
+    private TlsProtocol handler;
     private InputStream is;
     private OutputStream os;
     private TlsCompression readCompression = null, writeCompression = null;
@@ -25,7 +25,7 @@ class RecordStream
 
     private ProtocolVersion discoveredPeerVersion = null;
 
-    RecordStream(TlsProtocolHandler handler, InputStream is, OutputStream os)
+    RecordStream(TlsProtocol handler, InputStream is, OutputStream os)
     {
         this.handler = handler;
         this.is = is;

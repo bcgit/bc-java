@@ -8,7 +8,8 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.CipherSuite;
-import org.bouncycastle.crypto.tls.DTLSProtocolHandler;
+import org.bouncycastle.crypto.tls.DTLSClientProtocol;
+import org.bouncycastle.crypto.tls.DTLSProtocol;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
@@ -39,7 +40,7 @@ public class DTLSClientTest {
 
         transport = new LoggingDatagramTransport(transport, System.out);
 
-        DTLSProtocolHandler protocol = new DTLSProtocolHandler(secureRandom);
+        DTLSClientProtocol protocol = new DTLSClientProtocol(secureRandom);
 
         DTLSClient client = new DTLSClient();
         DatagramTransport dtls = protocol.connect(client, transport);

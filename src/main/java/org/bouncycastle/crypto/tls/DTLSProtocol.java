@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
-public class DTLSProtocolHandler {
+public abstract class DTLSProtocol {
 
     private static final Integer EXT_RenegotiationInfo = Integers
         .valueOf(ExtensionType.renegotiation_info);
@@ -22,7 +22,7 @@ public class DTLSProtocolHandler {
 
     private final SecureRandom secureRandom;
 
-    public DTLSProtocolHandler(SecureRandom secureRandom) {
+    public DTLSProtocol(SecureRandom secureRandom) {
 
         if (secureRandom == null)
             throw new IllegalArgumentException("'secureRandom' cannot be null");
@@ -304,7 +304,7 @@ public class DTLSProtocolHandler {
             Enumeration keys = state.clientExtensions.keys();
             while (keys.hasMoreElements()) {
                 Integer extType = (Integer) keys.nextElement();
-                TlsProtocolHandler.writeExtension(ext, extType,
+                TlsProtocol.writeExtension(ext, extType,
                     (byte[]) state.clientExtensions.get(extType));
             }
 
@@ -440,15 +440,14 @@ public class DTLSProtocolHandler {
         state.client.notifySessionID(sessionID);
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!TlsProtocolHandler.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
+        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
         state.client.notifySelectedCipherSuite(selectedCipherSuite);
 
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocolHandler.arrayContains(state.offeredCompressionMethods,
-            selectedCompressionMethod)) {
+        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, selectedCompressionMethod)) {
             // TODO Alert
         }
         state.client.notifySelectedCompressionMethod(selectedCompressionMethod);
@@ -534,7 +533,7 @@ public class DTLSProtocolHandler {
                 byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
 
                 if (!Arrays.constantTimeAreEqual(renegExtValue,
-                    TlsProtocolHandler.createRenegotiationInfo(EMPTY_BYTES))) {
+                    TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
                     // TODO Alert
                 }
             }

@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsProtocolHandler;
+import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -28,20 +28,21 @@ public class TLSClientTest {
         Socket socket = new Socket(InetAddress.getLocalHost(), 5556);
 
         SecureRandom secureRandom = new SecureRandom();
-        TlsProtocolHandler handler = new TlsProtocolHandler(socket.getInputStream(), socket.getOutputStream(), secureRandom);
-        
-        TLSClient client = new TLSClient();
-        handler.connect(client);
+        TlsClientProtocol protocol = new TlsClientProtocol(socket.getInputStream(),
+            socket.getOutputStream(), secureRandom);
 
-        OutputStream output = handler.getOutputStream();
+        TLSClient client = new TLSClient();
+        protocol.connect(client);
+
+        OutputStream output = protocol.getOutputStream();
         output.write("GET / HTTP/1.1\r\n\r\n".getBytes("UTF-8"));
 
-        InputStream input = handler.getInputStream();
+        InputStream input = protocol.getInputStream();
         byte[] result = Streams.readAll(input);
 
         System.out.println(new String(result, "UTF-8"));
 
-        handler.close();
+        protocol.close();
         socket.close();
     }
 

@@ -1,23 +1,24 @@
 package org.bouncycastle.crypto.tls.test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlwaysValidVerifyer;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.LegacyTlsClient;
 import org.bouncycastle.crypto.tls.TlsClient;
+import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsKeyExchange;
-import org.bouncycastle.crypto.tls.TlsProtocolHandler;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 
 public class BasicTlsTest
     extends TestCase
@@ -60,10 +61,10 @@ public class BasicTlsTest
         }
         
 //        long time = System.currentTimeMillis();
-        TlsProtocolHandler handler = new TlsProtocolHandler(s.getInputStream(), s.getOutputStream());
-        handler.connect(new LegacyTlsClient(verifyer));
-        InputStream is = handler.getInputStream();
-        OutputStream os = handler.getOutputStream();
+        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
+        protocol.connect(new LegacyTlsClient(verifyer));
+        InputStream is = protocol.getInputStream();
+        OutputStream os = protocol.getOutputStream();
 
         os.write("GET / HTTP/1.1\r\n\r\n".getBytes());
 

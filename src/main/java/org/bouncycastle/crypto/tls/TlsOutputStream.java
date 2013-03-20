@@ -9,9 +9,9 @@ import java.io.OutputStream;
 class TlsOutputStream extends OutputStream
 {
     private byte[] buf = new byte[1];
-    private TlsProtocolHandler handler;
+    private TlsProtocol handler;
 
-    TlsOutputStream(TlsProtocolHandler handler)
+    TlsOutputStream(TlsProtocol handler)
     {
         this.handler = handler;
     }
