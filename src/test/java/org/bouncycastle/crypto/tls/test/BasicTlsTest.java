@@ -12,7 +12,9 @@ import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlwaysValidVerifyer;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.LegacyTlsClient;
+import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClient;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsFatalAlert;
@@ -93,7 +95,7 @@ public class BasicTlsTest
     public void testRSAConnectionClient()
         throws Exception
     {
-        TestTlsClient client = new TestTlsClient(null);
+        MyTlsClient client = new MyTlsClient(null);
 
         checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, TlsTestUtils.rsaCertData);
         checkConnectionClient(client, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, TlsTestUtils.rsaCertData);
@@ -144,4 +146,22 @@ public class BasicTlsTest
     {
         junit.textui.TestRunner.run(suite());
     }
+    
+    static class MyTlsClient
+    extends DefaultTlsClient
+{
+    private final TlsAuthentication authentication;
+
+    MyTlsClient(TlsAuthentication authentication)
+    {
+        this.authentication = authentication;
+    }
+
+    public TlsAuthentication getAuthentication()
+        throws IOException
+    {
+        return authentication;
+    }
+}
+
 }

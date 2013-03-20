@@ -42,7 +42,7 @@ public class DTLSClientTest {
 
         DTLSClientProtocol protocol = new DTLSClientProtocol(secureRandom);
 
-        DTLSClient client = new DTLSClient();
+        MyTlsClient client = new MyTlsClient();
         DatagramTransport dtls = protocol.connect(client, transport);
 
         System.out.println("Receive limit: " + dtls.getReceiveLimit());
@@ -62,7 +62,7 @@ public class DTLSClientTest {
         socket.close();
     }
 
-    static class DTLSClient extends DefaultTlsClient {
+    static class MyTlsClient extends DefaultTlsClient {
 
         public int[] getCipherSuites() {
             return new int[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,

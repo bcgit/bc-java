@@ -21,7 +21,7 @@ import org.bouncycastle.util.io.Streams;
  * Please refer to GnuTLSSetup.txt or OpenSSLSetup.txt, and x509-*.pem files in this package for
  * help configuring an external TLS server.
  */
-public class TLSClientTest {
+public class TlsClientTest {
 
     public static void main(String[] args) throws Exception {
 
@@ -31,7 +31,7 @@ public class TLSClientTest {
         TlsClientProtocol protocol = new TlsClientProtocol(socket.getInputStream(),
             socket.getOutputStream(), secureRandom);
 
-        TLSClient client = new TLSClient();
+        MyTlsClient client = new MyTlsClient();
         protocol.connect(client);
 
         OutputStream output = protocol.getOutputStream();
@@ -46,7 +46,7 @@ public class TLSClientTest {
         socket.close();
     }
 
-    static class TLSClient extends DefaultTlsClient {
+    static class MyTlsClient extends DefaultTlsClient {
 
         public int[] getCipherSuites() {
             return new int[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
