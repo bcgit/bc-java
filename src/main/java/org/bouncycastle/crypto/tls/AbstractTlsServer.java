@@ -17,4 +17,8 @@ public abstract class AbstractTlsServer implements TlsServer {
     public void init(TlsServerContext context) {
         this.context = context;
     }
+
+    public CertificateRequest getCertificateRequest() {
+        return null;
+    }
 }
