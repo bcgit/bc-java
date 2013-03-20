@@ -167,6 +167,10 @@ public class TlsClientProtocol extends TlsProtocol {
         enableApplicationData();
     }
 
+    protected TlsContext getContext() {
+        return tlsClientContext;
+    }
+
     protected void processChangeCipherSpecMessage() throws IOException {
         /*
          * Check if we are in the correct connection state.
@@ -210,32 +214,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.finished:
             switch (this.connection_state) {
             case CS_SERVER_CHANGE_CIPHER_SPEC:
-                /*
-                 * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0
-                 * and 36 for SSLv3.
-                 */
-                int checksumLength = tlsClientContext.getServerVersion().isSSL() ? 36 : 12;
-                byte[] serverVerifyData = new byte[checksumLength];
-                TlsUtils.readFully(serverVerifyData, buf);
-
-                assertEmpty(buf);
-
-                /*
-                 * Calculate our own checksum.
-                 */
-                byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(tlsClientContext,
-                    "server finished", rs.getCurrentHash(TlsUtils.SSL_SERVER));
-
-                /*
-                 * Compare both checksums.
-                 */
-                if (!Arrays.constantTimeAreEqual(expectedServerVerifyData, serverVerifyData)) {
-                    /*
-                     * Wrong checksum in the finished message.
-                     */
-                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-                }
-
+                processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 break;
             default:
@@ -498,13 +477,7 @@ public class TlsClientProtocol extends TlsProtocol {
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
 
-                /*
-                 * Now, we send change cipher state
-                 */
-                byte[] cmessage = new byte[1];
-                cmessage[0] = 1;
-                rs.writeMessage(ContentType.change_cipher_spec, cmessage, 0, cmessage.length);
-
+                sendChangeCipherSpec();
                 this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
 
                 /*
@@ -512,20 +485,7 @@ public class TlsClientProtocol extends TlsProtocol {
                  */
                 rs.decidedWriteCipherSpec(tlsClient.getCompression(), tlsClient.getCipher());
 
-                /*
-                 * Send our finished message.
-                 */
-                byte[] clientVerifyData = TlsUtils.calculateVerifyData(tlsClientContext,
-                    "client finished", rs.getCurrentHash(TlsUtils.SSL_CLIENT));
-
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                TlsUtils.writeUint8(HandshakeType.finished, bos);
-                TlsUtils.writeUint24(clientVerifyData.length, bos);
-                bos.write(clientVerifyData);
-                byte[] message = bos.toByteArray();
-
-                rs.writeMessage(ContentType.handshake, message, 0, message.length);
-
+                sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
                 break;
             default:

@@ -54,6 +54,10 @@ public class TlsServerProtocol extends TlsProtocol {
         enableApplicationData();
     }
 
+    protected TlsContext getContext() {
+        return tlsServerContext;
+    }
+
     protected void processChangeCipherSpecMessage() throws IOException {
 
         switch (this.connection_state) {
@@ -98,7 +102,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 // TODO Send CertificateRequest
                 this.connection_state = CS_CERTIFICATE_REQUEST;
 
-                // TODO Send ServerHelloDone
+                sendServerHelloDone();
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
                 break;
@@ -158,10 +162,10 @@ public class TlsServerProtocol extends TlsProtocol {
                 processFinishedMessage(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                // TODO Send ChangeCipherSpec
+                sendChangeCipherSpec();
                 this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
 
-                // TODO Send Finished
+                sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
                 break;
             default:
@@ -209,32 +213,13 @@ public class TlsServerProtocol extends TlsProtocol {
         assertEmpty(buf);
     }
 
-    protected void processFinishedMessage(ByteArrayInputStream buf) throws IOException {
-        /*
-         * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0
-         * and 36 for SSLv3.
-         */
-        int checksumLength = tlsServerContext.getServerVersion().isSSL() ? 36 : 12;
-        byte[] clientVerifyData = new byte[checksumLength];
-        TlsUtils.readFully(clientVerifyData, buf);
+    protected void sendServerHelloDone() throws IOException {
 
-        assertEmpty(buf);
+        byte[] message = new byte[4];
+        TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
+        TlsUtils.writeUint24(0, message, 1);
 
-        /*
-         * Calculate our own checksum.
-         */
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(tlsServerContext,
-            "client finished", rs.getCurrentHash(TlsUtils.SSL_CLIENT));
-
-        /*
-         * Compare both checksums.
-         */
-        if (!Arrays.constantTimeAreEqual(expectedClientVerifyData, clientVerifyData)) {
-            /*
-             * Wrong checksum in the finished message.
-             */
-            this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-        }
+        rs.writeMessage(ContentType.handshake, message, 0, message.length);
     }
 
     protected void skipCertificateMessage() {

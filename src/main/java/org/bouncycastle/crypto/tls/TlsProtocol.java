@@ -76,6 +76,8 @@ public abstract class TlsProtocol {
         this.random = sr;
     }
 
+    protected abstract TlsContext getContext();
+
     protected abstract void processChangeCipherSpecMessage() throws IOException;
 
     protected abstract void processHandshakeMessage(short type, byte[] buf) throws IOException;
@@ -430,12 +432,70 @@ public abstract class TlsProtocol {
         }
     }
 
+    protected void processFinishedMessage(ByteArrayInputStream buf) throws IOException {
+        TlsContext context = getContext();
+
+        /*
+         * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0
+         * and 36 for SSLv3.
+         */
+        int checksumLength = context.getServerVersion().isSSL() ? 36 : 12;
+        byte[] verify_data = new byte[checksumLength];
+        TlsUtils.readFully(verify_data, buf);
+
+        assertEmpty(buf);
+
+        /*
+         * Calculate our own checksum.
+         */
+        byte[] expected_verify_data = createVerifyData(!getContext().isServer());
+
+        /*
+         * Compare both checksums.
+         */
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data)) {
+            /*
+             * Wrong checksum in the finished message.
+             */
+            this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+        }
+    }
+
     protected void sendAlert(short alertLevel, short alertDescription) throws IOException {
         byte[] error = new byte[2];
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
         rs.writeMessage(ContentType.alert, error, 0, 2);
+    }
+
+    protected void sendChangeCipherSpec() throws IOException {
+        byte[] message = new byte[] { 1 };
+        rs.writeMessage(ContentType.change_cipher_spec, message, 0, message.length);
+    }
+
+    protected void sendFinishedMessage() throws IOException {
+        byte[] verify_data = createVerifyData(getContext().isServer());
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.finished, bos);
+        TlsUtils.writeUint24(verify_data.length, bos);
+        bos.write(verify_data);
+        byte[] message = bos.toByteArray();
+
+        rs.writeMessage(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected byte[] createVerifyData(boolean isServer) {
+        TlsContext context = getContext();
+
+        if (isServer) {
+            return TlsUtils.calculateVerifyData(context, "server finished",
+                rs.getCurrentHash(TlsUtils.SSL_SERVER));
+        }
+
+        return TlsUtils.calculateVerifyData(context, "client finished",
+                rs.getCurrentHash(TlsUtils.SSL_CLIENT));
     }
 
     /**
