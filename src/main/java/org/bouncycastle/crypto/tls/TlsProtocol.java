@@ -31,18 +31,20 @@ public abstract class TlsProtocol {
     /*
      * Our Connection states
      */
+    protected static final short CS_START = 0;
     protected static final short CS_CLIENT_HELLO = 1;
     protected static final short CS_SERVER_HELLO = 2;
     protected static final short CS_SERVER_CERTIFICATE = 3;
     protected static final short CS_SERVER_KEY_EXCHANGE = 4;
     protected static final short CS_CERTIFICATE_REQUEST = 5;
     protected static final short CS_SERVER_HELLO_DONE = 6;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 7;
-    protected static final short CS_CERTIFICATE_VERIFY = 8;
-    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 9;
-    protected static final short CS_CLIENT_FINISHED = 10;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 11;
-    protected static final short CS_SERVER_FINISHED = 12;
+    protected static final short CS_CLIENT_CERTIFICATE = 7;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 8;
+    protected static final short CS_CERTIFICATE_VERIFY = 9;
+    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 10;
+    protected static final short CS_CLIENT_FINISHED = 11;
+    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 12;
+    protected static final short CS_SERVER_FINISHED = 13;
 
     /*
      * Queues for data from some protocols.
@@ -67,7 +69,7 @@ public abstract class TlsProtocol {
 
     protected SecurityParameters securityParameters = null;
 
-    protected short connection_state = 0;
+    protected short connection_state = CS_START;
 
     public TlsProtocol(InputStream is, OutputStream os, SecureRandom sr) {
         this.rs = new RecordStream(this, is, os);
