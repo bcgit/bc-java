@@ -63,23 +63,23 @@ public class Certificate
     }
 
     /**
-     * Encodes version of the ClientCertificate message
+     * Encodes version of the Certificate message
      * 
      * @param os stream to write the message to
      * @throws IOException If something goes wrong
      */
     protected void encode(OutputStream os) throws IOException
     {
-        Vector encCerts = new Vector();
-        int totalSize = 0;
+        Vector encCerts = new Vector(this.certs.length);
+        int totalLength = 0;
         for (int i = 0; i < this.certs.length; ++i)
         {
             byte[] encCert = certs[i].getEncoded(ASN1Encoding.DER);
             encCerts.addElement(encCert);
-            totalSize += encCert.length + 3;
+            totalLength += encCert.length + 3;
         }
 
-        TlsUtils.writeUint24(totalSize, os);
+        TlsUtils.writeUint24(totalLength, os);
 
         for (int i = 0; i < encCerts.size(); ++i)
         {
