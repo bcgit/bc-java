@@ -299,16 +299,7 @@ public abstract class DTLSProtocol {
 
         // Extensions
         if (state.clientExtensions != null) {
-            ByteArrayOutputStream ext = new ByteArrayOutputStream();
-
-            Enumeration keys = state.clientExtensions.keys();
-            while (keys.hasMoreElements()) {
-                Integer extType = (Integer) keys.nextElement();
-                TlsProtocol.writeExtension(ext, extType,
-                    (byte[]) state.clientExtensions.get(extType));
-            }
-
-            TlsUtils.writeOpaque16(ext.toByteArray(), buf);
+            TlsProtocol.writeExtensions(buf, state.clientExtensions);
         }
 
         return buf.toByteArray();
@@ -453,16 +444,19 @@ public abstract class DTLSProtocol {
          */
 
         // Integer -> byte[]
-        Hashtable serverExtensions = new Hashtable();
+        Hashtable serverExtensions = TlsProtocol.readExtensions(buf);
 
-        if (buf.available() > 0) {
-            // Process extensions from extended server hello
-            byte[] extBytes = TlsUtils.readOpaque16(buf);
+        boolean secure_negotiation = false;
 
-            ByteArrayInputStream ext = new ByteArrayInputStream(extBytes);
-            while (ext.available() > 0) {
-                Integer extType = Integers.valueOf(TlsUtils.readUint16(ext));
-                byte[] extValue = TlsUtils.readOpaque16(ext);
+        /*
+         * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
+         * extended client hello message. However, see RFC 5746 exception below. We always include
+         * the SCSV, so an Extended Server Hello is always allowed.
+         */
+        if (serverExtensions != null) {
+            Enumeration e = serverExtensions.keys();
+            while (e.hasMoreElements()) {
+                Integer extType = (Integer) e.nextElement();
 
                 /*
                  * RFC 5746 Note that sending a "renegotiation_info" extension in response to a
@@ -472,9 +466,8 @@ public abstract class DTLSProtocol {
                  * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. TLS implementations
                  * MUST continue to comply with Section 7.4.1.4 for all other extensions.
                  */
-
                 if (!extType.equals(EXT_RenegotiationInfo)
-                    && state.clientExtensions.get(extType) == null) {
+                    && (state.clientExtensions == null || state.clientExtensions.get(extType) == null)) {
                     /*
                      * RFC 3546 2.3 Note that for all extension types (including those defined in
                      * future), the extension type MUST NOT appear in the extended server hello
@@ -484,30 +477,15 @@ public abstract class DTLSProtocol {
                      * (extended) client hello.
                      */
                     // TODO Alert
+                    // this.failWithError(AlertLevel.fatal, AlertDescription.unsupported_extension);
                 }
-
-                if (serverExtensions.containsKey(extType)) {
-                    /*
-                     * RFC 3546 2.3 Also note that when multiple extensions of different types are
-                     * present in the extended client hello or the extended server hello, the
-                     * extensions may appear in any order. There MUST NOT be more than one extension
-                     * of the same type.
-                     */
-                    // TODO Alert
-                }
-
-                serverExtensions.put(extType, extValue);
             }
-        }
 
-        assertEmpty(buf);
-
-        /*
-         * RFC 5746 3.4. When a ServerHello is received, the client MUST check if it includes the
-         * "renegotiation_info" extension:
-         */
-        {
-            boolean secure_negotiation = serverExtensions.containsKey(EXT_RenegotiationInfo);
+            /*
+             * RFC 5746 3.4. When a ServerHello is received, the client MUST check if it includes
+             * the "renegotiation_info" extension:
+             */
+            secure_negotiation = serverExtensions.containsKey(EXT_RenegotiationInfo);
 
             /*
              * If the extension is present, set the secure_renegotiation flag to TRUE. The client
@@ -520,11 +498,12 @@ public abstract class DTLSProtocol {
                 if (!Arrays.constantTimeAreEqual(renegExtValue,
                     TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
                     // TODO Alert
+                    // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
             }
-
-            state.client.notifySecureRenegotiation(secure_negotiation);
         }
+
+        state.client.notifySecureRenegotiation(secure_negotiation);
 
         if (state.clientExtensions != null) {
             state.client.processServerExtensions(serverExtensions);
