@@ -461,7 +461,7 @@ public class TlsClientProtocol extends TlsProtocol {
                         createRenegotiationInfo(emptybuf))) {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
-               }
+                }
             }
         }
 
@@ -493,7 +493,11 @@ public class TlsClientProtocol extends TlsProtocol {
 
         rs.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.client_hello, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
         if (client_version.isDTLS()) {
@@ -501,14 +505,14 @@ public class TlsClientProtocol extends TlsProtocol {
         }
 
         this.tlsClientContext.setClientVersion(client_version);
-        TlsUtils.writeVersion(client_version, os);
+        TlsUtils.writeVersion(client_version, buf);
 
-        os.write(securityParameters.clientRandom);
+        buf.write(securityParameters.clientRandom);
 
         /*
          * Length of Session id
          */
-        TlsUtils.writeUint8((short) 0, os);
+        TlsUtils.writeUint8((short) 0, buf);
 
         /*
          * Cipher suites
@@ -534,30 +538,29 @@ public class TlsClientProtocol extends TlsProtocol {
                 ++count;
             }
 
-            TlsUtils.writeUint16(2 * count, os);
-            TlsUtils.writeUint16Array(offeredCipherSuites, os);
+            TlsUtils.writeUint16(2 * count, buf);
+            TlsUtils.writeUint16Array(offeredCipherSuites, buf);
 
             if (noRenegExt) {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, os);
+                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, buf);
             }
         }
 
         // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
-        TlsUtils.writeUint8((short) offeredCompressionMethods.length, os);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, os);
+        TlsUtils.writeUint8((short) offeredCompressionMethods.length, buf);
+        TlsUtils.writeUint8Array(offeredCompressionMethods, buf);
 
         // Extensions
         if (clientExtensions != null) {
-            writeExtensions(os, clientExtensions);
+            writeExtensions(buf, clientExtensions);
         }
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.client_hello, bos);
-        TlsUtils.writeUint24(os.size(), bos);
-        bos.write(os.toByteArray());
-        byte[] message = bos.toByteArray();
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
 
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
