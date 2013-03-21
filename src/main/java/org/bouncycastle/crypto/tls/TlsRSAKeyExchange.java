@@ -85,9 +85,9 @@ class TlsRSAKeyExchange implements TlsKeyExchange
         {
             switch (types[i])
             {
-                case CertificateType.rsa_sign:
-                case CertificateType.dss_sign:
-                case CertificateType.ecdsa_sign:
+                case ClientCertificateType.rsa_sign:
+                case ClientCertificateType.dss_sign:
+                case ClientCertificateType.ecdsa_sign:
                     break;
                 default:
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
