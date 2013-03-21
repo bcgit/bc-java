@@ -66,6 +66,7 @@ public abstract class TlsProtocol {
     protected SecurityParameters securityParameters = null;
 
     protected short connection_state = CS_START;
+    protected boolean secure_renegotiation = false;
 
     public TlsProtocol(InputStream is, OutputStream os, SecureRandom sr) {
         this.rs = new RecordStream(this, is, os);

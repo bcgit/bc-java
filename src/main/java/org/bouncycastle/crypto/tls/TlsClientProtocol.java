@@ -407,12 +407,12 @@ public class TlsClientProtocol extends TlsProtocol {
         // Integer -> byte[]
         Hashtable serverExtensions = readExtensions(buf);
 
-        boolean secure_negotiation = false;
-
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
-         * extended client hello message. However, see RFC 5746 exception below. We always include
-         * the SCSV, so an Extended Server Hello is always allowed.
+         * extended client hello message.
+         * 
+         * However, see RFC 5746 exception below. We always include the SCSV, so an Extended Server
+         * Hello is always allowed.
          */
         if (serverExtensions != null) {
             Enumeration e = serverExtensions.keys();
@@ -420,48 +420,52 @@ public class TlsClientProtocol extends TlsProtocol {
                 Integer extType = (Integer) e.nextElement();
 
                 /*
-                 * RFC 5746 Note that sending a "renegotiation_info" extension in response to a
+                 * RFC 5746 3.6. Note that sending a "renegotiation_info" extension in response to a
                  * ClientHello containing only the SCSV is an explicit exception to the prohibition
                  * in RFC 5246, Section 7.4.1.4, on the server sending unsolicited extensions and is
                  * only allowed because the client is signaling its willingness to receive the
-                 * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. TLS implementations
-                 * MUST continue to comply with Section 7.4.1.4 for all other extensions.
+                 * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
                 if (!extType.equals(EXT_RenegotiationInfo)
                     && (clientExtensions == null || clientExtensions.get(extType) == null)) {
                     /*
-                     * RFC 3546 2.3 Note that for all extension types (including those defined in
-                     * future), the extension type MUST NOT appear in the extended server hello
-                     * unless the same extension type appeared in the corresponding client hello.
-                     * Thus clients MUST abort the handshake if they receive an extension type in
-                     * the extended server hello that they did not request in the associated
-                     * (extended) client hello.
+                     * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless
+                     * the same extension type appeared in the corresponding ClientHello. If a
+                     * client receives an extension type in ServerHello that it did not request in
+                     * the associated ClientHello, it MUST abort the handshake with an
+                     * unsupported_extension fatal alert.
                      */
                     this.failWithError(AlertLevel.fatal, AlertDescription.unsupported_extension);
                 }
             }
 
             /*
-             * RFC 5746 3.4. When a ServerHello is received, the client MUST check if it includes
-             * the "renegotiation_info" extension:
+             * RFC 5746 3.4. Client Behavior: Initial Handshake
              */
-            secure_negotiation = serverExtensions.containsKey(EXT_RenegotiationInfo);
-
-            /*
-             * If the extension is present, set the secure_renegotiation flag to TRUE. The client
-             * MUST then verify that the length of the "renegotiated_connection" field is zero, and
-             * if it is not, MUST abort the handshake (by sending a fatal handshake_failure alert).
-             */
-            if (secure_negotiation) {
+            {
+                /*
+                 * When a ServerHello is received, the client MUST check if it includes the
+                 * "renegotiation_info" extension:
+                 */
                 byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
+                if (renegExtValue != null) {
+                    /*
+                     * If the extension is present, set the secure_renegotiation flag to TRUE. The
+                     * client MUST then verify that the length of the "renegotiated_connection"
+                     * field is zero, and if it is not, MUST abort the handshake (by sending a fatal
+                     * handshake_failure alert).
+                     */
+                    this.secure_renegotiation = true;
 
-                if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(emptybuf))) {
-                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-                }
+                    if (!Arrays.constantTimeAreEqual(renegExtValue,
+                        createRenegotiationInfo(emptybuf))) {
+                        this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                    }
+               }
             }
         }
 
-        tlsClient.notifySecureRenegotiation(secure_negotiation);
+        tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
 
         if (clientExtensions != null) {
             tlsClient.processServerExtensions(serverExtensions);

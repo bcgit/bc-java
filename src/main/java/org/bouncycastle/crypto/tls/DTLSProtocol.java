@@ -440,8 +440,6 @@ public abstract class DTLSProtocol {
         // Integer -> byte[]
         Hashtable serverExtensions = TlsProtocol.readExtensions(buf);
 
-        boolean secure_negotiation = false;
-
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
@@ -476,28 +474,33 @@ public abstract class DTLSProtocol {
             }
 
             /*
-             * RFC 5746 3.4. When a ServerHello is received, the client MUST check if it includes
-             * the "renegotiation_info" extension:
+             * RFC 5746 3.4. Client Behavior: Initial Handshake
              */
-            secure_negotiation = serverExtensions.containsKey(EXT_RenegotiationInfo);
-
-            /*
-             * If the extension is present, set the secure_renegotiation flag to TRUE. The client
-             * MUST then verify that the length of the "renegotiated_connection" field is zero, and
-             * if it is not, MUST abort the handshake (by sending a fatal handshake_failure alert).
-             */
-            if (secure_negotiation) {
+            {
+                /*
+                 * When a ServerHello is received, the client MUST check if it includes the
+                 * "renegotiation_info" extension:
+                 */
                 byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
+                if (renegExtValue != null) {
+                    /*
+                     * If the extension is present, set the secure_renegotiation flag to TRUE. The
+                     * client MUST then verify that the length of the "renegotiated_connection"
+                     * field is zero, and if it is not, MUST abort the handshake (by sending a fatal
+                     * handshake_failure alert).
+                     */
+                    state.secure_renegotiation = true;
 
-                if (!Arrays.constantTimeAreEqual(renegExtValue,
-                    TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
-                    // TODO Alert
-                    // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-                }
+                    if (!Arrays.constantTimeAreEqual(renegExtValue,
+                        TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
+                        // TODO Alert
+                        // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                    }
+               }
             }
         }
 
-        state.client.notifySecureRenegotiation(secure_negotiation);
+        state.client.notifySecureRenegotiation(state.secure_renegotiation);
 
         if (state.clientExtensions != null) {
             state.client.processServerExtensions(serverExtensions);
@@ -520,8 +523,9 @@ public abstract class DTLSProtocol {
         TlsClient client = null;
         TlsClientContextImpl clientContext = null;
         int[] offeredCipherSuites = null;
-        Hashtable clientExtensions = null;
         short[] offeredCompressionMethods = null;
+        Hashtable clientExtensions = null;
+        boolean secure_renegotiation = false;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;
         CertificateRequest certificateRequest = null;

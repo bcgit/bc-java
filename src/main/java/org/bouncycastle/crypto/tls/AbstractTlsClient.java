@@ -79,10 +79,8 @@ public abstract class AbstractTlsClient implements TlsClient {
     public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException {
         if (!secureRenegotiation) {
             /*
-             * RFC 5746 3.4. If the extension is not present, the server does not support secure
-             * renegotiation; set secure_renegotiation flag to FALSE. In this case, some clients may
-             * want to terminate the handshake instead of continuing; see Section 4.1 for
-             * discussion.
+             * RFC 5746 3.4. In this case, some clients may want to terminate the handshake instead
+             * of continuing; see Section 4.1 for discussion.
              */
             // throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }

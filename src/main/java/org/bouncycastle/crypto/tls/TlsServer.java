@@ -12,6 +12,8 @@ public interface TlsServer {
 
     short selectCompressionMethod(short[] offeredCompressionMethods) throws IOException;
 
+    void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
+
     TlsCredentials getCredentials();
 
     TlsKeyExchange getKeyExchange() throws IOException;

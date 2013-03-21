@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Hashtable;
 
+import org.bouncycastle.util.Arrays;
+
 public class TlsServerProtocol extends TlsProtocol {
 
     protected TlsServer tlsServer = null;
@@ -316,6 +318,43 @@ public class TlsServerProtocol extends TlsProtocol {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
+        /*
+         * RFC 5746 3.6. Server Behavior: Initial Handshake
+         */
+        {
+            /*
+             * When a ClientHello is received, the server MUST check if it includes the
+             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
+             * to TRUE.
+             */
+            if (arrayContains(cipher_suites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
+                this.secure_renegotiation = true;
+            }
+
+            /*
+             * The server MUST check if the "renegotiation_info" extension is included in the
+             * ClientHello.
+             */
+            if (clientExtensions != null) {
+                byte[] renegExtValue = (byte[]) clientExtensions.get(EXT_RenegotiationInfo);
+                if (renegExtValue != null) {
+                    /*
+                     * If the extension is present, set secure_renegotiation flag to TRUE. The
+                     * server MUST then verify that the length of the "renegotiated_connection"
+                     * field is zero, and if it is not, MUST abort the handshake.
+                     */
+                    this.secure_renegotiation = true;
+
+                    if (!Arrays.constantTimeAreEqual(renegExtValue,
+                        createRenegotiationInfo(emptybuf))) {
+                        this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                    }
+                }
+            }
+        }
+
+        tlsServer.notifySecureRenegotiation(this.secure_renegotiation);
+
         if (clientExtensions != null) {
             // TODO
             // tlsServer.notifyClientExtensions(clientExtensions);
@@ -330,6 +369,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
         throws IOException {
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
 
@@ -343,6 +383,28 @@ public class TlsServerProtocol extends TlsProtocol {
         TlsUtils.writeUint24(message.length - 4, message, 1);
 
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendServerHelloMessage() throws IOException {
+        // TODO
+
+        /*
+         * RFC 5746 3.6. Server Behavior: Initial Handshake
+         */
+        if (this.secure_renegotiation) {
+            /*
+             * Note that sending a "renegotiation_info" extension in response to a ClientHello
+             * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
+             * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
+             * because the client is signaling its willingness to receive the extension via the
+             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
+             */
+
+            /*
+             * TODO If the secure_renegotiation flag is set to TRUE, the server MUST include an
+             * empty "renegotiation_info" extension in the ServerHello message.
+             */
+        }
     }
 
     protected void sendServerHelloDoneMessage() throws IOException {
