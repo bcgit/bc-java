@@ -386,7 +386,16 @@ public class TlsServerProtocol extends TlsProtocol {
     }
 
     protected void sendServerHelloMessage() throws IOException {
+        
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.server_hello, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
         // TODO
+
+        Hashtable serverExtensions = null;
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -399,12 +408,27 @@ public class TlsServerProtocol extends TlsProtocol {
              * because the client is signaling its willingness to receive the extension via the
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
              */
+            if (serverExtensions == null) {
+                serverExtensions = new Hashtable();
+            }
 
             /*
-             * TODO If the secure_renegotiation flag is set to TRUE, the server MUST include an
-             * empty "renegotiation_info" extension in the ServerHello message.
+             * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
+             * "renegotiation_info" extension in the ServerHello message.
              */
+            serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(emptybuf));
         }
+
+        if (serverExtensions != null) {
+            writeExtensions(buf, serverExtensions);
+        }
+
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
+
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
     protected void sendServerHelloDoneMessage() throws IOException {
