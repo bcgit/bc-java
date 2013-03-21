@@ -528,6 +528,28 @@ public abstract class TlsProtocol {
         }
     }
 
+    protected void flush() throws IOException {
+        rs.flush();
+    }
+
+    protected static boolean arrayContains(short[] a, short n) {
+        for (int i = 0; i < a.length; ++i) {
+            if (a[i] == n) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static boolean arrayContains(int[] a, int n) {
+        for (int i = 0; i < a.length; ++i) {
+            if (a[i] == n) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Make sure the InputStream is now empty. Fail otherwise.
      * 
@@ -536,41 +558,19 @@ public abstract class TlsProtocol {
      * @throws IOException
      *             If is is not empty.
      */
-    protected void assertEmpty(ByteArrayInputStream is) throws IOException {
+    protected static void assertEmpty(ByteArrayInputStream is) throws IOException {
         if (is.available() > 0) {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
     }
 
-    protected void flush() throws IOException {
-        rs.flush();
-    }
-
-    static boolean arrayContains(short[] a, short n) {
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] == n) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static boolean arrayContains(int[] a, int n) {
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] == n) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static byte[] createRenegotiationInfo(byte[] renegotiated_connection) throws IOException {
+    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque8(renegotiated_connection, buf);
         return buf.toByteArray();
     }
 
-    static Hashtable readExtensions(ByteArrayInputStream buf) throws IOException {
+    protected static Hashtable readExtensions(ByteArrayInputStream buf) throws IOException {
 
         if (buf.available() < 1) {
             return null;
@@ -599,7 +599,7 @@ public abstract class TlsProtocol {
         return extensions;
     }
 
-    static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
+    protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         Enumeration keys = extensions.keys();

@@ -21,7 +21,7 @@ public class DefaultTlsAgreementCredentials implements TlsAgreementCredentials {
         if (certificate == null) {
             throw new IllegalArgumentException("'certificate' cannot be null");
         }
-        if (certificate.certs.length == 0) {
+        if (certificate.isEmpty()) {
             throw new IllegalArgumentException("'certificate' cannot be empty");
         }
         if (privateKey == null) {

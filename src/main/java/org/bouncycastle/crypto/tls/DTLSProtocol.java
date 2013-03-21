@@ -184,13 +184,6 @@ public abstract class DTLSProtocol {
         return new DTLSTransport(recordLayer);
     }
 
-    private void assertEmpty(ByteArrayInputStream is) throws IOException {
-        if (is.available() > 0) {
-            // throw new TlsFatalAlert(AlertDescription.decode_error);
-            // TODO ALert
-        }
-    }
-
     private TlsClientContextImpl createClientContext() {
         SecurityParameters securityParameters = new SecurityParameters();
 
@@ -324,7 +317,7 @@ public abstract class DTLSProtocol {
 
         byte[] cookie = TlsUtils.readOpaque8(buf);
 
-        assertEmpty(buf);
+        TlsProtocol.assertEmpty(buf);
 
         if (cookie.length < 1 || cookie.length > 32) {
             // TODO Alert
@@ -358,7 +351,7 @@ public abstract class DTLSProtocol {
 
         Certificate serverCertificate = Certificate.parse(buf);
 
-        assertEmpty(buf);
+        TlsProtocol.assertEmpty(buf);
 
         state.keyExchange.processServerCertificate(serverCertificate);
         state.authentication = state.client.getAuthentication();
@@ -375,7 +368,7 @@ public abstract class DTLSProtocol {
 
         state.certificateRequest = CertificateRequest.parse(buf);
 
-        assertEmpty(buf);
+        TlsProtocol.assertEmpty(buf);
 
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
     }
@@ -388,7 +381,7 @@ public abstract class DTLSProtocol {
         byte[] serverVerifyData = new byte[12];
         TlsUtils.readFully(serverVerifyData, buf);
 
-        assertEmpty(buf);
+        TlsProtocol.assertEmpty(buf);
 
         if (!Arrays.constantTimeAreEqual(verify_data, serverVerifyData)) {
             // TODO Alert
@@ -518,7 +511,7 @@ public abstract class DTLSProtocol {
 
         state.keyExchange.processServerKeyExchange(buf);
 
-        assertEmpty(buf);
+        TlsProtocol.assertEmpty(buf);
     }
 
     private static class HandshakeState {

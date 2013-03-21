@@ -71,10 +71,14 @@ class TlsSRPKeyExchange implements TlsKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
 
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.certs[0];
+        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
+
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-
         try
         {
             this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);

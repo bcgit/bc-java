@@ -19,6 +19,9 @@ import org.bouncycastle.asn1.x500.X500Name;
  *     DistinguishedName certificate_authorities<3..2^16-1>;
  * } CertificateRequest;
  * </pre>
+ * 
+ * @see ClientCertificateType
+ * @see X500Name
  */
 public class CertificateRequest {
     private short[] certificateTypes;
@@ -26,9 +29,9 @@ public class CertificateRequest {
 
     /**
      * @param certificateTypes
-     *            see {@link CertificateType} for valid constants
+     *            see {@link ClientCertificateType} for valid constants.
      * @param certificateAuthorities
-     *            a {@link Vector} of {@link X500Name}
+     *            a {@link Vector} of {@link X500Name}.
      */
     public CertificateRequest(short[] certificateTypes, Vector certificateAuthorities) {
         this.certificateTypes = certificateTypes;
@@ -36,7 +39,9 @@ public class CertificateRequest {
     }
 
     /**
-     * @return see {@link CertificateType} for valid constants
+     * @return an array of certificate types
+     * 
+     * @see {@link ClientCertificateType}
      */
     public short[] getCertificateTypes() {
         return certificateTypes;
@@ -49,6 +54,13 @@ public class CertificateRequest {
         return certificateAuthorities;
     }
 
+    /**
+     * Encode this {@link CertificateRequest} to an {@link OutputStream}.
+     * 
+     * @param output
+     *            the {@link OutputStream} to encode to.
+     * @throws IOException
+     */
     public void encode(OutputStream output) throws IOException {
 
         if (certificateTypes == null || certificateTypes.length == 0) {
@@ -80,6 +92,14 @@ public class CertificateRequest {
         }
     }
 
+    /**
+     * Parse a {@link CertificateRequest} from an {@link InputStream}.
+     * 
+     * @param input
+     *            the {@link InputStream} to parse from.
+     * @return a {@link CertificateRequest} object.
+     * @throws IOException
+     */
     public static CertificateRequest parse(InputStream input) throws IOException {
         int numTypes = TlsUtils.readUint8(input);
         short[] certificateTypes = new short[numTypes];

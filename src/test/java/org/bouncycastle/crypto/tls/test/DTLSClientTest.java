@@ -78,7 +78,7 @@ public class DTLSClientTest {
             return new ServerOnlyTlsAuthentication() {
                 public void notifyServerCertificate(
                     org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
-                    Certificate[] chain = serverCertificate.getCerts();
+                    Certificate[] chain = serverCertificate.getCertificateList();
                     System.out.println("Received server certificate chain of length "
                         + chain.length);
                     for (Certificate entry : chain) {

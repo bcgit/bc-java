@@ -23,7 +23,7 @@ public class DefaultTlsSignerCredentials implements TlsSignerCredentials
         {
             throw new IllegalArgumentException("'clientCertificate' cannot be null");
         }
-        if (clientCertificate.certs.length == 0)
+        if (clientCertificate.isEmpty())
         {
             throw new IllegalArgumentException("'clientCertificate' cannot be empty");
         }

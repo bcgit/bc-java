@@ -18,7 +18,7 @@ public class LegacyTlsAuthentication extends ServerOnlyTlsAuthentication
 
     public void notifyServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (!this.verifyer.isValid(serverCertificate.getCerts()))
+        if (!this.verifyer.isValid(serverCertificate.getCertificateList()))
         {
             throw new TlsFatalAlert(AlertDescription.user_canceled);
         }

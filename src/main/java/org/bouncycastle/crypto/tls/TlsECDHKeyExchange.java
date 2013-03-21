@@ -61,9 +61,14 @@ class TlsECDHKeyExchange implements TlsKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.certs[0];
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
 
+        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
+
+        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
         try
         {
             this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
