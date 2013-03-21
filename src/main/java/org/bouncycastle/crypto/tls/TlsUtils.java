@@ -282,7 +282,22 @@ public class TlsUtils
     {
         int i1 = is.read();
         int i2 = is.read();
+        if (i2 < 0)
+        {
+            throw new EOFException();
+        }
         return ProtocolVersion.get(i1, i2);
+    }
+
+    static int readVersionRaw(InputStream is) throws IOException
+    {
+        int i1 = is.read();
+        int i2 = is.read();
+        if (i2 < 0)
+        {
+            throw new EOFException();
+        }
+        return (i1 << 8) | i2;
     }
 
     protected static void writeGMTUnixTime(byte[] buf, int offset)
