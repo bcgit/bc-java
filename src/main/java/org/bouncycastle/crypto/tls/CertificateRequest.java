@@ -10,21 +10,40 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
 
+/**
+ * Parsing and encoding of a <i>CertificateRequest</i> struct from RFC 4346.
+ * 
+ * <pre>
+ * struct {
+ *     ClientCertificateType certificate_types<1..2^8-1>;
+ *     DistinguishedName certificate_authorities<3..2^16-1>;
+ * } CertificateRequest;
+ * </pre>
+ */
 public class CertificateRequest {
     private short[] certificateTypes;
     private Vector certificateAuthorities;
 
+    /**
+     * @param certificateTypes
+     *            see {@link CertificateType} for valid constants
+     * @param certificateAuthorities
+     *            a {@link Vector} of {@link X500Name}
+     */
     public CertificateRequest(short[] certificateTypes, Vector certificateAuthorities) {
         this.certificateTypes = certificateTypes;
         this.certificateAuthorities = certificateAuthorities;
     }
 
+    /**
+     * @return see {@link CertificateType} for valid constants
+     */
     public short[] getCertificateTypes() {
         return certificateTypes;
     }
 
     /**
-     * @return Vector of X500Name
+     * @return a {@link Vector} of {@link X500Name}
      */
     public Vector getCertificateAuthorities() {
         return certificateAuthorities;
