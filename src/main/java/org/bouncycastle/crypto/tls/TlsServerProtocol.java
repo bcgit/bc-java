@@ -98,8 +98,8 @@ public class TlsServerProtocol extends TlsProtocol {
                 // TODO Send ServerHello
                 this.connection_state = CS_SERVER_HELLO;
 
-                // TODO Will probably need to be moved
                 this.keyExchange = tlsServer.getKeyExchange();
+                this.keyExchange.init(this.tlsServerContext);
 
                 TlsCredentials serverCredentials = tlsServer.getCredentials();
                 if (serverCredentials == null) {
@@ -112,6 +112,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
                 // TODO Send ServerKeyExchange
+
                 this.connection_state = CS_SERVER_KEY_EXCHANGE;
 
                 if (serverCredentials != null) {

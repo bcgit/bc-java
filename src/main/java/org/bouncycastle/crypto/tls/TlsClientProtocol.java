@@ -468,6 +468,7 @@ public class TlsClientProtocol extends TlsProtocol {
         }
 
         this.keyExchange = tlsClient.getKeyExchange();
+        this.keyExchange.init(this.tlsClientContext);
     }
 
     protected void sendCertificateVerifyMessage(byte[] data) throws IOException {

@@ -14,17 +14,15 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
  */
 class TlsRSAKeyExchange extends AbstractTlsKeyExchange
 {
-    protected TlsContext context;
-
     protected AsymmetricKeyParameter serverPublicKey = null;
 
     protected RSAKeyParameters rsaServerPublicKey = null;
 
     protected byte[] premasterSecret;
 
-    TlsRSAKeyExchange(TlsContext context)
+    TlsRSAKeyExchange()
     {
-        this.context = context;
+        super();
     }
 
     public void skipServerCertificate() throws IOException

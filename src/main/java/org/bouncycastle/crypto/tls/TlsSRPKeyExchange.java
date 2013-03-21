@@ -22,7 +22,6 @@ import org.bouncycastle.util.BigIntegers;
  */
 class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 {
-    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
     protected byte[] identity;
@@ -34,8 +33,10 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
     protected BigInteger B = null;
     protected SRP6Client srpClient = new SRP6Client();
 
-    TlsSRPKeyExchange(TlsContext context, int keyExchange, byte[] identity, byte[] password)
+    TlsSRPKeyExchange(int keyExchange, byte[] identity, byte[] password)
     {
+        super();
+
         switch (keyExchange)
         {
             case KeyExchangeAlgorithm.SRP:
@@ -51,7 +52,6 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
                 throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.context = context;
         this.keyExchange = keyExchange;
         this.identity = identity;
         this.password = password;

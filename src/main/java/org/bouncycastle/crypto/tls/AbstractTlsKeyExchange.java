@@ -5,6 +5,12 @@ import java.io.InputStream;
 
 public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
 
+    protected TlsContext context;
+
+    public void init(TlsContext context) {
+        this.context = context;
+    }
+
     public boolean requiresServerKeyExchange() {
         return false;
     }

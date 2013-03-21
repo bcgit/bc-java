@@ -22,7 +22,6 @@ import org.bouncycastle.util.BigIntegers;
  */
 class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {
-    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
 
@@ -31,8 +30,10 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected ECPrivateKeyParameters ecAgreeClientPrivateKey = null;
 
-    TlsECDHKeyExchange(TlsContext context, int keyExchange)
+    TlsECDHKeyExchange(int keyExchange)
     {
+        super();
+
         switch (keyExchange)
         {
             case KeyExchangeAlgorithm.ECDHE_RSA:
@@ -49,7 +50,6 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange
                 throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.context = context;
         this.keyExchange = keyExchange;
     }
 

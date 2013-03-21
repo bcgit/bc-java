@@ -504,6 +504,7 @@ public abstract class DTLSProtocol {
         }
 
         state.keyExchange = state.client.getKeyExchange();
+        state.keyExchange.init(state.clientContext);
     }
 
     private void processServerKeyExchange(HandshakeState state, byte[] body) throws IOException {

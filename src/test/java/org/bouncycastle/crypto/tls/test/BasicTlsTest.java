@@ -148,20 +148,19 @@ public class BasicTlsTest
     }
     
     static class MyTlsClient
-    extends DefaultTlsClient
-{
-    private final TlsAuthentication authentication;
-
-    MyTlsClient(TlsAuthentication authentication)
+        extends DefaultTlsClient
     {
-        this.authentication = authentication;
-    }
+        private final TlsAuthentication authentication;
+    
+        MyTlsClient(TlsAuthentication authentication)
+        {
+            this.authentication = authentication;
+        }
 
-    public TlsAuthentication getAuthentication()
-        throws IOException
-    {
-        return authentication;
+        public TlsAuthentication getAuthentication()
+            throws IOException
+        {
+            return authentication;
+        }
     }
-}
-
 }

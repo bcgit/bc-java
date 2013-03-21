@@ -21,7 +21,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
-    protected TlsContext context;
     protected int keyExchange;
     protected TlsSigner tlsSigner;
 
@@ -30,7 +29,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected DHPrivateKeyParameters dhAgreeClientPrivateKey = null;
 
-    TlsDHKeyExchange(TlsContext context, int keyExchange)
+    TlsDHKeyExchange(int keyExchange)
     {
         switch (keyExchange)
         {
@@ -48,7 +47,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange
                 throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.context = context;
         this.keyExchange = keyExchange;
     }
 

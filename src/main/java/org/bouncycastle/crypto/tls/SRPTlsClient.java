@@ -131,6 +131,6 @@ public abstract class SRPTlsClient extends AbstractTlsClient
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
     {
-        return new TlsSRPKeyExchange(context, keyExchange, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, identity, password);
     }
 }

@@ -20,7 +20,6 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
  */
 class TlsPSKKeyExchange extends AbstractTlsKeyExchange
 {
-    protected TlsContext context;
     protected int keyExchange;
     protected TlsPSKIdentity pskIdentity;
 
@@ -33,8 +32,10 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
     protected RSAKeyParameters rsaServerPublicKey = null;
     protected byte[] premasterSecret;
 
-    TlsPSKKeyExchange(TlsContext context, int keyExchange, TlsPSKIdentity pskIdentity)
+    TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity)
     {
+        super();
+
         switch (keyExchange)
         {
             case KeyExchangeAlgorithm.PSK:
@@ -45,7 +46,6 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
                 throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.context = context;
         this.keyExchange = keyExchange;
         this.pskIdentity = pskIdentity;
     }

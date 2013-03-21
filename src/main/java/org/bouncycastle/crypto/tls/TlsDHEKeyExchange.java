@@ -11,9 +11,9 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
 class TlsDHEKeyExchange extends TlsDHKeyExchange
 {
-    TlsDHEKeyExchange(TlsContext context, int keyExchange)
+    TlsDHEKeyExchange(int keyExchange)
     {
-        super(context, keyExchange);
+        super(keyExchange);
     }
 
     public void processServerKeyExchange(InputStream is)

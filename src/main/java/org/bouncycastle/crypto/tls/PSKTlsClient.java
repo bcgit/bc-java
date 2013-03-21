@@ -110,6 +110,6 @@ public abstract class PSKTlsClient extends AbstractTlsClient
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
     {
-        return new TlsPSKKeyExchange(context, keyExchange, pskIdentity);
+        return new TlsPSKKeyExchange(keyExchange, pskIdentity);
     }
 }

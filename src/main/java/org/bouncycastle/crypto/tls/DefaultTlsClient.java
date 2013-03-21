@@ -152,26 +152,26 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange)
     {
-        return new TlsDHKeyExchange(context, keyExchange);
+        return new TlsDHKeyExchange(keyExchange);
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange)
     {
-        return new TlsDHEKeyExchange(context, keyExchange);
+        return new TlsDHEKeyExchange(keyExchange);
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange)
     {
-        return new TlsECDHKeyExchange(context, keyExchange);
+        return new TlsECDHKeyExchange(keyExchange);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange)
     {
-        return new TlsECDHEKeyExchange(context, keyExchange);
+        return new TlsECDHEKeyExchange(keyExchange);
     }
 
     protected TlsKeyExchange createRSAKeyExchange()
     {
-        return new TlsRSAKeyExchange(context);
+        return new TlsRSAKeyExchange();
     }
 }
