@@ -56,8 +56,9 @@ public abstract class DTLSProtocol {
         ProtocolVersion server_version = recordLayer.getDiscoveredPeerVersion();
         ProtocolVersion client_version = state.clientContext.getClientVersion();
 
-        if (server_version.getFullVersion() < client_version.getFullVersion()) {
+        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
             // TODO Alert
+//            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         state.clientContext.setServerVersion(server_version);

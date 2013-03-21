@@ -333,19 +333,23 @@ public class TlsClientProtocol extends TlsProtocol {
     }
 
     protected void receiveServerHelloMessage(ByteArrayInputStream buf) throws IOException {
+
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        if (server_version.isDTLS()) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+        }
 
         // Check that this matches what the server is sending in the record layer
-        if (!server_version.equals(rs.getDiscoveredPeerVersion())) {
+        if (!server_version.equals(rs.getReadVersion())) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         ProtocolVersion client_version = this.tlsClientContext.getClientVersion();
-
-        if (server_version.getFullVersion() > client_version.getFullVersion()) {
+        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
+        this.rs.setWriteVersion(server_version);
         this.tlsClientContext.setServerVersion(server_version);
         this.tlsClient.notifyServerVersion(server_version);
 
@@ -482,9 +486,15 @@ public class TlsClientProtocol extends TlsProtocol {
 
     protected void sendClientHelloMessage() throws IOException {
 
+        rs.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
+
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
+        if (client_version.isDTLS()) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
         this.tlsClientContext.setClientVersion(client_version);
         TlsUtils.writeVersion(client_version, os);
 

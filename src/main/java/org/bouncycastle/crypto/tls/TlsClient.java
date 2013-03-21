@@ -7,6 +7,8 @@ public interface TlsClient {
 
     void init(TlsClientContext context);
 
+    ProtocolVersion getClientHelloRecordLayerVersion();
+
     ProtocolVersion getClientVersion();
 
     int[] getCipherSuites();
@@ -15,6 +17,8 @@ public interface TlsClient {
 
     // Hashtable is (Integer -> byte[])
     Hashtable getClientExtensions() throws IOException;
+
+    ProtocolVersion getMinimumVersion();
 
     void notifyServerVersion(ProtocolVersion selectedVersion) throws IOException;
 

@@ -23,6 +23,27 @@ public abstract class AbstractTlsServer implements TlsServer {
         this.context = context;
     }
 
+    public ProtocolVersion getMinimumVersion() {
+        return ProtocolVersion.TLSv10;
+    }
+
+    public ProtocolVersion getMaximumVersion() {
+        return ProtocolVersion.TLSv11;
+    }
+
+    public ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException {
+        if (getMinimumVersion().isEqualOrEarlierVersionOf(clientVersion)) {
+            ProtocolVersion maximumVersion = getMaximumVersion();
+            if (clientVersion.isEqualOrEarlierVersionOf(maximumVersion)) {
+                return clientVersion;
+            }
+            if (clientVersion.isLaterVersionOf(maximumVersion)) {
+                return maximumVersion;
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
+
     public CertificateRequest getCertificateRequest() {
         return null;
     }

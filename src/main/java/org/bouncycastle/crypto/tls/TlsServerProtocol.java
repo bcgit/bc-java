@@ -47,6 +47,8 @@ public class TlsServerProtocol extends TlsProtocol {
         this.tlsServer.init(tlsServerContext);
         this.rs.init(tlsServerContext);
 
+        this.rs.setRestrictReadVersion(false);
+
         /*
          * We will now read data, until we have completed the handshake.
          */
@@ -242,6 +244,9 @@ public class TlsServerProtocol extends TlsProtocol {
     protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {
 
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
+        if (client_version.isDTLS()) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+        }
 
         /*
          * Read the client random
@@ -280,17 +285,26 @@ public class TlsServerProtocol extends TlsProtocol {
         Hashtable clientExtensions = readExtensions(buf);
 
         /*
-         * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
-         * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
+         * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info"
+         * extension, or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
          * ClientHello. Including both is NOT RECOMMENDED.
          */
 
         tlsServerContext.setClientVersion(client_version);
 
+        ProtocolVersion server_version = tlsServer.selectVersion(client_version);
+        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        rs.setReadVersion(server_version);
+        rs.setWriteVersion(server_version);
+        rs.setRestrictReadVersion(true);
+        tlsServerContext.setServerVersion(server_version);
+
         securityParameters.clientRandom = random;
 
         // TODO
-        // tlsServer.notifyClientVersion(client_version);
         // tlsServer.notifyOfferedCipherSuites(cipher_suites);
         // tlsServer.notifyOfferedCompressionMethod(compression_methods);
 

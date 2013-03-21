@@ -74,6 +74,10 @@ public class DTLSClientTest {
             return ProtocolVersion.DTLSv10;
         }
 
+        public ProtocolVersion getMinimumVersion() {
+            return ProtocolVersion.DTLSv10;
+        }
+
         public TlsAuthentication getAuthentication() throws IOException {
             return new ServerOnlyTlsAuthentication() {
                 public void notifyServerCertificate(
@@ -86,12 +90,6 @@ public class DTLSClientTest {
                     }
                 }
             };
-        }
-
-        public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException {
-            if (!ProtocolVersion.DTLSv10.equals(serverVersion)) {
-                throw new TlsFatalAlert(AlertDescription.protocol_version);
-            }
         }
     }
 }

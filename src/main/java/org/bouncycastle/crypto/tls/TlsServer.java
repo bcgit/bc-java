@@ -6,6 +6,10 @@ public interface TlsServer {
 
     void init(TlsServerContext context);
 
+    ProtocolVersion getMaximumVersion();
+
+    ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException;
+
     TlsCredentials getCredentials();
 
     TlsKeyExchange getKeyExchange() throws IOException;
