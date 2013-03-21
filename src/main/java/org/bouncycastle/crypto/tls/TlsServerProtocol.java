@@ -15,6 +15,9 @@ public class TlsServerProtocol extends TlsProtocol {
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
 
+    protected int selectedCipherSuite = -1;
+    protected short selectedCompressionMethod = -1;
+    protected Hashtable serverExtensions = null;
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
 
@@ -97,7 +100,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
 
-                // TODO Send ServerHello
+                sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
                 this.keyExchange = tlsServer.getKeyExchange();
@@ -307,14 +310,14 @@ public class TlsServerProtocol extends TlsProtocol {
 
         securityParameters.clientRandom = random;
 
-        int selectedCipherSuite = tlsServer.selectCipherSuite(cipher_suites);
-        if (!arrayContains(cipher_suites, selectedCipherSuite)
+        this.selectedCipherSuite = tlsServer.selectCipherSuite(cipher_suites);
+        if (!arrayContains(cipher_suites, this.selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
-        short selectedCompressionMethod = tlsServer.selectCompressionMethod(compression_methods);
-        if (!arrayContains(compression_methods, selectedCompressionMethod)) {
+        this.selectedCompressionMethod = tlsServer.selectCompressionMethod(compression_methods);
+        if (!arrayContains(compression_methods, this.selectedCompressionMethod)) {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
@@ -356,8 +359,7 @@ public class TlsServerProtocol extends TlsProtocol {
         tlsServer.notifySecureRenegotiation(this.secure_renegotiation);
 
         if (clientExtensions != null) {
-            // TODO
-            // tlsServer.notifyClientExtensions(clientExtensions);
+            this.serverExtensions = tlsServer.processClientExtensions(clientExtensions);
         }
     }
 
@@ -386,41 +388,56 @@ public class TlsServerProtocol extends TlsProtocol {
     }
 
     protected void sendServerHelloMessage() throws IOException {
-        
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.server_hello, buf);
 
         // Reserve space for length
         TlsUtils.writeUint24(0, buf);
 
-        // TODO
+        TlsUtils.writeVersion(this.tlsServerContext.getServerVersion(), buf);
 
-        Hashtable serverExtensions = null;
+        buf.write(this.securityParameters.serverRandom);
+
+        /*
+         * The server may return an empty session_id to indicate that the session will not be cached
+         * and therefore cannot be resumed.
+         */
+        TlsUtils.writeUint8((short) 0, buf);
+
+        TlsUtils.writeUint16(this.selectedCipherSuite, buf);
+        TlsUtils.writeUint8(this.selectedCompressionMethod, buf);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
         if (this.secure_renegotiation) {
-            /*
-             * Note that sending a "renegotiation_info" extension in response to a ClientHello
-             * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
-             * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
-             * because the client is signaling its willingness to receive the extension via the
-             * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
-             */
-            if (serverExtensions == null) {
-                serverExtensions = new Hashtable();
-            }
 
-            /*
-             * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
-             * "renegotiation_info" extension in the ServerHello message.
-             */
-            serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(emptybuf));
+            boolean noRenegExt = this.serverExtensions == null
+                || !this.serverExtensions.containsKey(EXT_RenegotiationInfo);
+
+            if (noRenegExt) {
+                /*
+                 * Note that sending a "renegotiation_info" extension in response to a ClientHello
+                 * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
+                 * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
+                 * because the client is signaling its willingness to receive the extension via the
+                 * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
+                 */
+                if (this.serverExtensions == null) {
+                    this.serverExtensions = new Hashtable();
+                }
+
+                /*
+                 * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
+                 * "renegotiation_info" extension in the ServerHello message.
+                 */
+                this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(emptybuf));
+            }
         }
 
-        if (serverExtensions != null) {
-            writeExtensions(buf, serverExtensions);
+        if (this.serverExtensions != null) {
+            writeExtensions(buf, this.serverExtensions);
         }
 
         byte[] message = buf.toByteArray();

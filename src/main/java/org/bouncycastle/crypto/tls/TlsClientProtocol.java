@@ -11,18 +11,18 @@ import java.util.Hashtable;
 
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 
 public class TlsClientProtocol extends TlsProtocol {
 
-    private Hashtable clientExtensions;
-    private TlsClientContextImpl tlsClientContext = null;
-    private TlsClient tlsClient = null;
-    private int[] offeredCipherSuites = null;
-    private short[] offeredCompressionMethods = null;
-    private TlsKeyExchange keyExchange = null;
-    private TlsAuthentication authentication = null;
-    private CertificateRequest certificateRequest = null;
+    protected TlsClient tlsClient = null;
+    protected TlsClientContextImpl tlsClientContext = null;
+
+    protected int[] offeredCipherSuites = null;
+    protected short[] offeredCompressionMethods = null;
+    protected Hashtable clientExtensions = null;
+    protected TlsKeyExchange keyExchange = null;
+    protected TlsAuthentication authentication = null;
+    protected CertificateRequest certificateRequest = null;
 
     private static SecureRandom createSecureRandom() {
         /*

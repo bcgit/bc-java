@@ -10,7 +10,7 @@ public abstract class AbstractTlsClient implements TlsClient {
     protected TlsClientContext context;
 
     protected int selectedCipherSuite;
-    protected int selectedCompressionMethod;
+    protected short selectedCompressionMethod;
 
     public AbstractTlsClient() {
         this(new DefaultTlsCipherFactory());

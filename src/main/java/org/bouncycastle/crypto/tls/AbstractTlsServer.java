@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
+import java.util.Hashtable;
 
 public abstract class AbstractTlsServer implements TlsServer {
 
@@ -9,7 +10,7 @@ public abstract class AbstractTlsServer implements TlsServer {
     protected TlsServerContext context;
 
     protected int selectedCipherSuite;
-    protected int selectedCompressionMethod;
+    protected short selectedCompressionMethod;
 
     public AbstractTlsServer() {
         this(new DefaultTlsCipherFactory());
@@ -54,7 +55,7 @@ public abstract class AbstractTlsServer implements TlsServer {
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i) {
             if (TlsProtocol.arrayContains(offeredCipherSuites, cipherSuites[i])) {
-                return cipherSuites[i];
+                return this.selectedCipherSuite = cipherSuites[i];
             }
         }
         throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -64,7 +65,7 @@ public abstract class AbstractTlsServer implements TlsServer {
         short[] compressionMethods = getCompressionMethods();
         for (int i = 0; i < compressionMethods.length; ++i) {
             if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i])) {
-                return compressionMethods[i];
+                return this.selectedCompressionMethod = compressionMethods[i];
             }
         }
         throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -78,6 +79,10 @@ public abstract class AbstractTlsServer implements TlsServer {
              */
             // throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
+    }
+
+    public Hashtable processClientExtensions(Hashtable serverExtensions) throws IOException {
+        return null;
     }
 
     public CertificateRequest getCertificateRequest() {

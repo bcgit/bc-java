@@ -565,42 +565,43 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection) throws IOException {
+    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
+        throws IOException {
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque8(renegotiated_connection, buf);
         return buf.toByteArray();
     }
 
-    protected static Hashtable readExtensions(ByteArrayInputStream buf) throws IOException {
+    protected static Hashtable readExtensions(ByteArrayInputStream input) throws IOException {
 
-        if (buf.available() < 1) {
+        if (input.available() < 1) {
             return null;
         }
 
-        byte[] extBytes = TlsUtils.readOpaque16(buf);
+        ByteArrayInputStream buf = new ByteArrayInputStream(TlsUtils.readOpaque16(input));
 
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
 
-        ByteArrayInputStream ext = new ByteArrayInputStream(extBytes);
-        while (ext.available() > 0) {
-            Integer extType = Integers.valueOf(TlsUtils.readUint16(ext));
-            byte[] extValue = TlsUtils.readOpaque16(ext);
+        while (buf.available() > 0) {
+            Integer extType = Integers.valueOf(TlsUtils.readUint16(buf));
+            byte[] extValue = TlsUtils.readOpaque16(buf);
 
             /*
              * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
              */
-            if (extensions.containsKey(extType)) {
+            if (null != extensions.put(extType, extValue)) {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-
-            extensions.put(extType, extValue);
         }
 
         return extensions;
     }
 
-    protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
+    protected static void writeExtensions(OutputStream output, Hashtable extensions)
+        throws IOException {
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         Enumeration keys = extensions.keys();
@@ -608,7 +609,7 @@ public abstract class TlsProtocol {
             Integer extType = (Integer) keys.nextElement();
             byte[] extValue = (byte[]) extensions.get(extType);
 
-            TlsUtils.writeUint16(extType.intValue(), output);
+            TlsUtils.writeUint16(extType.intValue(), buf);
             TlsUtils.writeOpaque16(extValue, buf);
         }
 
