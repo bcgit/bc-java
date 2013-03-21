@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
@@ -21,7 +20,7 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * ECDH key exchange (see RFC 4492)
  */
-class TlsECDHKeyExchange implements TlsKeyExchange
+class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {
     protected TlsContext context;
     protected int keyExchange;
@@ -109,15 +108,17 @@ class TlsECDHKeyExchange implements TlsKeyExchange
          */
     }
 
-    public void skipServerKeyExchange() throws IOException
+    public boolean requiresServerKeyExchange()
     {
-        // do nothing
-    }
-
-    public void processServerKeyExchange(InputStream is)
-        throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

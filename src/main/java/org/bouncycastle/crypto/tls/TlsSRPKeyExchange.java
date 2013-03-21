@@ -18,9 +18,9 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * TLS 1.1 SRP key exchange.
+ * TLS 1.1 SRP key exchange (RFC 5054).
  */
-class TlsSRPKeyExchange implements TlsKeyExchange
+class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 {
     protected TlsContext context;
     protected int keyExchange;
@@ -103,9 +103,9 @@ class TlsSRPKeyExchange implements TlsKeyExchange
          */
     }
 
-    public void skipServerKeyExchange() throws IOException
+    public boolean requiresServerKeyExchange()
     {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        return true;
     }
 
     public void processServerKeyExchange(InputStream is) throws IOException

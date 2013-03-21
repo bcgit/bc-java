@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
@@ -17,7 +16,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 /**
  * TLS 1.0 DH key exchange.
  */
-class TlsDHKeyExchange implements TlsKeyExchange
+class TlsDHKeyExchange extends AbstractTlsKeyExchange
 {
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
@@ -108,15 +107,17 @@ class TlsDHKeyExchange implements TlsKeyExchange
          */
     }
 
-    public void skipServerKeyExchange() throws IOException
+    public boolean requiresServerKeyExchange()
     {
-        // OK
-    }
-
-    public void processServerKeyExchange(InputStream is)
-        throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DH_anon:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

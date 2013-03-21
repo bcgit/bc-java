@@ -16,11 +16,6 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange
         super(context, keyExchange);
     }
 
-    public void skipServerKeyExchange() throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
-    }
-
     public void processServerKeyExchange(InputStream is)
         throws IOException
     {

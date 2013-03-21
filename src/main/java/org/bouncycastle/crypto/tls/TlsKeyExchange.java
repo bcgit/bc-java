@@ -13,6 +13,8 @@ public interface TlsKeyExchange
 
     void processServerCertificate(Certificate serverCertificate) throws IOException;
 
+    boolean requiresServerKeyExchange();
+
     void skipServerKeyExchange() throws IOException;
 
     void processServerKeyExchange(InputStream is)

@@ -15,7 +15,10 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
-class TlsPSKKeyExchange implements TlsKeyExchange
+/**
+ * TLS 1.0 PSK key exchange (RFC 4279).
+ */
+class TlsPSKKeyExchange extends AbstractTlsKeyExchange
 {
     protected TlsContext context;
     protected int keyExchange;
@@ -96,14 +99,9 @@ class TlsPSKKeyExchange implements TlsKeyExchange
          */
     }
 
-    public void skipServerKeyExchange() throws IOException
+    public boolean requiresServerKeyExchange()
     {
-        if (keyExchange == KeyExchangeAlgorithm.DHE_PSK)
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-
-        this.psk_identity_hint = new byte[0];
+        return keyExchange == KeyExchangeAlgorithm.DHE_PSK;
     }
 
     public void processServerKeyExchange(InputStream is) throws IOException
@@ -122,11 +120,6 @@ class TlsPSKKeyExchange implements TlsKeyExchange
 
             this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Ys,
                 new DHParameters(p, g)));
-        }
-        else if (this.psk_identity_hint.length == 0)
-        {
-            // TODO Should we enforce that this message should have been skipped if hint is empty?
-//            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
@@ -148,7 +141,7 @@ class TlsPSKKeyExchange implements TlsKeyExchange
 
     public void generateClientKeyExchange(OutputStream os) throws IOException
     {
-    	if (psk_identity_hint == null || psk_identity_hint.length == 0)
+    	if (psk_identity_hint == null)
     	{
     	    pskIdentity.skipIdentityHint();
     	}

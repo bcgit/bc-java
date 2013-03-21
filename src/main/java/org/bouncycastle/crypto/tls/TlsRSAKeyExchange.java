@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -13,7 +12,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 /**
  * TLS 1.0 and SSLv3 RSA key exchange.
  */
-class TlsRSAKeyExchange implements TlsKeyExchange
+class TlsRSAKeyExchange extends AbstractTlsKeyExchange
 {
     protected TlsContext context;
 
@@ -68,18 +67,6 @@ class TlsRSAKeyExchange implements TlsKeyExchange
          * signing algorithm for the certificate must be the same as the algorithm for the
          * certificate key."
          */
-    }
-
-    public void skipServerKeyExchange() throws IOException
-    {
-        // OK
-    }
-
-    public void processServerKeyExchange(InputStream is)
-        throws IOException
-    {
-        // TODO
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
