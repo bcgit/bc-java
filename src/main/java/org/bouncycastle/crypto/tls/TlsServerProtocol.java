@@ -304,9 +304,16 @@ public class TlsServerProtocol extends TlsProtocol {
 
         securityParameters.clientRandom = random;
 
-        // TODO
-        // tlsServer.notifyOfferedCipherSuites(cipher_suites);
-        // tlsServer.notifyOfferedCompressionMethod(compression_methods);
+        int selectedCipherSuite = tlsServer.selectCipherSuite(cipher_suites);
+        if (!arrayContains(cipher_suites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        short selectedCompressionMethod = tlsServer.selectCompressionMethod(compression_methods);
+        if (!arrayContains(compression_methods, selectedCompressionMethod)) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
 
         if (clientExtensions != null) {
             // TODO

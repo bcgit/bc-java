@@ -6,9 +6,11 @@ public interface TlsServer {
 
     void init(TlsServerContext context);
 
-    ProtocolVersion getMaximumVersion();
-
     ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException;
+
+    int selectCipherSuite(int[] offeredCipherSuites) throws IOException;
+
+    short selectCompressionMethod(short[] offeredCompressionMethods) throws IOException;
 
     TlsCredentials getCredentials();
 

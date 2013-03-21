@@ -18,8 +18,6 @@ public interface TlsClient {
     // Hashtable is (Integer -> byte[])
     Hashtable getClientExtensions() throws IOException;
 
-    ProtocolVersion getMinimumVersion();
-
     void notifyServerVersion(ProtocolVersion selectedVersion) throws IOException;
 
     void notifySessionID(byte[] sessionID);

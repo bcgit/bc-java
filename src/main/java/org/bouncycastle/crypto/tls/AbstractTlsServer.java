@@ -19,16 +19,22 @@ public abstract class AbstractTlsServer implements TlsServer {
         this.cipherFactory = cipherFactory;
     }
 
-    public void init(TlsServerContext context) {
-        this.context = context;
+    protected abstract int[] getCipherSuites();
+
+    protected short[] getCompressionMethods() {
+        return new short[] { CompressionMethod.NULL };
     }
 
-    public ProtocolVersion getMinimumVersion() {
+    protected ProtocolVersion getMaximumVersion() {
+        return ProtocolVersion.TLSv11;
+    }
+
+    protected ProtocolVersion getMinimumVersion() {
         return ProtocolVersion.TLSv10;
     }
 
-    public ProtocolVersion getMaximumVersion() {
-        return ProtocolVersion.TLSv11;
+    public void init(TlsServerContext context) {
+        this.context = context;
     }
 
     public ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException {
@@ -42,6 +48,26 @@ public abstract class AbstractTlsServer implements TlsServer {
             }
         }
         throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
+
+    public int selectCipherSuite(int[] offeredCipherSuites) throws IOException {
+        int[] cipherSuites = getCipherSuites();
+        for (int i = 0; i < cipherSuites.length; ++i) {
+            if (TlsProtocol.arrayContains(offeredCipherSuites, cipherSuites[i])) {
+                return cipherSuites[i];
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+    }
+
+    public short selectCompressionMethod(short[] offeredCompressionMethods) throws IOException {
+        short[] compressionMethods = getCompressionMethods();
+        for (int i = 0; i < compressionMethods.length; ++i) {
+            if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i])) {
+                return compressionMethods[i];
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.handshake_failure);
     }
 
     public CertificateRequest getCertificateRequest() {

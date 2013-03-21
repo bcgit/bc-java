@@ -33,10 +33,10 @@ public abstract class AbstractTlsClient implements TlsClient {
      */
     public ProtocolVersion getClientHelloRecordLayerVersion() {
         // "{03,00}"
-        //return ProtocolVersion.SSLv3;
+        // return ProtocolVersion.SSLv3;
 
         // "the lowest version number supported by the client"
-        //return getMinimumServerVersion();
+        // return getMinimumServerVersion();
 
         // "the value of ClientHello.client_version"
         return getClientVersion();
@@ -50,8 +50,7 @@ public abstract class AbstractTlsClient implements TlsClient {
         return null;
     }
 
-    public ProtocolVersion getMinimumVersion()
-    {
+    public ProtocolVersion getMinimumVersion() {
         return ProtocolVersion.TLSv10;
     }
 

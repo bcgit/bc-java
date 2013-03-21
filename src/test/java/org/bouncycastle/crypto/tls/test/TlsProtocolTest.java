@@ -8,14 +8,11 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.crypto.tls.AbstractTlsServer;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
+import org.bouncycastle.crypto.tls.DefaultTlsServer;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsCipher;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
-import org.bouncycastle.crypto.tls.TlsCredentials;
-import org.bouncycastle.crypto.tls.TlsKeyExchange;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -84,21 +81,6 @@ public class TlsProtocolTest extends TestCase {
         }
     }
 
-    static class MyTlsServer extends AbstractTlsServer {
-
-        public TlsCipher getCipher() throws IOException {
-            // TODO
-            return null;
-        }
-
-        public TlsCredentials getCredentials() {
-            // TODO
-            return null;
-        }
-
-        public TlsKeyExchange getKeyExchange() throws IOException {
-            // TODO
-            return null;
-        }
+    static class MyTlsServer extends DefaultTlsServer {
     }
 }
