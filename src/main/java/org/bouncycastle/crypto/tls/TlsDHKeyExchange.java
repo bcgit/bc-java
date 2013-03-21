@@ -122,11 +122,11 @@ class TlsDHKeyExchange implements TlsKeyExchange
         {
             switch (types[i])
             {
-                case ClientCertificateType.rsa_sign:
-                case ClientCertificateType.dss_sign:
-                case ClientCertificateType.rsa_fixed_dh:
-                case ClientCertificateType.dss_fixed_dh:
-                case ClientCertificateType.ecdsa_sign:
+                case CertificateType.rsa_sign:
+                case CertificateType.dss_sign:
+                case CertificateType.rsa_fixed_dh:
+                case CertificateType.dss_fixed_dh:
+                case CertificateType.ecdsa_sign:
                     break;
                 default:
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
