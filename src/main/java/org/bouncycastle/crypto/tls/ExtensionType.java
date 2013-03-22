@@ -29,6 +29,11 @@ public class ExtensionType
     public static final int signature_algorithms = 13;
 
     /*
+     * RFC 5764 9.
+     */
+    public static final int use_srtp = 14;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;
