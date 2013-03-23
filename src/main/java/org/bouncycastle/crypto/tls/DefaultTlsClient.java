@@ -40,6 +40,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
             case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
             case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
+            case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
                 return createRSAKeyExchange();
 
             case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -47,6 +48,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA:
             case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA:
             case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA:
+            case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
                 return createDHKeyExchange(KeyExchangeAlgorithm.DH_DSS);
 
             case CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
@@ -54,6 +56,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA:
             case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA:
             case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA:
+            case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
                 return createDHKeyExchange(KeyExchangeAlgorithm.DH_RSA);
 
             case CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -61,6 +64,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
             case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA:
             case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
+            case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
                 return createDHEKeyExchange(KeyExchangeAlgorithm.DHE_DSS);
 
             case CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
@@ -68,6 +72,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
             case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
             case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
+            case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
                 return createDHEKeyExchange(KeyExchangeAlgorithm.DHE_RSA);
 
             case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
@@ -162,6 +167,13 @@ public abstract class DefaultTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
             case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
                 return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC, DigestAlgorithm.SHA);
+
+            case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
+            case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
+            case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
+            case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
+            case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
+                return cipherFactory.createCipher(context, EncryptionAlgorithm.SEED_CBC, DigestAlgorithm.SHA);
 
             default:
                 /*

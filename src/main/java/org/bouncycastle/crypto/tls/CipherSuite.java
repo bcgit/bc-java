@@ -67,6 +67,16 @@ public class CipherSuite
     public static final int TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA = 0x0089;
 
     /*
+     * RFC 4162
+     */
+    public static final int TLS_RSA_WITH_SEED_CBC_SHA = 0x0096;
+    public static final int TLS_DH_DSS_WITH_SEED_CBC_SHA = 0x0097;
+    public static final int TLS_DH_RSA_WITH_SEED_CBC_SHA = 0x0098;
+    public static final int TLS_DHE_DSS_WITH_SEED_CBC_SHA = 0x0099;
+    public static final int TLS_DHE_RSA_WITH_SEED_CBC_SHA = 0x009A;
+    public static final int TLS_DH_anon_WITH_SEED_CBC_SHA = 0x009B;
+
+    /*
      * RFC 4279
      */
     public static final int TLS_PSK_WITH_RC4_128_SHA = 0x008A;

@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 
 public class DefaultTlsCipherFactory implements TlsCipherFactory
@@ -22,7 +23,7 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
         switch (encryptionAlgorithm)
         {
             case EncryptionAlgorithm._3DES_EDE_CBC:
-                return createDESedeCipher(context, 24, digestAlgorithm);
+                return createDESedeCipher(context, digestAlgorithm);
             case EncryptionAlgorithm.AES_128_CBC:
                 return createAESCipher(context, 16, digestAlgorithm);
             case EncryptionAlgorithm.AES_256_CBC:
@@ -33,6 +34,8 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
                 return createCamelliaCipher(context, 32, digestAlgorithm);
             case EncryptionAlgorithm.RC4_128:
                 return createRC4Cipher(context, 16, digestAlgorithm);
+            case EncryptionAlgorithm.SEED_CBC:
+                return createSEEDCipher(context, digestAlgorithm);
             default:
                 throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -56,10 +59,16 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
             createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createDESedeCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
+    protected TlsCipher createDESedeCipher(TlsContext context,int digestAlgorithm) throws IOException
     {
         return new TlsBlockCipher(context, createDESedeBlockCipher(),
-            createDESedeBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+            createDESedeBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), 24);
+    }
+
+    protected TlsCipher createSEEDCipher(TlsContext context, int digestAlgorithm) throws IOException
+    {
+        return new TlsBlockCipher(context, createSEEDBlockCipher(),
+            createSEEDBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), 16);
     }
 
     protected StreamCipher createRC4StreamCipher()
@@ -80,6 +89,11 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
     protected BlockCipher createDESedeBlockCipher()
     {
         return new CBCBlockCipher(new DESedeEngine());
+    }
+
+    protected BlockCipher createSEEDBlockCipher()
+    {
+        return new CBCBlockCipher(new SEEDEngine());
     }
 
     protected Digest createDigest(int digestAlgorithm) throws IOException
