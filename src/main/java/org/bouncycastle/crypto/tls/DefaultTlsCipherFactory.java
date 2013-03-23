@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -26,6 +27,10 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
                 return createAESCipher(context, 16, digestAlgorithm);
             case EncryptionAlgorithm.AES_256_CBC:
                 return createAESCipher(context, 32, digestAlgorithm);
+            case EncryptionAlgorithm.CAMELLIA_128_CBC:
+                return createCamelliaCipher(context, 16, digestAlgorithm);
+            case EncryptionAlgorithm.CAMELLIA_256_CBC:
+                return createCamelliaCipher(context, 32, digestAlgorithm);
             case EncryptionAlgorithm.RC4_128:
                 return createRC4Cipher(context, 16, digestAlgorithm);
             default:
@@ -37,6 +42,12 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
     {
         return new TlsBlockCipher(context, createAESBlockCipher(),
             createAESBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+    }
+
+    protected TlsCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
+    {
+        return new TlsBlockCipher(context, createCamelliaBlockCipher(),
+            createCamelliaBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createRC4Cipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
@@ -59,6 +70,11 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(new AESFastEngine());
+    }
+
+    protected BlockCipher createCamelliaBlockCipher()
+    {
+        return new CBCBlockCipher(new CamelliaEngine());
     }
 
     protected BlockCipher createDESedeBlockCipher()

@@ -22,6 +22,12 @@ public class EncryptionAlgorithm
     public static final int AES_256_CBC = 9;
 
     /*
+     * RFC 4132
+     */
+    public static final int CAMELLIA_128_CBC = 12;
+    public static final int CAMELLIA_256_CBC = 13;
+
+    /*
      * RFC 5289
      */
     public static final int AES_128_GCM = 10;
