@@ -333,11 +333,11 @@ public class OCBBlockCipher implements AEADBlockCipher {
          */
         xor(Checksum, OffsetMAIN);
         xor(Checksum, L_Dollar);
+        hashCipher.processBlock(Checksum, 0, Checksum, 0);
+        xor(Checksum, Sum);
 
         this.macBlock = new byte[macSize];
-        hashCipher.processBlock(Checksum, 0, macBlock, 0);
-
-        xor(macBlock, Sum);
+        System.arraycopy(Checksum, 0, macBlock, 0, macSize);
 
         /*
          * Validate or append tag and reset this cipher for the next run
