@@ -18,7 +18,7 @@ public interface TlsServer {
     // Hashtables are (Integer -> byte[])
     Hashtable processClientExtensions(Hashtable serverExtensions) throws IOException;
 
-    TlsCredentials getCredentials();
+    TlsCredentials getCredentials() throws IOException;
 
     TlsKeyExchange getKeyExchange() throws IOException;
 
