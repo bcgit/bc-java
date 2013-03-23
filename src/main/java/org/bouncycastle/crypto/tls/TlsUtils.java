@@ -253,6 +253,14 @@ public class TlsUtils
         return value;
     }
 
+    protected static byte[] readOpaque24(InputStream is) throws IOException
+    {
+        int length = readUint24(is);
+        byte[] value = new byte[length];
+        readFully(value, is);
+        return value;
+    }
+
     protected static short[] readUint8Array(int count, InputStream is) throws IOException
     {
         short[] uints = new short[count];
