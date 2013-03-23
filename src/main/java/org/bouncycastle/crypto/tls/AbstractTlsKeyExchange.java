@@ -15,6 +15,13 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
         return false;
     }
 
+    public byte[] generateServerKeyExchange() throws IOException {
+        if (requiresServerKeyExchange()) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return null;
+    }
+
     public void skipServerKeyExchange() throws IOException {
         if (requiresServerKeyExchange()) {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
