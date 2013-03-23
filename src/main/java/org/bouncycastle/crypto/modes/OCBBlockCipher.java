@@ -16,7 +16,7 @@ import org.bouncycastle.util.Arrays;
  * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-00">The OCB Authenticated-Encryption
  * Algorithm</a>, licensed per:
  * 
- * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf"</a> License for
+ * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
  * Open-Source Software Implementations of OCB</a> (Jan 9, 2013) &mdash; &ldquo;License 1&rdquo; <br>
  * Under this license, you are authorized to make, use, and distribute open-source software
  * implementations of OCB. This license terminates for you if you sue someone over their open-source
@@ -98,37 +98,37 @@ public class OCBBlockCipher implements AEADBlockCipher {
         return mainCipher.getAlgorithmName() + "/OCB";
     }
 
-    public void init(boolean forEncryption, CipherParameters params)
+    public void init(boolean forEncryption, CipherParameters parameters)
         throws IllegalArgumentException {
 
         this.forEncryption = forEncryption;
         this.macBlock = null;
 
-        KeyParameter keyParam;
+        KeyParameter keyParameter;
 
         byte[] N;
-        if (params instanceof AEADParameters) {
-            AEADParameters param = (AEADParameters) params;
+        if (parameters instanceof AEADParameters) {
+            AEADParameters aeadParameters = (AEADParameters) parameters;
 
-            N = param.getNonce();
-            initialAssociatedText = param.getAssociatedText();
+            N = aeadParameters.getNonce();
+            initialAssociatedText = aeadParameters.getAssociatedText();
 
-            int macSizeBits = param.getMacSize();
+            int macSizeBits = aeadParameters.getMacSize();
             if (macSizeBits < 64 || macSizeBits > 128 || macSizeBits % 8 != 0) {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
 
             macSize = macSizeBits / 8;
-            keyParam = param.getKey();
-        } else if (params instanceof ParametersWithIV) {
-            ParametersWithIV param = (ParametersWithIV) params;
+            keyParameter = aeadParameters.getKey();
+        } else if (parameters instanceof ParametersWithIV) {
+            ParametersWithIV parametersWithIV = (ParametersWithIV) parameters;
 
-            N = param.getIV();
+            N = parametersWithIV.getIV();
             initialAssociatedText = null;
             macSize = 16;
-            keyParam = (KeyParameter) param.getParameters();
+            keyParameter = (KeyParameter) parametersWithIV.getParameters();
         } else {
-            throw new IllegalArgumentException("invalid parameters passed to GCM");
+            throw new IllegalArgumentException("invalid parameters passed to OCB");
         }
 
         this.hashBlock = new byte[16];
@@ -147,13 +147,13 @@ public class OCBBlockCipher implements AEADBlockCipher {
          */
 
         // if keyParam is null we're reusing the last key.
-        if (keyParam != null) {
+        if (keyParameter != null) {
             // TODO
         }
 
         // hashCipher always used in forward mode
-        hashCipher.init(true, keyParam);
-        mainCipher.init(forEncryption, keyParam);
+        hashCipher.init(true, keyParameter);
+        mainCipher.init(forEncryption, keyParameter);
 
         this.L_Asterisk = new byte[16];
         hashCipher.processBlock(L_Asterisk, 0, L_Asterisk, 0);
@@ -455,11 +455,9 @@ public class OCBBlockCipher implements AEADBlockCipher {
     }
 
     protected static void OCB_extend(byte[] block, int pos) {
-        if (pos < 16) {
-            block[pos] = (byte) 0x80;
-            while (++pos < 16) {
-                block[pos] = 0;
-            }
+        block[pos] = (byte) 0x80;
+        while (++pos < 16) {
+            block[pos] = 0;
         }
     }
 
