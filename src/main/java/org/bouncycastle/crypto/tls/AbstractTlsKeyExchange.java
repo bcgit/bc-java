@@ -11,6 +11,10 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
         this.context = context;
     }
 
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
+        processServerCertificate(serverCredentials.getCertificate());
+    }
+
     public boolean requiresServerKeyExchange() {
         return false;
     }

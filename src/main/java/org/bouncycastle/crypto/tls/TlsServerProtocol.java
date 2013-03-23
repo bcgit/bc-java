@@ -69,7 +69,7 @@ public class TlsServerProtocol extends TlsProtocol {
             // NB: Fall through to next case label
         }
         case CS_CERTIFICATE_VERIFY: {
-            this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
+            this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
             break;
         }
         default: {
@@ -99,9 +99,8 @@ public class TlsServerProtocol extends TlsProtocol {
                 if (serverCredentials == null) {
                     this.keyExchange.skipServerCertificate();
                 } else {
-                    Certificate serverCertificate = serverCredentials.getCertificate();
-                    this.keyExchange.processServerCertificate(serverCertificate);
-                    sendCertificateMessage(serverCertificate);
+                    this.keyExchange.processServerCredentials(serverCredentials);
+                    sendCertificateMessage(serverCredentials.getCertificate());
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
@@ -355,7 +354,8 @@ public class TlsServerProtocol extends TlsProtocol {
     }
 
     protected void receiveClientKeyExchangeMessage(ByteArrayInputStream buf) throws IOException {
-        // TODO
+
+        this.keyExchange.processClientKeyExchange(buf);
 
         assertEmpty(buf);
 

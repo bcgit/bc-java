@@ -11,6 +11,8 @@ public interface TlsKeyExchange {
 
     void init(TlsContext context);
 
+    void processServerCredentials(TlsCredentials serverCredentials) throws IOException;
+
     void skipServerCertificate() throws IOException;
 
     void processServerCertificate(Certificate serverCertificate) throws IOException;

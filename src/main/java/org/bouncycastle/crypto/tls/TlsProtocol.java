@@ -62,6 +62,7 @@ public abstract class TlsProtocol {
     private volatile boolean closed = false;
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
+    private byte[] expected_verify_data = null;
 
     protected SecurityParameters securityParameters = null;
 
@@ -84,6 +85,8 @@ public abstract class TlsProtocol {
     }
 
     protected void completeHandshake() throws IOException {
+
+        this.expected_verify_data = null;
 
         /*
          * We will now read data, until we have completed the handshake.
@@ -171,8 +174,15 @@ public abstract class TlsProtocol {
                      */
                     switch (type) {
                     case HandshakeType.hello_request:
-                    case HandshakeType.finished:
                         break;
+                    case HandshakeType.finished: {
+
+                        if (this.expected_verify_data == null) {
+                            this.expected_verify_data = createVerifyData(!getContext().isServer());
+                        }
+
+                        // NB: Fall through to next case label
+                    }
                     default:
                         rs.updateHandshakeData(beginning, 0, 4);
                         rs.updateHandshakeData(buf, 0, len);
@@ -459,11 +469,6 @@ public abstract class TlsProtocol {
         TlsUtils.readFully(verify_data, buf);
 
         assertEmpty(buf);
-
-        /*
-         * Calculate our own checksum.
-         */
-        byte[] expected_verify_data = createVerifyData(!getContext().isServer());
 
         /*
          * Compare both checksums.
