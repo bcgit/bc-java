@@ -39,15 +39,18 @@ public class OCBBlockCipher implements AEADBlockCipher {
 
     // L is key-dependent, but elements are lazily calculated
     private Vector L;
+    private byte[] L_Asterisk, L_Dollar;
 
     // These fields are modified during processing
     private byte[] hashBlock, mainBlock;
     private int hashBlockPos, mainBlockPos;
     private long hashBlockCount, mainBlockCount;
-
-    private byte[] Offset;
+    private byte[] OffsetHASH;
     private byte[] Sum;
+    private byte[] OffsetMAIN;
+    private byte[] Checksum;
 
+    // The MAC value is preserved after doFinal
     private byte[] macBlock;
 
     public OCBBlockCipher(BlockCipher hashCipher, BlockCipher mainCipher) {
@@ -140,15 +143,13 @@ public class OCBBlockCipher implements AEADBlockCipher {
         hashCipher.init(true, keyParam);
         mainCipher.init(forEncryption, keyParam);
 
-        byte[] L_Star = new byte[16];
-        hashCipher.processBlock(L_Star, 0, L_Star, 0);
+        this.L_Asterisk = new byte[16];
+        hashCipher.processBlock(L_Asterisk, 0, L_Asterisk, 0);
 
-        byte[] L_Dollar = new byte[16];
-        OCB_double(L_Star, L_Dollar);
+        this.L_Dollar = OCB_double(L_Asterisk);
 
-        byte[] L_0 = new byte[16];
-        OCB_double(L_Star, L_Dollar);
-        L.addElement(L_0);
+        L = new Vector();
+        L.addElement(OCB_double(L_Dollar));
 
         /*
          * NONCE-DEPENDENT AND PER-ENCRYPTION INITIALISATION
@@ -174,14 +175,18 @@ public class OCBBlockCipher implements AEADBlockCipher {
             Stretch[16 + i] = (byte) (Ktop[i] ^ Ktop[i + 1]);
         }
 
+        // TODO Initialise OffsetMAIN
+
         this.hashBlockPos = 0;
         this.mainBlockPos = 0;
 
         this.hashBlockCount = 0;
         this.mainBlockCount = 0;
 
-        this.Offset = new byte[16];
+        this.OffsetHASH = new byte[16];
         this.Sum = new byte[16];
+        this.OffsetMAIN = new byte[16];
+        this.Checksum = new byte[16];
 
         if (initialAssociatedText != null) {
             processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
@@ -214,7 +219,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
     public void processAADByte(byte input) {
         hashBlock[hashBlockPos] = input;
         if (++hashBlockPos == hashBlock.length) {
-            updateHASH();
+            processHashBlock();
         }
     }
 
@@ -222,24 +227,15 @@ public class OCBBlockCipher implements AEADBlockCipher {
         for (int i = 0; i < len; ++i) {
             hashBlock[hashBlockPos] = input[off + i];
             if (++hashBlockPos == hashBlock.length) {
-                updateHASH();
+                processHashBlock();
             }
         }
-    }
-
-    private void updateHASH() {
-//        assert hashBlockPos == hashBlock.length;
-        hashBlockPos = 0;
-        xor(Offset, getLSub(OCB_ntz(++hashBlockCount)));
-        xor(hashBlock, Offset);
-        hashCipher.processBlock(hashBlock, 0, hashBlock, 0);
-        xor(Sum, hashBlock);
     }
 
     public int processByte(byte input, byte[] output, int outOff) throws DataLengthException {
         mainBlock[mainBlockPos] = input;
         if (++mainBlockPos == mainBlock.length) {
-            updateCRYPT(output, outOff);
+            processMainBlock(output, outOff);
             return BLOCK_SIZE;
         }
         return 0;
@@ -253,7 +249,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
         for (int i = 0; i < len; ++i) {
             mainBlock[mainBlockPos] = input[inOff + i];
             if (++mainBlockPos == mainBlock.length) {
-                updateCRYPT(output, outOff + resultLen);
+                processMainBlock(output, outOff + resultLen);
                 resultLen += BLOCK_SIZE;
             }
         }
@@ -261,26 +257,128 @@ public class OCBBlockCipher implements AEADBlockCipher {
         return resultLen;
     }
 
-    private void updateCRYPT(byte[] output, int outOff) {
-//      assert mainBlockPos == mainBlock.length;
-        mainBlockPos = 0;
-        
-        // TODO
-    }
-
-    public int doFinal(byte[] out, int outOff) throws IllegalStateException,
+    public int doFinal(byte[] output, int outOff) throws IllegalStateException,
         InvalidCipherTextException {
 
-        // TODO
+        /*
+         * For decryption, get the tag from the end of the message
+         */
+        byte[] tag = null;
+        if (!forEncryption) {
+            if (mainBlockPos < macSize) {
+                throw new InvalidCipherTextException("data too short");
+            }
+            mainBlockPos -= macSize;
+            tag = new byte[macSize];
+            System.arraycopy(mainBlock, mainBlockPos, tag, 0, macSize);
+        }
+
+        /*
+         * HASH: Process any final partial block; compute final hash value
+         */
+        if (hashBlockPos > 0) {
+            OCB_extend(hashBlock, hashBlockPos);
+            updateHASH(L_Asterisk);
+        }
+
+        /*
+         * OCB-ENCRYPT/OCB-DECRYPT: Process any final partial block
+         */
+        if (mainBlockPos > 0) {
+            if (forEncryption) {
+                OCB_extend(mainBlock, mainBlockPos);
+                xor(Checksum, mainBlock);
+            }
+
+            xor(OffsetMAIN, L_Asterisk);
+
+            byte[] Pad = new byte[16];
+            hashCipher.processBlock(OffsetMAIN, 0, Pad, 0);
+
+            xor(mainBlock, Pad);
+
+            System.arraycopy(mainBlock, 0, output, outOff, mainBlockPos);
+
+            if (!forEncryption) {
+                OCB_extend(mainBlock, mainBlockPos);
+                xor(Checksum, mainBlock);
+            }
+        }
+
+        /*
+         * OCB-ENCRYPT/OCB-DECRYPT: Compute raw tag
+         */
+        xor(Checksum, OffsetMAIN);
+        xor(Checksum, L_Dollar);
+
+        this.macBlock = new byte[macSize];
+        hashCipher.processBlock(Checksum, 0, macBlock, 0);
+
+        xor(macBlock, Sum);
+
+        /*
+         * Validate or append tag and reset this cipher for the next run
+         */
+        int resultLen = mainBlockPos;
+
+        if (forEncryption) {
+            // Append tag to the message
+            System.arraycopy(macBlock, 0, output, outOff + resultLen, macSize);
+            resultLen += macSize;
+        } else {
+            // Compare the tag from the message with the calculated one
+            if (!Arrays.constantTimeAreEqual(macBlock, tag)) {
+                throw new InvalidCipherTextException("mac check in OCB failed");
+            }
+        }
 
         reset(false);
 
-        // TODO
-        return 0;
+        return resultLen;
     }
 
     public void reset() {
         reset(true);
+    }
+
+    protected byte[] getLSub(int n) {
+        while (n >= L.size()) {
+            L.addElement(OCB_double((byte[]) L.lastElement()));
+        }
+        return (byte[]) L.elementAt(n);
+    }
+
+    protected void processHashBlock() {
+        /*
+         * HASH: Process any whole blocks
+         */
+        updateHASH(getLSub(OCB_ntz(++hashBlockCount)));
+        hashBlockPos = 0;
+    }
+
+    protected void processMainBlock(byte[] output, int outOff) {
+        /*
+         * OCB-ENCRYPT/OCB-DECRYPT: Process any whole blocks
+         */
+
+        if (forEncryption) {
+            xor(Checksum, mainBlock);
+            mainBlockPos = 0;
+        }
+
+        xor(OffsetMAIN, getLSub(OCB_ntz(++mainBlockCount)));
+
+        xor(mainBlock, OffsetMAIN);
+        mainCipher.processBlock(mainBlock, 0, mainBlock, 0);
+        xor(mainBlock, OffsetMAIN);
+
+        System.arraycopy(mainBlock, 0, output, outOff, 16);
+
+        if (!forEncryption) {
+            xor(Checksum, mainBlock);
+            System.arraycopy(mainBlock, BLOCK_SIZE, mainBlock, 0, macSize);
+            mainBlockPos = macSize;
+        }
     }
 
     protected void reset(boolean clearMac) {
@@ -306,19 +404,28 @@ public class OCBBlockCipher implements AEADBlockCipher {
         }
     }
 
-    protected byte[] getLSub(int n) {
-        while (n >= L.size()) {
-            byte[] L_i = new byte[16];
-            OCB_double((byte[]) L.lastElement(), L_i);
-            L.addElement(L_i);
-        }
-        return (byte[]) L.elementAt(n);
+    protected void updateHASH(byte[] LSub) {
+        xor(OffsetHASH, LSub);
+        xor(hashBlock, OffsetHASH);
+        hashCipher.processBlock(hashBlock, 0, hashBlock, 0);
+        xor(Sum, hashBlock);
     }
 
-    protected static void OCB_double(byte[] block, byte[] output) {
-        int carry = shiftLeft(block, output);
+    protected static byte[] OCB_double(byte[] block) {
+        byte[] result = new byte[16];
+        int carry = shiftLeft(block, result);
         if (carry != 0) {
-            output[15] ^= 0x10000111;
+            result[15] ^= 0x10000111;
+        }
+        return result;
+    }
+
+    protected static void OCB_extend(byte[] block, int pos) {
+        if (pos < 16) {
+            block[pos] = (byte) 0x80;
+            while (++pos < 16) {
+                block[pos] = 0;
+            }
         }
     }
 
@@ -346,10 +453,8 @@ public class OCBBlockCipher implements AEADBlockCipher {
         return bit;
     }
 
-    protected static void xor(byte[] block, byte[] val)
-    {
-        for (int i = 15; i >= 0; --i)
-        {
+    protected static void xor(byte[] block, byte[] val) {
+        for (int i = 15; i >= 0; --i) {
             block[i] ^= val[i];
         }
     }
