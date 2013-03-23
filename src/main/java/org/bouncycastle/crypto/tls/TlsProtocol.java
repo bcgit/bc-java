@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -30,17 +31,19 @@ public abstract class TlsProtocol {
     protected static final short CS_START = 0;
     protected static final short CS_CLIENT_HELLO = 1;
     protected static final short CS_SERVER_HELLO = 2;
-    protected static final short CS_SERVER_CERTIFICATE = 3;
-    protected static final short CS_SERVER_KEY_EXCHANGE = 4;
-    protected static final short CS_CERTIFICATE_REQUEST = 5;
-    protected static final short CS_SERVER_HELLO_DONE = 6;
-    protected static final short CS_CLIENT_CERTIFICATE = 7;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 8;
-    protected static final short CS_CERTIFICATE_VERIFY = 9;
-    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 10;
-    protected static final short CS_CLIENT_FINISHED = 11;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 12;
-    protected static final short CS_SERVER_FINISHED = 13;
+    protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 3;
+    protected static final short CS_SERVER_CERTIFICATE = 4;
+    protected static final short CS_SERVER_KEY_EXCHANGE = 5;
+    protected static final short CS_CERTIFICATE_REQUEST = 6;
+    protected static final short CS_SERVER_HELLO_DONE = 7;
+    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 8;
+    protected static final short CS_CLIENT_CERTIFICATE = 9;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 10;
+    protected static final short CS_CERTIFICATE_VERIFY = 11;
+    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 12;
+    protected static final short CS_CLIENT_FINISHED = 13;
+    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 14;
+    protected static final short CS_SERVER_FINISHED = 15;
 
     /*
      * Queues for data from some protocols.
@@ -481,6 +484,22 @@ public abstract class TlsProtocol {
         }
     }
 
+    protected static Vector receiveSupplementalDataMessage(ByteArrayInputStream buf) throws IOException {
+
+        ByteArrayInputStream supp_data = new ByteArrayInputStream(TlsUtils.readOpaque24(buf));
+
+        Vector supplementalData = new Vector();
+
+        while (supp_data.available() > 0) {
+            int supp_data_type = TlsUtils.readUint16(supp_data);
+            byte[] data = TlsUtils.readOpaque16(supp_data);
+
+            supplementalData.addElement(new SupplementalDataEntry(supp_data_type, data));
+        }
+
+        return supplementalData;
+    }
+
     protected void sendAlert(short alertLevel, short alertDescription) throws IOException {
         byte[] error = new byte[2];
         error[0] = (byte) alertLevel;
@@ -519,6 +538,33 @@ public abstract class TlsProtocol {
         TlsUtils.writeUint24(verify_data.length, bos);
         bos.write(verify_data);
         byte[] message = bos.toByteArray();
+
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendSupplementalDataMessage(Vector supplementalData) throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.supplemental_data, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
+        ByteArrayOutputStream supp_data = new ByteArrayOutputStream();
+
+        for (int i = 0; i < supplementalData.size(); ++i) {
+            SupplementalDataEntry entry = (SupplementalDataEntry)supplementalData.elementAt(i);
+
+            TlsUtils.writeUint16(entry.getDataType(), supp_data);
+            TlsUtils.writeOpaque16(entry.getData(), supp_data);
+        }
+
+        TlsUtils.writeOpaque24(supp_data.toByteArray(), buf);
+
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
 
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }

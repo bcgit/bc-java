@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Vector;
 
 public interface TlsServer {
 
@@ -18,11 +19,17 @@ public interface TlsServer {
     // Hashtables are (Integer -> byte[])
     Hashtable processClientExtensions(Hashtable serverExtensions) throws IOException;
 
+    // Vector is (SupplementalDataEntry)
+    Vector getServerSupplementalData() throws IOException;
+
     TlsCredentials getCredentials() throws IOException;
 
     TlsKeyExchange getKeyExchange() throws IOException;
 
     CertificateRequest getCertificateRequest();
+
+    // Vector is (SupplementalDataEntry)
+    void processClientSupplementalData(Vector clientSupplementalData) throws IOException;
 
     TlsCompression getCompression() throws IOException;
 

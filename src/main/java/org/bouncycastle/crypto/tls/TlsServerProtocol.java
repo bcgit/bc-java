@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
 
@@ -92,6 +93,12 @@ public class TlsServerProtocol extends TlsProtocol {
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
+                Vector supplementalData = tlsServer.getServerSupplementalData();
+                if (supplementalData != null) {
+                    sendSupplementalDataMessage(supplementalData);
+                }
+                this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
+
                 this.keyExchange = tlsServer.getKeyExchange();
                 this.keyExchange.init(this.tlsServerContext);
 
@@ -130,9 +137,26 @@ public class TlsServerProtocol extends TlsProtocol {
             }
             break;
         }
+        case HandshakeType.supplemental_data: {
+            switch (this.connection_state) {
+            case CS_SERVER_HELLO_DONE: {
+                tlsServer.processClientSupplementalData(receiveSupplementalDataMessage(buf));
+                this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
+                break;
+            }
+            default: {
+                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            }
+            }
+            break;
+        }
         case HandshakeType.certificate: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO_DONE: {
+                tlsServer.processClientSupplementalData(null);
+                // NB: Fall through to next case label
+            }
+            case CS_CLIENT_SUPPLEMENTAL_DATA: {
                 if (this.certificateRequest == null) {
                     this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                 }
@@ -149,6 +173,10 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.client_key_exchange: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO_DONE: {
+                tlsServer.processClientSupplementalData(null);
+                // NB: Fall through to next case label
+            }
+            case CS_CLIENT_SUPPLEMENTAL_DATA: {
                 this.keyExchange.skipClientCredentials();
                 // NB: Fall through to next case label
             }

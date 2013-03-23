@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Vector;
 
 public abstract class AbstractTlsClient implements TlsClient {
 
@@ -91,6 +92,16 @@ public abstract class AbstractTlsClient implements TlsClient {
          * TlsProtocol implementation validates that any server extensions received correspond to
          * client extensions sent. By default, we don't send any, and this method is not called.
          */
+    }
+
+    public void processServerSupplementalData(Vector serverSupplementalData) throws IOException {
+        if (serverSupplementalData != null) {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
+    public Vector getClientSupplementalData() throws IOException {
+        return null;
     }
 
     public TlsCompression getCompression() throws IOException {

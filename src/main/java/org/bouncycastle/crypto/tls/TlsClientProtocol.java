@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
@@ -100,6 +101,10 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.certificate: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO: {
+                tlsClient.processServerSupplementalData(null);
+                // NB: Fall through to next case label
+            }
+            case CS_SERVER_SUPPLEMENTAL_DATA: {
                 // Parse the Certificate message and send to cipher suite
 
                 Certificate serverCertificate = Certificate.parse(buf);
@@ -140,16 +145,31 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
             break;
-        case HandshakeType.server_hello_done:
+        case HandshakeType.supplemental_data: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO:
+                tlsClient.processServerSupplementalData(receiveSupplementalDataMessage(buf));
+                this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
+                break;
+            default:
+                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            }
+            break;
+        }
+        case HandshakeType.server_hello_done:
+            switch (this.connection_state) {
+            case CS_SERVER_HELLO: {
+                tlsClient.processServerSupplementalData(null);
+                // NB: Fall through to next case label
+            }
+            case CS_SERVER_SUPPLEMENTAL_DATA: {
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCertificate();
                 this.authentication = null;
 
                 // NB: Fall through to next case label
-
+            }
             case CS_SERVER_CERTIFICATE:
 
                 // There was no server key exchange message; check it's OK
@@ -163,6 +183,12 @@ public class TlsClientProtocol extends TlsProtocol {
                 assertEmpty(buf);
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
+
+                Vector supplementalData = tlsClient.getClientSupplementalData();
+                if (supplementalData != null) {
+                    sendSupplementalDataMessage(supplementalData);
+                }
+                this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
                 TlsCredentials clientCreds = null;
                 if (certificateRequest == null) {
@@ -243,14 +269,18 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         case HandshakeType.server_key_exchange: {
             switch (this.connection_state) {
-            case CS_SERVER_HELLO:
+            case CS_SERVER_HELLO: {
+                tlsClient.processServerSupplementalData(null);
+                // NB: Fall through to next case label
+            }
+            case CS_SERVER_SUPPLEMENTAL_DATA: {
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCertificate();
                 this.authentication = null;
 
                 // NB: Fall through to next case label
-
+            }
             case CS_SERVER_CERTIFICATE:
 
                 this.keyExchange.processServerKeyExchange(buf);

@@ -20,4 +20,9 @@ public class HandshakeType
      *  DTLS, RFC 4347 4.3.2
      */
     public static final short hello_verify_request = 3;
+
+    /*
+     * RFC 4680 
+     */
+    public static final short supplemental_data = 23;
 }
