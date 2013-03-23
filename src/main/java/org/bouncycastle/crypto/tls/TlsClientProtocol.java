@@ -85,9 +85,7 @@ public class TlsClientProtocol extends TlsProtocol {
     }
 
     protected void handleChangeCipherSpecMessage() throws IOException {
-        /*
-         * Check if we are in the correct connection state.
-         */
+
         if (this.connection_state != CS_CLIENT_FINISHED) {
             this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
         }

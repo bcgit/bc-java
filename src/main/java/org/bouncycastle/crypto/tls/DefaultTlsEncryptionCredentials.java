@@ -46,17 +46,14 @@ public class DefaultTlsEncryptionCredentials implements TlsEncryptionCredentials
 
     public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret) throws IOException {
 
-      PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-      encoding
-          .init(false, new ParametersWithRandom(this.privateKey, context.getSecureRandom()));
+        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
+        encoding.init(false, new ParametersWithRandom(this.privateKey, context.getSecureRandom()));
 
-      try
-      {
-          // TODO Figure out SSLv3 here
-          return encoding.processBlock(encryptedPreMasterSecret, 0, encryptedPreMasterSecret.length);
-      }
-      catch (InvalidCipherTextException e) {
-          throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-      }
+        try {
+            return encoding.processBlock(encryptedPreMasterSecret, 0,
+                encryptedPreMasterSecret.length);
+        } catch (InvalidCipherTextException e) {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
     }
 }

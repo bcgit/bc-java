@@ -9,11 +9,9 @@ import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
-public class TlsRSAUtils
-{
+public class TlsRSAUtils {
     public static byte[] generateEncryptedPreMasterSecret(TlsContext context,
-        RSAKeyParameters rsaServerPublicKey, OutputStream os) throws IOException
-    {
+        RSAKeyParameters rsaServerPublicKey, OutputStream output) throws IOException {
         /*
          * Choose a PremasterSecret and send it encrypted to the server
          */
@@ -22,23 +20,19 @@ public class TlsRSAUtils
         TlsUtils.writeVersion(context.getClientVersion(), premasterSecret, 0);
 
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-        encoding.init(true, new ParametersWithRandom(rsaServerPublicKey, context.getSecureRandom()));
+        encoding
+            .init(true, new ParametersWithRandom(rsaServerPublicKey, context.getSecureRandom()));
 
-        try
-        {
-            byte[] keData = encoding.processBlock(premasterSecret, 0, premasterSecret.length);
+        try {
+            byte[] encryptedPreMasterSecret = encoding.processBlock(premasterSecret, 0,
+                premasterSecret.length);
 
-            if (context.getServerVersion().isSSL())
-            {
-                os.write(keData);
+            if (context.getServerVersion().isSSL()) {
+                output.write(encryptedPreMasterSecret);
+            } else {
+                TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
             }
-            else
-            {
-                TlsUtils.writeOpaque16(keData, os);
-            }
-        }
-        catch (InvalidCipherTextException e)
-        {
+        } catch (InvalidCipherTextException e) {
             /*
              * This should never happen, only during decryption.
              */
