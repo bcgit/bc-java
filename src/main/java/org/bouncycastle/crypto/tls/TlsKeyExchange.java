@@ -21,7 +21,7 @@ public interface TlsKeyExchange {
 
     void skipServerKeyExchange() throws IOException;
 
-    void processServerKeyExchange(InputStream is) throws IOException;
+    void processServerKeyExchange(InputStream input) throws IOException;
 
     void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException;
 
@@ -29,7 +29,9 @@ public interface TlsKeyExchange {
 
     void processClientCredentials(TlsCredentials clientCredentials) throws IOException;
 
-    void generateClientKeyExchange(OutputStream os) throws IOException;
+    void generateClientKeyExchange(OutputStream output) throws IOException;
+
+    void processClientKeyExchange(InputStream input) throws IOException;
 
     byte[] generatePremasterSecret() throws IOException;
 }

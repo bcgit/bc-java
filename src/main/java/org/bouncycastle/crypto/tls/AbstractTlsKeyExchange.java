@@ -33,4 +33,9 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
+
+    public void processClientKeyExchange(InputStream input) throws IOException {
+        // Key exchange implementation MUST support client key exchange
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
 }
