@@ -83,9 +83,19 @@ public abstract class TlsProtocol {
 
     }
 
-    protected void enableApplicationData() {
+    protected void completeHandshake() throws IOException {
+
         /*
-         * We are now ready to send and receive application data.
+         * We will now read data, until we have completed the handshake.
+         */
+        while (this.connection_state != CS_SERVER_FINISHED) {
+            safeReadRecord();
+        }
+
+        rs.finaliseHandshake();
+
+        /*
+         * If this was an initial handshake, we are now ready to send and receive application data.
          */
         if (!appDataReady) {
             this.appDataReady = true;
@@ -251,6 +261,8 @@ public abstract class TlsProtocol {
                  */
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
+
+            rs.receivedReadCipherSpec();
 
             handleChangeCipherSpecMessage();
         }
@@ -491,6 +503,7 @@ public abstract class TlsProtocol {
     protected void sendChangeCipherSpecMessage() throws IOException {
         byte[] message = new byte[] { 1 };
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
+        rs.sentWriteCipherSpec();
     }
 
     protected void sendFinishedMessage() throws IOException {

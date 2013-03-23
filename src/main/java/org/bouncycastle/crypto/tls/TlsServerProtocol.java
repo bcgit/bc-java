@@ -54,14 +54,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         this.rs.setRestrictReadVersion(false);
 
-        /*
-         * We will now read data, until we have completed the handshake.
-         */
-        while (this.connection_state != CS_SERVER_FINISHED) {
-            safeReadRecord();
-        }
-
-        enableApplicationData();
+        completeHandshake();
     }
 
     protected TlsContext getContext() {
@@ -76,10 +69,6 @@ public class TlsServerProtocol extends TlsProtocol {
             // NB: Fall through to next case label
         }
         case CS_CERTIFICATE_VERIFY: {
-
-            // TODO Make sure that rs.decidedWriteCipherSpec is called before this
-            rs.receivedReadCipherSpec();
-
             this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
             break;
         }
@@ -367,6 +356,32 @@ public class TlsServerProtocol extends TlsProtocol {
         // TODO
 
         assertEmpty(buf);
+
+        /*
+         * Calculate the master_secret
+         */
+        {
+            byte[] pms = this.keyExchange.generatePremasterSecret();
+
+            try {
+                securityParameters.masterSecret = TlsUtils.calculateMasterSecret(
+                    this.tlsServerContext, pms);
+            } finally {
+                // TODO Is there a way to ensure the data is really overwritten?
+                /*
+                 * RFC 2246 8.1. The pre_master_secret should be deleted from memory once
+                 * the master_secret has been computed.
+                 */
+                if (pms != null) {
+                    Arrays.fill(pms, (byte) 0);
+                }
+            }
+        }
+
+        /*
+         * Initialize our cipher suite
+         */
+        rs.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

@@ -77,14 +77,7 @@ public class TlsClientProtocol extends TlsProtocol {
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
-        /*
-         * We will now read data, until we have completed the handshake.
-         */
-        while (this.connection_state != CS_SERVER_FINISHED) {
-            safeReadRecord();
-        }
-
-        enableApplicationData();
+        completeHandshake();
     }
 
     protected TlsContext getContext() {
@@ -98,8 +91,6 @@ public class TlsClientProtocol extends TlsProtocol {
         if (this.connection_state != CS_CLIENT_FINISHED) {
             this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
         }
-
-        rs.receivedReadCipherSpec();
 
         this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
     }
@@ -204,8 +195,6 @@ public class TlsClientProtocol extends TlsProtocol {
                  */
                 sendClientKeyExchangeMessage();
 
-                this.connection_state = CS_CLIENT_KEY_EXCHANGE;
-
                 /*
                  * Calculate the master_secret
                  */
@@ -227,6 +216,13 @@ public class TlsClientProtocol extends TlsProtocol {
                     }
                 }
 
+                /*
+                 * Initialize our cipher suite
+                 */
+                rs.setPendingConnectionState(tlsClient.getCompression(), tlsClient.getCipher());
+
+                this.connection_state = CS_CLIENT_KEY_EXCHANGE;
+
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials) {
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials) clientCreds;
                     byte[] md5andsha1 = rs.getCurrentHash(null);
@@ -239,11 +235,6 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 sendChangeCipherSpecMessage();
                 this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
-
-                /*
-                 * Initialize our cipher suite
-                 */
-                rs.sentWriteCipherSpec(tlsClient.getCompression(), tlsClient.getCipher());
 
                 sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;

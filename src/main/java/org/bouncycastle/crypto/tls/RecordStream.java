@@ -14,8 +14,9 @@ class RecordStream {
     private TlsProtocol handler;
     private InputStream is;
     private OutputStream os;
-    private TlsCompression readCompression = null, writeCompression = null;
-    private TlsCipher readCipher = null, writeCipher = null;
+    private TlsCompression pendingCompression = null, readCompression = null,
+        writeCompression = null;
+    private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -63,16 +64,35 @@ class RecordStream {
         this.restrictReadVersion = enabled;
     }
 
-    void sentWriteCipherSpec(TlsCompression tlsCompression, TlsCipher tlsCipher) {
-        this.writeCompression = tlsCompression;
-        this.writeCipher = tlsCipher;
+    void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher) {
+        this.pendingCompression = tlsCompression;
+        this.pendingCipher = tlsCipher;
+    }
+
+    void sentWriteCipherSpec() throws IOException {
+        if (pendingCompression == null || pendingCipher == null) {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+        this.writeCompression = this.pendingCompression;
+        this.writeCipher = this.pendingCipher;
         this.writeSeqNo = 0;
     }
 
-    void receivedReadCipherSpec() {
-        this.readCompression = this.writeCompression;
-        this.readCipher = this.writeCipher;
+    void receivedReadCipherSpec() throws IOException {
+        if (pendingCompression == null || pendingCipher == null) {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+        this.readCompression = this.pendingCompression;
+        this.readCipher = this.pendingCipher;
         this.readSeqNo = 0;
+    }
+
+    void finaliseHandshake() throws IOException {
+        if (readCompression != pendingCompression || writeCompression != pendingCompression || readCipher != pendingCipher || writeCipher != pendingCipher) {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+        pendingCompression = null;
+        pendingCipher = null;
     }
 
     public void readRecord() throws IOException {
