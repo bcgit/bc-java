@@ -16,11 +16,6 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
         return new int[] { CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
     }
 
-    public TlsCredentials getCredentials() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public TlsKeyExchange getKeyExchange() throws IOException {
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
