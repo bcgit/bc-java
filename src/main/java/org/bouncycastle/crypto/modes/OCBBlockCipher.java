@@ -32,16 +32,28 @@ public class OCBBlockCipher implements AEADBlockCipher {
     private BlockCipher hashCipher;
     private BlockCipher mainCipher;
 
-    // These fields are set by init and not modified by processing
+    /*
+     * CONFIGURATION
+     */
     private boolean forEncryption;
     private int macSize;
     private byte[] initialAssociatedText;
 
-    // L is key-dependent, but elements are lazily calculated
+    /*
+     * KEY-DEPENDENT
+     */
+    // NOTE: elements are lazily calculated
     private Vector L;
     private byte[] L_Asterisk, L_Dollar;
 
-    // These fields are modified during processing
+    /*
+     * NONCE-DEPENDENT
+     */
+    private byte[] OffsetMAIN_0;
+
+    /*
+     * PER-ENCRYPTION/DECRYPTION
+     */
     private byte[] hashBlock, mainBlock;
     private int hashBlockPos, mainBlockPos;
     private long hashBlockCount, mainBlockCount;
@@ -50,7 +62,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
     private byte[] OffsetMAIN;
     private byte[] Checksum;
 
-    // The MAC value is preserved after doFinal
+    // NOTE: The MAC value is preserved after doFinal
     private byte[] macBlock;
 
     public OCBBlockCipher(BlockCipher hashCipher, BlockCipher mainCipher) {
@@ -148,11 +160,11 @@ public class OCBBlockCipher implements AEADBlockCipher {
 
         this.L_Dollar = OCB_double(L_Asterisk);
 
-        L = new Vector();
-        L.addElement(OCB_double(L_Dollar));
+        this.L = new Vector();
+        this.L.addElement(OCB_double(L_Dollar));
 
         /*
-         * NONCE-DEPENDENT AND PER-ENCRYPTION INITIALISATION
+         * NONCE-DEPENDENT AND PER-ENCRYPTION/DECRYPTION INITIALISATION
          */
 
         byte[] nonce = new byte[16];
@@ -164,6 +176,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
         }
 
         int bottom = nonce[15] & 0x3F;
+        // System.out.println("bottom: " + bottom);
 
         byte[] Ktop = new byte[16];
         nonce[15] &= 0xC0;
@@ -175,7 +188,17 @@ public class OCBBlockCipher implements AEADBlockCipher {
             Stretch[16 + i] = (byte) (Ktop[i] ^ Ktop[i + 1]);
         }
 
-        // TODO Initialise OffsetMAIN
+        this.OffsetMAIN_0 = new byte[16];
+        int bits = bottom % 8, bytes = bottom / 8;
+        if (bits == 0) {
+            System.arraycopy(Stretch, bytes, OffsetMAIN_0, 0, 16);
+        } else {
+            for (int i = 0; i < 16; ++i) {
+                int b1 = Stretch[bytes] & 0xff;
+                int b2 = Stretch[++bytes] & 0xff;
+                this.OffsetMAIN_0[i] = (byte) ((b1 << bits) | (b2 >>> (8 - bits)));
+            }
+        }
 
         this.hashBlockPos = 0;
         this.mainBlockPos = 0;
@@ -185,7 +208,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
 
         this.OffsetHASH = new byte[16];
         this.Sum = new byte[16];
-        this.OffsetMAIN = new byte[16];
+        this.OffsetMAIN = Arrays.clone(this.OffsetMAIN_0);
         this.Checksum = new byte[16];
 
         if (initialAssociatedText != null) {
@@ -341,6 +364,12 @@ public class OCBBlockCipher implements AEADBlockCipher {
         reset(true);
     }
 
+    protected void clear(byte[] bs) {
+        if (bs != null) {
+            Arrays.fill(bs, (byte) 0);
+        }
+    }
+
     protected byte[] getLSub(int n) {
         while (n >= L.size()) {
             L.addElement(OCB_double((byte[]) L.lastElement()));
@@ -382,18 +411,23 @@ public class OCBBlockCipher implements AEADBlockCipher {
     }
 
     protected void reset(boolean clearMac) {
+
         hashCipher.reset();
         mainCipher.reset();
+
+        clear(hashBlock);
+        clear(mainBlock);
 
         hashBlockPos = 0;
         mainBlockPos = 0;
 
-        if (hashBlock != null) {
-            Arrays.fill(hashBlock, (byte) 0);
-        }
-        if (mainBlock != null) {
-            Arrays.fill(mainBlock, (byte) 0);
-        }
+        hashBlockCount = 0;
+        mainBlockCount = 0;
+
+        clear(OffsetHASH);
+        clear(Sum);
+        System.arraycopy(OffsetMAIN_0, 0, OffsetMAIN, 0, 16);
+        clear(Checksum);
 
         if (clearMac) {
             macBlock = null;
@@ -415,7 +449,7 @@ public class OCBBlockCipher implements AEADBlockCipher {
         byte[] result = new byte[16];
         int carry = shiftLeft(block, result);
         if (carry != 0) {
-            result[15] ^= 0x10000111;
+            result[15] ^= 0x87;
         }
         return result;
     }

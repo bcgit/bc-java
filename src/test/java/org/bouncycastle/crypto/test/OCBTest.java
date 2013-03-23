@@ -96,10 +96,13 @@ public class OCBTest extends SimpleTest {
         int macLengthBytes = macLengthBits / 8;
 
         // TODO Variations processing AAD and cipher bytes incrementally
-        AEADParameters parameters = new AEADParameters(new KeyParameter(key), macLengthBits, nonce,
-            A);
-        OCBBlockCipher encCipher = initCipher(true, parameters);
-        OCBBlockCipher decCipher = initCipher(false, parameters);
+
+        KeyParameter keyParameter = new KeyParameter(key);
+        AEADParameters aeadParameters = new AEADParameters(keyParameter, macLengthBits, nonce, A);
+
+        OCBBlockCipher encCipher = initCipher(true, aeadParameters);
+        OCBBlockCipher decCipher = initCipher(false, aeadParameters);
+
         checkTestCase(encCipher, decCipher, testName, macLengthBytes, P, C);
         checkTestCase(encCipher, decCipher, testName + " (reused)", macLengthBytes, P, C);
 
