@@ -8,11 +8,15 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
+import org.bouncycastle.crypto.tls.AlertDescription;
+import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
+import org.bouncycastle.crypto.tls.TlsCredentials;
+import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -82,5 +86,17 @@ public class TlsProtocolTest extends TestCase {
     }
 
     static class MyTlsServer extends DefaultTlsServer {
+        public TlsCredentials getCredentials() throws IOException {
+            switch (selectedCipherSuite) {
+            case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
+                return TlsTestUtils.loadCredentials(context, "x509-server.pem", "x509-server-key.pem", false);
+
+            default:
+                /*
+                 * Note: internal error here; selected a key exchange we don't implement!
+                 */
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
     }
 }
