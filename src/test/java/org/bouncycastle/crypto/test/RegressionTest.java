@@ -111,7 +111,8 @@ public class RegressionTest
         new ResetTest(),
         new NullTest(),
         new DSTU4145Test(),
-        new SipHashTest()
+        new SipHashTest(),
+        new OCBTest()
     };
 
     public static void main(
