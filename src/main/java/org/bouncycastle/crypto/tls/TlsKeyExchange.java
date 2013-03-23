@@ -5,10 +5,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * A generic interface for key exchange implementations in TLS 1.0.
+ * A generic interface for key exchange implementations in TLS 1.0/1.1.
  */
-public interface TlsKeyExchange
-{
+public interface TlsKeyExchange {
+
     void init(TlsContext context);
 
     void skipServerCertificate() throws IOException;
@@ -17,10 +17,11 @@ public interface TlsKeyExchange
 
     boolean requiresServerKeyExchange();
 
+    byte[] generateServerKeyExchange() throws IOException;
+
     void skipServerKeyExchange() throws IOException;
 
-    void processServerKeyExchange(InputStream is)
-        throws IOException;
+    void processServerKeyExchange(InputStream is) throws IOException;
 
     void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException;
 

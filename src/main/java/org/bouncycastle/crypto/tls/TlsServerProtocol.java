@@ -105,8 +105,10 @@ public class TlsServerProtocol extends TlsProtocol {
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
-                // TODO Send ServerKeyExchange
-
+                byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
+                if (serverKeyExchange != null) {
+                    sendServerKeyExchangeMessage(serverKeyExchange);
+                }
                 this.connection_state = CS_SERVER_KEY_EXCHANGE;
 
                 if (serverCredentials != null) {
@@ -468,6 +470,17 @@ public class TlsServerProtocol extends TlsProtocol {
         byte[] message = new byte[4];
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
         TlsUtils.writeUint24(0, message, 1);
+
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendServerKeyExchangeMessage(byte[] serverKeyExchange) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        TlsUtils.writeUint8(HandshakeType.server_key_exchange, bos);
+        TlsUtils.writeUint24(serverKeyExchange.length, bos);
+        bos.write(serverKeyExchange);
+        byte[] message = bos.toByteArray();
 
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
