@@ -23,7 +23,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
         this.inHandshake = true;
 
-        this.currentEpoch = new DTLSEpoch(0, new TlsNullCipher());
+        this.currentEpoch = new DTLSEpoch(0, new TlsNullCipher(context));
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;

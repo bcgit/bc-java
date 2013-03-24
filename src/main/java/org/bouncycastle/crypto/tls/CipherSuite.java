@@ -122,6 +122,13 @@ public class CipherSuite
     public static final int TLS_ECDH_anon_WITH_AES_256_CBC_SHA = 0xC019;
 
     /*
+     * RFC 4785
+     */
+    public static final int TLS_PSK_WITH_NULL_SHA = 0x002C;
+    public static final int TLS_DHE_PSK_WITH_NULL_SHA = 0x002D;
+    public static final int TLS_RSA_PSK_WITH_NULL_SHA = 0x002E;
+
+    /*
      * RFC 5054
      */
     public static final int TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA = 0xC01A;

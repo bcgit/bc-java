@@ -32,7 +32,7 @@ class RecordStream {
         this.os = os;
         this.readCompression = new TlsNullCompression();
         this.writeCompression = this.readCompression;
-        this.readCipher = new TlsNullCipher();
+        this.readCipher = new TlsNullCipher(context);
         this.writeCipher = this.readCipher;
     }
 

@@ -43,18 +43,21 @@ public abstract class PSKTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
             case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
             case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA:
+            case CipherSuite.TLS_PSK_WITH_NULL_SHA:
             case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
                 return createPSKKeyExchange(KeyExchangeAlgorithm.PSK);
 
             case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
             case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA:
             case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA:
+            case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
             case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
                 return createPSKKeyExchange(KeyExchangeAlgorithm.RSA_PSK);
 
             case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
             case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA:
             case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
+            case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
             case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
                 return createPSKKeyExchange(KeyExchangeAlgorithm.DHE_PSK);
 
@@ -90,6 +93,12 @@ public abstract class PSKTlsClient extends AbstractTlsClient
             case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
                 return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
                     DigestAlgorithm.SHA);
+
+        case CipherSuite.TLS_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
+                DigestAlgorithm.SHA);
 
             case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
             case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:

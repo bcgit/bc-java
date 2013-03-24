@@ -32,6 +32,8 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
                 return createCamelliaCipher(context, 16, digestAlgorithm);
             case EncryptionAlgorithm.CAMELLIA_256_CBC:
                 return createCamelliaCipher(context, 32, digestAlgorithm);
+            case EncryptionAlgorithm.NULL:
+                return createNullCipher(context, digestAlgorithm);
             case EncryptionAlgorithm.RC4_128:
                 return createRC4Cipher(context, 16, digestAlgorithm);
             case EncryptionAlgorithm.SEED_CBC:
@@ -51,6 +53,11 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
     {
         return new TlsBlockCipher(context, createCamelliaBlockCipher(),
             createCamelliaBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+    }
+
+    protected TlsCipher createNullCipher(TlsContext context, int digestAlgorithm) throws IOException
+    {
+        return new TlsNullCipher(context, createDigest(digestAlgorithm), createDigest(digestAlgorithm));
     }
 
     protected TlsCipher createRC4Cipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
@@ -102,6 +109,8 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
         {
             case DigestAlgorithm.MD5:
                 return new MD5Digest();
+            case DigestAlgorithm.NULL:
+                return null;
             case DigestAlgorithm.SHA:
                 return new SHA1Digest();
             case DigestAlgorithm.SHA256:
