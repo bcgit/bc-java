@@ -13,6 +13,11 @@ public class ExtensionType
     public static final int status_request = 5;
 
     /*
+     * RFC 4681
+     */
+    public static final int user_mapping = 6;
+
+    /*
      * RFC 4492 5.1.
      */
     public static final int elliptic_curves = 10;
