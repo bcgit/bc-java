@@ -344,6 +344,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.certificate_verify:
         case HandshakeType.client_hello:
         case HandshakeType.hello_verify_request:
+        case HandshakeType.session_ticket:
         default:
             // We do not support this!
             this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);

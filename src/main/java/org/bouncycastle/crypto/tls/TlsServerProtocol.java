@@ -228,6 +228,7 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.server_key_exchange:
         case HandshakeType.certificate_request:
         case HandshakeType.server_hello_done:
+        case HandshakeType.session_ticket:
         default:
             // We do not support this!
             this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
