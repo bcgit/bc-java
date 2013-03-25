@@ -68,7 +68,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String[] SYMMETRIC_CIPHERS =
     {
         "AES", "ARC4", "Blowfish", "Camellia", "CAST5", "CAST6", "DES", "DESede", "GOST28147", "Grainv1", "Grain128", "HC128", "HC256", "IDEA",
-        "Noekeon", "RC2", "RC5", "RC6", "Rijndael", "Salsa20", "SEED", "Serpent", "Skipjack", "TEA", "Twofish", "VMPC", "VMPCKSA3", "XTEA"
+        "Noekeon", "RC2", "RC5", "RC6", "Rijndael", "Salsa20", "SEED", "Serpent", "SipHash", "Skipjack", "TEA", "Twofish", "VMPC", "VMPCKSA3", "XTEA"
     };
 
      /*
