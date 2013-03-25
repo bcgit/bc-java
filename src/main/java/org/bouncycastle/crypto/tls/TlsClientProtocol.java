@@ -216,26 +216,7 @@ public class TlsClientProtocol extends TlsProtocol {
                  */
                 sendClientKeyExchangeMessage();
 
-                /*
-                 * Calculate the master_secret
-                 */
-                {
-                    byte[] pms = this.keyExchange.generatePremasterSecret();
-
-                    try {
-                        securityParameters.masterSecret = TlsUtils.calculateMasterSecret(
-                            this.tlsClientContext, pms);
-                    } finally {
-                        // TODO Is there a way to ensure the data is really overwritten?
-                        /*
-                         * RFC 2246 8.1. The pre_master_secret should be deleted from memory once
-                         * the master_secret has been computed.
-                         */
-                        if (pms != null) {
-                            Arrays.fill(pms, (byte) 0);
-                        }
-                    }
-                }
+                establishMasterSecret(tlsClientContext, keyExchange);
 
                 /*
                  * Initialize our cipher suite

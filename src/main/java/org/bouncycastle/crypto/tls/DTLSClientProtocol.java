@@ -136,20 +136,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         byte[] clientKeyExchangeBody = generateClientKeyExchange(state);
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
 
-        // Calculate the master_secret
-        {
-            byte[] pms = state.keyExchange.generatePremasterSecret();
-
-            try {
-                state.clientContext.getSecurityParameters().masterSecret = TlsUtils
-                    .calculateMasterSecret(state.clientContext, pms);
-            } finally {
-                // TODO Is there a way to ensure the data is really overwritten?
-                if (pms != null) {
-                    Arrays.fill(pms, (byte) 0);
-                }
-            }
-        }
+        TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
 
         if (state.clientCredentials instanceof TlsSignerCredentials) {
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials) state.clientCredentials;

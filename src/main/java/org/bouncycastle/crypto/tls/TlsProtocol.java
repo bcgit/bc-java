@@ -619,6 +619,26 @@ public abstract class TlsProtocol {
         return buf.toByteArray();
     }
 
+    protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
+        throws IOException {
+
+        byte[] pre_master_secret = keyExchange.generatePremasterSecret();
+
+        try {
+            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context,
+                pre_master_secret);
+        } finally {
+            // TODO Is there a way to ensure the data is really overwritten?
+            /*
+             * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
+             * master_secret has been computed.
+             */
+            if (pre_master_secret != null) {
+                Arrays.fill(pre_master_secret, (byte) 0);
+            }
+        }
+    }
+
     protected static Hashtable readExtensions(ByteArrayInputStream input) throws IOException {
 
         if (input.available() < 1) {

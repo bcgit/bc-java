@@ -390,26 +390,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         TlsProtocol.assertEmpty(buf);
 
-        /*
-         * Calculate the master_secret
-         */
-        {
-            byte[] pms = state.keyExchange.generatePremasterSecret();
-
-            try {
-                state.serverContext.getSecurityParameters().masterSecret = TlsUtils
-                    .calculateMasterSecret(state.serverContext, pms);
-            } finally {
-                // TODO Is there a way to ensure the data is really overwritten?
-                /*
-                 * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
-                 * master_secret has been computed.
-                 */
-                if (pms != null) {
-                    Arrays.fill(pms, (byte) 0);
-                }
-            }
-        }
+        TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
     }
 
     protected void processClientSupplementalData(ServerHandshakeState state, byte[] body)
