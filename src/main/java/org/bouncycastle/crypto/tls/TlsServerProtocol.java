@@ -45,15 +45,11 @@ public class TlsServerProtocol extends TlsProtocol {
         this.tlsServer = tlsServer;
 
         this.securityParameters = new SecurityParameters();
-        this.securityParameters.serverRandom = new byte[32];
-        random.nextBytes(securityParameters.serverRandom);
-        TlsUtils.writeGMTUnixTime(securityParameters.serverRandom, 0);
-
-        this.tlsServerContext = new TlsServerContextImpl(random, securityParameters);
+        this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
         this.tlsServer.init(tlsServerContext);
-        this.rs.init(tlsServerContext);
+        this.recordStream.init(tlsServerContext);
 
-        this.rs.setRestrictReadVersion(false);
+        this.recordStream.setRestrictReadVersion(false);
 
         completeHandshake();
     }
@@ -89,6 +85,8 @@ public class TlsServerProtocol extends TlsProtocol {
             case CS_START: {
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
+
+                securityParameters.serverRandom = createRandomBlock(secureRandom);
 
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
@@ -322,9 +320,9 @@ public class TlsServerProtocol extends TlsProtocol {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
-        rs.setReadVersion(server_version);
-        rs.setWriteVersion(server_version);
-        rs.setRestrictReadVersion(true);
+        recordStream.setReadVersion(server_version);
+        recordStream.setWriteVersion(server_version);
+        recordStream.setRestrictReadVersion(true);
         tlsServerContext.setServerVersion(server_version);
 
         securityParameters.clientRandom = random;
@@ -412,7 +410,7 @@ public class TlsServerProtocol extends TlsProtocol {
         /*
          * Initialize our cipher suite
          */
-        rs.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
+        recordStream.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

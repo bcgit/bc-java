@@ -56,8 +56,8 @@ public abstract class TlsProtocol {
     /*
      * The Record Stream we use
      */
-    protected RecordStream rs;
-    protected SecureRandom random;
+    protected RecordStream recordStream;
+    protected SecureRandom secureRandom;
 
     private TlsInputStream tlsInputStream = null;
     private TlsOutputStream tlsOutputStream = null;
@@ -73,8 +73,8 @@ public abstract class TlsProtocol {
     protected boolean secure_renegotiation = false;
 
     public TlsProtocol(InputStream is, OutputStream os, SecureRandom sr) {
-        this.rs = new RecordStream(this, is, os);
-        this.random = sr;
+        this.recordStream = new RecordStream(this, is, os);
+        this.secureRandom = sr;
     }
 
     protected abstract TlsContext getContext();
@@ -98,7 +98,7 @@ public abstract class TlsProtocol {
             safeReadRecord();
         }
 
-        rs.finaliseHandshake();
+        recordStream.finaliseHandshake();
 
         /*
          * If this was an initial handshake, we are now ready to send and receive application data.
@@ -187,8 +187,8 @@ public abstract class TlsProtocol {
                         // NB: Fall through to next case label
                     }
                     default:
-                        rs.updateHandshakeData(beginning, 0, 4);
-                        rs.updateHandshakeData(buf, 0, len);
+                        recordStream.updateHandshakeData(beginning, 0, 4);
+                        recordStream.updateHandshakeData(buf, 0, len);
                         break;
                     }
 
@@ -230,7 +230,7 @@ public abstract class TlsProtocol {
                  * Now try to close the stream, ignore errors.
                  */
                 try {
-                    rs.close();
+                    recordStream.close();
                 } catch (Exception e) {
 
                 }
@@ -275,7 +275,7 @@ public abstract class TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
 
-            rs.receivedReadCipherSpec();
+            recordStream.receivedReadCipherSpec();
 
             handleChangeCipherSpecMessage();
         }
@@ -324,7 +324,7 @@ public abstract class TlsProtocol {
 
     protected void safeReadRecord() throws IOException {
         try {
-            rs.readRecord();
+            recordStream.readRecord();
         } catch (TlsFatalAlert e) {
             if (!this.closed) {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -345,7 +345,7 @@ public abstract class TlsProtocol {
 
     protected void safeWriteRecord(short type, byte[] buf, int offset, int len) throws IOException {
         try {
-            rs.writeRecord(type, buf, offset, len);
+            recordStream.writeRecord(type, buf, offset, len);
         } catch (TlsFatalAlert e) {
             if (!this.closed) {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -451,7 +451,7 @@ public abstract class TlsProtocol {
                 this.failedWithError = true;
             }
             sendAlert(alertLevel, alertDescription);
-            rs.close();
+            recordStream.close();
             if (alertLevel == AlertLevel.fatal) {
                 throw new IOException(TLS_ERROR_MESSAGE);
             }
@@ -511,7 +511,7 @@ public abstract class TlsProtocol {
     protected void sendChangeCipherSpecMessage() throws IOException {
         byte[] message = new byte[] { 1 };
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
-        rs.sentWriteCipherSpec();
+        recordStream.sentWriteCipherSpec();
     }
 
     protected void sendFinishedMessage() throws IOException {
@@ -549,11 +549,11 @@ public abstract class TlsProtocol {
 
         if (isServer) {
             return TlsUtils.calculateVerifyData(context, "server finished",
-                rs.getCurrentHash(TlsUtils.SSL_SERVER));
+                recordStream.getCurrentHash(TlsUtils.SSL_SERVER));
         }
 
         return TlsUtils.calculateVerifyData(context, "client finished",
-            rs.getCurrentHash(TlsUtils.SSL_CLIENT));
+            recordStream.getCurrentHash(TlsUtils.SSL_CLIENT));
     }
 
     /**
@@ -569,7 +569,7 @@ public abstract class TlsProtocol {
     }
 
     protected void flush() throws IOException {
-        rs.flush();
+        recordStream.flush();
     }
 
     protected static boolean arrayContains(short[] a, short n) {
@@ -602,6 +602,13 @@ public abstract class TlsProtocol {
         if (is.available() > 0) {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
+    }
+
+    protected static byte[] createRandomBlock(SecureRandom random) {
+        byte[] result = new byte[32];
+        random.nextBytes(result);
+        TlsUtils.writeGMTUnixTime(result, 0);
+        return result;
     }
 
     protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)

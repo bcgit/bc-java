@@ -67,13 +67,11 @@ public class TlsClientProtocol extends TlsProtocol {
         this.tlsClient = tlsClient;
 
         this.securityParameters = new SecurityParameters();
-        this.securityParameters.clientRandom = new byte[32];
-        random.nextBytes(securityParameters.clientRandom);
-        TlsUtils.writeGMTUnixTime(securityParameters.clientRandom, 0);
-
-        this.tlsClientContext = new TlsClientContextImpl(random, securityParameters);
+        this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
-        this.rs.init(tlsClientContext);
+        this.recordStream.init(tlsClientContext);
+
+        this.securityParameters.clientRandom = createRandomBlock(secureRandom);
 
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
@@ -243,13 +241,14 @@ public class TlsClientProtocol extends TlsProtocol {
                 /*
                  * Initialize our cipher suite
                  */
-                rs.setPendingConnectionState(tlsClient.getCompression(), tlsClient.getCipher());
+                recordStream.setPendingConnectionState(tlsClient.getCompression(),
+                    tlsClient.getCipher());
 
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials) {
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials) clientCreds;
-                    byte[] md5andsha1 = rs.getCurrentHash(null);
+                    byte[] md5andsha1 = recordStream.getCurrentHash(null);
                     byte[] clientCertificateSignature = signerCreds
                         .generateCertificateSignature(md5andsha1);
                     sendCertificateVerifyMessage(clientCertificateSignature);
@@ -360,7 +359,7 @@ public class TlsClientProtocol extends TlsProtocol {
         }
 
         // Check that this matches what the server is sending in the record layer
-        if (!server_version.equals(rs.getReadVersion())) {
+        if (!server_version.equals(recordStream.getReadVersion())) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
@@ -369,7 +368,7 @@ public class TlsClientProtocol extends TlsProtocol {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        this.rs.setWriteVersion(server_version);
+        this.recordStream.setWriteVersion(server_version);
         this.tlsClientContext.setServerVersion(server_version);
         this.tlsClient.notifyServerVersion(server_version);
 
@@ -511,7 +510,7 @@ public class TlsClientProtocol extends TlsProtocol {
 
     protected void sendClientHelloMessage() throws IOException {
 
-        rs.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
+        recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.client_hello, buf);
