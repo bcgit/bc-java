@@ -484,22 +484,6 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected static Vector receiveSupplementalDataMessage(ByteArrayInputStream buf) throws IOException {
-
-        ByteArrayInputStream supp_data = new ByteArrayInputStream(TlsUtils.readOpaque24(buf));
-
-        Vector supplementalData = new Vector();
-
-        while (supp_data.available() > 0) {
-            int supp_data_type = TlsUtils.readUint16(supp_data);
-            byte[] data = TlsUtils.readOpaque16(supp_data);
-
-            supplementalData.addElement(new SupplementalDataEntry(supp_data_type, data));
-        }
-
-        return supplementalData;
-    }
-
     protected void sendAlert(short alertLevel, short alertDescription) throws IOException {
         byte[] error = new byte[2];
         error[0] = (byte) alertLevel;
@@ -550,16 +534,7 @@ public abstract class TlsProtocol {
         // Reserve space for length
         TlsUtils.writeUint24(0, buf);
 
-        ByteArrayOutputStream supp_data = new ByteArrayOutputStream();
-
-        for (int i = 0; i < supplementalData.size(); ++i) {
-            SupplementalDataEntry entry = (SupplementalDataEntry)supplementalData.elementAt(i);
-
-            TlsUtils.writeUint16(entry.getDataType(), supp_data);
-            TlsUtils.writeOpaque16(entry.getData(), supp_data);
-        }
-
-        TlsUtils.writeOpaque24(supp_data.toByteArray(), buf);
+        writeSupplementalData(buf, supplementalData);
 
         byte[] message = buf.toByteArray();
 
@@ -643,7 +618,11 @@ public abstract class TlsProtocol {
             return null;
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(TlsUtils.readOpaque16(input));
+        byte[] extBytes = TlsUtils.readOpaque16(input);
+
+        assertEmpty(input);
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extBytes);
 
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
@@ -663,6 +642,27 @@ public abstract class TlsProtocol {
         return extensions;
     }
 
+    protected static Vector readSupplementalDataMessage(ByteArrayInputStream input)
+        throws IOException {
+
+        byte[] supp_data = TlsUtils.readOpaque24(input);
+
+        assertEmpty(input);
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(supp_data);
+
+        Vector supplementalData = new Vector();
+
+        while (buf.available() > 0) {
+            int supp_data_type = TlsUtils.readUint16(buf);
+            byte[] data = TlsUtils.readOpaque16(buf);
+
+            supplementalData.addElement(new SupplementalDataEntry(supp_data_type, data));
+        }
+
+        return supplementalData;
+    }
+
     protected static void writeExtensions(OutputStream output, Hashtable extensions)
         throws IOException {
 
@@ -677,6 +677,25 @@ public abstract class TlsProtocol {
             TlsUtils.writeOpaque16(extValue, buf);
         }
 
-        TlsUtils.writeOpaque16(buf.toByteArray(), output);
+        byte[] extBytes = buf.toByteArray();
+
+        TlsUtils.writeOpaque16(extBytes, output);
+    }
+
+    protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
+        throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        for (int i = 0; i < supplementalData.size(); ++i) {
+            SupplementalDataEntry entry = (SupplementalDataEntry) supplementalData.elementAt(i);
+
+            TlsUtils.writeUint16(entry.getDataType(), buf);
+            TlsUtils.writeOpaque16(entry.getData(), buf);
+        }
+
+        byte[] supp_data = buf.toByteArray();
+
+        TlsUtils.writeOpaque24(supp_data, output);
     }
 }

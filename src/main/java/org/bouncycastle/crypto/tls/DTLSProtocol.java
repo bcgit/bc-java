@@ -8,8 +8,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -58,7 +56,7 @@ public abstract class DTLSProtocol {
 
         if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
             // TODO Alert
-//            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         state.clientContext.setServerVersion(server_version);
@@ -81,6 +79,13 @@ public abstract class DTLSProtocol {
             serverMessage = handshake.receiveMessage();
         } else {
             // TODO Alert
+        }
+
+        if (serverMessage.getType() == HandshakeType.supplemental_data) {
+            processServerSupplementalData(state, serverMessage.getBody());
+            serverMessage = handshake.receiveMessage();
+        } else {
+            state.client.processServerSupplementalData(null);
         }
 
         if (serverMessage.getType() == HandshakeType.certificate) {
@@ -112,6 +117,12 @@ public abstract class DTLSProtocol {
             }
         } else {
             // TODO Alert
+        }
+
+        Vector clientSupplementalData = state.client.getClientSupplementalData();
+        if (clientSupplementalData != null) {
+            byte[] supplementalDataBody = generateSupplementalData(state, clientSupplementalData);
+            handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
         if (state.certificateRequest != null) {
@@ -306,6 +317,14 @@ public abstract class DTLSProtocol {
         return buf.toByteArray();
     }
 
+    private byte[] generateSupplementalData(HandshakeState state, Vector supplementalData)
+        throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsProtocol.writeSupplementalData(buf, supplementalData);
+        return buf.toByteArray();
+    }
+
     private byte[] parseHelloVerifyRequest(TlsClientContextImpl clientContext, byte[] body)
         throws IOException {
 
@@ -496,7 +515,7 @@ public abstract class DTLSProtocol {
                         // TODO Alert
                         // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
-               }
+                }
             }
         }
 
@@ -517,6 +536,12 @@ public abstract class DTLSProtocol {
         state.keyExchange.processServerKeyExchange(buf);
 
         TlsProtocol.assertEmpty(buf);
+    }
+
+    private void processServerSupplementalData(HandshakeState state, byte[] body) throws IOException {
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+        Vector serverSupplementalData = TlsProtocol.readSupplementalDataMessage(buf);
+        state.client.processServerSupplementalData(serverSupplementalData);
     }
 
     private static class HandshakeState {

@@ -93,9 +93,9 @@ public class TlsServerProtocol extends TlsProtocol {
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                Vector supplementalData = tlsServer.getServerSupplementalData();
-                if (supplementalData != null) {
-                    sendSupplementalDataMessage(supplementalData);
+                Vector serverSupplementalData = tlsServer.getServerSupplementalData();
+                if (serverSupplementalData != null) {
+                    sendSupplementalDataMessage(serverSupplementalData);
                 }
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
@@ -140,7 +140,7 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.supplemental_data: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO_DONE: {
-                tlsServer.processClientSupplementalData(receiveSupplementalDataMessage(buf));
+                tlsServer.processClientSupplementalData(readSupplementalDataMessage(buf));
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
                 break;
             }
@@ -400,8 +400,8 @@ public class TlsServerProtocol extends TlsProtocol {
             } finally {
                 // TODO Is there a way to ensure the data is really overwritten?
                 /*
-                 * RFC 2246 8.1. The pre_master_secret should be deleted from memory once
-                 * the master_secret has been computed.
+                 * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
+                 * master_secret has been computed.
                  */
                 if (pms != null) {
                     Arrays.fill(pms, (byte) 0);

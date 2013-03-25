@@ -148,7 +148,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.supplemental_data: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO:
-                tlsClient.processServerSupplementalData(receiveSupplementalDataMessage(buf));
+                tlsClient.processServerSupplementalData(readSupplementalDataMessage(buf));
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
                 break;
             default:
@@ -184,9 +184,9 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                Vector supplementalData = tlsClient.getClientSupplementalData();
-                if (supplementalData != null) {
-                    sendSupplementalDataMessage(supplementalData);
+                Vector clientSupplementalData = tlsClient.getClientSupplementalData();
+                if (clientSupplementalData != null) {
+                    sendSupplementalDataMessage(clientSupplementalData);
                 }
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
