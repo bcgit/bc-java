@@ -25,8 +25,9 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         ClientHandshakeState state = new ClientHandshakeState();
         state.client = client;
-        state.clientContext = createClientContext();
-
+        state.clientContext = new TlsClientContextImpl(secureRandom, new SecurityParameters());
+        state.clientContext.getSecurityParameters().clientRandom = TlsProtocol
+            .createRandomBlock(secureRandom);
         client.init(state.clientContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext,
@@ -38,19 +39,21 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
-        // NOTE: After receiving a record from the server, we discover the version it chose
-        ProtocolVersion server_version = recordLayer.getDiscoveredPeerVersion();
-        ProtocolVersion client_version = state.clientContext.getClientVersion();
+        {
+            // NOTE: After receiving a record from the server, we discover the record layer version
+            ProtocolVersion server_version = recordLayer.getDiscoveredPeerVersion();
+            ProtocolVersion client_version = state.clientContext.getClientVersion();
 
-        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
-            // TODO Alert
-            // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
+                // TODO Alert
+                // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            }
+
+            state.clientContext.setServerVersion(server_version);
+            client.notifyServerVersion(server_version);
         }
 
-        state.clientContext.setServerVersion(server_version);
-        client.notifyServerVersion(server_version);
-
-        if (serverMessage.getType() == HandshakeType.hello_verify_request) {
+        while (serverMessage.getType() == HandshakeType.hello_verify_request) {
             byte[] cookie = parseHelloVerifyRequest(state.clientContext, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
@@ -58,8 +61,6 @@ public class DTLSClientProtocol extends DTLSProtocol {
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
             serverMessage = handshake.receiveMessage();
-        } else {
-            // Okay, HelloVerifyRequest is optional
         }
 
         if (serverMessage.getType() == HandshakeType.server_hello) {
@@ -184,16 +185,6 @@ public class DTLSClientProtocol extends DTLSProtocol {
         return new DTLSTransport(recordLayer);
     }
 
-    protected TlsClientContextImpl createClientContext() {
-        SecurityParameters securityParameters = new SecurityParameters();
-
-        securityParameters.clientRandom = new byte[32];
-        secureRandom.nextBytes(securityParameters.clientRandom);
-        TlsUtils.writeGMTUnixTime(securityParameters.clientRandom, 0);
-
-        return new TlsClientContextImpl(secureRandom, securityParameters);
-    }
-
     protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature)
         throws IOException {
 
@@ -315,7 +306,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
     }
 
-    protected void processServerCertificate(ClientHandshakeState state, byte[] body) throws IOException {
+    protected void processServerCertificate(ClientHandshakeState state, byte[] body)
+        throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
