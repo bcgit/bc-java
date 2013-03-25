@@ -163,6 +163,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         recordLayer.initPendingEpoch(state.client.getCipher());
 
+        // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
             "client finished", handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
