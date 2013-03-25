@@ -417,7 +417,7 @@ public class TlsUtils
 
         if (!context.getServerVersion().isSSL())
         {
-            return PRF(sp.masterSecret, "key expansion", random, size);
+            return PRF(sp.masterSecret, ExporterLabel.key_expansion, random, size);
         }
 
         Digest md5 = new MD5Digest();
@@ -449,14 +449,14 @@ public class TlsUtils
         return rval;
     }
 
-    static byte[] calculateMasterSecret(TlsContext context, byte[] pms)
+    static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
     {
         SecurityParameters sp = context.getSecurityParameters();
         byte[] random = concat(sp.clientRandom, sp.serverRandom);
 
         if (!context.getServerVersion().isSSL())
         {
-            return PRF(pms, "master secret", random, 48);
+            return PRF(pre_master_secret, ExporterLabel.master_secret, random, 48);
         }
 
         Digest md5 = new MD5Digest();
@@ -472,11 +472,11 @@ public class TlsUtils
             byte[] ssl3Const = SSL3_CONST[i];
 
             sha1.update(ssl3Const, 0, ssl3Const.length);
-            sha1.update(pms, 0, pms.length);
+            sha1.update(pre_master_secret, 0, pre_master_secret.length);
             sha1.update(random, 0, random.length);
             sha1.doFinal(shatmp, 0);
 
-            md5.update(pms, 0, pms.length);
+            md5.update(pre_master_secret, 0, pre_master_secret.length);
             md5.update(shatmp, 0, shatmp.length);
             md5.doFinal(rval, pos);
 
