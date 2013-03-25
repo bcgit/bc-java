@@ -45,6 +45,7 @@ public class TlsServerProtocol extends TlsProtocol {
         this.tlsServer = tlsServer;
 
         this.securityParameters = new SecurityParameters();
+        this.securityParameters.serverRandom = createRandomBlock(secureRandom);
         this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
@@ -85,8 +86,6 @@ public class TlsServerProtocol extends TlsProtocol {
             case CS_START: {
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
-
-                securityParameters.serverRandom = createRandomBlock(secureRandom);
 
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
