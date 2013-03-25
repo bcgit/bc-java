@@ -65,7 +65,40 @@ public class DTLSServerProtocol extends DTLSProtocol {
             handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
-        return null;
+        // TODO Send Certificate
+
+        // TODO Send ServerKeyExchange
+
+        // TODO Send CertificateRequest
+
+        // TODO Send ServerHelloDone
+
+        // TODO Lots more...
+        
+        recordLayer.initPendingEpoch(state.server.getCipher());
+
+        // NOTE: Calculated exclusive of the actual Finished message from the client
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
+            "client finished", handshake.getCurrentHash());
+        clientMessage = handshake.receiveMessage();
+
+        if (clientMessage.getType() == HandshakeType.finished) {
+            processFinished(clientMessage.getBody(), expectedClientVerifyData);
+        } else {
+            // TODO Alert
+        }
+
+        // NOTE: Calculated exclusive of the Finished message itself
+        byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
+            "server finished", handshake.getCurrentHash());
+        handshake.sendMessage(HandshakeType.finished, serverVerifyData);
+
+        // TODO Need an alternative here that supports resending of our final flight
+        handshake.finish();
+
+        recordLayer.handshakeSuccessful();
+
+        return new DTLSTransport(recordLayer);
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body) throws IOException {
