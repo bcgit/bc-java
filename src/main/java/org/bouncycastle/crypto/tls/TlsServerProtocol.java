@@ -512,6 +512,6 @@ public class TlsServerProtocol extends TlsProtocol {
     }
 
     protected void skipCertificateVerifyMessage() {
-        // TODO
+        // TODO Inform tlsServer that there's no CertificateVerify
     }
 }

@@ -184,6 +184,8 @@ class DTLSReliableHandshake {
         else {
             checkInboundFlight();
         }
+
+        recordLayer.handshakeSuccessful();
     }
 
     void resetHandshakeMessagesDigest() {

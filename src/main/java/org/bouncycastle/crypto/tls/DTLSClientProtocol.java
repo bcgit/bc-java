@@ -181,8 +181,6 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         handshake.finish();
 
-        recordLayer.handshakeSuccessful();
-
         return new DTLSTransport(recordLayer);
     }
 
@@ -219,27 +217,6 @@ public class DTLSClientProtocol extends DTLSProtocol {
          * Cipher suites
          */
         state.offeredCipherSuites = client.getCipherSuites();
-
-        for (int cipherSuite : state.offeredCipherSuites) {
-            switch (cipherSuite) {
-            case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
-            case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
-            case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_DH_anon_EXPORT_WITH_RC4_40_MD5:
-            case CipherSuite.TLS_DH_anon_WITH_RC4_128_MD5:
-            case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
-            case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
-                // TODO Alert
-                throw new IllegalStateException(
-                    "Client offered an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
-            }
-        }
 
         // Integer -> byte[]
         state.clientExtensions = client.getClientExtensions();
@@ -325,6 +302,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
+        // TODO Read RFCs for guidance on the expected record layer version number
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
         if (!server_version.equals(state.clientContext.getServerVersion())) {
             // TODO Alert
@@ -345,6 +323,9 @@ public class DTLSClientProtocol extends DTLSProtocol {
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
+
+        validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter);
+
         state.client.notifySelectedCipherSuite(selectedCipherSuite);
 
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
@@ -453,6 +434,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
     protected void processServerSupplementalData(ClientHandshakeState state, byte[] body)
         throws IOException {
+
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
         Vector serverSupplementalData = TlsProtocol.readSupplementalDataMessage(buf);
         state.client.processServerSupplementalData(serverSupplementalData);
