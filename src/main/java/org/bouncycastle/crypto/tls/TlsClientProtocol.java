@@ -162,7 +162,7 @@ public class TlsClientProtocol extends TlsProtocol {
             case CS_SERVER_SUPPLEMENTAL_DATA: {
 
                 // There was no server certificate message; check it's OK
-                this.keyExchange.skipServerCertificate();
+                this.keyExchange.skipServerCredentials();
                 this.authentication = null;
 
                 // NB: Fall through to next case label
@@ -255,7 +255,7 @@ public class TlsClientProtocol extends TlsProtocol {
             case CS_SERVER_SUPPLEMENTAL_DATA: {
 
                 // There was no server certificate message; check it's OK
-                this.keyExchange.skipServerCertificate();
+                this.keyExchange.skipServerCredentials();
                 this.authentication = null;
 
                 // NB: Fall through to next case label

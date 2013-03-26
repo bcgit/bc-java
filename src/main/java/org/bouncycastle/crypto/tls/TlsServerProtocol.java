@@ -63,6 +63,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         switch (this.connection_state) {
         case CS_CLIENT_KEY_EXCHANGE: {
+            // TODO Check whether the client Certificate has signing capability
             skipCertificateVerifyMessage();
             // NB: Fall through to next case label
         }
@@ -101,7 +102,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
                 TlsCredentials serverCredentials = tlsServer.getCredentials();
                 if (serverCredentials == null) {
-                    this.keyExchange.skipServerCertificate();
+                    this.keyExchange.skipServerCredentials();
                 } else {
                     this.keyExchange.processServerCredentials(serverCredentials);
                     sendCertificateMessage(serverCredentials.getCertificate());
@@ -191,7 +192,7 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.certificate_verify: {
             switch (this.connection_state) {
             case CS_CLIENT_KEY_EXCHANGE: {
-                // TODO Check there is a client Certificate with signing capability
+                // TODO Check whether the client Certificate has signing capability
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
                 break;
@@ -253,8 +254,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         assertEmpty(buf);
 
-        // TODO
-        // this.keyExchange.processClientCredentials(clientCredentials);
+        this.keyExchange.processClientCertificate(clientCertificate);
     }
 
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf) throws IOException {

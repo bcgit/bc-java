@@ -27,7 +27,7 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
         super();
     }
 
-    public void skipServerCertificate() throws IOException {
+    public void skipServerCredentials() throws IOException {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 

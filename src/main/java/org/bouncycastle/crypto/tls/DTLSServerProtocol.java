@@ -76,7 +76,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         TlsCredentials serverCredentials = state.server.getCredentials();
         if (serverCredentials == null) {
-            state.keyExchange.skipServerCertificate();
+            state.keyExchange.skipServerCredentials();
         } else {
             state.keyExchange.processServerCredentials(serverCredentials);
 
@@ -136,6 +136,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
         // NOTE: Calculated exclusive of the actual Finished message from the client
         byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
             "client finished", handshake.getCurrentHash());
+
+        // TODO Check whether the client Certificate has signing capability
 
         if (clientMessage.getType() == HandshakeType.certificate_verify) {
             processCertificateVerify(state, clientMessage.getBody());
@@ -236,8 +238,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         TlsProtocol.assertEmpty(buf);
 
-        // TODO
-        // state.keyExchange.processClientCredentials(clientCredentials);
+        state.keyExchange.processClientCertificate(clientCertificate);
     }
 
     protected void processCertificateVerify(ServerHandshakeState state, byte[] body)

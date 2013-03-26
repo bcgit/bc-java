@@ -50,7 +50,7 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
         this.pskIdentity = pskIdentity;
     }
 
-    public void skipServerCertificate() throws IOException
+    public void skipServerCredentials() throws IOException
     {
         if (keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {

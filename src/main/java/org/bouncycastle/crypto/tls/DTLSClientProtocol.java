@@ -82,7 +82,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             serverMessage = handshake.receiveMessage();
         } else {
             // Okay, Certificate is optional
-            state.keyExchange.skipServerCertificate();
+            state.keyExchange.skipServerCredentials();
         }
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange) {

@@ -11,9 +11,9 @@ public interface TlsKeyExchange {
 
     void init(TlsContext context);
 
-    void processServerCredentials(TlsCredentials serverCredentials) throws IOException;
+    void skipServerCredentials() throws IOException;
 
-    void skipServerCertificate() throws IOException;
+    void processServerCredentials(TlsCredentials serverCredentials) throws IOException;
 
     void processServerCertificate(Certificate serverCertificate) throws IOException;
 
@@ -30,6 +30,8 @@ public interface TlsKeyExchange {
     void skipClientCredentials() throws IOException;
 
     void processClientCredentials(TlsCredentials clientCredentials) throws IOException;
+
+    void processClientCertificate(Certificate clientCertificate) throws IOException;
 
     void generateClientKeyExchange(OutputStream output) throws IOException;
 

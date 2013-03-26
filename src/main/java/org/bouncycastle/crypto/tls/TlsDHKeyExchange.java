@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
@@ -28,6 +29,8 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
     protected TlsAgreementCredentials agreementCredentials;
     protected DHPrivateKeyParameters dhAgreeClientPrivateKey = null;
 
+    protected DHPublicKeyParameters dhAgreeClientPublicKey = null;
+
     TlsDHKeyExchange(int keyExchange) {
         switch (keyExchange) {
         case KeyExchangeAlgorithm.DH_RSA:
@@ -47,7 +50,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         this.keyExchange = keyExchange;
     }
 
-    public void skipServerCertificate() throws IOException {
+    public void skipServerCredentials() throws IOException {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
@@ -139,8 +142,14 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
          * Exchange message will be sent, but will be empty.
          */
         if (agreementCredentials == null) {
-            generateEphemeralClientKeyExchange(dhAgreeServerPublicKey.getParameters(), os);
+            this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
+                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), os);
         }
+    }
+
+    public void processClientKeyExchange(InputStream input) throws IOException {
+        // TODO Auto-generated method stub
+        super.processClientKeyExchange(input);
     }
 
     public byte[] generatePremasterSecret() throws IOException {
@@ -162,12 +171,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
 
     protected AsymmetricCipherKeyPair generateDHKeyPair(DHParameters dhParams) {
         return TlsDHUtils.generateDHKeyPair(context.getSecureRandom(), dhParams);
-    }
-
-    protected void generateEphemeralClientKeyExchange(DHParameters dhParams, OutputStream os)
-        throws IOException {
-        this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
-            context.getSecureRandom(), dhParams, os);
     }
 
     protected DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key)

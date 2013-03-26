@@ -57,7 +57,7 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         this.password = password;
     }
 
-    public void skipServerCertificate() throws IOException
+    public void skipServerCredentials() throws IOException
     {
         if (tlsSigner != null)
         {
