@@ -5,9 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
+import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
+import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.util.BigIntegers;
@@ -35,25 +39,29 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        SecurityParameters sp = context.getSecurityParameters();
-        byte[] cr = sp.clientRandom, sr = sp.serverRandom;
+        // TODO Allow specification of DH parameters to use
+        DHParametersGenerator pg = new DHParametersGenerator();
+        pg.init(512, 100, context.getSecureRandom());
+        DHParameters dhParameters = pg.generateParameters();
 
-        // TODO Determine ephemeral DH parameters to use
-        BigInteger p = BigInteger.ONE;
-        BigInteger g = BigInteger.ONE;
-        BigInteger Ys = BigInteger.ONE;
+        DHKeyPairGenerator kpg = new DHKeyPairGenerator();
+        kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), dhParameters));
+        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(p), buf);
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(g), buf);
+        BigInteger Ys = ((DHPublicKeyParameters) kp.getPublic()).getY();
+
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(dhParameters.getP()), buf);
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(dhParameters.getG()), buf);
         TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(Ys), buf);
 
         byte[] digestInput = buf.toByteArray();
 
         Digest d = new CombinedHash();
-        d.update(cr, 0, cr.length);
-        d.update(sr, 0, sr.length);
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
+        d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         d.update(digestInput, 0, digestInput.length);
-        
+
         byte[] hash = new byte[d.getDigestSize()];
         d.doFinal(hash, 0);
 
@@ -63,18 +71,18 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
         return buf.toByteArray();
     }
 
-    public void processServerKeyExchange(InputStream is) throws IOException {
+    public void processServerKeyExchange(InputStream input) throws IOException {
 
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         Signer signer = initVerifyer(tlsSigner, securityParameters);
-        InputStream sigIn = new SignerInputStream(is, signer);
+        InputStream sigIn = new SignerInputStream(input, signer);
 
         byte[] pBytes = TlsUtils.readOpaque16(sigIn);
         byte[] gBytes = TlsUtils.readOpaque16(sigIn);
         byte[] YsBytes = TlsUtils.readOpaque16(sigIn);
 
-        byte[] sigBytes = TlsUtils.readOpaque16(is);
+        byte[] sigBytes = TlsUtils.readOpaque16(input);
         if (!signer.verifySignature(sigBytes)) {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
