@@ -30,9 +30,10 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
 
     public byte[] getBytes(byte[] input)
     {
-        _underlyingCipher.update(input, 0, input.length);
-        byte[] hash = new byte[_underlyingCipher.getDigestSize()];
-        _underlyingCipher.doFinal(hash, 0);
+        // TODO:
+        //_underlyingCipher.update(input, 0, input.length);
+        byte[] hash = new byte[_underlyingCipher.getBlockSize()];
+        //_underlyingCipher.doFinal(hash, 0);
         return hash;
     }
 
@@ -153,7 +154,9 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
 
     public byte[] getByteGen(byte[] input, int length)
     {
-        return byteGenProcess(_underlyingCipher, input, length);
+        // TODO:
+        // return byteGenProcess(_underlyingCipher, input, length);
+        return null;
     }
 
     // 1. m = [requested_number_of_bits / outlen]
@@ -203,5 +206,4 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
             longer[longer.length - i] = (byte)res;
         }
     }
-
 }
