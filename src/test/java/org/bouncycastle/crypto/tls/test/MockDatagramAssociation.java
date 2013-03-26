@@ -71,7 +71,10 @@ public class MockDatagramAssociation {
                 // TODO Simulate rejection?
             }
 
-            DatagramPacket packet = new DatagramPacket(buf, off, len);
+            byte[] copy = new byte[len];
+            System.arraycopy(buf, off, copy, 0, len);
+            DatagramPacket packet = new DatagramPacket(copy, len);
+
             synchronized (sendQueue) {
                 sendQueue.addElement(packet);
                 sendQueue.notify();
