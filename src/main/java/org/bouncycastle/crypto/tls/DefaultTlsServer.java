@@ -13,6 +13,7 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
     }
 
     protected int[] getCipherSuites() {
+        // TODO Flesh out the default list
         return new int[] { CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
     }
 

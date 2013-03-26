@@ -26,7 +26,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         this.verifyRequests = verifyRequests;
     }
 
-    public DTLSTransport connect(TlsServer server, DatagramTransport transport) throws IOException {
+    public DTLSTransport accept(TlsServer server, DatagramTransport transport) throws IOException {
 
         if (server == null)
             throw new IllegalArgumentException("'server' cannot be null");
@@ -58,7 +58,6 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         if (clientMessage.getType() == HandshakeType.client_hello) {
             processClientHello(state, clientMessage.getBody());
-            clientMessage = handshake.receiveMessage();
         } else {
             // TODO Alert
         }
@@ -126,12 +125,13 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         if (clientMessage.getType() == HandshakeType.client_key_exchange) {
             processClientKeyExchange(state, clientMessage.getBody());
-            clientMessage = handshake.receiveMessage();
         } else {
             // TODO Alert
         }
 
         recordLayer.initPendingEpoch(state.server.getCipher());
+
+        clientMessage = handshake.receiveMessage();
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
         byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
@@ -272,6 +272,10 @@ public class DTLSServerProtocol extends DTLSProtocol {
             // TODO Alert
             // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
+
+        byte[] cookie = TlsUtils.readOpaque8(buf);
+
+        // TODO RFC 4347 has the cookie length restricted to 32, but not in RFC 6347
 
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0) {
