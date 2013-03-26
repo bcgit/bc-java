@@ -14,10 +14,9 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
- * TLS 1.0 DH key exchange.
+ * TLS 1.0/1.1 DH key exchange.
  */
-class TlsDHKeyExchange extends AbstractTlsKeyExchange
-{
+class TlsDHKeyExchange extends AbstractTlsKeyExchange {
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
@@ -29,86 +28,68 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected DHPrivateKeyParameters dhAgreeClientPrivateKey = null;
 
-    TlsDHKeyExchange(int keyExchange)
-    {
-        switch (keyExchange)
-        {
-            case KeyExchangeAlgorithm.DH_RSA:
-            case KeyExchangeAlgorithm.DH_DSS:
-                this.tlsSigner = null;
-                break;
-            case KeyExchangeAlgorithm.DHE_RSA:
-                this.tlsSigner = new TlsRSASigner();
-                break;
-            case KeyExchangeAlgorithm.DHE_DSS:
-                this.tlsSigner = new TlsDSSSigner();
-                break;
-            default:
-                throw new IllegalArgumentException("unsupported key exchange algorithm");
+    TlsDHKeyExchange(int keyExchange) {
+        switch (keyExchange) {
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_DSS:
+            this.tlsSigner = null;
+            break;
+        case KeyExchangeAlgorithm.DHE_RSA:
+            this.tlsSigner = new TlsRSASigner();
+            break;
+        case KeyExchangeAlgorithm.DHE_DSS:
+            this.tlsSigner = new TlsDSSSigner();
+            break;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
         this.keyExchange = keyExchange;
     }
 
-    public void skipServerCertificate() throws IOException
-    {
+    public void skipServerCertificate() throws IOException {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
-    public void processServerCertificate(Certificate serverCertificate) throws IOException
-    {
-        if (serverCertificate.isEmpty())
-        {
+    public void processServerCertificate(Certificate serverCertificate) throws IOException {
+        if (serverCertificate.isEmpty()) {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
         org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
 
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        try
-        {
+        try {
             this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
+        } catch (RuntimeException e) {
             throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
         }
 
-        if (tlsSigner == null)
-        {
-            try
-            {
-                this.dhAgreeServerPublicKey = validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
-            }
-            catch (ClassCastException e)
-            {
+        if (tlsSigner == null) {
+            try {
+                this.dhAgreeServerPublicKey = validateDHPublicKey((DHPublicKeyParameters) this.serverPublicKey);
+            } catch (ClassCastException e) {
                 throw new TlsFatalAlert(AlertDescription.certificate_unknown);
             }
 
             TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
-        }
-        else
-        {
-            if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
-            {
+        } else {
+            if (!tlsSigner.isValidPublicKey(this.serverPublicKey)) {
                 throw new TlsFatalAlert(AlertDescription.certificate_unknown);
             }
 
             TlsUtils.validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
         }
 
-        // TODO 
+        // TODO
         /*
-         * Perform various checks per RFC2246 7.4.2: "Unless otherwise specified, the
-         * signing algorithm for the certificate must be the same as the algorithm for the
-         * certificate key."
+         * Perform various checks per RFC2246 7.4.2: "Unless otherwise specified, the signing
+         * algorithm for the certificate must be the same as the algorithm for the certificate key."
          */
     }
 
-    public boolean requiresServerKeyExchange()
-    {
-        switch (keyExchange)
-        {
+    public boolean requiresServerKeyExchange() {
+        switch (keyExchange) {
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.DH_anon:
@@ -119,96 +100,78 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException
-    {
+        throws IOException {
         short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-                case ClientCertificateType.rsa_sign:
-                case ClientCertificateType.dss_sign:
-                case ClientCertificateType.rsa_fixed_dh:
-                case ClientCertificateType.dss_fixed_dh:
-                case ClientCertificateType.ecdsa_sign:
-                    break;
-                default:
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        for (int i = 0; i < types.length; ++i) {
+            switch (types[i]) {
+            case ClientCertificateType.rsa_sign:
+            case ClientCertificateType.dss_sign:
+            case ClientCertificateType.rsa_fixed_dh:
+            case ClientCertificateType.dss_fixed_dh:
+            case ClientCertificateType.ecdsa_sign:
+                break;
+            default:
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
     }
 
-    public void skipClientCredentials() throws IOException
-    {
+    public void skipClientCredentials() throws IOException {
         this.agreementCredentials = null;
     }
 
-    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
-    {
-        if (clientCredentials instanceof TlsAgreementCredentials)
-        {
+    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException {
+        if (clientCredentials instanceof TlsAgreementCredentials) {
             // TODO Validate client cert has matching parameters (see 'areCompatibleParameters')?
 
-            this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
-        }
-        else if (clientCredentials instanceof TlsSignerCredentials)
-        {
+            this.agreementCredentials = (TlsAgreementCredentials) clientCredentials;
+        } else if (clientCredentials instanceof TlsSignerCredentials) {
             // OK
-        }
-        else
-        {
+        } else {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException
-    {
+    public void generateClientKeyExchange(OutputStream os) throws IOException {
         /*
-         * RFC 2246 7.4.7.2 If the client certificate already contains a suitable
-         * Diffie-Hellman key, then Yc is implicit and does not need to be sent again. In
-         * this case, the Client Key Exchange message will be sent, but will be empty.
+         * RFC 2246 7.4.7.2 If the client certificate already contains a suitable Diffie-Hellman
+         * key, then Yc is implicit and does not need to be sent again. In this case, the Client Key
+         * Exchange message will be sent, but will be empty.
          */
-        if (agreementCredentials == null)
-        {
+        if (agreementCredentials == null) {
             generateEphemeralClientKeyExchange(dhAgreeServerPublicKey.getParameters(), os);
         }
     }
 
-    public byte[] generatePremasterSecret() throws IOException
-    {
-        if (agreementCredentials != null)
-        {
+    public byte[] generatePremasterSecret() throws IOException {
+        if (agreementCredentials != null) {
             return agreementCredentials.generateAgreement(dhAgreeServerPublicKey);
         }
 
         return calculateDHBasicAgreement(dhAgreeServerPublicKey, dhAgreeClientPrivateKey);
     }
 
-    protected boolean areCompatibleParameters(DHParameters a, DHParameters b)
-    {
+    protected boolean areCompatibleParameters(DHParameters a, DHParameters b) {
         return a.getP().equals(b.getP()) && a.getG().equals(b.getG());
     }
 
     protected byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey,
-        DHPrivateKeyParameters privateKey)
-    {
+        DHPrivateKeyParameters privateKey) {
         return TlsDHUtils.calculateDHBasicAgreement(publicKey, privateKey);
     }
 
-    protected AsymmetricCipherKeyPair generateDHKeyPair(DHParameters dhParams)
-    {
+    protected AsymmetricCipherKeyPair generateDHKeyPair(DHParameters dhParams) {
         return TlsDHUtils.generateDHKeyPair(context.getSecureRandom(), dhParams);
     }
 
     protected void generateEphemeralClientKeyExchange(DHParameters dhParams, OutputStream os)
-        throws IOException
-    {
-        this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(), dhParams, os);
+        throws IOException {
+        this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
+            context.getSecureRandom(), dhParams, os);
     }
 
     protected DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key)
-        throws IOException
-    {
+        throws IOException {
         return TlsDHUtils.validateDHPublicKey(key);
     }
 }
