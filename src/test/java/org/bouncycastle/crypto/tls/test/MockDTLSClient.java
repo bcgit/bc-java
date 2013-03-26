@@ -35,7 +35,7 @@ public class MockDTLSClient extends DefaultTlsClient {
                 System.out.println("Received server certificate chain of length "
                     + chain.length);
                 for (Certificate entry : chain) {
-                    System.out.println("    SHA-256 Fingerprint=" + fingerprint(entry) + " ("
+                    System.out.println("    fingerprint:SHA-256 " + fingerprint(entry) + " ("
                         + entry.getSubject() + ")");
                 }
             }
