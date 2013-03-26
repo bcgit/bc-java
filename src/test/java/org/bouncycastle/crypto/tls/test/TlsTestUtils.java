@@ -43,38 +43,45 @@ public class TlsTestUtils {
             + "0lAQH/BAgwBgYEVR0lADAcBgNVHREBAf8EEjAQgQ50ZXN0QHRlc3QudGVzdDANBgkqhkiG9w0BAQQFAANBAJg55PBS"
             + "weg6obRUKF4FF6fCrWFi6oCYSQ99LWcAeupc5BofW5MstFMhCOaEucuGVqunwT5G7/DweazzCIrSzB0=");
 
-    static TlsAgreementCredentials loadAgreementCredentials(TlsContext context, String certResource,
-        String keyResource) throws IOException {
+    static TlsAgreementCredentials loadAgreementCredentials(TlsContext context,
+        String[] certResources, String keyResource) throws IOException {
 
-        Certificate certificate = new Certificate(
-            new org.bouncycastle.asn1.x509.Certificate[] { loadCertificateResource(certResource) });
+        Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         return new DefaultTlsAgreementCredentials(certificate, privateKey);
     }
 
-    static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context, String certResource,
-        String keyResource) throws IOException {
+    static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context,
+        String[] certResources, String keyResource) throws IOException {
 
-        Certificate certificate = new Certificate(
-            new org.bouncycastle.asn1.x509.Certificate[] { loadCertificateResource(certResource) });
+        Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         return new DefaultTlsEncryptionCredentials(context, certificate, privateKey);
     }
 
-    static TlsSignerCredentials loadSignerCredentials(TlsContext context, String certResource,
+    static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
         String keyResource) throws IOException {
 
-        Certificate certificate = new Certificate(
-            new org.bouncycastle.asn1.x509.Certificate[] { loadCertificateResource(certResource) });
+        Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         return new DefaultTlsSignerCredentials(context, certificate, privateKey);
     }
 
+    static Certificate loadCertificateChain(String[] resources) throws IOException {
+
+        org.bouncycastle.asn1.x509.Certificate[] chain = new org.bouncycastle.asn1.x509.Certificate[resources.length];
+        for (int i = 0; i < resources.length; ++i) {
+            chain[i] = loadCertificateResource(resources[i]);
+        }
+        return new Certificate(chain);
+    }
+
     static org.bouncycastle.asn1.x509.Certificate loadCertificateResource(String resource)
         throws IOException {
+
         PemObject pem = loadPemResource(resource);
         if (pem.getType().endsWith("CERTIFICATE")) {
             return org.bouncycastle.asn1.x509.Certificate.getInstance(pem.getContent());
@@ -83,6 +90,7 @@ public class TlsTestUtils {
     }
 
     static AsymmetricKeyParameter loadPrivateKeyResource(String resource) throws IOException {
+
         PemObject pem = loadPemResource(resource);
         if (pem.getType().endsWith("RSA PRIVATE KEY")) {
             RSAPrivateKey rsa = RSAPrivateKey.getInstance(pem.getContent());
@@ -97,6 +105,7 @@ public class TlsTestUtils {
     }
 
     static PemObject loadPemResource(String resource) throws IOException {
+
         InputStream s = TlsTestUtils.class.getResourceAsStream(resource);
         PemReader p = new PemReader(new InputStreamReader(s));
         PemObject o = p.readPemObject();

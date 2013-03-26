@@ -20,10 +20,11 @@ public class MockDTLSServer extends DefaultTlsServer {
     }
 
     public TlsCredentials getCredentials() throws IOException {
+
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
-            return TlsTestUtils.loadEncryptionCredentials(context, "x509-server.pem",
-                "x509-server-key.pem");
+            return TlsTestUtils.loadEncryptionCredentials(context, new String[] {
+                "x509-server.pem", "x509-ca.pem" }, "x509-server-key.pem");
 
         default:
             /*
