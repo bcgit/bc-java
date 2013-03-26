@@ -6,17 +6,16 @@ import java.net.InetAddress;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.crypto.tls.AlertDescription;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
-import org.bouncycastle.crypto.tls.DTLSProtocol;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.UDPTransport;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * A simple test designed to conduct a DTLS handshake with an external DTLS server.
@@ -86,10 +85,35 @@ public class DTLSClientTest {
                     System.out.println("Received server certificate chain of length "
                         + chain.length);
                     for (Certificate entry : chain) {
-                        System.out.println("    " + entry.getSubject());
+                        System.out.println("    SHA1 Fingerprint=" + fingerprint(entry) + " ("
+                            + entry.getSubject() + ")");
                     }
                 }
             };
+        }
+
+        private static String fingerprint(Certificate c) throws IOException {
+            byte[] der = c.getEncoded();
+            byte[] sha1 = sha1DigestOf(der);
+            byte[] hexBytes = Hex.encode(sha1);
+            String hex = new String(hexBytes, "ASCII").toUpperCase();
+
+            StringBuffer fp = new StringBuffer();
+            int i = 0;
+            fp.append(hex.substring(i, i + 2));
+            while ((i += 2) < hex.length()) {
+                fp.append(':');
+                fp.append(hex.substring(i, i + 2));
+            }
+            return fp.toString();
+        }
+
+        private static byte[] sha1DigestOf(byte[] input) {
+            SHA1Digest d = new SHA1Digest();
+            d.update(input, 0, input.length);
+            byte[] result = new byte[d.getDigestSize()];
+            d.doFinal(result, 0);
+            return result;
         }
     }
 }
