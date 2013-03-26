@@ -448,9 +448,12 @@ public class OCBBlockCipher implements AEADBlockCipher {
     protected static byte[] OCB_double(byte[] block) {
         byte[] result = new byte[16];
         int carry = shiftLeft(block, result);
-        if (carry != 0) {
-            result[15] ^= 0x87;
-        }
+
+        /*
+         * NOTE: This construction is an attempt at a constant-time implementation.
+         */
+        result[15] ^= (0x87 >>> ((1 - carry) << 3));
+
         return result;
     }
 
