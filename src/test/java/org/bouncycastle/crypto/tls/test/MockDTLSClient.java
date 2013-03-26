@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
@@ -12,12 +11,6 @@ import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.util.encoders.Hex;
 
 public class MockDTLSClient extends DefaultTlsClient {
-
-    public int[] getCipherSuites() {
-        return new int[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
-    }
 
     public ProtocolVersion getClientVersion() {
         return ProtocolVersion.DTLSv10;
