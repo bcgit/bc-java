@@ -90,6 +90,9 @@ class DTLSReliableHandshake {
             try {
                 for (;;) {
                     int received = recordLayer.receive(buf, 0, receiveLimit, readTimeoutMillis);
+                    if (received < 0) {
+                        break;
+                    }
                     if (received < 12) {
                         // TODO What kind of exception?
                         continue;
@@ -180,8 +183,7 @@ class DTLSReliableHandshake {
     void finish() {
         if (sending) {
             // TODO Support case when this side sends the final handshake message
-        }
-        else {
+        } else {
             checkInboundFlight();
         }
 

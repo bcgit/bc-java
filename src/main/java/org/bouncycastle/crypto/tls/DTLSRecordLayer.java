@@ -90,6 +90,9 @@ class DTLSRecordLayer implements DatagramTransport {
 
             try {
                 int received = receiveRecord(record, 0, receiveLimit, waitMillis);
+                if (received < 0) {
+                    return received;
+                }
                 if (received < RECORD_HEADER_LENGTH) {
                     // TODO What kind of exception?
                     continue;
@@ -255,8 +258,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
-        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion
-            : context.getClientVersion();
+        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion : context
+            .getClientVersion();
         TlsUtils.writeVersion(version, record, 1);
         TlsUtils.writeUint16(recordEpoch, record, 3);
         TlsUtils.writeUint48(recordSequenceNumber, record, 5);
