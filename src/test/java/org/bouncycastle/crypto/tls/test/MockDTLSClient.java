@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.tls.test;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
@@ -35,7 +35,7 @@ public class MockDTLSClient extends DefaultTlsClient {
                 System.out.println("Received server certificate chain of length "
                     + chain.length);
                 for (Certificate entry : chain) {
-                    System.out.println("    SHA1 Fingerprint=" + fingerprint(entry) + " ("
+                    System.out.println("    SHA-256 Fingerprint=" + fingerprint(entry) + " ("
                         + entry.getSubject() + ")");
                 }
             }
@@ -44,7 +44,7 @@ public class MockDTLSClient extends DefaultTlsClient {
 
     private static String fingerprint(Certificate c) throws IOException {
         byte[] der = c.getEncoded();
-        byte[] sha1 = sha1DigestOf(der);
+        byte[] sha1 = sha256DigestOf(der);
         byte[] hexBytes = Hex.encode(sha1);
         String hex = new String(hexBytes, "ASCII").toUpperCase();
 
@@ -58,8 +58,8 @@ public class MockDTLSClient extends DefaultTlsClient {
         return fp.toString();
     }
 
-    private static byte[] sha1DigestOf(byte[] input) {
-        SHA1Digest d = new SHA1Digest();
+    private static byte[] sha256DigestOf(byte[] input) {
+        SHA256Digest d = new SHA256Digest();
         d.update(input, 0, input.length);
         byte[] result = new byte[d.getDigestSize()];
         d.doFinal(result, 0);
