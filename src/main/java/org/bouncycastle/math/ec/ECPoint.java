@@ -108,7 +108,12 @@ public abstract class ECPoint
         this.preCompInfo = preCompInfo;
     }
 
-    public abstract byte[] getEncoded();
+    public byte[] getEncoded()
+    {
+        return getEncoded(withCompression);
+    }
+
+    public abstract byte[] getEncoded(boolean compressed);
 
     public abstract ECPoint add(ECPoint b);
     public abstract ECPoint subtract(ECPoint b);
@@ -193,7 +198,7 @@ public abstract class ECPoint
         /**
          * return the field element encoded with point compression. (S 4.3.6)
          */
-        public byte[] getEncoded()
+        public byte[] getEncoded(boolean compressed)
         {
             if (this.isInfinity()) 
             {
@@ -202,7 +207,7 @@ public abstract class ECPoint
 
             int qLength = converter.getByteLength(x);
             
-            if (withCompression)
+            if (compressed)
             {
                 byte    PC;
     
@@ -268,7 +273,7 @@ public abstract class ECPoint
             ECFieldElement x3 = gamma.square().subtract(this.x).subtract(b.x);
             ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
 
-            return new ECPoint.Fp(curve, x3, y3);
+            return new ECPoint.Fp(curve, x3, y3, withCompression);
         }
 
         // B.3 pg 62
@@ -374,7 +379,7 @@ public abstract class ECPoint
         /* (non-Javadoc)
          * @see org.bouncycastle.math.ec.ECPoint#getEncoded()
          */
-        public byte[] getEncoded()
+        public byte[] getEncoded(boolean compressed)
         {
             if (this.isInfinity()) 
             {
@@ -385,7 +390,7 @@ public abstract class ECPoint
             byte[] X = converter.integerToBytes(this.getX().toBigInteger(), byteCount);
             byte[] PO;
 
-            if (withCompression)
+            if (compressed)
             {
                 // See X9.62 4.3.6 and 4.2.2
                 PO = new byte[byteCount + 1];
