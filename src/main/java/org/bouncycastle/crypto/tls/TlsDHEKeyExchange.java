@@ -8,8 +8,8 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
-import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
@@ -40,9 +40,7 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         // TODO Allow specification of DH parameters to use
-        DHParametersGenerator pg = new DHParametersGenerator();
-        pg.init(512, 100, context.getSecureRandom());
-        DHParameters dhParameters = pg.generateParameters();
+        DHParameters dhParameters = DHStandardGroups.rfc5114_1024_160;
 
         DHKeyPairGenerator kpg = new DHKeyPairGenerator();
         kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), dhParameters));
