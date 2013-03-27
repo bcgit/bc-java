@@ -32,6 +32,31 @@ public class Base64
     }
 
     /**
+     * encode the input data producing a base 64 encoded byte array.
+     *
+     * @return a byte array containing the base 64 encoded data.
+     */
+    public static byte[] encode(
+        byte[] data,
+        int    off,
+        int    length)
+    {
+        int len = (length + 2) / 3 * 4;
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
+
+        try
+        {
+            encoder.encode(data, off, length, bOut);
+        }
+        catch (Exception e)
+        {
+            throw new EncoderException("exception encoding base64 string: " + e.getMessage(), e);
+        }
+        
+        return bOut.toByteArray();
+    }
+
+    /**
      * Encode the byte data to base 64 writing it to the given output stream.
      *
      * @return the number of bytes produced.
