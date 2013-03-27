@@ -25,9 +25,9 @@ public class MockDTLSClient extends DefaultTlsClient {
             public void notifyServerCertificate(
                 org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
                 Certificate[] chain = serverCertificate.getCertificateList();
-                System.out.println("Received server certificate chain of length "
-                    + chain.length);
+                System.out.println("Received server certificate chain of length " + chain.length);
                 for (Certificate entry : chain) {
+                    // TODO Create fingerprint based on certificate signature algorithm digest
                     System.out.println("    fingerprint:SHA-256 " + fingerprint(entry) + " ("
                         + entry.getSubject() + ")");
                 }
