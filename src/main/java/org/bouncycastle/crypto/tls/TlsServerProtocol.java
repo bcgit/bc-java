@@ -285,7 +285,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0) {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            this.failWithError(AlertLevel.fatal, AlertDescription.decode_error);
         }
 
         /*
