@@ -17,7 +17,7 @@ public abstract class AbstractTlsServer implements TlsServer {
 
     protected boolean eccCipherSuitesOffered;
     protected int[] namedCurves;
-    protected short[] ecPointFormats;
+    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
@@ -102,7 +102,8 @@ public abstract class AbstractTlsServer implements TlsServer {
 
         if (clientExtensions != null) {
             this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
-            this.ecPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
+            this.clientECPointFormats = TlsECCUtils
+                .getSupportedPointFormatsExtension(clientExtensions);
         }
 
         /*
@@ -110,7 +111,7 @@ public abstract class AbstractTlsServer implements TlsServer {
          * does not propose any ECC cipher suites.
          */
         if (!this.eccCipherSuitesOffered
-            && (this.namedCurves != null || this.ecPointFormats != null)) {
+            && (this.namedCurves != null || this.clientECPointFormats != null)) {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
@@ -138,7 +139,7 @@ public abstract class AbstractTlsServer implements TlsServer {
          * formats supported by the client [...].
          */
         boolean eccCipherSuitesEnabled = supportsClientECCCapabilities(this.namedCurves,
-            this.ecPointFormats);
+            this.clientECPointFormats);
 
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i) {
@@ -164,16 +165,18 @@ public abstract class AbstractTlsServer implements TlsServer {
     // Hashtable is (Integer -> byte[])
     public Hashtable getServerExtensions() throws IOException {
 
-        if (this.ecPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+        if (this.clientECPointFormats != null
+            && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
+            this.serverECPointFormats = new short[] { ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
+
             this.serverExtensions = new Hashtable();
-            TlsECCUtils.addSupportedPointFormatsExtension(serverExtensions, new short[] {
-                ECPointFormat.ansiX962_compressed_char2, ECPointFormat.ansiX962_compressed_prime,
-                ECPointFormat.uncompressed });
+            TlsECCUtils.addSupportedPointFormatsExtension(serverExtensions, serverECPointFormats);
             return serverExtensions;
         }
 

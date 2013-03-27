@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 
@@ -27,7 +28,7 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
     protected TlsSigner tlsSigner;
     protected int keyExchange;
     protected int[] namedCurves;
-    protected short[] ecPointFormats;
+    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected AsymmetricKeyParameter serverPublicKey;
     protected ECPublicKeyParameters ecAgreeServerPublicKey;
@@ -37,7 +38,9 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
     protected ECPrivateKeyParameters ecAgreeServerPrivateKey;
     protected ECPublicKeyParameters ecAgreeClientPublicKey;
 
-    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] ecPointFormats) {
+    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats,
+        short[] serverECPointFormats) {
+
         super();
 
         switch (keyExchange) {
@@ -57,7 +60,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
         this.keyExchange = keyExchange;
         this.namedCurves = namedCurves;
-        this.ecPointFormats = ecPointFormats;
+        this.clientECPointFormats = clientECPointFormats;
+        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials() throws IOException {
@@ -196,8 +200,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
             && a.getN().equals(b.getN()) && a.getH().equals(b.getH());
     }
 
-    protected byte[] serializeKey(ECPublicKeyParameters keyParameters) throws IOException {
-        // TODO Add support for compressed encoding and SPF extension
+    protected byte[] serializeKey(short[] ecPointFormats, ECPublicKeyParameters keyParameters)
+        throws IOException {
 
         /*
          * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
@@ -205,7 +209,35 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
          * Extension if this extension was used, and MUST be uncompressed if this extension was not
          * used.
          */
-        return keyParameters.getQ().getEncoded();
+        ECPoint q = keyParameters.getQ();
+        ECCurve curve = q.getCurve();
+
+        boolean compressed = false;
+        if (curve instanceof ECCurve.F2m) {
+            compressed = isCompressionPreferred(ecPointFormats,
+                ECPointFormat.ansiX962_compressed_char2);
+        } else if (curve instanceof ECCurve.Fp) {
+            compressed = isCompressionPreferred(ecPointFormats,
+                ECPointFormat.ansiX962_compressed_prime);
+        }
+
+        return q.getEncoded(compressed);
+    }
+
+    protected boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat) {
+        if (ecPointFormats == null) {
+            return false;
+        }
+        for (int i = 0; i < ecPointFormats.length; ++i) {
+            short ecPointFormat = ecPointFormats[i];
+            if (ecPointFormat == ECPointFormat.uncompressed) {
+                return false;
+            }
+            if (ecPointFormat == compressionFormat) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected AsymmetricCipherKeyPair generateECKeyPair(ECDomainParameters ecParams) {
@@ -223,7 +255,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         AsymmetricCipherKeyPair ecAgreeClientKeyPair = generateECKeyPair(ecParams);
         this.ecAgreeClientPrivateKey = (ECPrivateKeyParameters) ecAgreeClientKeyPair.getPrivate();
 
-        byte[] keData = serializeKey((ECPublicKeyParameters) ecAgreeClientKeyPair.getPublic());
+        byte[] keData = serializeKey(serverECPointFormats,
+            (ECPublicKeyParameters) ecAgreeClientKeyPair.getPublic());
         TlsUtils.writeOpaque8(keData, os);
     }
 

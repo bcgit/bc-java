@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -22,8 +23,9 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] ecPointFormats) {
-        super(keyExchange, namedCurves, ecPointFormats);
+    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats,
+        short[] serverECPointFormats) {
+        super(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
@@ -46,13 +48,14 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         short curveType = ECCurveType.named_curve;
         int namedCurve = chooseNamedCurve();
         ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+        ECCurve curve = curve_params.getCurve();
 
         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
         kpg.init(new ECKeyGenerationParameters(curve_params, context.getSecureRandom()));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters) kp.getPrivate();
 
-        byte[] publicBytes = serializeKey((ECPublicKeyParameters) kp.getPublic());
+        byte[] publicBytes = serializeKey(clientECPointFormats, (ECPublicKeyParameters) kp.getPublic());
 
         TlsUtils.writeUint8(curveType, buf);
         TlsUtils.writeUint16(namedCurve, buf);
@@ -147,8 +150,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         return signer;
     }
 
-    protected int chooseNamedCurve() throws IOException
-    {
+    protected int chooseNamedCurve() throws IOException {
         if (namedCurves == null) {
             return NamedCurve.secp256r1;
         }

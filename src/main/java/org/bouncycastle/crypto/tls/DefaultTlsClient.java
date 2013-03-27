@@ -6,7 +6,7 @@ import java.util.Hashtable;
 public abstract class DefaultTlsClient extends AbstractTlsClient {
 
     protected int[] namedCurves;
-    protected short[] ecPointFormats;
+    protected short[] clientECPointFormats, serverECPointFormats;
 
     public DefaultTlsClient() {
         super();
@@ -40,7 +40,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
              */
             this.namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.secp224r1,
                 NamedCurve.secp192r1 };
-            this.ecPointFormats = new short[] { ECPointFormat.ansiX962_compressed_char2,
+            this.clientECPointFormats = new short[] { ECPointFormat.ansiX962_compressed_char2,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
 
             if (clientExtensions == null) {
@@ -48,11 +48,28 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
             }
 
             TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
-            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, ecPointFormats);
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
             return clientExtensions;
         }
 
         return clientExtensions;
+    }
+
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException {
+
+        if (serverExtensions != null) {
+            int[] namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
+            if (namedCurves != null) {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            this.serverECPointFormats = TlsECCUtils
+                .getSupportedPointFormatsExtension(serverExtensions);
+            if (this.serverECPointFormats != null
+                && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException {
@@ -223,11 +240,13 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
-        return new TlsECDHKeyExchange(keyExchange, namedCurves, ecPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
-        return new TlsECDHEKeyExchange(keyExchange, namedCurves, ecPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() {
