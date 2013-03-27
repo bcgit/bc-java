@@ -41,9 +41,10 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        // TODO Allow specification of ECDH parameters to use
+        // TODO Add support for arbitrary_explicit_*_curves
+
         short curveType = ECCurveType.named_curve;
-        int namedCurve = NamedCurve.secp256r1;
+        int namedCurve = chooseNamedCurve();
         ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
 
         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
@@ -144,5 +145,19 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         return signer;
+    }
+
+    protected int chooseNamedCurve() throws IOException
+    {
+        if (namedCurves == null) {
+            return NamedCurve.secp256r1;
+        }
+        for (int i = 0; i < namedCurves.length; ++i) {
+            int namedCurve = namedCurves[i];
+            if (TlsECCUtils.isSupportedNamedCurve(namedCurve)) {
+                return namedCurve;
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 }
