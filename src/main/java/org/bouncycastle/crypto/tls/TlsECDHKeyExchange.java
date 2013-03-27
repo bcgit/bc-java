@@ -173,7 +173,15 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         byte[] keData = TlsUtils.readOpaque8(input);
 
         ECDomainParameters curve_params = this.ecAgreeServerPrivateKey.getParameters();
-        ECPoint Yc = curve_params.getCurve().decodePoint(keData);
+        ECCurve curve = curve_params.getCurve();
+
+        /*
+         * NOTE: Here we implicitly decode compressed or uncompressed encodings. AbstractTlsServer
+         * by default is set up to advertise that we can parse any encoding so this works fine, but
+         * extra checks might be needed here if that were changed.
+         */
+        ECPoint Yc = curve.decodePoint(keData);
+
         this.ecAgreeClientPublicKey = validateECPublicKey(new ECPublicKeyParameters(Yc,
             curve_params));
     }

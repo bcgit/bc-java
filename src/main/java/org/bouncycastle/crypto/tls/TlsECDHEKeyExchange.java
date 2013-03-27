@@ -55,7 +55,8 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters) kp.getPrivate();
 
-        byte[] publicBytes = serializeKey(clientECPointFormats, (ECPublicKeyParameters) kp.getPublic());
+        byte[] publicBytes = serializeKey(clientECPointFormats,
+            (ECPublicKeyParameters) kp.getPublic());
 
         TlsUtils.writeUint8(curveType, buf);
         TlsUtils.writeUint16(namedCurve, buf);
@@ -108,6 +109,11 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
+        /*
+         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient
+         * by default is set up to advertise that we can parse any encoding so this works fine, but
+         * extra checks might be needed here if that were changed.
+         */
         ECPoint Ys = curve_params.getCurve().decodePoint(publicBytes);
 
         this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys,
