@@ -38,8 +38,10 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
         }
     }
 
+    public void skipClientCredentials() throws IOException {
+    }
+
     public void processClientCertificate(Certificate clientCertificate) throws IOException {
-        // TODO
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException {

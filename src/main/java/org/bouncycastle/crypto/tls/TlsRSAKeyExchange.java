@@ -87,10 +87,6 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void skipClientCredentials() throws IOException {
-        // OK
-    }
-
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException {
         if (!(clientCredentials instanceof TlsSignerCredentials)) {
             throw new TlsFatalAlert(AlertDescription.internal_error);

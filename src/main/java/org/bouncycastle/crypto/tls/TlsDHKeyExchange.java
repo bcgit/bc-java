@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
@@ -24,12 +23,12 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
     protected int keyExchange;
     protected TlsSigner tlsSigner;
 
-    protected AsymmetricKeyParameter serverPublicKey = null;
-    protected DHPublicKeyParameters dhAgreeServerPublicKey = null;
+    protected AsymmetricKeyParameter serverPublicKey;
+    protected DHPublicKeyParameters dhAgreeServerPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
-    protected DHPrivateKeyParameters dhAgreeClientPrivateKey = null;
+    protected DHPrivateKeyParameters dhAgreeClientPrivateKey;
 
-    protected DHPublicKeyParameters dhAgreeClientPublicKey = null;
+    protected DHPublicKeyParameters dhAgreeClientPublicKey;
 
     TlsDHKeyExchange(int keyExchange) {
         switch (keyExchange) {
@@ -119,10 +118,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void skipClientCredentials() throws IOException {
-        this.agreementCredentials = null;
-    }
-
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException {
         if (clientCredentials instanceof TlsAgreementCredentials) {
             // TODO Validate client cert has matching parameters (see 'areCompatibleParameters')?
@@ -145,11 +140,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
             this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
                 context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), os);
         }
-    }
-
-    public void processClientKeyExchange(InputStream input) throws IOException {
-        // TODO Auto-generated method stub
-        super.processClientKeyExchange(input);
     }
 
     public byte[] generatePremasterSecret() throws IOException {

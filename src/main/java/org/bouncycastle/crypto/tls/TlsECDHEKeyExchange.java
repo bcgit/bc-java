@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -48,10 +49,9 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
         kpg.init(new ECKeyGenerationParameters(curve_params, context.getSecureRandom()));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+        this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters) kp.getPrivate();
 
-        ECPoint Q = ((ECPublicKeyParameters) kp.getPublic()).getQ();
-        // TODO Check the point encoding we should use
-        byte[] publicBytes = Q.getEncoded();
+        byte[] publicBytes = serializeKey((ECPublicKeyParameters) kp.getPublic());
 
         TlsUtils.writeUint8(curveType, buf);
         TlsUtils.writeUint16(namedCurve, buf);
@@ -104,11 +104,9 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        // TODO Check curve_params not null
+        ECPoint Ys = curve_params.getCurve().decodePoint(publicBytes);
 
-        ECPoint Q = curve_params.getCurve().decodePoint(publicBytes);
-
-        this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Q, curve_params));
+        this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys, curve_params));
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

@@ -166,11 +166,6 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
-    public void skipClientCredentials() throws IOException
-    {
-        // OK
-    }
-
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
