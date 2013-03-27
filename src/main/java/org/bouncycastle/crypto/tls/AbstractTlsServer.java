@@ -11,6 +11,8 @@ public abstract class AbstractTlsServer implements TlsServer {
     protected TlsServerContext context;
 
     protected ProtocolVersion clientVersion;
+    protected int[] offeredCipherSuites;
+    protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
     protected ProtocolVersion serverVersion;
@@ -49,26 +51,12 @@ public abstract class AbstractTlsServer implements TlsServer {
     }
 
     public void notifyOfferedCipherSuites(int[] offeredCipherSuites) throws IOException {
-        int[] cipherSuites = getCipherSuites();
-        for (int i = 0; i < cipherSuites.length; ++i) {
-            if (TlsProtocol.arrayContains(offeredCipherSuites, cipherSuites[i])) {
-                this.selectedCipherSuite = cipherSuites[i];
-                return;
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        this.offeredCipherSuites = offeredCipherSuites;
     }
 
     public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
         throws IOException {
-        short[] compressionMethods = getCompressionMethods();
-        for (int i = 0; i < compressionMethods.length; ++i) {
-            if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i])) {
-                this.selectedCompressionMethod = compressionMethods[i];
-                return;
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        this.offeredCompressionMethods = offeredCompressionMethods;
     }
 
     public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException {
@@ -99,11 +87,23 @@ public abstract class AbstractTlsServer implements TlsServer {
     }
 
     public int getSelectedCipherSuite() throws IOException {
-        return selectedCipherSuite;
+        int[] cipherSuites = getCipherSuites();
+        for (int i = 0; i < cipherSuites.length; ++i) {
+            if (TlsProtocol.arrayContains(this.offeredCipherSuites, cipherSuites[i])) {
+                return this.selectedCipherSuite = cipherSuites[i];
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.handshake_failure);
     }
 
     public short getSelectedCompressionMethod() throws IOException {
-        return selectedCompressionMethod;
+        short[] compressionMethods = getCompressionMethods();
+        for (int i = 0; i < compressionMethods.length; ++i) {
+            if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i])) {
+                return this.selectedCompressionMethod = compressionMethods[i];
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.handshake_failure);
     }
 
     // Hashtable is (Integer -> byte[])
