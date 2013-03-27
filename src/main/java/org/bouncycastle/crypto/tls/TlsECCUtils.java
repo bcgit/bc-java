@@ -46,7 +46,8 @@ public class TlsECCUtils {
             TlsECCUtils.createSupportedPointFormatsExtension(ecPointFormats));
     }
 
-    public int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException {
+    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions)
+        throws IOException {
         if (extensions == null) {
             return null;
         }
@@ -57,7 +58,8 @@ public class TlsECCUtils {
         return readSupportedEllipticCurvesExtension(extensionValue);
     }
 
-    public short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException {
+    public static short[] getSupportedPointFormatsExtension(Hashtable extensions)
+        throws IOException {
         if (extensions == null) {
             return null;
         }
