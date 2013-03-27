@@ -44,7 +44,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         // TODO Allow specification of ECDH parameters to use
         short curveType = ECCurveType.named_curve;
         int namedCurve = NamedCurve.secp256r1;
-        ECDomainParameters curve_params = NamedCurve.getECParameters(namedCurve);
+        ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
 
         ECKeyPairGenerator kpg = new ECKeyPairGenerator();
         kpg.init(new ECKeyGenerationParameters(curve_params, context.getSecureRandom()));
@@ -90,7 +90,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
             // TODO Check namedCurve is one we offered?
 
-            curve_params = NamedCurve.getECParameters(namedCurve);
+            curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
         } else {
             // TODO Add support for explicit curve parameters (read from sigIn)
 
@@ -106,7 +106,8 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         ECPoint Ys = curve_params.getCurve().decodePoint(publicBytes);
 
-        this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys, curve_params));
+        this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys,
+            curve_params));
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

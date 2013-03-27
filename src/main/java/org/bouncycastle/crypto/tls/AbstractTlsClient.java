@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Integers;
+
 public abstract class AbstractTlsClient implements TlsClient {
 
     protected TlsCipherFactory cipherFactory;
@@ -48,6 +50,23 @@ public abstract class AbstractTlsClient implements TlsClient {
     }
 
     public Hashtable getClientExtensions() throws IOException {
+
+        if (TlsECCUtils.containsECCCipherSuites(getCipherSuites())) {
+            /*
+             * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
+             * appends these extensions (along with any others), enumerating the curves it supports
+             * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
+             * Curves Extension and the Supported Point Formats Extension.
+             */
+            Hashtable extensions = new Hashtable();
+            TlsECCUtils.addSupportedEllipticCurvesExtension(extensions, new int[] {
+                NamedCurve.secp256r1, NamedCurve.secp224r1, NamedCurve.secp192r1 });
+            TlsECCUtils.addSupportedPointFormatsExtension(extensions, new short[] {
+                ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime });
+            return extensions;
+        }
+
         return null;
     }
 
