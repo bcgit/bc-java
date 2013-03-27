@@ -149,12 +149,7 @@ public class TlsECCUtils {
     }
 
     public static String getNameOfNamedCurve(int namedCurve) {
-        int index = namedCurve - 1;
-        if (index < 0 || index >= curveNames.length) {
-            return null;
-        }
-
-        return curveNames[index];
+        return isSupportedNamedCurve(namedCurve) ? curveNames[namedCurve - 1] : null;
     }
 
     public static ECDomainParameters getParametersForNamedCurve(int namedCurve) {
@@ -173,6 +168,10 @@ public class TlsECCUtils {
         // It's a bit inefficient to do this conversion every time
         return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(),
             ecP.getSeed());
+    }
+
+    public static boolean hasAnySupportedNamedCurves() {
+        return curveNames.length > 0;
     }
 
     public static boolean isECCCipherSuite(int cipherSuite) {
@@ -222,6 +221,9 @@ public class TlsECCUtils {
         default:
             return false;
         }
+    }
 
+    public static boolean isSupportedNamedCurve(int namedCurve) {
+        return (namedCurve > 0 && namedCurve <= curveNames.length);
     }
 }
