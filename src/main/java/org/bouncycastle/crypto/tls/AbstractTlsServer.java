@@ -82,7 +82,24 @@ public abstract class AbstractTlsServer implements TlsServer {
         }
     }
 
-    public Hashtable processClientExtensions(Hashtable serverExtensions) throws IOException {
+    public Hashtable processClientExtensions(Hashtable clientExtensions) throws IOException {
+
+        if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+
+            /*
+             * TODO RFC 4429 5.1. A server that receives a ClientHello containing one or both of
+             * these extensions MUST use the client's enumerated capabilities to guide its selection
+             * of an appropriate cipher suite. One of the proposed ECC cipher suites must be
+             * negotiated only if the server can successfully complete the handshake while using the
+             * curves and point formats supported by the client [...].
+             */
+            Hashtable serverExtensions = new Hashtable();
+            TlsECCUtils.addSupportedPointFormatsExtension(serverExtensions, new short[] {
+                ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime });
+            return serverExtensions;
+        }
+
         return null;
     }
 
