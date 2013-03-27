@@ -4,9 +4,11 @@ import java.util.Arrays;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -74,6 +76,10 @@ public class OCBTest extends SimpleTest {
         for (int i = 0; i < TEST_VECTORS.length; ++i) {
             runTestCase("Test Case " + i, TEST_VECTORS[i]);
         }
+
+        runLongerTestCase(128, Hex.decode("B2B41CBF9B05037DA7F16C24A35C1C94"));
+        runLongerTestCase(192, Hex.decode("1529F894659D2B51B776740211E7D083"));
+        runLongerTestCase(256, Hex.decode("42B83106E473C0EEE086C8D631FD4C7B"));
     }
 
     private void runTestCase(String testName, String[] testVector)
@@ -155,6 +161,67 @@ public class OCBTest extends SimpleTest {
                 fail("getMac() not the same as the appended tag: " + testName);
             }
         }
+    }
+
+    private void runLongerTestCase(int aesKeySize, byte[] expectedOutput) throws InvalidCipherTextException {
+
+        KeyParameter key = new KeyParameter(new byte[aesKeySize / 8]);
+        byte[] N = new byte[12];
+
+        AEADBlockCipher c1 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+        c1.init(true, new ParametersWithIV(key, N));
+
+        AEADBlockCipher c2 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+
+        long total = 0;
+
+        byte[] S = new byte[128];
+
+        for (int i = 0; i < 128; ++i) {
+            N[11] = (byte) i;
+
+            c2.init(true, new ParametersWithIV(key, N));
+
+            total += updateCiphers(c1, c2, S, i, true, true);
+            total += updateCiphers(c1, c2, S, i, false, true);
+            total += updateCiphers(c1, c2, S, i, true, false);
+        }
+
+        if (total != 22400L) {
+            fail("test generated the wrong amount of input: " + total);
+        }
+
+        byte[] output = new byte[c1.getOutputSize(0)];
+        c1.doFinal(output, 0);
+
+        if (!areEqual(expectedOutput, output)) {
+            fail("incorrect encrypt in long-form test");
+        }
+    }
+
+    private int updateCiphers(AEADBlockCipher c1, AEADBlockCipher c2, byte[] S, int i,
+        boolean includeAAD, boolean includePlaintext) throws InvalidCipherTextException {
+
+        int inputLen = includePlaintext ? i : 0;
+        int outputLen = c2.getOutputSize(inputLen);
+
+        byte[] output = new byte[outputLen];
+
+        int len = 0;
+
+        if (includeAAD) {
+            c2.processAADBytes(S, 0, i);
+        }
+
+        if (includePlaintext) {
+            len += c2.processBytes(S, 0, i, output, len);
+        }
+
+        len += c2.doFinal(output, len);
+
+        c1.processAADBytes(output, 0, len);
+
+        return len;
     }
 
     public static void main(String[] args) {

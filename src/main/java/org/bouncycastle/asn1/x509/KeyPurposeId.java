@@ -13,6 +13,12 @@ import org.bouncycastle.asn1.ASN1Primitive;
  *          dod(6) internet(1) security(5) mechanisms(5) pkix(7) 3}
  *
  * </pre>
+ * To create a new KeyPurposeId where none of the below suit, use
+ * <pre>
+ *     ASN1ObjectIdentifier newKeyPurposeIdOID = new ASN1ObjectIdentifier("1.3.6.1...");
+ *
+ *     KeyPurposeId newKeyPurposeId = KeyPurposeId.getInstance(newKeyPurposeIdOID);
+ * </pre>
  */
 public class KeyPurposeId
     extends ASN1Object

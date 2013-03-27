@@ -449,7 +449,7 @@ public abstract class ECCurve
                     new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3,
                         new BigInteger(1, xEnc)),
                     new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3,
-                        new BigInteger(1, yEnc)), false);
+                        new BigInteger(1, yEnc)));
                 break;
 
             default:
@@ -550,8 +550,8 @@ public abstract class ECCurve
                 }
                 yp = xp.multiply(z);
             }
-            
-            return new ECPoint.F2m(this, xp, yp);
+
+            return new ECPoint.F2m(this, xp, yp, true);
         }
         
         /**

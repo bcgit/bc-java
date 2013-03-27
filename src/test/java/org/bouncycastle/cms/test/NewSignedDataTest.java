@@ -6,6 +6,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -55,6 +56,7 @@ import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.bc.BcRSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerId;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
@@ -62,11 +64,13 @@ import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.cms.SignerInformationVerifierProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
@@ -1239,6 +1243,86 @@ public class NewSignedDataTest
             assertNull(cSigner.getSignedAttributes().get(PKCSObjectIdentifiers.pkcs_9_at_contentType));
             assertEquals(true, cSigner.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
+    }
+
+    public void testSHA1WithRSACounterSignatureAndVerifierProvider()
+        throws Exception
+    {
+        List                certList = new ArrayList();
+        List                crlList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_signCert);
+        certList.add(_origCert);
+
+        crlList.add(_signCrl);
+
+        Store           certStore = new JcaCertStore(certList);
+        Store           crlStore = new JcaCRLStore(crlList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_signKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _signCert));
+
+        gen.addCertificates(certStore);
+        gen.addCRLs(crlStore);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        SignerInformationVerifierProvider vProv = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
+            }
+        };
+
+        assertTrue(s.verifySignatures(vProv));
+
+        SignerInformation origSigner = (SignerInformation)s.getSignerInfos().getSigners().toArray()[0];
+
+        gen = new CMSSignedDataGenerator();
+
+        sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _origCert));
+
+        SignerInformationStore counterSigners = gen.generateCounterSigners(origSigner);
+
+        SignerInformation signer1 = SignerInformation.addCounterSigners(origSigner, counterSigners);
+
+        List signers = new ArrayList();
+
+        signers.add(signer1);
+
+        s = CMSSignedData.replaceSigners(s, new SignerInformationStore(signers));
+
+        assertTrue(s.verifySignatures(vProv, true));
+
+        // provider can't handle counter sig
+        assertFalse(s.verifySignatures(vProv, false));
+
+        vProv = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                if (_signCert.getSerialNumber().equals(signerId.getSerialNumber()))
+                {
+                    return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
+                }
+                else
+                {
+                    return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origCert);
+                }
+            }
+        };
+
+        // verify sig and counter sig.
+        assertFalse(s.verifySignatures(vProv, false));
     }
 
     private void rsaPSSTest(String signatureAlgorithmName)

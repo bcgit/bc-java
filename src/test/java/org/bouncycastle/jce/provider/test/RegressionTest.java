@@ -69,6 +69,7 @@ public class RegressionTest
         new CMacTest(),
         new DSTU4145Test(),
         new CRL5Test(),
+        new SipHashTest(),
         new SHA3Test()
     };
 

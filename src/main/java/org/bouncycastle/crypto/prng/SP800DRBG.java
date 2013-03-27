@@ -33,7 +33,7 @@ public class SP800DRBG implements DRBG
         int entropyLengthInBytes = securityStrength;
         byte[] entropy = entropySource.getEntropy(entropyLengthInBytes/8);
         
-        System.out.println("Entropy: "+ new String(Hex.encode(entropy)));
+        System.out.println("Constructor Entropy: "+ new String(Hex.encode(entropy)));
         
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
         
@@ -42,11 +42,11 @@ public class SP800DRBG implements DRBG
         System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length,
                 personalisationString.length);
 
-        System.out.println("SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
+        System.out.println("Constructor SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
         byte[] seed = function.getDFBytes(seedMaterial, function.getSeedlength());
         
-        System.out.println("Seed: "+ new String(Hex.encode(seed)));
+        System.out.println("Constructor Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
@@ -54,7 +54,8 @@ public class SP800DRBG implements DRBG
         _C = function.getDFBytes(subV, function.getSeedlength());
         _reseedCounter = 1;
         
-        System.out.println("C: "+ new String(Hex.encode(_C)));
+        System.out.println("Constructor V: "+ new String(Hex.encode(_V)));        
+        System.out.println("Constructor C: "+ new String(Hex.encode(_C)));
 
     }
 
@@ -116,7 +117,8 @@ public class SP800DRBG implements DRBG
         _reseedCounter++;
 
         System.arraycopy(rv, 0, output, 0, output.length);
-        System.out.println("V: "+ new String(Hex.encode(_V)));
+        System.out.println("Generate V: "+ new String(Hex.encode(_V)));
+        System.out.println("Generate C: "+ new String(Hex.encode(_C)));
 
         return numberOfBits;
     }
@@ -165,7 +167,7 @@ public class SP800DRBG implements DRBG
         int entropyLengthInBytes = _securityStrength;
         byte[] entropy = _entropySource.getEntropy(entropyLengthInBytes/8);
         
-        System.out.println("Entropy: "+ new String(Hex.encode(entropy)));
+        System.out.println("Reseed Entropy: "+ new String(Hex.encode(entropy)));
         
         byte[] seedMaterial = new byte[1+ _V.length + entropy.length + additionalInput.length];
         
@@ -174,11 +176,11 @@ public class SP800DRBG implements DRBG
         System.arraycopy(entropy, 0, seedMaterial, 1+_V.length, entropy.length);
         System.arraycopy(additionalInput, 0, seedMaterial, 1+_V.length+entropy.length,additionalInput.length);
 
-        System.out.println("SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
+        System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
         byte[] seed = _function.getDFBytes(seedMaterial, _function.getSeedlength());
         
-        System.out.println("Seed: "+ new String(Hex.encode(seed)));
+        System.out.println("Reseed Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
@@ -187,6 +189,7 @@ public class SP800DRBG implements DRBG
         _C = _function.getDFBytes(subV, _function.getSeedlength());
         _reseedCounter = 1;
         
-        System.out.println("C: "+ new String(Hex.encode(_C)));
+        System.out.println("Reseed V: "+ new String(Hex.encode(_V)));
+        System.out.println("Reseed C: "+ new String(Hex.encode(_C)));
     }
 }

@@ -9,6 +9,7 @@ import java.security.Provider;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.x509.NoSuchStoreException;
@@ -533,7 +535,73 @@ public class CMSSignedData
     {
         return contentInfo.getEncoded();
     }
-    
+
+    /**
+     * Verify all the SignerInformation objects and their associated counter signatures attached
+     * to this CMS SignedData object.
+     *
+     * @param verifierProvider  a provider of SignerInformationVerifier objects.
+     * @return true if all verify, false otherwise.
+     * @throws CMSException  if an exception occurs during the verification process.
+     */
+    public boolean verifySignatures(SignerInformationVerifierProvider verifierProvider)
+        throws CMSException
+    {
+        return verifySignatures(verifierProvider, false);
+    }
+
+    /**
+     * Verify all the SignerInformation objects and optionally their associated counter signatures attached
+     * to this CMS SignedData object.
+     *
+     * @param verifierProvider  a provider of SignerInformationVerifier objects.
+     * @param ignoreCounterSignatures if true don't check counter signatures. If false check counter signatures as well.
+     * @return true if all verify, false otherwise.
+     * @throws CMSException  if an exception occurs during the verification process.
+     */
+    public boolean verifySignatures(SignerInformationVerifierProvider verifierProvider, boolean ignoreCounterSignatures)
+        throws CMSException
+    {
+        Collection signers = this.getSignerInfos().getSigners();
+
+        for (Iterator it = signers.iterator(); it.hasNext();)
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+
+            try
+            {
+                SignerInformationVerifier verifier = verifierProvider.get(signer.getSID());
+
+                if (!signer.verify(verifier))
+                {
+                    return false;
+                }
+
+                if (!ignoreCounterSignatures)
+                {
+                    Collection counterSigners = signer.getCounterSignatures().getSigners();
+
+                    for  (Iterator cIt = counterSigners.iterator(); cIt.hasNext();)
+                    {
+                        SignerInformation counterSigner = (SignerInformation)cIt.next();
+                        SignerInformationVerifier counterVerifier = verifierProvider.get(signer.getSID());
+
+                        if (!counterSigner.verify(counterVerifier))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (OperatorCreationException e)
+            {
+                throw new CMSException("failure in verifier provider: " + e.getMessage(), e);
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Replace the SignerInformation store associated with this
      * CMSSignedData object with the new one passed in. You would

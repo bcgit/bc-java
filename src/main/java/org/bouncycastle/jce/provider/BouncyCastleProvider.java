@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -58,11 +55,16 @@ public final class BouncyCastleProvider extends Provider
     /*
      * Configurable symmetric ciphers
      */
-    private static final String SYMMETRIC_CIPHER_PACKAGE = "org.bouncycastle.jcajce.provider.symmetric.";
+    private static final String SYMMETRIC_PACKAGE = "org.bouncycastle.jcajce.provider.symmetric.";
 
     private static final String[] SYMMETRIC_GENERIC =
     {
         "PBEPBKDF2", "PBEPKCS12"
+    };
+
+    private static final String[] SYMMETRIC_MACS =
+    {
+        "SipHash"
     };
 
     private static final String[] SYMMETRIC_CIPHERS =
@@ -74,7 +76,7 @@ public final class BouncyCastleProvider extends Provider
      /*
      * Configurable asymmetric ciphers
      */
-    private static final String ASYMMETRIC_CIPHER_PACKAGE = "org.bouncycastle.jcajce.provider.asymmetric.";
+    private static final String ASYMMETRIC_PACKAGE = "org.bouncycastle.jcajce.provider.asymmetric.";
 
     // this one is required for GNU class path - it needs to be loaded first as the
     // later ones configure it.
@@ -129,13 +131,15 @@ public final class BouncyCastleProvider extends Provider
     {
         loadAlgorithms(DIGEST_PACKAGE, DIGESTS);
 
-        loadAlgorithms(SYMMETRIC_CIPHER_PACKAGE, SYMMETRIC_GENERIC);
+        loadAlgorithms(SYMMETRIC_PACKAGE, SYMMETRIC_GENERIC);
 
-        loadAlgorithms(SYMMETRIC_CIPHER_PACKAGE, SYMMETRIC_CIPHERS);
+        loadAlgorithms(SYMMETRIC_PACKAGE, SYMMETRIC_MACS);
 
-        loadAlgorithms(ASYMMETRIC_CIPHER_PACKAGE, ASYMMETRIC_GENERIC);
+        loadAlgorithms(SYMMETRIC_PACKAGE, SYMMETRIC_CIPHERS);
 
-        loadAlgorithms(ASYMMETRIC_CIPHER_PACKAGE, ASYMMETRIC_CIPHERS);
+        loadAlgorithms(ASYMMETRIC_PACKAGE, ASYMMETRIC_GENERIC);
+
+        loadAlgorithms(ASYMMETRIC_PACKAGE, ASYMMETRIC_CIPHERS);
 
         loadAlgorithms(KEYSTORE_PACKAGE, KEYSTORES);
 
