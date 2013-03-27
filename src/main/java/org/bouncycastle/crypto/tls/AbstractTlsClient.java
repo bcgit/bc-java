@@ -62,8 +62,8 @@ public abstract class AbstractTlsClient implements TlsClient {
             TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, new int[] {
                 NamedCurve.secp256r1, NamedCurve.secp224r1, NamedCurve.secp192r1 });
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, new short[] {
-                ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_char2,
-                ECPointFormat.ansiX962_compressed_prime });
+                ECPointFormat.ansiX962_compressed_char2, ECPointFormat.ansiX962_compressed_prime,
+                ECPointFormat.uncompressed });
             return clientExtensions;
         }
 
