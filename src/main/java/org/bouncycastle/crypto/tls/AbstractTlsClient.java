@@ -58,13 +58,13 @@ public abstract class AbstractTlsClient implements TlsClient {
              * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
              * Curves Extension and the Supported Point Formats Extension.
              */
-            Hashtable extensions = new Hashtable();
-            TlsECCUtils.addSupportedEllipticCurvesExtension(extensions, new int[] {
+            Hashtable clientExtensions = new Hashtable();
+            TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, new int[] {
                 NamedCurve.secp256r1, NamedCurve.secp224r1, NamedCurve.secp192r1 });
-            TlsECCUtils.addSupportedPointFormatsExtension(extensions, new short[] {
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, new short[] {
                 ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_char2,
                 ECPointFormat.ansiX962_compressed_prime });
-            return extensions;
+            return clientExtensions;
         }
 
         return null;
