@@ -22,8 +22,8 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsECDHEKeyExchange(int keyExchange) {
-        super(keyExchange);
+    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] ecPointFormats) {
+        super(keyExchange, namedCurves, ecPointFormats);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {

@@ -185,11 +185,11 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
-        return new TlsECDHKeyExchange(keyExchange);
+        return new TlsECDHKeyExchange(keyExchange, namedCurves, ecPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
-        return new TlsECDHEKeyExchange(keyExchange);
+        return new TlsECDHEKeyExchange(keyExchange, namedCurves, ecPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() {

@@ -23,8 +23,11 @@ import org.bouncycastle.util.BigIntegers;
  * ECDH key exchange (see RFC 4492)
  */
 class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
-    protected int keyExchange;
+
     protected TlsSigner tlsSigner;
+    protected int keyExchange;
+    protected int[] namedCurves;
+    protected short[] ecPointFormats;
 
     protected AsymmetricKeyParameter serverPublicKey;
     protected ECPublicKeyParameters ecAgreeServerPublicKey;
@@ -34,7 +37,7 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
     protected ECPrivateKeyParameters ecAgreeServerPrivateKey;
     protected ECPublicKeyParameters ecAgreeClientPublicKey;
 
-    TlsECDHKeyExchange(int keyExchange) {
+    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] ecPointFormats) {
         super();
 
         switch (keyExchange) {
@@ -53,6 +56,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         }
 
         this.keyExchange = keyExchange;
+        this.namedCurves = namedCurves;
+        this.ecPointFormats = ecPointFormats;
     }
 
     public void skipServerCredentials() throws IOException {

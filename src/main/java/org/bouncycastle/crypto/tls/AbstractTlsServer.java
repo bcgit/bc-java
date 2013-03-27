@@ -16,8 +16,8 @@ public abstract class AbstractTlsServer implements TlsServer {
     protected Hashtable clientExtensions;
 
     protected boolean eccCipherSuitesOffered;
-    protected int[] namedCurves = null;
-    protected short[] ecPointFormats = null;
+    protected int[] namedCurves;
+    protected short[] ecPointFormats;
 
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
