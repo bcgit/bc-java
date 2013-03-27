@@ -21,8 +21,7 @@ public class DTLSClientTest {
         SecureRandom secureRandom = new SecureRandom();
 
         DatagramSocket socket = new DatagramSocket();
-        // socket.connect(InetAddress.getLocalHost(), 5556);
-        socket.connect(InetAddress.getByName("192.168.105.100"), 5556);
+        socket.connect(InetAddress.getLocalHost(), 5556);
 
         int mtu = 1500;
         DatagramTransport transport = new UDPTransport(socket, mtu);
