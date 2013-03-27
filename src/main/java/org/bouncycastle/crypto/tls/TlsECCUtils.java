@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
@@ -10,6 +11,11 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils {
+
+    private static final Integer EXT_elliptic_curves = Integers
+        .valueOf(ExtensionType.elliptic_curves);
+    private static final Integer EXT_ec_point_formats = Integers
+        .valueOf(ExtensionType.ec_point_formats);
 
     private static final String[] curveNames = new String[] { "sect163k1", "sect163r1",
         "sect163r2", "sect193r1", "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1",
@@ -29,15 +35,37 @@ public class TlsECCUtils {
     public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves)
         throws IOException {
 
-        extensions.put(Integers.valueOf(ExtensionType.elliptic_curves),
+        extensions.put(EXT_elliptic_curves,
             TlsECCUtils.createSupportedEllipticCurvesExtension(namedCurves));
     }
 
     public static void addSupportedPointFormatsExtension(Hashtable extensions,
         short[] ecPointFormats) throws IOException {
 
-        extensions.put(Integers.valueOf(ExtensionType.ec_point_formats),
+        extensions.put(EXT_ec_point_formats,
             TlsECCUtils.createSupportedPointFormatsExtension(ecPointFormats));
+    }
+
+    public int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException {
+        if (extensions == null) {
+            return null;
+        }
+        byte[] extensionValue = (byte[]) extensions.get(EXT_elliptic_curves);
+        if (extensionValue == null) {
+            return null;
+        }
+        return readSupportedEllipticCurvesExtension(extensionValue);
+    }
+
+    public short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException {
+        if (extensions == null) {
+            return null;
+        }
+        byte[] extensionValue = (byte[]) extensions.get(EXT_ec_point_formats);
+        if (extensionValue == null) {
+            return null;
+        }
+        return readSupportedPointFormatsExtension(extensionValue);
     }
 
     public static byte[] createSupportedEllipticCurvesExtension(int[] namedCurves)
@@ -76,6 +104,46 @@ public class TlsECCUtils {
         TlsUtils.writeUint8((short) ecPointFormats.length, buf);
         TlsUtils.writeUint8Array(ecPointFormats, buf);
         return buf.toByteArray();
+    }
+
+    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue)
+        throws IOException {
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+
+        int length = TlsUtils.readUint16(buf);
+        if (length < 2 || (length & 1) != 0) {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int[] namedCurves = TlsUtils.readUint16Array(length / 2, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return namedCurves;
+    }
+
+    public static short[] readSupportedPointFormatsExtension(byte[] extensionValue)
+        throws IOException {
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+
+        short length = TlsUtils.readUint8(buf);
+        if (length < 1) {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        short[] ecPointFormats = TlsUtils.readUint8Array(length, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (!TlsProtocol.arrayContains(ecPointFormats, ECPointFormat.uncompressed)) {
+            /*
+             * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
+             * contain the value 0 (uncompressed) as one of the items in the list of point formats.
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return ecPointFormats;
     }
 
     public static String getNameOfNamedCurve(int namedCurve) {
