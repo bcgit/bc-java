@@ -10,8 +10,13 @@ public abstract class AbstractTlsServer implements TlsServer {
 
     protected TlsServerContext context;
 
+    protected ProtocolVersion clientVersion;
+    protected Hashtable clientExtensions;
+
+    protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
+    protected Hashtable serverExtensions;
 
     public AbstractTlsServer() {
         this(new DefaultTlsCipherFactory());
@@ -39,34 +44,28 @@ public abstract class AbstractTlsServer implements TlsServer {
         this.context = context;
     }
 
-    public ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException {
-        if (getMinimumVersion().isEqualOrEarlierVersionOf(clientVersion)) {
-            ProtocolVersion maximumVersion = getMaximumVersion();
-            if (clientVersion.isEqualOrEarlierVersionOf(maximumVersion)) {
-                return clientVersion;
-            }
-            if (clientVersion.isLaterVersionOf(maximumVersion)) {
-                return maximumVersion;
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.protocol_version);
+    public void notifyClientVersion(ProtocolVersion clientVersion) throws IOException {
+        this.clientVersion = clientVersion;
     }
 
-    public int selectCipherSuite(int[] offeredCipherSuites) throws IOException {
+    public void notifyOfferedCipherSuites(int[] offeredCipherSuites) throws IOException {
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i) {
             if (TlsProtocol.arrayContains(offeredCipherSuites, cipherSuites[i])) {
-                return this.selectedCipherSuite = cipherSuites[i];
+                this.selectedCipherSuite = cipherSuites[i];
+                return;
             }
         }
         throw new TlsFatalAlert(AlertDescription.handshake_failure);
     }
 
-    public short selectCompressionMethod(short[] offeredCompressionMethods) throws IOException {
+    public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
+        throws IOException {
         short[] compressionMethods = getCompressionMethods();
         for (int i = 0; i < compressionMethods.length; ++i) {
             if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i])) {
-                return this.selectedCompressionMethod = compressionMethods[i];
+                this.selectedCompressionMethod = compressionMethods[i];
+                return;
             }
         }
         throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -82,8 +81,33 @@ public abstract class AbstractTlsServer implements TlsServer {
         }
     }
 
-    public Hashtable processClientExtensions(Hashtable clientExtensions) throws IOException {
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException {
+        this.clientExtensions = clientExtensions;
+    }
 
+    public ProtocolVersion getServerVersion() throws IOException {
+        if (getMinimumVersion().isEqualOrEarlierVersionOf(clientVersion)) {
+            ProtocolVersion maximumVersion = getMaximumVersion();
+            if (clientVersion.isEqualOrEarlierVersionOf(maximumVersion)) {
+                return serverVersion = clientVersion;
+            }
+            if (clientVersion.isLaterVersionOf(maximumVersion)) {
+                return serverVersion = maximumVersion;
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
+
+    public int getSelectedCipherSuite() throws IOException {
+        return selectedCipherSuite;
+    }
+
+    public short getSelectedCompressionMethod() throws IOException {
+        return selectedCompressionMethod;
+    }
+
+    // Hashtable is (Integer -> byte[])
+    public Hashtable getServerExtensions() throws IOException {
         if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
 
             /*
@@ -93,7 +117,7 @@ public abstract class AbstractTlsServer implements TlsServer {
              * negotiated only if the server can successfully complete the handshake while using the
              * curves and point formats supported by the client [...].
              */
-            Hashtable serverExtensions = new Hashtable();
+            this.serverExtensions = new Hashtable();
             TlsECCUtils.addSupportedPointFormatsExtension(serverExtensions, new short[] {
                 ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_char2,
                 ECPointFormat.ansiX962_compressed_prime });

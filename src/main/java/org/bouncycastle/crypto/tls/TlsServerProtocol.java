@@ -16,9 +16,14 @@ public class TlsServerProtocol extends TlsProtocol {
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
 
-    protected int selectedCipherSuite = -1;
-    protected short selectedCompressionMethod = -1;
-    protected Hashtable serverExtensions = null;
+    protected int[] offeredCipherSuites;
+    protected short[] offeredCompressionMethods;
+    protected Hashtable clientExtensions;
+
+    protected int selectedCipherSuite;
+    protected short selectedCompressionMethod;
+    protected Hashtable serverExtensions;
+
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
 
@@ -292,21 +297,21 @@ public class TlsServerProtocol extends TlsProtocol {
          * NOTE: "If the session_id field is not empty (implying a session resumption request) this
          * vector must include at least the cipher_suite from that session."
          */
-        int[] cipher_suites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
+        this.offeredCipherSuites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
 
         int compression_methods_length = TlsUtils.readUint8(buf);
-        if (cipher_suites_length < 1) {
+        if (compression_methods_length < 1) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        short[] compression_methods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        this.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-        Hashtable clientExtensions = readExtensions(buf);
+        this.clientExtensions = readExtensions(buf);
 
         /*
          * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info"
@@ -316,28 +321,12 @@ public class TlsServerProtocol extends TlsProtocol {
 
         tlsServerContext.setClientVersion(client_version);
 
-        ProtocolVersion server_version = tlsServer.selectVersion(client_version);
-        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
-
-        recordStream.setReadVersion(server_version);
-        recordStream.setWriteVersion(server_version);
-        recordStream.setRestrictReadVersion(true);
-        tlsServerContext.setServerVersion(server_version);
+        tlsServer.notifyClientVersion(client_version);
 
         securityParameters.clientRandom = random;
 
-        this.selectedCipherSuite = tlsServer.selectCipherSuite(cipher_suites);
-        if (!arrayContains(cipher_suites, this.selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
-
-        this.selectedCompressionMethod = tlsServer.selectCompressionMethod(compression_methods);
-        if (!arrayContains(compression_methods, this.selectedCompressionMethod)) {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
+        tlsServer.notifyOfferedCipherSuites(offeredCipherSuites);
+        tlsServer.notifyOfferedCompressionMethods(offeredCompressionMethods);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -348,7 +337,7 @@ public class TlsServerProtocol extends TlsProtocol {
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (arrayContains(cipher_suites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
+            if (arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 this.secure_renegotiation = true;
             }
 
@@ -377,7 +366,7 @@ public class TlsServerProtocol extends TlsProtocol {
         tlsServer.notifySecureRenegotiation(this.secure_renegotiation);
 
         if (clientExtensions != null) {
-            this.serverExtensions = tlsServer.processClientExtensions(clientExtensions);
+            tlsServer.processClientExtensions(clientExtensions);
         }
     }
 
@@ -421,7 +410,17 @@ public class TlsServerProtocol extends TlsProtocol {
         // Reserve space for length
         TlsUtils.writeUint24(0, buf);
 
-        TlsUtils.writeVersion(this.tlsServerContext.getServerVersion(), buf);
+        ProtocolVersion server_version = tlsServer.getServerVersion();
+        if (!server_version.isEqualOrEarlierVersionOf(tlsServerContext.getClientVersion())) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        recordStream.setReadVersion(server_version);
+        recordStream.setWriteVersion(server_version);
+        recordStream.setRestrictReadVersion(true);
+        tlsServerContext.setServerVersion(server_version);
+
+        TlsUtils.writeVersion(server_version, buf);
 
         buf.write(this.securityParameters.serverRandom);
 
@@ -431,8 +430,21 @@ public class TlsServerProtocol extends TlsProtocol {
          */
         TlsUtils.writeUint8((short) 0, buf);
 
+        this.selectedCipherSuite = tlsServer.getSelectedCipherSuite();
+        if (!arrayContains(this.offeredCipherSuites, this.selectedCipherSuite)
+            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        this.selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
+        if (!arrayContains(this.offeredCompressionMethods, this.selectedCompressionMethod)) {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
         TlsUtils.writeUint16(this.selectedCipherSuite, buf);
         TlsUtils.writeUint8(this.selectedCompressionMethod, buf);
+
+        this.serverExtensions = tlsServer.getServerExtensions();
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake

@@ -182,6 +182,18 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+        ProtocolVersion server_version = state.server.getServerVersion();
+        if (!server_version.isEqualOrEarlierVersionOf(state.serverContext.getClientVersion())) {
+            // TODO Alert
+            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        // TODO Read RFCs for guidance on the expected record layer version number
+        // recordStream.setReadVersion(server_version);
+        // recordStream.setWriteVersion(server_version);
+        // recordStream.setRestrictReadVersion(true);
+        state.serverContext.setServerVersion(server_version);
+
         TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
 
         buf.write(state.serverContext.getSecurityParameters().serverRandom);
@@ -192,8 +204,26 @@ public class DTLSServerProtocol extends DTLSProtocol {
          */
         TlsUtils.writeUint8((short) 0, buf);
 
+        state.selectedCipherSuite = state.server.getSelectedCipherSuite();
+        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+            // TODO Alert
+            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
+        validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.internal_error);
+
+        state.selectedCompressionMethod = state.server.getSelectedCompressionMethod();
+        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods,
+            state.selectedCompressionMethod)) {
+            // TODO Alert
+            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+        }
+
         TlsUtils.writeUint16(state.selectedCipherSuite, buf);
         TlsUtils.writeUint8(state.selectedCompressionMethod, buf);
+
+        state.serverExtensions = state.server.getServerExtensions();
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -290,22 +320,22 @@ public class DTLSServerProtocol extends DTLSProtocol {
          * NOTE: "If the session_id field is not empty (implying a session resumption request) this
          * vector must include at least the cipher_suite from that session."
          */
-        int[] cipher_suites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
+        state.offeredCipherSuites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
 
         int compression_methods_length = TlsUtils.readUint8(buf);
-        if (cipher_suites_length < 1) {
+        if (compression_methods_length < 1) {
             // TODO Alert
             // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        short[] compression_methods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        state.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-        Hashtable clientExtensions = TlsProtocol.readExtensions(buf);
+        state.clientExtensions = TlsProtocol.readExtensions(buf);
 
         /*
          * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info"
@@ -315,34 +345,12 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         state.serverContext.setClientVersion(client_version);
 
-        ProtocolVersion server_version = state.server.selectVersion(client_version);
-        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
-            // TODO Alert
-            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
-
-        // TODO Read RFCs for guidance on the expected record layer version number
-        // recordStream.setReadVersion(server_version);
-        // recordStream.setWriteVersion(server_version);
-        // recordStream.setRestrictReadVersion(true);
-        state.serverContext.setServerVersion(server_version);
+        state.server.notifyClientVersion(client_version);
 
         state.serverContext.getSecurityParameters().clientRandom = random;
 
-        state.selectedCipherSuite = state.server.selectCipherSuite(cipher_suites);
-        if (!TlsProtocol.arrayContains(cipher_suites, state.selectedCipherSuite)
-            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
-            // TODO Alert
-            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
-
-        validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.internal_error);
-
-        state.selectedCompressionMethod = state.server.selectCompressionMethod(compression_methods);
-        if (!TlsProtocol.arrayContains(compression_methods, state.selectedCompressionMethod)) {
-            // TODO Alert
-            // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
-        }
+        state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
+        state.server.notifyOfferedCompressionMethods(state.offeredCompressionMethods);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -353,7 +361,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (TlsProtocol.arrayContains(cipher_suites,
+            if (TlsProtocol.arrayContains(state.offeredCipherSuites,
                 CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 state.secure_renegotiation = true;
             }
@@ -362,8 +370,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            if (clientExtensions != null) {
-                byte[] renegExtValue = (byte[]) clientExtensions.get(EXT_RenegotiationInfo);
+            if (state.clientExtensions != null) {
+                byte[] renegExtValue = (byte[]) state.clientExtensions.get(EXT_RenegotiationInfo);
                 if (renegExtValue != null) {
                     /*
                      * If the extension is present, set secure_renegotiation flag to TRUE. The
@@ -383,8 +391,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         state.server.notifySecureRenegotiation(state.secure_renegotiation);
 
-        if (clientExtensions != null) {
-            state.serverExtensions = state.server.processClientExtensions(clientExtensions);
+        if (state.clientExtensions != null) {
+            state.server.processClientExtensions(state.clientExtensions);
         }
     }
 
@@ -411,6 +419,9 @@ public class DTLSServerProtocol extends DTLSProtocol {
     protected static class ServerHandshakeState {
         TlsServer server = null;
         TlsServerContextImpl serverContext = null;
+        int[] offeredCipherSuites;
+        short[] offeredCompressionMethods;
+        Hashtable clientExtensions;
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;

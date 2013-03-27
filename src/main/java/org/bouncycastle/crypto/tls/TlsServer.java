@@ -8,16 +8,25 @@ public interface TlsServer {
 
     void init(TlsServerContext context);
 
-    ProtocolVersion selectVersion(ProtocolVersion clientVersion) throws IOException;
+    void notifyClientVersion(ProtocolVersion clientVersion) throws IOException;
 
-    int selectCipherSuite(int[] offeredCipherSuites) throws IOException;
+    void notifyOfferedCipherSuites(int[] offeredCipherSuites) throws IOException;
 
-    short selectCompressionMethod(short[] offeredCompressionMethods) throws IOException;
+    void notifyOfferedCompressionMethods(short[] offeredCompressionMethods) throws IOException;
 
     void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
 
-    // Hashtables are (Integer -> byte[])
-    Hashtable processClientExtensions(Hashtable clientExtensions) throws IOException;
+    // Hashtable is (Integer -> byte[])
+    void processClientExtensions(Hashtable clientExtensions) throws IOException;
+
+    ProtocolVersion getServerVersion() throws IOException;
+
+    int getSelectedCipherSuite() throws IOException;
+
+    short getSelectedCompressionMethod() throws IOException;
+
+    // Hashtable is (Integer -> byte[])
+    Hashtable getServerExtensions() throws IOException;
 
     // Vector is (SupplementalDataEntry)
     Vector getServerSupplementalData() throws IOException;
