@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
@@ -18,8 +17,6 @@ import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.Streams;
 
 public class TlsProtocolTest extends TestCase {
 
