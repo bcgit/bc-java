@@ -11,17 +11,6 @@ import org.bouncycastle.crypto.tls.TlsFatalAlert;
 
 public class MockDTLSServer extends DefaultTlsServer {
 
-    protected int[] getCipherSuites() {
-        return new int[] {
-//            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-//            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-//            CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-        };
-    }
-
     protected ProtocolVersion getMaximumVersion() {
         return ProtocolVersion.DTLSv10;
     }
@@ -48,6 +37,9 @@ public class MockDTLSServer extends DefaultTlsServer {
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
             return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem",
                 "x509-ca.pem" }, "x509-server-key.pem");
 
