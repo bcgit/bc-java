@@ -165,6 +165,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         handshake.finish();
 
+        state.server.notifyHandshakeComplete();
+
         return new DTLSTransport(recordLayer);
     }
 

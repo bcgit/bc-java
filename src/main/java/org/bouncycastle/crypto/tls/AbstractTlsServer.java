@@ -113,4 +113,7 @@ public abstract class AbstractTlsServer implements TlsServer {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
+
+    public void notifyHandshakeComplete() throws IOException {
+    }
 }

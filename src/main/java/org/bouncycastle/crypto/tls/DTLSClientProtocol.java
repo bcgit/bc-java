@@ -168,6 +168,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         handshake.finish();
 
+        state.client.notifyHandshakeComplete();
+
         return new DTLSTransport(recordLayer);
     }
 

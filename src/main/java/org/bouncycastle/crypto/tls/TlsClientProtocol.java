@@ -76,6 +76,8 @@ public class TlsClientProtocol extends TlsProtocol {
         this.connection_state = CS_CLIENT_HELLO;
 
         completeHandshake();
+
+        this.tlsClient.notifyHandshakeComplete();
     }
 
     protected TlsContext getContext() {

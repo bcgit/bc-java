@@ -45,4 +45,6 @@ public interface TlsClient {
     TlsCompression getCompression() throws IOException;
 
     TlsCipher getCipher() throws IOException;
+
+    void notifyHandshakeComplete() throws IOException;
 }

@@ -53,6 +53,8 @@ public class TlsServerProtocol extends TlsProtocol {
         this.recordStream.setRestrictReadVersion(false);
 
         completeHandshake();
+
+        this.tlsServer.notifyHandshakeComplete();
     }
 
     protected TlsContext getContext() {
