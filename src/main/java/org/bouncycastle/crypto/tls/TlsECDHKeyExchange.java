@@ -170,17 +170,16 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
             return;
         }
 
-        byte[] keData = TlsUtils.readOpaque8(input);
+        byte[] point = TlsUtils.readOpaque8(input);
 
         ECDomainParameters curve_params = this.ecAgreeServerPrivateKey.getParameters();
-        ECCurve curve = curve_params.getCurve();
 
         /*
          * NOTE: Here we implicitly decode compressed or uncompressed encodings. AbstractTlsServer
          * by default is set up to advertise that we can parse any encoding so this works fine, but
          * extra checks might be needed here if that were changed.
          */
-        ECPoint Yc = curve.decodePoint(keData);
+        ECPoint Yc = deserializeKey(curve_params, point);
 
         this.ecAgreeClientPublicKey = validateECPublicKey(new ECPublicKeyParameters(Yc,
             curve_params));
@@ -208,6 +207,22 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
             && a.getN().equals(b.getN()) && a.getH().equals(b.getH());
     }
 
+    protected ECPoint deserializeKey(ECDomainParameters curve_params, byte[] encoding)
+        throws IOException {
+
+        try {
+            /*
+             * NOTE: Here we implicitly decode compressed or uncompressed encodings.
+             * DefaultTlsClient by default is set up to advertise that we can parse any encoding so
+             * this works fine, but extra checks might be needed here if that were changed.
+             */
+            return curve_params.getCurve().decodePoint(encoding);
+        } catch (Exception e) {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+    }
+
     protected byte[] serializeKey(short[] ecPointFormats, ECPublicKeyParameters keyParameters)
         throws IOException {
 
@@ -222,30 +237,14 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
         boolean compressed = false;
         if (curve instanceof ECCurve.F2m) {
-            compressed = isCompressionPreferred(ecPointFormats,
+            compressed = TlsECCUtils.isCompressionPreferred(ecPointFormats,
                 ECPointFormat.ansiX962_compressed_char2);
         } else if (curve instanceof ECCurve.Fp) {
-            compressed = isCompressionPreferred(ecPointFormats,
+            compressed = TlsECCUtils.isCompressionPreferred(ecPointFormats,
                 ECPointFormat.ansiX962_compressed_prime);
         }
 
         return q.getEncoded(compressed);
-    }
-
-    protected boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat) {
-        if (ecPointFormats == null) {
-            return false;
-        }
-        for (int i = 0; i < ecPointFormats.length; ++i) {
-            short ecPointFormat = ecPointFormats[i];
-            if (ecPointFormat == ECPointFormat.uncompressed) {
-                return false;
-            }
-            if (ecPointFormat == compressionFormat) {
-                return true;
-            }
-        }
-        return false;
     }
 
     protected AsymmetricCipherKeyPair generateECKeyPair(ECDomainParameters ecParams) {

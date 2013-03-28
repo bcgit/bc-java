@@ -87,34 +87,51 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         InputStream sigIn = new SignerInputStream(input, signer);
 
         short curveType = TlsUtils.readUint8(sigIn);
-        ECDomainParameters curve_params;
 
-        // Currently, we only support named curves
-        if (curveType == ECCurveType.named_curve) {
-            int namedCurve = TlsUtils.readUint16(sigIn);
-
-            // TODO Check namedCurve is one we offered?
-
-            curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
-        } else {
-            // TODO Add support for explicit curve parameters (read from sigIn)
-
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        // TODO Add support for explicit curve parameters (read from sigIn)
+        if (curveType != ECCurveType.named_curve) {
+            /*
+             * NOTE: DefaultTlsClient by default doesn't offer support for
+             * arbitrary_explicit_*_curves (see NamedCurve class), so the server can only validly
+             * select ECCurveType.named_curve.
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        byte[] publicBytes = TlsUtils.readOpaque8(sigIn);
+        int namedCurve = TlsUtils.readUint16(sigIn);
+        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve)) {
+            /*
+             * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a specific
+             * curve. Values of NamedCurve that indicate support for a class of explicitly defined
+             * curves are not allowed here [...].
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        if (!TlsProtocol.arrayContains(namedCurves, namedCurve)) {
+            /*
+             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite unless
+             * they can complete the handshake while respecting the choice of curves and compression
+             * techniques specified by the client.
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        byte[] point = TlsUtils.readOpaque8(sigIn);
 
         byte[] sigByte = TlsUtils.readOpaque16(input);
         if (!signer.verifySignature(sigByte)) {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
+        ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+
         /*
-         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient
-         * by default is set up to advertise that we can parse any encoding so this works fine, but
+         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient by
+         * default is set up to advertise that we can parse any encoding so this works fine, but
          * extra checks might be needed here if that were changed.
          */
-        ECPoint Ys = curve_params.getCurve().decodePoint(publicBytes);
+        ECPoint Ys = deserializeKey(curve_params, point);
 
         this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys,
             curve_params));

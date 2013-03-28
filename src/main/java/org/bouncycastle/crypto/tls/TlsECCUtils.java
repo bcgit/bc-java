@@ -174,6 +174,22 @@ public class TlsECCUtils {
         return curveNames.length > 0;
     }
 
+    public static boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat) {
+        if (ecPointFormats == null) {
+            return false;
+        }
+        for (int i = 0; i < ecPointFormats.length; ++i) {
+            short ecPointFormat = ecPointFormats[i];
+            if (ecPointFormat == ECPointFormat.uncompressed) {
+                return false;
+            }
+            if (ecPointFormat == compressionFormat) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isECCCipherSuite(int cipherSuite) {
         switch (cipherSuite) {
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
