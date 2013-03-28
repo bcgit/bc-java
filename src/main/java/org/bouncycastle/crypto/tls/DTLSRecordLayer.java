@@ -163,12 +163,12 @@ class DTLSRecordLayer implements DatagramTransport {
                         continue;
                     }
 
-                    // if (pendingReadCipher == null)
                     if (pendingEpoch == null) {
                         // TODO Exception?
-                    }
+                    } else {
 
-                    readEpoch = pendingEpoch;
+                        readEpoch = pendingEpoch;
+                    }
 
                     continue;
                 }
@@ -201,15 +201,16 @@ class DTLSRecordLayer implements DatagramTransport {
             if (handshakeType == HandshakeType.finished) {
                 if (pendingEpoch == null) {
                     // TODO Exception?
+                } else {
+
+                    // Implicitly send change_cipher_spec and change to pending cipher state
+
+                    // TODO Send change_cipher_spec and finished records in single datagram?
+                    byte[] data = new byte[] { 1 };
+                    sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
+
+                    writeEpoch = pendingEpoch;
                 }
-
-                // Implicitly send change_cipher_spec and change to pending cipher state
-
-                // TODO Send change_cipher_spec and finished records in single datagram?
-                byte[] data = new byte[] { 1 };
-                sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
-
-                writeEpoch = pendingEpoch;
             }
         }
 
