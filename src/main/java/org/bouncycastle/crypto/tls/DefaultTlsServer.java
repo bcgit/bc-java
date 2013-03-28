@@ -15,6 +15,14 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
         super(cipherFactory);
     }
 
+    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     protected DHParameters getDHParameters() {
         return DHStandardGroups.rfc5114_1024_160;
     }
@@ -28,6 +36,38 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
             CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
+    }
+
+    public TlsCredentials getCredentials() throws IOException {
+
+        switch (selectedCipherSuite) {
+        case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
+            return getRSAEncryptionCredentials();
+
+        case CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
+            return getRSASignerCredentials();
+
+        default:
+            /*
+             * Note: internal error here; selected a key exchange we don't implement!
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException {
