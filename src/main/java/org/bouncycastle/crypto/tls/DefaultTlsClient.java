@@ -75,15 +75,6 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     public TlsKeyExchange getKeyExchange() throws IOException {
 
         switch (selectedCipherSuite) {
-        case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
-        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
-        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
-            return createRSAKeyExchange();
-
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA:
@@ -144,6 +135,16 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
             return createECDHEKeyExchange(KeyExchangeAlgorithm.ECDHE_RSA);
 
+        case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
+            return createRSAKeyExchange();
+
         default:
             /*
              * Note: internal error here; the TlsProtocol implementation verifies that the
@@ -157,55 +158,55 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     public TlsCipher getCipher() throws IOException {
 
         switch (selectedCipherSuite) {
-        case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_128_CBC,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC,
                 DigestAlgorithm.SHA);
 
@@ -213,22 +214,23 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDH_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_WITH_NULL_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128,
                 DigestAlgorithm.SHA);
 
-        case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.SEED_CBC,
                 DigestAlgorithm.SHA);
 
