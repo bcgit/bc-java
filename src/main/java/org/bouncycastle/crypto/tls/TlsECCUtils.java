@@ -264,7 +264,7 @@ public class TlsECCUtils {
 
     public static byte[] serializeECPublicKey(short[] ecPointFormats,
         ECPublicKeyParameters keyParameters) throws IOException {
-    
+
         /*
          * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
          * format MUST conform to what the server has requested through a Supported Point Formats
@@ -273,7 +273,7 @@ public class TlsECCUtils {
          */
         ECPoint q = keyParameters.getQ();
         ECCurve curve = q.getCurve();
-    
+
         boolean compressed = false;
         if (curve instanceof ECCurve.F2m) {
             compressed = isCompressionPreferred(ecPointFormats,
@@ -282,13 +282,13 @@ public class TlsECCUtils {
             compressed = isCompressionPreferred(ecPointFormats,
                 ECPointFormat.ansiX962_compressed_prime);
         }
-    
+
         return q.getEncoded(compressed);
     }
 
     public static ECPublicKeyParameters deserializeECPublicKey(short[] ecPointFormats,
         ECDomainParameters curve_params, byte[] encoding) throws IOException {
-    
+
         try {
             /*
              * NOTE: Here we implicitly decode compressed or uncompressed encodings.
@@ -304,16 +304,22 @@ public class TlsECCUtils {
 
     public static byte[] calculateECDHBasicAgreement(ECPublicKeyParameters publicKey,
         ECPrivateKeyParameters privateKey) {
-    
+
         ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
         basicAgreement.init(privateKey);
-        BigInteger agreement = basicAgreement.calculateAgreement(publicKey);
-        return BigIntegers.asUnsignedByteArray(agreement);
+        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
+
+        /*
+         * RFC 4492 5.10. Note that this octet string (Z in IEEE 1363 terminology) as output by
+         * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length for
+         * any given field; leading zeros found in this octet string MUST NOT be truncated.
+         */
+        return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
     }
 
     public static AsymmetricCipherKeyPair generateECKeyPair(SecureRandom random,
         ECDomainParameters ecParams) {
-    
+
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
         ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams,
             random);

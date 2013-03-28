@@ -16,6 +16,7 @@ public class DefaultTlsAgreementCredentials implements TlsAgreementCredentials {
     protected AsymmetricKeyParameter privateKey;
 
     protected BasicAgreement basicAgreement;
+    protected boolean truncateAgreement;
 
     public DefaultTlsAgreementCredentials(Certificate certificate, AsymmetricKeyParameter privateKey) {
         if (certificate == null) {
@@ -33,8 +34,10 @@ public class DefaultTlsAgreementCredentials implements TlsAgreementCredentials {
 
         if (privateKey instanceof DHPrivateKeyParameters) {
             basicAgreement = new DHBasicAgreement();
+            truncateAgreement = true;
         } else if (privateKey instanceof ECPrivateKeyParameters) {
             basicAgreement = new ECDHBasicAgreement();
+            truncateAgreement = false;
         } else {
             throw new IllegalArgumentException("'privateKey' type not supported: "
                 + privateKey.getClass().getName());
@@ -51,6 +54,11 @@ public class DefaultTlsAgreementCredentials implements TlsAgreementCredentials {
     public byte[] generateAgreement(AsymmetricKeyParameter peerPublicKey) {
         basicAgreement.init(privateKey);
         BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
-        return BigIntegers.asUnsignedByteArray(agreementValue);
+
+        if (truncateAgreement) {
+            return BigIntegers.asUnsignedByteArray(agreementValue);
+        }
+
+        return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
     }
 }

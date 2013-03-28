@@ -21,10 +21,16 @@ public class TlsDHUtils {
 
     public static byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey,
         DHPrivateKeyParameters privateKey) {
-        DHBasicAgreement dhAgree = new DHBasicAgreement();
-        dhAgree.init(privateKey);
-        BigInteger agreement = dhAgree.calculateAgreement(publicKey);
-        return BigIntegers.asUnsignedByteArray(agreement);
+
+        DHBasicAgreement basicAgreement = new DHBasicAgreement();
+        basicAgreement.init(privateKey);
+        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
+
+        /*
+         * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it is
+         * used as the pre_master_secret.
+         */
+        return BigIntegers.asUnsignedByteArray(agreementValue);
     }
 
     public static AsymmetricCipherKeyPair generateDHKeyPair(SecureRandom random,
