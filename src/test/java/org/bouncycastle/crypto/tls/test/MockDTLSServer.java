@@ -27,6 +27,8 @@ public class MockDTLSServer extends DefaultTlsServer {
         case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return TlsTestUtils.loadEncryptionCredentials(context, new String[] {
                 "x509-server.pem", "x509-ca.pem" }, "x509-server-key.pem");
