@@ -2,6 +2,9 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.params.DHParameters;
+
 public abstract class DefaultTlsServer extends AbstractTlsServer {
 
     public DefaultTlsServer() {
@@ -10,6 +13,10 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
 
     public DefaultTlsServer(TlsCipherFactory cipherFactory) {
         super(cipherFactory);
+    }
+
+    protected DHParameters getDHParameters() {
+        return DHStandardGroups.rfc5114_1024_160;
     }
 
     protected int[] getCipherSuites() {
@@ -177,19 +184,21 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
     }
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) {
-        return new TlsDHKeyExchange(keyExchange);
+        return new TlsDHKeyExchange(keyExchange, getDHParameters());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) {
-        return new TlsDHEKeyExchange(keyExchange);
+        return new TlsDHEKeyExchange(keyExchange, getDHParameters());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
-        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
-        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() {

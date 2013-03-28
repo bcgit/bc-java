@@ -32,7 +32,7 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
         }
     }
 
-    public void processServerKeyExchange(InputStream is) throws IOException {
+    public void processServerKeyExchange(InputStream input) throws IOException {
         if (!requiresServerKeyExchange()) {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }

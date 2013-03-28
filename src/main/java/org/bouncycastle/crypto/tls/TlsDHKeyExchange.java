@@ -17,11 +17,13 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
  * TLS 1.0/1.1 DH key exchange.
  */
 class TlsDHKeyExchange extends AbstractTlsKeyExchange {
+
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
-    protected int keyExchange;
     protected TlsSigner tlsSigner;
+    protected int keyExchange;
+    protected DHParameters dhParameters;
 
     protected AsymmetricKeyParameter serverPublicKey;
     protected DHPublicKeyParameters dhAgreeServerPublicKey;
@@ -30,7 +32,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
 
     protected DHPublicKeyParameters dhAgreeClientPublicKey;
 
-    TlsDHKeyExchange(int keyExchange) {
+    TlsDHKeyExchange(int keyExchange, DHParameters dhParameters) {
         switch (keyExchange) {
         case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_DSS:
@@ -47,6 +49,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         }
 
         this.keyExchange = keyExchange;
+        this.dhParameters = dhParameters;
     }
 
     public void skipServerCredentials() throws IOException {
@@ -130,7 +133,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException {
+    public void generateClientKeyExchange(OutputStream output) throws IOException {
         /*
          * RFC 2246 7.4.7.2 If the client certificate already contains a suitable Diffie-Hellman
          * key, then Yc is implicit and does not need to be sent again. In this case, the Client Key
@@ -138,7 +141,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
          */
         if (agreementCredentials == null) {
             this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
-                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), os);
+                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), output);
         }
     }
 

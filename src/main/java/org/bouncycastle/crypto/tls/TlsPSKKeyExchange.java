@@ -104,22 +104,22 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
         return keyExchange == KeyExchangeAlgorithm.DHE_PSK;
     }
 
-    public void processServerKeyExchange(InputStream is) throws IOException
+    public void processServerKeyExchange(InputStream input) throws IOException
     {
-        this.psk_identity_hint = TlsUtils.readOpaque16(is);
+        this.psk_identity_hint = TlsUtils.readOpaque16(input);
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            byte[] pBytes = TlsUtils.readOpaque16(is);
-            byte[] gBytes = TlsUtils.readOpaque16(is);
-            byte[] YsBytes = TlsUtils.readOpaque16(is);
+            byte[] pBytes = TlsUtils.readOpaque16(input);
+            byte[] gBytes = TlsUtils.readOpaque16(input);
+            byte[] YsBytes = TlsUtils.readOpaque16(input);
 
             BigInteger p = new BigInteger(1, pBytes);
             BigInteger g = new BigInteger(1, gBytes);
             BigInteger Ys = new BigInteger(1, YsBytes);
 
-            this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Ys,
-                new DHParameters(p, g)));
+            this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(
+                Ys, new DHParameters(p, g)));
         }
     }
 
@@ -134,7 +134,7 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
     	if (psk_identity_hint == null)
     	{
@@ -147,17 +147,17 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange
 
     	byte[] psk_identity = pskIdentity.getPSKIdentity();
 
-        TlsUtils.writeOpaque16(psk_identity, os);
+        TlsUtils.writeOpaque16(psk_identity, output);
 
         if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
             this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context,
-                this.rsaServerPublicKey, os);
+                this.rsaServerPublicKey, output);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
             this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
-                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), os);
+                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), output);
         }
     }
 

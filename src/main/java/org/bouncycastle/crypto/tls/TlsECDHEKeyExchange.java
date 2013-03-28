@@ -7,14 +7,10 @@ import java.io.InputStream;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * ECDHE key exchange (see RFC 4492)
@@ -46,16 +42,14 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         // TODO Add support for arbitrary_explicit_*_curves
 
         short curveType = ECCurveType.named_curve;
+
         int namedCurve = chooseNamedCurve();
         ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
-        ECCurve curve = curve_params.getCurve();
 
-        ECKeyPairGenerator kpg = new ECKeyPairGenerator();
-        kpg.init(new ECKeyGenerationParameters(curve_params, context.getSecureRandom()));
-        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+        AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters) kp.getPrivate();
 
-        byte[] publicBytes = serializeKey(clientECPointFormats,
+        byte[] publicBytes = TlsECCUtils.serializeECPublicKey(clientECPointFormats,
             (ECPublicKeyParameters) kp.getPublic());
 
         TlsUtils.writeUint8(curveType, buf);
@@ -126,15 +120,8 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
 
-        /*
-         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient by
-         * default is set up to advertise that we can parse any encoding so this works fine, but
-         * extra checks might be needed here if that were changed.
-         */
-        ECPoint Ys = deserializeKey(curve_params, point);
-
-        this.ecAgreeServerPublicKey = validateECPublicKey(new ECPublicKeyParameters(Ys,
-            curve_params));
+        this.ecAgreeServerPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
+            clientECPointFormats, curve_params, point));
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

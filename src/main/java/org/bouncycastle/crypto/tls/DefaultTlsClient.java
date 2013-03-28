@@ -232,11 +232,11 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     }
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) {
-        return new TlsDHKeyExchange(keyExchange);
+        return new TlsDHKeyExchange(keyExchange, null);
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) {
-        return new TlsDHEKeyExchange(keyExchange);
+        return new TlsDHEKeyExchange(keyExchange, null);
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {

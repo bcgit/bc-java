@@ -108,17 +108,17 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         return true;
     }
 
-    public void processServerKeyExchange(InputStream is) throws IOException
+    public void processServerKeyExchange(InputStream input) throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
 
-        InputStream sigIn = is;
+        InputStream sigIn = input;
         Signer signer = null;
 
         if (tlsSigner != null)
         {
             signer = initSigner(tlsSigner, securityParameters);
-            sigIn = new SignerInputStream(is, signer);
+            sigIn = new SignerInputStream(input, signer);
         }
 
         byte[] NBytes = TlsUtils.readOpaque16(sigIn);
@@ -128,7 +128,7 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
         if (signer != null)
         {
-            byte[] sigByte = TlsUtils.readOpaque16(is);
+            byte[] sigByte = TlsUtils.readOpaque16(input);
 
             if (!signer.verifySignature(sigByte))
             {
@@ -171,11 +171,11 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
         byte[] keData = BigIntegers.asUnsignedByteArray(srpClient.generateClientCredentials(s,
             this.identity, this.password));
-        TlsUtils.writeOpaque16(keData, os);
+        TlsUtils.writeOpaque16(keData, output);
     }
 
     public byte[] generatePremasterSecret() throws IOException

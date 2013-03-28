@@ -93,9 +93,9 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException {
+    public void generateClientKeyExchange(OutputStream output) throws IOException {
         this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context,
-            this.rsaServerPublicKey, os);
+            this.rsaServerPublicKey, output);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException {

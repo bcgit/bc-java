@@ -3,22 +3,15 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * ECDH key exchange (see RFC 4492)
@@ -85,7 +78,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
         if (tlsSigner == null) {
             try {
-                this.ecAgreeServerPublicKey = validateECPublicKey((ECPublicKeyParameters) this.serverPublicKey);
+                this.ecAgreeServerPublicKey = TlsECCUtils
+                    .validateECPublicKey((ECPublicKeyParameters) this.serverPublicKey);
             } catch (ClassCastException e) {
                 throw new TlsFatalAlert(AlertDescription.certificate_unknown);
             }
@@ -142,7 +136,7 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException {
         if (clientCredentials instanceof TlsAgreementCredentials) {
-            // TODO Validate client cert has matching parameters (see 'areOnSameCurve')?
+            // TODO Validate client cert has matching parameters (see 'TlsECCUtils.areOnSameCurve')?
 
             this.agreementCredentials = (TlsAgreementCredentials) clientCredentials;
         } else if (clientCredentials instanceof TlsSignerCredentials) {
@@ -152,13 +146,23 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void generateClientKeyExchange(OutputStream os) throws IOException {
-        if (agreementCredentials == null) {
-            generateEphemeralClientKeyExchange(ecAgreeServerPublicKey.getParameters(), os);
+    public void generateClientKeyExchange(OutputStream output) throws IOException {
+        if (agreementCredentials != null) {
+            return;
         }
+
+        AsymmetricCipherKeyPair ecAgreeClientKeyPair = TlsECCUtils.generateECKeyPair(
+            context.getSecureRandom(), ecAgreeServerPublicKey.getParameters());
+        this.ecAgreeClientPrivateKey = (ECPrivateKeyParameters) ecAgreeClientKeyPair.getPrivate();
+
+        byte[] point = TlsECCUtils.serializeECPublicKey(serverECPointFormats,
+            (ECPublicKeyParameters) ecAgreeClientKeyPair.getPublic());
+
+        TlsUtils.writeOpaque8(point, output);
     }
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException {
+
         // TODO Extract the public key
         // TODO If the certificate is 'fixed', take the public key as ecAgreeClientPublicKey
     }
@@ -174,15 +178,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
         ECDomainParameters curve_params = this.ecAgreeServerPrivateKey.getParameters();
 
-        /*
-         * NOTE: Here we implicitly decode compressed or uncompressed encodings. AbstractTlsServer
-         * by default is set up to advertise that we can parse any encoding so this works fine, but
-         * extra checks might be needed here if that were changed.
-         */
-        ECPoint Yc = deserializeKey(curve_params, point);
-
-        this.ecAgreeClientPublicKey = validateECPublicKey(new ECPublicKeyParameters(Yc,
-            curve_params));
+        this.ecAgreeClientPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils
+            .deserializeECPublicKey(serverECPointFormats, curve_params, point));
     }
 
     public byte[] generatePremasterSecret() throws IOException {
@@ -191,94 +188,15 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         }
 
         if (ecAgreeServerPrivateKey != null) {
-            return calculateECDHBasicAgreement(ecAgreeClientPublicKey, ecAgreeServerPrivateKey);
+            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeClientPublicKey,
+                ecAgreeServerPrivateKey);
         }
 
         if (ecAgreeClientPrivateKey != null) {
-            return calculateECDHBasicAgreement(ecAgreeServerPublicKey, ecAgreeClientPrivateKey);
+            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeServerPublicKey,
+                ecAgreeClientPrivateKey);
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected boolean areOnSameCurve(ECDomainParameters a, ECDomainParameters b) {
-        // TODO Move to ECDomainParameters.equals() or other utility method?
-        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG())
-            && a.getN().equals(b.getN()) && a.getH().equals(b.getH());
-    }
-
-    protected ECPoint deserializeKey(ECDomainParameters curve_params, byte[] encoding)
-        throws IOException {
-
-        try {
-            /*
-             * NOTE: Here we implicitly decode compressed or uncompressed encodings.
-             * DefaultTlsClient by default is set up to advertise that we can parse any encoding so
-             * this works fine, but extra checks might be needed here if that were changed.
-             */
-            return curve_params.getCurve().decodePoint(encoding);
-        } catch (Exception e) {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-    }
-
-    protected byte[] serializeKey(short[] ecPointFormats, ECPublicKeyParameters keyParameters)
-        throws IOException {
-
-        /*
-         * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
-         * format MUST conform to what the server has requested through a Supported Point Formats
-         * Extension if this extension was used, and MUST be uncompressed if this extension was not
-         * used.
-         */
-        ECPoint q = keyParameters.getQ();
-        ECCurve curve = q.getCurve();
-
-        boolean compressed = false;
-        if (curve instanceof ECCurve.F2m) {
-            compressed = TlsECCUtils.isCompressionPreferred(ecPointFormats,
-                ECPointFormat.ansiX962_compressed_char2);
-        } else if (curve instanceof ECCurve.Fp) {
-            compressed = TlsECCUtils.isCompressionPreferred(ecPointFormats,
-                ECPointFormat.ansiX962_compressed_prime);
-        }
-
-        return q.getEncoded(compressed);
-    }
-
-    protected AsymmetricCipherKeyPair generateECKeyPair(ECDomainParameters ecParams) {
-
-        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams,
-            context.getSecureRandom());
-        keyPairGenerator.init(keyGenerationParameters);
-        return keyPairGenerator.generateKeyPair();
-    }
-
-    protected void generateEphemeralClientKeyExchange(ECDomainParameters ecParams, OutputStream os)
-        throws IOException {
-
-        AsymmetricCipherKeyPair ecAgreeClientKeyPair = generateECKeyPair(ecParams);
-        this.ecAgreeClientPrivateKey = (ECPrivateKeyParameters) ecAgreeClientKeyPair.getPrivate();
-
-        byte[] keData = serializeKey(serverECPointFormats,
-            (ECPublicKeyParameters) ecAgreeClientKeyPair.getPublic());
-        TlsUtils.writeOpaque8(keData, os);
-    }
-
-    protected byte[] calculateECDHBasicAgreement(ECPublicKeyParameters publicKey,
-        ECPrivateKeyParameters privateKey) {
-
-        ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
-        basicAgreement.init(privateKey);
-        BigInteger agreement = basicAgreement.calculateAgreement(publicKey);
-        return BigIntegers.asUnsignedByteArray(agreement);
-    }
-
-    protected ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key)
-        throws IOException {
-        // TODO Check RFC 4492 for validation
-        return key;
     }
 }

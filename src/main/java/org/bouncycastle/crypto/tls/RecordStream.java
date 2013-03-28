@@ -12,8 +12,8 @@ import org.bouncycastle.crypto.Digest;
  */
 class RecordStream {
     private TlsProtocol handler;
-    private InputStream is;
-    private OutputStream os;
+    private InputStream input;
+    private OutputStream output;
     private TlsCompression pendingCompression = null, readCompression = null,
         writeCompression = null;
     private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
@@ -26,10 +26,10 @@ class RecordStream {
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
 
-    RecordStream(TlsProtocol handler, InputStream is, OutputStream os) {
+    RecordStream(TlsProtocol handler, InputStream input, OutputStream output) {
         this.handler = handler;
-        this.is = is;
-        this.os = os;
+        this.input = input;
+        this.output = output;
         this.readCompression = new TlsNullCompression();
         this.writeCompression = this.readCompression;
         this.readCipher = new TlsNullCipher(context);
@@ -88,7 +88,8 @@ class RecordStream {
     }
 
     void finaliseHandshake() throws IOException {
-        if (readCompression != pendingCompression || writeCompression != pendingCompression || readCipher != pendingCipher || writeCipher != pendingCipher) {
+        if (readCompression != pendingCompression || writeCompression != pendingCompression
+            || readCipher != pendingCipher || writeCipher != pendingCipher) {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
         pendingCompression = null;
@@ -96,15 +97,15 @@ class RecordStream {
     }
 
     public void readRecord() throws IOException {
-        short type = TlsUtils.readUint8(is);
+        short type = TlsUtils.readUint8(input);
 
         if (!restrictReadVersion) {
-            int version = TlsUtils.readVersionRaw(is);
+            int version = TlsUtils.readVersionRaw(input);
             if ((version & 0xffffff00) != 0x0300) {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         } else {
-            ProtocolVersion version = TlsUtils.readVersion(is);
+            ProtocolVersion version = TlsUtils.readVersion(input);
             if (readVersion == null) {
                 readVersion = version;
             } else if (!version.equals(readVersion)) {
@@ -112,14 +113,14 @@ class RecordStream {
             }
         }
 
-        int size = TlsUtils.readUint16(is);
-        byte[] buf = decodeAndVerify(type, is, size);
+        int size = TlsUtils.readUint16(input);
+        byte[] buf = decodeAndVerify(type, input, size);
         handler.processRecord(type, buf, 0, buf.length);
     }
 
-    protected byte[] decodeAndVerify(short type, InputStream is, int len) throws IOException {
+    protected byte[] decodeAndVerify(short type, InputStream input, int len) throws IOException {
         byte[] buf = new byte[len];
-        TlsUtils.readFully(buf, is);
+        TlsUtils.readFully(buf, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
         OutputStream cOut = readCompression.decompress(buffer);
@@ -156,8 +157,8 @@ class RecordStream {
         TlsUtils.writeVersion(writeVersion, writeMessage, 1);
         TlsUtils.writeUint16(ciphertext.length, writeMessage, 3);
         System.arraycopy(ciphertext, 0, writeMessage, 5, ciphertext.length);
-        os.write(writeMessage);
-        os.flush();
+        output.write(writeMessage);
+        output.flush();
     }
 
     void updateHandshakeData(byte[] message, int offset, int len) {
@@ -182,12 +183,12 @@ class RecordStream {
     protected void close() throws IOException {
         IOException e = null;
         try {
-            is.close();
+            input.close();
         } catch (IOException ex) {
             e = ex;
         }
         try {
-            os.close();
+            output.close();
         } catch (IOException ex) {
             e = ex;
         }
@@ -197,7 +198,7 @@ class RecordStream {
     }
 
     protected void flush() throws IOException {
-        os.flush();
+        output.flush();
     }
 
     private byte[] getBufferContents() {

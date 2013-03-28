@@ -3,11 +3,24 @@ package org.bouncycastle.crypto.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECCurve.F2m;
+import org.bouncycastle.math.ec.ECCurve.Fp;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils {
@@ -22,15 +35,6 @@ public class TlsECCUtils {
         "sect283r1", "sect409k1", "sect409r1", "sect571k1", "sect571r1", "secp160k1", "secp160r1",
         "secp160r2", "secp192k1", "secp192r1", "secp224k1", "secp224r1", "secp256k1", "secp256r1",
         "secp384r1", "secp521r1", };
-
-    public static boolean containsECCCipherSuites(int[] cipherSuites) {
-        for (int i = 0; i < cipherSuites.length; ++i) {
-            if (isECCCipherSuite(cipherSuites[i])) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves)
         throws IOException {
@@ -174,16 +178,9 @@ public class TlsECCUtils {
         return curveNames.length > 0;
     }
 
-    public static boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat) {
-        if (ecPointFormats == null) {
-            return false;
-        }
-        for (int i = 0; i < ecPointFormats.length; ++i) {
-            short ecPointFormat = ecPointFormats[i];
-            if (ecPointFormat == ECPointFormat.uncompressed) {
-                return false;
-            }
-            if (ecPointFormat == compressionFormat) {
+    public static boolean containsECCCipherSuites(int[] cipherSuites) {
+        for (int i = 0; i < cipherSuites.length; ++i) {
+            if (isECCCipherSuite(cipherSuites[i])) {
                 return true;
             }
         }
@@ -239,7 +236,94 @@ public class TlsECCUtils {
         }
     }
 
+    public static boolean areOnSameCurve(ECDomainParameters a, ECDomainParameters b) {
+        // TODO Move to ECDomainParameters.equals() or other utility method?
+        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG())
+            && a.getN().equals(b.getN()) && a.getH().equals(b.getH());
+    }
+
     public static boolean isSupportedNamedCurve(int namedCurve) {
         return (namedCurve > 0 && namedCurve <= curveNames.length);
+    }
+
+    public static boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat) {
+        if (ecPointFormats == null) {
+            return false;
+        }
+        for (int i = 0; i < ecPointFormats.length; ++i) {
+            short ecPointFormat = ecPointFormats[i];
+            if (ecPointFormat == ECPointFormat.uncompressed) {
+                return false;
+            }
+            if (ecPointFormat == compressionFormat) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static byte[] serializeECPublicKey(short[] ecPointFormats,
+        ECPublicKeyParameters keyParameters) throws IOException {
+    
+        /*
+         * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
+         * format MUST conform to what the server has requested through a Supported Point Formats
+         * Extension if this extension was used, and MUST be uncompressed if this extension was not
+         * used.
+         */
+        ECPoint q = keyParameters.getQ();
+        ECCurve curve = q.getCurve();
+    
+        boolean compressed = false;
+        if (curve instanceof ECCurve.F2m) {
+            compressed = isCompressionPreferred(ecPointFormats,
+                ECPointFormat.ansiX962_compressed_char2);
+        } else if (curve instanceof ECCurve.Fp) {
+            compressed = isCompressionPreferred(ecPointFormats,
+                ECPointFormat.ansiX962_compressed_prime);
+        }
+    
+        return q.getEncoded(compressed);
+    }
+
+    public static ECPublicKeyParameters deserializeECPublicKey(short[] ecPointFormats,
+        ECDomainParameters curve_params, byte[] encoding) throws IOException {
+    
+        try {
+            /*
+             * NOTE: Here we implicitly decode compressed or uncompressed encodings.
+             * DefaultTlsClient by default is set up to advertise that we can parse any encoding so
+             * this works fine, but extra checks might be needed here if that were changed.
+             */
+            ECPoint Y = curve_params.getCurve().decodePoint(encoding);
+            return new ECPublicKeyParameters(Y, curve_params);
+        } catch (Exception e) {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    public static byte[] calculateECDHBasicAgreement(ECPublicKeyParameters publicKey,
+        ECPrivateKeyParameters privateKey) {
+    
+        ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
+        basicAgreement.init(privateKey);
+        BigInteger agreement = basicAgreement.calculateAgreement(publicKey);
+        return BigIntegers.asUnsignedByteArray(agreement);
+    }
+
+    public static AsymmetricCipherKeyPair generateECKeyPair(SecureRandom random,
+        ECDomainParameters ecParams) {
+    
+        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
+        ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams,
+            random);
+        keyPairGenerator.init(keyGenerationParameters);
+        return keyPairGenerator.generateKeyPair();
+    }
+
+    public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key)
+        throws IOException {
+        // TODO Check RFC 4492 for validation
+        return key;
     }
 }

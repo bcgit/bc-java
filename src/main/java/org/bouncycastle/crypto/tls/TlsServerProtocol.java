@@ -27,8 +27,8 @@ public class TlsServerProtocol extends TlsProtocol {
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
 
-    public TlsServerProtocol(InputStream is, OutputStream os, SecureRandom sr) {
-        super(is, os, sr);
+    public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
+        super(input, output, secureRandom);
     }
 
     /**

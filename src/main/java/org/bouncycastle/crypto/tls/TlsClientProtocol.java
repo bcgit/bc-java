@@ -41,12 +41,12 @@ public class TlsClientProtocol extends TlsProtocol {
         return random;
     }
 
-    public TlsClientProtocol(InputStream is, OutputStream os) {
-        this(is, os, createSecureRandom());
+    public TlsClientProtocol(InputStream input, OutputStream output) {
+        this(input, output, createSecureRandom());
     }
 
-    public TlsClientProtocol(InputStream is, OutputStream os, SecureRandom sr) {
-        super(is, os, sr);
+    public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
+        super(input, output, secureRandom);
     }
 
     /**

@@ -8,20 +8,18 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
-import org.bouncycastle.util.BigIntegers;
 
 class TlsDHEKeyExchange extends TlsDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsDHEKeyExchange(int keyExchange) {
-        super(keyExchange);
+    TlsDHEKeyExchange(int keyExchange, DHParameters dhParameters) {
+        super(keyExchange, dhParameters);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
@@ -37,20 +35,21 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
 
     public byte[] generateServerKeyExchange() throws IOException {
 
+        if (this.dhParameters == null) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        // TODO Allow specification of DH parameters to use
-        DHParameters dhParameters = DHStandardGroups.rfc5114_1024_160;
-
         DHKeyPairGenerator kpg = new DHKeyPairGenerator();
-        kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), dhParameters));
+        kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), this.dhParameters));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
         BigInteger Ys = ((DHPublicKeyParameters) kp.getPublic()).getY();
 
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(dhParameters.getP()), buf);
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(dhParameters.getG()), buf);
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(Ys), buf);
+        TlsDHUtils.writeDHParameter(dhParameters.getP(), buf);
+        TlsDHUtils.writeDHParameter(dhParameters.getG(), buf);
+        TlsDHUtils.writeDHParameter(Ys, buf);
 
         byte[] digestInput = buf.toByteArray();
 
@@ -76,18 +75,14 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
         Signer signer = initVerifyer(tlsSigner, securityParameters);
         InputStream sigIn = new SignerInputStream(input, signer);
 
-        byte[] pBytes = TlsUtils.readOpaque16(sigIn);
-        byte[] gBytes = TlsUtils.readOpaque16(sigIn);
-        byte[] YsBytes = TlsUtils.readOpaque16(sigIn);
+        BigInteger p = TlsDHUtils.readDHParameter(sigIn);
+        BigInteger g = TlsDHUtils.readDHParameter(sigIn);
+        BigInteger Ys = TlsDHUtils.readDHParameter(sigIn);
 
         byte[] sigBytes = TlsUtils.readOpaque16(input);
         if (!signer.verifySignature(sigBytes)) {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
-
-        BigInteger p = new BigInteger(1, pBytes);
-        BigInteger g = new BigInteger(1, gBytes);
-        BigInteger Ys = new BigInteger(1, YsBytes);
 
         this.dhAgreeServerPublicKey = validateDHPublicKey(new DHPublicKeyParameters(Ys,
             new DHParameters(p, g)));

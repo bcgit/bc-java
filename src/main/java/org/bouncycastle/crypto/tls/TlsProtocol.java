@@ -72,9 +72,9 @@ public abstract class TlsProtocol {
     protected short connection_state = CS_START;
     protected boolean secure_renegotiation = false;
 
-    public TlsProtocol(InputStream is, OutputStream os, SecureRandom sr) {
-        this.recordStream = new RecordStream(this, is, os);
-        this.secureRandom = sr;
+    public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
+        this.recordStream = new RecordStream(this, input, output);
+        this.secureRandom = secureRandom;
     }
 
     protected abstract TlsContext getContext();
@@ -591,15 +591,15 @@ public abstract class TlsProtocol {
     }
 
     /**
-     * Make sure the InputStream is now empty. Fail otherwise.
+     * Make sure the InputStream 'buf' now empty. Fail otherwise.
      * 
-     * @param is
+     * @param buf
      *            The InputStream to check.
      * @throws IOException
-     *             If is is not empty.
+     *             If 'buf' is not empty.
      */
-    protected static void assertEmpty(ByteArrayInputStream is) throws IOException {
-        if (is.available() > 0) {
+    protected static void assertEmpty(ByteArrayInputStream buf) throws IOException {
+        if (buf.available() > 0) {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
     }
