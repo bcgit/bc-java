@@ -10,6 +10,13 @@ class DTLSEpoch {
     private long sequence_number = 0;
 
     DTLSEpoch(int epoch, TlsCipher cipher) {
+        if (epoch < 0) {
+            throw new IllegalArgumentException("'epoch' must be >= 0");
+        }
+        if (cipher == null) {
+            throw new IllegalArgumentException("'cipher' cannot be null");
+        }
+
         this.epoch = epoch;
         this.cipher = cipher;
     }
