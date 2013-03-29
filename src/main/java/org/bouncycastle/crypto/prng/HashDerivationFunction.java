@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.prng;
 
 import org.bouncycastle.crypto.Digest;
 
-public class HashDerivationFunction implements DRBGDerivationFunction
+public class HashDerivationFunction
 {
 
     private Digest _underlyingDigest;
