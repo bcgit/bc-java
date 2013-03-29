@@ -2,12 +2,12 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 2246
+ * 
+ * Note that the values here are implementation-specific and arbitrary. It is recommended not to
+ * depend on the particular values (e.g. serialization).
  */
 public class MACAlgorithm {
-    /*
-     * Note that the values here are implementation-specific and arbitrary. It is recommended not to
-     * depend on the particular values (e.g. serialization).
-     */
+
     public static final int NULL = 0;
     public static final int md5 = 1;
     public static final int sha = 2;

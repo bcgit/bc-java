@@ -1,11 +1,15 @@
 package org.bouncycastle.crypto.tls;
 
+/**
+ * RFC 2246
+ * 
+ * Note that the values here are implementation-specific and arbitrary. It is recommended not to
+ * depend on the particular values (e.g. serialization).
+ * 
+ * @deprecated use MACAlgorithm constants instead
+ */
 public class DigestAlgorithm
 {
-    /*
-     * Note that the values here are implementation-specific and arbitrary.
-     * It is recommended not to depend on the particular values (e.g. serialization).
-     */
     public static final int NULL = 0;
     public static final int MD5 = 1;
     public static final int SHA = 2;

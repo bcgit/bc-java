@@ -1,11 +1,13 @@
 package org.bouncycastle.crypto.tls;
 
-public class EncryptionAlgorithm
-{
-    /*
-     * Note that the values here are implementation-specific and arbitrary.
-     * It is recommended not to depend on the particular values (e.g. serialization).
-     */
+/**
+ * RFC 2246
+ * 
+ * Note that the values here are implementation-specific and arbitrary. It is recommended not to
+ * depend on the particular values (e.g. serialization).
+ */
+public class EncryptionAlgorithm {
+
     public static final int NULL = 0;
     public static final int RC4_40 = 1;
     public static final int RC4_128 = 2;
