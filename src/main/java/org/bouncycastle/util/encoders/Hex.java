@@ -4,10 +4,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Strings;
+
 public class Hex
 {
     private static final Encoder encoder = new HexEncoder();
     
+    public static String toHexString(
+        byte[] data)
+    {
+        return toHexString(data, 0, data.length);
+    }
+
+    public static String toHexString(
+        byte[] data,
+        int    off,
+        int    length)
+    {
+        byte[] encoded = encode(data, off, length);
+        return Strings.fromByteArray(encoded);
+    }
+
     /**
      * encode the input data producing a Hex encoded byte array.
      *
