@@ -4,10 +4,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Strings;
+
 public class Base64
 {
     private static final Encoder encoder = new Base64Encoder();
     
+    public static String toBase64String(
+        byte[] data)
+    {
+        return toBase64String(data, 0, data.length);
+    }
+
+    public static String toBase64String(
+        byte[] data,
+        int    off,
+        int    length)
+    {
+        byte[] encoded = encode(data, off, length);
+        return Strings.fromByteArray(encoded);
+    }
+
     /**
      * encode the input data producing a base 64 encoded byte array.
      *
@@ -16,19 +33,7 @@ public class Base64
     public static byte[] encode(
         byte[]    data)
     {
-        int len = (data.length + 2) / 3 * 4;
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
-        
-        try
-        {
-            encoder.encode(data, 0, data.length, bOut);
-        }
-        catch (Exception e)
-        {
-            throw new EncoderException("exception encoding base64 string: " + e.getMessage(), e);
-        }
-        
-        return bOut.toByteArray();
+        return encode(data, 0, data.length);
     }
 
     /**
