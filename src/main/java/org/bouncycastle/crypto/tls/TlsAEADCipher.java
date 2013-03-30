@@ -22,6 +22,12 @@ public class TlsAEADCipher implements TlsCipher {
         AEADBlockCipher serverWriteCipher, int cipherKeySize, int macSize, int prfAlgorithm)
         throws IOException {
 
+        ProtocolVersion version = context.getServerVersion();
+        if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
+            && !ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version)) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         this.context = context;
         this.macSize = macSize;
 
