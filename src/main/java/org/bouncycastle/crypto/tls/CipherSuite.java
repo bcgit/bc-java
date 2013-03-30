@@ -3,8 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 2246 A.5
  */
-public class CipherSuite
-{
+public class CipherSuite {
+
     public static final int TLS_NULL_WITH_NULL_NULL = 0x0000;
     public static final int TLS_RSA_WITH_NULL_MD5 = 0x0001;
     public static final int TLS_RSA_WITH_NULL_SHA = 0x0002;
@@ -140,6 +140,22 @@ public class CipherSuite
     public static final int TLS_SRP_SHA_WITH_AES_256_CBC_SHA = 0xC020;
     public static final int TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA = 0xC021;
     public static final int TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA = 0xC022;
+
+    /*
+     * RFC 5288
+     */
+    public static final int TLS_RSA_WITH_AES_128_GCM_SHA256 = 0x009C;
+    public static final int TLS_RSA_WITH_AES_256_GCM_SHA384 = 0x009D;
+    public static final int TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 = 0x009E;
+    public static final int TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 = 0x009F;
+    public static final int TLS_DH_RSA_WITH_AES_128_GCM_SHA256 = 0x00A0;
+    public static final int TLS_DH_RSA_WITH_AES_256_GCM_SHA384 = 0x00A1;
+    public static final int TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 = 0x00A2;
+    public static final int TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 = 0x00A3;
+    public static final int TLS_DH_DSS_WITH_AES_128_GCM_SHA256 = 0x00A4;
+    public static final int TLS_DH_DSS_WITH_AES_256_GCM_SHA384 = 0x00A5;
+    public static final int TLS_DH_anon_WITH_AES_128_GCM_SHA256 = 0x00A6;
+    public static final int TLS_DH_anon_WITH_AES_256_GCM_SHA384 = 0x00A7;
 
     /*
      * RFC 5289
