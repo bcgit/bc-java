@@ -96,8 +96,7 @@ public class TlsBlockCipher implements TlsCipher {
             this.decryptCipher = clientWriteCipher;
             encryptParams = new ParametersWithIV(server_write_key, server_write_IV);
             decryptParams = new ParametersWithIV(client_write_key, client_write_IV);
-        }
-        else {
+        } else {
             this.writeMac = clientWriteMac;
             this.readMac = serverWriteMac;
             this.encryptCipher = clientWriteCipher;
