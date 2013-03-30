@@ -2,13 +2,13 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
-public class TlsStreamCipher implements TlsCipher
-{
+public class TlsStreamCipher implements TlsCipher {
     protected TlsContext context;
 
     protected StreamCipher encryptCipher;
@@ -17,29 +17,40 @@ public class TlsStreamCipher implements TlsCipher
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    public TlsStreamCipher(TlsContext context, StreamCipher encryptCipher,
-        StreamCipher decryptCipher, Digest writeDigest, Digest readDigest, int cipherKeySize)
-        throws IOException
-    {
+    /**
+     * @deprecated use constructor taking the additional 'prfAlgorithm' parameter
+     */
+    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
+        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+        int cipherKeySize) throws IOException {
+        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest,
+            cipherKeySize, PRFAlgorithm.tls_prf_legacy);
+    }
+
+    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
+        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+        int cipherKeySize, int prfAlgorithm) throws IOException {
         boolean isServer = context.isServer();
 
         this.context = context;
 
-        this.encryptCipher = encryptCipher;
-        this.decryptCipher = decryptCipher;
+        this.encryptCipher = clientWriteCipher;
+        this.decryptCipher = serverWriteCipher;
 
-        int key_block_size = (2 * cipherKeySize) + writeDigest.getDigestSize()
-            + readDigest.getDigestSize();
+        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
+            + serverWriteDigest.getDigestSize();
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
 
         int offset = 0;
 
         // Init MACs
-        TlsMac clientWriteMac = new TlsMac(context, writeDigest, key_block, offset, writeDigest.getDigestSize());
-        offset += writeDigest.getDigestSize();
-        TlsMac serverWriteMac = new TlsMac(context, readDigest, key_block, offset, readDigest.getDigestSize());
-        offset += readDigest.getDigestSize();
+        TlsMac clientWriteMac = new TlsMac(context, clientWriteDigest, key_block, offset,
+            clientWriteDigest.getDigestSize());
+        offset += clientWriteDigest.getDigestSize();
+        TlsMac serverWriteMac = new TlsMac(context, serverWriteDigest, key_block, offset,
+            serverWriteDigest.getDigestSize());
+        offset += serverWriteDigest.getDigestSize();
 
         // Build keys
         KeyParameter clientWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
@@ -47,38 +58,36 @@ public class TlsStreamCipher implements TlsCipher
         KeyParameter serverWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        if (offset != key_block_size)
-        {
+        if (offset != key_block_size) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        KeyParameter encryptKey, decryptKey;
-        if (isServer)
-        {
-            writeMac = serverWriteMac;
-            readMac = clientWriteMac;
-            encryptKey = serverWriteKey;
-            decryptKey = clientWriteKey;
-        }
-        else
-        {
-            writeMac = clientWriteMac;
-            readMac = serverWriteMac;
-            encryptKey = clientWriteKey;
-            decryptKey = serverWriteKey;
+        CipherParameters encryptParams, decryptParams;
+        if (isServer) {
+            this.writeMac = serverWriteMac;
+            this.readMac = clientWriteMac;
+            this.encryptCipher = serverWriteCipher;
+            this.decryptCipher = clientWriteCipher;
+            encryptParams = serverWriteKey;
+            decryptParams = clientWriteKey;
+        } else {
+            this.writeMac = clientWriteMac;
+            this.readMac = serverWriteMac;
+            this.encryptCipher = clientWriteCipher;
+            this.decryptCipher = serverWriteCipher;
+            encryptParams = clientWriteKey;
+            decryptParams = serverWriteKey;
         }
 
-        encryptCipher.init(true, encryptKey);
-        decryptCipher.init(false, decryptKey);
+        this.encryptCipher.init(true, encryptParams);
+        this.decryptCipher.init(false, decryptParams);
     }
 
-    public int getPlaintextLimit(int ciphertextLimit)
-    {
+    public int getPlaintextLimit(int ciphertextLimit) {
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
-    {
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len) {
         byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
 
         byte[] outbuf = new byte[len + mac.length];
@@ -90,11 +99,9 @@ public class TlsStreamCipher implements TlsCipher
     }
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
-        throws IOException
-    {
+        throws IOException {
         int macSize = readMac.getSize();
-        if (len < macSize)
-        {
+        if (len < macSize) {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
@@ -106,8 +113,7 @@ public class TlsStreamCipher implements TlsCipher
         byte[] receivedMac = Arrays.copyOfRange(deciphered, macInputLen, len);
         byte[] computedMac = readMac.calculateMac(seqNo, type, deciphered, 0, macInputLen);
 
-        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
-        {
+        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac)) {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 

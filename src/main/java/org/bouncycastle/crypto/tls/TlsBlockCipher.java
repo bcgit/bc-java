@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -32,9 +33,20 @@ public class TlsBlockCipher implements TlsCipher {
         return readMac;
     }
 
+    /**
+     * @deprecated use constructor taking the additional 'prfAlgorithm' parameter
+     */
     public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher,
-        BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest clientReadDigest,
+        BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize) throws IOException {
+
+        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest,
+            cipherKeySize, PRFAlgorithm.tls_prf_legacy);
+    }
+
+    public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher,
+        BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+        int cipherKeySize, int prfAlgorithm) throws IOException {
 
         this.context = context;
 
@@ -44,27 +56,24 @@ public class TlsBlockCipher implements TlsCipher {
         this.useExplicitIV = !context.getServerVersion().isEqualOrEarlierVersionOf(
             ProtocolVersion.TLSv10);
 
-        this.encryptCipher = clientWriteCipher;
-        this.decryptCipher = serverWriteCipher;
-
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
-            + clientReadDigest.getDigestSize();
+            + serverWriteDigest.getDigestSize();
 
         // From TLS 1.1 onwards, block ciphers don't need client_write_IV
         if (!useExplicitIV) {
             key_block_size += clientWriteCipher.getBlockSize() + serverWriteCipher.getBlockSize();
         }
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
 
         int offset = 0;
 
         TlsMac clientWriteMac = new TlsMac(context, clientWriteDigest, key_block, offset,
             clientWriteDigest.getDigestSize());
         offset += clientWriteDigest.getDigestSize();
-        TlsMac serverWriteMac = new TlsMac(context, clientReadDigest, key_block, offset,
-            clientReadDigest.getDigestSize());
-        offset += clientReadDigest.getDigestSize();
+        TlsMac serverWriteMac = new TlsMac(context, serverWriteDigest, key_block, offset,
+            serverWriteDigest.getDigestSize());
+        offset += serverWriteDigest.getDigestSize();
 
         KeyParameter client_write_key = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
@@ -88,7 +97,7 @@ public class TlsBlockCipher implements TlsCipher {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ParametersWithIV encryptParams, decryptParams;
+        CipherParameters encryptParams, decryptParams;
         if (context.isServer()) {
             this.writeMac = serverWriteMac;
             this.readMac = clientWriteMac;

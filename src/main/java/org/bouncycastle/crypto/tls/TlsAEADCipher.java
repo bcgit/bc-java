@@ -39,7 +39,7 @@ public class TlsAEADCipher implements TlsCipher {
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsUtils.calculateKeyBlock_1_2(context, prfAlgorithm, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
 
         int offset = 0;
 

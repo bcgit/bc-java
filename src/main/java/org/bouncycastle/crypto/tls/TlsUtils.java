@@ -356,36 +356,34 @@ public class TlsUtils
 
     static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
     {
-        ProtocolVersion version = context.getServerVersion();
-
-        if (version.isSSL())
-        {
-            throw new IllegalStateException("No PRF available for SSLv3 session");
-        }
-
         // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
 
-        int prfAlgorithm = PRFAlgorithm.tls_prf_legacy;
-
-        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
-            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version))
-        {
-            prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
-        }
-
-        return PRF_1_2(prfAlgorithm, secret, asciiLabel, seed, size);
+        return PRF_1_2(context, PRFAlgorithm.tls_prf_legacy, secret, asciiLabel, seed, size);
     }
 
-    static byte[] PRF_1_2(int prfAlgorithm, byte[] secret, String asciiLabel, byte[] seed, int size)
+    static byte[] PRF_1_2(TlsContext context, int prfAlgorithm, byte[] secret, String asciiLabel,
+        byte[] seed, int size)
     {
-        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+        ProtocolVersion version = context.getServerVersion();
+
+        if (version.isSSL()) {
+            throw new IllegalStateException("No PRF available for SSLv3 session");
+        }
 
         byte[] label = Strings.toByteArray(asciiLabel);
         byte[] labelSeed = concat(label, seed);
 
+        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            return PRF_legacy(secret, label, labelSeed, size);
+            if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
+                && !ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version))
+            {
+                return PRF_legacy(secret, label, labelSeed, size);
+            }
+
+            prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
         }
 
         Digest prfDigest = getPRFDigest(prfAlgorithm);
@@ -437,32 +435,21 @@ public class TlsUtils
             }
         }
     }
-    
-    static byte[] calculateKeyBlock(TlsContext context, int size)
+
+    static byte[] calculateKeyBlock(TlsContext context, int prfAlgorithm, int size)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] master_secret = securityParameters.getMasterSecret();
-        byte[] seed = concat(securityParameters.getServerRandom(), securityParameters.getClientRandom());
+        byte[] seed = concat(securityParameters.getServerRandom(),
+            securityParameters.getClientRandom());
 
-        ProtocolVersion version = context.getServerVersion();
-        
-        if (version.isSSL())
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy && context.getServerVersion().isSSL())
         {
             return calculateKeyBlock_SSL(master_secret, seed, size);
         }
 
-        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, size);
-    }
-
-    static byte[] calculateKeyBlock_1_2(TlsContext context, int prfAlgorithm, int size)
-    {
-        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
-
-        SecurityParameters securityParameters = context.getSecurityParameters();
-        byte[] secret = securityParameters.getMasterSecret();
-        byte[] seed = concat(securityParameters.getServerRandom(),
-            securityParameters.getClientRandom());
-        return PRF_1_2(prfAlgorithm, secret, ExporterLabel.key_expansion, seed, size);
+        return PRF_1_2(context, prfAlgorithm, master_secret, ExporterLabel.key_expansion, seed,
+            size);
     }
 
     static byte[] calculateKeyBlock_SSL(byte[] master_secret, byte[] random, int size)
@@ -550,15 +537,18 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, 12);
     }
 
-    static final Digest getPRFDigest(int prfAlgorithm) {
+    static final Digest getPRFDigest(int prfAlgorithm)
+    {
         switch (prfAlgorithm)
         {
+        case PRFAlgorithm.tls_prf_legacy:
+            throw new IllegalArgumentException("legacy PRF not a valid algorithm");
         case PRFAlgorithm.tls_prf_sha256:
             return new SHA256Digest();
         case PRFAlgorithm.tls_prf_sha384:
             return new SHA384Digest();
-            default:
-                throw new IllegalArgumentException("unknown PRF algorithm");
+        default:
+            throw new IllegalArgumentException("unknown PRF algorithm");
         }
     }
 
