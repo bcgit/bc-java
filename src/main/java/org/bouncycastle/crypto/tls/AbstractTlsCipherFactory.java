@@ -4,13 +4,15 @@ import java.io.IOException;
 
 public class AbstractTlsCipherFactory implements TlsCipherFactory {
 
-    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int digestAlgorithm)
+    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+
+        return createCipher(context, encryptionAlgorithm, macAlgorithm, PRFAlgorithm.tls_prf_legacy);
     }
 
-    public TlsCipher createAEADCipher(TlsContext context, int encryptionAlgorithm, int prfAlgorithm)
-        throws IOException {
+    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm,
+        int prfAlgorithm) throws IOException {
+
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 }

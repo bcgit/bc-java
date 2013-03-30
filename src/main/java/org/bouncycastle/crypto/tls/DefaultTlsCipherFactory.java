@@ -21,15 +21,26 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
 
-    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm , int prfAlgorithm)
         throws IOException {
+
+        /*
+         * TODO Configure the cipher with the PRF algorithm
+         */
+
         switch (encryptionAlgorithm) {
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return createDESedeCipher(context, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CBC:
             return createAESCipher(context, 16, macAlgorithm);
+        case EncryptionAlgorithm.AES_128_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_GCM(context, 16, 16, prfAlgorithm);
         case EncryptionAlgorithm.AES_256_CBC:
             return createAESCipher(context, 32, macAlgorithm);
+        case EncryptionAlgorithm.AES_256_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_GCM(context, 32, 16, prfAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return createCamelliaCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
@@ -40,19 +51,6 @@ public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
             return createRC4Cipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(context, macAlgorithm);
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    public TlsCipher createAEADCipher(TlsContext context, int encryptionAlgorithm, int prfAlgorithm)
-        throws IOException {
-
-        switch (encryptionAlgorithm) {
-        case EncryptionAlgorithm.AES_128_GCM:
-            return createCipher_AES_GCM(context, 16, 16, prfAlgorithm);
-        case EncryptionAlgorithm.AES_256_GCM:
-            return createCipher_AES_GCM(context, 32, 16, prfAlgorithm);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
