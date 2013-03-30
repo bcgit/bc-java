@@ -283,12 +283,12 @@ public class TlsUtils
         return uints;
     }
 
-    static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
+    protected static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
     {
         return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
     }
 
-    static ProtocolVersion readVersion(InputStream is) throws IOException
+    protected static ProtocolVersion readVersion(InputStream is) throws IOException
     {
         int i1 = is.read();
         int i2 = is.read();
@@ -299,7 +299,7 @@ public class TlsUtils
         return ProtocolVersion.get(i1, i2);
     }
 
-    static int readVersionRaw(InputStream is) throws IOException
+    protected static int readVersionRaw(InputStream is) throws IOException
     {
         int i1 = is.read();
         int i2 = is.read();
@@ -319,19 +319,19 @@ public class TlsUtils
         buf[offset + 3] = (byte)t;
     }
 
-    static void writeVersion(ProtocolVersion version, OutputStream os) throws IOException
+    protected static void writeVersion(ProtocolVersion version, OutputStream os) throws IOException
     {
         os.write(version.getMajorVersion());
         os.write(version.getMinorVersion());
     }
 
-    static void writeVersion(ProtocolVersion version, byte[] buf, int offset) throws IOException
+    protected static void writeVersion(ProtocolVersion version, byte[] buf, int offset) throws IOException
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
-    private static void hmac_hash(Digest digest, byte[] secret, byte[] seed, byte[] out)
+    static void hmac_hash(Digest digest, byte[] secret, byte[] seed, byte[] out)
     {
         HMac mac = new HMac(digest);
         KeyParameter param = new KeyParameter(secret);
@@ -354,37 +354,63 @@ public class TlsUtils
         }
     }
 
-    protected static byte[] PRF(byte[] secret, String asciiLabel, byte[] seed, int size)
+    static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
     {
-        byte[] label = Strings.toByteArray(asciiLabel);
+        ProtocolVersion version = context.getServerVersion();
 
+        if (version.isSSL())
+        {
+            throw new IllegalStateException("No PRF available for SSLv3 session");
+        }
+
+        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+
+        int prfAlgorithm = PRFAlgorithm.tls_prf_legacy;
+
+        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
+            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version))
+        {
+            prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
+        }
+
+        return PRF_1_2(prfAlgorithm, secret, asciiLabel, seed, size);
+    }
+
+    static byte[] PRF_1_2(int prfAlgorithm, byte[] secret, String asciiLabel, byte[] seed, int size)
+    {
+        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+
+        byte[] label = Strings.toByteArray(asciiLabel);
+        byte[] labelSeed = concat(label, seed);
+
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+        {
+            return PRF_legacy(secret, label, labelSeed, size);
+        }
+
+        Digest prfDigest = getPRFDigest(prfAlgorithm);
+        byte[] buf = new byte[size];
+        hmac_hash(prfDigest, secret, labelSeed, buf);
+        return buf;
+    }
+
+    static byte[] PRF_legacy(byte[] secret, byte[] label, byte[] labelSeed, int size)
+    {
         int s_half = (secret.length + 1) / 2;
         byte[] s1 = new byte[s_half];
         byte[] s2 = new byte[s_half];
         System.arraycopy(secret, 0, s1, 0, s_half);
         System.arraycopy(secret, secret.length - s_half, s2, 0, s_half);
 
-        byte[] ls = concat(label, seed);
-
-        byte[] buf = new byte[size];
-        byte[] prf = new byte[size];
-        hmac_hash(new MD5Digest(), s1, ls, prf);
-        hmac_hash(new SHA1Digest(), s2, ls, buf);
+        byte[] b1 = new byte[size];
+        byte[] b2 = new byte[size];
+        hmac_hash(new MD5Digest(), s1, labelSeed, b1);
+        hmac_hash(new SHA1Digest(), s2, labelSeed, b2);
         for (int i = 0; i < size; i++)
         {
-            buf[i] ^= prf[i];
+            b1[i] ^= b2[i];
         }
-        return buf;
-    }
-
-    static byte[] PRF_1_2(int prfAlgorithm, byte[] secret, String asciiLabel, byte[] seed, int size)
-    {
-        Digest prfDigest = getPRFDigest(prfAlgorithm);
-        byte[] label = Strings.toByteArray(asciiLabel);
-        byte[] labelSeed = concat(label, seed);
-        byte[] buf = new byte[size];
-        hmac_hash(prfDigest, secret, labelSeed, buf);
-        return buf;
+        return b1;
     }
 
     static byte[] concat(byte[] a, byte[] b)
@@ -414,14 +440,33 @@ public class TlsUtils
     
     static byte[] calculateKeyBlock(TlsContext context, int size)
     {
-        SecurityParameters sp = context.getSecurityParameters();
-        byte[] random = concat(sp.serverRandom, sp.clientRandom);
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] master_secret = securityParameters.getMasterSecret();
+        byte[] seed = concat(securityParameters.getServerRandom(), securityParameters.getClientRandom());
 
-        if (!context.getServerVersion().isSSL())
+        ProtocolVersion version = context.getServerVersion();
+        
+        if (version.isSSL())
         {
-            return PRF(sp.masterSecret, ExporterLabel.key_expansion, random, size);
+            return calculateKeyBlock_SSL(master_secret, seed, size);
         }
 
+        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, size);
+    }
+
+    static byte[] calculateKeyBlock_1_2(TlsContext context, int prfAlgorithm, int size)
+    {
+        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] secret = securityParameters.getMasterSecret();
+        byte[] seed = concat(securityParameters.getServerRandom(),
+            securityParameters.getClientRandom());
+        return PRF_1_2(prfAlgorithm, secret, ExporterLabel.key_expansion, seed, size);
+    }
+
+    static byte[] calculateKeyBlock_SSL(byte[] master_secret, byte[] random, int size)
+    {
         Digest md5 = new MD5Digest();
         Digest sha1 = new SHA1Digest();
         int md5Size = md5.getDigestSize();
@@ -434,11 +479,11 @@ public class TlsUtils
             byte[] ssl3Const = SSL3_CONST[i];
 
             sha1.update(ssl3Const, 0, ssl3Const.length);
-            sha1.update(sp.masterSecret, 0, sp.masterSecret.length);
+            sha1.update(master_secret, 0, master_secret.length);
             sha1.update(random, 0, random.length);
             sha1.doFinal(shatmp, 0);
 
-            md5.update(sp.masterSecret, 0, sp.masterSecret.length);
+            md5.update(master_secret, 0, master_secret.length);
             md5.update(shatmp, 0, shatmp.length);
             md5.doFinal(tmp, pos);
 
@@ -451,25 +496,21 @@ public class TlsUtils
         return rval;
     }
 
-    static byte[] calculateKeyBlock_1_2(TlsContext context, int prfAlgorithm, int size)
-    {
-        SecurityParameters securityParameters = context.getSecurityParameters();
-        byte[] secret = securityParameters.getMasterSecret();
-        byte[] seed = concat(securityParameters.getServerRandom(),
-            securityParameters.getClientRandom());
-        return PRF_1_2(prfAlgorithm, secret, ExporterLabel.key_expansion, seed, size);
-    }
-
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
     {
-        SecurityParameters sp = context.getSecurityParameters();
-        byte[] random = concat(sp.clientRandom, sp.serverRandom);
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
 
-        if (!context.getServerVersion().isSSL())
+        if (context.getServerVersion().isSSL())
         {
-            return PRF(pre_master_secret, ExporterLabel.master_secret, random, 48);
+            return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
 
+        return PRF(context, pre_master_secret, ExporterLabel.master_secret, seed, 48);
+    }
+
+    static byte[] calculateMasterSecret_SSL(byte[] pre_master_secret, byte[] random)
+    {
         Digest md5 = new MD5Digest();
         Digest sha1 = new SHA1Digest();
         int md5Size = md5.getDigestSize();
@@ -504,9 +545,9 @@ public class TlsUtils
     	    return handshakeHash;
     	}
 
-        SecurityParameters sp = context.getSecurityParameters();
+        byte[] master_secret = context.getSecurityParameters().getMasterSecret();
 
-        return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
+        return PRF(context, master_secret, asciiLabel, handshakeHash, 12);
     }
 
     static final Digest getPRFDigest(int prfAlgorithm) {

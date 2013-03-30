@@ -76,6 +76,6 @@ abstract class AbstractTlsContext implements TlsContext {
             throw new IllegalStateException("error in calculation of seed for export");
         }
 
-        return TlsUtils.PRF(sp.getMasterSecret(), asciiLabel, seed, length);
+        return TlsUtils.PRF(this, sp.getMasterSecret(), asciiLabel, seed, length);
     }
 }
