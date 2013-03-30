@@ -41,29 +41,28 @@ public class TlsAEADCipher implements TlsCipher {
         offset += cipherKeySize;
         KeyParameter server_write_key = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        byte[] client_write_iv = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
+        byte[] client_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
-        byte[] server_write_iv = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
+        byte[] server_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
 
         if (offset != key_block_size) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        boolean isServer = context.isServer();
         KeyParameter encryptKey, decryptKey;
-        if (isServer) {
+        if (context.isServer()) {
             this.encryptCipher = serverWriteCipher;
             this.decryptCipher = clientWriteCipher;
-            this.encryptImplicitNonce = server_write_iv;
-            this.decryptImplicitNonce = client_write_iv;
+            this.encryptImplicitNonce = server_write_IV;
+            this.decryptImplicitNonce = client_write_IV;
             encryptKey = server_write_key;
             decryptKey = client_write_key;
         } else {
             this.encryptCipher = clientWriteCipher;
             this.decryptCipher = serverWriteCipher;
-            this.encryptImplicitNonce = client_write_iv;
-            this.decryptImplicitNonce = server_write_iv;
+            this.encryptImplicitNonce = client_write_IV;
+            this.decryptImplicitNonce = server_write_IV;
             encryptKey = client_write_key;
             decryptKey = server_write_key;
         }
