@@ -91,19 +91,19 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
-                DigestAlgorithm.SHA);
+                MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                DigestAlgorithm.SHA);
+                MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                DigestAlgorithm.SHA);
+                MACAlgorithm.hmac_sha1);
 
         default:
             /*
