@@ -20,25 +20,26 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
-    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int digestAlgorithm)
+
+    public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException {
         switch (encryptionAlgorithm) {
         case EncryptionAlgorithm._3DES_EDE_CBC:
-            return createDESedeCipher(context, digestAlgorithm);
+            return createDESedeCipher(context, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CBC:
-            return createAESCipher(context, 16, digestAlgorithm);
+            return createAESCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.AES_256_CBC:
-            return createAESCipher(context, 32, digestAlgorithm);
+            return createAESCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            return createCamelliaCipher(context, 16, digestAlgorithm);
+            return createCamelliaCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return createCamelliaCipher(context, 32, digestAlgorithm);
+            return createCamelliaCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
-            return createNullCipher(context, digestAlgorithm);
+            return createNullCipher(context, macAlgorithm);
         case EncryptionAlgorithm.RC4_128:
-            return createRC4Cipher(context, 16, digestAlgorithm);
+            return createRC4Cipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
-            return createSEEDCipher(context, digestAlgorithm);
+            return createSEEDCipher(context, macAlgorithm);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -57,47 +58,47 @@ public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
         }
     }
 
-    protected TlsCipher createAESCipher(TlsContext context, int cipherKeySize, int digestAlgorithm)
+    protected TlsBlockCipher createAESCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException {
         return new TlsBlockCipher(context, createAESBlockCipher(), createAESBlockCipher(),
-            createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createCipher_AES_GCM(TlsContext context, int cipherKeySize, int macSize,
-        int prfAlgorithm) throws IOException {
+    protected TlsAEADCipher createCipher_AES_GCM(TlsContext context, int cipherKeySize,
+        int macSize, int prfAlgorithm) throws IOException {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(),
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize, prfAlgorithm);
     }
 
-    protected TlsCipher createCamelliaCipher(TlsContext context, int cipherKeySize,
-        int digestAlgorithm) throws IOException {
+    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize,
+        int macAlgorithm) throws IOException {
         return new TlsBlockCipher(context, createCamelliaBlockCipher(),
-            createCamelliaBlockCipher(), createDigest(digestAlgorithm),
-            createDigest(digestAlgorithm), cipherKeySize);
+            createCamelliaBlockCipher(), createHMACDigest(macAlgorithm),
+            createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createNullCipher(TlsContext context, int digestAlgorithm)
+    protected TlsNullCipher createNullCipher(TlsContext context, int macAlgorithm)
         throws IOException {
-        return new TlsNullCipher(context, createDigest(digestAlgorithm),
-            createDigest(digestAlgorithm));
+        return new TlsNullCipher(context, createHMACDigest(macAlgorithm),
+            createHMACDigest(macAlgorithm));
     }
 
-    protected TlsCipher createRC4Cipher(TlsContext context, int cipherKeySize, int digestAlgorithm)
-        throws IOException {
+    protected TlsStreamCipher createRC4Cipher(TlsContext context, int cipherKeySize,
+        int macAlgorithm) throws IOException {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createDESedeCipher(TlsContext context, int digestAlgorithm)
+    protected TlsBlockCipher createDESedeCipher(TlsContext context, int macAlgorithm)
         throws IOException {
         return new TlsBlockCipher(context, createDESedeBlockCipher(), createDESedeBlockCipher(),
-            createDigest(digestAlgorithm), createDigest(digestAlgorithm), 24);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 24);
     }
 
-    protected TlsCipher createSEEDCipher(TlsContext context, int digestAlgorithm)
+    protected TlsBlockCipher createSEEDCipher(TlsContext context, int macAlgorithm)
         throws IOException {
         return new TlsBlockCipher(context, createSEEDBlockCipher(), createSEEDBlockCipher(),
-            createDigest(digestAlgorithm), createDigest(digestAlgorithm), 16);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
     }
 
     protected StreamCipher createRC4StreamCipher() {
@@ -125,7 +126,7 @@ public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    protected Digest createDigest(int macAlgorithm) throws IOException {
+    protected Digest createHMACDigest(int macAlgorithm) throws IOException {
         switch (macAlgorithm) {
         case MACAlgorithm.NULL:
             return null;
