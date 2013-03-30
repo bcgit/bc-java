@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Arrays;
 
 /**
  * HMAC implementation based on RFC2104
@@ -26,6 +27,7 @@ public class HMac
     
     private byte[] inputPad;
     private byte[] outputPad;
+    private byte[] doFinalBuf;
 
     private static Hashtable blockLengths;
     
@@ -93,6 +95,7 @@ public class HMac
 
         inputPad = new byte[blockLength];
         outputPad = new byte[blockLength];
+        doFinalBuf = new byte[digestSize];
     }
     
     public String getAlgorithmName()
@@ -169,11 +172,10 @@ public class HMac
         byte[] out,
         int outOff)
     {
-        byte[] tmp = new byte[digestSize];
-        digest.doFinal(tmp, 0);
+        digest.doFinal(doFinalBuf, 0);
 
         digest.update(outputPad, 0, outputPad.length);
-        digest.update(tmp, 0, tmp.length);
+        digest.update(doFinalBuf, 0, doFinalBuf.length);
 
         int     len = digest.doFinal(out, outOff);
 
@@ -196,5 +198,7 @@ public class HMac
          * reinitialize the digest.
          */
         digest.update(inputPad, 0, inputPad.length);
+
+        Arrays.fill(doFinalBuf, (byte)0);
     }
 }

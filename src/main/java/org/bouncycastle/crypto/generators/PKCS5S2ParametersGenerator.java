@@ -21,6 +21,7 @@ public class PKCS5S2ParametersGenerator
     extends PBEParametersGenerator
 {
     private Mac hMac;
+    private byte[] state;
 
     /**
      * construct a PKCS5 Scheme 2 Parameters generator.
@@ -33,27 +34,25 @@ public class PKCS5S2ParametersGenerator
     public PKCS5S2ParametersGenerator(Digest digest)
     {
         hMac = new HMac(digest);
+        state = new byte[hMac.getMacSize()];
     }
 
     private void F(
-        byte[]  P,
         byte[]  S,
         int     c,
-        byte[]  iBuf,
+        int     i,
         byte[]  out,
         int     outOff)
     {
-        byte[]              state = new byte[hMac.getMacSize()];
-        CipherParameters    param = new KeyParameter(P);
-
-        hMac.init(param);
-
         if (S != null)
         {
             hMac.update(S, 0, S.length);
         }
 
-        hMac.update(iBuf, 0, iBuf.length);
+        hMac.update((byte)(i >>> 24));
+        hMac.update((byte)(i >>> 16));
+        hMac.update((byte)(i >>> 8));
+        hMac.update((byte)i);
 
         hMac.doFinal(state, 0);
 
@@ -66,7 +65,6 @@ public class PKCS5S2ParametersGenerator
         
         for (int count = 1; count < c; count++)
         {
-            hMac.init(param);
             hMac.update(state, 0, state.length);
             hMac.doFinal(state, 0);
 
@@ -77,29 +75,20 @@ public class PKCS5S2ParametersGenerator
         }
     }
 
-    private void intToOctet(
-        byte[]  buf,
-        int     i)
-    {
-        buf[0] = (byte)(i >>> 24);
-        buf[1] = (byte)(i >>> 16);
-        buf[2] = (byte)(i >>> 8);
-        buf[3] = (byte)i;
-    }
-
     private byte[] generateDerivedKey(
         int dkLen)
     {
         int     hLen = hMac.getMacSize();
         int     l = (dkLen + hLen - 1) / hLen;
-        byte[]  iBuf = new byte[4];
         byte[]  out = new byte[l * hLen];
+
+        CipherParameters    param = new KeyParameter(password);
+
+        hMac.init(param);
 
         for (int i = 1; i <= l; i++)
         {
-            intToOctet(iBuf, i);
-
-            F(password, salt, iterationCount, iBuf, out, (i - 1) * hLen);
+            F(salt, iterationCount, i, out, (i - 1) * hLen);
         }
 
         return out;
