@@ -14,9 +14,11 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
-public class DefaultTlsCipherFactory implements TlsCipherFactory
+public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory
 {
     public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int digestAlgorithm) throws IOException
     {
@@ -43,10 +45,30 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
         }
     }
 
+    public TlsCipher createAEADCipher(TlsContext context, int encryptionAlgorithm, int prfAlgorithm)
+        throws IOException {
+
+        switch (encryptionAlgorithm)
+        {
+        case EncryptionAlgorithm.AES_128_GCM:
+            return createCipher_AES_GCM(context, 16, 16, prfAlgorithm);
+        case EncryptionAlgorithm.AES_256_GCM:
+            return createCipher_AES_GCM(context, 32, 16, prfAlgorithm);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
     protected TlsCipher createAESCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
     {
         return new TlsBlockCipher(context, createAESBlockCipher(),
             createAESBlockCipher(), createDigest(digestAlgorithm), createDigest(digestAlgorithm), cipherKeySize);
+    }
+
+    protected TlsCipher createCipher_AES_GCM(TlsContext context, int cipherKeySize, int macSize, int prfAlgorithm) throws IOException
+    {
+        return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(),
+            createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize, prfAlgorithm);
     }
 
     protected TlsCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int digestAlgorithm) throws IOException
@@ -86,6 +108,12 @@ public class DefaultTlsCipherFactory implements TlsCipherFactory
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(new AESFastEngine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
+    {
+        // TODO Consider allowing custom configuration of multiplier
+        return new GCMBlockCipher(new AESFastEngine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()

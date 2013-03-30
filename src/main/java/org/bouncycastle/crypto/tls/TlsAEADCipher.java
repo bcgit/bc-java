@@ -70,13 +70,13 @@ public class TlsAEADCipher implements TlsCipher {
 
         byte[] dummyNonce = new byte[fixed_iv_length + nonce_explicit_length];
 
-        this.encryptCipher.init(true, new AEADParameters(encryptKey, macSize, dummyNonce));
-        this.decryptCipher.init(false, new AEADParameters(decryptKey, macSize, dummyNonce));
+        this.encryptCipher.init(true, new AEADParameters(encryptKey, 8 * macSize, dummyNonce));
+        this.decryptCipher.init(false, new AEADParameters(decryptKey, 8 * macSize, dummyNonce));
     }
 
     public int getPlaintextLimit(int ciphertextLimit) {
         // TODO We ought to be able to ask the decryptCipher (independently of it's current state!)
-        return ciphertextLimit - ((macSize + 7) / 8) - nonce_explicit_length;
+        return ciphertextLimit - macSize - nonce_explicit_length;
     }
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
@@ -100,9 +100,10 @@ public class TlsAEADCipher implements TlsCipher {
         System.arraycopy(nonce, encryptImplicitNonce.length, output, 0, nonce_explicit_length);
         int outputPos = nonce_explicit_length;
 
-        encryptCipher.init(true,
-            new AEADParameters(null, macSize, nonce,
-                getAdditionalData(seqNo, type, plaintextLength)));
+        encryptCipher.init(
+            true,
+            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type,
+                plaintextLength)));
 
         outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength,
             output, outputPos);
@@ -139,9 +140,10 @@ public class TlsAEADCipher implements TlsCipher {
         byte[] output = new byte[plaintextLength];
         int outputPos = 0;
 
-        decryptCipher.init(false,
-            new AEADParameters(null, macSize, nonce,
-                getAdditionalData(seqNo, type, plaintextLength)));
+        decryptCipher.init(
+            false,
+            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type,
+                plaintextLength)));
 
         outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength,
             output, outputPos);

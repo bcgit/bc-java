@@ -8,4 +8,6 @@ public interface TlsCipherFactory
      * See enumeration classes EncryptionAlgorithm and DigestAlgorithm for appropriate argument values
      */
     TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int digestAlgorithm) throws IOException;
+
+    TlsCipher createAEADCipher(TlsContext context, int encryptionAlgorithm, int prfAlgorithm) throws IOException;
 }
