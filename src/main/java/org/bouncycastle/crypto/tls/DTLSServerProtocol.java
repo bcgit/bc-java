@@ -206,6 +206,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         state.selectedCipherSuite = state.server.getSelectedCipherSuite();
         if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+            || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
             // this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);

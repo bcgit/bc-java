@@ -432,6 +432,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         this.selectedCipherSuite = tlsServer.getSelectedCipherSuite();
         if (!arrayContains(this.offeredCipherSuites, this.selectedCipherSuite)
+            || this.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }

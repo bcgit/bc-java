@@ -373,6 +373,7 @@ public class TlsClientProtocol extends TlsProtocol {
          */
         int selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!arrayContains(offeredCipherSuites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }

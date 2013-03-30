@@ -309,6 +309,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         int selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!TlsProtocol.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
