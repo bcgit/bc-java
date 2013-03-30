@@ -10,6 +10,8 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
@@ -375,13 +377,13 @@ public class TlsUtils
         return buf;
     }
 
-    static byte[] PRF_1_2(Digest digest, byte[] secret, String asciiLabel, byte[] seed, int size)
+    static byte[] PRF_1_2(int prfAlgorithm, byte[] secret, String asciiLabel, byte[] seed, int size)
     {
+        Digest prfDigest = getPRFDigest(prfAlgorithm);
         byte[] label = Strings.toByteArray(asciiLabel);
         byte[] labelSeed = concat(label, seed);
-
         byte[] buf = new byte[size];
-        hmac_hash(digest, secret, labelSeed, buf);
+        hmac_hash(prfDigest, secret, labelSeed, buf);
         return buf;
     }
 
@@ -449,6 +451,15 @@ public class TlsUtils
         return rval;
     }
 
+    static byte[] calculateKeyBlock_1_2(TlsContext context, int prfAlgorithm, int size)
+    {
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] secret = securityParameters.getMasterSecret();
+        byte[] seed = concat(securityParameters.getServerRandom(),
+            securityParameters.getClientRandom());
+        return PRF_1_2(prfAlgorithm, secret, ExporterLabel.key_expansion, seed, size);
+    }
+
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
     {
         SecurityParameters sp = context.getSecurityParameters();
@@ -496,6 +507,18 @@ public class TlsUtils
         SecurityParameters sp = context.getSecurityParameters();
 
         return PRF(sp.masterSecret, asciiLabel, handshakeHash, 12);
+    }
+
+    static final Digest getPRFDigest(int prfAlgorithm) {
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.tls_prf_sha256:
+            return new SHA256Digest();
+        case PRFAlgorithm.tls_prf_sha384:
+            return new SHA384Digest();
+            default:
+                throw new IllegalArgumentException("unknown PRF algorithm");
+        }
     }
 
     static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };

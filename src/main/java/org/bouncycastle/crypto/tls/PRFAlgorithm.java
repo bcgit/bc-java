@@ -9,4 +9,9 @@ package org.bouncycastle.crypto.tls;
 public class PRFAlgorithm {
 
     public static final int tls_prf_sha256 = 0;
+
+    /*
+     * Implied by RFC 5288
+     */
+    public static final int tls_prf_sha384 = 1;
 }
