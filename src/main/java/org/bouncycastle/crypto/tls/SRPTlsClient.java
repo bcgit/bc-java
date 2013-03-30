@@ -59,6 +59,7 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException {
+
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
@@ -86,24 +87,25 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
     }
 
     public TlsCipher getCipher() throws IOException {
+
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         default:
             /*

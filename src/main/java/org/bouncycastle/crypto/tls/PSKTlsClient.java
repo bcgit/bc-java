@@ -28,6 +28,7 @@ public abstract class PSKTlsClient extends AbstractTlsClient {
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException {
+
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
@@ -61,36 +62,37 @@ public abstract class PSKTlsClient extends AbstractTlsClient {
     }
 
     public TlsCipher getCipher() throws IOException {
+
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128,
-                MACAlgorithm.hmac_sha1);
+                MACAlgorithm.hmac_sha1, PRFAlgorithm.tls_prf_legacy);
 
         default:
             /*
