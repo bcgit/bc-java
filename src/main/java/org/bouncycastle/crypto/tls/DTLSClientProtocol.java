@@ -118,6 +118,12 @@ public class DTLSClientProtocol extends DTLSProtocol {
             state.clientCredentials = state.authentication
                 .getClientCredentials(state.certificateRequest);
 
+            /*
+             * RFC 5246 If no suitable certificate is available, the client MUST
+             * send a certificate message containing no certificates.
+             * 
+             * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+             */
             Certificate clientCertificate = Certificate.EMPTY_CHAIN;
             if (state.clientCredentials != null) {
                 clientCertificate = state.clientCredentials.getCertificate();

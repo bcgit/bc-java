@@ -201,6 +201,12 @@ public class TlsClientProtocol extends TlsProtocol {
                         if (tlsClientContext.getServerVersion().isSSL()) {
                             sendAlert(AlertLevel.warning, AlertDescription.no_certificate);
                         } else {
+                            /*
+                             * RFC 5246 If no suitable certificate is available, the client MUST
+                             * send a certificate message containing no certificates.
+                             * 
+                             * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+                             */
                             sendCertificateMessage(Certificate.EMPTY_CHAIN);
                         }
                     } else {
