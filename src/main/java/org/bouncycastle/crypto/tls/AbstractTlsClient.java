@@ -119,6 +119,9 @@ public abstract class AbstractTlsClient implements TlsClient {
         }
     }
 
+    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket) throws IOException {
+    }
+
     public void notifyHandshakeComplete() throws IOException {
     }
 }

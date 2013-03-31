@@ -29,6 +29,11 @@ public class ExtensionType
     public static final int srp = 12;
 
     /*
+     * RFC 5077 7.
+     */
+    public static final int session_ticket = 35;
+
+    /*
      * RFC 5246 7.4.1.4.
      */
     public static final int signature_algorithms = 13;

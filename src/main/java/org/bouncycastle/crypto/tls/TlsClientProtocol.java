@@ -21,6 +21,7 @@ public class TlsClientProtocol extends TlsProtocol {
     protected int[] offeredCipherSuites = null;
     protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
+    protected boolean expectSessionTicket = false;
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
     protected CertificateRequest certificateRequest = null;
@@ -86,11 +87,23 @@ public class TlsClientProtocol extends TlsProtocol {
 
     protected void handleChangeCipherSpecMessage() throws IOException {
 
-        if (this.connection_state != CS_CLIENT_FINISHED) {
+        switch (this.connection_state) {
+        case CS_CLIENT_FINISHED: {
+            if (this.expectSessionTicket) {
+                /*
+                 * RFC 5077 3.3. This message MUST be sent if the server included a SessionTicket
+                 * extension in the ServerHello.
+                 */
+                this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+            }
+            // NB: Fall through to next case label
+        }
+        case CS_SERVER_SESSION_TICKET:
+            this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
+            break;
+        default:
             this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
         }
-
-        this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
     }
 
     protected void handleHandshakeMessage(short type, byte[] data) throws IOException {
@@ -315,6 +328,23 @@ public class TlsClientProtocol extends TlsProtocol {
             this.connection_state = CS_CERTIFICATE_REQUEST;
             break;
         }
+        case HandshakeType.session_ticket: {
+            switch (this.connection_state) {
+            case CS_CLIENT_FINISHED:
+                if (!this.expectSessionTicket) {
+                    /*
+                     * RFC 5077 3.3. This message MUST NOT be sent if the server did not include a
+                     * SessionTicket extension in the ServerHello.
+                     */
+                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                }
+                receiveNewSessionTicket(buf);
+                this.connection_state = CS_SERVER_SESSION_TICKET;
+                break;
+            default:
+                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            }
+        }
         case HandshakeType.hello_request:
             /*
              * RFC 2246 7.4.1.1 Hello request This message will be ignored by the client if the
@@ -331,12 +361,24 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.certificate_verify:
         case HandshakeType.client_hello:
         case HandshakeType.hello_verify_request:
-        case HandshakeType.session_ticket:
         default:
             // We do not support this!
             this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             break;
         }
+    }
+
+    protected void receiveNewSessionTicket(ByteArrayInputStream buf) throws IOException {
+        /*
+         * RFC 5077 3.3. If the server determines that it does not want to include a ticket after it
+         * has included the SessionTicket extension in the ServerHello, then it sends a zero-length
+         * ticket in the NewSessionTicket handshake message.
+         */
+        NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        tlsClient.notifyNewSessionTicket(newSessionTicket);
     }
 
     protected void receiveServerHelloMessage(ByteArrayInputStream buf) throws IOException {
@@ -471,6 +513,8 @@ public class TlsClientProtocol extends TlsProtocol {
                     }
                 }
             }
+
+            this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
         }
 
         tlsClient.notifySecureRenegotiation(this.secure_renegotiation);

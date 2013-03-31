@@ -20,6 +20,8 @@ public abstract class TlsProtocol {
 
     protected static final Integer EXT_RenegotiationInfo = Integers
         .valueOf(ExtensionType.renegotiation_info);
+    protected static final Integer EXT_SessionTicket = Integers
+        .valueOf(ExtensionType.session_ticket);
 
     protected static final byte[] emptybuf = new byte[0];
 
@@ -42,8 +44,9 @@ public abstract class TlsProtocol {
     protected static final short CS_CERTIFICATE_VERIFY = 11;
     protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 12;
     protected static final short CS_CLIENT_FINISHED = 13;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 14;
-    protected static final short CS_SERVER_FINISHED = 15;
+    protected static final short CS_SERVER_SESSION_TICKET = 14;
+    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 15;
+    protected static final short CS_SERVER_FINISHED = 16;
 
     /*
      * Queues for data from some protocols.
