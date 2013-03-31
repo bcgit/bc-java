@@ -243,7 +243,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_GCM,
-                MACAlgorithm.NULL, PRFAlgorithm.tls_prf_sha256);
+                MACAlgorithm._null, PRFAlgorithm.tls_prf_sha256);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA:
@@ -282,7 +282,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_GCM,
-                MACAlgorithm.NULL, PRFAlgorithm.tls_prf_sha384);
+                MACAlgorithm._null, PRFAlgorithm.tls_prf_sha384);
 
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA:

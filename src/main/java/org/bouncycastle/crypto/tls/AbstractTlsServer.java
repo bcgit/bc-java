@@ -35,7 +35,7 @@ public abstract class AbstractTlsServer implements TlsServer {
     protected abstract int[] getCipherSuites();
 
     protected short[] getCompressionMethods() {
-        return new short[] { CompressionMethod.NULL };
+        return new short[] { CompressionMethod._null };
     }
 
     protected ProtocolVersion getMaximumVersion() {
@@ -199,7 +199,7 @@ public abstract class AbstractTlsServer implements TlsServer {
 
     public TlsCompression getCompression() throws IOException {
         switch (selectedCompressionMethod) {
-        case CompressionMethod.NULL:
+        case CompressionMethod._null:
             return new TlsNullCompression();
 
         default:

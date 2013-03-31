@@ -17,17 +17,15 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECCurve.F2m;
-import org.bouncycastle.math.ec.ECCurve.Fp;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils {
 
-    private static final Integer EXT_elliptic_curves = Integers
+    public static final Integer EXT_elliptic_curves = Integers
         .valueOf(ExtensionType.elliptic_curves);
-    private static final Integer EXT_ec_point_formats = Integers
+    public static final Integer EXT_ec_point_formats = Integers
         .valueOf(ExtensionType.ec_point_formats);
 
     private static final String[] curveNames = new String[] { "sect163k1", "sect163r1",
@@ -39,19 +37,18 @@ public class TlsECCUtils {
     public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves)
         throws IOException {
 
-        extensions.put(EXT_elliptic_curves,
-            TlsECCUtils.createSupportedEllipticCurvesExtension(namedCurves));
+        extensions.put(EXT_elliptic_curves, createSupportedEllipticCurvesExtension(namedCurves));
     }
 
     public static void addSupportedPointFormatsExtension(Hashtable extensions,
         short[] ecPointFormats) throws IOException {
 
-        extensions.put(EXT_ec_point_formats,
-            TlsECCUtils.createSupportedPointFormatsExtension(ecPointFormats));
+        extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
     public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions)
         throws IOException {
+
         if (extensions == null) {
             return null;
         }
@@ -64,6 +61,7 @@ public class TlsECCUtils {
 
     public static short[] getSupportedPointFormatsExtension(Hashtable extensions)
         throws IOException {
+
         if (extensions == null) {
             return null;
         }
@@ -114,6 +112,7 @@ public class TlsECCUtils {
 
     public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue)
         throws IOException {
+
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
 
         int length = TlsUtils.readUint16(buf);
@@ -130,6 +129,7 @@ public class TlsECCUtils {
 
     public static short[] readSupportedPointFormatsExtension(byte[] extensionValue)
         throws IOException {
+
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
 
         short length = TlsUtils.readUint8(buf);

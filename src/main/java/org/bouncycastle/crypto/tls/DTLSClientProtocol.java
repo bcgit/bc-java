@@ -253,7 +253,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         // TODO Add support for compression
         // Compression methods
         // state.offeredCompressionMethods = client.getCompressionMethods();
-        state.offeredCompressionMethods = new short[] { CompressionMethod.NULL };
+        state.offeredCompressionMethods = new short[] { CompressionMethod._null };
 
         TlsUtils.writeUint8((short) state.offeredCompressionMethods.length, buf);
         TlsUtils.writeUint8Array(state.offeredCompressionMethods, buf);

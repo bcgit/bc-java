@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils {
+
     static final BigInteger ONE = BigInteger.valueOf(1);
     static final BigInteger TWO = BigInteger.valueOf(2);
 

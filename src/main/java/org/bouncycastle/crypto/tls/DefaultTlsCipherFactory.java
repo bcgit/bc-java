@@ -124,7 +124,7 @@ public class DefaultTlsCipherFactory extends AbstractTlsCipherFactory {
 
     protected Digest createHMACDigest(int macAlgorithm) throws IOException {
         switch (macAlgorithm) {
-        case MACAlgorithm.NULL:
+        case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
             return new MD5Digest();

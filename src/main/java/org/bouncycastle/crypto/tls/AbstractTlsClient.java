@@ -62,7 +62,7 @@ public abstract class AbstractTlsClient implements TlsClient {
     }
 
     public short[] getCompressionMethods() {
-        return new short[] { CompressionMethod.NULL };
+        return new short[] { CompressionMethod._null };
     }
 
     public void notifySessionID(byte[] sessionID) {
@@ -106,7 +106,7 @@ public abstract class AbstractTlsClient implements TlsClient {
 
     public TlsCompression getCompression() throws IOException {
         switch (selectedCompressionMethod) {
-        case CompressionMethod.NULL:
+        case CompressionMethod._null:
             return new TlsNullCompression();
 
         default:

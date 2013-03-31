@@ -5,7 +5,12 @@ package org.bouncycastle.crypto.tls;
  */
 public class CompressionMethod
 {
-    public static final short NULL = 0;
+    public static final short _null = 0;
+
+    /**
+     * @deprecated use '_null' instead
+     */
+    public static final short NULL = _null;
 
     /*
      * RFC 3749 2
