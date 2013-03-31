@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Arrays;
 
 /**
  * HMAC implementation based on RFC2104
@@ -26,8 +25,7 @@ public class HMac
     private int blockLength;
     
     private byte[] inputPad;
-    private byte[] outputPad;
-    private byte[] doFinalBuf;
+    private byte[] outputBuf;
 
     private static Hashtable blockLengths;
     
@@ -89,15 +87,12 @@ public class HMac
         int    byteLength)
     {
         this.digest = digest;
-        digestSize = digest.getDigestSize();
-
+        this.digestSize = digest.getDigestSize();
         this.blockLength = byteLength;
-
-        inputPad = new byte[blockLength];
-        outputPad = new byte[blockLength];
-        doFinalBuf = new byte[digestSize];
+        this.inputPad = new byte[blockLength];
+        this.outputBuf = new byte[blockLength + digestSize];
     }
-    
+
     public String getAlgorithmName()
     {
         return digest.getAlgorithmName() + "/HMAC";
@@ -114,37 +109,29 @@ public class HMac
         digest.reset();
 
         byte[] key = ((KeyParameter)params).getKey();
+        int keyLength = key.length;
 
-        if (key.length > blockLength)
+        if (keyLength > blockLength)
         {
-            digest.update(key, 0, key.length);
+            digest.update(key, 0, keyLength);
             digest.doFinal(inputPad, 0);
-            for (int i = digestSize; i < inputPad.length; i++)
-            {
-                inputPad[i] = 0;
-            }
+            
+            keyLength = digestSize;
         }
         else
         {
-            System.arraycopy(key, 0, inputPad, 0, key.length);
-            for (int i = key.length; i < inputPad.length; i++)
-            {
-                inputPad[i] = 0;
-            }
+            System.arraycopy(key, 0, inputPad, 0, keyLength);
         }
 
-        outputPad = new byte[inputPad.length];
-        System.arraycopy(inputPad, 0, outputPad, 0, inputPad.length);
-
-        for (int i = 0; i < inputPad.length; i++)
+        for (int i = keyLength; i < inputPad.length; i++)
         {
-            inputPad[i] ^= IPAD;
+            inputPad[i] = 0;
         }
 
-        for (int i = 0; i < outputPad.length; i++)
-        {
-            outputPad[i] ^= OPAD;
-        }
+        System.arraycopy(inputPad, 0, outputBuf, 0, blockLength);
+
+        xorPad(inputPad, blockLength, IPAD);
+        xorPad(outputBuf, blockLength, OPAD);
 
         digest.update(inputPad, 0, inputPad.length);
     }
@@ -172,14 +159,16 @@ public class HMac
         byte[] out,
         int outOff)
     {
-        digest.doFinal(doFinalBuf, 0);
+        digest.doFinal(outputBuf, blockLength);
+        digest.update(outputBuf, 0, outputBuf.length);
+        int len = digest.doFinal(out, outOff);
 
-        digest.update(outputPad, 0, outputPad.length);
-        digest.update(doFinalBuf, 0, doFinalBuf.length);
+        for (int i = blockLength; i < outputBuf.length; i++)
+        {
+            outputBuf[i] = 0;
+        }
 
-        int     len = digest.doFinal(out, outOff);
-
-        reset();
+        digest.update(inputPad, 0, inputPad.length);
 
         return len;
     }
@@ -198,7 +187,13 @@ public class HMac
          * reinitialize the digest.
          */
         digest.update(inputPad, 0, inputPad.length);
+    }
 
-        Arrays.fill(doFinalBuf, (byte)0);
+    private static void xorPad(byte[] pad, int len, byte n)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            pad[i] ^= n;
+        }
     }
 }
