@@ -211,6 +211,15 @@ public abstract class AbstractTlsServer implements TlsServer {
         }
     }
 
+    public NewSessionTicket getNewSessionTicket() throws IOException {
+        /*
+         * RFC 5077 3.3. If the server determines that it does not want to include a ticket after it
+         * has included the SessionTicket extension in the ServerHello, then it sends a zero-length
+         * ticket in the NewSessionTicket handshake message.
+         */
+        return new NewSessionTicket(0L, TlsUtils.EMPTY_BYTES);
+    }
+
     public void notifyHandshakeComplete() throws IOException {
     }
 }

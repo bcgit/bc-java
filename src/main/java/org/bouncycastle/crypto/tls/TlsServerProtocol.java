@@ -216,6 +216,11 @@ public class TlsServerProtocol extends TlsProtocol {
                 processFinishedMessage(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
+                if (expectSessionTicket) {
+                    sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
+                }
+                this.connection_state = CS_SERVER_SESSION_TICKET;
+
                 sendChangeCipherSpecMessage();
                 this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
 
@@ -401,6 +406,28 @@ public class TlsServerProtocol extends TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
+    protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket)
+        throws IOException {
+
+        if (newSessionTicket == null) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.session_ticket, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
+        newSessionTicket.encode(buf);
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
+
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+    }
+
     protected void sendServerHelloMessage() throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -476,6 +503,7 @@ public class TlsServerProtocol extends TlsProtocol {
         }
 
         if (this.serverExtensions != null) {
+            this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
             writeExtensions(buf, this.serverExtensions);
         }
 

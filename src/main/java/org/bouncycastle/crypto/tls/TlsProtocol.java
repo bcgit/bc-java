@@ -72,6 +72,7 @@ public abstract class TlsProtocol {
 
     protected short connection_state = CS_START;
     protected boolean secure_renegotiation = false;
+    protected boolean expectSessionTicket = false;
 
     public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
         this.recordStream = new RecordStream(this, input, output);

@@ -161,6 +161,16 @@ public class DTLSClientProtocol extends DTLSProtocol {
             "client finished", handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
+        if (state.expectSessionTicket) {
+            serverMessage = handshake.receiveMessage();
+            if (serverMessage.getType() == HandshakeType.session_ticket) {
+                processNewSessionTicket(state, serverMessage.getBody());
+            }
+            else {
+                // TODO Alert
+            }
+        }
+
         // NOTE: Calculated exclusive of the actual Finished message from the server
         byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
             "server finished", handshake.getCurrentHash());
@@ -224,7 +234,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
              * ClientHello. Including both is NOT RECOMMENDED.
              */
             boolean noRenegExt = state.clientExtensions == null
-                || state.clientExtensions.get(EXT_RenegotiationInfo) == null;
+                || state.clientExtensions.get(TlsProtocol.EXT_RenegotiationInfo) == null;
 
             int count = state.offeredCipherSuites.length;
             if (noRenegExt) {
@@ -277,6 +287,18 @@ public class DTLSClientProtocol extends DTLSProtocol {
         TlsProtocol.assertEmpty(buf);
 
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
+    }
+
+    protected void processNewSessionTicket(ClientHandshakeState state, byte[] body)
+        throws IOException {
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        state.client.notifyNewSessionTicket(newSessionTicket);
     }
 
     protected void processServerCertificate(ClientHandshakeState state, byte[] body)
@@ -365,7 +387,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
                  * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. TLS implementations
                  * MUST continue to comply with Section 7.4.1.4 for all other extensions.
                  */
-                if (!extType.equals(EXT_RenegotiationInfo)
+                if (!extType.equals(TlsProtocol.EXT_RenegotiationInfo)
                     && (state.clientExtensions == null || state.clientExtensions.get(extType) == null)) {
                     /*
                      * RFC 3546 2.3 Note that for all extension types (including those defined in
@@ -388,7 +410,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
                  * When a ServerHello is received, the client MUST check if it includes the
                  * "renegotiation_info" extension:
                  */
-                byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
+                byte[] renegExtValue = (byte[]) serverExtensions
+                    .get(TlsProtocol.EXT_RenegotiationInfo);
                 if (renegExtValue != null) {
                     /*
                      * If the extension is present, set the secure_renegotiation flag to TRUE. The
@@ -405,6 +428,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
                     }
                 }
             }
+
+            state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
         }
 
         state.client.notifySecureRenegotiation(state.secure_renegotiation);
@@ -482,6 +507,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;
         boolean secure_renegotiation = false;
+        boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;
         CertificateRequest certificateRequest = null;

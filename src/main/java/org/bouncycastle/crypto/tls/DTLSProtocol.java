@@ -11,9 +11,6 @@ import org.bouncycastle.util.Integers;
 
 public abstract class DTLSProtocol {
 
-    protected static final Integer EXT_RenegotiationInfo = Integers
-        .valueOf(ExtensionType.renegotiation_info);
-
     protected final SecureRandom secureRandom;
 
     protected DTLSProtocol(SecureRandom secureRandom) {

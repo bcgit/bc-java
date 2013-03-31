@@ -51,7 +51,8 @@ public interface TlsClient {
      * 
      * This method will be called (only) when a NewSessionTicket handshake message is received.
      * 
-     * @param newSessionTicket The ticket. 
+     * @param newSessionTicket
+     *            The ticket.
      * @throws IOException
      */
     void notifyNewSessionTicket(NewSessionTicket newSessionTicket) throws IOException;

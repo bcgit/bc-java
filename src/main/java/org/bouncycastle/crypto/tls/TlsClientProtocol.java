@@ -21,7 +21,6 @@ public class TlsClientProtocol extends TlsProtocol {
     protected int[] offeredCipherSuites = null;
     protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
-    protected boolean expectSessionTicket = false;
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
     protected CertificateRequest certificateRequest = null;
@@ -369,11 +368,7 @@ public class TlsClientProtocol extends TlsProtocol {
     }
 
     protected void receiveNewSessionTicket(ByteArrayInputStream buf) throws IOException {
-        /*
-         * RFC 5077 3.3. If the server determines that it does not want to include a ticket after it
-         * has included the SessionTicket extension in the ServerHello, then it sends a zero-length
-         * ticket in the NewSessionTicket handshake message.
-         */
+
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
         TlsProtocol.assertEmpty(buf);

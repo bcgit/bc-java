@@ -158,6 +158,12 @@ public class DTLSServerProtocol extends DTLSProtocol {
             // TODO Alert
         }
 
+        if (state.expectSessionTicket) {
+            NewSessionTicket newSessionTicket = state.server.getNewSessionTicket();
+            byte[] newSessionTicketBody = generateNewSessionTicket(state, newSessionTicket);
+            handshake.sendMessage(HandshakeType.session_ticket, newSessionTicketBody);
+        }
+
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
             "server finished", handshake.getCurrentHash());
@@ -175,6 +181,14 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificateRequest.encode(buf);
+        return buf.toByteArray();
+    }
+
+    protected byte[] generateNewSessionTicket(ServerHandshakeState state,
+        NewSessionTicket newSessionTicket) throws IOException {
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        newSessionTicket.encode(buf);
         return buf.toByteArray();
     }
 
@@ -232,7 +246,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         if (state.secure_renegotiation) {
 
             boolean noRenegExt = state.serverExtensions == null
-                || !state.serverExtensions.containsKey(EXT_RenegotiationInfo);
+                || !state.serverExtensions.containsKey(TlsProtocol.EXT_RenegotiationInfo);
 
             if (noRenegExt) {
                 /*
@@ -250,12 +264,14 @@ public class DTLSServerProtocol extends DTLSProtocol {
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
-                state.serverExtensions.put(EXT_RenegotiationInfo,
+                state.serverExtensions.put(TlsProtocol.EXT_RenegotiationInfo,
                     TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }
 
         if (state.serverExtensions != null) {
+            state.expectSessionTicket = state.serverExtensions
+                .containsKey(TlsProtocol.EXT_SessionTicket);
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
         }
 
@@ -371,7 +387,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
              * ClientHello.
              */
             if (state.clientExtensions != null) {
-                byte[] renegExtValue = (byte[]) state.clientExtensions.get(EXT_RenegotiationInfo);
+                byte[] renegExtValue = (byte[]) state.clientExtensions
+                    .get(TlsProtocol.EXT_RenegotiationInfo);
                 if (renegExtValue != null) {
                     /*
                      * If the extension is present, set secure_renegotiation flag to TRUE. The
@@ -425,6 +442,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        boolean expectSessionTicket = false;
         Hashtable serverExtensions = null;
         TlsKeyExchange keyExchange = null;
         CertificateRequest certificateRequest = null;
