@@ -2,10 +2,10 @@ package org.bouncycastle.crypto.prng;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 
-public class CTRDerivationFunction implements DRBGDerivationFunction
+public class CTRDerivationFunction 
 {
     private static final byte[] K_BITS = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
     private BlockCipher _underlyingCipher;
@@ -16,6 +16,7 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
     {
         _underlyingCipher = underlyingCipher;
         _seedLength = seedLength;
+        _keySizeInBits = keySizeInBits;
     }
 
     public int getSeedlength()
@@ -25,16 +26,19 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
 
     public int getSecurityStrength()
     {
-        return 128; // TODO;;;;
+        return _underlyingCipher.getBlockSize()*8;
     }
 
     public byte[] getBytes(byte[] input)
     {
         // TODO:
         //_underlyingCipher.update(input, 0, input.length);
-        byte[] hash = new byte[_underlyingCipher.getBlockSize()];
-        //_underlyingCipher.doFinal(hash, 0);
-        return hash;
+        byte[] K = new byte[_keySizeInBits / 8];
+        System.arraycopy(K_BITS, 0, K, 0, K.length); 
+        _underlyingCipher.init(true, new KeyParameter(K));
+        byte[] out = new byte[_underlyingCipher.getBlockSize()];
+        _underlyingCipher.processBlock(input, 0, out, 0);
+        return out;
     }
 
     public byte[] getDFBytes(byte[] seedMaterial, int seedLength)
@@ -140,8 +144,41 @@ public class CTRDerivationFunction implements DRBGDerivationFunction
         return temp;
     }
 
-    private void BCC(byte[] bccOut, byte[] k, byte[] iV, byte[] s)
+    
+    /*
+    * 1. chaining_value = 0^outlen    
+    *    . Comment: Set the first chaining value to outlen zeros.
+    * 2. n = len (data)/outlen.
+    * 3. Starting with the leftmost bits of data, split the data into n blocks of outlen bits 
+    *    each, forming block(1) to block(n). 
+    * 4. For i = 1 to n do
+    * 4.1 input_block = chaining_value ^ block(i) .
+    * 4.2 chaining_value = Block_Encrypt (Key, input_block).
+    * 5. output_block = chaining_value.
+    * 6. Return output_block. 
+     */
+    private void BCC(byte[] bccOut, byte[] k, byte[] iV, byte[] data)
     {
+        int outlen = _underlyingCipher.getBlockSize();
+        byte[] chainingValue = new byte[outlen]; // initial values = 0
+        int n = data.length / outlen;
+        
+        byte[] inputBlock = new byte[outlen];
+        _underlyingCipher.init(true, new KeyParameter(k));
+        for (int i=0; i< n; i++) 
+        {
+            XOR(inputBlock, chainingValue, data, i*outlen);
+            _underlyingCipher.processBlock(inputBlock, 0, chainingValue, 0);
+        }
+        System.arraycopy(chainingValue, 0, bccOut, 0, bccOut.length);
+    }
+    
+    private void XOR(byte[] out, byte[] a, byte[] b, int bOff)
+    {
+        for (int i=0; i< out.length; i++) 
+        {
+            out[i] = (byte)(a[i] ^ b[i+bOff]);
+        }
     }
 
     private void copyIntToByteArray(byte[] buf, int value, int offSet)

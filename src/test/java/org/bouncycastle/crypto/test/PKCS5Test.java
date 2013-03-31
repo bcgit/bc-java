@@ -249,6 +249,12 @@ public class PKCS5Test
         {
             fail("192 test failed");
         }
+
+        generator.init(PBEParametersGenerator.PKCS5PasswordToBytes(password), salt, 60000);
+        if (!areEqual(((KeyParameter)generator.generateDerivedParameters(192)).getKey(), Hex.decode("29aaef810c12ecd2236bbcfb55407f9852b5573dc1c095bb")))
+        {
+            fail("192 (60000) test failed");
+        }
     }
 
     public static void main(

@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.prng.CTRDerivationFunction;
 import org.bouncycastle.crypto.prng.DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.HashDerivationFunction;
-import org.bouncycastle.crypto.prng.SP800DRBG;
+import org.bouncycastle.crypto.prng.CTRSP800DRBG;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestResult;
@@ -17,16 +17,16 @@ import org.bouncycastle.util.test.TestResult;
 /**
  * DRBG Test
  */
-public class DRBGHashTest extends SimpleTest
+public class CTRDRGBTest extends SimpleTest
 {
     public String getName()
     {
-        return "DRGBTest";
+        return "DRGBCTRTest";
     }
 
     public static void main(String[] args)
     {
-        DRBGHashTest test = new DRBGHashTest();
+        CTRDRGBTest test = new CTRDRGBTest();
         TestResult result = test.perform();
         
         if (result.getException() != null) 
@@ -113,11 +113,11 @@ public class DRBGHashTest extends SimpleTest
     {
         Collection rv = new ArrayList();
 
-        TestVector tv = new TestVector("a37a3e08d8393feb01c4d78cb6a4d1e210c288c89e9838176bc78946745f1c5bea44cf15e061601bfd45f7b3b95be924", true, "8243299805c0877e", 128, "a05002f98d5676e1b2e3b3d4686bb9055a830a39"); 
-        // rv.add(tv);
-        tv = new TestVector("55d201f2e3e2a6b42c95e73539ccf3ca51457ff8639e023be8a9c891ad318aa5b9bbf6b48d14d647d20708e7782bd7e0", true, "438bc46d0de7db69", 128, "aed4af08f9c1bda495338c305946d4c94452a785");
-        tv.setAdditionalInput("4bd19fd0f73d92373a3633375a367ee2");
-        tv.setAdditionalInput("b247178c21b266432594738d2430cb1d");
+        TestVector tv = new TestVector("86976d97b310666bae11261d1bca974443dd7fd94d4dd7c4bca96aa62a78b0e7abd60a015fbffecb44b43a2ba12b126b02dcc32fd68732e74803e8765c8a4c1d8a2f522a9f2dbc8715b050baf9455b62641c9ca69a5b811b64a4a5f4ace3886b", 
+                true, 
+                "a34231c944711541", 
+                128, 
+                "7eef853b420b133aed3c4334a8941ca7"); 
         rv.add(tv);
         return rv;
         
@@ -130,13 +130,13 @@ public class DRBGHashTest extends SimpleTest
         for (TestVector tv : tests)
         {
             tv.entropy();
-            Digest digest = new SHA1Digest();
-            HashDerivationFunction hf = new HashDerivationFunction(digest, 440);
+            BlockCipher engine = new AESFastEngine();
+            CTRDerivationFunction cdf = new CTRDerivationFunction(engine, 256, 256);
             EntropySource tes = new TestEntropySource(Hex.decode(tv.entropy()), tv.predictionResistance());
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            DRBG d = new SP800DRBG(hf, tes, nonce, personalisationString, securityStrength);
+            DRBG d = new CTRSP800DRBG(cdf, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

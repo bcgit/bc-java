@@ -2,16 +2,16 @@ package org.bouncycastle.crypto.prng;
 
 import org.bouncycastle.util.encoders.Hex;
 
-public class SP800DRBG implements DRBG
+public class CTRSP800DRBG implements DRBG
 {
-    private DRBGDerivationFunction _function;
+    private CTRDerivationFunction _function;
     private byte[]                 _V;
     private byte[]                 _C;
     private int                    _reseedCounter;
     private EntropySource          _entropySource;
     private int                    _securityStrength;
 
-    public SP800DRBG(DRBGDerivationFunction function, EntropySource entropySource, byte[] nonce,
+    public CTRSP800DRBG(CTRDerivationFunction function, EntropySource entropySource, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
         if (securityStrength > function.getSecurityStrength())
