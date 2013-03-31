@@ -45,9 +45,10 @@ public interface TlsServer {
     TlsCipher getCipher() throws IOException;
 
     /**
-     * RFC 5077 3.3. NewSessionTicket Handshake Message
-     * 
-     * This method will be called (only) if a NewSessionTicket extension was sent by the server.
+     * RFC 5077 3.3. NewSessionTicket Handshake Message.
+     * <p>
+     * This method will be called (only) if a NewSessionTicket extension was sent by the server. See
+     * <i>RFC 5077 4. Recommended Ticket Construction</i> for recommended format and protection.
      * 
      * @return The ticket.
      * @throws IOException
