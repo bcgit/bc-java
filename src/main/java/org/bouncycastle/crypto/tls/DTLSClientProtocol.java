@@ -119,8 +119,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
                 .getClientCredentials(state.certificateRequest);
 
             /*
-             * RFC 5246 If no suitable certificate is available, the client MUST
-             * send a certificate message containing no certificates.
+             * RFC 5246 If no suitable certificate is available, the client MUST send a certificate
+             * message containing no certificates.
              * 
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
@@ -303,8 +303,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             // TODO Alert
         }
 
-        byte[] server_random = new byte[32];
-        TlsUtils.readFully(server_random, buf);
+        byte[] server_random = TlsUtils.readFully(32, buf);
         state.clientContext.getSecurityParameters().serverRandom = server_random;
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
@@ -400,7 +399,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
                     state.secure_renegotiation = true;
 
                     if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
+                        TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         // TODO Alert
                         // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }

@@ -112,8 +112,7 @@ public class Certificate {
             int size = TlsUtils.readUint24(input);
             left -= 3 + size;
 
-            byte[] buf = new byte[size];
-            TlsUtils.readFully(buf, input);
+            byte[] buf = TlsUtils.readFully(size, input);
 
             ByteArrayInputStream bis = new ByteArrayInputStream(buf);
             ASN1Primitive asn1 = new ASN1InputStream(bis).readObject();

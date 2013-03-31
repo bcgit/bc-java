@@ -23,9 +23,7 @@ public abstract class TlsProtocol {
     protected static final Integer EXT_SessionTicket = Integers
         .valueOf(ExtensionType.session_ticket);
 
-    protected static final byte[] emptybuf = new byte[0];
-
-    protected static final String TLS_ERROR_MESSAGE = "Internal TLS error, this could be an attack";
+    private static final String TLS_ERROR_MESSAGE = "Internal TLS error, this could be an attack";
 
     /*
      * Our Connection states
@@ -395,7 +393,7 @@ public abstract class TlsProtocol {
          * 
          * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
          */
-        safeWriteRecord(ContentType.application_data, emptybuf, 0, 0);
+        safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
 
         do {
             /*
@@ -471,8 +469,7 @@ public abstract class TlsProtocol {
          * for SSLv3.
          */
         int checksumLength = context.getServerVersion().isSSL() ? 36 : 12;
-        byte[] verify_data = new byte[checksumLength];
-        TlsUtils.readFully(verify_data, buf);
+        byte[] verify_data = TlsUtils.readFully(checksumLength, buf);
 
         assertEmpty(buf);
 

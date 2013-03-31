@@ -100,7 +100,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
             }
         }
 
-        handshake.sendMessage(HandshakeType.server_hello_done, EMPTY_BYTES);
+        handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
 
         clientMessage = handshake.receiveMessage();
 
@@ -251,7 +251,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
                  * "renegotiation_info" extension in the ServerHello message.
                  */
                 state.serverExtensions.put(EXT_RenegotiationInfo,
-                    TlsProtocol.createRenegotiationInfo(EMPTY_BYTES));
+                    TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }
 
@@ -298,8 +298,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         /*
          * Read the client random
          */
-        byte[] random = new byte[32];
-        TlsUtils.readFully(random, buf);
+        byte[] client_random = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
@@ -348,7 +347,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         state.server.notifyClientVersion(client_version);
 
-        state.serverContext.getSecurityParameters().clientRandom = random;
+        state.serverContext.getSecurityParameters().clientRandom = client_random;
 
         state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
         state.server.notifyOfferedCompressionMethods(state.offeredCompressionMethods);
@@ -382,7 +381,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
                     state.secure_renegotiation = true;
 
                     if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        TlsProtocol.createRenegotiationInfo(EMPTY_BYTES))) {
+                        TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         // TODO Alert
                         // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }

@@ -119,8 +119,8 @@ class RecordStream {
     }
 
     protected byte[] decodeAndVerify(short type, InputStream input, int len) throws IOException {
-        byte[] buf = new byte[len];
-        TlsUtils.readFully(buf, input);
+
+        byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
         OutputStream cOut = readCompression.decompress(buffer);

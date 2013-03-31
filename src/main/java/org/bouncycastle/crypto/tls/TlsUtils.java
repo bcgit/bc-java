@@ -23,51 +23,53 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
-    protected static void writeUint8(short i, OutputStream os) throws IOException
+    public static byte[] EMPTY_BYTES = new byte[0];
+
+    public static void writeUint8(short i, OutputStream output) throws IOException
     {
-        os.write(i);
+        output.write(i);
     }
 
-    protected static void writeUint8(short i, byte[] buf, int offset)
+    public static void writeUint8(short i, byte[] buf, int offset)
     {
         buf[offset] = (byte)i;
     }
 
-    protected static void writeUint16(int i, OutputStream os) throws IOException
+    public static void writeUint16(int i, OutputStream output) throws IOException
     {
-        os.write(i >> 8);
-        os.write(i);
+        output.write(i >> 8);
+        output.write(i);
     }
 
-    protected static void writeUint16(int i, byte[] buf, int offset)
+    public static void writeUint16(int i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 8);
         buf[offset + 1] = (byte)i;
     }
 
-    protected static void writeUint24(int i, OutputStream os) throws IOException
+    public static void writeUint24(int i, OutputStream output) throws IOException
     {
-        os.write(i >> 16);
-        os.write(i >> 8);
-        os.write(i);
+        output.write(i >> 16);
+        output.write(i >> 8);
+        output.write(i);
     }
 
-    protected static void writeUint24(int i, byte[] buf, int offset)
+    public static void writeUint24(int i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 16);
         buf[offset + 1] = (byte)(i >> 8);
         buf[offset + 2] = (byte)(i);
     }
 
-    protected static void writeUint32(long i, OutputStream os) throws IOException
+    public static void writeUint32(long i, OutputStream output) throws IOException
     {
-        os.write((int)(i >> 24));
-        os.write((int)(i >> 16));
-        os.write((int)(i >> 8));
-        os.write((int)(i));
+        output.write((int)(i >> 24));
+        output.write((int)(i >> 16));
+        output.write((int)(i >> 8));
+        output.write((int)(i));
     }
 
-    protected static void writeUint32(long i, byte[] buf, int offset)
+    public static void writeUint32(long i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 24);
         buf[offset + 1] = (byte)(i >> 16);
@@ -75,7 +77,7 @@ public class TlsUtils
         buf[offset + 3] = (byte)(i);
     }
 
-    protected static void writeUint48(long i, byte[] buf, int offset)
+    public static void writeUint48(long i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 40);
         buf[offset + 1] = (byte)(i >> 32);
@@ -85,19 +87,19 @@ public class TlsUtils
         buf[offset + 5] = (byte)(i);
     }
 
-    protected static void writeUint64(long i, OutputStream os) throws IOException
+    public static void writeUint64(long i, OutputStream output) throws IOException
     {
-        os.write((int)(i >> 56));
-        os.write((int)(i >> 48));
-        os.write((int)(i >> 40));
-        os.write((int)(i >> 32));
-        os.write((int)(i >> 24));
-        os.write((int)(i >> 16));
-        os.write((int)(i >> 8));
-        os.write((int)(i));
+        output.write((int)(i >> 56));
+        output.write((int)(i >> 48));
+        output.write((int)(i >> 40));
+        output.write((int)(i >> 32));
+        output.write((int)(i >> 24));
+        output.write((int)(i >> 16));
+        output.write((int)(i >> 8));
+        output.write((int)(i));
     }
 
-    protected static void writeUint64(long i, byte[] buf, int offset)
+    public static void writeUint64(long i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 56);
         buf[offset + 1] = (byte)(i >> 48);
@@ -109,43 +111,43 @@ public class TlsUtils
         buf[offset + 7] = (byte)(i);
     }
 
-    protected static void writeOpaque8(byte[] buf, OutputStream os) throws IOException
+    public static void writeOpaque8(byte[] buf, OutputStream output) throws IOException
     {
-        writeUint8((short)buf.length, os);
-        os.write(buf);
+        writeUint8((short)buf.length, output);
+        output.write(buf);
     }
 
-    protected static void writeOpaque16(byte[] buf, OutputStream os) throws IOException
+    public static void writeOpaque16(byte[] buf, OutputStream output) throws IOException
     {
-        writeUint16(buf.length, os);
-        os.write(buf);
+        writeUint16(buf.length, output);
+        output.write(buf);
     }
 
-    protected static void writeOpaque24(byte[] buf, OutputStream os) throws IOException
+    public static void writeOpaque24(byte[] buf, OutputStream output) throws IOException
     {
-        writeUint24(buf.length, os);
-        os.write(buf);
+        writeUint24(buf.length, output);
+        output.write(buf);
     }
 
-    protected static void writeUint8Array(short[] uints, OutputStream os) throws IOException
+    public static void writeUint8Array(short[] uints, OutputStream output) throws IOException
     {
         for (int i = 0; i < uints.length; ++i)
         {
-            writeUint8(uints[i], os);
+            writeUint8(uints[i], output);
         }
     }
 
-    protected static void writeUint16Array(int[] uints, OutputStream os) throws IOException
+    public static void writeUint16Array(int[] uints, OutputStream output) throws IOException
     {
         for (int i = 0; i < uints.length; ++i)
         {
-            writeUint16(uints[i], os);
+            writeUint16(uints[i], output);
         }
     }
 
-    protected static short readUint8(InputStream is) throws IOException
+    public static short readUint8(InputStream input) throws IOException
     {
-        int i = is.read();
+        int i = input.read();
         if (i < 0)
         {
             throw new EOFException();
@@ -153,15 +155,15 @@ public class TlsUtils
         return (short)i;
     }
 
-    protected static short readUint8(byte[] buf, int offset)
+    public static short readUint8(byte[] buf, int offset)
     {
         return (short)buf[offset];
     }
 
-    protected static int readUint16(InputStream is) throws IOException
+    public static int readUint16(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
         if (i2 < 0)
         {
             throw new EOFException();
@@ -169,18 +171,18 @@ public class TlsUtils
         return i1 << 8 | i2;
     }
 
-    protected static int readUint16(byte[] buf, int offset)
+    public static int readUint16(byte[] buf, int offset)
     {
         int n = (buf[offset] & 0xff) << 8;
         n |= (buf[++offset] & 0xff);
         return n;
     }
 
-    protected static int readUint24(InputStream is) throws IOException
+    public static int readUint24(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
-        int i3 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
+        int i3 = input.read();
         if (i3 < 0)
         {
             throw new EOFException();
@@ -188,7 +190,7 @@ public class TlsUtils
         return (i1 << 16) | (i2 << 8) | i3;
     }
 
-    protected static int readUint24(byte[] buf, int offset)
+    public static int readUint24(byte[] buf, int offset)
     {
         int n = (buf[offset] & 0xff) << 16;
         n |= (buf[++offset] & 0xff) << 8;
@@ -196,12 +198,12 @@ public class TlsUtils
         return n;
     }
 
-    protected static long readUint32(InputStream is) throws IOException
+    public static long readUint32(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
-        int i3 = is.read();
-        int i4 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
+        int i3 = input.read();
+        int i4 = input.read();
         if (i4 < 0)
         {
             throw new EOFException();
@@ -209,14 +211,14 @@ public class TlsUtils
         return (((long)i1) << 24) | (((long)i2) << 16) | (((long)i3) << 8) | ((long)i4);
     }
 
-    protected static long readUint48(InputStream is) throws IOException
+    public static long readUint48(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
-        int i3 = is.read();
-        int i4 = is.read();
-        int i5 = is.read();
-        int i6 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
+        int i3 = input.read();
+        int i4 = input.read();
+        int i5 = input.read();
+        int i6 = input.read();
         if (i6 < 0)
         {
             throw new EOFException();
@@ -224,75 +226,82 @@ public class TlsUtils
         return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8)  | ((long)i6);
     }
 
-    protected static long readUint48(byte[] buf, int offset)
+    public static long readUint48(byte[] buf, int offset)
     {
         int hi = readUint24(buf, offset);
         int lo = readUint24(buf, offset + 3);
         return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
-    protected static void readFully(byte[] buf, InputStream is) throws IOException
+    public static byte[] readFully(int length, InputStream input) throws IOException
+    {
+        if (length < 1) {
+            return EMPTY_BYTES;
+        }
+        byte[] buf = new byte[length];
+        if (length != Streams.readFully(input, buf))
+        {
+            throw new EOFException();
+        }
+        return buf;
+    }
+
+    public static void readFully(byte[] buf, InputStream input) throws IOException
     {
         int length = buf.length;
-        if (length > 0 && length != Streams.readFully(is, buf))
+        if (length > 0 && length != Streams.readFully(input, buf))
         {
             throw new EOFException();
         }
     }
 
-    protected static byte[] readOpaque8(InputStream is) throws IOException
+    public static byte[] readOpaque8(InputStream input) throws IOException
     {
-        short length = readUint8(is);
-        byte[] value = new byte[length];
-        readFully(value, is);
-        return value;
+        short length = readUint8(input);
+        return readFully(length, input);
     }
 
-    protected static byte[] readOpaque16(InputStream is) throws IOException
+    public static byte[] readOpaque16(InputStream input) throws IOException
     {
-        int length = readUint16(is);
-        byte[] value = new byte[length];
-        readFully(value, is);
-        return value;
+        int length = readUint16(input);
+        return readFully(length, input);
     }
 
-    protected static byte[] readOpaque24(InputStream is) throws IOException
+    public static byte[] readOpaque24(InputStream input) throws IOException
     {
-        int length = readUint24(is);
-        byte[] value = new byte[length];
-        readFully(value, is);
-        return value;
+        int length = readUint24(input);
+        return readFully(length, input);
     }
 
-    protected static short[] readUint8Array(int count, InputStream is) throws IOException
+    public static short[] readUint8Array(int count, InputStream input) throws IOException
     {
         short[] uints = new short[count];
         for (int i = 0; i < count; ++i)
         {
-            uints[i] = readUint8(is);
+            uints[i] = readUint8(input);
         }
         return uints;
     }
 
-    protected static int[] readUint16Array(int count, InputStream is) throws IOException
+    public static int[] readUint16Array(int count, InputStream input) throws IOException
     {
         int[] uints = new int[count];
         for (int i = 0; i < count; ++i)
         {
-            uints[i] = readUint16(is);
+            uints[i] = readUint16(input);
         }
         return uints;
     }
 
-    protected static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
+    public static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
     {
         return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
     }
 
-    protected static ProtocolVersion readVersion(InputStream is) throws IOException
+    public static ProtocolVersion readVersion(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
         if (i2 < 0)
         {
             throw new EOFException();
@@ -300,10 +309,10 @@ public class TlsUtils
         return ProtocolVersion.get(i1, i2);
     }
 
-    protected static int readVersionRaw(InputStream is) throws IOException
+    public static int readVersionRaw(InputStream input) throws IOException
     {
-        int i1 = is.read();
-        int i2 = is.read();
+        int i1 = input.read();
+        int i2 = input.read();
         if (i2 < 0)
         {
             throw new EOFException();
@@ -311,7 +320,7 @@ public class TlsUtils
         return (i1 << 8) | i2;
     }
 
-    protected static void writeGMTUnixTime(byte[] buf, int offset)
+    public static void writeGMTUnixTime(byte[] buf, int offset)
     {
         int t = (int)(System.currentTimeMillis() / 1000L);
         buf[offset] = (byte)(t >> 24);
@@ -320,41 +329,19 @@ public class TlsUtils
         buf[offset + 3] = (byte)t;
     }
 
-    protected static void writeVersion(ProtocolVersion version, OutputStream os) throws IOException
+    public static void writeVersion(ProtocolVersion version, OutputStream output) throws IOException
     {
-        os.write(version.getMajorVersion());
-        os.write(version.getMinorVersion());
+        output.write(version.getMajorVersion());
+        output.write(version.getMinorVersion());
     }
 
-    protected static void writeVersion(ProtocolVersion version, byte[] buf, int offset) throws IOException
+    public static void writeVersion(ProtocolVersion version, byte[] buf, int offset) throws IOException
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
-    static void hmac_hash(Digest digest, byte[] secret, byte[] seed, byte[] out)
-    {
-        HMac mac = new HMac(digest);
-        KeyParameter param = new KeyParameter(secret);
-        byte[] a = seed;
-        int size = digest.getDigestSize();
-        int iterations = (out.length + size - 1) / size;
-        byte[] buf = new byte[mac.getMacSize()];
-        byte[] buf2 = new byte[mac.getMacSize()];
-        for (int i = 0; i < iterations; i++)
-        {
-            mac.init(param);
-            mac.update(a, 0, a.length);
-            mac.doFinal(buf, 0);
-            a = buf;
-            mac.init(param);
-            mac.update(a, 0, a.length);
-            mac.update(seed, 0, seed.length);
-            mac.doFinal(buf2, 0);
-            System.arraycopy(buf2, 0, out, (size * i), Math.min(size, out.length - (size * i)));
-        }
-    }
-
+    // TODO Make at least one PRF method public
     static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
     {
         // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
@@ -362,6 +349,7 @@ public class TlsUtils
         return PRF_1_2(context, PRFAlgorithm.tls_prf_legacy, secret, asciiLabel, seed, size);
     }
 
+    // TODO Make at least one PRF method public
     static byte[] PRF_1_2(TlsContext context, int prfAlgorithm, byte[] secret, String asciiLabel,
         byte[] seed, int size)
     {
@@ -418,6 +406,29 @@ public class TlsUtils
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
+    }
+
+    static void hmac_hash(Digest digest, byte[] secret, byte[] seed, byte[] out)
+    {
+        HMac mac = new HMac(digest);
+        KeyParameter param = new KeyParameter(secret);
+        byte[] a = seed;
+        int size = digest.getDigestSize();
+        int iterations = (out.length + size - 1) / size;
+        byte[] buf = new byte[mac.getMacSize()];
+        byte[] buf2 = new byte[mac.getMacSize()];
+        for (int i = 0; i < iterations; i++)
+        {
+            mac.init(param);
+            mac.update(a, 0, a.length);
+            mac.doFinal(buf, 0);
+            a = buf;
+            mac.init(param);
+            mac.update(a, 0, a.length);
+            mac.update(seed, 0, seed.length);
+            mac.doFinal(buf2, 0);
+            System.arraycopy(buf2, 0, out, (size * i), Math.min(size, out.length - (size * i)));
+        }
     }
 
     static void validateKeyUsage(org.bouncycastle.asn1.x509.Certificate c, int keyUsageBits) throws IOException

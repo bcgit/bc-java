@@ -14,8 +14,6 @@ public abstract class DTLSProtocol {
     protected static final Integer EXT_RenegotiationInfo = Integers
         .valueOf(ExtensionType.renegotiation_info);
 
-    protected static final byte[] EMPTY_BYTES = new byte[0];
-
     protected final SecureRandom secureRandom;
 
     protected DTLSProtocol(SecureRandom secureRandom) {
@@ -30,8 +28,7 @@ public abstract class DTLSProtocol {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        byte[] serverVerifyData = new byte[12];
-        TlsUtils.readFully(serverVerifyData, buf);
+        byte[] serverVerifyData = TlsUtils.readFully(12, buf);
 
         TlsProtocol.assertEmpty(buf);
 

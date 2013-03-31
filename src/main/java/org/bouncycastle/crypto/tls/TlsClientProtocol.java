@@ -405,8 +405,7 @@ public class TlsClientProtocol extends TlsProtocol {
         /*
          * Read the server random
          */
-        securityParameters.serverRandom = new byte[32];
-        TlsUtils.readFully(securityParameters.serverRandom, buf);
+        securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
@@ -508,7 +507,7 @@ public class TlsClientProtocol extends TlsProtocol {
                     this.secure_renegotiation = true;
 
                     if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        createRenegotiationInfo(emptybuf))) {
+                        createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
                 }

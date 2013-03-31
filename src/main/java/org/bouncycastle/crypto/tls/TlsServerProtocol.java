@@ -280,8 +280,7 @@ public class TlsServerProtocol extends TlsProtocol {
         /*
          * Read the client random
          */
-        byte[] random = new byte[32];
-        TlsUtils.readFully(random, buf);
+        byte[] client_random = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
@@ -323,7 +322,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         tlsServer.notifyClientVersion(client_version);
 
-        securityParameters.clientRandom = random;
+        securityParameters.clientRandom = client_random;
 
         tlsServer.notifyOfferedCipherSuites(offeredCipherSuites);
         tlsServer.notifyOfferedCompressionMethods(offeredCompressionMethods);
@@ -356,7 +355,7 @@ public class TlsServerProtocol extends TlsProtocol {
                     this.secure_renegotiation = true;
 
                     if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        createRenegotiationInfo(emptybuf))) {
+                        createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
                 }
@@ -471,7 +470,8 @@ public class TlsServerProtocol extends TlsProtocol {
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
-                this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(emptybuf));
+                this.serverExtensions.put(EXT_RenegotiationInfo,
+                    createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }
 
