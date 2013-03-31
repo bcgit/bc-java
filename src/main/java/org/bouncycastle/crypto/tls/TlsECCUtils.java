@@ -113,6 +113,10 @@ public class TlsECCUtils {
     public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue)
         throws IOException {
 
+        if (extensionValue == null) {
+            throw new IllegalArgumentException("'extensionValue' cannot be null");
+        }
+
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
 
         int length = TlsUtils.readUint16(buf);
@@ -129,6 +133,10 @@ public class TlsECCUtils {
 
     public static short[] readSupportedPointFormatsExtension(byte[] extensionValue)
         throws IOException {
+
+        if (extensionValue == null) {
+            throw new IllegalArgumentException("'extensionValue' cannot be null");
+        }
 
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
 
