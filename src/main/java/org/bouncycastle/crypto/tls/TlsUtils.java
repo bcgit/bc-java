@@ -233,7 +233,8 @@ public class TlsUtils
 
     protected static void readFully(byte[] buf, InputStream is) throws IOException
     {
-        if (Streams.readFully(is, buf) != buf.length)
+        int length = buf.length;
+        if (length > 0 && length != Streams.readFully(is, buf))
         {
             throw new EOFException();
         }
