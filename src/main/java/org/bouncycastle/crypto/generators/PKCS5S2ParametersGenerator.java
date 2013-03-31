@@ -40,28 +40,24 @@ public class PKCS5S2ParametersGenerator
     private void F(
         byte[]  S,
         int     c,
-        int     i,
+        byte[]  iBuf,
         byte[]  out,
         int     outOff)
     {
+        if (c == 0)
+        {
+            throw new IllegalArgumentException("iteration count must be at least 1.");
+        }
+
         if (S != null)
         {
             hMac.update(S, 0, S.length);
         }
 
-        hMac.update((byte)(i >>> 24));
-        hMac.update((byte)(i >>> 16));
-        hMac.update((byte)(i >>> 8));
-        hMac.update((byte)i);
-
+        hMac.update(iBuf, 0, iBuf.length);
         hMac.doFinal(state, 0);
 
         System.arraycopy(state, 0, out, outOff, state.length);
-
-        if (c == 0)
-        {
-            throw new IllegalArgumentException("iteration count must be at least 1.");
-        }
         
         for (int count = 1; count < c; count++)
         {
@@ -80,18 +76,28 @@ public class PKCS5S2ParametersGenerator
     {
         int     hLen = hMac.getMacSize();
         int     l = (dkLen + hLen - 1) / hLen;
-        byte[]  out = new byte[l * hLen];
+        byte[]  iBuf = new byte[4];
+        byte[]  outBytes = new byte[l * hLen];
+        int     outPos = 0;
 
-        CipherParameters    param = new KeyParameter(password);
+        CipherParameters param = new KeyParameter(password);
 
         hMac.init(param);
 
         for (int i = 1; i <= l; i++)
         {
-            F(salt, iterationCount, i, out, (i - 1) * hLen);
+            // Increment the value in 'iBuf'
+            int pos = 3;
+            while (++iBuf[pos] == 0)
+            {
+                --pos;
+            }
+
+            F(salt, iterationCount, iBuf, outBytes, outPos);
+            outPos += hLen;
         }
 
-        return out;
+        return outBytes;
     }
 
     /**
