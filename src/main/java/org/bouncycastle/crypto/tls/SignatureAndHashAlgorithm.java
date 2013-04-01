@@ -8,6 +8,10 @@ public class SignatureAndHashAlgorithm {
     private short hash;
     private short signature;
 
+    /**
+     * @param hash {@link HashAlgorithm}
+     * @param signature {@link SignatureAlgorithm}
+     */
     public SignatureAndHashAlgorithm(short hash, short signature) {
 
         if (!TlsUtils.isValidUint8(hash)) {
@@ -21,10 +25,16 @@ public class SignatureAndHashAlgorithm {
         this.signature = signature;
     }
 
+    /**
+     * @return {@link HashAlgorithm}
+     */
     public short getHash() {
         return hash;
     }
 
+    /**
+     * @return {@link SignatureAlgorithm}
+     */
     public short getSignature() {
         return signature;
     }
