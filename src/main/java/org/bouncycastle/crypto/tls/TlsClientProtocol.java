@@ -67,7 +67,9 @@ public class TlsClientProtocol extends TlsProtocol {
         this.tlsClient = tlsClient;
 
         this.securityParameters = new SecurityParameters();
+        this.securityParameters.entity = ConnectionEnd.client;
         this.securityParameters.clientRandom = createRandomBlock(secureRandom);
+
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);

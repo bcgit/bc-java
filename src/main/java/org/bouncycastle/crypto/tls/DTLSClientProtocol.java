@@ -24,6 +24,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             throw new IllegalArgumentException("'transport' cannot be null");
 
         SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.entity = ConnectionEnd.client;
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(secureRandom);
 
         ClientHandshakeState state = new ClientHandshakeState();

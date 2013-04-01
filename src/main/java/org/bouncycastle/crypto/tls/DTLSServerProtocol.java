@@ -33,6 +33,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
             throw new IllegalArgumentException("'transport' cannot be null");
 
         SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.entity = ConnectionEnd.server;
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(secureRandom);
 
         ServerHandshakeState state = new ServerHandshakeState();

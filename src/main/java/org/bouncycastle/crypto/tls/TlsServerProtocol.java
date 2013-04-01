@@ -50,7 +50,9 @@ public class TlsServerProtocol extends TlsProtocol {
         this.tlsServer = tlsServer;
 
         this.securityParameters = new SecurityParameters();
+        this.securityParameters.entity = ConnectionEnd.server;
         this.securityParameters.serverRandom = createRandomBlock(secureRandom);
+
         this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
