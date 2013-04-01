@@ -72,8 +72,7 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
          */
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException {
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {
         short[] types = certificateRequest.getCertificateTypes();
         for (int i = 0; i < types.length; ++i) {
             switch (types[i]) {
@@ -94,15 +93,10 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
     }
 
     public void generateClientKeyExchange(OutputStream output) throws IOException {
-        this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context,
-            this.rsaServerPublicKey, output);
+        this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, this.rsaServerPublicKey, output);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException {
-
-        /*
-         * NOTE: see RFC 4346 7.4.7.1 Implementation notes about SSLv3 and Bleichenbacher attacks
-         */
 
         byte[] encryptedPreMasterSecret;
         if (context.getServerVersion().isSSL()) {
@@ -112,16 +106,58 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        try {
-            this.premasterSecret = validatePremasterSecret(serverCredentials
-                .decryptPreMasterSecret(encryptedPreMasterSecret));
-        } catch (Exception e) {
+        ProtocolVersion clientVersion = context.getClientVersion();
+
+        /*
+         * RFC 5246 7.4.7.1.
+         */
+        {
+            // TODO Provide as configuration option?
+            boolean versionNumberCheckDisabled = false;
+
             /*
-             * "The best way to avoid vulnerability to this attack is to treat incorrectly formatted
-             * messages in a manner indistinguishable from correctly formatted RSA blocks."
+             * See notes regarding Bleichenbacher/Klima attack. The code here implements the first
+             * construction proposed there, which is RECOMMENDED.
              */
-            premasterSecret = new byte[48];
-            context.getSecureRandom().nextBytes(premasterSecret);
+            byte[] R = new byte[48];
+            this.context.getSecureRandom().nextBytes(R);
+
+            byte[] M = TlsUtils.EMPTY_BYTES;
+            try {
+                M = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+            } catch (Exception e) {
+                /*
+                 * In any case, a TLS server MUST NOT generate an alert if processing an
+                 * RSA-encrypted premaster secret message fails, or the version number is not as
+                 * expected. Instead, it MUST continue the handshake with a randomly generated
+                 * premaster secret.
+                 */
+            }
+
+            if (M.length != 48) {
+                TlsUtils.writeVersion(clientVersion, R, 0);
+                this.premasterSecret = R;
+            } else {
+                /*
+                 * If ClientHello.client_version is TLS 1.1 or higher, server implementations MUST
+                 * check the version number [..].
+                 */
+                if (versionNumberCheckDisabled && clientVersion.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10)) {
+                    /*
+                     * If the version number is TLS 1.0 or earlier, server implementations SHOULD
+                     * check the version number, but MAY have a configuration option to disable the
+                     * check.
+                     */
+                } else {
+                    /*
+                     * Note that explicitly constructing the pre_master_secret with the
+                     * ClientHello.client_version produces an invalid master_secret if the client
+                     * has sent the wrong version in the original pre_master_secret.
+                     */
+                    TlsUtils.writeVersion(clientVersion, M, 0);
+                }
+                this.premasterSecret = M;
+            }
         }
     }
 
@@ -163,21 +199,6 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
     // this.rsaServerPublicKey = validateRSAPublicKey(new RSAKeyParameters(false, modulus,
     // exponent));
     // }
-
-    protected byte[] validatePremasterSecret(byte[] premasterSecret) throws IOException {
-
-        if (premasterSecret.length != 48) {
-            throw new IllegalArgumentException("'premasterSecret' must be 48 bytes");
-        }
-
-        ProtocolVersion client_version = TlsUtils.readVersion(premasterSecret, 0);
-        if (!client_version.equals(context.getClientVersion())) {
-            throw new IllegalArgumentException(
-                "'premasterSecret' version bytes must match ClientHello version");
-        }
-
-        return premasterSecret;
-    }
 
     protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key) throws IOException {
         // TODO What is the minimum bit length required?
