@@ -354,6 +354,9 @@ public class TlsClientProtocol extends TlsProtocol {
             }
         }
         case HandshakeType.hello_request:
+
+            assertEmpty(buf);
+
             /*
              * RFC 2246 7.4.1.1 Hello request This message will be ignored by the client if the
              * client is currently negotiating a session. This message may be ignored by the client
