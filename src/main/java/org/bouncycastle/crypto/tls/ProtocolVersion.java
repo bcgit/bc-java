@@ -4,17 +4,19 @@ import java.io.IOException;
 
 public class ProtocolVersion {
 
-    public static final ProtocolVersion SSLv3 = new ProtocolVersion(0x0300);
-    public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301);
-    public static final ProtocolVersion TLSv11 = new ProtocolVersion(0x0302);
-    public static final ProtocolVersion TLSv12 = new ProtocolVersion(0x0303);
-    public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF);
-    public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD);
+    public static final ProtocolVersion SSLv3 = new ProtocolVersion(0x0300, "SSL 3.0");
+    public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301, "TLS 1.0");
+    public static final ProtocolVersion TLSv11 = new ProtocolVersion(0x0302, "TLS 1.1");
+    public static final ProtocolVersion TLSv12 = new ProtocolVersion(0x0303, "TLS 1.2");
+    public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
+    public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
     private int version;
+    private String name;
 
-    private ProtocolVersion(int v) {
-        version = v & 0xffff;
+    private ProtocolVersion(int v, String name) {
+        this.version = v & 0xffff;
+        this.name = name;
     }
 
     public int getFullVersion() {
@@ -88,5 +90,9 @@ public class ProtocolVersion {
         }
 
         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+    }
+
+    public String toString() {
+        return name;
     }
 }
