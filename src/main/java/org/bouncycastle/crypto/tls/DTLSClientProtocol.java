@@ -23,11 +23,12 @@ public class DTLSClientProtocol extends DTLSProtocol {
         if (transport == null)
             throw new IllegalArgumentException("'transport' cannot be null");
 
+        SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.clientRandom = TlsProtocol.createRandomBlock(secureRandom);
+
         ClientHandshakeState state = new ClientHandshakeState();
         state.client = client;
-        state.clientContext = new TlsClientContextImpl(secureRandom, new SecurityParameters());
-        state.clientContext.getSecurityParameters().clientRandom = TlsProtocol
-            .createRandomBlock(secureRandom);
+        state.clientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         client.init(state.clientContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext,
@@ -69,6 +70,11 @@ public class DTLSClientProtocol extends DTLSProtocol {
         } else {
             // TODO Alert
         }
+
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
+
+        state.keyExchange = state.client.getKeyExchange();
+        state.keyExchange.init(state.clientContext);
 
         if (serverMessage.getType() == HandshakeType.supplemental_data) {
             processServerSupplementalData(state, serverMessage.getBody());
@@ -334,22 +340,23 @@ public class DTLSClientProtocol extends DTLSProtocol {
         }
         state.client.notifySessionID(sessionID);
 
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+        state.selectedCipherSuite = TlsUtils.readUint16(buf);
+        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+            || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             // TODO Alert
         }
 
-        validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter);
+        validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.illegal_parameter);
 
-        state.client.notifySelectedCipherSuite(selectedCipherSuite);
+        state.client.notifySelectedCipherSuite(state.selectedCipherSuite);
 
-        short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, selectedCompressionMethod)) {
+        state.selectedCompressionMethod = TlsUtils.readUint8(buf);
+        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods,
+            state.selectedCompressionMethod)) {
             // TODO Alert
         }
-        state.client.notifySelectedCompressionMethod(selectedCompressionMethod);
+        state.client.notifySelectedCompressionMethod(state.selectedCompressionMethod);
 
         /*
          * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
@@ -437,11 +444,6 @@ public class DTLSClientProtocol extends DTLSProtocol {
         if (state.clientExtensions != null) {
             state.client.processServerExtensions(serverExtensions);
         }
-
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(selectedCipherSuite);
-
-        state.keyExchange = state.client.getKeyExchange();
-        state.keyExchange.init(state.clientContext);
     }
 
     protected void processServerKeyExchange(ClientHandshakeState state, byte[] body)
@@ -508,6 +510,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         int[] offeredCipherSuites = null;
         short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;
+        int selectedCipherSuite = -1;
+        short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
