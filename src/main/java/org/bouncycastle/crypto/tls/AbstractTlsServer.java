@@ -15,6 +15,7 @@ public abstract class AbstractTlsServer implements TlsServer {
     protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
+    protected Vector signatureAlgorithms;
     protected boolean eccCipherSuitesOffered;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
@@ -101,6 +102,18 @@ public abstract class AbstractTlsServer implements TlsServer {
         this.clientExtensions = clientExtensions;
 
         if (clientExtensions != null) {
+
+            this.signatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+            if (this.signatureAlgorithms != null) {
+                /*
+                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
+                 * Clients MUST NOT offer it if they are offering prior versions.
+                 */
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion)) {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+            }
+
             this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
             this.clientECPointFormats = TlsECCUtils
                 .getSupportedPointFormatsExtension(clientExtensions);
