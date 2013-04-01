@@ -57,8 +57,7 @@ public abstract class AbstractTlsClient implements TlsClient {
          * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
          * Clients MUST NOT offer it if they are offering prior versions.
          */
-        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion)
-            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(clientVersion)) {
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion)) {
 
             // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
 

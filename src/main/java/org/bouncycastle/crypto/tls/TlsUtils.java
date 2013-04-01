@@ -378,6 +378,12 @@ public class TlsUtils
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
+    public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
+    {
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion)
+            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(clientVersion);
+    }
+
     /**
      * Add a 'signature_algorithms' extension to existing extensions.
      * 
