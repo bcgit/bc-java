@@ -49,13 +49,14 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
 
             TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
-            return clientExtensions;
         }
 
         return clientExtensions;
     }
 
     public void processServerExtensions(Hashtable serverExtensions) throws IOException {
+
+        super.processServerExtensions(serverExtensions);
 
         if (serverExtensions != null) {
             int[] namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);

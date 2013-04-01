@@ -48,7 +48,42 @@ public abstract class AbstractTlsClient implements TlsClient {
     }
 
     public Hashtable getClientExtensions() throws IOException {
-        return null;
+
+        Hashtable clientExtensions = null;
+
+        ProtocolVersion clientVersion = context.getClientVersion();
+
+        /*
+         * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
+         * Clients MUST NOT offer it if they are offering prior versions.
+         */
+        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion)
+            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(clientVersion)) {
+
+            // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
+
+            short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
+                HashAlgorithm.sha224, HashAlgorithm.sha1, HashAlgorithm.md5 };
+
+            // TODO Sort out ECDSA signatures and add them as the preferred option here
+            short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa, SignatureAlgorithm.dsa };
+
+            Vector supportedSignatureAlgorithms = new Vector();
+            for (int i = 0; i < hashAlgorithms.length; ++i) {
+                for (int j = 0; j < signatureAlgorithms.length; ++j) {
+                    supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
+                        signatureAlgorithms[j]));
+                }
+            }
+
+            if (clientExtensions == null) {
+                clientExtensions = new Hashtable();
+            }
+
+            TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
+        }
+
+        return clientExtensions;
     }
 
     public ProtocolVersion getMinimumVersion() {
@@ -92,6 +127,14 @@ public abstract class AbstractTlsClient implements TlsClient {
          * TlsProtocol implementation validates that any server extensions received correspond to
          * client extensions sent. By default, we don't send any, and this method is not called.
          */
+        if (serverExtensions != null) {
+            /*
+             * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
+             */
+            if (serverExtensions.containsKey(TlsUtils.EXT_signature_algorithms)) {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
     }
 
     public void processServerSupplementalData(Vector serverSupplementalData) throws IOException {
