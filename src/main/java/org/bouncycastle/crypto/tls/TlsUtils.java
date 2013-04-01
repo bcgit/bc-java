@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -378,7 +379,7 @@ public class TlsUtils
     }
 
     /**
-     * Add a 'signature_algorithms' extension value to existing extensions.
+     * Add a 'signature_algorithms' extension to existing extensions.
      * 
      * @param extensions A {@link Hashtable} to add the extension to.
      * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
@@ -391,9 +392,28 @@ public class TlsUtils
     }
 
     /**
+     * Get a 'signature_algorithms' extension from extensions.
+     * 
+     * @param extensions A {@link Hashtable} to get the extension from, if it is present.
+     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}, or null.
+     * @throws IOException
+     */
+    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions) throws IOException {
+
+        if (extensions == null) {
+            return null;
+        }
+        byte[] extensionValue = (byte[]) extensions.get(EXT_signature_algorithms);
+        if (extensionValue == null) {
+            return null;
+        }
+        return readSignatureAlgorithmsExtension(extensionValue);
+    }
+
+    /**
      * Create a 'signature_algorithms' extension value.
      * 
-     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
+     * @param supportedSignatureAlgorithms A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
      * @return A byte array suitable for use as an extension value.
      * @throws IOException
      */
@@ -414,6 +434,38 @@ public class TlsUtils
         }
 
         return buf.toByteArray();
+    }
+
+    /**
+     * Read a 'signature_algorithms' extension value.
+     * 
+     * @param extensionValue The extension value.
+     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
+     * @throws IOException
+     */
+    public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue) throws IOException {
+
+        if (extensionValue == null) {
+            throw new IllegalArgumentException("'extensionValue' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+
+        // supported_signature_algorithms
+        int length = TlsUtils.readUint16(buf);
+        if (length < 2 || (length & 1) != 0) {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        int count = length / 2;
+        Vector result = new Vector(count);
+        for (int i = 0; i < count; ++i) {
+            SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(buf);
+            result.addElement(entry);
+        }
+
+        TlsProtocol.assertEmpty(buf);
+
+        return result;
     }
 
     public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)

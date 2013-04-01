@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -55,7 +56,7 @@ public class SignatureAndHashAlgorithm {
     public int hashCode() {
         return (getHash() << 8) | getSignature();
     }
-    
+
     /**
      * Encode this {@link SignatureAndHashAlgorithm} to an {@link OutputStream}.
      * 
@@ -66,5 +67,19 @@ public class SignatureAndHashAlgorithm {
     public void encode(OutputStream output) throws IOException {
         TlsUtils.writeUint8(hash, output);
         TlsUtils.writeUint8(signature, output);
+    }
+
+    /**
+     * Parse a {@link SignatureAndHashAlgorithm} from an {@link InputStream}.
+     * 
+     * @param input
+     *            the {@link InputStream} to parse from.
+     * @return a {@link SignatureAndHashAlgorithm} object.
+     * @throws IOException
+     */
+    public static SignatureAndHashAlgorithm parse(InputStream input) throws IOException {
+        short hash = TlsUtils.readUint8(input);
+        short signature = TlsUtils.readUint8(input);
+        return new SignatureAndHashAlgorithm(hash, signature);
     }
 }
