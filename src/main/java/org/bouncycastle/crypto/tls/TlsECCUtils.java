@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Hashtable;
@@ -23,31 +25,26 @@ import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils {
 
-    public static final Integer EXT_elliptic_curves = Integers
-        .valueOf(ExtensionType.elliptic_curves);
-    public static final Integer EXT_ec_point_formats = Integers
-        .valueOf(ExtensionType.ec_point_formats);
+    public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.elliptic_curves);
+    public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
 
-    private static final String[] curveNames = new String[] { "sect163k1", "sect163r1",
-        "sect163r2", "sect193r1", "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1",
-        "sect283r1", "sect409k1", "sect409r1", "sect571k1", "sect571r1", "secp160k1", "secp160r1",
-        "secp160r2", "secp192k1", "secp192r1", "secp224k1", "secp224r1", "secp256k1", "secp256r1",
-        "secp384r1", "secp521r1", };
+    private static final String[] curveNames = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
+        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
+        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", };
 
-    public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves)
-        throws IOException {
+    public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves) throws IOException {
 
         extensions.put(EXT_elliptic_curves, createSupportedEllipticCurvesExtension(namedCurves));
     }
 
-    public static void addSupportedPointFormatsExtension(Hashtable extensions,
-        short[] ecPointFormats) throws IOException {
+    public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
+        throws IOException {
 
         extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
-    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions)
-        throws IOException {
+    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException {
 
         if (extensions == null) {
             return null;
@@ -59,8 +56,7 @@ public class TlsECCUtils {
         return readSupportedEllipticCurvesExtension(extensionValue);
     }
 
-    public static short[] getSupportedPointFormatsExtension(Hashtable extensions)
-        throws IOException {
+    public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException {
 
         if (extensions == null) {
             return null;
@@ -72,8 +68,7 @@ public class TlsECCUtils {
         return readSupportedPointFormatsExtension(extensionValue);
     }
 
-    public static byte[] createSupportedEllipticCurvesExtension(int[] namedCurves)
-        throws IOException {
+    public static byte[] createSupportedEllipticCurvesExtension(int[] namedCurves) throws IOException {
 
         if (namedCurves == null || namedCurves.length < 1) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -85,8 +80,7 @@ public class TlsECCUtils {
         return buf.toByteArray();
     }
 
-    public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats)
-        throws IOException {
+    public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException {
 
         if (ecPointFormats == null) {
             ecPointFormats = new short[] { ECPointFormat.uncompressed };
@@ -110,8 +104,7 @@ public class TlsECCUtils {
         return buf.toByteArray();
     }
 
-    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue)
-        throws IOException {
+    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue) throws IOException {
 
         if (extensionValue == null) {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
@@ -131,8 +124,7 @@ public class TlsECCUtils {
         return namedCurves;
     }
 
-    public static short[] readSupportedPointFormatsExtension(byte[] extensionValue)
-        throws IOException {
+    public static short[] readSupportedPointFormatsExtension(byte[] extensionValue) throws IOException {
 
         if (extensionValue == null) {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
@@ -178,8 +170,7 @@ public class TlsECCUtils {
         }
 
         // It's a bit inefficient to do this conversion every time
-        return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(),
-            ecP.getSeed());
+        return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
     }
 
     public static boolean hasAnySupportedNamedCurves() {
@@ -246,8 +237,8 @@ public class TlsECCUtils {
 
     public static boolean areOnSameCurve(ECDomainParameters a, ECDomainParameters b) {
         // TODO Move to ECDomainParameters.equals() or other utility method?
-        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG())
-            && a.getN().equals(b.getN()) && a.getH().equals(b.getH());
+        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG()) && a.getN().equals(b.getN())
+            && a.getH().equals(b.getH());
     }
 
     public static boolean isSupportedNamedCurve(int namedCurve) {
@@ -270,8 +261,14 @@ public class TlsECCUtils {
         return false;
     }
 
-    public static byte[] serializeECPublicKey(short[] ecPointFormats,
-        ECPublicKeyParameters keyParameters) throws IOException {
+    public static byte[] serializeECFieldElement(int fieldSize, BigInteger x) throws IOException {
+        int requiredLength = (fieldSize + 7) / 8;
+        return BigIntegers.asUnsignedByteArray(requiredLength, x);
+    }
+
+    public static byte[] serializeECPoint(short[] ecPointFormats, ECPoint point) throws IOException {
+
+        ECCurve curve = point.getCurve();
 
         /*
          * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
@@ -279,39 +276,50 @@ public class TlsECCUtils {
          * Extension if this extension was used, and MUST be uncompressed if this extension was not
          * used.
          */
-        ECPoint q = keyParameters.getQ();
-        ECCurve curve = q.getCurve();
-
         boolean compressed = false;
         if (curve instanceof ECCurve.F2m) {
-            compressed = isCompressionPreferred(ecPointFormats,
-                ECPointFormat.ansiX962_compressed_char2);
+            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
         } else if (curve instanceof ECCurve.Fp) {
-            compressed = isCompressionPreferred(ecPointFormats,
-                ECPointFormat.ansiX962_compressed_prime);
+            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_prime);
         }
-
-        return q.getEncoded(compressed);
+        return point.getEncoded(compressed);
     }
 
-    public static ECPublicKeyParameters deserializeECPublicKey(short[] ecPointFormats,
-        ECDomainParameters curve_params, byte[] encoding) throws IOException {
+    public static byte[] serializeECPublicKey(short[] ecPointFormats, ECPublicKeyParameters keyParameters)
+        throws IOException {
+
+        return serializeECPoint(ecPointFormats, keyParameters.getQ());
+    }
+
+    public static BigInteger deserializeECFieldElement(int fieldSize, byte[] encoding) throws IOException {
+        int requiredLength = (fieldSize + 7) / 8;
+        if (encoding.length != requiredLength) {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+        return new BigInteger(1, encoding);
+    }
+
+    public static ECPoint deserializeECPoint(short[] ecPointFormats, ECCurve curve, byte[] encoding) throws IOException {
+        /*
+         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient by
+         * default is set up to advertise that we can parse any encoding so this works fine, but
+         * extra checks might be needed here if that were changed.
+         */
+        return curve.decodePoint(encoding);
+    }
+
+    public static ECPublicKeyParameters deserializeECPublicKey(short[] ecPointFormats, ECDomainParameters curve_params,
+        byte[] encoding) throws IOException {
 
         try {
-            /*
-             * NOTE: Here we implicitly decode compressed or uncompressed encodings.
-             * DefaultTlsClient by default is set up to advertise that we can parse any encoding so
-             * this works fine, but extra checks might be needed here if that were changed.
-             */
-            ECPoint Y = curve_params.getCurve().decodePoint(encoding);
+            ECPoint Y = deserializeECPoint(ecPointFormats, curve_params.getCurve(), encoding);
             return new ECPublicKeyParameters(Y, curve_params);
         } catch (Exception e) {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
 
-    public static byte[] calculateECDHBasicAgreement(ECPublicKeyParameters publicKey,
-        ECPrivateKeyParameters privateKey) {
+    public static byte[] calculateECDHBasicAgreement(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey) {
 
         ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
         basicAgreement.init(privateKey);
@@ -325,19 +333,120 @@ public class TlsECCUtils {
         return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
     }
 
-    public static AsymmetricCipherKeyPair generateECKeyPair(SecureRandom random,
-        ECDomainParameters ecParams) {
+    public static AsymmetricCipherKeyPair generateECKeyPair(SecureRandom random, ECDomainParameters ecParams) {
 
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams,
-            random);
+        ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams, random);
         keyPairGenerator.init(keyGenerationParameters);
         return keyPairGenerator.generateKeyPair();
     }
 
-    public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key)
-        throws IOException {
+    public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key) throws IOException {
         // TODO Check RFC 4492 for validation
         return key;
+    }
+
+    public static int readECExponent(int fieldSize, InputStream input) throws IOException {
+        BigInteger K = readECParameter(input);
+        if (K.bitLength() < 32) {
+            int k = K.intValue();
+            if (k > 0 && k < fieldSize) {
+                return k;
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+    }
+
+    public static BigInteger readECFieldElement(int fieldSize, InputStream input) throws IOException {
+        return deserializeECFieldElement(fieldSize, TlsUtils.readOpaque8(input));
+    }
+
+    public static BigInteger readECParameter(InputStream input) throws IOException {
+        // TODO Are leading zeroes okay here?
+        return new BigInteger(1, TlsUtils.readOpaque8(input));
+    }
+
+    public static ECDomainParameters readECParameters(int[] namedCurves, short[] ecPointFormats, InputStream input)
+        throws IOException {
+
+        try {
+            short curveType = TlsUtils.readUint8(input);
+
+            switch (curveType) {
+            case ECCurveType.explicit_prime: {
+                BigInteger prime_p = readECParameter(input);
+                BigInteger a = readECFieldElement(prime_p.bitLength(), input);
+                BigInteger b = readECFieldElement(prime_p.bitLength(), input);
+                ECCurve curve = new ECCurve.Fp(prime_p, a, b);
+                ECPoint base = deserializeECPoint(ecPointFormats, curve, TlsUtils.readOpaque8(input));
+                BigInteger order = readECParameter(input);
+                BigInteger cofactor = readECParameter(input);
+                return new ECDomainParameters(curve, base, order, cofactor);
+            }
+            case ECCurveType.explicit_char2: {
+                int m = TlsUtils.readUint16(input);
+                short basis = TlsUtils.readUint8(input);
+                ECCurve curve;
+                switch (basis) {
+                case ECBasisType.ec_basis_trinomial: {
+                    int k = readECExponent(m, input);
+                    BigInteger a = readECFieldElement(m, input);
+                    BigInteger b = readECFieldElement(m, input);
+                    curve = new ECCurve.F2m(m, k, a, b);
+                    break;
+                }
+                case ECBasisType.ec_basis_pentanomial: {
+                    int k1 = readECExponent(m, input);
+                    int k2 = readECExponent(m, input);
+                    int k3 = readECExponent(m, input);
+                    BigInteger a = readECFieldElement(m, input);
+                    BigInteger b = readECFieldElement(m, input);
+                    curve = new ECCurve.F2m(m, k1, k2, k3, a, b);
+                    break;
+                }
+                default:
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+                ECPoint base = deserializeECPoint(ecPointFormats, curve, TlsUtils.readOpaque8(input));
+                BigInteger order = readECParameter(input);
+                BigInteger cofactor = readECParameter(input);
+                return new ECDomainParameters(curve, base, order, cofactor);
+            }
+            case ECCurveType.named_curve: {
+                int namedCurve = TlsUtils.readUint16(input);
+                if (!NamedCurve.refersToASpecificNamedCurve(namedCurve)) {
+                    /*
+                     * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
+                     * specific curve. Values of NamedCurve that indicate support for a class of
+                     * explicitly defined curves are not allowed here [...].
+                     */
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                if (!TlsProtocol.arrayContains(namedCurves, namedCurve)) {
+                    /*
+                     * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
+                     * unless they can complete the handshake while respecting the choice of curves
+                     * and compression techniques specified by the client.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                return TlsECCUtils.getParametersForNamedCurve(namedCurve);
+            }
+            default:
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    public static void writeECFieldElement(int fieldSize, BigInteger x, OutputStream output) throws IOException {
+        TlsUtils.writeOpaque8(serializeECFieldElement(fieldSize, x), output);
+    }
+
+    public static void writeECParameter(BigInteger x, OutputStream output) throws IOException {
+        TlsUtils.writeOpaque8(BigIntegers.asUnsignedByteArray(x), output);
     }
 }

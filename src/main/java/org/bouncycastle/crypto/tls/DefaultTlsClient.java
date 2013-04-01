@@ -18,13 +18,10 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
 
     public int[] getCipherSuites() {
         return new int[] { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
     }
 
     public Hashtable getClientExtensions() throws IOException {
@@ -38,8 +35,13 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
              * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
              * Curves Extension and the Supported Point Formats Extension.
              */
-            this.namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.secp224r1,
-                NamedCurve.secp192r1 };
+            /*
+             * TODO Could just add all the curves since we support them all, but users may not want
+             * to use unnecessarily large fields. Need configuration options.
+             */
+            this.namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.sect233r1, NamedCurve.secp224r1,
+                NamedCurve.sect193r1, NamedCurve.secp192r1, NamedCurve.arbitrary_explicit_char2_curves,
+                NamedCurve.arbitrary_explicit_prime_curves };
             this.clientECPointFormats = new short[] { ECPointFormat.ansiX962_compressed_char2,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
 
@@ -64,10 +66,8 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            this.serverECPointFormats = TlsECCUtils
-                .getSupportedPointFormatsExtension(serverExtensions);
-            if (this.serverECPointFormats != null
-                && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+            this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
+            if (this.serverECPointFormats != null && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
@@ -207,8 +207,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA:
@@ -219,8 +218,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA256:
@@ -231,8 +229,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                MACAlgorithm.hmac_sha256);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha256);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
@@ -243,8 +240,7 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_GCM,
-                MACAlgorithm._null);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_GCM, MACAlgorithm._null);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA:
@@ -255,23 +251,20 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha256);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha256);
 
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha384);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha384);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
@@ -282,60 +275,51 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_GCM,
-                MACAlgorithm._null);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_GCM, MACAlgorithm._null);
 
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_128_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_128_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_RSA_WITH_NULL_MD5:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
-                MACAlgorithm.hmac_md5);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_md5);
 
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL,
-                MACAlgorithm.hmac_sha256);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_sha256);
 
         case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128,
-                MACAlgorithm.hmac_md5);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128, MACAlgorithm.hmac_md5);
 
         case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.SEED_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.SEED_CBC, MACAlgorithm.hmac_sha1);
 
         default:
             /*
@@ -356,13 +340,11 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
-        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats,
-            serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
-        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats,
-            serverECPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() {

@@ -19,8 +19,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats,
-        short[] serverECPointFormats) {
+    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) {
         super(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 
@@ -80,36 +79,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         Signer signer = initSigner(tlsSigner, securityParameters);
         InputStream sigIn = new SignerInputStream(input, signer);
 
-        short curveType = TlsUtils.readUint8(sigIn);
-
-        // TODO Add support for explicit curve parameters (read from sigIn)
-        if (curveType != ECCurveType.named_curve) {
-            /*
-             * NOTE: DefaultTlsClient by default doesn't offer support for
-             * arbitrary_explicit_*_curves (see NamedCurve class), so the server can only validly
-             * select ECCurveType.named_curve.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        int namedCurve = TlsUtils.readUint16(sigIn);
-        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve)) {
-            /*
-             * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a specific
-             * curve. Values of NamedCurve that indicate support for a class of explicitly defined
-             * curves are not allowed here [...].
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        if (!TlsProtocol.arrayContains(namedCurves, namedCurve)) {
-            /*
-             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite unless
-             * they can complete the handshake while respecting the choice of curves and compression
-             * techniques specified by the client.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, sigIn);
 
         byte[] point = TlsUtils.readOpaque8(sigIn);
 
@@ -118,14 +88,11 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
-
         this.ecAgreeServerPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
             clientECPointFormats, curve_params, point));
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException {
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
          * ECDH_ECDSA and ECDH_RSA. Their use with ECDHE_ECDSA and ECDHE_RSA is prohibited because
