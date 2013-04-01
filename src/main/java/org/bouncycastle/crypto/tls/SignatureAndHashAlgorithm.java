@@ -9,8 +9,10 @@ public class SignatureAndHashAlgorithm {
     private short signature;
 
     /**
-     * @param hash {@link HashAlgorithm}
-     * @param signature {@link SignatureAlgorithm}
+     * @param hash
+     *            {@link HashAlgorithm}
+     * @param signature
+     *            {@link SignatureAlgorithm}
      */
     public SignatureAndHashAlgorithm(short hash, short signature) {
 
@@ -37,5 +39,17 @@ public class SignatureAndHashAlgorithm {
      */
     public short getSignature() {
         return signature;
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SignatureAndHashAlgorithm)) {
+            return false;
+        }
+        SignatureAndHashAlgorithm other = (SignatureAndHashAlgorithm) obj;
+        return other.getHash() == getHash() && other.getSignature() == getSignature();
+    }
+
+    public int hashCode() {
+        return (getHash() << 8) | getSignature();
     }
 }
