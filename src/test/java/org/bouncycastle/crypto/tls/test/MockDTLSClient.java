@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
+import java.io.PrintStream;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
@@ -11,6 +13,22 @@ import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.util.encoders.Hex;
 
 public class MockDTLSClient extends DefaultTlsClient {
+
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause) {
+        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+        out.println("DTLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription + ")");
+        if (message != null) {
+            out.println(message);
+        }
+        if (cause != null) {
+            cause.printStackTrace(out);
+        }
+    }
+
+    public void notifyAlertReceived(short alertLevel, short alertDescription) {
+        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+        out.println("DTLS client received alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription + ")");
+    }
 
     public ProtocolVersion getClientVersion() {
         return ProtocolVersion.DTLSv10;
@@ -22,14 +40,14 @@ public class MockDTLSClient extends DefaultTlsClient {
 
     public TlsAuthentication getAuthentication() throws IOException {
         return new ServerOnlyTlsAuthentication() {
-            public void notifyServerCertificate(
-                org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
+            public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate)
+                throws IOException {
                 Certificate[] chain = serverCertificate.getCertificateList();
                 System.out.println("Received server certificate chain of length " + chain.length);
                 for (Certificate entry : chain) {
                     // TODO Create fingerprint based on certificate signature algorithm digest
-                    System.out.println("    fingerprint:SHA-256 " + fingerprint(entry) + " ("
-                        + entry.getSubject() + ")");
+                    System.out.println("    fingerprint:SHA-256 " + fingerprint(entry) + " (" + entry.getSubject()
+                        + ")");
                 }
             }
         };

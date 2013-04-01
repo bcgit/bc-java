@@ -3,11 +3,13 @@ package org.bouncycastle.crypto.tls.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
@@ -28,8 +30,8 @@ public class TlsClientTest {
         Socket socket = new Socket(InetAddress.getLocalHost(), 5556);
 
         SecureRandom secureRandom = new SecureRandom();
-        TlsClientProtocol protocol = new TlsClientProtocol(socket.getInputStream(),
-            socket.getOutputStream(), secureRandom);
+        TlsClientProtocol protocol = new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream(),
+            secureRandom);
 
         MyTlsClient client = new MyTlsClient();
         protocol.connect(client);
@@ -48,19 +50,35 @@ public class TlsClientTest {
 
     static class MyTlsClient extends DefaultTlsClient {
 
+        public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause) {
+            PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+            out.println("TLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
+                + ")");
+            if (message != null) {
+                out.println(message);
+            }
+            if (cause != null) {
+                cause.printStackTrace(out);
+            }
+        }
+
+        public void notifyAlertReceived(short alertLevel, short alertDescription) {
+            PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+            out.println("TLS client received alert (AlertLevel." + alertLevel + ", AlertDescription."
+                + alertDescription + ")");
+        }
+
         public int[] getCipherSuites() {
-            return new int[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+            return new int[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
                 CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
         }
 
         public TlsAuthentication getAuthentication() throws IOException {
             return new ServerOnlyTlsAuthentication() {
-                public void notifyServerCertificate(
-                    org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
+                public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate)
+                    throws IOException {
                     Certificate[] chain = serverCertificate.getCertificateList();
-                    System.out.println("Received server certificate chain with " + chain.length
-                        + " entries");
+                    System.out.println("Received server certificate chain with " + chain.length + " entries");
                     for (Certificate entry : chain) {
                         System.out.println("    " + entry.getSubject());
                     }
