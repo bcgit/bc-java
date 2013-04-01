@@ -17,19 +17,10 @@ public class TlsStreamCipher implements TlsCipher {
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    /**
-     * @deprecated use constructor taking the additional 'prfAlgorithm' parameter
-     */
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
         StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize) throws IOException {
-        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest,
-            cipherKeySize, PRFAlgorithm.tls_prf_legacy);
-    }
 
-    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize, int prfAlgorithm) throws IOException {
         boolean isServer = context.isServer();
 
         this.context = context;
@@ -40,7 +31,7 @@ public class TlsStreamCipher implements TlsCipher {
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 

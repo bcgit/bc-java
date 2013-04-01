@@ -341,17 +341,7 @@ public class TlsUtils
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
-    // TODO Make at least one PRF method public
-    static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
-    {
-        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
-
-        return PRF_1_2(context, PRFAlgorithm.tls_prf_legacy, secret, asciiLabel, seed, size);
-    }
-
-    // TODO Make at least one PRF method public
-    static byte[] PRF_1_2(TlsContext context, int prfAlgorithm, byte[] secret, String asciiLabel,
-        byte[] seed, int size)
+    public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
     {
         ProtocolVersion version = context.getServerVersion();
 
@@ -362,7 +352,7 @@ public class TlsUtils
         byte[] label = Strings.toByteArray(asciiLabel);
         byte[] labelSeed = concat(label, seed);
 
-        // TODO The PRFAlgorithm of the session should be available from the SecurityParameters
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
@@ -375,7 +365,7 @@ public class TlsUtils
             prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
         }
 
-        Digest prfDigest = getPRFDigest(prfAlgorithm);
+        Digest prfDigest = createPRFDigest(prfAlgorithm);
         byte[] buf = new byte[size];
         hmac_hash(prfDigest, secret, labelSeed, buf);
         return buf;
@@ -448,20 +438,19 @@ public class TlsUtils
         }
     }
 
-    static byte[] calculateKeyBlock(TlsContext context, int prfAlgorithm, int size)
+    static byte[] calculateKeyBlock(TlsContext context, int size)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] master_secret = securityParameters.getMasterSecret();
         byte[] seed = concat(securityParameters.getServerRandom(),
             securityParameters.getClientRandom());
 
-        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy && context.getServerVersion().isSSL())
+        if (context.getServerVersion().isSSL())
         {
             return calculateKeyBlock_SSL(master_secret, seed, size);
         }
 
-        return PRF_1_2(context, prfAlgorithm, master_secret, ExporterLabel.key_expansion, seed,
-            size);
+        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, size);
     }
 
     static byte[] calculateKeyBlock_SSL(byte[] master_secret, byte[] random, int size)
@@ -549,7 +538,7 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, 12);
     }
 
-    static final Digest getPRFDigest(int prfAlgorithm)
+    static final Digest createPRFDigest(int prfAlgorithm)
     {
         switch (prfAlgorithm)
         {

@@ -98,6 +98,8 @@ public class TlsServerProtocol extends TlsProtocol {
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
+                securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null) {
                     sendSupplementalDataMessage(serverSupplementalData);

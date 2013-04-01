@@ -19,8 +19,7 @@ public class TlsAEADCipher implements TlsCipher {
     protected byte[] encryptImplicitNonce, decryptImplicitNonce;
 
     public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher,
-        AEADBlockCipher serverWriteCipher, int cipherKeySize, int macSize, int prfAlgorithm)
-        throws IOException {
+        AEADBlockCipher serverWriteCipher, int cipherKeySize, int macSize) throws IOException {
 
         ProtocolVersion version = context.getServerVersion();
         if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
@@ -39,7 +38,7 @@ public class TlsAEADCipher implements TlsCipher {
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 

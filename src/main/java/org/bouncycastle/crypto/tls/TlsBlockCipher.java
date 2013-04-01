@@ -33,20 +33,9 @@ public class TlsBlockCipher implements TlsCipher {
         return readMac;
     }
 
-    /**
-     * @deprecated use constructor taking the additional 'prfAlgorithm' parameter
-     */
     public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher,
         BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize) throws IOException {
-
-        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest,
-            cipherKeySize, PRFAlgorithm.tls_prf_legacy);
-    }
-
-    public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher,
-        BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize, int prfAlgorithm) throws IOException {
 
         this.context = context;
 
@@ -64,7 +53,7 @@ public class TlsBlockCipher implements TlsCipher {
             key_block_size += clientWriteCipher.getBlockSize() + serverWriteCipher.getBlockSize();
         }
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 

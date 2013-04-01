@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.tls.DTLSClientProtocol.ClientHandshakeState;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSServerProtocol extends DTLSProtocol {
@@ -33,11 +32,12 @@ public class DTLSServerProtocol extends DTLSProtocol {
         if (transport == null)
             throw new IllegalArgumentException("'transport' cannot be null");
 
+        SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(secureRandom);
+
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
-        state.serverContext = new TlsServerContextImpl(secureRandom, new SecurityParameters());
-        state.serverContext.getSecurityParameters().serverRandom = TlsProtocol
-            .createRandomBlock(secureRandom);
+        state.serverContext = new TlsServerContextImpl(secureRandom, securityParameters);
         server.init(state.serverContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext,
@@ -64,6 +64,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         byte[] serverHelloBody = generateServerHello(state);
         handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
+
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null) {

@@ -165,8 +165,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             serverMessage = handshake.receiveMessage();
             if (serverMessage.getType() == HandshakeType.session_ticket) {
                 processNewSessionTicket(state, serverMessage.getBody());
-            }
-            else {
+            } else {
                 // TODO Alert
             }
         }
@@ -317,6 +316,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
     protected void processServerHello(ClientHandshakeState state, byte[] body) throws IOException {
 
+        SecurityParameters securityParameters = state.clientContext.getSecurityParameters();
+
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         // TODO Read RFCs for guidance on the expected record layer version number
@@ -325,8 +326,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             // TODO Alert
         }
 
-        byte[] server_random = TlsUtils.readFully(32, buf);
-        state.clientContext.getSecurityParameters().serverRandom = server_random;
+        securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
@@ -437,6 +437,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         if (state.clientExtensions != null) {
             state.client.processServerExtensions(serverExtensions);
         }
+
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(selectedCipherSuite);
 
         state.keyExchange = state.client.getKeyExchange();
         state.keyExchange.init(state.clientContext);

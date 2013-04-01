@@ -517,6 +517,8 @@ public class TlsClientProtocol extends TlsProtocol {
             tlsClient.processServerExtensions(serverExtensions);
         }
 
+        securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+
         this.keyExchange = tlsClient.getKeyExchange();
         this.keyExchange.init(this.tlsClientContext);
     }

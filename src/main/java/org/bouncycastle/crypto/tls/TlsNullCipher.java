@@ -20,8 +20,8 @@ public class TlsNullCipher implements TlsCipher {
         this.readMac = null;
     }
 
-    public TlsNullCipher(TlsContext context, Digest clientWriteDigest, Digest serverWriteDigest,
-        int prfAlgorithm) throws IOException {
+    public TlsNullCipher(TlsContext context, Digest clientWriteDigest, Digest serverWriteDigest)
+        throws IOException {
 
         if ((clientWriteDigest == null) != (serverWriteDigest == null)) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -35,7 +35,7 @@ public class TlsNullCipher implements TlsCipher {
 
             int key_block_size = clientWriteDigest.getDigestSize()
                 + serverWriteDigest.getDigestSize();
-            byte[] key_block = TlsUtils.calculateKeyBlock(context, prfAlgorithm, key_block_size);
+            byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
             int offset = 0;
 
