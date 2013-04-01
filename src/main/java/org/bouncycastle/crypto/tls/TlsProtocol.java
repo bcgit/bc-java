@@ -18,10 +18,8 @@ import org.bouncycastle.util.Integers;
  */
 public abstract class TlsProtocol {
 
-    protected static final Integer EXT_RenegotiationInfo = Integers
-        .valueOf(ExtensionType.renegotiation_info);
-    protected static final Integer EXT_SessionTicket = Integers
-        .valueOf(ExtensionType.session_ticket);
+    protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
+    protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
 
     private static final String TLS_ERROR_MESSAGE = "Internal TLS error, this could be an attack";
 
@@ -117,8 +115,7 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void processRecord(short protocol, byte[] buf, int offset, int len)
-        throws IOException {
+    protected void processRecord(short protocol, byte[] buf, int offset, int len) throws IOException {
         /*
          * Have a look at the protocol type, and add it to the correct queue.
          */
@@ -393,6 +390,10 @@ public abstract class TlsProtocol {
             throw new IOException("Sorry, connection has been closed, you cannot write more data");
         }
 
+        /*
+         * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
+         * potentially useful as a traffic analysis countermeasure.
+         */
         if (this.writeExtraEmptyRecords) {
             /*
              * Protect against known IV attack!
@@ -618,22 +619,19 @@ public abstract class TlsProtocol {
         return result;
     }
 
-    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
-        throws IOException {
+    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque8(renegotiated_connection, buf);
         return buf.toByteArray();
     }
 
-    protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
-        throws IOException {
+    protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange) throws IOException {
 
         byte[] pre_master_secret = keyExchange.generatePremasterSecret();
 
         try {
-            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context,
-                pre_master_secret);
+            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context, pre_master_secret);
         } finally {
             // TODO Is there a way to ensure the data is really overwritten?
             /*
@@ -676,8 +674,7 @@ public abstract class TlsProtocol {
         return extensions;
     }
 
-    protected static Vector readSupplementalDataMessage(ByteArrayInputStream input)
-        throws IOException {
+    protected static Vector readSupplementalDataMessage(ByteArrayInputStream input) throws IOException {
 
         byte[] supp_data = TlsUtils.readOpaque24(input);
 
@@ -697,8 +694,7 @@ public abstract class TlsProtocol {
         return supplementalData;
     }
 
-    protected static void writeExtensions(OutputStream output, Hashtable extensions)
-        throws IOException {
+    protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -716,8 +712,7 @@ public abstract class TlsProtocol {
         TlsUtils.writeOpaque16(extBytes, output);
     }
 
-    protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
-        throws IOException {
+    protected static void writeSupplementalData(OutputStream output, Vector supplementalData) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 

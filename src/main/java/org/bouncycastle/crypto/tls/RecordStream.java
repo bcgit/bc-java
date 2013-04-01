@@ -14,8 +14,7 @@ class RecordStream {
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
-    private TlsCompression pendingCompression = null, readCompression = null,
-        writeCompression = null;
+    private TlsCompression pendingCompression = null, readCompression = null, writeCompression = null;
     private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -135,6 +134,15 @@ class RecordStream {
     }
 
     protected void writeRecord(short type, byte[] message, int offset, int len) throws IOException {
+
+        /*
+         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * or ChangeCipherSpec content types.
+         */
+        if (len < 1 && type != ContentType.application_data) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         if (type == ContentType.handshake) {
             updateHandshakeData(message, offset, len);
         }
@@ -148,8 +156,7 @@ class RecordStream {
             cOut.write(message, offset, len);
             cOut.flush();
             byte[] compressed = getBufferContents();
-            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, compressed, 0,
-                compressed.length);
+            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, compressed, 0, compressed.length);
         }
 
         byte[] writeMessage = new byte[ciphertext.length + 5];

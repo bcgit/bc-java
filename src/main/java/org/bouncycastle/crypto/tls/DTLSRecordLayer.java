@@ -64,17 +64,13 @@ class DTLSRecordLayer implements DatagramTransport {
     }
 
     public int getReceiveLimit() throws IOException {
-        return Math.min(
-            MAX_FRAGMENT_LENGTH,
-            readEpoch.getCipher().getPlaintextLimit(
-                transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
+        return Math.min(MAX_FRAGMENT_LENGTH,
+            readEpoch.getCipher().getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int getSendLimit() throws IOException {
-        return Math.min(
-            MAX_FRAGMENT_LENGTH,
-            writeEpoch.getCipher().getPlaintextLimit(
-                transport.getSendLimit() - RECORD_HEADER_LENGTH));
+        return Math.min(MAX_FRAGMENT_LENGTH,
+            writeEpoch.getCipher().getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
@@ -133,8 +129,8 @@ class DTLSRecordLayer implements DatagramTransport {
                 }
 
                 byte[] plaintext = readEpoch.getCipher().decodeCiphertext(
-                    getMacSequenceNumber(readEpoch.getEpoch(), seq), type, record,
-                    RECORD_HEADER_LENGTH, received - RECORD_HEADER_LENGTH);
+                    getMacSequenceNumber(readEpoch.getEpoch(), seq), type, record, RECORD_HEADER_LENGTH,
+                    received - RECORD_HEADER_LENGTH);
 
                 readEpoch.getReplayWindow().reportAuthenticated(seq);
 
@@ -247,6 +243,14 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private void sendRecord(short contentType, byte[] buf, int off, int len) throws IOException {
 
+        /*
+         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * or ChangeCipherSpec content types.
+         */
+        if (len < 1 && contentType != ContentType.application_data) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         int recordEpoch = writeEpoch.getEpoch();
         long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
 
@@ -259,8 +263,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
-        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion : context
-            .getClientVersion();
+        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion : context.getClientVersion();
         TlsUtils.writeVersion(version, record, 1);
         TlsUtils.writeUint16(recordEpoch, record, 3);
         TlsUtils.writeUint48(recordSequenceNumber, record, 5);
