@@ -74,15 +74,15 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
 
-        state.keyExchange = state.client.getKeyExchange();
-        state.keyExchange.init(state.clientContext);
-
         if (serverMessage.getType() == HandshakeType.supplemental_data) {
             processServerSupplementalData(state, serverMessage.getBody());
             serverMessage = handshake.receiveMessage();
         } else {
             state.client.processServerSupplementalData(null);
         }
+
+        state.keyExchange = state.client.getKeyExchange();
+        state.keyExchange.init(state.clientContext);
 
         if (serverMessage.getType() == HandshakeType.certificate) {
             processServerCertificate(state, serverMessage.getBody());

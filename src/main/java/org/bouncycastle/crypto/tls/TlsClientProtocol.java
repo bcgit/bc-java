@@ -21,6 +21,10 @@ public class TlsClientProtocol extends TlsProtocol {
     protected int[] offeredCipherSuites = null;
     protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
+
+    protected int selectedCipherSuite;
+    protected short selectedCompressionMethod;
+
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
     protected CertificateRequest certificateRequest = null;
@@ -114,7 +118,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.certificate: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO: {
-                tlsClient.processServerSupplementalData(null);
+                handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
             case CS_SERVER_SUPPLEMENTAL_DATA: {
@@ -153,6 +157,9 @@ public class TlsClientProtocol extends TlsProtocol {
             case CS_CLIENT_HELLO:
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
+
+                securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
@@ -161,8 +168,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.supplemental_data: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO:
-                tlsClient.processServerSupplementalData(readSupplementalDataMessage(buf));
-                this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
+                handleSupplementalData(readSupplementalDataMessage(buf));
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
@@ -172,7 +178,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.server_hello_done:
             switch (this.connection_state) {
             case CS_SERVER_HELLO: {
-                tlsClient.processServerSupplementalData(null);
+                handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
             case CS_SERVER_SUPPLEMENTAL_DATA: {
@@ -271,7 +277,7 @@ public class TlsClientProtocol extends TlsProtocol {
         case HandshakeType.server_key_exchange: {
             switch (this.connection_state) {
             case CS_SERVER_HELLO: {
-                tlsClient.processServerSupplementalData(null);
+                handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
             case CS_SERVER_SUPPLEMENTAL_DATA: {
@@ -339,7 +345,7 @@ public class TlsClientProtocol extends TlsProtocol {
                      */
                     this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                 }
-                receiveNewSessionTicket(buf);
+                receiveNewSessionTicketMessage(buf);
                 this.connection_state = CS_SERVER_SESSION_TICKET;
                 break;
             default:
@@ -369,7 +375,16 @@ public class TlsClientProtocol extends TlsProtocol {
         }
     }
 
-    protected void receiveNewSessionTicket(ByteArrayInputStream buf) throws IOException {
+    protected void handleSupplementalData(Vector serverSupplementalData) throws IOException {
+
+        this.tlsClient.processServerSupplementalData(serverSupplementalData);
+        this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
+
+        this.keyExchange = tlsClient.getKeyExchange();
+        this.keyExchange.init(this.tlsClientContext);
+    }
+
+    protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf) throws IOException {
 
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
@@ -415,14 +430,14 @@ public class TlsClientProtocol extends TlsProtocol {
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones.
          */
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!arrayContains(offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+        this.selectedCipherSuite = TlsUtils.readUint16(buf);
+        if (!arrayContains(offeredCipherSuites, this.selectedCipherSuite)
+            || this.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
+        this.tlsClient.notifySelectedCipherSuite(this.selectedCipherSuite);
 
         /*
          * Find out which CompressionMethod the server has chosen and check that it was one of the
@@ -518,11 +533,6 @@ public class TlsClientProtocol extends TlsProtocol {
         if (clientExtensions != null) {
             tlsClient.processServerExtensions(serverExtensions);
         }
-
-        securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
-
-        this.keyExchange = tlsClient.getKeyExchange();
-        this.keyExchange.init(this.tlsClientContext);
     }
 
     protected void sendCertificateVerifyMessage(byte[] data) throws IOException {
