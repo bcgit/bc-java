@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.tls;
 
+/**
+ * RFC 5246 7.4.1.4.1
+ */
 public class SignatureAndHashAlgorithm {
 
     private short hash;
