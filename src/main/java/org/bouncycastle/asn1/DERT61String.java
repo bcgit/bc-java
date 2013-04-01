@@ -68,23 +68,27 @@ public class DERT61String
     }
 
     /**
-     * basic constructor - with bytes.
+     * basic constructor - string encpded as a sequence of bytes.
      */
-    DERT61String(
+    public DERT61String(
         byte[]   string)
     {
         this.string = string;
     }
 
     /**
-     * basic constructor - with string.
+     * basic constructor - with string UTF8 conversion assumed.
      */
     public DERT61String(
         String   string)
     {
-        this.string = Strings.toUTF8ByteArray(string);
+        this(Strings.toUTF8ByteArray(string));
     }
 
+    /**
+     * Decode the encoded string and return it, UTF8 assumed.
+     * @return the decoded String
+     */
     public String getString()
     {
         return Strings.fromUTF8ByteArray(string);
@@ -111,7 +115,11 @@ public class DERT61String
     {
         out.writeEncoded(BERTags.T61_STRING, string);
     }
-    
+
+    /**
+     * Return the encoded string as a byte array.
+     * @return the actual bytes making up the encoded body of the T61 string.
+     */
     public byte[] getOctets()
     {
         return Arrays.clone(string);
