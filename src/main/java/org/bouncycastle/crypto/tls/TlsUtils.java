@@ -1,9 +1,12 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -15,6 +18,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
@@ -24,6 +28,8 @@ import org.bouncycastle.util.io.Streams;
 public class TlsUtils
 {
     public static byte[] EMPTY_BYTES = new byte[0];
+
+    public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
 
     public static boolean isValidUint8(short i)
     {
@@ -369,6 +375,45 @@ public class TlsUtils
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
+    }
+
+    /**
+     * Add a 'signature_algorithms' extension value to existing extensions.
+     * 
+     * @param extensions A {@link Hashtable} to add the extension to.
+     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
+     * @throws IOException
+     */
+    public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
+    }
+
+    /**
+     * Create a 'signature_algorithms' extension value.
+     * 
+     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
+     * @return A byte array suitable for use as an extension value.
+     * @throws IOException
+     */
+    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms) throws IOException {
+
+        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1 || supportedSignatureAlgorithms.size() >= (1 << 15)) {
+            throw new IllegalArgumentException(
+                "'supportedSignatureAlgorithms' must have length from 1 to (2^15 - 1)");
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        // supported_signature_algorithms
+        TlsUtils.writeUint16(2 * supportedSignatureAlgorithms.size(), buf);
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i) {
+            SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            entry.encode(buf);
+        }
+
+        return buf.toByteArray();
     }
 
     public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)

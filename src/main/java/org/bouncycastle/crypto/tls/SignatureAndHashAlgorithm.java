@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * RFC 5246 7.4.1.4.1
  */
@@ -51,5 +54,17 @@ public class SignatureAndHashAlgorithm {
 
     public int hashCode() {
         return (getHash() << 8) | getSignature();
+    }
+    
+    /**
+     * Encode this {@link SignatureAndHashAlgorithm} to an {@link OutputStream}.
+     * 
+     * @param output
+     *            the {@link OutputStream} to encode to.
+     * @throws IOException
+     */
+    public void encode(OutputStream output) throws IOException {
+        TlsUtils.writeUint8(hash, output);
+        TlsUtils.writeUint8(signature, output);
     }
 }
