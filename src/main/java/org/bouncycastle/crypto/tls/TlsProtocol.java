@@ -66,6 +66,7 @@ public abstract class TlsProtocol {
     private volatile boolean closed = false;
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
+    private volatile boolean writeExtraEmptyRecords = true;
     private byte[] expected_verify_data = null;
 
     protected SecurityParameters securityParameters = null;
@@ -100,7 +101,10 @@ public abstract class TlsProtocol {
             safeReadRecord();
         }
 
-        recordStream.finaliseHandshake();
+        this.recordStream.finaliseHandshake();
+
+        ProtocolVersion version = getContext().getServerVersion();
+        this.writeExtraEmptyRecords = version.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10);
 
         /*
          * If this was an initial handshake, we are now ready to send and receive application data.
@@ -389,12 +393,14 @@ public abstract class TlsProtocol {
             throw new IOException("Sorry, connection has been closed, you cannot write more data");
         }
 
-        /*
-         * Protect against known IV attack!
-         * 
-         * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
-         */
-        safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+        if (this.writeExtraEmptyRecords) {
+            /*
+             * Protect against known IV attack!
+             * 
+             * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
+             */
+            safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+        }
 
         do {
             /*
