@@ -395,20 +395,20 @@ public abstract class TlsProtocol {
             throw new IOException("Sorry, connection has been closed, you cannot write more data");
         }
 
-        /*
-         * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
-         * potentially useful as a traffic analysis countermeasure.
-         */
-        if (this.writeExtraEmptyRecords) {
+        while (len > 0) {
             /*
-             * Protect against known IV attack!
-             * 
-             * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
+             * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
+             * potentially useful as a traffic analysis countermeasure.
              */
-            safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
-        }
+            if (this.writeExtraEmptyRecords) {
+                /*
+                 * Protect against known IV attack!
+                 * 
+                 * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
+                 */
+                safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+            }
 
-        do {
             /*
              * We are only allowed to write fragments up to 2^14 bytes.
              */
@@ -418,8 +418,7 @@ public abstract class TlsProtocol {
 
             offset += toWrite;
             len -= toWrite;
-        } while (len > 0);
-
+        }
     }
 
     /**
