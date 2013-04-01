@@ -122,6 +122,12 @@ class RecordStream {
         byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
+        /*
+         * TODO RFC5264 6.2.2. If the decompression function encounters a TLSCompressed.fragment
+         * that would decompress to a length in excess of 2^14 bytes, it MUST report a fatal
+         * decompression failure error. [..] Implementation note: Decompression functions are
+         * responsible for ensuring that messages cannot cause internal buffer overflows.
+         */
         OutputStream cOut = readCompression.decompress(buffer);
 
         if (cOut == buffer) {
@@ -147,6 +153,10 @@ class RecordStream {
             updateHandshakeData(message, offset, len);
         }
 
+        /*
+         * TODO RFC5264 6.2.2. Compression must be lossless and may not increase the content length
+         * by more than 1024 bytes.
+         */
         OutputStream cOut = writeCompression.compress(buffer);
 
         byte[] ciphertext;
