@@ -67,6 +67,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
+        securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null) {

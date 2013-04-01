@@ -159,6 +159,7 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.connection_state = CS_SERVER_HELLO;
 
                 securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+                securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
 
                 break;
             default:

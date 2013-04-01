@@ -73,6 +73,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         }
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
+        securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
 
         if (serverMessage.getType() == HandshakeType.supplemental_data) {
             processServerSupplementalData(state, serverMessage.getBody());
