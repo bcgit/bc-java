@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-public abstract class AbstractTlsServer implements TlsServer {
+public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsServer {
 
     protected TlsCipherFactory cipherFactory;
 
@@ -82,8 +82,7 @@ public abstract class AbstractTlsServer implements TlsServer {
         this.eccCipherSuitesOffered = TlsECCUtils.containsECCCipherSuites(this.offeredCipherSuites);
     }
 
-    public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
-        throws IOException {
+    public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods) throws IOException {
         this.offeredCompressionMethods = offeredCompressionMethods;
     }
 
@@ -106,8 +105,8 @@ public abstract class AbstractTlsServer implements TlsServer {
             this.signatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
             if (this.signatureAlgorithms != null) {
                 /*
-                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
-                 * Clients MUST NOT offer it if they are offering prior versions.
+                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
+                 * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
                  */
                 if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion)) {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -115,16 +114,14 @@ public abstract class AbstractTlsServer implements TlsServer {
             }
 
             this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
-            this.clientECPointFormats = TlsECCUtils
-                .getSupportedPointFormatsExtension(clientExtensions);
+            this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
         }
 
         /*
          * RFC 4429 4. The client MUST NOT include these extensions in the ClientHello message if it
          * does not propose any ECC cipher suites.
          */
-        if (!this.eccCipherSuitesOffered
-            && (this.namedCurves != null || this.clientECPointFormats != null)) {
+        if (!this.eccCipherSuitesOffered && (this.namedCurves != null || this.clientECPointFormats != null)) {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
@@ -151,8 +148,7 @@ public abstract class AbstractTlsServer implements TlsServer {
          * if the server can successfully complete the handshake while using the curves and point
          * formats supported by the client [...].
          */
-        boolean eccCipherSuitesEnabled = supportsClientECCCapabilities(this.namedCurves,
-            this.clientECPointFormats);
+        boolean eccCipherSuitesEnabled = supportsClientECCCapabilities(this.namedCurves, this.clientECPointFormats);
 
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i) {
@@ -178,8 +174,7 @@ public abstract class AbstractTlsServer implements TlsServer {
     // Hashtable is (Integer -> byte[])
     public Hashtable getServerExtensions() throws IOException {
 
-        if (this.clientECPointFormats != null
-            && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+        if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
              * message including a Supported Point Formats Extension appends this extension (along

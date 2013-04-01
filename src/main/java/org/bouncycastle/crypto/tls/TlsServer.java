@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-public interface TlsServer {
+public interface TlsServer extends TlsPeer {
 
     void init(TlsServerContext context);
 

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-public abstract class AbstractTlsClient implements TlsClient {
+public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsClient {
 
     protected TlsCipherFactory cipherFactory;
 
