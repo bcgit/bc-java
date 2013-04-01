@@ -25,6 +25,36 @@ public class TlsUtils
 {
     public static byte[] EMPTY_BYTES = new byte[0];
 
+    public static boolean isValidUint8(short i)
+    {
+        return (i & 0xFF) == i;
+    }
+
+    public static boolean isValidUint16(int i)
+    {
+        return (i & 0xFFFF) == i;
+    }
+
+    public static boolean isValidUint24(int i)
+    {
+        return (i & 0xFFFFFF) == i;
+    }
+
+    public static boolean isValidUint32(long i)
+    {
+        return (i & 0xFFFFFFFFL) == i;
+    }
+
+    public static boolean isValidUint48(long i)
+    {
+        return (i & 0xFFFFFFFFFFFFL) == i;
+    }
+
+    public static boolean isValidUint64(long i)
+    {
+        return true;
+    }
+
     public static void writeUint8(short i, OutputStream output) throws IOException
     {
         output.write(i);
