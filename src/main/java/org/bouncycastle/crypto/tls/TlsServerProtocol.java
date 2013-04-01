@@ -68,6 +68,10 @@ public class TlsServerProtocol extends TlsProtocol {
         return tlsServerContext;
     }
 
+    protected TlsPeer getPeer() {
+        return tlsServer;
+    }
+
     protected void handleChangeCipherSpecMessage() throws IOException {
 
         switch (this.connection_state) {

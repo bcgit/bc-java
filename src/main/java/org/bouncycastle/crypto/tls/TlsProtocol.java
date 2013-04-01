@@ -80,6 +80,8 @@ public abstract class TlsProtocol {
 
     protected abstract TlsContext getContext();
 
+    protected abstract TlsPeer getPeer();
+
     protected abstract void handleChangeCipherSpecMessage() throws IOException;
 
     protected abstract void handleHandshakeMessage(short type, byte[] buf) throws IOException;
@@ -223,6 +225,9 @@ public abstract class TlsProtocol {
             alertQueue.removeData(2);
             short level = tmp[0];
             short description = tmp[1];
+
+            getPeer().notifyAlertReceived(level, description);
+
             if (level == AlertLevel.fatal) {
                 /*
                  * This is a fatal error.
@@ -459,7 +464,7 @@ public abstract class TlsProtocol {
                  */
                 this.failedWithError = true;
             }
-            sendAlert(alertLevel, alertDescription);
+            raiseAlert(alertLevel, alertDescription, null, null);
             recordStream.close();
             if (alertLevel == AlertLevel.fatal) {
                 throw new IOException(TLS_ERROR_MESSAGE);
@@ -492,12 +497,20 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void sendAlert(short alertLevel, short alertDescription) throws IOException {
+    protected void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
+        throws IOException {
+
+        getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);
+
         byte[] error = new byte[2];
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
         safeWriteRecord(ContentType.alert, error, 0, 2);
+    }
+
+    protected void raiseWarning(short alertDescription, String message) throws IOException {
+        raiseAlert(AlertLevel.warning, alertDescription, message, null);
     }
 
     protected void sendCertificateMessage(Certificate certificate) throws IOException {

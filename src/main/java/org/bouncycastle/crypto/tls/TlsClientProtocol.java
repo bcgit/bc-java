@@ -90,6 +90,10 @@ public class TlsClientProtocol extends TlsProtocol {
         return tlsClientContext;
     }
 
+    protected TlsPeer getPeer() {
+        return tlsClient;
+    }
+
     protected void handleChangeCipherSpecMessage() throws IOException {
 
         switch (this.connection_state) {
@@ -219,8 +223,10 @@ public class TlsClientProtocol extends TlsProtocol {
                     if (clientCreds == null) {
                         this.keyExchange.skipClientCredentials();
 
-                        if (tlsClientContext.getServerVersion().isSSL()) {
-                            sendAlert(AlertLevel.warning, AlertDescription.no_certificate);
+                        ProtocolVersion serverVersion = tlsClientContext.getServerVersion();
+                        if (serverVersion.isSSL()) {
+                            String message = serverVersion.toString() + " client didn't provide credentials";
+                            raiseWarning(AlertDescription.no_certificate, message);
                         } else {
                             /*
                              * RFC 5246 If no suitable certificate is available, the client MUST
@@ -250,16 +256,14 @@ public class TlsClientProtocol extends TlsProtocol {
                 /*
                  * Initialize our cipher suite
                  */
-                recordStream.setPendingConnectionState(tlsClient.getCompression(),
-                    tlsClient.getCipher());
+                recordStream.setPendingConnectionState(tlsClient.getCompression(), tlsClient.getCipher());
 
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials) {
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials) clientCreds;
                     byte[] md5andsha1 = recordStream.getCurrentHash(null);
-                    byte[] clientCertificateSignature = signerCreds
-                        .generateCertificateSignature(md5andsha1);
+                    byte[] clientCertificateSignature = signerCreds.generateCertificateSignature(md5andsha1);
                     sendCertificateVerifyMessage(clientCertificateSignature);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
@@ -364,8 +368,8 @@ public class TlsClientProtocol extends TlsProtocol {
              * respond with a no_renegotiation alert.
              */
             if (this.connection_state == CS_SERVER_FINISHED) {
-                // Renegotiation not supported yet
-                sendAlert(AlertLevel.warning, AlertDescription.no_renegotiation);
+                String message = "Renegotiation not supported";
+                raiseWarning(AlertDescription.no_renegotiation, message);
             }
             break;
         case HandshakeType.client_key_exchange:
@@ -522,8 +526,7 @@ public class TlsClientProtocol extends TlsProtocol {
                      */
                     this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
+                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
                 }
@@ -593,8 +596,7 @@ public class TlsClientProtocol extends TlsProtocol {
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = clientExtensions == null
-                || clientExtensions.get(EXT_RenegotiationInfo) == null;
+            boolean noRenegExt = clientExtensions == null || clientExtensions.get(EXT_RenegotiationInfo) == null;
 
             int count = offeredCipherSuites.length;
             if (noRenegExt) {

@@ -9,12 +9,12 @@ public interface TlsPeer {
      *            {@link AlertLevel}
      * @param alertDescription
      *            {@link AlertDescription}
-     * @param details
+     * @param message
      *            A human-readable message explaining what caused this alert. May be null.
      * @param cause
      *            The exception that caused this alert to be raised. May be null.
      */
-    void notifyAlertRaised(short alertLevel, short alertDescription, String details, Exception cause);
+    void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause);
 
     /**
      * This method will be called when an alert is received from the remote peer.
