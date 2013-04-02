@@ -15,7 +15,7 @@ class DTLSReliableHandshake {
 
     private final DTLSRecordLayer recordLayer;
 
-    private CombinedHash hash = new CombinedHash();
+    private TlsDigest hash = new CombinedHash();
     private DigestOutputStream hashStream = new DigestOutputStream(hash);
 
     private Hashtable currentInboundFlight = new Hashtable();
@@ -30,7 +30,7 @@ class DTLSReliableHandshake {
     }
 
     byte[] getCurrentHash() {
-        Digest copyOfHash = new CombinedHash(hash);
+        TlsDigest copyOfHash = hash.fork();
         byte[] result = new byte[copyOfHash.getDigestSize()];
         copyOfHash.doFinal(result, 0);
         return result;
@@ -61,14 +61,12 @@ class DTLSReliableHandshake {
 
         // Check if we already have the next message waiting
         {
-            DTLSReassembler next = (DTLSReassembler) currentInboundFlight.get(Integer
-                .valueOf(next_receive_seq));
+            DTLSReassembler next = (DTLSReassembler) currentInboundFlight.get(Integer.valueOf(next_receive_seq));
             if (next != null) {
                 byte[] body = next.getBodyIfComplete();
                 if (body != null) {
                     previousInboundFlight = null;
-                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
-                        next.getType(), body));
+                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getType(), body));
                 }
             }
         }
@@ -123,12 +121,12 @@ class DTLSReliableHandshake {
                          * again, retransmit our last flight
                          */
                         if (previousInboundFlight != null) {
-                            DTLSReassembler reassembler = (DTLSReassembler) previousInboundFlight
-                                .get(Integer.valueOf(seq));
+                            DTLSReassembler reassembler = (DTLSReassembler) previousInboundFlight.get(Integer
+                                .valueOf(seq));
                             if (reassembler != null) {
 
-                                reassembler.contributeFragment(msg_type, length, buf, 12,
-                                    fragment_offset, fragment_length);
+                                reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset,
+                                    fragment_length);
 
                                 if (checkAll(previousInboundFlight)) {
 
@@ -146,22 +144,20 @@ class DTLSReliableHandshake {
                         }
                     } else {
 
-                        DTLSReassembler reassembler = (DTLSReassembler) currentInboundFlight
-                            .get(Integer.valueOf(seq));
+                        DTLSReassembler reassembler = (DTLSReassembler) currentInboundFlight.get(Integer.valueOf(seq));
                         if (reassembler == null) {
                             reassembler = new DTLSReassembler(msg_type, length);
                             currentInboundFlight.put(Integer.valueOf(seq), reassembler);
                         }
 
-                        reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset,
-                            fragment_length);
+                        reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset, fragment_length);
 
                         if (seq == next_receive_seq) {
                             byte[] body = reassembler.getBodyIfComplete();
                             if (body != null) {
                                 previousInboundFlight = null;
-                                return updateHandshakeMessagesDigest(new Message(
-                                    next_receive_seq++, reassembler.getType(), body));
+                                return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
+                                    reassembler.getType(), body));
                             }
                         }
                     }
@@ -254,8 +250,7 @@ class DTLSReliableHandshake {
         } while (fragment_offset < length);
     }
 
-    private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length)
-        throws IOException {
+    private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(message.getType(), buf);

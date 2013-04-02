@@ -1,59 +1,54 @@
 package org.bouncycastle.crypto.tls;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 
 /**
  * A combined hash, which implements md5(m) || sha1(m).
  */
-class CombinedHash implements Digest
-{
+class CombinedHash implements TlsDigest {
     protected TlsContext context;
-    protected MD5Digest md5;
-    protected SHA1Digest sha1;
+    protected Digest md5;
+    protected Digest sha1;
 
-    CombinedHash()
-    {
-        this.md5 = new MD5Digest();
-        this.sha1 = new SHA1Digest();
+    CombinedHash() {
+        this.md5 = TlsUtils.createHash(HashAlgorithm.md5);
+        this.sha1 = TlsUtils.createHash(HashAlgorithm.sha1);
     }
 
-    CombinedHash(TlsContext context)
-    {
+    CombinedHash(TlsContext context) {
         this.context = context;
-        this.md5 = new MD5Digest();
-        this.sha1 = new SHA1Digest();
+        this.md5 = TlsUtils.createHash(HashAlgorithm.md5);
+        this.sha1 = TlsUtils.createHash(HashAlgorithm.sha1);
     }
 
-    CombinedHash(CombinedHash t)
-    {
+    CombinedHash(CombinedHash t) {
         this.context = t.context;
-        this.md5 = new MD5Digest(t.md5);
-        this.sha1 = new SHA1Digest(t.sha1);
+        this.md5 = TlsUtils.cloneHash(HashAlgorithm.md5, t.md5);
+        this.sha1 = TlsUtils.cloneHash(HashAlgorithm.sha1, t.sha1);
+    }
+
+    public TlsDigest fork() {
+        return new CombinedHash(this);
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#getAlgorithmName()
      */
-    public String getAlgorithmName()
-    {
+    public String getAlgorithmName() {
         return md5.getAlgorithmName() + " and " + sha1.getAlgorithmName();
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#getDigestSize()
      */
-    public int getDigestSize()
-    {
-        return 16 + 20;
+    public int getDigestSize() {
+        return md5.getDigestSize() + sha1.getDigestSize();
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#update(byte)
      */
-    public void update(byte in)
-    {
+    public void update(byte in) {
         md5.update(in);
         sha1.update(in);
     }
@@ -61,8 +56,7 @@ class CombinedHash implements Digest
     /**
      * @see org.bouncycastle.crypto.Digest#update(byte[],int,int)
      */
-    public void update(byte[] in, int inOff, int len)
-    {
+    public void update(byte[] in, int inOff, int len) {
         md5.update(in, inOff, len);
         sha1.update(in, inOff, len);
     }
@@ -70,30 +64,26 @@ class CombinedHash implements Digest
     /**
      * @see org.bouncycastle.crypto.Digest#doFinal(byte[],int)
      */
-    public int doFinal(byte[] out, int outOff)
-    {
-        if (context != null && context.getServerVersion().isSSL())
-        {
+    public int doFinal(byte[] out, int outOff) {
+        if (context != null && context.getServerVersion().isSSL()) {
             ssl3Complete(md5, SSL3Mac.MD5_IPAD, SSL3Mac.MD5_OPAD);
             ssl3Complete(sha1, SSL3Mac.SHA1_IPAD, SSL3Mac.SHA1_OPAD);
         }
 
         int i1 = md5.doFinal(out, outOff);
-        int i2 = sha1.doFinal(out, outOff + 16);
+        int i2 = sha1.doFinal(out, outOff + i1);
         return i1 + i2;
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#reset()
      */
-    public void reset()
-    {
+    public void reset() {
         md5.reset();
         sha1.reset();
     }
 
-    protected void ssl3Complete(Digest d, byte[] ipad, byte[] opad)
-    {
+    protected void ssl3Complete(Digest d, byte[] ipad, byte[] opad) {
         byte[] secret = context.getSecurityParameters().masterSecret;
 
         d.update(secret, 0, secret.length);

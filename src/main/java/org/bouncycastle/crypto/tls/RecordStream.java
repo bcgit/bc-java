@@ -25,7 +25,7 @@ class RecordStream {
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsContext context = null;
-    private CombinedHash hash = null;
+    private TlsDigest hash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
@@ -227,7 +227,7 @@ class RecordStream {
      * 'sender' only relevant to SSLv3
      */
     byte[] getCurrentHash(byte[] sender) {
-        Digest d = new CombinedHash(hash);
+        TlsDigest d = hash.fork();
 
         if (context.getServerVersion().isSSL()) {
             if (sender != null) {
