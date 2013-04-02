@@ -14,8 +14,10 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
@@ -498,7 +500,7 @@ public class TlsUtils
             prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
         }
 
-        Digest prfDigest = createPRFDigest(prfAlgorithm);
+        Digest prfDigest = createPRFHash(prfAlgorithm);
         byte[] buf = new byte[size];
         hmac_hash(prfDigest, secret, labelSeed, buf);
         return buf;
@@ -671,18 +673,65 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, 12);
     }
 
-    static final Digest createPRFDigest(int prfAlgorithm)
+    public static final Digest createHash(int hashAlgorithm)
     {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.md5:
+            return new MD5Digest();
+        case HashAlgorithm.sha1:
+            return new SHA1Digest();
+        case HashAlgorithm.sha224:
+            return new SHA224Digest();
+        case HashAlgorithm.sha256:
+            return new SHA256Digest();
+        case HashAlgorithm.sha384:
+            return new SHA384Digest();
+        case HashAlgorithm.sha512:
+            return new SHA512Digest();
+        default:
+            throw new IllegalArgumentException("unknown HashAlgorithm");
+        }
+    }
+
+    public static final Digest cloneHash(int hashAlgorithm, Digest hash)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.md5:
+            return new MD5Digest((MD5Digest)hash);
+        case HashAlgorithm.sha1:
+            return new SHA1Digest((SHA1Digest)hash);
+        case HashAlgorithm.sha224:
+            return new SHA224Digest((SHA224Digest)hash);
+        case HashAlgorithm.sha256:
+            return new SHA256Digest((SHA256Digest)hash);
+        case HashAlgorithm.sha384:
+            return new SHA384Digest((SHA384Digest)hash);
+        case HashAlgorithm.sha512:
+            return new SHA512Digest((SHA512Digest)hash);
+        default:
+            throw new IllegalArgumentException("unknown HashAlgorithm");
+        }
+    }
+
+    public static final Digest createPRFHash(int prfAlgorithm)
+    {
+        short hashAlgorithm = getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
+        return createHash(hashAlgorithm);
+    }
+
+    public static final short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm) {
         switch (prfAlgorithm)
         {
         case PRFAlgorithm.tls_prf_legacy:
             throw new IllegalArgumentException("legacy PRF not a valid algorithm");
         case PRFAlgorithm.tls_prf_sha256:
-            return new SHA256Digest();
+            return HashAlgorithm.sha256;
         case PRFAlgorithm.tls_prf_sha384:
-            return new SHA384Digest();
+            return HashAlgorithm.sha384;
         default:
-            throw new IllegalArgumentException("unknown PRF algorithm");
+            throw new IllegalArgumentException("unknown PRFAlgorithm");
         }
     }
 
