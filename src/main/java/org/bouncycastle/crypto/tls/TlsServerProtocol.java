@@ -104,8 +104,13 @@ public class TlsServerProtocol extends TlsProtocol {
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
-                securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
+                // TODO This block could really be done before actually sending the hello
+                {
+                    securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+                    securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
+
+                    recordStream.notifyHelloComplete();
+                }
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null) {
@@ -368,8 +373,7 @@ public class TlsServerProtocol extends TlsProtocol {
                      */
                     this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
+                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
                 }
@@ -397,8 +401,7 @@ public class TlsServerProtocol extends TlsProtocol {
         recordStream.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
     }
 
-    protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
-        throws IOException {
+    protected void sendCertificateRequestMessage(CertificateRequest certificateRequest) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
@@ -415,8 +418,7 @@ public class TlsServerProtocol extends TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket)
-        throws IOException {
+    protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket) throws IOException {
 
         if (newSessionTicket == null) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -506,8 +508,7 @@ public class TlsServerProtocol extends TlsProtocol {
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
-                this.serverExtensions.put(EXT_RenegotiationInfo,
-                    createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
+                this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }
 

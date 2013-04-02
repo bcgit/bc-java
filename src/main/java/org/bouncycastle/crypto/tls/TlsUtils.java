@@ -717,8 +717,24 @@ public class TlsUtils
 
     public static final Digest createPRFHash(int prfAlgorithm)
     {
-        short hashAlgorithm = getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
-        return createHash(hashAlgorithm);
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.tls_prf_legacy:
+            return new CombinedHash();
+        default:
+            return createHash(getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        }
+    }
+
+    public static final Digest clonePRFHash(int prfAlgorithm, Digest hash)
+    {
+        switch (prfAlgorithm)
+        {
+        case PRFAlgorithm.tls_prf_legacy:
+            return new CombinedHash((CombinedHash)hash);
+        default:
+            return cloneHash(getHashAlgorithmForPRFAlgorithm(prfAlgorithm), hash);
+        }
     }
 
     public static final short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm) {

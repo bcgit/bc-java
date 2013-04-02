@@ -6,7 +6,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.io.DigestOutputStream;
 
 class DTLSReliableHandshake {
@@ -15,7 +14,7 @@ class DTLSReliableHandshake {
 
     private final DTLSRecordLayer recordLayer;
 
-    private TlsDigest hash = new CombinedHash();
+    private TlsHandshakeHash hash = new DeferredHash();
     private DigestOutputStream hashStream = new DigestOutputStream(hash);
 
     private Hashtable currentInboundFlight = new Hashtable();
@@ -25,12 +24,18 @@ class DTLSReliableHandshake {
 
     private int message_seq = 0, next_receive_seq = 0;
 
-    DTLSReliableHandshake(DTLSRecordLayer transport) {
+    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport) {
         this.recordLayer = transport;
+        this.hash.init(context);
+    }
+
+    void notifyHelloComplete() {
+        this.hash = this.hash.commit();
+        this.hashStream = new DigestOutputStream(this.hash);
     }
 
     byte[] getCurrentHash() {
-        TlsDigest copyOfHash = hash.fork();
+        TlsHandshakeHash copyOfHash = hash.fork();
         byte[] result = new byte[copyOfHash.getDigestSize()];
         copyOfHash.doFinal(result, 0);
         return result;

@@ -7,10 +7,12 @@ import org.bouncycastle.crypto.Digest;
 /**
  * Buffers input until the hash algorithm is determined.
  */
-class DeferredHash implements TlsDigest {
+class DeferredHash implements TlsHandshakeHash {
+
+    protected TlsContext context;
 
     private ByteArrayOutputStream buf = new ByteArrayOutputStream();
-    private short hashAlgorithm = -1;
+    private int prfAlgorithm = -1;
     private Digest hash = null;
 
     DeferredHash() {
@@ -23,19 +25,35 @@ class DeferredHash implements TlsDigest {
         this.hash = hash;
     }
 
-    void setHashAlgorithm(short hashAlgorithm) {
-
-        this.hashAlgorithm = hashAlgorithm;
-        this.hash = TlsUtils.createHash(hashAlgorithm);
-
-        byte[] data = buf.toByteArray();
-        this.hash.update(data, 0, data.length);
-        this.buf = null;
+    public void init(TlsContext context) {
+        this.context = context;
     }
 
-    public TlsDigest fork() {
+    public TlsHandshakeHash commit() {
+
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+
+        Digest prfHash = TlsUtils.createPRFHash(prfAlgorithm);
+
+        byte[] data = buf.toByteArray();
+        prfHash.update(data, 0, data.length);
+
+        if (prfHash instanceof TlsHandshakeHash) {
+            TlsHandshakeHash tlsPRFHash = (TlsHandshakeHash) prfHash;
+            tlsPRFHash.init(context);
+            return tlsPRFHash.commit();
+        }
+
+        this.prfAlgorithm = prfAlgorithm;
+        this.hash = prfHash;
+        this.buf = null;
+
+        return this;
+    }
+
+    public TlsHandshakeHash fork() {
         checkHash();
-        return new DeferredHash(TlsUtils.cloneHash(hashAlgorithm, hash));
+        return new DeferredHash(TlsUtils.clonePRFHash(prfAlgorithm, hash));
     }
 
     public String getAlgorithmName() {

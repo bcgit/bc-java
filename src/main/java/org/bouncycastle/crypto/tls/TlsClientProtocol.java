@@ -165,6 +165,8 @@ public class TlsClientProtocol extends TlsProtocol {
                 securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
                 securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
 
+                recordStream.notifyHelloComplete();
+
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);

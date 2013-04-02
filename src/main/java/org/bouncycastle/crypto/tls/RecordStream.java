@@ -25,7 +25,7 @@ class RecordStream {
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsContext context = null;
-    private TlsDigest hash = null;
+    private TlsHandshakeHash hash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
@@ -42,7 +42,8 @@ class RecordStream {
 
     void init(TlsContext context) {
         this.context = context;
-        this.hash = new CombinedHash(context);
+        this.hash = new DeferredHash();
+        this.hash.init(context);
     }
 
     ProtocolVersion getReadVersion() {
@@ -66,6 +67,10 @@ class RecordStream {
      */
     void setRestrictReadVersion(boolean enabled) {
         this.restrictReadVersion = enabled;
+    }
+
+    void notifyHelloComplete() {
+        this.hash = this.hash.commit();
     }
 
     void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher) {
@@ -227,7 +232,7 @@ class RecordStream {
      * 'sender' only relevant to SSLv3
      */
     byte[] getCurrentHash(byte[] sender) {
-        TlsDigest d = hash.fork();
+        TlsHandshakeHash d = hash.fork();
 
         if (context.getServerVersion().isSSL()) {
             if (sender != null) {

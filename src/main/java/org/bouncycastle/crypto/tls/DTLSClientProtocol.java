@@ -32,9 +32,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.clientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         client.init(state.clientContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext,
-            ContentType.handshake);
-        DTLSReliableHandshake handshake = new DTLSReliableHandshake(recordLayer);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, ContentType.handshake);
+        DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
 
         byte[] clientHelloBody = generateClientHello(state, client);
         handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
@@ -74,6 +73,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
         securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
+
+        handshake.notifyHelloComplete();
 
         if (serverMessage.getType() == HandshakeType.supplemental_data) {
             processServerSupplementalData(state, serverMessage.getBody());
@@ -123,8 +124,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         }
 
         if (state.certificateRequest != null) {
-            state.clientCredentials = state.authentication
-                .getClientCredentials(state.certificateRequest);
+            state.clientCredentials = state.authentication.getClientCredentials(state.certificateRequest);
 
             /*
              * RFC 5246 If no suitable certificate is available, the client MUST send a certificate
@@ -165,8 +165,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         recordLayer.initPendingEpoch(state.client.getCipher());
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-            "client finished", handshake.getCurrentHash());
+        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "client finished",
+            handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
         if (state.expectSessionTicket) {
@@ -179,8 +179,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
-        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-            "server finished", handshake.getCurrentHash());
+        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "server finished",
+            handshake.getCurrentHash());
         serverMessage = handshake.receiveMessage();
 
         if (serverMessage.getType() == HandshakeType.finished) {
@@ -196,16 +196,14 @@ public class DTLSClientProtocol extends DTLSProtocol {
         return new DTLSTransport(recordLayer);
     }
 
-    protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature)
-        throws IOException {
+    protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque16(signature, buf);
         return buf.toByteArray();
     }
 
-    protected byte[] generateClientHello(ClientHandshakeState state, TlsClient client)
-        throws IOException {
+    protected byte[] generateClientHello(ClientHandshakeState state, TlsClient client) throws IOException {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -280,8 +278,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         return buf.toByteArray();
     }
 
-    protected void processCertificateRequest(ClientHandshakeState state, byte[] body)
-        throws IOException {
+    protected void processCertificateRequest(ClientHandshakeState state, byte[] body) throws IOException {
 
         if (state.authentication == null) {
             // TODO Alert
@@ -296,8 +293,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
     }
 
-    protected void processNewSessionTicket(ClientHandshakeState state, byte[] body)
-        throws IOException {
+    protected void processNewSessionTicket(ClientHandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -308,8 +304,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.client.notifyNewSessionTicket(newSessionTicket);
     }
 
-    protected void processServerCertificate(ClientHandshakeState state, byte[] body)
-        throws IOException {
+    protected void processServerCertificate(ClientHandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -354,8 +349,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.client.notifySelectedCipherSuite(state.selectedCipherSuite);
 
         state.selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods,
-            state.selectedCompressionMethod)) {
+        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod)) {
             // TODO Alert
         }
         state.client.notifySelectedCompressionMethod(state.selectedCompressionMethod);
@@ -419,8 +413,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
                  * When a ServerHello is received, the client MUST check if it includes the
                  * "renegotiation_info" extension:
                  */
-                byte[] renegExtValue = (byte[]) serverExtensions
-                    .get(TlsProtocol.EXT_RenegotiationInfo);
+                byte[] renegExtValue = (byte[]) serverExtensions.get(TlsProtocol.EXT_RenegotiationInfo);
                 if (renegExtValue != null) {
                     /*
                      * If the extension is present, set the secure_renegotiation flag to TRUE. The
@@ -448,8 +441,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         }
     }
 
-    protected void processServerKeyExchange(ClientHandshakeState state, byte[] body)
-        throws IOException {
+    protected void processServerKeyExchange(ClientHandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -458,16 +450,14 @@ public class DTLSClientProtocol extends DTLSProtocol {
         TlsProtocol.assertEmpty(buf);
     }
 
-    protected void processServerSupplementalData(ClientHandshakeState state, byte[] body)
-        throws IOException {
+    protected void processServerSupplementalData(ClientHandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
         Vector serverSupplementalData = TlsProtocol.readSupplementalDataMessage(buf);
         state.client.processServerSupplementalData(serverSupplementalData);
     }
 
-    protected static byte[] parseHelloVerifyRequest(TlsContext context, byte[] body)
-        throws IOException {
+    protected static byte[] parseHelloVerifyRequest(TlsContext context, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -487,8 +477,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         return cookie;
     }
 
-    protected static byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie)
-        throws IOException {
+    protected static byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie) throws IOException {
 
         int sessionIDPos = 34;
         int sessionIDLength = TlsUtils.readUint8(clientHelloBody, sessionIDPos);
@@ -500,8 +489,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
         System.arraycopy(clientHelloBody, 0, patched, 0, cookieLengthPos);
         TlsUtils.writeUint8((short) cookie.length, patched, cookieLengthPos);
         System.arraycopy(cookie, 0, patched, cookiePos, cookie.length);
-        System.arraycopy(clientHelloBody, cookiePos, patched, cookiePos + cookie.length,
-            clientHelloBody.length - cookiePos);
+        System.arraycopy(clientHelloBody, cookiePos, patched, cookiePos + cookie.length, clientHelloBody.length
+            - cookiePos);
 
         return patched;
     }
