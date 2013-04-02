@@ -9,8 +9,12 @@ import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -750,6 +754,25 @@ public class TlsUtils
             return HashAlgorithm.sha384;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm");
+        }
+    }
+
+    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(int hashAlgorithm) {
+        switch (hashAlgorithm) {
+        case HashAlgorithm.md5:
+            return PKCSObjectIdentifiers.md5;
+        case HashAlgorithm.sha1:
+            return X509ObjectIdentifiers.id_SHA1;
+        case HashAlgorithm.sha224:
+            return NISTObjectIdentifiers.id_sha224;
+        case HashAlgorithm.sha256:
+            return NISTObjectIdentifiers.id_sha256;
+        case HashAlgorithm.sha384:
+            return NISTObjectIdentifiers.id_sha384;
+        case HashAlgorithm.sha512:
+            return NISTObjectIdentifiers.id_sha512;
+        default:
+            throw new IllegalArgumentException("unknown HashAlgorithm");
         }
     }
 
