@@ -6,10 +6,8 @@ import java.util.List;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.prng.CTRDerivationFunction;
-import org.bouncycastle.crypto.prng.DRBG;
-import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.CTRSP800DRBG;
+import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestResult;
@@ -130,12 +128,11 @@ public class CTRDRGBTest extends SimpleTest
         {
             tv.entropy();
             BlockCipher engine = new AESFastEngine();
-            CTRDerivationFunction cdf = new CTRDerivationFunction(engine, 256, 256);
             EntropySource tes = new TestEntropySource(Hex.decode(tv.entropy()), tv.predictionResistance());
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            CTRSP800DRBG d = new CTRSP800DRBG(cdf, tes, nonce, personalisationString, securityStrength);
+            CTRSP800DRBG d = new CTRSP800DRBG(engine, 256, 256, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             
