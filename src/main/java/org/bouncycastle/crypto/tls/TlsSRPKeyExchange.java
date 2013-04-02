@@ -34,6 +34,7 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange {
     protected SRP6Client srpClient = new SRP6Client();
 
     TlsSRPKeyExchange(int keyExchange, byte[] identity, byte[] password) {
+
         super();
 
         switch (keyExchange) {

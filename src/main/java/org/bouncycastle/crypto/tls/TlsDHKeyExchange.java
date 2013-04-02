@@ -33,6 +33,9 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
     protected DHPublicKeyParameters dhAgreeClientPublicKey;
 
     TlsDHKeyExchange(int keyExchange, DHParameters dhParameters) {
+
+        super();
+
         switch (keyExchange) {
         case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_DSS:
