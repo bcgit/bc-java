@@ -18,8 +18,8 @@ public class SSL3Mac implements Mac
     private final static byte IPAD_BYTE = (byte)0x36;
     private final static byte OPAD_BYTE = (byte)0x5C;
 
-    private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
-    private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
+    static final byte[] IPAD = genPad(IPAD_BYTE, 48);
+    static final byte[] OPAD = genPad(OPAD_BYTE, 48);
 
     private Digest digest;
 

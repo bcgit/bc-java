@@ -69,8 +69,8 @@ class CombinedHash implements TlsHandshakeHash {
      */
     public int doFinal(byte[] out, int outOff) {
         if (context != null && context.getServerVersion().isSSL()) {
-            ssl3Complete(md5, SSL3Mac.MD5_IPAD, SSL3Mac.MD5_OPAD);
-            ssl3Complete(sha1, SSL3Mac.SHA1_IPAD, SSL3Mac.SHA1_OPAD);
+            ssl3Complete(md5, SSL3Mac.IPAD, SSL3Mac.OPAD, 48);
+            ssl3Complete(sha1, SSL3Mac.IPAD, SSL3Mac.OPAD, 40);
         }
 
         int i1 = md5.doFinal(out, outOff);
@@ -86,17 +86,17 @@ class CombinedHash implements TlsHandshakeHash {
         sha1.reset();
     }
 
-    protected void ssl3Complete(Digest d, byte[] ipad, byte[] opad) {
+    protected void ssl3Complete(Digest d, byte[] ipad, byte[] opad, int padLength) {
         byte[] secret = context.getSecurityParameters().masterSecret;
 
         d.update(secret, 0, secret.length);
-        d.update(ipad, 0, ipad.length);
+        d.update(ipad, 0, padLength);
 
         byte[] tmp = new byte[d.getDigestSize()];
         d.doFinal(tmp, 0);
 
         d.update(secret, 0, secret.length);
-        d.update(opad, 0, opad.length);
+        d.update(opad, 0, padLength);
         d.update(tmp, 0, tmp.length);
     }
 }
