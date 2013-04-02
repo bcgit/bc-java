@@ -61,7 +61,8 @@ public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsSe
         }
 
         for (int i = 0; i < namedCurves.length; ++i) {
-            if (TlsECCUtils.isSupportedNamedCurve(namedCurves[i])) {
+            int namedCurve = namedCurves[i];
+            if (!NamedCurve.refersToASpecificNamedCurve(namedCurve) || TlsECCUtils.isSupportedNamedCurve(namedCurve)) {
                 return true;
             }
         }

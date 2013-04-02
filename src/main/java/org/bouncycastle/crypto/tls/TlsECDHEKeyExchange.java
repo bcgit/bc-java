@@ -36,14 +36,43 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
     public byte[] generateServerKeyExchange() throws IOException {
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        /*
+         * First we try to find a supported named curve from the client's list.
+         */
+        int namedCurve = -1;
+        if (namedCurves == null) {
+            namedCurve = NamedCurve.secp256r1;
+        } else {
+            for (int i = 0; i < namedCurves.length; ++i) {
+                int entry = namedCurves[i];
+                if (TlsECCUtils.isSupportedNamedCurve(entry)) {
+                    namedCurve = entry;
+                    break;
+                }
+            }
+        }
 
-        // TODO Add support for arbitrary_explicit_*_curves
+        ECDomainParameters curve_params = null;
+        if (namedCurve >= 0) {
+            curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+        } else {
+            /*
+             * If no named curves are suitable, check if the client supports explicit curves.
+             */
+            if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves)) {
+                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
+            } else if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves)) {
+                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect233r1);
+            }
+        }
 
-        short curveType = ECCurveType.named_curve;
-
-        int namedCurve = chooseNamedCurve();
-        ECDomainParameters curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+        if (curve_params == null) {
+            /*
+             * NOTE: We shouldn't have negotiated ECDHE key exchange since we apparently can't find
+             * a suitable curve.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters) kp.getPrivate();
@@ -51,8 +80,14 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         byte[] publicBytes = TlsECCUtils.serializeECPublicKey(clientECPointFormats,
             (ECPublicKeyParameters) kp.getPublic());
 
-        TlsUtils.writeUint8(curveType, buf);
-        TlsUtils.writeUint16(namedCurve, buf);
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        if (namedCurve < 0) {
+            TlsECCUtils.writeExplicitECParameters(clientECPointFormats, curve_params, buf);
+        } else {
+            TlsECCUtils.writeNamedECParameters(namedCurve, buf);
+        }
+
         TlsUtils.writeOpaque8(publicBytes, buf);
 
         byte[] digestInput = buf.toByteArray();
@@ -125,18 +160,5 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         return signer;
-    }
-
-    protected int chooseNamedCurve() throws IOException {
-        if (namedCurves == null) {
-            return NamedCurve.secp256r1;
-        }
-        for (int i = 0; i < namedCurves.length; ++i) {
-            int namedCurve = namedCurves[i];
-            if (TlsECCUtils.isSupportedNamedCurve(namedCurve)) {
-                return namedCurve;
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 }

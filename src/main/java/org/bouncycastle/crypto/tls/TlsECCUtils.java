@@ -442,11 +442,70 @@ public class TlsECCUtils {
         }
     }
 
+    public static void writeECExponent(int k, OutputStream output) throws IOException {
+        BigInteger K = BigInteger.valueOf(k);
+        writeECParameter(K, output);
+    }
+
     public static void writeECFieldElement(int fieldSize, BigInteger x, OutputStream output) throws IOException {
         TlsUtils.writeOpaque8(serializeECFieldElement(fieldSize, x), output);
     }
 
     public static void writeECParameter(BigInteger x, OutputStream output) throws IOException {
         TlsUtils.writeOpaque8(BigIntegers.asUnsignedByteArray(x), output);
+    }
+
+    public static void writeExplicitECParameters(short[] ecPointFormats, ECDomainParameters ecParameters,
+        OutputStream output) throws IOException {
+
+        ECCurve curve = ecParameters.getCurve();
+        if (curve instanceof ECCurve.Fp) {
+
+            TlsUtils.writeUint8(ECCurveType.explicit_prime, output);
+
+            ECCurve.Fp fp = (ECCurve.Fp) curve;
+            writeECParameter(fp.getQ(), output);
+
+        } else if (curve instanceof ECCurve.F2m) {
+
+            TlsUtils.writeUint8(ECCurveType.explicit_char2, output);
+
+            ECCurve.F2m f2m = (ECCurve.F2m) curve;
+            TlsUtils.writeUint16(f2m.getM(), output);
+
+            if (f2m.isTrinomial()) {
+                TlsUtils.writeUint8(ECBasisType.ec_basis_trinomial, output);
+                writeECExponent(f2m.getK1(), output);
+            } else {
+                TlsUtils.writeUint8(ECBasisType.ec_basis_pentanomial, output);
+                writeECExponent(f2m.getK1(), output);
+                writeECExponent(f2m.getK2(), output);
+                writeECExponent(f2m.getK3(), output);
+            }
+
+        } else {
+            throw new IllegalArgumentException("'ecParameters' not a known curve type");
+        }
+
+        writeECFieldElement(curve.getFieldSize(), curve.getA().toBigInteger(), output);
+        writeECFieldElement(curve.getFieldSize(), curve.getB().toBigInteger(), output);
+        TlsUtils.writeOpaque8(serializeECPoint(ecPointFormats, ecParameters.getG()), output);
+        writeECParameter(ecParameters.getN(), output);
+        writeECParameter(ecParameters.getH(), output);
+    }
+
+    public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException {
+
+        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve)) {
+            /*
+             * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a specific
+             * curve. Values of NamedCurve that indicate support for a class of explicitly defined
+             * curves are not allowed here [...].
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        TlsUtils.writeUint8(ECCurveType.named_curve, output);
+        TlsUtils.writeUint16(namedCurve, output);
     }
 }
