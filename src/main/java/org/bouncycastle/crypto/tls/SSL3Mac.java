@@ -15,18 +15,16 @@ import org.bouncycastle.util.Arrays;
  */
 public class SSL3Mac implements Mac
 {
-    private final static byte IPAD = (byte)0x36;
-    private final static byte OPAD = (byte)0x5C;
+    private final static byte IPAD_BYTE = (byte)0x36;
+    private final static byte OPAD_BYTE = (byte)0x5C;
 
-    static final byte[] MD5_IPAD = genPad(IPAD, 48);
-    static final byte[] MD5_OPAD = genPad(OPAD, 48);
-    static final byte[] SHA1_IPAD = genPad(IPAD, 40);
-    static final byte[] SHA1_OPAD = genPad(OPAD, 40);
+    private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
+    private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
 
     private Digest digest;
 
     private byte[] secret;
-    private byte[] ipad, opad;
+    private int padLength;
 
     /**
      * Base constructor for one of the standard digest algorithms that the byteLength of
@@ -40,13 +38,11 @@ public class SSL3Mac implements Mac
 
         if (digest.getDigestSize() == 20)
         {
-            this.ipad = SHA1_IPAD;
-            this.opad = SHA1_OPAD;
+            this.padLength = 40;
         }
         else
         {
-            this.ipad = MD5_IPAD;
-            this.opad = MD5_OPAD;
+            this.padLength = 48;
         }
     }
 
@@ -88,7 +84,7 @@ public class SSL3Mac implements Mac
         digest.doFinal(tmp, 0);
 
         digest.update(secret, 0, secret.length);
-        digest.update(opad, 0, opad.length);
+        digest.update(OPAD, 0, padLength);
         digest.update(tmp, 0, tmp.length);
 
         int len = digest.doFinal(out, outOff);
@@ -105,7 +101,7 @@ public class SSL3Mac implements Mac
     {
         digest.reset();
         digest.update(secret, 0, secret.length);
-        digest.update(ipad, 0, ipad.length);
+        digest.update(IPAD, 0, padLength);
     }
 
     private static byte[] genPad(byte b, int count)
