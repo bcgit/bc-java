@@ -294,7 +294,7 @@ public class TlsECCUtils {
     public static BigInteger deserializeECFieldElement(int fieldSize, byte[] encoding) throws IOException {
         int requiredLength = (fieldSize + 7) / 8;
         if (encoding.length != requiredLength) {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         return new BigInteger(1, encoding);
     }
@@ -314,7 +314,7 @@ public class TlsECCUtils {
         try {
             ECPoint Y = deserializeECPoint(ecPointFormats, curve_params.getCurve(), encoding);
             return new ECPublicKeyParameters(Y, curve_params);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
@@ -437,7 +437,7 @@ public class TlsECCUtils {
             default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
