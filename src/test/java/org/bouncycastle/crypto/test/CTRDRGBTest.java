@@ -41,7 +41,6 @@ public class CTRDRGBTest extends SimpleTest
 
     private class TestVector 
     {
-        
         private String _entropy;
         private boolean _pr;
         private String _nonce;
@@ -136,14 +135,14 @@ public class CTRDRGBTest extends SimpleTest
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            DRBG d = new CTRSP800DRBG(cdf, tes, nonce, personalisationString, securityStrength);
+            CTRSP800DRBG d = new CTRSP800DRBG(cdf, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             
-            int rv = d.generate(output, tv.additionalInput(0), true);
+            // int rv = d.generate(output, tv.additionalInput(0), true);
             String out = new String(Hex.encode(output));
             System.out.println(out);
-            rv = d.generate(output, tv.additionalInput(1), true);
+            // rv = d.generate(output, tv.additionalInput(1), true);
             out = new String(Hex.encode(output));
             System.out.println(out);
             

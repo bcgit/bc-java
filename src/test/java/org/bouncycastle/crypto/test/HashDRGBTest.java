@@ -131,12 +131,11 @@ public class HashDRGBTest extends SimpleTest
         {
             tv.entropy();
             Digest digest = new SHA1Digest();
-            HashDerivationFunction hf = new HashDerivationFunction(digest, 440);
             EntropySource tes = new TestEntropySource(Hex.decode(tv.entropy()), tv.predictionResistance());
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            DRBG d = new HashSP800DRBG(hf, tes, nonce, personalisationString, securityStrength);
+            DRBG d = new HashSP800DRBG(digest, 440, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

@@ -1,27 +1,32 @@
 package org.bouncycastle.crypto.prng;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.encoders.Hex;
 
 public class HashSP800DRBG implements DRBG
 {
-    private HashDerivationFunction _function;
+    private Digest                 _digest;
     private byte[]                 _V;
     private byte[]                 _C;
     private int                    _reseedCounter;
     private EntropySource          _entropySource;
     private int                    _securityStrength;
+    
+    private int                    _seedLength;
 
-    public HashSP800DRBG(HashDerivationFunction function, EntropySource entropySource, byte[] nonce,
+    public HashSP800DRBG(Digest digest, int seedlen, EntropySource entropySource, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
-        if (securityStrength > function.getSecurityStrength())
+        if (securityStrength > digest.getDigestSize() * 8) // TODO: this may, or may not be correct, but it's good enough for now
         {
             throw new IllegalStateException(
                     "Security strength is not supported by the derivation function");
         }
-        _function = function;
+        
+        _digest = digest;
         _entropySource = entropySource;
         _securityStrength = securityStrength;
+        _seedLength = seedlen;
         // 1. seed_material = entropy_input || nonce || personalization_string.
         // 2. seed = Hash_df (seed_material, seedlen).
         // 3. V = seed.
@@ -44,14 +49,14 @@ public class HashSP800DRBG implements DRBG
 
         System.out.println("Constructor SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = function.getDFBytes(seedMaterial, function.getSeedlength());
+        byte[] seed = getDFBytes(seedMaterial, _seedLength);
         
         System.out.println("Constructor Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = function.getDFBytes(subV, function.getSeedlength());
+        _C = getDFBytes(subV, _seedLength);
         _reseedCounter = 1;
         
         System.out.println("Constructor V: "+ new String(Hex.encode(_V)));        
@@ -89,20 +94,20 @@ public class HashSP800DRBG implements DRBG
             System.arraycopy(_V, 0, newInput, 1, _V.length);
             // TODO: inOff / inLength
             System.arraycopy(additionalInput, 0, newInput, 1 + _V.length, additionalInput.length);
-            byte[] w = _function.getBytes(newInput);
+            byte[] w = getBytes(newInput);
 
             addTo(_V, w);
         }
         
         // 3.
-        byte[] rv = _function.getByteGen(_V, numberOfBits);
+        byte[] rv = getByteGen(_V, numberOfBits);
         
         // 4.
         byte[] subH = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subH, 1, _V.length);
         subH[0] = 0x03;
         
-        byte[] H = _function.getBytes(subH);
+        byte[] H = getBytes(subH);
         
         // 5.
         addTo(_V, H);
@@ -178,7 +183,7 @@ public class HashSP800DRBG implements DRBG
 
         System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = _function.getDFBytes(seedMaterial, _function.getSeedlength());
+        byte[] seed = getDFBytes(seedMaterial, _seedLength);
         
         System.out.println("Reseed Seed: "+ new String(Hex.encode(seed)));
 
@@ -186,10 +191,125 @@ public class HashSP800DRBG implements DRBG
         byte[] subV = new byte[_V.length + 1];
         subV[0] = 0x00;
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = _function.getDFBytes(subV, _function.getSeedlength());
+        _C = getDFBytes(subV, _seedLength);
         _reseedCounter = 1;
         
         System.out.println("Reseed V: "+ new String(Hex.encode(_V)));
         System.out.println("Reseed C: "+ new String(Hex.encode(_C)));
     }
+    
+    
+    // ---- Internal manipulation --- 
+    // ---- Migrating from the external HashDF class --
+    
+    private byte[] getDFBytes(byte[] seedMaterial, int seedLength)
+    {
+        return hashDFProcess(_digest, seedLength, seedMaterial);
+    }
+
+    // 1. temp = the Null string.
+    // 2. .
+    // 3. counter = an 8-bit binary value representing the integer "1".
+    // 4. For i = 1 to len do
+    // Comment : In step 4.1, no_of_bits_to_return
+    // is used as a 32-bit string.
+    // 4.1 temp = temp || Hash (counter || no_of_bits_to_return ||
+    // input_string).
+    // 4.2 counter = counter + 1.
+    // 5. requested_bits = Leftmost (no_of_bits_to_return) of temp.
+    // 6. Return SUCCESS and requested_bits.
+    private byte[] hashDFProcess(Digest digest, int bitLength, byte[] inputString)
+    {
+        byte[] temp = new byte[bitLength / 8];
+
+        int len = temp.length / digest.getDigestSize();
+        int counter = 1;
+
+        byte[] dig = new byte[digest.getDigestSize()];
+
+        for (int i = 0; i <= len; i++)
+        {
+            digest.update((byte)counter);
+
+            digest.update((byte)(bitLength >> 24));
+            digest.update((byte)(bitLength >> 16));
+            digest.update((byte)(bitLength >> 8));
+            digest.update((byte)bitLength);
+
+            digest.update(inputString, 0, inputString.length);
+
+            digest.doFinal(dig, 0);
+
+            int bytesToCopy = ((temp.length - i * dig.length) > dig.length)
+                    ? dig.length
+                    : (temp.length - i * dig.length);
+            System.arraycopy(dig, 0, temp, i * dig.length, bytesToCopy);
+
+            counter++;
+        }
+
+        return temp;
+    }
+    
+    private byte[] getBytes(byte[] input)
+    {
+        _digest.update(input, 0, input.length);
+        byte[] hash = new byte[_digest.getDigestSize()];
+        _digest.doFinal(hash, 0);
+        return hash;
+    }
+    
+    private byte[] getByteGen(byte[] input, int length)
+    {
+        return byteGenProcess(_digest, input, length);
+    }
+
+    // 1. m = [requested_number_of_bits / outlen]
+    // 2. data = V.
+    // 3. W = the Null string.
+    // 4. For i = 1 to m
+    // 4.1 wi = Hash (data).
+    // 4.2 W = W || wi.
+    // 4.3 data = (data + 1) mod 2^seedlen
+    // .
+    // 5. returned_bits = Leftmost (requested_no_of_bits) bits of W.
+    private byte[] byteGenProcess(Digest digest, byte[] input, int lengthInBits)
+    {
+        int m = (lengthInBits / 8) / digest.getDigestSize();
+
+        byte[] data = new byte[input.length];
+        System.arraycopy(input, 0, data, 0, input.length);
+
+        byte[] W = new byte[lengthInBits / 8];
+
+        byte[] dig = new byte[digest.getDigestSize()];
+
+        for (int i = 0; i <= m; i++)
+        {
+            digest.update(data, 0, data.length);
+
+            digest.doFinal(dig, 0);
+
+            int bytesToCopy = ((W.length - i * dig.length) > dig.length)
+                    ? dig.length
+                    : (W.length - i * dig.length);
+            System.arraycopy(dig, 0, W, i * dig.length, bytesToCopy);
+
+            addOneTo(data);
+        }
+
+        return W;
+    }
+
+    private void addOneTo(byte[] longer)
+    {
+        int carry = 1;
+        for (int i = 1; i <= longer.length; i++) // warning
+        {
+            int res = (longer[longer.length - i] & 0xff) + carry;
+            carry = (res > 0xff) ? 1 : 0;
+            longer[longer.length - i] = (byte)res;
+        }
+    }
+    
 }

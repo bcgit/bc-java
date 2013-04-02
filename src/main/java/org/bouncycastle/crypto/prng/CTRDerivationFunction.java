@@ -243,4 +243,14 @@ public class CTRDerivationFunction
             longer[longer.length - i] = (byte)res;
         }
     }
+
+    public int getEngineBlockSize()
+    {
+        return _underlyingCipher.getBlockSize();
+    }
+
+    public BlockCipher getEngine()
+    {
+        return _underlyingCipher;
+    }
 }
