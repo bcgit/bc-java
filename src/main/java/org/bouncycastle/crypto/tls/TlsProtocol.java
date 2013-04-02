@@ -248,7 +248,7 @@ public abstract class TlsProtocol {
                  * and close down the connection immediately, discarding any pending writes.
                  */
                 if (description == AlertDescription.close_notify) {
-                    close();
+                    handleClose(false);
                 }
 
                 /*
@@ -586,7 +586,14 @@ public abstract class TlsProtocol {
      *             If something goes wrong during closing.
      */
     public void close() throws IOException {
+        handleClose(true);
+    }
+
+    protected void handleClose(boolean user_canceled) throws IOException {
         if (!closed) {
+            if (user_canceled && !appDataReady) {
+                raiseWarning(AlertDescription.user_canceled, "User canceled handshake");
+            }
             this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
         }
     }
