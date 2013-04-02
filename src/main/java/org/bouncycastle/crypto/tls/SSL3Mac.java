@@ -9,7 +9,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * HMAC implementation based on original internet draft for HMAC (RFC 2104)
  * 
- * The difference is that padding is concatentated versus XORed with the key
+ * The difference is that padding is concatenated versus XORed with the key
  * 
  * H(K + opad, H(K + ipad, text))
  */
