@@ -229,9 +229,7 @@ public abstract class TlsProtocol {
             getPeer().notifyAlertReceived(level, description);
 
             if (level == AlertLevel.fatal) {
-                /*
-                 * This is a fatal error.
-                 */
+
                 this.failedWithError = true;
                 this.closed = true;
                 /*
@@ -244,15 +242,15 @@ public abstract class TlsProtocol {
                 }
                 throw new IOException(TLS_ERROR_MESSAGE);
             } else {
+
                 /*
-                 * This is just a warning.
+                 * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
+                 * and close down the connection immediately, discarding any pending writes.
                  */
                 if (description == AlertDescription.close_notify) {
-                    /*
-                     * Close notify
-                     */
-                    this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
+                    close();
                 }
+
                 /*
                  * If it is just a warning, we continue.
                  */
@@ -304,6 +302,11 @@ public abstract class TlsProtocol {
      *             If something goes wrong during reading data.
      */
     protected int readApplicationData(byte[] buf, int offset, int len) throws IOException {
+
+        if (len < 1) {
+            return 0;
+        }
+
         while (applicationDataQueue.size() == 0) {
             /*
              * We need to read some data.
