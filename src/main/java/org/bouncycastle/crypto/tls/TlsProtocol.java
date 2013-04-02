@@ -495,7 +495,7 @@ public abstract class TlsProtocol {
             /*
              * Wrong checksum in the finished message.
              */
-            this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+            this.failWithError(AlertLevel.fatal, AlertDescription.decrypt_error);
         }
     }
 

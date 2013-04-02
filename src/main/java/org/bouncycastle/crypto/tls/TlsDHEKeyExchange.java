@@ -81,7 +81,7 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
 
         byte[] sigBytes = TlsUtils.readOpaque16(input);
         if (!signer.verifySignature(sigBytes)) {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
         this.dhAgreeServerPublicKey = validateDHPublicKey(new DHPublicKeyParameters(Ys,

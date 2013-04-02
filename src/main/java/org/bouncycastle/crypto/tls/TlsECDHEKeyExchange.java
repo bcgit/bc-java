@@ -85,7 +85,7 @@ class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         byte[] sigByte = TlsUtils.readOpaque16(input);
         if (!signer.verifySignature(sigByte)) {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
         this.ecAgreeServerPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(

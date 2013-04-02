@@ -43,6 +43,7 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException {
+
         if (serverCertificate.isEmpty()) {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
