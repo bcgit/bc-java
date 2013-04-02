@@ -5,6 +5,7 @@ public class SecurityParameters {
     int entity = -1;
     int prfAlgorithm = -1;
     short compressionAlgorithm = -1;
+    int verifyDataLength = -1;
     byte[] masterSecret = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
@@ -26,9 +27,12 @@ public class SecurityParameters {
     /**
      * @return {@link CompressionMethod}
      */
-    public short getCompressionAlgorithm()
-    {
+    public short getCompressionAlgorithm() {
         return compressionAlgorithm;
+    }
+
+    public int getVerifyDataLength() {
+        return verifyDataLength;
     }
 
     public byte[] getMasterSecret() {

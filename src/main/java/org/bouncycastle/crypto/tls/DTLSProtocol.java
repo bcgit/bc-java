@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 
 public abstract class DTLSProtocol {
 
@@ -21,15 +20,15 @@ public abstract class DTLSProtocol {
         this.secureRandom = secureRandom;
     }
 
-    protected void processFinished(byte[] body, byte[] verify_data) throws IOException {
+    protected void processFinished(byte[] body, byte[] expected_verify_data) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        byte[] serverVerifyData = TlsUtils.readFully(12, buf);
+        byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         TlsProtocol.assertEmpty(buf);
 
-        if (!Arrays.constantTimeAreEqual(verify_data, serverVerifyData)) {
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data)) {
             // TODO Alert
             // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
         }
@@ -49,8 +48,8 @@ public abstract class DTLSProtocol {
         return buf.toByteArray();
     }
 
-    protected static void validateSelectedCipherSuite(int selectedCipherSuite,
-        short alertDescription) throws IOException {
+    protected static void validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
+        throws IOException {
 
         switch (selectedCipherSuite) {
         case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
@@ -67,8 +66,7 @@ public abstract class DTLSProtocol {
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
             // TODO Alert
-            throw new IllegalStateException(
-                "Server selected an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
+            throw new IllegalStateException("Server selected an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
         }
     }
 }

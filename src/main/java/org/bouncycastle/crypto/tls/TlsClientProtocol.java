@@ -165,6 +165,13 @@ public class TlsClientProtocol extends TlsProtocol {
                 securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
                 securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
 
+                /*
+                 * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
+                 * verify_data_length has a verify_data_length equal to 12. This includes all
+                 * existing cipher suites.
+                 */
+                securityParameters.verifyDataLength = 12;
+
                 recordStream.notifyHelloComplete();
 
                 break;

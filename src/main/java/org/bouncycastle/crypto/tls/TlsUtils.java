@@ -668,9 +668,11 @@ public class TlsUtils
     	    return handshakeHash;
     	}
 
-        byte[] master_secret = context.getSecurityParameters().getMasterSecret();
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] master_secret = securityParameters.getMasterSecret();
+        int verify_data_length = securityParameters.getVerifyDataLength();
 
-        return PRF(context, master_secret, asciiLabel, handshakeHash, 12);
+        return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length);
     }
 
     public static final Digest createHash(int hashAlgorithm)

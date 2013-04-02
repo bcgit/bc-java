@@ -477,14 +477,8 @@ public abstract class TlsProtocol {
     }
 
     protected void processFinishedMessage(ByteArrayInputStream buf) throws IOException {
-        TlsContext context = getContext();
 
-        /*
-         * Read the checksum from the finished message, it has always 12 bytes for TLS 1.0 and 36
-         * for SSLv3.
-         */
-        int checksumLength = context.getServerVersion().isSSL() ? 36 : 12;
-        byte[] verify_data = TlsUtils.readFully(checksumLength, buf);
+        byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         assertEmpty(buf);
 

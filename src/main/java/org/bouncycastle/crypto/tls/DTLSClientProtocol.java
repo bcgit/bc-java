@@ -74,6 +74,12 @@ public class DTLSClientProtocol extends DTLSProtocol {
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
         securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
 
+        /*
+         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
+         * a verify_data_length equal to 12. This includes all existing cipher suites.
+         */
+        securityParameters.verifyDataLength = 12;
+
         handshake.notifyHelloComplete();
 
         if (serverMessage.getType() == HandshakeType.supplemental_data) {
