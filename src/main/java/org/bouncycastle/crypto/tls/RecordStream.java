@@ -8,9 +8,14 @@ import java.io.OutputStream;
 import org.bouncycastle.crypto.Digest;
 
 /**
- * An implementation of the TLS 1.0 record layer, allowing downgrade to SSLv3.
+ * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
  */
 class RecordStream {
+
+    private static int PLAINTEXT_LIMIT = (1 << 14);
+    private static int COMPRESSED_LIMIT = PLAINTEXT_LIMIT + 1024;
+    private static int CIPHERTEXT_LIMIT = COMPRESSED_LIMIT + 1024;
+
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
@@ -96,7 +101,15 @@ class RecordStream {
     }
 
     public void readRecord() throws IOException {
+
         short type = TlsUtils.readUint8(input);
+
+        // TODO In earlier RFCs, it was "SHOULD ignore"; should this be version-dependent?
+        /*
+         * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
+         * unexpected_message alert.
+         */
+        checkType(type, AlertDescription.unexpected_message);
 
         if (!restrictReadVersion) {
             int version = TlsUtils.readVersionRaw(input);
@@ -112,69 +125,97 @@ class RecordStream {
             }
         }
 
-        int size = TlsUtils.readUint16(input);
-        byte[] buf = decodeAndVerify(type, input, size);
-        handler.processRecord(type, buf, 0, buf.length);
+        int length = TlsUtils.readUint16(input);
+        byte[] plaintext = decodeAndVerify(type, input, length);
+        handler.processRecord(type, plaintext, 0, plaintext.length);
     }
 
     protected byte[] decodeAndVerify(short type, InputStream input, int len) throws IOException {
 
+        checkLength(len, CIPHERTEXT_LIMIT, AlertDescription.record_overflow);
+
         byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
+        checkLength(decoded.length, COMPRESSED_LIMIT, AlertDescription.record_overflow);
+
         /*
-         * TODO RFC5264 6.2.2. If the decompression function encounters a TLSCompressed.fragment
-         * that would decompress to a length in excess of 2^14 bytes, it MUST report a fatal
-         * decompression failure error. [..] Implementation note: Decompression functions are
-         * responsible for ensuring that messages cannot cause internal buffer overflows.
+         * TODO RFC5264 6.2.2. Implementation note: Decompression functions are responsible for
+         * ensuring that messages cannot cause internal buffer overflows.
          */
         OutputStream cOut = readCompression.decompress(buffer);
-
-        if (cOut == buffer) {
-            return decoded;
+        if (cOut != buffer) {
+            cOut.write(decoded, 0, decoded.length);
+            cOut.flush();
+            decoded = getBufferContents();
         }
 
-        cOut.write(decoded, 0, decoded.length);
-        cOut.flush();
-        return getBufferContents();
+        /*
+         * RFC 5264 6.2.2. If the decompression function encounters a TLSCompressed.fragment that
+         * would decompress to a length in excess of 2^14 bytes, it should report a fatal
+         * decompression failure error.
+         */
+        checkLength(decoded.length, PLAINTEXT_LIMIT, AlertDescription.decompression_failure);
+
+        return decoded;
     }
 
-    protected void writeRecord(short type, byte[] message, int offset, int len) throws IOException {
+    protected void writeRecord(short type, byte[] plaintext, int plaintextOffset, int plaintextLength)
+        throws IOException {
+
+        /*
+         * RFC 5264 6. Implementations MUST NOT send record types not defined in this document
+         * unless negotiated by some extension.
+         */
+        checkType(type, AlertDescription.internal_error);
+
+        /*
+         * RFC 5264 6.2.1 The length should not exceed 2^14.
+         */
+        checkLength(plaintextLength, PLAINTEXT_LIMIT, AlertDescription.internal_error);
 
         /*
          * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
          * or ChangeCipherSpec content types.
          */
-        if (len < 1 && type != ContentType.application_data) {
+        if (plaintextLength < 1 && type != ContentType.application_data) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         if (type == ContentType.handshake) {
-            updateHandshakeData(message, offset, len);
+            updateHandshakeData(plaintext, plaintextOffset, plaintextLength);
         }
 
-        /*
-         * TODO RFC5264 6.2.2. Compression must be lossless and may not increase the content length
-         * by more than 1024 bytes.
-         */
         OutputStream cOut = writeCompression.compress(buffer);
 
         byte[] ciphertext;
         if (cOut == buffer) {
-            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, message, offset, len);
+            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, plaintext, plaintextOffset, plaintextLength);
         } else {
-            cOut.write(message, offset, len);
+            cOut.write(plaintext, plaintextOffset, plaintextLength);
             cOut.flush();
             byte[] compressed = getBufferContents();
+
+            /*
+             * RFC5264 6.2.2. Compression must be lossless and may not increase the content length
+             * by more than 1024 bytes.
+             */
+            checkLength(compressed.length, plaintextLength + 1024, AlertDescription.internal_error);
+
             ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, compressed, 0, compressed.length);
         }
 
-        byte[] writeMessage = new byte[ciphertext.length + 5];
-        TlsUtils.writeUint8(type, writeMessage, 0);
-        TlsUtils.writeVersion(writeVersion, writeMessage, 1);
-        TlsUtils.writeUint16(ciphertext.length, writeMessage, 3);
-        System.arraycopy(ciphertext, 0, writeMessage, 5, ciphertext.length);
-        output.write(writeMessage);
+        /*
+         * RFC 5264 6.2.3. The length may not exceed 2^14 + 2048.
+         */
+        checkLength(ciphertext.length, CIPHERTEXT_LIMIT, AlertDescription.internal_error);
+
+        byte[] record = new byte[ciphertext.length + 5];
+        TlsUtils.writeUint8(type, record, 0);
+        TlsUtils.writeVersion(writeVersion, record, 1);
+        TlsUtils.writeUint16(ciphertext.length, record, 3);
+        System.arraycopy(ciphertext, 0, record, 5, ciphertext.length);
+        output.write(record);
         output.flush();
     }
 
@@ -228,5 +269,24 @@ class RecordStream {
         byte[] bs = new byte[d.getDigestSize()];
         d.doFinal(bs, 0);
         return bs;
+    }
+
+    private static void checkType(short type, short alertDescription) throws IOException {
+
+        switch (type) {
+        case ContentType.change_cipher_spec:
+        case ContentType.alert:
+        case ContentType.handshake:
+        case ContentType.application_data:
+            break;
+        default:
+            throw new TlsFatalAlert(alertDescription);
+        }
+    }
+
+    private static void checkLength(int length, int limit, short alertDescription) throws IOException {
+        if (length > limit) {
+            throw new TlsFatalAlert(alertDescription);
+        }
     }
 }
