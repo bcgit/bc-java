@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.prng.DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.HashDerivationFunction;
 import org.bouncycastle.crypto.prng.HashSP800DRBG;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
