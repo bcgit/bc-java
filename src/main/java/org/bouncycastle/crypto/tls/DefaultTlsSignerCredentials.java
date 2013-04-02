@@ -15,8 +15,8 @@ public class DefaultTlsSignerCredentials implements TlsSignerCredentials {
 
     protected TlsSigner signer;
 
-    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate,
-        AsymmetricKeyParameter privateKey) {
+    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey) {
+
         if (certificate == null) {
             throw new IllegalArgumentException("'certificate' cannot be null");
         }
@@ -31,15 +31,16 @@ public class DefaultTlsSignerCredentials implements TlsSignerCredentials {
         }
 
         if (privateKey instanceof RSAKeyParameters) {
-            signer = new TlsRSASigner();
+            this.signer = new TlsRSASigner();
         } else if (privateKey instanceof DSAPrivateKeyParameters) {
-            signer = new TlsDSSSigner();
+            this.signer = new TlsDSSSigner();
         } else if (privateKey instanceof ECPrivateKeyParameters) {
-            signer = new TlsECDSASigner();
+            this.signer = new TlsECDSASigner();
         } else {
-            throw new IllegalArgumentException("'privateKey' type not supported: "
-                + privateKey.getClass().getName());
+            throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());
         }
+
+        this.signer.init(context);
 
         this.context = context;
         this.certificate = certificate;

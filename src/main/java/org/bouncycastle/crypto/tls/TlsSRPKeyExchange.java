@@ -56,6 +56,14 @@ class TlsSRPKeyExchange extends AbstractTlsKeyExchange {
         this.password = password;
     }
 
+    public void init(TlsContext context) {
+        super.init(context);
+
+        if (this.tlsSigner != null) {
+            this.tlsSigner.init(context);
+        }
+    }
+
     public void skipServerCredentials() throws IOException {
         if (tlsSigner != null) {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);

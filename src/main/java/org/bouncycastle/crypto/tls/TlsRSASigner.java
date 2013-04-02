@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.GenericSigner;
 
-class TlsRSASigner implements TlsSigner
+class TlsRSASigner extends AbstractTlsSigner
 {
     public byte[] calculateRawSignature(SecureRandom random, AsymmetricKeyParameter privateKey, byte[] md5andsha1)
         throws CryptoException

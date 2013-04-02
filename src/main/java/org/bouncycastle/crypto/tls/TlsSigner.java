@@ -8,6 +8,8 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 interface TlsSigner
 {
+    void init(TlsContext context);
+
     byte[] calculateRawSignature(SecureRandom random, AsymmetricKeyParameter privateKey, byte[] md5andsha1)
         throws CryptoException;
 

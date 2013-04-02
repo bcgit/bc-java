@@ -55,6 +55,14 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         this.dhParameters = dhParameters;
     }
 
+    public void init(TlsContext context) {
+        super.init(context);
+
+        if (this.tlsSigner != null) {
+            this.tlsSigner.init(context);
+        }
+    }
+
     public void skipServerCredentials() throws IOException {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
@@ -108,8 +116,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException {
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {
         short[] types = certificateRequest.getCertificateTypes();
         for (int i = 0; i < types.length; ++i) {
             switch (types[i]) {
@@ -144,8 +151,8 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
          * Exchange message will be sent, but will be empty.
          */
         if (agreementCredentials == null) {
-            this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(
-                context.getSecureRandom(), dhAgreeServerPublicKey.getParameters(), output);
+            this.dhAgreeClientPrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(),
+                dhAgreeServerPublicKey.getParameters(), output);
         }
     }
 
@@ -161,8 +168,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         return a.getP().equals(b.getP()) && a.getG().equals(b.getG());
     }
 
-    protected byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey,
-        DHPrivateKeyParameters privateKey) {
+    protected byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey, DHPrivateKeyParameters privateKey) {
         return TlsDHUtils.calculateDHBasicAgreement(publicKey, privateKey);
     }
 
@@ -170,8 +176,7 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
         return TlsDHUtils.generateDHKeyPair(context.getSecureRandom(), dhParams);
     }
 
-    protected DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key)
-        throws IOException {
+    protected DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException {
         return TlsDHUtils.validateDHPublicKey(key);
     }
 }

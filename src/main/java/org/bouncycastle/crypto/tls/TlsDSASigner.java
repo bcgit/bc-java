@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 
-abstract class TlsDSASigner implements TlsSigner
+abstract class TlsDSASigner extends AbstractTlsSigner
 {
     public byte[] calculateRawSignature(SecureRandom secureRandom, AsymmetricKeyParameter privateKey, byte[] md5andsha1)
         throws CryptoException

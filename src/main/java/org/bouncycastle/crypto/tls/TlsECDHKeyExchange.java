@@ -31,8 +31,7 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
     protected ECPrivateKeyParameters ecAgreeServerPrivateKey;
     protected ECPublicKeyParameters ecAgreeClientPublicKey;
 
-    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats,
-        short[] serverECPointFormats) {
+    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) {
 
         super();
 
@@ -55,6 +54,14 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         this.namedCurves = namedCurves;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
+    }
+
+    public void init(TlsContext context) {
+        super.init(context);
+
+        if (this.tlsSigner != null) {
+            this.tlsSigner.init(context);
+        }
     }
 
     public void skipServerCredentials() throws IOException {
@@ -111,8 +118,7 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException {
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
          * ECDH_ECDSA and ECDH_RSA. Their use with ECDHE_ECDSA and ECDHE_RSA is prohibited because
@@ -151,8 +157,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
             return;
         }
 
-        AsymmetricCipherKeyPair ecAgreeClientKeyPair = TlsECCUtils.generateECKeyPair(
-            context.getSecureRandom(), ecAgreeServerPublicKey.getParameters());
+        AsymmetricCipherKeyPair ecAgreeClientKeyPair = TlsECCUtils.generateECKeyPair(context.getSecureRandom(),
+            ecAgreeServerPublicKey.getParameters());
         this.ecAgreeClientPrivateKey = (ECPrivateKeyParameters) ecAgreeClientKeyPair.getPrivate();
 
         byte[] point = TlsECCUtils.serializeECPublicKey(serverECPointFormats,
@@ -178,8 +184,8 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
         ECDomainParameters curve_params = this.ecAgreeServerPrivateKey.getParameters();
 
-        this.ecAgreeClientPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils
-            .deserializeECPublicKey(serverECPointFormats, curve_params, point));
+        this.ecAgreeClientPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
+            serverECPointFormats, curve_params, point));
     }
 
     public byte[] generatePremasterSecret() throws IOException {
@@ -188,13 +194,11 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
         }
 
         if (ecAgreeServerPrivateKey != null) {
-            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeClientPublicKey,
-                ecAgreeServerPrivateKey);
+            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeClientPublicKey, ecAgreeServerPrivateKey);
         }
 
         if (ecAgreeClientPrivateKey != null) {
-            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeServerPublicKey,
-                ecAgreeClientPrivateKey);
+            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeServerPublicKey, ecAgreeClientPrivateKey);
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
