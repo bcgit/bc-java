@@ -17,11 +17,11 @@ public interface X9ObjectIdentifiers
 
     static final ASN1ObjectIdentifier characteristic_two_field = id_fieldType.branch("2");
 
-    static final ASN1ObjectIdentifier gnBasis = id_fieldType.branch("2.3.1");
+    static final ASN1ObjectIdentifier gnBasis = characteristic_two_field.branch("3.1");
 
-    static final ASN1ObjectIdentifier tpBasis = id_fieldType.branch("2.3.2");
+    static final ASN1ObjectIdentifier tpBasis = characteristic_two_field.branch("3.2");
 
-    static final ASN1ObjectIdentifier ppBasis = id_fieldType.branch("2.3.3");
+    static final ASN1ObjectIdentifier ppBasis = characteristic_two_field.branch("3.3");
 
     static final ASN1ObjectIdentifier id_ecSigType = ansi_X9_62.branch("4");
 
