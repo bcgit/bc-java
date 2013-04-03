@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
-public class ProtocolVersion {
+public final class ProtocolVersion {
 
     public static final ProtocolVersion SSLv3 = new ProtocolVersion(0x0300, "SSL 3.0");
     public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301, "TLS 1.0");
@@ -39,8 +39,14 @@ public class ProtocolVersion {
         return this == SSLv3;
     }
 
-    public boolean isTLS() {
-        return getMajorVersion() == 0x03 && !isSSL();
+    public ProtocolVersion getEquivalentTLSVersion() {
+        if (!isDTLS()) {
+            return this;
+        }
+        if (this == DTLSv10) {
+            return TLSv11;
+        }
+        return TLSv12;
     }
 
     public boolean isEqualOrEarlierVersionOf(ProtocolVersion version) {

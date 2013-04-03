@@ -386,8 +386,7 @@ public class TlsUtils
 
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
     {
-        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion)
-            || ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(clientVersion);
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
     }
 
     /**
@@ -484,7 +483,8 @@ public class TlsUtils
     {
         ProtocolVersion version = context.getServerVersion();
 
-        if (version.isSSL()) {
+        if (version.isSSL())
+        {
             throw new IllegalStateException("No PRF available for SSLv3 session");
         }
 
@@ -495,8 +495,7 @@ public class TlsUtils
 
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
-                && !ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version))
+            if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion()))
             {
                 return PRF_legacy(secret, label, labelSeed, size);
             }

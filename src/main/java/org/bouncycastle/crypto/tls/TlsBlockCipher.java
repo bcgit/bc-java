@@ -33,17 +33,16 @@ public class TlsBlockCipher implements TlsCipher {
         return readMac;
     }
 
-    public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher,
-        BlockCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize) throws IOException {
+    public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher, BlockCipher serverWriteCipher,
+        Digest clientWriteDigest, Digest serverWriteDigest, int cipherKeySize) throws IOException {
 
         this.context = context;
 
         this.randomData = new byte[256];
         context.getSecureRandom().nextBytes(randomData);
 
-        this.useExplicitIV = !context.getServerVersion().isEqualOrEarlierVersionOf(
-            ProtocolVersion.TLSv10);
+        this.useExplicitIV = ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(context.getServerVersion()
+            .getEquivalentTLSVersion());
 
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();
@@ -74,11 +73,9 @@ public class TlsBlockCipher implements TlsCipher {
             client_write_IV = new byte[clientWriteCipher.getBlockSize()];
             server_write_IV = new byte[serverWriteCipher.getBlockSize()];
         } else {
-            client_write_IV = Arrays.copyOfRange(key_block, offset,
-                offset + clientWriteCipher.getBlockSize());
+            client_write_IV = Arrays.copyOfRange(key_block, offset, offset + clientWriteCipher.getBlockSize());
             offset += clientWriteCipher.getBlockSize();
-            server_write_IV = Arrays.copyOfRange(key_block, offset,
-                offset + serverWriteCipher.getBlockSize());
+            server_write_IV = Arrays.copyOfRange(key_block, offset, offset + serverWriteCipher.getBlockSize());
             offset += serverWriteCipher.getBlockSize();
         }
 
@@ -128,11 +125,10 @@ public class TlsBlockCipher implements TlsCipher {
         int padding_length = blockSize - 1 - ((len + macSize) % blockSize);
 
         // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
-        if (version.isTLS()) {
+        if (!version.isDTLS() && !version.isSSL()) {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(),
-                maxExtraPadBlocks);
+            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
@@ -169,8 +165,7 @@ public class TlsBlockCipher implements TlsCipher {
         return outbuf;
     }
 
-    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
-        throws IOException {
+    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len) throws IOException {
         int blockSize = decryptCipher.getBlockSize();
         int macSize = readMac.getSize();
 
@@ -203,10 +198,9 @@ public class TlsBlockCipher implements TlsCipher {
 
         int macInputLen = len - totalPad - macSize;
 
-        byte[] decryptedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset
-            + macInputLen + macSize);
-        byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset,
-            macInputLen, len - macSize, randomData);
+        byte[] decryptedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset + macInputLen + macSize);
+        byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, macInputLen, len
+            - macSize, randomData);
 
         boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, decryptedMac);
 
@@ -226,8 +220,7 @@ public class TlsBlockCipher implements TlsCipher {
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        if ((context.getServerVersion().isSSL() && totalPad > blockSize)
-            || (macSize + totalPad > len)) {
+        if ((context.getServerVersion().isSSL() && totalPad > blockSize) || (macSize + totalPad > len)) {
             totalPad = 0;
         } else {
             int padPos = end - totalPad;

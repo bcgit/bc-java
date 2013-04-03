@@ -18,12 +18,10 @@ public class TlsAEADCipher implements TlsCipher {
 
     protected byte[] encryptImplicitNonce, decryptImplicitNonce;
 
-    public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher,
-        AEADBlockCipher serverWriteCipher, int cipherKeySize, int macSize) throws IOException {
+    public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
+        int cipherKeySize, int macSize) throws IOException {
 
-        ProtocolVersion version = context.getServerVersion();
-        if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version)
-            && !ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(version)) {
+        if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion())) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -83,8 +81,7 @@ public class TlsAEADCipher implements TlsCipher {
         return ciphertextLimit - macSize - nonce_explicit_length;
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
-        throws IOException {
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len) throws IOException {
 
         byte[] nonce = new byte[this.encryptImplicitNonce.length + nonce_explicit_length];
         System.arraycopy(encryptImplicitNonce, 0, nonce, 0, encryptImplicitNonce.length);
@@ -104,13 +101,10 @@ public class TlsAEADCipher implements TlsCipher {
         System.arraycopy(nonce, encryptImplicitNonce.length, output, 0, nonce_explicit_length);
         int outputPos = nonce_explicit_length;
 
-        encryptCipher.init(
-            true,
-            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type,
-                plaintextLength)));
+        encryptCipher.init(true,
+            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type, plaintextLength)));
 
-        outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength,
-            output, outputPos);
+        outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength, output, outputPos);
         try {
             outputPos += encryptCipher.doFinal(output, outputPos);
         } catch (Exception e) {
@@ -125,8 +119,7 @@ public class TlsAEADCipher implements TlsCipher {
         return output;
     }
 
-    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
-        throws IOException {
+    public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len) throws IOException {
 
         if (getPlaintextLimit(len) < 0) {
             throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -134,8 +127,7 @@ public class TlsAEADCipher implements TlsCipher {
 
         byte[] nonce = new byte[this.decryptImplicitNonce.length + nonce_explicit_length];
         System.arraycopy(decryptImplicitNonce, 0, nonce, 0, decryptImplicitNonce.length);
-        System.arraycopy(ciphertext, offset, nonce, decryptImplicitNonce.length,
-            nonce_explicit_length);
+        System.arraycopy(ciphertext, offset, nonce, decryptImplicitNonce.length, nonce_explicit_length);
 
         int ciphertextOffset = offset + nonce_explicit_length;
         int ciphertextLength = len - nonce_explicit_length;
@@ -144,13 +136,10 @@ public class TlsAEADCipher implements TlsCipher {
         byte[] output = new byte[plaintextLength];
         int outputPos = 0;
 
-        decryptCipher.init(
-            false,
-            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type,
-                plaintextLength)));
+        decryptCipher.init(false,
+            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type, plaintextLength)));
 
-        outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength,
-            output, outputPos);
+        outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
 
         try {
             outputPos += decryptCipher.doFinal(output, outputPos);
