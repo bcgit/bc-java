@@ -54,43 +54,44 @@ public class X9Curve
             X9FieldElement  x9B = new X9FieldElement(p, (ASN1OctetString)seq.getObjectAt(1));
             curve = new ECCurve.Fp(p, x9A.getValue().toBigInteger(), x9B.getValue().toBigInteger());
         }
+        else if (fieldIdentifier.equals(characteristic_two_field)) 
+        {
+            // Characteristic two field
+            ASN1Sequence parameters = ASN1Sequence.getInstance(fieldID.getParameters());
+            int m = ((ASN1Integer)parameters.getObjectAt(0)).getValue().
+                intValue();
+            ASN1ObjectIdentifier representation
+                = (ASN1ObjectIdentifier)parameters.getObjectAt(1);
+
+            int k1 = 0;
+            int k2 = 0;
+            int k3 = 0;
+
+            if (representation.equals(tpBasis)) 
+            {
+                // Trinomial basis representation
+                k1 = ASN1Integer.getInstance(parameters.getObjectAt(2)).getValue().intValue();
+            }
+            else if (representation.equals(ppBasis))
+            {
+                // Pentanomial basis representation
+                ASN1Sequence pentanomial = ASN1Sequence.getInstance(parameters.getObjectAt(2));
+                k1 = ASN1Integer.getInstance(pentanomial.getObjectAt(0)).getValue().intValue();
+                k2 = ASN1Integer.getInstance(pentanomial.getObjectAt(1)).getValue().intValue();
+                k3 = ASN1Integer.getInstance(pentanomial.getObjectAt(2)).getValue().intValue();
+            }
+            else
+            {
+                throw new IllegalArgumentException("This type of EC basis is not implemented");
+            }
+            X9FieldElement x9A = new X9FieldElement(m, k1, k2, k3, (ASN1OctetString)seq.getObjectAt(0));
+            X9FieldElement x9B = new X9FieldElement(m, k1, k2, k3, (ASN1OctetString)seq.getObjectAt(1));
+            // TODO Is it possible to get the order (n) and cofactor(h) too?
+            curve = new ECCurve.F2m(m, k1, k2, k3, x9A.getValue().toBigInteger(), x9B.getValue().toBigInteger());
+        }
         else
         {
-            if (fieldIdentifier.equals(characteristic_two_field)) 
-            {
-                // Characteristic two field
-                ASN1Sequence parameters = ASN1Sequence.getInstance(fieldID.getParameters());
-                int m = ((ASN1Integer)parameters.getObjectAt(0)).getValue().
-                    intValue();
-                ASN1ObjectIdentifier representation
-                    = (ASN1ObjectIdentifier)parameters.getObjectAt(1);
-
-                int k1 = 0;
-                int k2 = 0;
-                int k3 = 0;
-                if (representation.equals(tpBasis)) 
-                {
-                    // Trinomial basis representation
-                    k1 = ((ASN1Integer)parameters.getObjectAt(2)).getValue().
-                        intValue();
-                }
-                else 
-                {
-                    // Pentanomial basis representation
-                    DERSequence pentanomial
-                        = (DERSequence)parameters.getObjectAt(2);
-                    k1 = ((ASN1Integer)pentanomial.getObjectAt(0)).getValue().
-                        intValue();
-                    k2 = ((ASN1Integer)pentanomial.getObjectAt(1)).getValue().
-                        intValue();
-                    k3 = ((ASN1Integer)pentanomial.getObjectAt(2)).getValue().
-                        intValue();
-                }
-                X9FieldElement x9A = new X9FieldElement(m, k1, k2, k3, (ASN1OctetString)seq.getObjectAt(0));
-                X9FieldElement x9B = new X9FieldElement(m, k1, k2, k3, (ASN1OctetString)seq.getObjectAt(1));
-                // TODO Is it possible to get the order (n) and cofactor(h) too?
-                curve = new ECCurve.F2m(m, k1, k2, k3, x9A.getValue().toBigInteger(), x9B.getValue().toBigInteger());
-            }
+            throw new IllegalArgumentException("This type of ECCurve is not implemented");
         }
 
         if (seq.size() == 3)
@@ -111,8 +112,7 @@ public class X9Curve
         }
         else
         {
-            throw new IllegalArgumentException("This type of ECCurve is not "
-                    + "implemented");
+            throw new IllegalArgumentException("This type of ECCurve is not implemented");
         }
     }
 

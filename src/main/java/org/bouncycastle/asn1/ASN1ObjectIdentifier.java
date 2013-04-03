@@ -13,6 +13,11 @@ public class ASN1ObjectIdentifier
         super(bytes);
     }
 
+    ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branch)
+    {
+        super(oid, branch);
+    }
+
     /**
      * Return an OID that creates a branch under the current one.
      *
@@ -21,7 +26,7 @@ public class ASN1ObjectIdentifier
      */
     public ASN1ObjectIdentifier branch(String branchID)
     {
-        return new ASN1ObjectIdentifier(getId() + "." + branchID);
+        return new ASN1ObjectIdentifier(this, branchID);
     }
 
     /**
