@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.DLSet;
 
 public class Attributes
     extends ASN1Object
@@ -18,7 +19,7 @@ public class Attributes
 
     public Attributes(ASN1EncodableVector v)
     {
-        attributes = new BERSet(v);
+        attributes = new DLSet(v);
     }
 
     public static Attributes getInstance(Object obj)
@@ -33,6 +34,18 @@ public class Attributes
         }
 
         return null;
+    }
+
+    public Attribute[] getAttributes()
+    {
+        Attribute[] rv = new Attribute[attributes.size()];
+
+        for (int i = 0; i != rv.length; i++)
+        {
+            rv[i] = Attribute.getInstance(attributes.getObjectAt(i));
+        }
+
+        return rv;
     }
 
     /**

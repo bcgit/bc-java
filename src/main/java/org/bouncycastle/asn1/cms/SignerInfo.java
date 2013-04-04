@@ -68,6 +68,34 @@ public class SignerInfo
     }
 
     public SignerInfo(
+        SignerIdentifier        sid,
+        AlgorithmIdentifier     digAlgorithm,
+        Attributes              authenticatedAttributes,
+        AlgorithmIdentifier     digEncryptionAlgorithm,
+        ASN1OctetString         encryptedDigest,
+        Attributes              unauthenticatedAttributes)
+    {
+        if (sid.isTagged())
+        {
+            this.version = new ASN1Integer(3);
+        }
+        else
+        {
+            this.version = new ASN1Integer(1);
+        }
+
+        this.sid = sid;
+        this.digAlgorithm = digAlgorithm;
+        this.authenticatedAttributes = ASN1Set.getInstance(authenticatedAttributes);
+        this.digEncryptionAlgorithm = digEncryptionAlgorithm;
+        this.encryptedDigest = encryptedDigest;
+        this.unauthenticatedAttributes = ASN1Set.getInstance(unauthenticatedAttributes);
+    }
+
+    /**
+     * @deprecated use getInstance() method.
+     */
+    public SignerInfo(
         ASN1Sequence seq)
     {
         Enumeration     e = seq.getObjects();
