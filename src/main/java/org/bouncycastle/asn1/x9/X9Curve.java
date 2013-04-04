@@ -77,8 +77,8 @@ public class X9Curve
                 else 
                 {
                     // Pentanomial basis representation
-                    DERSequence pentanomial
-                        = (DERSequence)parameters.getObjectAt(2);
+                    ASN1Sequence pentanomial
+                        = ASN1Sequence.getInstance(parameters.getObjectAt(2));
                     k1 = ((ASN1Integer)pentanomial.getObjectAt(0)).getValue().
                         intValue();
                     k2 = ((ASN1Integer)pentanomial.getObjectAt(1)).getValue().
