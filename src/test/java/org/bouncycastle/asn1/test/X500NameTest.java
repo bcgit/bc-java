@@ -44,7 +44,15 @@ public class X500NameTest
        "unstructuredAddress=192.168.1.33,unstructuredName=pixfirewall.ciscopix.com,CN=pixfirewall.ciscopix.com",
        "CN=*.canal-plus.com,OU=Provided by TBS INTERNET http://www.tbs-certificats.com/,OU=\\ CANAL \\+,O=CANAL\\+DISTRIBUTION,L=issy les moulineaux,ST=Hauts de Seine,C=FR",
        "O=Bouncy Castle,CN=www.bouncycastle.org\\ ",
-       "O=Bouncy Castle,CN=c:\\\\fred\\\\bob"
+       "O=Bouncy Castle,CN=c:\\\\fred\\\\bob",
+    };
+
+    String[] hexSubjects =
+    {
+        "CN=\\20Test\\20X,O=\\20Test,C=GB",    // input
+        "CN=\\ Test X,O=\\ Test,C=GB",          // expected
+        "CN=\\20Test\\20X\\20,O=\\20Test,C=GB",    // input
+        "CN=\\ Test X\\ ,O=\\ Test,C=GB"          // expected
     };
 
     public String getName()
@@ -327,10 +335,27 @@ public class X500NameTest
             aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
 
             name = X500Name.getInstance(aIn.readObject());
-
             if (!name.toString().equals(subjects[i]))
             {
-                fail("failed regeneration test " + i);
+                fail("failed regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
+            }
+        }
+
+        for (int i = 0; i < hexSubjects.length; i += 2)
+        {
+            X500Name    name = new X500Name(hexSubjects[i]);
+
+            bOut = new ByteArrayOutputStream();
+            aOut = new ASN1OutputStream(bOut);
+
+            aOut.writeObject(name);
+
+            aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+            name = X500Name.getInstance(aIn.readObject());
+            if (!name.toString().equals(hexSubjects[i + 1]))
+            {
+                fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
             }
         }
 
