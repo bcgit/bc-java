@@ -26,7 +26,7 @@ public class ServiceType
     public static final ServiceType VSD = new ServiceType(2);
 
     /**
-     * Identifier of VPKC service (Verify Public Key Certificates).
+     * Identifier of VPKC service (Verify Public Key Certificates (also referred to as CPKC)).
      */
     public static final ServiceType VPKC = new ServiceType(3);
 
