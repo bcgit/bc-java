@@ -16,8 +16,6 @@ public abstract class ECCurve
 
     public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
-    public abstract ECPoint decodePoint(byte[] encoded);
-
     public abstract ECPoint getInfinity();
 
     public ECFieldElement getA()
@@ -28,6 +26,74 @@ public abstract class ECCurve
     public ECFieldElement getB()
     {
         return b;
+    }
+
+    protected abstract ECPoint decompressPoint(int yTilde, BigInteger X1);
+
+    /**
+     * Decode a point on this curve from its ASN.1 encoding. The different
+     * encodings are taken account of, including point compression for
+     * <code>F<sub>p</sub></code> (X9.62 s 4.2.1 pg 17).
+     * @return The decoded point.
+     */
+    public ECPoint decodePoint(byte[] encoded)
+    {
+        ECPoint p = null;
+        int expectedLength = (getFieldSize() + 7) / 8;
+
+        switch (encoded[0])
+        {
+        case 0x00: // infinity
+        {
+            if (encoded.length != 1)
+            {
+                throw new IllegalArgumentException("Incorrect length for infinity encoding");
+            }
+
+            p = getInfinity();
+            break;
+        }
+        case 0x02: // compressed
+        case 0x03: // compressed
+        {
+            if (encoded.length != (expectedLength + 1))
+            {
+                throw new IllegalArgumentException("Incorrect length for compressed encoding");
+            }
+
+            int yTilde = encoded[0] & 1;
+            BigInteger X1 = fromArray(encoded, 1, expectedLength);
+
+            p = decompressPoint(yTilde, X1);
+            break;
+        }
+        case 0x04: // uncompressed
+        case 0x06: // hybrid
+        case 0x07: // hybrid
+        {
+            if (encoded.length != (2 * expectedLength + 1))
+            {
+                throw new IllegalArgumentException("Incorrect length for uncompressed/hybrid encoding");
+            }
+
+            BigInteger X1 = fromArray(encoded, 1, expectedLength);
+            BigInteger Y1 = fromArray(encoded, 1 + expectedLength, expectedLength);
+
+            p = createPoint(X1, Y1, false);
+            break;
+        }
+        default:
+            throw new IllegalArgumentException("Invalid point encoding 0x" + Integer.toString(encoded[0], 16));
+        }
+
+        return p;
+    }
+
+    private static BigInteger fromArray(byte[] buf, int off, int length)
+    {
+        byte[] mag = new byte[length];
+        System.arraycopy(buf, off, mag, 0, length);
+        return new BigInteger(1, mag);
     }
 
     /**
@@ -66,79 +132,31 @@ public abstract class ECCurve
             return new ECPoint.Fp(this, fromBigInteger(x), fromBigInteger(y), withCompression);
         }
 
-        /**
-         * Decode a point on this curve from its ASN.1 encoding. The different
-         * encodings are taken account of, including point compression for
-         * <code>F<sub>p</sub></code> (X9.62 s 4.2.1 pg 17).
-         * @return The decoded point.
-         */
-        public ECPoint decodePoint(byte[] encoded)
+        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECPoint p = null;
+            ECFieldElement x = fromBigInteger(X1);
+            ECFieldElement alpha = x.multiply(x.square().add(a)).add(b);
+            ECFieldElement beta = alpha.sqrt();
 
-            switch (encoded[0])
+            //
+            // if we can't find a sqrt we haven't got a point on the
+            // curve - run!
+            //
+            if (beta == null)
             {
-                // infinity
-            case 0x00:
-                if (encoded.length > 1)
-                {
-                    throw new RuntimeException("Invalid point encoding");
-                }
-                p = getInfinity();
-                break;
-                // compressed
-            case 0x02:
-            case 0x03:
-                int ytilde = encoded[0] & 1;
-                byte[]  i = new byte[encoded.length - 1];
-
-                System.arraycopy(encoded, 1, i, 0, i.length);
-
-                ECFieldElement x = new ECFieldElement.Fp(this.q, new BigInteger(1, i));
-                ECFieldElement alpha = x.multiply(x.square().add(a)).add(b);
-                ECFieldElement beta = alpha.sqrt();
-
-                //
-                // if we can't find a sqrt we haven't got a point on the
-                // curve - run!
-                //
-                if (beta == null)
-                {
-                    throw new RuntimeException("Invalid point compression");
-                }
-
-                int bit0 = (beta.toBigInteger().testBit(0) ? 1 : 0);
-
-                if (bit0 == ytilde)
-                {
-                    p = new ECPoint.Fp(this, x, beta, true);
-                }
-                else
-                {
-                    p = new ECPoint.Fp(this, x,
-                        new ECFieldElement.Fp(this.q, q.subtract(beta.toBigInteger())), true);
-                }
-                break;
-                // uncompressed
-            case 0x04:
-                // hybrid
-            case 0x06:
-            case 0x07:
-                byte[]  xEnc = new byte[(encoded.length - 1) / 2];
-                byte[]  yEnc = new byte[(encoded.length - 1) / 2];
-
-                System.arraycopy(encoded, 1, xEnc, 0, xEnc.length);
-                System.arraycopy(encoded, xEnc.length + 1, yEnc, 0, yEnc.length);
-
-                p = new ECPoint.Fp(this,
-                        new ECFieldElement.Fp(this.q, new BigInteger(1, xEnc)),
-                        new ECFieldElement.Fp(this.q, new BigInteger(1, yEnc)));
-                break;
-            default:
-                throw new RuntimeException("Invalid point encoding 0x" + Integer.toString(encoded[0], 16));
+                throw new RuntimeException("Invalid point compression");
             }
 
-            return p;
+            BigInteger betaValue = beta.toBigInteger();
+            int bit0 = betaValue.testBit(0) ? 1 : 0;
+
+            if (bit0 != yTilde)
+            {
+                // Use the other root
+                beta = fromBigInteger(q.subtract(betaValue));
+            }
+
+            return new ECPoint.Fp(this, x, beta, true);
         }
 
         public ECPoint getInfinity()
@@ -403,62 +421,6 @@ public abstract class ECCurve
             return new ECPoint.F2m(this, fromBigInteger(x), fromBigInteger(y), withCompression);
         }
 
-        /* (non-Javadoc)
-         * @see org.bouncycastle.math.ec.ECCurve#decodePoint(byte[])
-         */
-        public ECPoint decodePoint(byte[] encoded)
-        {
-            ECPoint p = null;
-
-            switch (encoded[0])
-            {
-                // infinity
-            case 0x00:
-                if (encoded.length > 1)
-                {
-                    throw new RuntimeException("Invalid point encoding");
-                }
-                p = getInfinity();
-                break;
-                // compressed
-            case 0x02:
-            case 0x03:
-                byte[] enc = new byte[encoded.length - 1];
-                System.arraycopy(encoded, 1, enc, 0, enc.length);
-                if (encoded[0] == 0x02) 
-                {
-                        p = decompressPoint(enc, 0);
-                }
-                else 
-                {
-                        p = decompressPoint(enc, 1);
-                }
-                break;
-                // uncompressed
-            case 0x04:
-                // hybrid
-            case 0x06:
-            case 0x07:
-                byte[] xEnc = new byte[(encoded.length - 1) / 2];
-                byte[] yEnc = new byte[(encoded.length - 1) / 2];
-
-                System.arraycopy(encoded, 1, xEnc, 0, xEnc.length);
-                System.arraycopy(encoded, xEnc.length + 1, yEnc, 0, yEnc.length);
-
-                p = new ECPoint.F2m(this,
-                    new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3,
-                        new BigInteger(1, xEnc)),
-                    new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3,
-                        new BigInteger(1, yEnc)));
-                break;
-
-            default:
-                throw new RuntimeException("Invalid point encoding 0x" + Integer.toString(encoded[0], 16));
-            }
-
-            return p;
-        }
-
         public ECPoint getInfinity()
         {
             return infinity;
@@ -508,18 +470,15 @@ public abstract class ECCurve
         /**
          * Decompresses a compressed point P = (xp, yp) (X9.62 s 4.2.2).
          * 
-         * @param xEnc
-         *            The encoding of field element xp.
-         * @param ypBit
+         * @param yTilde
          *            ~yp, an indication bit for the decompression of yp.
+         * @param X1
+         *            The field element xp.
          * @return the decompressed point.
          */
-        private ECPoint decompressPoint(
-            byte[] xEnc, 
-            int ypBit)
+        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECFieldElement xp = new ECFieldElement.F2m(
-                    this.m, this.k1, this.k2, this.k3, new BigInteger(1, xEnc));
+            ECFieldElement xp = fromBigInteger(X1);
             ECFieldElement yp = null;
             if (xp.toBigInteger().equals(ECConstants.ZERO))
             {
@@ -531,22 +490,16 @@ public abstract class ECCurve
             }
             else
             {
-                ECFieldElement beta = xp.add(a).add(
-                        b.multiply(xp.square().invert()));
+                ECFieldElement beta = xp.add(a).add(b.multiply(xp.square().invert()));
                 ECFieldElement z = solveQuadradicEquation(beta);
                 if (z == null)
                 {
-                    throw new RuntimeException("Invalid point compression");
+                    throw new IllegalArgumentException("Invalid point compression");
                 }
-                int zBit = 0;
-                if (z.toBigInteger().testBit(0))
+                int zBit = z.toBigInteger().testBit(0) ? 1 : 0;
+                if (zBit != yTilde)
                 {
-                    zBit = 1;
-                }
-                if (zBit != ypBit)
-                {
-                    z = z.add(new ECFieldElement.F2m(this.m, this.k1, this.k2,
-                            this.k3, ECConstants.ONE));
+                    z = z.add(fromBigInteger(ECConstants.ONE));
                 }
                 yp = xp.multiply(z);
             }
