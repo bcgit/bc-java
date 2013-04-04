@@ -1,12 +1,18 @@
 package org.bouncycastle.dvcs;
 
-/**
- * Created with IntelliJ IDEA.
- * User: dgh
- * Date: 31/03/13
- * Time: 1:07 PM
- * To change this template use File | Settings | File Templates.
- */
+import org.bouncycastle.asn1.x509.DigestInfo;
+
 public class MessageImprint
 {
+    private final DigestInfo messageImprint;
+
+    public MessageImprint(DigestInfo messageImprint)
+    {
+        this.messageImprint = messageImprint;
+    }
+
+    public DigestInfo toASN1Structure()
+    {
+        return messageImprint;
+    }
 }
