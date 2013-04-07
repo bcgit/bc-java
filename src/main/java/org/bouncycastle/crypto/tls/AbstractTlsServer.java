@@ -143,6 +143,13 @@ public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsSe
     public int getSelectedCipherSuite() throws IOException {
 
         /*
+         * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate
+         * cipher suites against the "signature_algorithms" extension before selecting them. This is
+         * somewhat inelegant but is a compromise designed to minimize changes to the original
+         * cipher suite design.
+         */
+
+        /*
          * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these
          * extensions MUST use the client's enumerated capabilities to guide its selection of an
          * appropriate cipher suite. One of the proposed ECC cipher suites must be negotiated only
