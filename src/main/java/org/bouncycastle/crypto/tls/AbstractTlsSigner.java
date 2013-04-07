@@ -1,6 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
-abstract class AbstractTlsSigner implements TlsSigner {
+public abstract class AbstractTlsSigner implements TlsSigner {
 
     protected TlsContext context;
 

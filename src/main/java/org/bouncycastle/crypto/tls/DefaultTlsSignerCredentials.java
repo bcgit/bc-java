@@ -53,7 +53,7 @@ public class DefaultTlsSignerCredentials implements TlsSignerCredentials {
 
     public byte[] generateCertificateSignature(byte[] md5andsha1) throws IOException {
         try {
-            return signer.calculateRawSignature(context.getSecureRandom(), privateKey, md5andsha1);
+            return signer.generateRawSignature(privateKey, md5andsha1);
         } catch (CryptoException e) {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
