@@ -34,7 +34,24 @@ public class EnvelopedData
         this.encryptedContentInfo = encryptedContentInfo;
         this.unprotectedAttrs = unprotectedAttrs;
     }
-                         
+
+    public EnvelopedData(
+        OriginatorInfo          originatorInfo,
+        ASN1Set                 recipientInfos,
+        EncryptedContentInfo    encryptedContentInfo,
+        Attributes              unprotectedAttrs)
+    {
+        version = new ASN1Integer(calculateVersion(originatorInfo, recipientInfos, ASN1Set.getInstance(unprotectedAttrs)));
+
+        this.originatorInfo = originatorInfo;
+        this.recipientInfos = recipientInfos;
+        this.encryptedContentInfo = encryptedContentInfo;
+        this.unprotectedAttrs = ASN1Set.getInstance(unprotectedAttrs);
+    }
+
+    /**
+     * @deprecated use getInstance()
+     */
     public EnvelopedData(
         ASN1Sequence seq)
     {

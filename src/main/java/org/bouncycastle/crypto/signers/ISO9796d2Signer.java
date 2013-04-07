@@ -327,6 +327,13 @@ public class ISO9796d2Signer
         
         recoveredMessage = null;
         fullMessage = false;
+
+        if (preSig != null)
+        {
+            preSig = null;
+            clearBlock(preBlock);
+            preBlock = null;
+        }
     }
 
     /**

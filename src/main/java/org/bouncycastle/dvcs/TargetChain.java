@@ -4,8 +4,15 @@ import org.bouncycastle.asn1.dvcs.TargetEtcChain;
 
 public class TargetChain
 {
-    public TargetChain(TargetEtcChain cert)
+    private final TargetEtcChain certs;
+
+    public TargetChain(TargetEtcChain certs)
     {
-        //To change body of created methods use File | Settings | File Templates.
+        this.certs = certs;
+    }
+
+    public TargetEtcChain toASN1Structure()
+    {
+        return certs;
     }
 }

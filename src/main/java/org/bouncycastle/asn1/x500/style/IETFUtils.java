@@ -45,6 +45,7 @@ public class IETFUtils
 
         boolean nonWhiteSpaceEncountered = false;
         int     lastEscaped = 0;
+        char    hex1 = 0;
 
         for (int i = start; i != elts.length; i++)
         {
@@ -78,6 +79,18 @@ public class IETFUtils
                 {
                     continue;
                 }
+                if (escaped && isHexDigit(c))
+                {
+                    if (hex1 != 0)
+                    {
+                        buf.append((char)(convertHex(hex1) * 16 + convertHex(c)));
+                        escaped = false;
+                        hex1 = 0;
+                        continue;
+                    }
+                    hex1 = c;
+                    continue;
+                }
                 buf.append(c);
                 escaped = false;
             }
@@ -92,6 +105,24 @@ public class IETFUtils
         }
 
         return buf.toString();
+    }
+
+    private static boolean isHexDigit(char c)
+    {
+        return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
+    }
+
+    private static int convertHex(char c)
+    {
+        if ('0' <= c && c <= '9')
+        {
+            return c - '0';
+        }
+        if ('a' <= c && c <= 'f')
+        {
+            return c - 'a' + 10;
+        }
+        return c - 'A' + 10;
     }
 
     public static RDN[] rDNsFromString(String name, X500NameStyle x500Style)
@@ -224,29 +255,13 @@ public class IETFUtils
         int     off)
         throws IOException
     {
-        str = Strings.toLowerCase(str);
         byte[] data = new byte[(str.length() - off) / 2];
         for (int index = 0; index != data.length; index++)
         {
             char left = str.charAt((index * 2) + off);
             char right = str.charAt((index * 2) + off + 1);
 
-            if (left < 'a')
-            {
-                data[index] = (byte)((left - '0') << 4);
-            }
-            else
-            {
-                data[index] = (byte)((left - 'a' + 10) << 4);
-            }
-            if (right < 'a')
-            {
-                data[index] |= (byte)(right - '0');
-            }
-            else
-            {
-                data[index] |= (byte)(right - 'a' + 10);
-            }
+            data[index] = (byte)((convertHex(left) << 4) | convertHex(right));
         }
 
         return ASN1Primitive.fromByteArray(data);
