@@ -104,6 +104,9 @@ public class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         d.doFinal(hash, 0);
 
         byte[] sigBytes = serverCredentials.generateCertificateSignature(hash);
+        /*
+         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended from TLS 1.2
+         */
         TlsUtils.writeOpaque16(sigBytes, buf);
 
         return buf.toByteArray();
