@@ -67,15 +67,21 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
                 HashAlgorithm.sha224, HashAlgorithm.sha1 };
 
             // TODO Sort out ECDSA signatures and add them as the preferred option here
-            short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa, SignatureAlgorithm.dsa };
+            short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa };
 
             this.supportedSignatureAlgorithms = new Vector();
             for (int i = 0; i < hashAlgorithms.length; ++i) {
                 for (int j = 0; j < signatureAlgorithms.length; ++j) {
-                    supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
+                    this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
                         signatureAlgorithms[j]));
                 }
             }
+
+            /*
+             * RFC 5264 7.4.3. Currently, DSA [DSS] may only be used with SHA-1.
+             */
+            this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1,
+                SignatureAlgorithm.dsa));
 
             if (clientExtensions == null) {
                 clientExtensions = new Hashtable();
