@@ -67,11 +67,7 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
 
         TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyEncipherment);
 
-        // TODO
-        /*
-         * Perform various checks per RFC2246 7.4.2: "Unless otherwise specified, the signing
-         * algorithm for the certificate must be the same as the algorithm for the certificate key."
-         */
+        super.processServerCertificate(serverCertificate);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {

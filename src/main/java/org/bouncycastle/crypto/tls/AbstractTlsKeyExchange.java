@@ -73,6 +73,22 @@ public abstract class AbstractTlsKeyExchange implements TlsKeyExchange {
         }
     }
 
+    public void processServerCertificate(Certificate serverCertificate) throws IOException {
+
+        if (supportedSignatureAlgorithms == null) {
+            /*
+             * TODO RFC 2264 7.4.2. Unless otherwise specified, the signing algorithm for the
+             * certificate must be the same as the algorithm for the certificate key.
+             */
+        } else {
+            /*
+             * TODO RFC 5264 7.4.2. If the client provided a "signature_algorithms" extension, then
+             * all certificates provided by the server MUST be signed by a hash/signature algorithm
+             * pair that appears in that extension.
+             */
+        }
+    }
+
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
         processServerCertificate(serverCredentials.getCertificate());
     }

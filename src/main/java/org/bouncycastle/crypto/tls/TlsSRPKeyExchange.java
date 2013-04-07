@@ -94,11 +94,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange {
 
         TlsUtils.validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
 
-        // TODO
-        /*
-         * Perform various checks per RFC2246 7.4.2: "Unless otherwise specified, the signing
-         * algorithm for the certificate must be the same as the algorithm for the certificate key."
-         */
+        super.processServerCertificate(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange() {
