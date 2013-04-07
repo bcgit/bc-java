@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.GenericSigner;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.util.Arrays;
 
 public class TlsRSASigner extends AbstractTlsSigner {
@@ -45,7 +46,20 @@ public class TlsRSASigner extends AbstractTlsSigner {
     }
 
     protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp) {
-        Signer s = new GenericSigner(createRSAImpl(), d);
+        Signer s;
+        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion())) {
+            /*
+             * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
+             * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
+             */
+            s = new RSADigestSigner(d);
+        } else {
+            /*
+             * RFC 5246 4.7. Note that earlier versions of TLS used a different RSA signature scheme
+             * that did not include a DigestInfo encoding.
+             */
+            s = new GenericSigner(createRSAImpl(), d);
+        }
         s.init(forSigning, cp);
         return s;
     }
