@@ -113,11 +113,17 @@ public class HashDRGBTest extends SimpleTest
         Collection rv = new ArrayList();
 
         TestVector tv = new TestVector("a37a3e08d8393feb01c4d78cb6a4d1e210c288c89e9838176bc78946745f1c5bea44cf15e061601bfd45f7b3b95be924", true, "8243299805c0877e", 128, "a05002f98d5676e1b2e3b3d4686bb9055a830a39"); 
+         rv.add(tv);
+        // line 209 of Hash_DRBG.txt
+//        tv = new TestVector(
+//                "55d201f2e3e2a6b42c95e73539ccf3ca51457ff8639e023be8a9c891ad318aa5b9bbf6b48d14d647d20708e7782bd7e0", // entropy 
+//                true, // prediction resistance 
+//                "438bc46d0de7db69", // nonce
+//                128, // security strength
+//                "aed4af08f9c1bda495338c305946d4c94452a785"); // result
+//        tv.setAdditionalInput("4bd19fd0f73d92373a3633375a367ee2");  // additional input
+//        tv.setAdditionalInput("b247178c21b266432594738d2430cb1d");  // additional input
         rv.add(tv);
-//        tv = new TestVector("55d201f2e3e2a6b42c95e73539ccf3ca51457ff8639e023be8a9c891ad318aa5b9bbf6b48d14d647d20708e7782bd7e0", true, "438bc46d0de7db69", 128, "aed4af08f9c1bda495338c305946d4c94452a785");
-//        tv.setAdditionalInput("4bd19fd0f73d92373a3633375a367ee2");
-//        tv.setAdditionalInput("b247178c21b266432594738d2430cb1d");
-//        rv.add(tv);
         return rv;
         
     }

@@ -5,6 +5,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class HashSP800DRBG implements DRBG
 {
+    private final static byte[]     ONE = { 0x01 };
     private Digest                 _digest;
     private byte[]                 _V;
     private byte[]                 _C;
@@ -27,6 +28,7 @@ public class HashSP800DRBG implements DRBG
         _entropySource = entropySource;
         _securityStrength = securityStrength;
         _seedLength = seedlen;
+        
         // 1. seed_material = entropy_input || nonce || personalization_string.
         // 2. seed = Hash_df (seed_material, seedlen).
         // 3. V = seed.
@@ -49,14 +51,14 @@ public class HashSP800DRBG implements DRBG
 
         System.out.println("Constructor SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = getDFBytes(seedMaterial, _seedLength);
+        byte[] seed = hash_df(seedMaterial, _seedLength);
         
         System.out.println("Constructor Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = getDFBytes(subV, _seedLength);
+        _C = hash_df(subV, _seedLength);
         _reseedCounter = 1;
         
         System.out.println("Constructor V: "+ new String(Hex.encode(_V)));        
@@ -94,20 +96,20 @@ public class HashSP800DRBG implements DRBG
             System.arraycopy(_V, 0, newInput, 1, _V.length);
             // TODO: inOff / inLength
             System.arraycopy(additionalInput, 0, newInput, 1 + _V.length, additionalInput.length);
-            byte[] w = getBytes(newInput);
+            byte[] w = hash(newInput);
 
             addTo(_V, w);
         }
         
         // 3.
-        byte[] rv = getByteGen(_V, numberOfBits);
+        byte[] rv = hashgen(_V, numberOfBits);
         
         // 4.
         byte[] subH = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subH, 1, _V.length);
         subH[0] = 0x03;
         
-        byte[] H = getBytes(subH);
+        byte[] H = hash(subH);
         
         // 5.
         addTo(_V, H);
@@ -177,13 +179,16 @@ public class HashSP800DRBG implements DRBG
         byte[] seedMaterial = new byte[1+ _V.length + entropy.length + additionalInput.length];
         
         seedMaterial[0] = 0x01;
+        int pos = 1;
         System.arraycopy(_V, 0, seedMaterial, 1, _V.length);
-        System.arraycopy(entropy, 0, seedMaterial, 1+_V.length, entropy.length);
-        System.arraycopy(additionalInput, 0, seedMaterial, 1+_V.length+entropy.length,additionalInput.length);
+        pos += _V.length;
+        System.arraycopy(entropy, 0, seedMaterial, pos, entropy.length);
+        pos += entropy.length;
+        System.arraycopy(additionalInput, 0, seedMaterial, pos ,additionalInput.length);
 
         System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = getDFBytes(seedMaterial, _seedLength);
+        byte[] seed = hash_df(seedMaterial, _seedLength);
         
         System.out.println("Reseed Seed: "+ new String(Hex.encode(seed)));
 
@@ -191,7 +196,7 @@ public class HashSP800DRBG implements DRBG
         byte[] subV = new byte[_V.length + 1];
         subV[0] = 0x00;
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = getDFBytes(subV, _seedLength);
+        _C = hash_df(subV, _seedLength);
         _reseedCounter = 1;
         
         System.out.println("Reseed V: "+ new String(Hex.encode(_V)));
@@ -202,10 +207,6 @@ public class HashSP800DRBG implements DRBG
     // ---- Internal manipulation --- 
     // ---- Migrating from the external HashDF class --
     
-    private byte[] getDFBytes(byte[] seedMaterial, int seedLength)
-    {
-        return hashDFProcess(_digest, seedLength, seedMaterial);
-    }
 
     // 1. temp = the Null string.
     // 2. .
@@ -218,27 +219,27 @@ public class HashSP800DRBG implements DRBG
     // 4.2 counter = counter + 1.
     // 5. requested_bits = Leftmost (no_of_bits_to_return) of temp.
     // 6. Return SUCCESS and requested_bits.
-    private byte[] hashDFProcess(Digest digest, int bitLength, byte[] inputString)
+    private byte[] hash_df(byte[] seedMaterial, int seedLength)
     {
-        byte[] temp = new byte[bitLength / 8];
+        byte[] temp = new byte[seedLength / 8];
 
-        int len = temp.length / digest.getDigestSize();
+        int len = temp.length / _digest.getDigestSize();
         int counter = 1;
 
-        byte[] dig = new byte[digest.getDigestSize()];
+        byte[] dig = new byte[_digest.getDigestSize()];
 
         for (int i = 0; i <= len; i++)
         {
-            digest.update((byte)counter);
+            _digest.update((byte)counter);
 
-            digest.update((byte)(bitLength >> 24));
-            digest.update((byte)(bitLength >> 16));
-            digest.update((byte)(bitLength >> 8));
-            digest.update((byte)bitLength);
+            _digest.update((byte)(seedLength >> 24));
+            _digest.update((byte)(seedLength >> 16));
+            _digest.update((byte)(seedLength >> 8));
+            _digest.update((byte)seedLength);
 
-            digest.update(inputString, 0, inputString.length);
+            _digest.update(seedMaterial, 0, seedMaterial.length);
 
-            digest.doFinal(dig, 0);
+            _digest.doFinal(dig, 0);
 
             int bytesToCopy = ((temp.length - i * dig.length) > dig.length)
                     ? dig.length
@@ -251,7 +252,7 @@ public class HashSP800DRBG implements DRBG
         return temp;
     }
     
-    private byte[] getBytes(byte[] input)
+    private byte[] hash(byte[] input)
     {
         _digest.update(input, 0, input.length);
         byte[] hash = new byte[_digest.getDigestSize()];
@@ -259,11 +260,6 @@ public class HashSP800DRBG implements DRBG
         return hash;
     }
     
-    private byte[] getByteGen(byte[] input, int length)
-    {
-        return byteGenProcess(_digest, input, length);
-    }
-
     // 1. m = [requested_number_of_bits / outlen]
     // 2. data = V.
     // 3. W = the Null string.
@@ -273,43 +269,29 @@ public class HashSP800DRBG implements DRBG
     // 4.3 data = (data + 1) mod 2^seedlen
     // .
     // 5. returned_bits = Leftmost (requested_no_of_bits) bits of W.
-    private byte[] byteGenProcess(Digest digest, byte[] input, int lengthInBits)
+    private byte[] hashgen(byte[] input, int lengthInBits)
     {
-        int m = (lengthInBits / 8) / digest.getDigestSize();
+        int digestSize = _digest.getDigestSize();
+        int m = (lengthInBits / 8) / digestSize;
 
         byte[] data = new byte[input.length];
         System.arraycopy(input, 0, data, 0, input.length);
 
         byte[] W = new byte[lengthInBits / 8];
 
-        byte[] dig = new byte[digest.getDigestSize()];
-
+        byte[] dig;
         for (int i = 0; i <= m; i++)
         {
-            digest.update(data, 0, data.length);
-
-            digest.doFinal(dig, 0);
+            dig = hash(data);
 
             int bytesToCopy = ((W.length - i * dig.length) > dig.length)
                     ? dig.length
                     : (W.length - i * dig.length);
             System.arraycopy(dig, 0, W, i * dig.length, bytesToCopy);
 
-            addOneTo(data);
+            addTo(data, ONE);
         }
 
         return W;
-    }
-
-    private void addOneTo(byte[] longer)
-    {
-        int carry = 1;
-        for (int i = 1; i <= longer.length; i++) // warning
-        {
-            int res = (longer[longer.length - i] & 0xff) + carry;
-            carry = (res > 0xff) ? 1 : 0;
-            longer[longer.length - i] = (byte)res;
-        }
-    }
-    
+    }    
 }
