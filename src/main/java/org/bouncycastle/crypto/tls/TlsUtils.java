@@ -384,6 +384,21 @@ public class TlsUtils
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
+    public static Vector getDefaultDSSSignatureAlgorithms()
+    {
+        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+    }
+
+    public static Vector getDefaultECDSASignatureAlgorithms()
+    {
+        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.ecdsa));
+    }
+
+    public static Vector getDefaultRSASignatureAlgorithms()
+    {
+        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
+    }
+
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
     {
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
@@ -792,5 +807,12 @@ public class TlsUtils
             arr[i] = b;
         }
         return arr;
+    }
+    
+    private static Vector vectorOfOne(Object obj)
+    {
+        Vector v = new Vector(1);
+        v.addElement(obj);
+        return v;
     }
 }

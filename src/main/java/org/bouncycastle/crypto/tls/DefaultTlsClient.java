@@ -332,22 +332,24 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
     }
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) {
-        return new TlsDHKeyExchange(keyExchange, null);
+        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) {
-        return new TlsDHEKeyExchange(keyExchange, null);
+        return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
-        return new TlsECDHKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
-        return new TlsECDHEKeyExchange(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() {
-        return new TlsRSAKeyExchange();
+        return new TlsRSAKeyExchange(supportedSignatureAlgorithms);
     }
 }

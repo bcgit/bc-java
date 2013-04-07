@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -16,10 +17,9 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 /**
  * ECDH key exchange (see RFC 4492)
  */
-class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
+public class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
 
     protected TlsSigner tlsSigner;
-    protected int keyExchange;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
@@ -31,9 +31,10 @@ class TlsECDHKeyExchange extends AbstractTlsKeyExchange {
     protected ECPrivateKeyParameters ecAgreeServerPrivateKey;
     protected ECPublicKeyParameters ecAgreeClientPublicKey;
 
-    TlsECDHKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) {
+    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
+        short[] clientECPointFormats, short[] serverECPointFormats) {
 
-        super();
+        super(keyExchange, supportedSignatureAlgorithms);
 
         switch (keyExchange) {
         case KeyExchangeAlgorithm.ECDHE_RSA:

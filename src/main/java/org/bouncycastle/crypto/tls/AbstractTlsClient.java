@@ -10,6 +10,8 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
 
     protected TlsClientContext context;
 
+    protected Vector supportedSignatureAlgorithms;
+
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
 
@@ -62,12 +64,12 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
             // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
 
             short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1, HashAlgorithm.md5 };
+                HashAlgorithm.sha224, HashAlgorithm.sha1 };
 
             // TODO Sort out ECDSA signatures and add them as the preferred option here
             short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa, SignatureAlgorithm.dsa };
 
-            Vector supportedSignatureAlgorithms = new Vector();
+            this.supportedSignatureAlgorithms = new Vector();
             for (int i = 0; i < hashAlgorithms.length; ++i) {
                 for (int j = 0; j < signatureAlgorithms.length; ++j) {
                     supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],

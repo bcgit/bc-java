@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Vector;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
@@ -15,12 +16,13 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 /**
  * ECDHE key exchange (see RFC 4492)
  */
-class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
+public class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsECDHEKeyExchange(int keyExchange, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) {
-        super(keyExchange, namedCurves, clientECPointFormats, serverECPointFormats);
+    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
+        short[] clientECPointFormats, short[] serverECPointFormats) {
+        super(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {

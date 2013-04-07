@@ -15,7 +15,7 @@ public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsSe
     protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
-    protected Vector signatureAlgorithms;
+    protected Vector supportedSignatureAlgorithms;
     protected boolean eccCipherSuitesOffered;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
@@ -103,8 +103,8 @@ public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsSe
 
         if (clientExtensions != null) {
 
-            this.signatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-            if (this.signatureAlgorithms != null) {
+            this.supportedSignatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+            if (this.supportedSignatureAlgorithms != null) {
                 /*
                  * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
                  * to 1.2. Clients MUST NOT offer it if they are offering prior versions.

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Vector;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
@@ -14,12 +15,12 @@ import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
-class TlsDHEKeyExchange extends TlsDHKeyExchange {
+public class TlsDHEKeyExchange extends TlsDHKeyExchange {
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    TlsDHEKeyExchange(int keyExchange, DHParameters dhParameters) {
-        super(keyExchange, dhParameters);
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters) {
+        super(keyExchange, supportedSignatureAlgorithms, dhParameters);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
@@ -84,8 +85,7 @@ class TlsDHEKeyExchange extends TlsDHKeyExchange {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.dhAgreeServerPublicKey = validateDHPublicKey(new DHPublicKeyParameters(Ys,
-            new DHParameters(p, g)));
+        this.dhAgreeServerPublicKey = validateDHPublicKey(new DHPublicKeyParameters(Ys, new DHParameters(p, g)));
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters) {

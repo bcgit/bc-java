@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -18,9 +19,8 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 /**
  * TLS 1.0 PSK key exchange (RFC 4279).
  */
-class TlsPSKKeyExchange extends AbstractTlsKeyExchange {
-    
-    protected int keyExchange;
+public class TlsPSKKeyExchange extends AbstractTlsKeyExchange {
+
     protected TlsPSKIdentity pskIdentity;
 
     protected byte[] psk_identity_hint = null;
@@ -32,8 +32,8 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange {
     protected RSAKeyParameters rsaServerPublicKey = null;
     protected byte[] premasterSecret;
 
-    TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity) {
-        super();
+    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity) {
+        super(keyExchange, supportedSignatureAlgorithms);
 
         switch (keyExchange) {
         case KeyExchangeAlgorithm.PSK:
@@ -44,7 +44,6 @@ class TlsPSKKeyExchange extends AbstractTlsKeyExchange {
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.keyExchange = keyExchange;
         this.pskIdentity = pskIdentity;
     }
 

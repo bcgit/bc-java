@@ -27,10 +27,8 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
 
     public int[] getCipherSuites() {
         return new int[] { CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA, };
     }
 
@@ -92,20 +90,17 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
         case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC,
-                MACAlgorithm.hmac_sha1);
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha1);
 
         default:
             /*
@@ -118,6 +113,6 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
     }
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange) {
-        return new TlsSRPKeyExchange(keyExchange, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, identity, password);
     }
 }

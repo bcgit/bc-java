@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -14,7 +15,7 @@ import org.bouncycastle.util.io.Streams;
 /**
  * TLS 1.0/1.1 and SSLv3 RSA key exchange.
  */
-class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
+public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
     protected AsymmetricKeyParameter serverPublicKey = null;
 
     protected RSAKeyParameters rsaServerPublicKey = null;
@@ -23,8 +24,8 @@ class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
 
     protected byte[] premasterSecret;
 
-    TlsRSAKeyExchange() {
-        super();
+    public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms) {
+        super(KeyExchangeAlgorithm.RSA, supportedSignatureAlgorithms);
     }
 
     public void skipServerCredentials() throws IOException {

@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -16,13 +17,12 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 /**
  * TLS 1.0/1.1 DH key exchange.
  */
-class TlsDHKeyExchange extends AbstractTlsKeyExchange {
+public class TlsDHKeyExchange extends AbstractTlsKeyExchange {
 
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
     protected TlsSigner tlsSigner;
-    protected int keyExchange;
     protected DHParameters dhParameters;
 
     protected AsymmetricKeyParameter serverPublicKey;
@@ -32,9 +32,9 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
 
     protected DHPublicKeyParameters dhAgreeClientPublicKey;
 
-    TlsDHKeyExchange(int keyExchange, DHParameters dhParameters) {
+    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters) {
 
-        super();
+        super(keyExchange, supportedSignatureAlgorithms);
 
         switch (keyExchange) {
         case KeyExchangeAlgorithm.DH_RSA:
@@ -51,7 +51,6 @@ class TlsDHKeyExchange extends AbstractTlsKeyExchange {
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.keyExchange = keyExchange;
         this.dhParameters = dhParameters;
     }
 
