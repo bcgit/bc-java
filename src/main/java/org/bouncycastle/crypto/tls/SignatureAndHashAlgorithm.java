@@ -26,6 +26,9 @@ public class SignatureAndHashAlgorithm {
         if (!TlsUtils.isValidUint8(signature)) {
             throw new IllegalArgumentException("'signature' should be a uint8");
         }
+        if (signature == SignatureAlgorithm.anonymous) {
+            throw new IllegalArgumentException("'signature' MUST NOT be \"anonymous\"");
+        }
 
         this.hash = hash;
         this.signature = signature;
