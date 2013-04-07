@@ -159,11 +159,13 @@ public class DTLSClientProtocol extends DTLSProtocol {
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
 
         if (state.clientCredentials instanceof TlsSignerCredentials) {
+            /*
+             * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
+             * from TLS 1.2
+             */
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials) state.clientCredentials;
-
             byte[] md5andsha1 = handshake.getCurrentHash();
             byte[] signature = signerCredentials.generateCertificateSignature(md5andsha1);
-
             byte[] certificateVerifyBody = generateCertificateVerify(state, signature);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }

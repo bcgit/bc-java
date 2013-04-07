@@ -270,6 +270,10 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials) {
+                    /*
+                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm
+                     * prepended from TLS 1.2
+                     */
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials) clientCreds;
                     byte[] md5andsha1 = recordStream.getCurrentHash(null);
                     byte[] clientCertificateSignature = signerCreds.generateCertificateSignature(md5andsha1);

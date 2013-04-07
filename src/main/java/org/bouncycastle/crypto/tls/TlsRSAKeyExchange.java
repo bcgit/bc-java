@@ -98,7 +98,7 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
 
         byte[] encryptedPreMasterSecret;
         if (context.getServerVersion().isSSL()) {
-            // TODO Do any SSLv3 implementations actually include the length?
+            // TODO Do any SSLv3 clients actually include the length?
             encryptedPreMasterSecret = Streams.readAll(input);
         } else {
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
