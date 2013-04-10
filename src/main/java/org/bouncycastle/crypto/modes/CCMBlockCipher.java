@@ -87,6 +87,11 @@ public class CCMBlockCipher
         {
             throw new IllegalArgumentException("invalid parameters passed to CCM");
         }
+
+        if (nonce == null || nonce.length < 7 || nonce.length > 13)
+        {
+            throw new IllegalArgumentException("nonce must have length from 7 to 13 octets");
+        }
     }
 
     public String getAlgorithmName()
@@ -183,22 +188,31 @@ public class CCMBlockCipher
             throw new IllegalStateException("CCM cipher unitialized.");
         }
 
-        BlockCipher ctrCipher = new SICBlockCipher(cipher);
+        int n = nonce.length;
+        int q = 15 - n;
+        if (q < 4)
+        {
+            int limitLen = 1 << (8 * q);
+            if (inLen >= limitLen)
+            {
+                throw new IllegalStateException("CCM packet too large for choice of q.");
+            }
+        }
+
         byte[] iv = new byte[blockSize];
-        byte[] out;
-
-        iv[0] = (byte)(((15 - nonce.length) - 1) & 0x7);
-
+        iv[0] = (byte)((q - 1) & 0x7);
         System.arraycopy(nonce, 0, iv, 1, nonce.length);
 
+        BlockCipher ctrCipher = new SICBlockCipher(cipher);
         ctrCipher.init(forEncryption, new ParametersWithIV(keyParam, iv));
+
+        int index = inOff;
+        int outOff = 0;
+        byte[] output;
 
         if (forEncryption)
         {
-            int index = inOff;
-            int outOff = 0;
-
-            out = new byte[inLen + macSize];
+            output = new byte[inLen + macSize];
 
             calculateMac(in, inOff, inLen, macBlock);
 
@@ -206,7 +220,7 @@ public class CCMBlockCipher
 
             while (index < inLen - blockSize)                   // S1...
             {
-                ctrCipher.processBlock(in, index, out, outOff);
+                ctrCipher.processBlock(in, index, output, outOff);
                 outOff += blockSize;
                 index += blockSize;
             }
@@ -217,18 +231,15 @@ public class CCMBlockCipher
 
             ctrCipher.processBlock(block, 0, block, 0);
 
-            System.arraycopy(block, 0, out, outOff, inLen - index);
+            System.arraycopy(block, 0, output, outOff, inLen - index);
 
             outOff += inLen - index;
 
-            System.arraycopy(macBlock, 0, out, outOff, out.length - outOff);
+            System.arraycopy(macBlock, 0, output, outOff, output.length - outOff);
         }
         else
         {
-            int index = inOff;
-            int outOff = 0;
-
-            out = new byte[inLen - macSize];
+            output = new byte[inLen - macSize];
 
             System.arraycopy(in, inOff + inLen - macSize, macBlock, 0, macSize);
 
@@ -239,24 +250,24 @@ public class CCMBlockCipher
                 macBlock[i] = 0;
             }
 
-            while (outOff < out.length - blockSize)
+            while (outOff < output.length - blockSize)
             {
-                ctrCipher.processBlock(in, index, out, outOff);
+                ctrCipher.processBlock(in, index, output, outOff);
                 outOff += blockSize;
                 index += blockSize;
             }
 
             byte[] block = new byte[blockSize];
 
-            System.arraycopy(in, index, block, 0, out.length - outOff);
+            System.arraycopy(in, index, block, 0, output.length - outOff);
 
             ctrCipher.processBlock(block, 0, block, 0);
 
-            System.arraycopy(block, 0, out, outOff, out.length - outOff);
+            System.arraycopy(block, 0, output, outOff, output.length - outOff);
 
             byte[] calculatedMacBlock = new byte[blockSize];
 
-            calculateMac(out, 0, out.length, calculatedMacBlock);
+            calculateMac(output, 0, output.length, calculatedMacBlock);
 
             if (!Arrays.constantTimeAreEqual(macBlock, calculatedMacBlock))
             {
@@ -264,7 +275,7 @@ public class CCMBlockCipher
             }
         }
 
-        return out;
+        return output;
     }
 
     private int calculateMac(byte[] data, int dataOff, int dataLen, byte[] macBlock)
@@ -340,13 +351,13 @@ public class CCMBlockCipher
             extra = (extra + textLength) % 16;
             if (extra != 0)
             {
-                for (int i = 0; i != 16 - extra; i++)
+                for (int i = extra; i != 16; i++)
                 {
                     cMac.update((byte)0x00);
                 }
             }
         }
-        
+ 
         //
         // add the text
         //

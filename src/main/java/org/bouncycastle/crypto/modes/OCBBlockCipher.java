@@ -139,6 +139,10 @@ public class OCBBlockCipher implements AEADBlockCipher {
         }
 
         if (N.length > 16 || (N.length == 16 && (N[0] & 0x80) != 0)) {
+            /*
+             * NOTE: We don't just ignore bit 128 because it would hide from the caller the fact
+             * that two nonces differing only in bit 128 are not different.
+             */
             throw new IllegalArgumentException("IV must be no more than 127 bits");
         }
 
