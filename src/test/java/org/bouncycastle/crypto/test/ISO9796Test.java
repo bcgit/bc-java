@@ -685,7 +685,7 @@ public class ISO9796Test
         byte[] m3 = {1, 2, 3, 4, 5, 6, 7, 8};
 
         //
-        // ISO 9796-2 - PSS Signing
+        // ISO 9796-2 - Signing
         //
         Digest dig = new SHA1Digest();
         ISO9796d2Signer eng = new ISO9796d2Signer(rsa, dig);
@@ -726,7 +726,6 @@ public class ISO9796Test
             fail("failed ISO9796-2 verify Test 12");
         }
     }
-
 
     private void doTest13()
         throws Exception
@@ -770,8 +769,7 @@ public class ISO9796Test
 
         digest = new SHA1Digest();
 
-        // NOTE setting implit to false does not actually do anything for verification !!!
-        signer = new ISO9796d2Signer(rsaEngine, digest, false);
+        signer = new ISO9796d2Signer(rsaEngine, digest, true);
 
 
         signer.init(false, pubParams);
@@ -891,7 +889,7 @@ public class ISO9796Test
 
         pssSign.updateWithRecoveredMessage(shortPartialSig);
 
-        pssSign.update(longMessage, 0, longMessage.length);
+        pssSign.update(longMessage, pssSign.getRecoveredMessage().length, longMessage.length - pssSign.getRecoveredMessage().length);
 
         if (!pssSign.verifySignature(shortPartialSig))
         {
@@ -903,6 +901,46 @@ public class ISO9796Test
         if (!Arrays.areEqual(recovered, mm))
         {
             fail("short partial PSS recovery failed");
+        }
+    }
+
+    private void doFullMessageTest()
+        throws Exception
+    {
+        BigInteger modulus = new BigInteger(1, Hex.decode("CDCBDABBF93BE8E8294E32B055256BBD0397735189BF75816341BB0D488D05D627991221DF7D59835C76A4BB4808ADEEB779E7794504E956ADC2A661B46904CDC71337DD29DDDD454124EF79CFDD7BC2C21952573CEFBA485CC38C6BD2428809B5A31A898A6B5648CAA4ED678D9743B589134B7187478996300EDBA16271A861"));
+        BigInteger pubExp = new BigInteger(1, Hex.decode("010001"));
+        BigInteger privExp = new BigInteger(1, Hex.decode("4BA6432AD42C74AA5AFCB6DF60FD57846CBC909489994ABD9C59FE439CC6D23D6DE2F3EA65B8335E796FD7904CA37C248367997257AFBD82B26F1A30525C447A236C65E6ADE43ECAAF7283584B2570FA07B340D9C9380D88EAACFFAEEFE7F472DBC9735C3FF3A3211E8A6BBFD94456B6A33C17A2C4EC18CE6335150548ED126D"));
+
+        RSAKeyParameters pubParams = new RSAKeyParameters(false, modulus, pubExp);
+        RSAKeyParameters privParams = new RSAKeyParameters(true, modulus, privExp);
+
+        AsymmetricBlockCipher rsaEngine = new RSABlindedEngine();
+
+        // set challenge to all zero's for verification
+        byte[] challenge = new byte[8];
+
+        ISO9796d2PSSSigner pssSign = new ISO9796d2PSSSigner(new RSAEngine(), new SHA256Digest(), 20, true);
+
+        pssSign.init(true, privParams);
+
+        pssSign.update(challenge, 0, challenge.length);
+
+        byte[] sig = pssSign.generateSignature();
+
+        pssSign.init(false, pubParams);
+
+        pssSign.updateWithRecoveredMessage(sig);
+
+        if (!pssSign.verifySignature(sig))
+        {
+            fail("challenge PSS sig verification failed.");
+        }
+
+        byte[] mm = pssSign.getRecoveredMessage();
+
+        if (!Arrays.areEqual(challenge, mm))
+        {
+            fail("challenge partial PSS recovery failed");
         }
     }
 
@@ -923,6 +961,7 @@ public class ISO9796Test
         doTest12();
         doTest13();
         doShortPartialTest();
+        doFullMessageTest();
     }
 
     public static void main(
