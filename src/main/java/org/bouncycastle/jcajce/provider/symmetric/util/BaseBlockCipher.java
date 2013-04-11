@@ -283,8 +283,15 @@ public class BaseBlockCipher
         }
         else if (modeName.startsWith("OCB"))
         {
-            ivLength = baseEngine.getBlockSize();
-            cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
+            if (engineProvider != null)
+            {
+                ivLength = baseEngine.getBlockSize();
+                cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
+            }
+            else
+            {
+                throw new NoSuchAlgorithmException("can't support mode " + mode);
+            }
         }
         else if (modeName.startsWith("EAX"))
         {

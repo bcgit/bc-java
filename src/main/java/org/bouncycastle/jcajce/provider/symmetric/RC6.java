@@ -7,6 +7,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.RC6Engine;
@@ -17,6 +18,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -32,7 +34,13 @@ public final class RC6
     {
         public ECB()
         {
-            super(new RC6Engine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new RC6Engine();
+                }
+            });
         }
     }
 

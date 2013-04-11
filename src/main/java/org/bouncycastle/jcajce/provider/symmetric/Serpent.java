@@ -1,10 +1,12 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
@@ -19,7 +21,13 @@ public final class Serpent
     {
         public ECB()
         {
-            super(new SerpentEngine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new SerpentEngine();
+                }
+            });
         }
     }
 
