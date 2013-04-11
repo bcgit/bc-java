@@ -9,6 +9,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.AESFastEngine;
@@ -24,6 +25,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
@@ -40,7 +42,13 @@ public final class AES
     {
         public ECB()
         {
-            super(new AESFastEngine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new AESFastEngine();
+                }
+            });
         }
     }
 
