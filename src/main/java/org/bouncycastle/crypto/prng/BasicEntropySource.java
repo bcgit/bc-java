@@ -5,8 +5,8 @@ import java.security.SecureRandom;
 public class BasicEntropySource
     implements EntropySource
 {
-    private SecureRandom _sr = new SecureRandom();
-    private boolean      _predictionResistant;
+    private final SecureRandom _sr;
+    private final boolean      _predictionResistant;
 
     public BasicEntropySource(SecureRandom random, boolean isPredictionResistant)
     {
