@@ -1,6 +1,8 @@
 package org.bouncycastle.dvcs;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.asn1.dvcs.Data;
@@ -45,6 +47,6 @@ public class VPKCRequestData
      */
     public List getCerts()
     {
-        return chains;
+        return Collections.unmodifiableList(chains);
     }
 }
