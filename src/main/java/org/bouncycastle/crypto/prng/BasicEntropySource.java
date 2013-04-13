@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.prng;
 
 import java.security.SecureRandom;
 
-public class BasicEntropySource implements EntropySource
+public class BasicEntropySource
+    implements EntropySource
 {
-
-    private SecureRandom _sr = new SecureRandom();
-    private boolean      _predictionResistant;
+    private final SecureRandom _sr;
+    private final boolean      _predictionResistant;
 
     public BasicEntropySource(SecureRandom random, boolean isPredictionResistant)
     {
@@ -22,8 +22,9 @@ public class BasicEntropySource implements EntropySource
     public byte[] getEntropy(int length)
     {
         byte[] rv = new byte[length];
+
         _sr.nextBytes(rv);
+
         return rv;
     }
-
 }

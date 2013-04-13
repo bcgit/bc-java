@@ -34,8 +34,6 @@ public abstract class DVCSRequestBuilder
 
     protected final DVCSRequestInformationBuilder requestInformationBuilder;
 
-    private SignerInfoGenerator signerInfoGen;
-
     protected DVCSRequestBuilder(DVCSRequestInformationBuilder requestInformationBuilder)
     {
         this.requestInformationBuilder = requestInformationBuilder;

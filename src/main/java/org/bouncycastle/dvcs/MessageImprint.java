@@ -15,4 +15,19 @@ public class MessageImprint
     {
         return messageImprint;
     }
+
+    public boolean equals(Object o)
+    {
+        if (o == this)
+        {
+            return true;
+        }
+
+        if (o instanceof MessageImprint)
+        {
+            return messageImprint.equals(((MessageImprint)o).messageImprint);
+        }
+
+        return false;
+    }
 }

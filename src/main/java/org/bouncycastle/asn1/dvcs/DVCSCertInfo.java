@@ -143,7 +143,8 @@ public class DVCSCertInfo
         {
             return new DVCSCertInfo(ASN1Sequence.getInstance(obj));
         }
-        throw new IllegalArgumentException("obj == null");
+
+        return null;
     }
 
     public static DVCSCertInfo getInstance(

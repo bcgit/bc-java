@@ -272,6 +272,7 @@ public class ISO9796d2Signer
 
         digest.update(recoveredMessage, 0, recoveredMessage.length);
         messageLength = recoveredMessage.length;
+        System.arraycopy(recoveredMessage, 0, mBuf, 0, recoveredMessage.length);
     }
     
     /**
@@ -282,7 +283,7 @@ public class ISO9796d2Signer
     {
         digest.update(b);
 
-        if (preSig == null && messageLength < mBuf.length)
+        if (messageLength < mBuf.length)
         {
             mBuf[messageLength] = b;
         }
@@ -298,16 +299,14 @@ public class ISO9796d2Signer
         int     off,
         int     len)
     {
-        digest.update(in, off, len);
-
-        if (preSig == null && messageLength < mBuf.length)
+        while (len > 0 && messageLength < mBuf.length)
         {
-            for (int i = 0; i < len && (i + messageLength) < mBuf.length; i++)
-            {
-                mBuf[messageLength + i] = in[off + i];
-            }
+            this.update(in[off]);
+            off++;
+            len--;
         }
 
+        digest.update(in, off, len);
         messageLength += len;
     }
 
@@ -416,11 +415,9 @@ public class ISO9796d2Signer
         byte[]      signature)
     {
         byte[]      block = null;
-        boolean     updateWithRecoveredCalled;
 
         if (preSig == null)
         {
-            updateWithRecoveredCalled = false;
             try
             {
                 block = cipher.processBlock(signature, 0, signature.length);
@@ -437,7 +434,6 @@ public class ISO9796d2Signer
                 throw new IllegalStateException("updateWithRecoveredMessage called on different signature");
             }
 
-            updateWithRecoveredCalled = true;
             block = preBlock;
 
             preSig = null;
@@ -576,7 +572,7 @@ public class ISO9796d2Signer
         // if they've input a message check what we've recovered against
         // what was input.
         //
-        if (messageLength != 0 && !updateWithRecoveredCalled)
+        if (messageLength != 0)
         {
             if (!isSameAs(mBuf, recoveredMessage))
             {

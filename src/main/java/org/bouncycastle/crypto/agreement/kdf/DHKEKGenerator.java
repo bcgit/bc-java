@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.util.Pack;
 
 /**
  * RFC 2631 Diffie-hellman KEK derivation function.
@@ -85,7 +86,7 @@ public class DHKEKGenerator
             ASN1EncodableVector v2 = new ASN1EncodableVector();
 
             v2.add(algorithm);
-            v2.add(new DEROctetString(integerToBytes(counter)));
+            v2.add(new DEROctetString(Pack.intToBigEndian(counter)));
 
             v1.add(new DERSequence(v2));
 
@@ -94,7 +95,7 @@ public class DHKEKGenerator
                 v1.add(new DERTaggedObject(true, 0, new DEROctetString(partyAInfo)));
             }
 
-            v1.add(new DERTaggedObject(true, 2, new DEROctetString(integerToBytes(keySize))));
+            v1.add(new DERTaggedObject(true, 2, new DEROctetString(Pack.intToBigEndian(keySize))));
 
             try
             {
@@ -126,17 +127,5 @@ public class DHKEKGenerator
         digest.reset();
 
         return len;
-    }
-
-    private byte[] integerToBytes(int keySize)
-    {
-        byte[] val = new byte[4];
-
-        val[0] = (byte)(keySize >> 24);
-        val[1] = (byte)(keySize >> 16);
-        val[2] = (byte)(keySize >> 8);
-        val[3] = (byte)keySize;
-
-        return val;
     }
 }

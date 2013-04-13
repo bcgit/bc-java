@@ -22,14 +22,10 @@ public class SymmetricKeyEncSessionPacket
         encAlgorithm = in.read();
 
         s2k = new S2K(in);
-    
-        if (in.available() != 0)
-        {
-            secKeyData = new byte[in.available()];
-            in.readFully(secKeyData, 0, secKeyData.length);
-        }
+
+        this.secKeyData = in.readAll();
     }
-    
+
     public SymmetricKeyEncSessionPacket(
         int       encAlgorithm,
         S2K       s2k,

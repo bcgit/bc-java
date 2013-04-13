@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.signers;
 
 import java.security.SecureRandom;
+import java.util.Hashtable;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -15,6 +16,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSalt;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 /**
  * ISO9796-2 - mechanism using a hash function with recovery (scheme 2 and 3).
@@ -25,10 +27,29 @@ import org.bouncycastle.util.Arrays;
 public class ISO9796d2PSSSigner
     implements SignerWithRecovery
 {
-    static final public int TRAILER_IMPLICIT = 0xBC;
-    static final public int TRAILER_RIPEMD160 = 0x31CC;
-    static final public int TRAILER_RIPEMD128 = 0x32CC;
-    static final public int TRAILER_SHA1 = 0x33CC;
+    static final public int   TRAILER_IMPLICIT    = 0xBC;
+    static final public int   TRAILER_RIPEMD160   = 0x31CC;
+    static final public int   TRAILER_RIPEMD128   = 0x32CC;
+    static final public int   TRAILER_SHA1        = 0x33CC;
+    static final public int   TRAILER_SHA256      = 0x34CC;
+    static final public int   TRAILER_SHA512      = 0x35CC;
+    static final public int   TRAILER_SHA384      = 0x36CC;
+    static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
+
+    private static Hashtable trailerMap          = new Hashtable();
+
+    static
+    {
+        trailerMap.put("RIPEMD128", Integers.valueOf(TRAILER_RIPEMD128));
+        trailerMap.put("RIPEMD160", Integers.valueOf(TRAILER_RIPEMD160));
+
+        trailerMap.put("SHA-1", Integers.valueOf(TRAILER_SHA1));
+        trailerMap.put("SHA-256", Integers.valueOf(TRAILER_SHA256));
+        trailerMap.put("SHA-384", Integers.valueOf(TRAILER_SHA384));
+        trailerMap.put("SHA-512", Integers.valueOf(TRAILER_SHA512));
+
+        trailerMap.put("Whirlpool", Integers.valueOf(TRAILER_WHIRLPOOL));
+    }
 
     private Digest digest;
     private AsymmetricBlockCipher cipher;
@@ -77,17 +98,11 @@ public class ISO9796d2PSSSigner
         }
         else
         {
-            if (digest instanceof SHA1Digest)
+            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+
+            if (trailerObj != null)
             {
-                trailer = TRAILER_SHA1;
-            }
-            else if (digest instanceof RIPEMD160Digest)
-            {
-                trailer = TRAILER_RIPEMD160;
-            }
-            else if (digest instanceof RIPEMD128Digest)
-            {
-                trailer = TRAILER_RIPEMD128;
+                trailer = trailerObj.intValue();
             }
             else
             {
@@ -242,27 +257,17 @@ public class ISO9796d2PSSSigner
         {
             int sigTrail = ((block[block.length - 2] & 0xFF) << 8) | (block[block.length - 1] & 0xFF);
 
-            switch (sigTrail)
+            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+
+            if (trailerObj != null)
             {
-            case TRAILER_RIPEMD160:
-                if (!(digest instanceof RIPEMD160Digest))
+                if (sigTrail != trailerObj.intValue())
                 {
-                    throw new IllegalStateException("signer should be initialised with RIPEMD160");
+                    throw new IllegalStateException("signer initialised with wrong digest for trailer " + sigTrail);
                 }
-                break;
-            case TRAILER_SHA1:
-                if (!(digest instanceof SHA1Digest))
-                {
-                    throw new IllegalStateException("signer should be initialised with SHA1");
-                }
-                break;
-            case TRAILER_RIPEMD128:
-                if (!(digest instanceof RIPEMD128Digest))
-                {
-                    throw new IllegalStateException("signer should be initialised with RIPEMD128");
-                }
-                break;
-            default:
+            }
+            else
+            {
                 throw new IllegalArgumentException("unrecognised hash in signature");
             }
 
@@ -310,6 +315,7 @@ public class ISO9796d2PSSSigner
         recoveredMessage = new byte[dbMask.length - mStart - saltLength];
 
         System.arraycopy(block, mStart, recoveredMessage, 0, recoveredMessage.length);
+        System.arraycopy(recoveredMessage, 0, mBuf, 0, recoveredMessage.length);
 
         preSig = signature;
         preBlock = block;
@@ -323,7 +329,7 @@ public class ISO9796d2PSSSigner
     public void update(
         byte b)
     {
-        if ((preSig == null && messageLength < mBuf.length) || (preSig != null && messageLength < recoveredMessage.length))
+        if (preSig == null && messageLength < mBuf.length)
         {
             mBuf[messageLength++] = b;
         }
@@ -341,11 +347,14 @@ public class ISO9796d2PSSSigner
         int off,
         int len)
     {
-        while (len > 0 && messageLength < mBuf.length)
+        if (preSig == null)
         {
-            this.update(in[off]);
-            off++;
-            len--;
+            while (len > 0 && messageLength < mBuf.length)
+            {
+                this.update(in[off]);
+                off++;
+                len--;
+            }
         }
 
         if (len > 0)
@@ -475,106 +484,19 @@ public class ISO9796d2PSSSigner
         digest.doFinal(m2Hash, 0);
 
         byte[] block;
-        boolean updateWithRecoveredCalled;
         int tLength;
         int mStart = 0;
 
         if (preSig == null)
         {
-            updateWithRecoveredCalled = false;
             try
             {
-                block = cipher.processBlock(signature, 0, signature.length);
+                updateWithRecoveredMessage(signature);
             }
             catch (Exception e)
             {
                 return false;
             }
-
-            //
-            // adjust block size for leading zeroes if necessary
-            //
-            if (block.length < (keyBits + 7) / 8)
-            {
-                byte[] tmp = new byte[(keyBits + 7) / 8];
-
-                System.arraycopy(block, 0, tmp, tmp.length - block.length, block.length);
-                clearBlock(block);
-                block = tmp;
-            }
-
-            if (((block[block.length - 1] & 0xFF) ^ 0xBC) == 0)
-            {
-                tLength = 1;
-            }
-            else
-            {
-                int sigTrail = ((block[block.length - 2] & 0xFF) << 8) | (block[block.length - 1] & 0xFF);
-
-                switch (sigTrail)
-                {
-                case TRAILER_RIPEMD160:
-                    if (!(digest instanceof RIPEMD160Digest))
-                    {
-                        throw new IllegalStateException("signer should be initialised with RIPEMD160");
-                    }
-                    break;
-                case TRAILER_SHA1:
-                    if (!(digest instanceof SHA1Digest))
-                    {
-                        throw new IllegalStateException("signer should be initialised with SHA1");
-                    }
-                    break;
-                case TRAILER_RIPEMD128:
-                    if (!(digest instanceof RIPEMD128Digest))
-                    {
-                        throw new IllegalStateException("signer should be initialised with RIPEMD128");
-                    }
-                    break;
-                default:
-                    throw new IllegalArgumentException("unrecognised hash in signature");
-                }
-
-                tLength = 2;
-            }
-
-            //
-            // remove the mask
-            //
-            byte[] dbMask = maskGeneratorFunction1(block, block.length - hLen - tLength, hLen, block.length - hLen - tLength);
-
-            for (int i = 0; i != dbMask.length; i++)
-            {
-                block[i] ^= dbMask[i];
-            }
-
-            block[0] &= 0x7f;
-
-            //
-            // find out how much padding we've got
-            //
-
-            for (; mStart != block.length; mStart++)
-            {
-                if (block[mStart] == 0x01)
-                {
-                    break;
-                }
-            }
-
-            mStart++;
-
-            if (mStart >= block.length)
-            {
-                clearBlock(block);
-                return false;
-            }
-
-            fullMessage = (mStart > 1);
-
-            recoveredMessage = new byte[dbMask.length - mStart - saltLength];
-
-            System.arraycopy(block, mStart, recoveredMessage, 0, recoveredMessage.length);
         }
         else
         {
@@ -582,15 +504,14 @@ public class ISO9796d2PSSSigner
             {
                 throw new IllegalStateException("updateWithRecoveredMessage called on different signature");
             }
-
-            updateWithRecoveredCalled = true;
-            block = preBlock;
-            mStart = preMStart;
-            tLength = preTLength;
-
-            preSig = null;
-            preBlock = null;
         }
+
+        block = preBlock;
+        mStart = preMStart;
+        tLength = preTLength;
+
+        preSig = null;
+        preBlock = null;
 
         //
         // check the hashes
@@ -639,7 +560,7 @@ public class ISO9796d2PSSSigner
         // if they've input a message check what we've recovered against
         // what was input.
         //
-        if (messageLength != 0 && !updateWithRecoveredCalled)
+        if (messageLength != 0)
         {
             if (!isSameAs(mBuf, recoveredMessage))
             {

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.prng.DRBG;
+import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.HashSP800DRBG;
 import org.bouncycastle.util.encoders.Hex;
@@ -140,7 +140,7 @@ public class HashDRGBTest extends SimpleTest
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            DRBG d = new HashSP800DRBG(digest, 440, tes, nonce, personalisationString, securityStrength);
+            SP80090DRBG d = new HashSP800DRBG(digest, 440, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

@@ -3,6 +3,8 @@ package org.bouncycastle.dvcs;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.dvcs.DVCSObjectIdentifiers;
@@ -52,7 +54,14 @@ public class DVCSRequest
 
         try
         {
-            this.asn1 = org.bouncycastle.asn1.dvcs.DVCSRequest.getInstance(contentInfo.getContent());
+            if (contentInfo.getContent().toASN1Primitive() instanceof ASN1Sequence)
+            {
+                this.asn1 = org.bouncycastle.asn1.dvcs.DVCSRequest.getInstance(contentInfo.getContent());
+            }
+            else
+            {
+                this.asn1 = org.bouncycastle.asn1.dvcs.DVCSRequest.getInstance(ASN1OctetString.getInstance(contentInfo.getContent()).getOctets());
+            }
         }
         catch (Exception e)
         {

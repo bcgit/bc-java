@@ -1,13 +1,11 @@
 package org.bouncycastle.crypto.prng;
 
-import javax.crypto.Cipher;
-
 import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CTRSP800DRBG
+    implements SP80090DRBG
 {
     private EntropySource         _entropySource;
     private BlockCipher           _engine;
@@ -295,5 +293,16 @@ public class CTRSP800DRBG
         }
 
         return W;
+    }
+
+    // TODO:
+    public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void reseed(byte[] additionalInput)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

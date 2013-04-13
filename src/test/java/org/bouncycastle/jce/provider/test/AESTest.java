@@ -286,6 +286,54 @@ public class AESTest
         }
     }
 
+    private void ocbTest()
+        throws Exception
+    {
+        byte[] K = Hex.decode(
+              "000102030405060708090A0B0C0D0E0F");
+        byte[] P = Hex.decode(
+              "000102030405060708090A0B0C0D0E0F");
+        byte[] N = Hex.decode("000102030405060708090A0B");
+        String T = "4CBB3E4BD6B456AF";
+        byte[] C = Hex.decode(
+            "BEA5E8798DBE7110031C144DA0B2612213CC8B747807121A" + T);
+
+        Key                     key;
+        Cipher                  in, out;
+
+        key = new SecretKeySpec(K, "AES");
+
+        in = Cipher.getInstance("AES/OCB/NoPadding", "BC");
+        out = Cipher.getInstance("AES/OCB/NoPadding", "BC");
+
+        in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+
+        byte[] enc = in.doFinal(P);
+        if (!areEqual(enc, C))
+        {
+            fail("ciphertext doesn't match in OCB");
+        }
+
+        out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
+
+        byte[] dec = out.doFinal(C);
+        if (!areEqual(dec, P))
+        {
+            fail("plaintext doesn't match in OCB");
+        }
+
+        try
+        {
+            in = Cipher.getInstance("AES/OCB/PKCS5Padding", "BC");
+
+            fail("bad padding missed in OCB");
+        }
+        catch (NoSuchPaddingException e)
+        {
+            // expected
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -347,6 +395,7 @@ public class AESTest
         eaxTest();
         ccmTest();
         gcmTest();
+        ocbTest();
     }
 
     public static void main(

@@ -8,6 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.engines.SEEDWrapEngine;
@@ -17,6 +18,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGen
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -32,7 +34,13 @@ public final class SEED
     {
         public ECB()
         {
-            super(new SEEDEngine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new SEEDEngine();
+                }
+            });
         }
     }
 

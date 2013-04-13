@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.dvcs;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -37,35 +39,39 @@ public class DVCSResponse
 
     public static DVCSResponse getInstance(Object obj)
     {
-        if (obj instanceof DVCSResponse)
+        if (obj == null || obj instanceof DVCSResponse)
         {
             return (DVCSResponse)obj;
         }
-        else if (obj != null)
+        else
         {
-
-            try
+            if (obj instanceof byte[])
+            {
+                try
+                {
+                    return getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("failed to construct sequence from byte[]: " + e.getMessage());
+                }
+            }
+            if (obj instanceof ASN1Sequence)
             {
                 DVCSCertInfo dvCertInfo = DVCSCertInfo.getInstance(obj);
+
                 return new DVCSResponse(dvCertInfo);
             }
-            catch (IllegalArgumentException e)
-            {
-            }
-
-            try
+            if (obj instanceof ASN1TaggedObject)
             {
                 ASN1TaggedObject t = ASN1TaggedObject.getInstance(obj);
                 DVCSErrorNotice dvErrorNote = DVCSErrorNotice.getInstance(t, false);
+
                 return new DVCSResponse(dvErrorNote);
             }
-            catch (IllegalArgumentException e)
-            {
-            }
-
         }
 
-        throw new IllegalArgumentException("Couldn't convert from object to DVCSResponse");
+        throw new IllegalArgumentException("Couldn't convert from object to DVCSResponse: " + obj.getClass().getName());
     }
 
     public static DVCSResponse getInstance(

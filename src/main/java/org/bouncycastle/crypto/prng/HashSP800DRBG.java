@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.prng;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.encoders.Hex;
 
-public class HashSP800DRBG implements DRBG
+public class HashSP800DRBG implements SP80090DRBG
 {
     private final static byte[]     ONE = { 0x01 };
     private Digest                 _digest;
