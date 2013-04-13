@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.ISO18033KDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.util.Pack;
 
 /**
  * Basic KDF generator for derived keys and ivs as defined by IEEE P1363a/ISO
@@ -97,20 +98,17 @@ public class BaseKDFBytesGenerator implements DerivationFunction
 
         int cThreshold = (int)((oBytes + outLen - 1) / outLen);
 
-        byte[] dig = null;
-
-        dig = new byte[digest.getDigestSize()];
+        byte[] dig = new byte[digest.getDigestSize()];
 
         int counter = counterStart;
+        byte[] C = new byte[4];
 
         for (int i = 0; i < cThreshold; i++)
         {
             digest.update(shared, 0, shared.length);
 
-            digest.update((byte)(counter >> 24));
-            digest.update((byte)(counter >> 16));
-            digest.update((byte)(counter >> 8));
-            digest.update((byte)counter);
+            Pack.intToBigEndian(counter, C, 0);
+            digest.update(C, 0, C.length);
 
             if (iv != null)
             {
@@ -135,6 +133,6 @@ public class BaseKDFBytesGenerator implements DerivationFunction
 
         digest.reset();
 
-        return len;
+        return (int)oBytes;
     }
 }
