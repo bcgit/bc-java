@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.prng;
 
+import org.bouncycastle.crypto.util.Pack;
+
 public class VMPCRandomGenerator implements RandomGenerator
 {
     private byte n = 0;
@@ -98,12 +100,7 @@ public class VMPCRandomGenerator implements RandomGenerator
 
     public void addSeedMaterial(long seed)
     {
-        byte[] s = new byte[4];
-        s[3] = (byte) (seed & 0x000000ff);
-        s[2] = (byte) ((seed & 0x0000ff00) >> 8);
-        s[1] = (byte) ((seed & 0x00ff0000) >> 16);
-        s[0] = (byte) ((seed & 0xff000000) >> 24);
-        addSeedMaterial(s);
+        addSeedMaterial(Pack.longToBigEndian(seed));
     }
 
     public void nextBytes(byte[] bytes)
