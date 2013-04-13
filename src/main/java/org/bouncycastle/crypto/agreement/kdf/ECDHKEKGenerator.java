@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.util.Pack;
 
 /**
  * X9.63 based key derivation function for ECDH CMS.
@@ -57,7 +58,7 @@ public class ECDHKEKGenerator
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new AlgorithmIdentifier(algorithm, DERNull.INSTANCE));
-        v.add(new DERTaggedObject(true, 2, new DEROctetString(integerToBytes(keySize))));
+        v.add(new DERTaggedObject(true, 2, new DEROctetString(Pack.intToBigEndian(keySize))));
 
         try
         {
@@ -69,17 +70,5 @@ public class ECDHKEKGenerator
         }
 
         return kdf.generateBytes(out, outOff, len);
-    }
-
-    private byte[] integerToBytes(int keySize)
-    {
-        byte[] val = new byte[4];
-
-        val[0] = (byte)(keySize >> 24);
-        val[1] = (byte)(keySize >> 16);
-        val[2] = (byte)(keySize >> 8);
-        val[3] = (byte)keySize;
-
-        return val;
     }
 }

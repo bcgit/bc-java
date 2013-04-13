@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.util.Pack;
 
 /**
  * Implementation of Bob Jenkin's ISAAC (Indirection Shift Accumulate Add and Count).
@@ -37,8 +38,8 @@ public class ISAACEngine
      * inappropriate.
      */
     public void init(
-                     boolean             forEncryption, 
-                     CipherParameters     params)
+        boolean             forEncryption, 
+        CipherParameters    params)
     {
         if (!(params instanceof KeyParameter))
         {
@@ -60,7 +61,7 @@ public class ISAACEngine
         if (index == 0) 
         {
             isaac();
-            keyStream = intToByteLittle(results);
+            keyStream = Pack.intToBigEndian(results);
         }
         byte out = (byte)(keyStream[index]^in);
         index = (index + 1) & 1023;
@@ -69,11 +70,11 @@ public class ISAACEngine
     }
     
     public void processBytes(
-                             byte[]     in, 
-                             int     inOff, 
-                             int     len, 
-                             byte[]     out, 
-                             int     outOff)
+        byte[]  in, 
+        int     inOff, 
+        int     len, 
+        byte[]  out, 
+        int     outOff)
     {
         if (!initialised)
         {
@@ -95,7 +96,7 @@ public class ISAACEngine
             if (index == 0) 
             {
                 isaac();
-                keyStream = intToByteLittle(results);
+                keyStream = Pack.intToBigEndian(results);
             }
             out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
             index = (index + 1) & 1023;
@@ -144,9 +145,9 @@ public class ISAACEngine
         System.arraycopy(keyBytes, 0, t, 0, keyBytes.length);
         for (i = 0; i < t.length; i+=4)
         {
-            results[i>>2] = byteToIntLittle(t, i);
+            results[i >>> 2] = Pack.littleEndianToInt(t, i);
         }
-        
+
         // It has begun?
         int[] abcdefgh = new int[sizeL];
         
@@ -214,33 +215,5 @@ public class ISAACEngine
         x[5]^=x[6]>>> 4; x[0]+=x[5]; x[6]+=x[7];
         x[6]^=x[7]<<  8; x[1]+=x[6]; x[7]+=x[0];
         x[7]^=x[0]>>> 9; x[2]+=x[7]; x[0]+=x[1];
-    }
-    
-    private int byteToIntLittle(byte[] x, int offset)
-    {
-        return (int)(x[offset++] & 0xFF)        |
-                   ((x[offset++] & 0xFF) <<  8) |
-                   ((x[offset++] & 0xFF) << 16) |
-                    (x[offset++] << 24);
-    }
-    
-    private byte[] intToByteLittle(int x)
-    {
-        byte[] out = new byte[4];
-        out[3] = (byte)x;
-        out[2] = (byte)(x >>> 8);
-        out[1] = (byte)(x >>> 16);
-        out[0] = (byte)(x >>> 24);
-        return out;
-    } 
-    
-    private byte[] intToByteLittle(int[] x)
-    {
-        byte[] out = new byte[4*x.length];
-        for (int i = 0, j = 0; i < x.length; i++,j+=4)
-        {
-            System.arraycopy(intToByteLittle(x[i]), 0, out, j, 4);
-        }
-        return out;
     }
 }

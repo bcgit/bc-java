@@ -186,7 +186,6 @@ public class IESEngine
                 C[i] = (byte)(in[inOff + i] ^ K1[i]);
             }
             len = inLen;
-
         }
         else
         {
@@ -209,16 +208,9 @@ public class IESEngine
         // Convert the length of the encoding vector into a byte array.
         byte[] P2 = param.getEncodingV();
         byte[] L2 = new byte[4];
-        if (V.length != 0)
+        if (V.length != 0 && P2 != null)
         {
-            if (P2 == null)
-            {
-                Pack.intToBigEndian(0, L2, 0);
-            }
-            else
-            {
-                Pack.intToBigEndian(P2.length * 8, L2, 0);
-            }
+            Pack.intToBigEndian(P2.length * 8, L2, 0);
         }
 
 
@@ -282,9 +274,7 @@ public class IESEngine
                 M[i] = (byte)(in_enc[inOff + V.length + i] ^ K1[i]);
             }
 
-
             len = K1.length;
-
         }
         else
         {
@@ -302,29 +292,21 @@ public class IESEngine
             M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
             len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
             len += cipher.doFinal(M, len);
-
         }
 
 
         // Convert the length of the encoding vector into a byte array.
         byte[] P2 = param.getEncodingV();
         byte[] L2 = new byte[4];
-        if (V.length != 0)
+        if (V.length != 0 && P2 != null)
         {
-            if (P2 != null)
-            {
-                Pack.intToBigEndian(P2.length * 8, L2, 0);
-            }
-            else
-            {
-                Pack.intToBigEndian(0, L2, 0);
-            }
+            Pack.intToBigEndian(P2.length * 8, L2, 0);
         }
 
 
         // Verify the MAC.
-        byte[] T1 = new byte[mac.getMacSize()];
-        System.arraycopy(in_enc, inOff + inLen - T1.length, T1, 0, T1.length);
+        int end = inOff + inLen;
+        byte[] T1 = Arrays.copyOfRange(in_enc, end - mac.getMacSize(), end);
 
         byte[] T2 = new byte[T1.length];
         mac.init(new KeyParameter(K2));
@@ -340,16 +322,14 @@ public class IESEngine
         }
         mac.doFinal(T2, 0);
 
-        if (!Arrays.areEqual(T1, T2))
+        if (!Arrays.constantTimeAreEqual(T1, T2))
         {
             throw new InvalidCipherTextException("Invalid MAC.");
         }
 
 
-        // Output the message.    
-        byte[] Output = new byte[len];
-        System.arraycopy(M, 0, Output, 0, len);
-        return Output;
+        // Output the message.
+        return Arrays.copyOfRange(M, 0, len);
     }
 
 
@@ -385,9 +365,7 @@ public class IESEngine
                 }
 
                 int encLength = (inLen - bIn.available());
-
-                this.V = new byte[encLength];
-                System.arraycopy(in, inOff, V, 0, V.length);
+                this.V = Arrays.copyOfRange(in, inOff, inOff + encLength);
             }
         }
 
@@ -397,8 +375,7 @@ public class IESEngine
         byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
 
         // Create input to KDF.  
-        byte[] VZ = null;
-
+        byte[] VZ;
         if (V.length != 0)
         {
             VZ = new byte[V.length + Z.length];
