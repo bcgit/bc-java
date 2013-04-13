@@ -16,10 +16,9 @@ public class UserIDPacket
         BCPGInputStream  in)
         throws IOException
     {
-        idData = new byte[in.available()];
-        in.readFully(idData);
+        this.idData = in.readAll();
     }
-    
+
     public UserIDPacket(
         String    id)
     {

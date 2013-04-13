@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * basic packet for a PGP secret key
@@ -64,15 +65,10 @@ public class SecretKeyPacket
                 in.readFully(iv, 0, iv.length);
             }
         }
-        
-        if (in.available() != 0)
-        {
-            secKeyData = new byte[in.available()];
-            
-            in.readFully(secKeyData);
-        }
+
+        this.secKeyData = in.readAll();
     }
-    
+
     /**
      * 
      * @param pubKeyPacket
@@ -176,7 +172,7 @@ public class SecretKeyPacket
         {
             pOut.write(secKeyData);
         }
-        
+
         return bOut.toByteArray();
     }
     

@@ -1,6 +1,8 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
+
+import org.bouncycastle.util.Arrays;
 
 /**
  * basic packet for an experimental packet.
@@ -22,25 +24,9 @@ public class ExperimentalPacket
         throws IOException
     {
         this.tag = tag;
-        
-        if (in.available() != 0)
-        {
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream(in.available());
-            
-            int b;
-            while ((b = in.read()) >= 0) 
-            {
-                 bOut.write(b);
-            }
-            
-            contents = bOut.toByteArray();
-        }
-        else
-        {
-            contents = new byte[0];
-        }
+        this.contents = in.readAll();
     }
-    
+
     public int getTag()
     {
         return tag;
@@ -48,13 +34,9 @@ public class ExperimentalPacket
     
     public byte[] getContents()
     {
-        byte[]    tmp = new byte[contents.length];
-        
-        System.arraycopy(contents, 0, tmp, 0, tmp.length);
-        
-        return tmp;
+        return Arrays.clone(contents);
     }
-    
+
     public void encode(
         BCPGOutputStream    out)
         throws IOException

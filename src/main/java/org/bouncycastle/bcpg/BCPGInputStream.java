@@ -83,7 +83,13 @@ public class BCPGInputStream
             throw new EOFException();
         }
     }
-    
+
+    public byte[] readAll()
+        throws IOException
+    {
+        return Streams.readAll(this);
+    }
+
     public void readFully(
         byte[]    buf)
         throws IOException
