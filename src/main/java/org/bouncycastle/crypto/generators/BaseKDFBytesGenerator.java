@@ -100,14 +100,14 @@ public class BaseKDFBytesGenerator implements DerivationFunction
 
         byte[] dig = new byte[digest.getDigestSize()];
 
-        int counter = counterStart;
         byte[] C = new byte[4];
+        Pack.intToBigEndian(counterStart, C, 0);
+
+        int counterBase = counterStart & ~0xFF;
 
         for (int i = 0; i < cThreshold; i++)
         {
             digest.update(shared, 0, shared.length);
-
-            Pack.intToBigEndian(counter, C, 0);
             digest.update(C, 0, C.length);
 
             if (iv != null)
@@ -128,7 +128,11 @@ public class BaseKDFBytesGenerator implements DerivationFunction
                 System.arraycopy(dig, 0, out, outOff, len);
             }
 
-            counter++;
+            if (++C[3] == 0)
+            {
+                counterBase += 0x100;
+                Pack.intToBigEndian(counterBase, C, 0);
+            }
         }
 
         digest.reset();
