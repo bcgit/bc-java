@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.util.Pack;
  * implementation of SHA-1 as outlined in "Handbook of Applied Cryptography", pages 346 - 349.
  *
  * It is interesting to ponder why the, apart from the extra IV, the other difference here from MD5
- * is the "endienness" of the word processing!
+ * is the "endianness" of the word processing!
  */
 public class SHA1Digest
     extends GeneralDigest
