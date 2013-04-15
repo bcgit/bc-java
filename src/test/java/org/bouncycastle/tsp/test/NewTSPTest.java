@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
@@ -175,7 +176,7 @@ public class NewTSPTest
     {
         JcaSimpleSignerInfoGeneratorBuilder signerInfoGenBuilder = new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC");
 
-        IssuerSerial issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(X500Name.getInstance(cert.getIssuerX500Principal().getEncoded()))), cert.getSerialNumber());
+        IssuerSerial issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(new X509CertificateHolder(cert.getEncoded()).getIssuer())), cert.getSerialNumber());
 
         DigestCalculator digCalc = new SHA1DigestCalculator();
 
@@ -239,13 +240,13 @@ public class NewTSPTest
 
         SigningCertificate sigCert = SigningCertificate.getInstance(table.get(PKCSObjectIdentifiers.id_aa_signingCertificate).getAttributeValues()[0]);
 
-        assertEquals(X500Name.getInstance(cert.getIssuerX500Principal().getEncoded()), sigCert.getCerts()[0].getIssuerSerial().getIssuer().getNames()[0].getName());
+        assertEquals(new X509CertificateHolder(cert.getEncoded()).getIssuer(), sigCert.getCerts()[0].getIssuerSerial().getIssuer().getNames()[0].getName());
         assertEquals(cert.getSerialNumber(), sigCert.getCerts()[0].getIssuerSerial().getSerial().getValue());
         assertTrue(Arrays.areEqual(certHash, sigCert.getCerts()[0].getCertHash()));
 
         SigningCertificateV2 sigCertV2 = SigningCertificateV2.getInstance(table.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2).getAttributeValues()[0]);
 
-        assertEquals(X500Name.getInstance(cert.getIssuerX500Principal().getEncoded()), sigCertV2.getCerts()[0].getIssuerSerial().getIssuer().getNames()[0].getName());
+        assertEquals(new X509CertificateHolder(cert.getEncoded()).getIssuer(), sigCertV2.getCerts()[0].getIssuerSerial().getIssuer().getNames()[0].getName());
         assertEquals(cert.getSerialNumber(), sigCertV2.getCerts()[0].getIssuerSerial().getSerial().getValue());
         assertTrue(Arrays.areEqual(certHash256, sigCertV2.getCerts()[0].getCertHash()));
     }
