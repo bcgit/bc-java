@@ -19,7 +19,7 @@ public class CCPDRequestData
     /**
      * Construct from corresponding ASN.1 Data structure.
      * Note, that data should have messageImprint choice,
-     * otherwise DVCSInitializationException is thrown.
+     * otherwise DVCSConstructionException is thrown.
      *
      * @param data
      * @throws DVCSConstructionException

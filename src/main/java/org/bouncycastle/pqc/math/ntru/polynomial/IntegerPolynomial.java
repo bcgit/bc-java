@@ -30,7 +30,7 @@ public class IntegerPolynomial
     /**
      * Prime numbers &gt; 4500 for resultant computation. Starting them below ~4400 causes incorrect results occasionally.
      * Fortunately, 4500 is about the optimum number for performance.<br/>
-     * This array contains enough prime numbers so primes never have to be computed on-line for any standard {@link org.bouncycastle.crypto.params.NTRUSigningParameters}.
+     * This array contains enough prime numbers so primes never have to be computed on-line for any standard {@link org.bouncycastle.pqc.crypto.ntru.NTRUSigningParameters}.
      */
     private static final int[] PRIMES = new int[]{
         4507, 4513, 4517, 4519, 4523, 4547, 4549, 4561, 4567, 4583,
