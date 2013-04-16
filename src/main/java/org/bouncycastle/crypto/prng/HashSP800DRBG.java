@@ -86,6 +86,7 @@ public class HashSP800DRBG implements SP80090DRBG
         if (predictionResistant) 
         {
             reseed(additionalInput);
+            additionalInput = null;
         }
 
         // 2.
