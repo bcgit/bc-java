@@ -23,7 +23,6 @@ public class DVCSResponse
     extends ASN1Object
     implements ASN1Choice
 {
-
     private DVCSCertInfo dvCertInfo;
     private DVCSErrorNotice dvErrorNote;
 
@@ -115,5 +114,4 @@ public class DVCSResponse
         }
         return null;
     }
-
 }
