@@ -126,6 +126,6 @@ public class DHKEKGenerator
 
         digest.reset();
 
-        return len;
+        return (int)oBytes;
     }
 }

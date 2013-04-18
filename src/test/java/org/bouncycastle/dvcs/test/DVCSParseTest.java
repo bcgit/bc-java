@@ -3,6 +3,7 @@ package org.bouncycastle.dvcs.test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -58,8 +59,8 @@ public class DVCSParseTest
     // expected info initialization:
     private static final DVCSRequest REQ_CCPD_CLEPSYDRE, REQ_CCPD_TOMSK, REQ_CPD_TOMSK, REQ_VPKC_TOMSK;
     private static final DVCSResponse RES_CCPD_CLEPSYDRE, RES_CCPD_TOMSK, RES_CPD_TOMSK, RES_VPKC_TOMSK;
-    private static List<Info<DVCSRequest>> requests = new ArrayList<Info<DVCSRequest>>();
-    private static List<Info<DVCSResponse>> responses = new ArrayList<Info<DVCSResponse>>();
+    private static List requests = new ArrayList();
+    private static List responses = new ArrayList();
 
     static
     {
@@ -132,15 +133,15 @@ public class DVCSParseTest
 
         RES_VPKC_TOMSK = new DVCSResponse(certInfoBldr.build());
 
-        requests.add(new Info<DVCSRequest>("req_ccpd_clepsydre", REQUEST_CCPD_CLEPSYDRE, REQ_CCPD_CLEPSYDRE));
-        requests.add(new Info<DVCSRequest>("req_ccpd_tomsk", REQUEST_CCPD_TOMSK, REQ_CCPD_TOMSK));
-        requests.add(new Info<DVCSRequest>("req_cpd_tomsk", REQUEST_CPD_TOMSK, REQ_CPD_TOMSK));
-        requests.add(new Info<DVCSRequest>("req_vpkc_tomsk", REQUEST_VPKC_TOMSK, REQ_VPKC_TOMSK));
+        requests.add(new Info("req_ccpd_clepsydre", REQUEST_CCPD_CLEPSYDRE, REQ_CCPD_CLEPSYDRE));
+        requests.add(new Info("req_ccpd_tomsk", REQUEST_CCPD_TOMSK, REQ_CCPD_TOMSK));
+        requests.add(new Info("req_cpd_tomsk", REQUEST_CPD_TOMSK, REQ_CPD_TOMSK));
+        requests.add(new Info("req_vpkc_tomsk", REQUEST_VPKC_TOMSK, REQ_VPKC_TOMSK));
 
-        responses.add(new Info<DVCSResponse>("res_ccpd_clepsydre", RESPONSE_CCPD_CLEPSYDRE, RES_CCPD_CLEPSYDRE));
-        responses.add(new Info<DVCSResponse>("res_ccpd_tomsk", RESPONSE_CCPD_TOMSK, RES_CCPD_TOMSK));
-        responses.add(new Info<DVCSResponse>("res_cpd_tomsk", RESPONSE_CPD_TOMSK, RES_CPD_TOMSK));
-        responses.add(new Info<DVCSResponse>("res_vpkc_tomsk", RESPONSE_VPKC_TOMSK, RES_VPKC_TOMSK));
+        responses.add(new Info("res_ccpd_clepsydre", RESPONSE_CCPD_CLEPSYDRE, RES_CCPD_CLEPSYDRE));
+        responses.add(new Info("res_ccpd_tomsk", RESPONSE_CCPD_TOMSK, RES_CCPD_TOMSK));
+        responses.add(new Info("res_cpd_tomsk", RESPONSE_CPD_TOMSK, RES_CPD_TOMSK));
+        responses.add(new Info("res_vpkc_tomsk", RESPONSE_VPKC_TOMSK, RES_VPKC_TOMSK));
 
     }
 
@@ -201,9 +202,10 @@ public class DVCSParseTest
     public void testParseRequests()
         throws IOException, DVCSException, CMSException
     {
-        for (Info<DVCSRequest> info : requests)
+        for (Iterator it = requests.iterator(); it.hasNext();)
         {
-            testParseRequest(info.name, info.base64, info.expected);
+            Info info = (Info)it.next();
+            testParseRequest(info.name, info.base64, (DVCSRequest)info.expected);
         }
     }
 
@@ -220,9 +222,10 @@ public class DVCSParseTest
     public void testParseResponses()
         throws IOException, DVCSException, CMSException
     {
-        for (Info<DVCSResponse> info : responses)
+        for (Iterator it = responses.iterator(); it.hasNext();)
         {
-            testParseResponse(info.name, info.base64, info.expected);
+            Info info = (Info)it.next();
+            testParseResponse(info.name, info.base64, (DVCSResponse)info.expected);
         }
     }
 
@@ -373,13 +376,13 @@ public class DVCSParseTest
         validate(name + ".transactionIdentifier", result.getTransactionIdentifier(), expected.getTransactionIdentifier());
     }
 
-    private static class Info<T>
+    private static class Info
     {
         public String name;
         public String base64;
-        public T expected;
+        public Object expected;
 
-        public Info(String name, String base64, T expected)
+        public Info(String name, String base64, Object expected)
         {
             this.name = name;
             this.base64 = base64;

@@ -6,6 +6,8 @@ import org.bouncycastle.util.encoders.Hex;
 public class HashSP800DRBG implements SP80090DRBG
 {
     private final static byte[]     ONE = { 0x01 };
+    private final static int        RESEED_MAX = 100000;
+    
     private Digest                 _digest;
     private byte[]                 _V;
     private byte[]                 _C;
@@ -83,9 +85,10 @@ public class HashSP800DRBG implements SP80090DRBG
     {
         int numberOfBits = output.length*8;
         
-        if (predictionResistant) 
-        {
+        if (predictionResistant || _reseedCounter > RESEED_MAX) 
+        {   
             reseed(additionalInput);
+            additionalInput = null;
         }
 
         // 2.
@@ -163,8 +166,7 @@ public class HashSP800DRBG implements SP80090DRBG
     //
     // 6. Return V, C, and reseed_counter for the new_working_state.
     //
-    // Comment: Preceed with a byte of all
-    // zeros.
+    // Comment: Precede with a byte of all zeros.
     public void reseed(byte[] additionalInput)
     {
         if (additionalInput == null) 
