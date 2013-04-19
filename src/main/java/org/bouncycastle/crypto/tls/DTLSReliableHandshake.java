@@ -6,8 +6,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.io.DigestOutputStream;
-
 class DTLSReliableHandshake {
 
     private final static int MAX_RECEIVE_AHEAD = 10;
@@ -15,7 +13,6 @@ class DTLSReliableHandshake {
     private final DTLSRecordLayer recordLayer;
 
     private TlsHandshakeHash hash = new DeferredHash();
-    private DigestOutputStream hashStream = new DigestOutputStream(hash);
 
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
@@ -31,7 +28,6 @@ class DTLSReliableHandshake {
 
     void notifyHelloComplete() {
         this.hash = this.hash.commit();
-        this.hashStream = new DigestOutputStream(this.hash);
     }
 
     byte[] getCurrentHash() {
@@ -223,13 +219,15 @@ class DTLSReliableHandshake {
 
     private Message updateHandshakeMessagesDigest(Message message) throws IOException {
         if (message.getType() != HandshakeType.hello_request) {
-            int length = message.getBody().length;
-            TlsUtils.writeUint8(message.getType(), hashStream);
-            TlsUtils.writeUint24(length, hashStream);
-            TlsUtils.writeUint16(message.getSeq(), hashStream);
-            TlsUtils.writeUint24(0, hashStream);
-            TlsUtils.writeUint24(length, hashStream);
-            hashStream.write(message.getBody(), 0, length);
+            byte[] body = message.getBody();
+            byte[] buf = new byte[12];
+            TlsUtils.writeUint8(message.getType(), buf, 0);
+            TlsUtils.writeUint24(body.length, buf, 1);
+            TlsUtils.writeUint16(message.getSeq(), buf, 4);
+            TlsUtils.writeUint24(0, buf, 6);
+            TlsUtils.writeUint24(body.length, buf, 9);
+            hash.update(buf, 0, buf.length);
+            hash.update(body, 0, body.length);
         }
         return message;
     }
