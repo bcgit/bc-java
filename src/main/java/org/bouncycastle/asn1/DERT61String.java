@@ -91,7 +91,14 @@ public class DERT61String
      */
     public String getString()
     {
-        return Strings.fromUTF8ByteArray(string);
+        try
+        {
+            return Strings.fromUTF8ByteArray(string);
+        }
+        catch (Exception e)
+        {    // not UTF-8 try 8 bit.
+            return Strings.fromByteArray(string);
+        }
     }
 
     public String toString()
