@@ -143,11 +143,9 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         recordLayer.initPendingEpoch(state.server.getCipher());
 
-        clientMessage = handshake.receiveMessage();
-
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-            handshake.getCurrentHash());
+        byte[] clientFinishedHash = handshake.getCurrentHash();
+        clientMessage = handshake.receiveMessage();
 
         // TODO Check whether the client Certificate has signing capability
 
@@ -156,15 +154,15 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
             // TODO Integrate verify_data determination into DTLSReliableHandshake to avoid
             // re-calculating this
-            expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-                handshake.getCurrentHash());
-
+            clientFinishedHash = handshake.getCurrentHash();
             clientMessage = handshake.receiveMessage();
         } else {
             // TODO Inform state.server that there's no CertificateVerify
         }
 
         if (clientMessage.getType() == HandshakeType.finished) {
+            byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
+                clientFinishedHash);
             processFinished(clientMessage.getBody(), expectedClientVerifyData);
         } else {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
