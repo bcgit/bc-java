@@ -46,8 +46,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             ProtocolVersion client_version = state.clientContext.getClientVersion();
 
             if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
-                // TODO Alert
-                // this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
             state.clientContext.setServerVersion(server_version);
@@ -68,7 +67,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             processServerHello(state, serverMessage.getBody());
             serverMessage = handshake.receiveMessage();
         } else {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
@@ -117,10 +116,10 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         if (serverMessage.getType() == HandshakeType.server_hello_done) {
             if (serverMessage.getBody().length != 0) {
-                // TODO Alert
+                throw new TlsFatalAlert(AlertDescription.decode_error);
             }
         } else {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         Vector clientSupplementalData = state.client.getClientSupplementalData();
@@ -182,7 +181,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             if (serverMessage.getType() == HandshakeType.session_ticket) {
                 processNewSessionTicket(state, serverMessage.getBody());
             } else {
-                // TODO Alert
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
         }
 
@@ -194,7 +193,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         if (serverMessage.getType() == HandshakeType.finished) {
             processFinished(serverMessage.getBody(), expectedServerVerifyData);
         } else {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         handshake.finish();
@@ -217,7 +216,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         ProtocolVersion client_version = client.getClientVersion();
         if (!client_version.isDTLS()) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         state.clientContext.setClientVersion(client_version);
@@ -334,14 +333,14 @@ public class DTLSClientProtocol extends DTLSProtocol {
         // TODO Read RFCs for guidance on the expected record layer version number
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
         if (!server_version.equals(state.clientContext.getServerVersion())) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
         state.client.notifySessionID(sessionID);
 
@@ -349,7 +348,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
         if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.illegal_parameter);
@@ -358,7 +357,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         state.selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod)) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
         state.client.notifySelectedCompressionMethod(state.selectedCompressionMethod);
 
@@ -408,8 +407,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
                      * the extended server hello that they did not request in the associated
                      * (extended) client hello.
                      */
-                    // TODO Alert
-                    // this.failWithError(AlertLevel.fatal, AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
                 }
             }
 
@@ -433,8 +431,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
                     if (!Arrays.constantTimeAreEqual(renegExtValue,
                         TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
-                        // TODO Alert
-                        // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
                     }
                 }
             }

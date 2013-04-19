@@ -29,8 +29,7 @@ public abstract class DTLSProtocol {
         TlsProtocol.assertEmpty(buf);
 
         if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data)) {
-            // TODO Alert
-            // this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
     }
 
@@ -66,7 +65,7 @@ public abstract class DTLSProtocol {
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
             // TODO Alert
-            throw new IllegalStateException("Server selected an RC4 cipher suite: RC4 MUST NOT be used with DTLS");
+            throw new IllegalStateException("RC4 MUST NOT be used with DTLS");
         }
     }
 }
