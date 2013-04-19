@@ -56,4 +56,8 @@ public class UDPTransport implements DatagramTransport {
         DatagramPacket packet = new DatagramPacket(buf, off, len);
         socket.send(packet);
     }
+
+    public void close() throws IOException {
+        socket.close();
+    }
 }

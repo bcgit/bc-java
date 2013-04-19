@@ -40,6 +40,9 @@ public class LoggingDatagramTransport implements DatagramTransport {
         transport.send(buf, off, len);
     }
 
+    public void close() throws IOException {
+    }
+
     private void dumpDatagram(String verb, byte[] buf, int off, int len) throws IOException {
         long timestamp = System.currentTimeMillis() - launchTimestamp;
         StringBuffer sb = new StringBuffer("(+" + timestamp + "ms) " + verb + " " + len + " byte datagram:");

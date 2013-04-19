@@ -52,6 +52,10 @@ public class UnreliableDatagramTransport implements DatagramTransport {
         }
     }
 
+    public void close() throws IOException {
+        transport.close();
+    }
+
     private boolean lostPacket(int percentPacketLoss) {
         return random.nextInt(100) < percentPacketLoss;
     }

@@ -11,4 +11,6 @@ public interface DatagramTransport {
     int receive(byte[] buf, int off, int len, int waitMillis) throws IOException;
 
     void send(byte[] buf, int off, int len) throws IOException;
+
+    void close() throws IOException;
 }

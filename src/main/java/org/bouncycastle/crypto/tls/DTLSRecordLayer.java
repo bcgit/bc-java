@@ -213,6 +213,12 @@ class DTLSRecordLayer implements DatagramTransport {
         sendRecord(contentType, buf, off, len);
     }
 
+    public void close() throws IOException {
+        // TODO Send close notify?
+
+        transport.close();
+    }
+
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis) throws IOException {
         if (recordQueue.size() > 0) {
             int length = 0;

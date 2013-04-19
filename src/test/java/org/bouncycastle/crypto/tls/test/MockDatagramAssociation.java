@@ -80,5 +80,9 @@ public class MockDatagramAssociation {
                 sendQueue.notify();
             }
         }
+
+        public void close() throws IOException {
+            // TODO?
+        }
     }
 }

@@ -5,7 +5,7 @@ import java.io.IOException;
 public class DTLSTransport implements DatagramTransport {
 
     private final DatagramTransport transport;
-    
+
     DTLSTransport(DatagramTransport transport) {
         this.transport = transport;
     }
@@ -24,5 +24,9 @@ public class DTLSTransport implements DatagramTransport {
 
     public void send(byte[] buf, int off, int len) throws IOException {
         transport.send(buf, off, len);
+    }
+
+    public void close() throws IOException {
+        transport.close();
     }
 }
