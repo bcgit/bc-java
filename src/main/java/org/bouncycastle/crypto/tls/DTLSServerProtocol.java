@@ -45,16 +45,16 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 
-        try
-        {
+        try {
             return serverHandshake(state, recordLayer);
-        }
-        catch (TlsFatalAlert fatalAlert)
-        {
+        } catch (TlsFatalAlert fatalAlert) {
+            recordLayer.fail(server, fatalAlert.getAlertDescription());
             throw fatalAlert;
-        }
-        catch (Exception e)
-        {
+        } catch (IOException e) {
+            recordLayer.fail(server, AlertDescription.internal_error);
+            throw e;
+        } catch (RuntimeException e) {
+            recordLayer.fail(server, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }

@@ -34,16 +34,16 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, ContentType.handshake);
 
-        try
-        {
+        try {
             return clientHandshake(state, recordLayer);
-        }
-        catch (TlsFatalAlert fatalAlert)
-        {
+        } catch (TlsFatalAlert fatalAlert) {
+            recordLayer.fail(client, fatalAlert.getAlertDescription());
             throw fatalAlert;
-        }
-        catch (Exception e)
-        {
+        } catch (IOException e) {
+            recordLayer.fail(client, AlertDescription.internal_error);
+            throw e;
+        } catch (RuntimeException e) {
+            recordLayer.fail(client, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }

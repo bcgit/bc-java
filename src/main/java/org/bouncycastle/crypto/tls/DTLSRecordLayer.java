@@ -96,8 +96,7 @@ class DTLSRecordLayer implements DatagramTransport {
             }
 
             try {
-                if (retransmit != null && System.currentTimeMillis() > retransmitExpiry)
-                {
+                if (retransmit != null && System.currentTimeMillis() > retransmitExpiry) {
                     retransmit = null;
                 }
 
@@ -241,8 +240,45 @@ class DTLSRecordLayer implements DatagramTransport {
         sendRecord(contentType, buf, off, len);
     }
 
-    void raiseAlert(TlsPeer peer, short alertLevel, short alertDescription, String message, Exception cause)
-        throws IOException {
+    public void close() throws IOException {
+        // NOTE: We shouldn't really be implementing DatagramTransport after all
+        throw new IllegalStateException();
+    }
+
+    void close(TlsPeer peer) throws IOException {
+        if (!closed) {
+            if (inHandshake) {
+                warn(peer, AlertDescription.user_canceled, "User canceled handshake");
+            }
+            warn(peer, AlertDescription.close_notify, null);
+            closeTransport(peer);
+        }
+    }
+
+    void fail(TlsPeer peer, short alertDescription) {
+        if (!closed) {
+            failed = true;
+            raiseAlert(peer, AlertLevel.fatal, alertDescription, null, null);
+            closeTransport(peer);
+        }
+    }
+
+    void warn(TlsPeer peer, short alertDescription, String message) {
+        raiseAlert(peer, AlertLevel.warning, alertDescription, message, null);
+    }
+
+    private void closeTransport(TlsPeer peer) {
+        if (!closed) {
+            closed = true;
+            try {
+                transport.close();
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+
+    private void raiseAlert(TlsPeer peer, short alertLevel, short alertDescription, String message, Exception cause) {
 
         peer.notifyAlertRaised(alertLevel, alertDescription, message, cause);
 
@@ -250,43 +286,10 @@ class DTLSRecordLayer implements DatagramTransport {
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
-        try
-        {
+        try {
             sendRecord(ContentType.alert, error, 0, 2);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             // TODO Check that there's nothing to do here
-        }
-    }
-
-    void raiseWarning(TlsPeer peer, short alertDescription, String message) throws IOException {
-        raiseAlert(peer, AlertLevel.warning, alertDescription, message, null);
-    }
-
-    public void close() throws IOException {
-        // NOTE: We shouldn't really be implementing DatagramTransport after all
-        throw new IllegalStateException();
-    }
-
-    void close(TlsPeer peer) throws IOException {
-        if (!closed && inHandshake) {
-            raiseWarning(peer, AlertDescription.user_canceled, "User canceled handshake");
-        }
-        handleClose(peer);
-    }
-
-    void handleClose(TlsPeer peer) {
-        if (!closed) {
-            closed = true;
-            try
-            {
-                transport.close();
-            }
-            catch (Exception e)
-            {
-                // Ignore
-            }
         }
     }
 
