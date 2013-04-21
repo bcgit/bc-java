@@ -6,6 +6,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private static final int RECORD_HEADER_LENGTH = 13;
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
+    private static final long TCP_MSL = 1000L * 60 * 2;
+    private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
 
     private final DatagramTransport transport;
     private final TlsContext context;
@@ -16,6 +18,9 @@ class DTLSRecordLayer implements DatagramTransport {
     private volatile boolean inHandshake;
     private DTLSEpoch currentEpoch, pendingEpoch;
     private DTLSEpoch readEpoch, writeEpoch;
+
+    private DTLSHandshakeRetransmit retransmit = null;
+    private long retransmitExpiry = 0;
 
     DTLSRecordLayer(DatagramTransport transport, TlsContext context, short contentType) {
         this.transport = transport;
@@ -35,7 +40,6 @@ class DTLSRecordLayer implements DatagramTransport {
 
     void initPendingEpoch(TlsCipher pendingCipher) {
         if (pendingEpoch != null) {
-            // TODO
             throw new IllegalStateException();
         }
 
@@ -49,7 +53,7 @@ class DTLSRecordLayer implements DatagramTransport {
         this.pendingEpoch = new DTLSEpoch(writeEpoch.getEpoch() + 1, pendingCipher);
     }
 
-    void handshakeSuccessful() {
+    void handshakeSuccessful(DTLSHandshakeRetransmit retransmit) {
         if (readEpoch == currentEpoch || writeEpoch == currentEpoch) {
             // TODO
             throw new IllegalStateException();
@@ -57,6 +61,11 @@ class DTLSRecordLayer implements DatagramTransport {
         this.inHandshake = false;
         this.currentEpoch = pendingEpoch;
         this.pendingEpoch = null;
+
+        if (retransmit != null) {
+            this.retransmit = retransmit;
+            this.retransmitExpiry = System.currentTimeMillis() + RETRANSMIT_TIMEOUT;
+        }
     }
 
     void resetWriteEpoch() {
@@ -85,6 +94,11 @@ class DTLSRecordLayer implements DatagramTransport {
             }
 
             try {
+                if (retransmit != null && System.currentTimeMillis() > retransmitExpiry)
+                {
+                    retransmit = null;
+                }
+
                 int received = receiveRecord(record, 0, receiveLimit, waitMillis);
                 if (received < 0) {
                     return received;
@@ -162,7 +176,6 @@ class DTLSRecordLayer implements DatagramTransport {
                     if (pendingEpoch == null) {
                         // TODO Exception?
                     } else {
-
                         readEpoch = pendingEpoch;
                     }
 
@@ -170,10 +183,23 @@ class DTLSRecordLayer implements DatagramTransport {
                 }
                 case ContentType.handshake: {
                     if (!inHandshake) {
+                        if (retransmit != null) {
+                            // TODO Need to cater to records from the previous epoch
+                            retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
+                        }
+
                         // TODO Consider support for HelloRequest
                         continue;
                     }
                 }
+                }
+
+                /*
+                 * NOTE: If we receive any non-handshake data in the new epoch implies the peer has
+                 * received our final flight.
+                 */
+                if (!inHandshake && retransmit != null) {
+                    this.retransmit = null;
                 }
 
                 System.arraycopy(plaintext, 0, buf, off, plaintext.length);

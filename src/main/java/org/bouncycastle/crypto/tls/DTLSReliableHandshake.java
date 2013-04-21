@@ -178,13 +178,25 @@ class DTLSReliableHandshake {
     }
 
     void finish() {
+        DTLSHandshakeRetransmit retransmit;
         if (sending) {
-            // TODO Support case when this side sends the final handshake message
+            retransmit = new DTLSHandshakeRetransmit() {
+                public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len) {
+                    /*
+                     * TODO RFC 6347 4.2.4. In addition, for at least twice the default MSL defined
+                     * for [TCP], when in the FINISHED state, the node that transmits the last
+                     * flight (the server in an ordinary handshake or the client in a resumed
+                     * handshake) MUST respond to a retransmit of the peer's last flight with a
+                     * retransmit of the last flight.
+                     */
+                }
+            };
         } else {
             checkInboundFlight();
+            retransmit = null;
         }
 
-        recordLayer.handshakeSuccessful();
+        recordLayer.handshakeSuccessful(retransmit);
     }
 
     void resetHandshakeMessagesDigest() {
