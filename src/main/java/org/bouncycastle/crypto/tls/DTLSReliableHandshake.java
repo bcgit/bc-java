@@ -178,22 +178,52 @@ class DTLSReliableHandshake {
     }
 
     void finish() {
-        DTLSHandshakeRetransmit retransmit;
-        if (sending) {
+        DTLSHandshakeRetransmit retransmit = null;
+        if (!sending) {
+            checkInboundFlight();
+        } else if (previousInboundFlight != null) {
+            /*
+             * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
+             * when in the FINISHED state, the node that transmits the last flight (the server in an
+             * ordinary handshake or the client in a resumed handshake) MUST respond to a retransmit
+             * of the peer's last flight with a retransmit of the last flight.
+             */
             retransmit = new DTLSHandshakeRetransmit() {
-                public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len) {
+                public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len) throws IOException {
                     /*
-                     * TODO RFC 6347 4.2.4. In addition, for at least twice the default MSL defined
-                     * for [TCP], when in the FINISHED state, the node that transmits the last
-                     * flight (the server in an ordinary handshake or the client in a resumed
-                     * handshake) MUST respond to a retransmit of the peer's last flight with a
-                     * retransmit of the last flight.
+                     * TODO Need to handle the case where the previous inbound flight cotains
+                     * messages from two epochs.
                      */
+                    if (len < 12) {
+                        return;
+                    }
+                    int fragment_length = TlsUtils.readUint24(buf, off + 9);
+                    if (len != (fragment_length + 12)) {
+                        return;
+                    }
+                    int seq = TlsUtils.readUint16(buf, off + 4);
+                    if (seq >= next_receive_seq) {
+                        return;
+                    }
+
+                    short msg_type = TlsUtils.readUint8(buf, off);
+                    int length = TlsUtils.readUint24(buf, off + 1);
+                    int fragment_offset = TlsUtils.readUint24(buf, off + 6);
+                    if (fragment_offset + fragment_length > length) {
+                        return;
+                    }
+
+                    DTLSReassembler reassembler = (DTLSReassembler) previousInboundFlight.get(Integer.valueOf(seq));
+                    if (reassembler != null) {
+                        reassembler.contributeFragment(msg_type, length, buf, off + 12, fragment_offset,
+                            fragment_length);
+                        if (checkAll(previousInboundFlight)) {
+                            resendOutboundFlight();
+                            resetAll(previousInboundFlight);
+                        }
+                    }
                 }
             };
-        } else {
-            checkInboundFlight();
-            retransmit = null;
         }
 
         recordLayer.handshakeSuccessful(retransmit);
