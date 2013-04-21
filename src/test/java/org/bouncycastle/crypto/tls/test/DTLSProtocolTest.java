@@ -61,6 +61,8 @@ public class DTLSProtocolTest extends TestCase {
                 DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport);
                 // Streams.pipeAll(serverProtocol.getInputStream(),
                 // serverProtocol.getOutputStream());
+//                byte[] buf = new byte[dtlsServer.getReceiveLimit()];
+//                dtlsServer.receive(buf, 0, buf.length, 60000);
                 dtlsServer.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);

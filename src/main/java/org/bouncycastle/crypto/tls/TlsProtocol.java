@@ -247,6 +247,7 @@ public abstract class TlsProtocol {
                  * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
                  * and close down the connection immediately, discarding any pending writes.
                  */
+                // TODO Can close_notify be a fatal alert?
                 if (description == AlertDescription.close_notify) {
                     handleClose(false);
                 }

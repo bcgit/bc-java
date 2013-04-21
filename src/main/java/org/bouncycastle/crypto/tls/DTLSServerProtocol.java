@@ -41,20 +41,20 @@ public class DTLSServerProtocol extends DTLSProtocol {
         state.serverContext = new TlsServerContextImpl(secureRandom, securityParameters);
         server.init(state.serverContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 
         try {
             return serverHandshake(state, recordLayer);
         } catch (TlsFatalAlert fatalAlert) {
-            recordLayer.fail(server, fatalAlert.getAlertDescription());
+            recordLayer.fail(fatalAlert.getAlertDescription());
             throw fatalAlert;
         } catch (IOException e) {
-            recordLayer.fail(server, AlertDescription.internal_error);
+            recordLayer.fail(AlertDescription.internal_error);
             throw e;
         } catch (RuntimeException e) {
-            recordLayer.fail(server, AlertDescription.internal_error);
+            recordLayer.fail(AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
@@ -200,7 +200,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         state.server.notifyHandshakeComplete();
 
-        return new DTLSTransport(recordLayer, state.server);
+        return new DTLSTransport(recordLayer);
     }
 
     protected byte[] generateCertificateRequest(ServerHandshakeState state, CertificateRequest certificateRequest)

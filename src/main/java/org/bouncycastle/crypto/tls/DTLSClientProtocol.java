@@ -32,18 +32,18 @@ public class DTLSClientProtocol extends DTLSProtocol {
         state.clientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         client.init(state.clientContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, client, ContentType.handshake);
 
         try {
             return clientHandshake(state, recordLayer);
         } catch (TlsFatalAlert fatalAlert) {
-            recordLayer.fail(client, fatalAlert.getAlertDescription());
+            recordLayer.fail(fatalAlert.getAlertDescription());
             throw fatalAlert;
         } catch (IOException e) {
-            recordLayer.fail(client, AlertDescription.internal_error);
+            recordLayer.fail(AlertDescription.internal_error);
             throw e;
         } catch (RuntimeException e) {
-            recordLayer.fail(client, AlertDescription.internal_error);
+            recordLayer.fail(AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
@@ -218,7 +218,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         state.client.notifyHandshakeComplete();
 
-        return new DTLSTransport(recordLayer, state.client);
+        return new DTLSTransport(recordLayer);
     }
 
     protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature) throws IOException {

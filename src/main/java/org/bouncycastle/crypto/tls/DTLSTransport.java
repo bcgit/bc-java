@@ -5,11 +5,9 @@ import java.io.IOException;
 public class DTLSTransport implements DatagramTransport {
 
     private final DTLSRecordLayer recordLayer;
-    private final TlsPeer peer;
 
-    DTLSTransport(DTLSRecordLayer recordLayer, TlsPeer peer) {
+    DTLSTransport(DTLSRecordLayer recordLayer) {
         this.recordLayer = recordLayer;
-        this.peer = peer;
     }
 
     public int getReceiveLimit() throws IOException {
@@ -21,14 +19,36 @@ public class DTLSTransport implements DatagramTransport {
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
-        return recordLayer.receive(buf, off, len, waitMillis);
+        try {
+            return recordLayer.receive(buf, off, len, waitMillis);
+        } catch (TlsFatalAlert fatalAlert) {
+            recordLayer.fail(fatalAlert.getAlertDescription());
+            throw fatalAlert;
+        } catch (IOException e) {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw e;
+        } catch (RuntimeException e) {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
-        recordLayer.send(buf, off, len);
+        try {
+            recordLayer.send(buf, off, len);
+        } catch (TlsFatalAlert fatalAlert) {
+            recordLayer.fail(fatalAlert.getAlertDescription());
+            throw fatalAlert;
+        } catch (IOException e) {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw e;
+        } catch (RuntimeException e) {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public void close() throws IOException {
-        recordLayer.close(peer);
+        recordLayer.close();
     }
 }

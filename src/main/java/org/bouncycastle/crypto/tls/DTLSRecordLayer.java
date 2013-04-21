@@ -11,6 +11,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private final DatagramTransport transport;
     private final TlsContext context;
+    private final TlsPeer peer;
 
     private final ByteQueue recordQueue = new ByteQueue();
 
@@ -24,9 +25,10 @@ class DTLSRecordLayer implements DatagramTransport {
     private DTLSHandshakeRetransmit retransmit = null;
     private long retransmitExpiry = 0;
 
-    DTLSRecordLayer(DatagramTransport transport, TlsContext context, short contentType) {
+    DTLSRecordLayer(DatagramTransport transport, TlsContext context, TlsPeer peer, short contentType) {
         this.transport = transport;
         this.context = context;
+        this.peer = peer;
 
         this.inHandshake = true;
 
@@ -155,8 +157,27 @@ class DTLSRecordLayer implements DatagramTransport {
 
                 switch (type) {
                 case ContentType.alert: {
-                    // TODO Figure out approach to sending/receiving alerts
-                    break;
+
+                    if (plaintext.length == 2) {
+                        short alertLevel = plaintext[0];
+                        short alertDescription = plaintext[1];
+
+                        peer.notifyAlertReceived(alertLevel, alertDescription);
+
+                        if (alertLevel == AlertLevel.fatal) {
+                            fail(alertDescription);
+                            throw new TlsFatalAlert(alertDescription);
+                        }
+
+                        // TODO Can close_notify be a fatal alert?
+                        if (alertDescription == AlertDescription.close_notify) {
+                            closeTransport();
+                        }
+                    } else {
+                        // TODO What exception?
+                    }
+
+                    continue;
                 }
                 case ContentType.application_data: {
                     if (inHandshake) {
@@ -241,44 +262,56 @@ class DTLSRecordLayer implements DatagramTransport {
     }
 
     public void close() throws IOException {
-        // NOTE: We shouldn't really be implementing DatagramTransport after all
-        throw new IllegalStateException();
-    }
-
-    void close(TlsPeer peer) throws IOException {
         if (!closed) {
             if (inHandshake) {
-                warn(peer, AlertDescription.user_canceled, "User canceled handshake");
+                warn(AlertDescription.user_canceled, "User canceled handshake");
             }
-            warn(peer, AlertDescription.close_notify, null);
-            closeTransport(peer);
+            closeTransport();
         }
     }
 
-    void fail(TlsPeer peer, short alertDescription) {
+    void fail(short alertDescription) {
         if (!closed) {
-            failed = true;
-            raiseAlert(peer, AlertLevel.fatal, alertDescription, null, null);
-            closeTransport(peer);
-        }
-    }
-
-    void warn(TlsPeer peer, short alertDescription, String message) {
-        raiseAlert(peer, AlertLevel.warning, alertDescription, message, null);
-    }
-
-    private void closeTransport(TlsPeer peer) {
-        if (!closed) {
-            closed = true;
             try {
+                raiseAlert(AlertLevel.fatal, alertDescription, null, null);
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            failed = true;
+
+            closeTransport();
+        }
+    }
+
+    void warn(short alertDescription, String message) throws IOException {
+        raiseAlert(AlertLevel.warning, alertDescription, message, null);
+    }
+
+    private void closeTransport() {
+        if (!closed) {
+            /*
+             * RFC 5246 7.2.1. Unless some other fatal alert has been transmitted, each party is
+             * required to send a close_notify alert before closing the write side of the
+             * connection. The other party MUST respond with a close_notify alert of its own and
+             * close down the connection immediately, discarding any pending writes.
+             */
+
+            try {
+                if (!failed) {
+                    warn(AlertDescription.close_notify, null);
+                }
                 transport.close();
             } catch (Exception e) {
                 // Ignore
             }
+
+            closed = true;
         }
     }
 
-    private void raiseAlert(TlsPeer peer, short alertLevel, short alertDescription, String message, Exception cause) {
+    private void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
+        throws IOException {
 
         peer.notifyAlertRaised(alertLevel, alertDescription, message, cause);
 
@@ -286,11 +319,7 @@ class DTLSRecordLayer implements DatagramTransport {
         error[0] = (byte) alertLevel;
         error[1] = (byte) alertDescription;
 
-        try {
-            sendRecord(ContentType.alert, error, 0, 2);
-        } catch (IOException e) {
-            // TODO Check that there's nothing to do here
-        }
+        sendRecord(ContentType.alert, error, 0, 2);
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis) throws IOException {
