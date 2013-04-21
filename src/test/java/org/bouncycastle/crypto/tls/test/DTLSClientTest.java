@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
+import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.UDPTransport;
 
@@ -33,22 +34,22 @@ public class DTLSClientTest {
         DTLSClientProtocol protocol = new DTLSClientProtocol(secureRandom);
 
         MockDTLSClient client = new MockDTLSClient();
-        DatagramTransport dtls = protocol.connect(client, transport);
+        DTLSTransport dtlsClient = protocol.connect(client, transport);
 
-        System.out.println("Receive limit: " + dtls.getReceiveLimit());
-        System.out.println("Send limit: " + dtls.getSendLimit());
+        System.out.println("Receive limit: " + dtlsClient.getReceiveLimit());
+        System.out.println("Send limit: " + dtlsClient.getSendLimit());
 
         // Send and hopefully receive a packet back
 
         byte[] request = "Hello World!\n".getBytes("UTF-8");
-        dtls.send(request, 0, request.length);
+        dtlsClient.send(request, 0, request.length);
 
-        byte[] response = new byte[dtls.getReceiveLimit()];
-        int received = dtls.receive(response, 0, response.length, 30000);
+        byte[] response = new byte[dtlsClient.getReceiveLimit()];
+        int received = dtlsClient.receive(response, 0, response.length, 30000);
         if (received >= 0) {
             System.out.println(new String(response, 0, received, "UTF-8"));
         }
 
-        socket.close();
+        dtlsClient.close();
     }
 }

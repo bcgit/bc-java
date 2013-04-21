@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
+import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 
 public class DTLSProtocolTest extends TestCase {
@@ -27,7 +28,7 @@ public class DTLSProtocolTest extends TestCase {
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
         MockDTLSClient client = new MockDTLSClient();
-        clientProtocol.connect(client, clientTransport);
+        DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
         // byte[] data = new byte[64];
         // secureRandom.nextBytes(data);
@@ -37,6 +38,9 @@ public class DTLSProtocolTest extends TestCase {
         // output.close();
         //
         // byte[] echo = Streams.readAll(clientProtocol.getInputStream());
+
+        dtlsClient.close();
+
         serverThread.join();
 
         // assertTrue(Arrays.areEqual(data, echo));
@@ -54,10 +58,10 @@ public class DTLSProtocolTest extends TestCase {
         public void run() {
             try {
                 MockDTLSServer server = new MockDTLSServer();
-                serverProtocol.accept(server, serverTransport);
+                DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport);
                 // Streams.pipeAll(serverProtocol.getInputStream(),
                 // serverProtocol.getOutputStream());
-                // serverProtocol.close();
+                dtlsServer.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
