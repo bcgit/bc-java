@@ -4,29 +4,31 @@ import java.io.IOException;
 
 public class DTLSTransport implements DatagramTransport {
 
-    private final DatagramTransport transport;
+    private final DTLSRecordLayer recordLayer;
+    private final TlsPeer peer;
 
-    DTLSTransport(DatagramTransport transport) {
-        this.transport = transport;
+    DTLSTransport(DTLSRecordLayer recordLayer, TlsPeer peer) {
+        this.recordLayer = recordLayer;
+        this.peer = peer;
     }
 
     public int getReceiveLimit() throws IOException {
-        return transport.getReceiveLimit();
+        return recordLayer.getReceiveLimit();
     }
 
     public int getSendLimit() throws IOException {
-        return transport.getSendLimit();
+        return recordLayer.getSendLimit();
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
-        return transport.receive(buf, off, len, waitMillis);
+        return recordLayer.receive(buf, off, len, waitMillis);
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
-        transport.send(buf, off, len);
+        recordLayer.send(buf, off, len);
     }
 
     public void close() throws IOException {
-        transport.close();
+        recordLayer.close(peer);
     }
 }

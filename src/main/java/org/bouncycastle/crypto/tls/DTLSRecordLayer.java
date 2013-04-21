@@ -14,6 +14,8 @@ class DTLSRecordLayer implements DatagramTransport {
 
     private final ByteQueue recordQueue = new ByteQueue();
 
+    private volatile boolean closed = false;
+    private volatile boolean failed = false;
     private volatile ProtocolVersion discoveredPeerVersion = null;
     private volatile boolean inHandshake;
     private DTLSEpoch currentEpoch, pendingEpoch;
@@ -239,10 +241,53 @@ class DTLSRecordLayer implements DatagramTransport {
         sendRecord(contentType, buf, off, len);
     }
 
-    public void close() throws IOException {
-        // TODO Send close notify?
+    void raiseAlert(TlsPeer peer, short alertLevel, short alertDescription, String message, Exception cause)
+        throws IOException {
 
-        transport.close();
+        peer.notifyAlertRaised(alertLevel, alertDescription, message, cause);
+
+        byte[] error = new byte[2];
+        error[0] = (byte) alertLevel;
+        error[1] = (byte) alertDescription;
+
+        try
+        {
+            sendRecord(ContentType.alert, error, 0, 2);
+        }
+        catch (IOException e)
+        {
+            // TODO Check that there's nothing to do here
+        }
+    }
+
+    void raiseWarning(TlsPeer peer, short alertDescription, String message) throws IOException {
+        raiseAlert(peer, AlertLevel.warning, alertDescription, message, null);
+    }
+
+    public void close() throws IOException {
+        // NOTE: We shouldn't really be implementing DatagramTransport after all
+        throw new IllegalStateException();
+    }
+
+    void close(TlsPeer peer) throws IOException {
+        if (!closed && inHandshake) {
+            raiseWarning(peer, AlertDescription.user_canceled, "User canceled handshake");
+        }
+        handleClose(peer);
+    }
+
+    void handleClose(TlsPeer peer) {
+        if (!closed) {
+            closed = true;
+            try
+            {
+                transport.close();
+            }
+            catch (Exception e)
+            {
+                // Ignore
+            }
+        }
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis) throws IOException {

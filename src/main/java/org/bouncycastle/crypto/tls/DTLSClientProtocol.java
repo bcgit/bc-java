@@ -200,7 +200,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         state.client.notifyHandshakeComplete();
 
-        return new DTLSTransport(recordLayer);
+        return new DTLSTransport(recordLayer, state.client);
     }
 
     protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature) throws IOException {
