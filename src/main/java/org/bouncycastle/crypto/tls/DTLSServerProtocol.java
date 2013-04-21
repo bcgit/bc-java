@@ -45,6 +45,23 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 
+        try
+        {
+            return serverHandshake(state, recordLayer);
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            throw fatalAlert;
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    public DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer) throws IOException {
+
+        SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.serverContext, recordLayer);
 
         DTLSReliableHandshake.Message clientMessage = handshake.receiveMessage();

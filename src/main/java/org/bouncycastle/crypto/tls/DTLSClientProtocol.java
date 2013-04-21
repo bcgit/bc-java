@@ -33,9 +33,27 @@ public class DTLSClientProtocol extends DTLSProtocol {
         client.init(state.clientContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, ContentType.handshake);
+
+        try
+        {
+            return clientHandshake(state, recordLayer);
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            throw fatalAlert;
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer) throws IOException {
+
+        SecurityParameters securityParameters = state.clientContext.getSecurityParameters();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
 
-        byte[] clientHelloBody = generateClientHello(state, client);
+        byte[] clientHelloBody = generateClientHello(state, state.client);
         handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
@@ -50,7 +68,7 @@ public class DTLSClientProtocol extends DTLSProtocol {
             }
 
             state.clientContext.setServerVersion(server_version);
-            client.notifyServerVersion(server_version);
+            state.client.notifyServerVersion(server_version);
         }
 
         while (serverMessage.getType() == HandshakeType.hello_verify_request) {
