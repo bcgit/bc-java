@@ -86,7 +86,7 @@ public abstract class TlsProtocol {
 
     protected abstract void handleHandshakeMessage(short type, byte[] buf) throws IOException;
 
-    protected void handleWarningMessage(short description) {
+    protected void handleWarningMessage(short description) throws IOException {
 
     }
 
@@ -511,6 +511,23 @@ public abstract class TlsProtocol {
     }
 
     protected void sendCertificateMessage(Certificate certificate) throws IOException {
+
+        if (certificate == null) {
+            certificate = Certificate.EMPTY_CHAIN;
+        }
+
+        if (certificate.getLength() == 0) {
+            TlsContext context = getContext();
+            if (!context.isServer()) {
+                ProtocolVersion serverVersion = getContext().getServerVersion();
+                if (serverVersion.isSSL()) {
+                    String message = serverVersion.toString() + " client didn't provide credentials";
+                    raiseWarning(AlertDescription.no_certificate, message);
+                    return;
+                }
+            }
+        }
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.certificate, bos);
 
