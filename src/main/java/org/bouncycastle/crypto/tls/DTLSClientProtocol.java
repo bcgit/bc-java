@@ -242,11 +242,11 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         buf.write(state.clientContext.getSecurityParameters().getClientRandom());
 
-        // Length of Session id
-        TlsUtils.writeUint8((short) 0, buf);
+        // Session id
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
-        // Length of cookie
-        TlsUtils.writeUint8((short) 0, buf);
+        // Cookie
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         /*
          * Cipher suites
@@ -306,7 +306,11 @@ public class DTLSClientProtocol extends DTLSProtocol {
     protected void processCertificateRequest(ClientHandshakeState state, byte[] body) throws IOException {
 
         if (state.authentication == null) {
-            // TODO Alert
+            /*
+             * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
+             * to request client identification.
+             */
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
@@ -486,16 +490,14 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
         if (!server_version.equals(context.getServerVersion())) {
-            // TODO Alert
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         byte[] cookie = TlsUtils.readOpaque8(buf);
 
-        TlsProtocol.assertEmpty(buf);
+        // TODO RFC 4347 has the cookie length restricted to 32, but not in RFC 6347
 
-        if (cookie.length < 1 || cookie.length > 32) {
-            // TODO Alert
-        }
+        TlsProtocol.assertEmpty(buf);
 
         return cookie;
     }

@@ -31,7 +31,6 @@ class DTLSReassembler {
         int fragment_end = fragment_offset + fragment_length;
 
         if (this.msg_type != msg_type || this.body.length != length || fragment_end > length) {
-            // TODO Throw exception?
             return;
         }
 

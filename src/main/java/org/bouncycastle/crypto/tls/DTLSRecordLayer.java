@@ -107,17 +107,14 @@ class DTLSRecordLayer implements DatagramTransport {
                     return received;
                 }
                 if (received < RECORD_HEADER_LENGTH) {
-                    // TODO What kind of exception?
                     continue;
                 }
                 int length = TlsUtils.readUint16(record, 11);
                 if (received != (length + RECORD_HEADER_LENGTH)) {
-                    // TODO What kind of exception?
                     continue;
                 }
                 int epoch = TlsUtils.readUint16(record, 3);
                 if (epoch != readEpoch.getEpoch()) {
-                    // TODO What kind of exception?
                     continue;
                 }
 
@@ -141,8 +138,7 @@ class DTLSRecordLayer implements DatagramTransport {
 
                 ProtocolVersion version = TlsUtils.readVersion(record, 1);
                 if (discoveredPeerVersion != null && !discoveredPeerVersion.equals(version)) {
-                    // TODO What exception?
-                    // throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
                 byte[] plaintext = readEpoch.getCipher().decodeCiphertext(
@@ -191,13 +187,10 @@ class DTLSRecordLayer implements DatagramTransport {
                     // Implicitly receive change_cipher_spec and change to pending cipher state
 
                     if (plaintext.length != 1 || plaintext[0] != 1) {
-                        // TODO What exception?
                         continue;
                     }
 
-                    if (pendingEpoch == null) {
-                        // TODO Exception?
-                    } else {
+                    if (pendingEpoch != null) {
                         readEpoch = pendingEpoch;
                     }
 
@@ -244,17 +237,17 @@ class DTLSRecordLayer implements DatagramTransport {
             short handshakeType = TlsUtils.readUint8(buf, off);
             if (handshakeType == HandshakeType.finished) {
                 if (pendingEpoch == null) {
-                    // TODO Exception?
-                } else {
-
-                    // Implicitly send change_cipher_spec and change to pending cipher state
-
-                    // TODO Send change_cipher_spec and finished records in single datagram?
-                    byte[] data = new byte[] { 1 };
-                    sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
-
-                    writeEpoch = pendingEpoch;
+                    // TODO
+                    throw new IllegalStateException();
                 }
+
+                // Implicitly send change_cipher_spec and change to pending cipher state
+
+                // TODO Send change_cipher_spec and finished records in single datagram?
+                byte[] data = new byte[] { 1 };
+                sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
+
+                writeEpoch = pendingEpoch;
             }
         }
 
@@ -367,7 +360,7 @@ class DTLSRecordLayer implements DatagramTransport {
             getMacSequenceNumber(recordEpoch, recordSequenceNumber), contentType, buf, off, len);
 
         if (ciphertext.length > MAX_FRAGMENT_LENGTH) {
-            // TODO Exception
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];

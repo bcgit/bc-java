@@ -589,10 +589,8 @@ public class TlsClientProtocol extends TlsProtocol {
 
         buf.write(securityParameters.clientRandom);
 
-        /*
-         * Length of Session id
-         */
-        TlsUtils.writeUint8((short) 0, buf);
+        // Session id
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         /*
          * Cipher suites

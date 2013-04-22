@@ -93,26 +93,20 @@ class DTLSReliableHandshake {
                         break;
                     }
                     if (received < 12) {
-                        // TODO What kind of exception?
                         continue;
                     }
                     int fragment_length = TlsUtils.readUint24(buf, 9);
                     if (received != (fragment_length + 12)) {
-                        // TODO What kind of exception?
                         continue;
                     }
-
                     int seq = TlsUtils.readUint16(buf, 4);
                     if (seq > (next_receive_seq + MAX_RECEIVE_AHEAD)) {
                         continue;
                     }
-
                     short msg_type = TlsUtils.readUint8(buf, 0);
                     int length = TlsUtils.readUint24(buf, 1);
                     int fragment_offset = TlsUtils.readUint24(buf, 6);
-
                     if (fragment_offset + fragment_length > length) {
-                        // TODO What kind of exception?
                         continue;
                     }
 
@@ -191,7 +185,7 @@ class DTLSReliableHandshake {
             retransmit = new DTLSHandshakeRetransmit() {
                 public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len) throws IOException {
                     /*
-                     * TODO Need to handle the case where the previous inbound flight cotains
+                     * TODO Need to handle the case where the previous inbound flight contains
                      * messages from two epochs.
                      */
                     if (len < 12) {
@@ -241,7 +235,7 @@ class DTLSReliableHandshake {
         while (e.hasMoreElements()) {
             Integer key = (Integer) e.nextElement();
             if (key.intValue() >= next_receive_seq) {
-                // TODO Exception
+                // TODO Should this be considered an error?
             }
         }
     }
@@ -281,7 +275,8 @@ class DTLSReliableHandshake {
 
         // TODO Support a higher minimum fragment size?
         if (fragmentLimit < 1) {
-            // TODO What kind of exception to throw?
+            // TODO Should we be throwing an exception here?
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         int length = message.getBody().length;

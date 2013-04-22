@@ -472,7 +472,7 @@ public class TlsServerProtocol extends TlsProtocol {
          * The server may return an empty session_id to indicate that the session will not be cached
          * and therefore cannot be resumed.
          */
-        TlsUtils.writeUint8((short) 0, buf);
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         this.selectedCipherSuite = tlsServer.getSelectedCipherSuite();
         if (!arrayContains(this.offeredCipherSuites, this.selectedCipherSuite)

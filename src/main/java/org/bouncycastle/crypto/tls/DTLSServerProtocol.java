@@ -242,7 +242,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
          * The server may return an empty session_id to indicate that the session will not be cached
          * and therefore cannot be resumed.
          */
-        TlsUtils.writeUint8((short) 0, buf);
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         state.selectedCipherSuite = state.server.getSelectedCipherSuite();
         if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
@@ -340,9 +340,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        byte[] cookie = TlsUtils.readOpaque8(buf);
-
         // TODO RFC 4347 has the cookie length restricted to 32, but not in RFC 6347
+        byte[] cookie = TlsUtils.readOpaque8(buf);
 
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0) {
@@ -370,9 +369,9 @@ public class DTLSServerProtocol extends DTLSProtocol {
         state.clientExtensions = TlsProtocol.readExtensions(buf);
 
         /*
-         * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info"
-         * extension, or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
-         * ClientHello. Including both is NOT RECOMMENDED.
+         * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension, or
+         * the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
+         * Including both is NOT RECOMMENDED.
          */
 
         state.serverContext.setClientVersion(client_version);
