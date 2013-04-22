@@ -232,19 +232,13 @@ public class TlsClientProtocol extends TlsProtocol {
                     if (clientCreds == null) {
                         this.keyExchange.skipClientCredentials();
 
-                        ProtocolVersion serverVersion = tlsClientContext.getServerVersion();
-                        if (serverVersion.isSSL()) {
-                            String message = serverVersion.toString() + " client didn't provide credentials";
-                            raiseWarning(AlertDescription.no_certificate, message);
-                        } else {
-                            /*
-                             * RFC 5246 If no suitable certificate is available, the client MUST
-                             * send a certificate message containing no certificates.
-                             * 
-                             * NOTE: In previous RFCs, this was SHOULD instead of MUST.
-                             */
-                            sendCertificateMessage(Certificate.EMPTY_CHAIN);
-                        }
+                        /*
+                         * RFC 5246 If no suitable certificate is available, the client MUST send a
+                         * certificate message containing no certificates.
+                         * 
+                         * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+                         */
+                        sendCertificateMessage(Certificate.EMPTY_CHAIN);
                     } else {
                         this.keyExchange.processClientCredentials(clientCreds);
 
