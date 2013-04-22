@@ -26,6 +26,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
+    protected Certificate clientCertificate = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
         super(input, output, secureRandom);
@@ -203,7 +204,29 @@ public class TlsServerProtocol extends TlsProtocol {
                 // NB: Fall through to next case label
             }
             case CS_CLIENT_SUPPLEMENTAL_DATA: {
-                this.keyExchange.skipClientCredentials();
+                if (this.certificateRequest == null) {
+                    this.keyExchange.skipClientCredentials();
+                } else {
+
+                    ProtocolVersion equivalentTLSVersion = tlsServerContext.getServerVersion()
+                        .getEquivalentTLSVersion();
+
+                    if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion)) {
+                        /*
+                         * RFC 5246 If no suitable certificate is available, the client MUST send a
+                         * certificate message containing no certificates.
+                         * 
+                         * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+                         */
+                        this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    } else if (equivalentTLSVersion.isSSL()) {
+                        if (clientCertificate == null) {
+                            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                        }
+                    } else {
+                        notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                    }
+                }
                 // NB: Fall through to next case label
             }
             case CS_CLIENT_CERTIFICATE: {
@@ -220,7 +243,11 @@ public class TlsServerProtocol extends TlsProtocol {
         case HandshakeType.certificate_verify: {
             switch (this.connection_state) {
             case CS_CLIENT_KEY_EXCHANGE: {
-                // TODO Check whether the client Certificate has signing capability
+                /*
+                 * TODO RFC 5246 7.4.8 This message is only sent following a client certificate that
+                 * has signing capability (i.e., all certificates except those containing fixed
+                 * Diffie-Hellman parameters).
+                 */
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
                 break;
@@ -267,11 +294,15 @@ public class TlsServerProtocol extends TlsProtocol {
         }
     }
 
-    protected void handleWarningMessage(short description) {
+    protected void handleWarningMessage(short description) throws IOException {
         switch (description) {
         case AlertDescription.no_certificate: {
-            if (tlsServerContext.getServerVersion().isSSL()) {
-                // TODO In SSLv3, this is an alternative to client Certificate message
+            /*
+             * SSL 3.0 If the server has sent a certificate request Message, the client must send
+             * either the certificate message or a no_certificate alert.
+             */
+            if (tlsServerContext.getServerVersion().isSSL() && certificateRequest != null) {
+                notifyClientCertificate(Certificate.EMPTY_CHAIN);
             }
             break;
         }
@@ -281,19 +312,68 @@ public class TlsServerProtocol extends TlsProtocol {
         }
     }
 
+    protected void notifyClientCertificate(Certificate clientCertificate) throws IOException {
+
+        if (this.clientCertificate != null) {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        this.clientCertificate = clientCertificate;
+
+        if (clientCertificate.getLength() == 0) {
+            this.keyExchange.skipClientCredentials();
+        } else {
+
+            /*
+             * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
+             * restrictions) has to be compatible with the certificate types listed in
+             * CertificateRequest.
+             */
+
+            /*
+             * TODO RFC 5246 7.4.6. If the certificate_authorities list in the certificate request
+             * message was non-empty, one of the certificates in the certificate chain SHOULD be
+             * issued by one of the listed CAs.
+             */
+
+            /*
+             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
+             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
+             * constraints on certificate-signing algorithms found in prior versions of TLS.
+             */
+
+            this.keyExchange.processClientCertificate(clientCertificate);
+        }
+
+        /*
+         * TODO RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
+         * discretion either continue the handshake without client authentication, or respond with a
+         * fatal handshake_failure alert. Also, if some aspect of the certificate chain was
+         * unacceptable (e.g., it was not signed by a known, trusted CA), the server MAY at its
+         * discretion either continue the handshake (considering the client unauthenticated) or send
+         * a fatal alert.
+         */
+    }
+
     protected void receiveCertificateMessage(ByteArrayInputStream buf) throws IOException {
 
         Certificate clientCertificate = Certificate.parse(buf);
 
         assertEmpty(buf);
 
-        this.keyExchange.processClientCertificate(clientCertificate);
+        notifyClientCertificate(clientCertificate);
     }
 
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf) throws IOException {
-        // TODO
+
+        byte[] clientCertificateSignature = TlsUtils.readOpaque16(buf);
 
         assertEmpty(buf);
+
+        // TODO Needs to exclude the certificate verify message itself
+        byte[] md5andsha1 = recordStream.getCurrentHash(null);
+
+        // TODO Verify the signature against the client certificate
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {

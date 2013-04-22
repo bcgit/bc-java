@@ -141,15 +141,28 @@ public class DTLSServerProtocol extends DTLSProtocol {
             state.server.processClientSupplementalData(null);
         }
 
-        if (clientMessage.getType() == HandshakeType.certificate) {
-            if (state.certificateRequest == null) {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
-            processClientCertificate(state, clientMessage.getBody());
-            clientMessage = handshake.receiveMessage();
-        } else {
-            // Okay, Certificate is optional
+        if (state.certificateRequest == null) {
             state.keyExchange.skipClientCredentials();
+        } else {
+            if (clientMessage.getType() == HandshakeType.certificate) {
+                processClientCertificate(state, clientMessage.getBody());
+                clientMessage = handshake.receiveMessage();
+            } else {
+                ProtocolVersion equivalentTLSVersion = state.serverContext.getServerVersion()
+                    .getEquivalentTLSVersion();
+
+                if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion)) {
+                    /*
+                     * RFC 5246 If no suitable certificate is available, the client MUST send a
+                     * certificate message containing no certificates.
+                     * 
+                     * NOTE: In previous RFCs, this was SHOULD instead of MUST.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                } else {
+                    notifyClientCertificate(state, Certificate.EMPTY_CHAIN);
+                }
+            }
         }
 
         if (clientMessage.getType() == HandshakeType.client_key_exchange) {
@@ -161,25 +174,26 @@ public class DTLSServerProtocol extends DTLSProtocol {
         recordLayer.initPendingEpoch(state.server.getCipher());
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] clientFinishedHash = handshake.getCurrentHash();
+        byte[] handshakeHash = handshake.getCurrentHash();
         clientMessage = handshake.receiveMessage();
 
-        // TODO Check whether the client Certificate has signing capability
-
+        /*
+         * TODO RFC 5246 7.4.8 This message is only sent following a client certificate that has
+         * signing capability (i.e., all certificates except those containing fixed Diffie-Hellman
+         * parameters).
+         */
         if (clientMessage.getType() == HandshakeType.certificate_verify) {
-            processCertificateVerify(state, clientMessage.getBody());
+            processCertificateVerify(state, clientMessage.getBody(), handshakeHash);
 
-            // TODO Integrate verify_data determination into DTLSReliableHandshake to avoid
-            // re-calculating this
-            clientFinishedHash = handshake.getCurrentHash();
+            handshakeHash = handshake.getCurrentHash();
             clientMessage = handshake.receiveMessage();
         } else {
-            // TODO Inform state.server that there's no CertificateVerify
+
         }
 
         if (clientMessage.getType() == HandshakeType.finished) {
             byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-                clientFinishedHash);
+                handshakeHash);
             processFinished(clientMessage.getBody(), expectedClientVerifyData);
         } else {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -300,6 +314,44 @@ public class DTLSServerProtocol extends DTLSProtocol {
         return buf.toByteArray();
     }
 
+    protected void notifyClientCertificate(ServerHandshakeState state, Certificate clientCertificate)
+        throws IOException {
+
+        if (clientCertificate.getLength() == 0) {
+            state.keyExchange.skipClientCredentials();
+        } else {
+
+            /*
+             * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
+             * restrictions) has to be compatible with the certificate types listed in
+             * CertificateRequest.
+             */
+
+            /*
+             * TODO RFC 5246 7.4.6. If the certificate_authorities list in the certificate request
+             * message was non-empty, one of the certificates in the certificate chain SHOULD be
+             * issued by one of the listed CAs.
+             */
+
+            /*
+             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
+             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
+             * constraints on certificate-signing algorithms found in prior versions of TLS.
+             */
+
+            state.keyExchange.processClientCertificate(clientCertificate);
+        }
+
+        /*
+         * TODO RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
+         * discretion either continue the handshake without client authentication, or respond with a
+         * fatal handshake_failure alert. Also, if some aspect of the certificate chain was
+         * unacceptable (e.g., it was not signed by a known, trusted CA), the server MAY at its
+         * discretion either continue the handshake (considering the client unauthenticated) or send
+         * a fatal alert.
+         */
+    }
+
     protected void processClientCertificate(ServerHandshakeState state, byte[] body) throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
@@ -308,16 +360,19 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         TlsProtocol.assertEmpty(buf);
 
-        state.keyExchange.processClientCertificate(clientCertificate);
+        notifyClientCertificate(state, clientCertificate);
     }
 
-    protected void processCertificateVerify(ServerHandshakeState state, byte[] body) throws IOException {
+    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, byte[] handshakeHash)
+        throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        // TODO
+        byte[] clientCertificateSignature = TlsUtils.readOpaque16(buf);
 
         TlsProtocol.assertEmpty(buf);
+
+        // TODO Verify the signature against the client certificate
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body) throws IOException {
