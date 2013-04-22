@@ -155,9 +155,12 @@ public class DTLSClientProtocol extends DTLSProtocol {
              * 
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
-            Certificate clientCertificate = Certificate.EMPTY_CHAIN;
+            Certificate clientCertificate = null;
             if (state.clientCredentials != null) {
                 clientCertificate = state.clientCredentials.getCertificate();
+            }
+            if (clientCertificate == null) {
+                clientCertificate = Certificate.EMPTY_CHAIN;
             }
 
             byte[] certificateBody = generateCertificate(clientCertificate);
@@ -307,8 +310,8 @@ public class DTLSClientProtocol extends DTLSProtocol {
 
         if (state.authentication == null) {
             /*
-             * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
-             * to request client identification.
+             * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server to
+             * request client identification.
              */
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
