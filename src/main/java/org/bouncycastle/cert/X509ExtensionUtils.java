@@ -12,6 +12,12 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.DigestCalculator;
 
+/**
+ * General utility class for creating calculated extensions using the standard methods.
+ * <p>
+ * <b>Note:</b> This class is not thread safe!
+ * </p>
+ */
 public class X509ExtensionUtils
 {
     private DigestCalculator calculator;
@@ -111,8 +117,8 @@ public class X509ExtensionUtils
             cOut.close();
         }
         catch (IOException e)
-        {
-
+        {   // it's hard to imagine this happening, but yes it does!
+            throw new IllegalStateException("unable to calculate identifier: " + e.getMessage(), e);
         }
 
         return calculator.getDigest();

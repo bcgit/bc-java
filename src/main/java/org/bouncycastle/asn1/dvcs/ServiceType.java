@@ -73,7 +73,6 @@ public class ServiceType
         return value.getValue();
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return value;

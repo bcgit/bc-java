@@ -9,7 +9,7 @@ import org.bouncycastle.asn1.dvcs.DVCSObjectIdentifiers;
 import org.bouncycastle.cms.CMSSignedData;
 
 /**
- * DVCResponse is general request to DVCS (RFC 3029).
+ * DVCResponse is general response to DVCS (RFC 3029).
  * It represents responses for all types of services.
  */
 public class DVCSResponse
@@ -63,7 +63,7 @@ public class DVCSResponse
     }
 
     /**
-     * Return the ASN.1 DVCSRequest structure making up the body of this request.
+     * Return the ASN.1 DVCSResponse structure making up the body of this response.
      *
      * @return an org.bouncycastle.asn1.dvcs.DVCSResponse object.
      */

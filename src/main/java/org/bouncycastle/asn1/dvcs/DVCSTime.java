@@ -80,7 +80,6 @@ public class DVCSTime
         return timeStampToken;
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
 

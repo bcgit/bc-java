@@ -110,11 +110,13 @@ public class CTRDRGBTest extends SimpleTest
     {
         Collection rv = new ArrayList();
 
-        TestVector tv = new TestVector("86976d97b310666bae11261d1bca974443dd7fd94d4dd7c4bca96aa62a78b0e7abd60a015fbffecb44b43a2ba12b126b02dcc32fd68732e74803e8765c8a4c1d8a2f522a9f2dbc8715b050baf9455b62641c9ca69a5b811b64a4a5f4ace3886b", 
+        // line 3246
+        TestVector tv = new TestVector(
+                "d9dc92450a03fa663613395037d50655136b3088ebe84cd3cc99d39733e2c88fa6528dff60b1f934f1ee472a20572eb7",
                 true, 
-                "a34231c944711541", 
+                "d3ec0c67136ee08c", 
                 128, 
-                "7eef853b420b133aed3c4334a8941ca7"); 
+                "e7ce8192f1c18613cd5d7ab11ca22da1"); 
         rv.add(tv);
         return rv;
         
@@ -136,10 +138,10 @@ public class CTRDRGBTest extends SimpleTest
             
             byte[] output = new byte[20];
             
-            // int rv = d.generate(output, tv.additionalInput(0), true);
+            int rv = d.generate(output, tv.additionalInput(0), true);
             String out = new String(Hex.encode(output));
             System.out.println(out);
-            // rv = d.generate(output, tv.additionalInput(1), true);
+            rv = d.generate(output, tv.additionalInput(1), true);
             out = new String(Hex.encode(output));
             System.out.println(out);
             

@@ -15,33 +15,45 @@ public class CTRSP800DRBG
     // internal state
     private byte[]                _Key;
     private byte[]                _V;
-    private int                   _reseedCounter;
+    private int                   _reseedCounter = 0;
 
     public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
 
         _entropySource = entropySource;
-        _engine = engine;
+        _engine = engine;     
         
         _keySizeInBits = keySizeInBits;
         _seedLength = seedLength;
 
         int entropyLengthInBytes = securityStrength;
-        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes / 8);
+        
+        if (securityStrength > 128) 
+        {
+            throw new IllegalStateException(
+                            "Security strength is not supported by the derivation function");            
+        }
+            
+        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes / 8);  // Get_entropy_input
 
         System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
 
+        addOneTo(nonce); 
+        
+        // CTR_DRBG_Instantiate_Algorithm
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
 
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length,
-                personalisationString.length);
+        int pos = 0;
+        System.arraycopy(entropy, 0, seedMaterial, pos, entropy.length);
+        pos += entropy.length;
+        System.arraycopy(nonce, 0, seedMaterial, pos, nonce.length);
+        pos += nonce.length;
+        System.arraycopy(personalisationString, 0, seedMaterial, pos, personalisationString.length);
 
         System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = getDFBytes(seedMaterial, _seedLength);
+        byte[] seed = Block_Cipher_df(seedMaterial, _seedLength);
 
         System.out.println("Constructor Seed: " + new String(Hex.encode(seed)));
 
@@ -51,6 +63,8 @@ public class CTRSP800DRBG
 
         CTR_DRBG_Update(seed, _Key, _V); // _Key & _V are modified by this call
 
+        _reseedCounter = 1;
+        
         System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
         System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
 
@@ -120,11 +134,6 @@ public class CTRSP800DRBG
         return out;
     }
 
-    private byte[] getDFBytes(byte[] seedMaterial, int seedLength)
-    {
-        return cipherDFProcess(_engine, seedLength, seedMaterial);
-    }
-
     // 1. If (number_of_bits_to_return > max_number_of_bits), then return an
     // ERROR_FLAG.
     // 2. L = len (input_string)/8.
@@ -185,9 +194,9 @@ public class CTRSP800DRBG
     // 14. requested_bits = Leftmost number_of_bits_to_return of temp.
     //
     // 15. Return SUCCESS and requested_bits.
-    private byte[] cipherDFProcess(BlockCipher engine, int bitLength, byte[] inputString)
+    private byte[] Block_Cipher_df(int bitLength, byte[] inputString)
     {
-        int outLen = engine.getBlockSize();
+        int outLen = _engine.getBlockSize();
         int L = inputString.length; // already in bytes
         int N = bitLength / 8;
         // 4 S = L || N || inputstring || 0x80

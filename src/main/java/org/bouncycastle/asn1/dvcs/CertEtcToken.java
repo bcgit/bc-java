@@ -125,7 +125,6 @@ public class CertEtcToken
         return null;
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         if (extension == null)

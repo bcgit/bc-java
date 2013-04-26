@@ -154,8 +154,6 @@ public class DVCSCertInfo
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
-
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
 
@@ -195,7 +193,7 @@ public class DVCSCertInfo
 
     public String toString()
     {
-        StringBuilder s = new StringBuilder();
+        StringBuffer s = new StringBuffer();
 
         s.append("DVCSCertInfo {\n");
 

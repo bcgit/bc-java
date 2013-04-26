@@ -6,33 +6,38 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * DER T61String (also the teletex string), try not to use this if you don't need to. The standard support the encoding for
- * this has been withdrawn.
+ * DER T61String (also the teletex string) - a "modern" encapsulation that uses UTF-8. If at all possible, avoid this one! It's only for emergencies.
+ * Use UTF8String instead.
  */
-public class DERT61String
+public class DERT61UTF8String
     extends ASN1Primitive
     implements ASN1String
 {
     private byte[] string;
 
     /**
-     * return a T61 string from the passed in object.
+     * return a T61 string from the passed in object. UTF-8 Encoding is assumed in this case.
      *
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
-    public static DERT61String getInstance(
-        Object  obj)
+    public static DERT61UTF8String getInstance(
+        Object obj)
     {
-        if (obj == null || obj instanceof DERT61String)
+        if (obj instanceof DERT61String)
         {
-            return (DERT61String)obj;
+            return new DERT61UTF8String(((DERT61String)obj).getOctets());
+        }
+
+        if (obj == null || obj instanceof DERT61UTF8String)
+        {
+            return (DERT61UTF8String)obj;
         }
 
         if (obj instanceof byte[])
         {
             try
             {
-                return (DERT61String)fromByteArray((byte[])obj);
+                return new DERT61UTF8String(((DERT61String)fromByteArray((byte[])obj)).getOctets());
             }
             catch (Exception e)
             {
@@ -44,55 +49,56 @@ public class DERT61String
     }
 
     /**
-     * return an T61 String from a tagged object.
+     * return an T61 String from a tagged object. UTF-8 encoding is assumed in this case.
      *
-     * @param obj the tagged object holding the object we want
+     * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
-     *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
-     *               be converted.
+     *                 tagged false otherwise.
+     * @throws IllegalArgumentException if the tagged object cannot
+     * be converted.
      */
-    public static DERT61String getInstance(
+    public static DERT61UTF8String getInstance(
         ASN1TaggedObject obj,
-        boolean          explicit)
+        boolean explicit)
     {
         ASN1Primitive o = obj.getObject();
 
-        if (explicit || o instanceof DERT61String)
+        if (explicit || o instanceof DERT61String || o instanceof DERT61UTF8String)
         {
             return getInstance(o);
         }
         else
         {
-            return new DERT61String(ASN1OctetString.getInstance(o).getOctets());
+            return new DERT61UTF8String(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 
     /**
      * basic constructor - string encoded as a sequence of bytes.
      */
-    public DERT61String(
-        byte[]   string)
+    public DERT61UTF8String(
+        byte[] string)
     {
         this.string = string;
     }
 
     /**
-     * basic constructor - with string 8 bit assumed.
+     * basic constructor - with string UTF8 conversion assumed.
      */
-    public DERT61String(
-        String   string)
+    public DERT61UTF8String(
+        String string)
     {
-        this(Strings.toByteArray(string));
+        this(Strings.toUTF8ByteArray(string));
     }
 
     /**
-     * Decode the encoded string and return it, 8 bit encoding assumed.
+     * Decode the encoded string and return it, UTF8 assumed.
+     *
      * @return the decoded String
      */
     public String getString()
     {
-        return Strings.fromByteArray(string);
+        return Strings.fromUTF8ByteArray(string);
     }
 
     public String toString()
@@ -119,6 +125,7 @@ public class DERT61String
 
     /**
      * Return the encoded string as a byte array.
+     *
      * @return the actual bytes making up the encoded body of the T61 string.
      */
     public byte[] getOctets()
@@ -129,14 +136,14 @@ public class DERT61String
     boolean asn1Equals(
         ASN1Primitive o)
     {
-        if (!(o instanceof DERT61String))
+        if (!(o instanceof DERT61UTF8String))
         {
             return false;
         }
 
-        return Arrays.areEqual(string, ((DERT61String)o).string);
+        return Arrays.areEqual(string, ((DERT61UTF8String)o).string);
     }
-    
+
     public int hashCode()
     {
         return Arrays.hashCode(string);

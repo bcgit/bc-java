@@ -64,8 +64,6 @@ public class DVCSErrorNotice
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
-
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
