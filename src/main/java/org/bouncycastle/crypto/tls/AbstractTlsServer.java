@@ -213,6 +213,10 @@ public abstract class AbstractTlsServer extends AbstractTlsPeer implements TlsSe
         }
     }
 
+    public void notifyClientCertificate(Certificate clientCertificate) throws IOException {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     public TlsCompression getCompression() throws IOException {
         switch (selectedCompressionMethod) {
         case CompressionMethod._null:

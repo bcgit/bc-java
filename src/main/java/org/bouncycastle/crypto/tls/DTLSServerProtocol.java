@@ -148,8 +148,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
                 processClientCertificate(state, clientMessage.getBody());
                 clientMessage = handshake.receiveMessage();
             } else {
-                ProtocolVersion equivalentTLSVersion = state.serverContext.getServerVersion()
-                    .getEquivalentTLSVersion();
+                ProtocolVersion equivalentTLSVersion = state.serverContext.getServerVersion().getEquivalentTLSVersion();
 
                 if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion)) {
                     /*
@@ -159,9 +158,9 @@ public class DTLSServerProtocol extends DTLSProtocol {
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
-                } else {
-                    notifyClientCertificate(state, Certificate.EMPTY_CHAIN);
                 }
+
+                notifyClientCertificate(state, Certificate.EMPTY_CHAIN);
             }
         }
 
@@ -343,13 +342,14 @@ public class DTLSServerProtocol extends DTLSProtocol {
         }
 
         /*
-         * TODO RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
+         * RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
          * discretion either continue the handshake without client authentication, or respond with a
          * fatal handshake_failure alert. Also, if some aspect of the certificate chain was
          * unacceptable (e.g., it was not signed by a known, trusted CA), the server MAY at its
          * discretion either continue the handshake (considering the client unauthenticated) or send
          * a fatal alert.
          */
+        state.server.notifyClientCertificate(clientCertificate);
     }
 
     protected void processClientCertificate(ServerHandshakeState state, byte[] body) throws IOException {

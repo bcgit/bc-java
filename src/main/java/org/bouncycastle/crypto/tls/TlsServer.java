@@ -40,6 +40,17 @@ public interface TlsServer extends TlsPeer {
     // Vector is (SupplementalDataEntry)
     void processClientSupplementalData(Vector clientSupplementalData) throws IOException;
 
+    /**
+     * Called by the protocol handler to report the client certificate, only if a Certificate
+     * {@link #getCertificateRequest()} returned non-null. Note: this method is responsible for
+     * certificate verification and validation.
+     * 
+     * @param clientCertificate
+     *            the effective client certificate (may be an empty chain).
+     * @throws IOException
+     */
+    void notifyClientCertificate(Certificate clientCertificate) throws IOException;
+
     TlsCompression getCompression() throws IOException;
 
     TlsCipher getCipher() throws IOException;
