@@ -4,22 +4,22 @@ import org.bouncycastle.math.ec.ECPoint;
 
 public class ECPair
 {
-    private ECPoint a;
-    private ECPoint b;
+    private final ECPoint x;
+    private final ECPoint y;
 
-    public ECPair(ECPoint a, ECPoint b)
+    public ECPair(ECPoint x, ECPoint y)
     {
-        this.a = a;
-        this.b = b;
+        this.x = x;
+        this.y = y;
     }
 
-    public ECPoint getA()
+    public ECPoint getX()
     {
-        return a;
+        return x;
     }
 
-    public ECPoint getB()
+    public ECPoint getY()
     {
-        return b;
+        return y;
     }
 }

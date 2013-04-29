@@ -10,16 +10,16 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
- * this does your basic ElGamal encryption algorithm using EC
+ * this does your basic Elgamal encryption algorithm using EC
  */
-public class ECElGamalEncryptor
-    implements ECEncryptor
+public class ECNewPublicKeyTransform
+    implements ECPairTransform
 {
     private ECPublicKeyParameters key;
     private SecureRandom          random;
 
     /**
-     * initialise the encryptor.
+     * initialise the EC Elgamal engine.
      *
      * @param param the necessary EC key parameters.
      */
@@ -32,7 +32,7 @@ public class ECElGamalEncryptor
 
             if (!(p.getParameters() instanceof ECPublicKeyParameters))
             {
-                throw new IllegalArgumentException("ECPublicKeyParameters are required for encryption.");
+                throw new IllegalArgumentException("ECPublicKeyParameters are required for new public key transform.");
             }
             this.key = (ECPublicKeyParameters)p.getParameters();
             this.random = p.getRandom();
@@ -41,7 +41,7 @@ public class ECElGamalEncryptor
         {
             if (!(param instanceof ECPublicKeyParameters))
             {
-                throw new IllegalArgumentException("ECPublicKeyParameters are required for encryption.");
+                throw new IllegalArgumentException("ECPublicKeyParameters are required for new public key transform.");
             }
 
             this.key = (ECPublicKeyParameters)param;
@@ -50,16 +50,17 @@ public class ECElGamalEncryptor
     }
 
     /**
-     * Process a single EC point using the basic ElGamal algorithm.
+     * Transform an existing cipher test pair using the ElGamal algorithm. Note: the input cipherText will
+     * need to be preserved in order to complete the transformation to the new public key.
      *
-     * @param point the EC point to process.
-     * @return the result of the Elgamal process.
+     * @param cipherText the EC point to process.
+     * @return returns a new ECPair representing the result of the process.
      */
-    public ECPair encrypt(ECPoint point)
+    public ECPair transform(ECPair cipherText)
     {
         if (key == null)
         {
-            throw new IllegalStateException("ECElGamalEncryptor not initialised");
+            throw new IllegalStateException("ECNewPublicKeyTransform not initialised");
         }
 
         BigInteger             n = key.getParameters().getN();
@@ -67,7 +68,7 @@ public class ECElGamalEncryptor
 
         ECPoint  g = key.getParameters().getG();
         ECPoint  gamma = g.multiply(k);
-        ECPoint  phi = key.getQ().multiply(k).add(point);
+        ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
 
         return new ECPair(gamma, phi);
     }
