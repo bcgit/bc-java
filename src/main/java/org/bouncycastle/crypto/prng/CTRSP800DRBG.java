@@ -40,8 +40,16 @@ public class CTRSP800DRBG
         System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
 
         addOneTo(nonce); 
+        CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalisationString);
         
-        // CTR_DRBG_Instantiate_Algorithm
+        System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
+        System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
+
+    }
+
+    private void CTR_DRBG_Instantiate_algorithm(byte[] entropy, byte[] nonce,
+            byte[] personalisationString)
+    {
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
 
         int pos = 0;
@@ -53,21 +61,18 @@ public class CTRSP800DRBG
 
         System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = Block_Cipher_df(seedMaterial, _seedLength);
+        byte[] seed = Block_Cipher_df(_seedLength, seedMaterial);
 
         System.out.println("Constructor Seed: " + new String(Hex.encode(seed)));
 
-        int outlen = engine.getBlockSize();
+        int outlen = _engine.getBlockSize();
         _Key = new byte[outlen];
         _V = new byte[outlen];
 
-        CTR_DRBG_Update(seed, _Key, _V); // _Key & _V are modified by this call
+        CTR_DRBG_Update(seed, _Key, _V); 
+        // _Key & _V are modified by this call
 
         _reseedCounter = 1;
-        
-        System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
-        System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
-
     }
 
     private void CTR_DRBG_Update(byte[] seed, byte[] key, byte[] v)
