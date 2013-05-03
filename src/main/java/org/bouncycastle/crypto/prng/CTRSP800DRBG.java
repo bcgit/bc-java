@@ -16,8 +16,9 @@ public class CTRSP800DRBG
     private byte[]                _Key;
     private byte[]                _V;
     private int                   _reseedCounter = 0;
+    private int                   _entropyRequired;
 
-    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, byte[] nonce,
+    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, int entropySizeInBits, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
 
@@ -26,6 +27,7 @@ public class CTRSP800DRBG
         
         _keySizeInBits = keySizeInBits;
         _seedLength = seedLength;
+        _entropyRequired = entropySizeInBits / 8;
 
         int entropyLengthInBytes = securityStrength;
         
@@ -35,7 +37,7 @@ public class CTRSP800DRBG
                             "Security strength is not supported by the derivation function");            
         }
             
-        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes / 8);  // Get_entropy_input
+        byte[] entropy = entropySource.getEntropy(_entropyRequired);  // Get_entropy_input
 
         System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
 

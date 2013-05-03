@@ -40,7 +40,6 @@ public class HashSP800DRBG implements SP80090DRBG
         // 5. reseed_counter = 1.
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
-        int entropyLengthInBytes = securityStrength;
         byte[] entropy = entropySource.getEntropy(_entropyRequired);
         
         System.out.println("Constructor Entropy: "+ new String(Hex.encode(entropy)));
