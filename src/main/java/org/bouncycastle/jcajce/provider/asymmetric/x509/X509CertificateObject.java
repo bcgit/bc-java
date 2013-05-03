@@ -66,7 +66,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
 
-class X509CertificateObject
+class  X509CertificateObject
     extends X509Certificate
     implements PKCS12BagAttributeCarrier
 {

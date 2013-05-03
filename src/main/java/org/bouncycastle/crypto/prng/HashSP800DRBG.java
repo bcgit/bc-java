@@ -14,10 +14,10 @@ public class HashSP800DRBG implements SP80090DRBG
     private int                    _reseedCounter;
     private EntropySource          _entropySource;
     private int                    _securityStrength;
-    
+    private int                     _entropyRequired;
     private int                    _seedLength;
 
-    public HashSP800DRBG(Digest digest, int seedlen, EntropySource entropySource, byte[] nonce,
+    public HashSP800DRBG(Digest digest, int seedlen, EntropySource entropySource, int entropyBitsRequired, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
         if (securityStrength > digest.getDigestSize() * 8) // TODO: this may, or may not be correct, but it's good enough for now
@@ -30,7 +30,8 @@ public class HashSP800DRBG implements SP80090DRBG
         _entropySource = entropySource;
         _securityStrength = securityStrength;
         _seedLength = seedlen;
-        
+        _entropyRequired = entropyBitsRequired / 8;
+
         // 1. seed_material = entropy_input || nonce || personalization_string.
         // 2. seed = Hash_df (seed_material, seedlen).
         // 3. V = seed.
@@ -39,8 +40,7 @@ public class HashSP800DRBG implements SP80090DRBG
         // 5. reseed_counter = 1.
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
-        int entropyLengthInBytes = securityStrength;
-        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes/8);
+        byte[] entropy = entropySource.getEntropy(_entropyRequired);
         
         System.out.println("Constructor Entropy: "+ new String(Hex.encode(entropy)));
         
@@ -173,8 +173,8 @@ public class HashSP800DRBG implements SP80090DRBG
         {
             additionalInput = new byte[0];
         }
-        int entropyLengthInBytes = _securityStrength;
-        byte[] entropy = _entropySource.getEntropy(entropyLengthInBytes/8);
+
+        byte[] entropy = _entropySource.getEntropy(_entropyRequired);
         
         System.out.println("Reseed Entropy: "+ new String(Hex.encode(entropy)));
         

@@ -253,7 +253,7 @@ public class HashDRGBTest extends SimpleTest
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            SP80090DRBG d = new HashSP800DRBG(digest, 440, tes, nonce, personalisationString, securityStrength);
+            SP80090DRBG d = new HashSP800DRBG(digest, 440, tes, securityStrength, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

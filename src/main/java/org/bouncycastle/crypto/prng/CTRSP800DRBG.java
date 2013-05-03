@@ -16,8 +16,9 @@ public class CTRSP800DRBG
     private byte[]                _Key;
     private byte[]                _V;
     private int                   _reseedCounter = 0;
+    private int                   _entropyRequired;
 
-    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, byte[] nonce,
+    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, int entropySizeInBits, byte[] nonce,
             byte[] personalisationString, int securityStrength)
     {
 
@@ -26,6 +27,7 @@ public class CTRSP800DRBG
         
         _keySizeInBits = keySizeInBits;
         _seedLength = seedLength;
+        _entropyRequired = entropySizeInBits / 8;
 
         int entropyLengthInBytes = securityStrength;
         
@@ -35,13 +37,21 @@ public class CTRSP800DRBG
                             "Security strength is not supported by the derivation function");            
         }
             
-        byte[] entropy = entropySource.getEntropy(entropyLengthInBytes / 8);  // Get_entropy_input
+        byte[] entropy = entropySource.getEntropy(_entropyRequired);  // Get_entropy_input
 
         System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
 
         addOneTo(nonce); 
+        CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalisationString);
         
-        // CTR_DRBG_Instantiate_Algorithm
+        System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
+        System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
+
+    }
+
+    private void CTR_DRBG_Instantiate_algorithm(byte[] entropy, byte[] nonce,
+            byte[] personalisationString)
+    {
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
 
         int pos = 0;
@@ -53,21 +63,18 @@ public class CTRSP800DRBG
 
         System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = Block_Cipher_df(seedMaterial, _seedLength);
+        byte[] seed = Block_Cipher_df(_seedLength, seedMaterial);
 
         System.out.println("Constructor Seed: " + new String(Hex.encode(seed)));
 
-        int outlen = engine.getBlockSize();
+        int outlen = _engine.getBlockSize();
         _Key = new byte[outlen];
         _V = new byte[outlen];
 
-        CTR_DRBG_Update(seed, _Key, _V); // _Key & _V are modified by this call
+        CTR_DRBG_Update(seed, _Key, _V); 
+        // _Key & _V are modified by this call
 
         _reseedCounter = 1;
-        
-        System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
-        System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
-
     }
 
     private void CTR_DRBG_Update(byte[] seed, byte[] key, byte[] v)

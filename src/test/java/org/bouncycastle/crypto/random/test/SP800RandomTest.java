@@ -33,7 +33,7 @@ public class SP800RandomTest
         rBuild.setEntropySource(new FixedSecureRandom(tv.entropy()), true);
         rBuild.setSeedLength(440);
 
-        SecureRandom random = rBuild.build(new SHA1Digest(), true);
+        SecureRandom random = rBuild.build(new SHA1Digest(), true, tv.securityStrength());
 
         byte[] expected = tv.expectedValue();
         byte[] produced = new byte[expected.length];
@@ -60,7 +60,7 @@ public class SP800RandomTest
         rBuild.setEntropySource(new FixedSecureRandom(tv.entropy()), true);
         rBuild.setSeedLength(440);
 
-        SecureRandom random = rBuild.build(new AESFastEngine(), 192, true);
+        SecureRandom random = rBuild.build(new AESFastEngine(), 192, true, tv.securityStrength());
 
         byte[] expected = tv.expectedValue();
         byte[] produced = new byte[expected.length];
