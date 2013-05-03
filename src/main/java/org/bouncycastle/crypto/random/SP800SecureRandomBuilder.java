@@ -157,7 +157,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
         {
-            return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, nonce, personalizationString, securityStrength);
+            return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
         }
     }
 }

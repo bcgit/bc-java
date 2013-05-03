@@ -134,7 +134,7 @@ public class CTRDRGBTest extends SimpleTest
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            CTRSP800DRBG d = new CTRSP800DRBG(engine, 256, 256, tes, nonce, personalisationString, securityStrength);
+            CTRSP800DRBG d = new CTRSP800DRBG(engine, 256, 256, tes, 256, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             
