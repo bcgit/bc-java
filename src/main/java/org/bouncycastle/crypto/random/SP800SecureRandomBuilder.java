@@ -4,7 +4,9 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.CTRSP800DRBG;
+import org.bouncycastle.crypto.prng.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.HashSP800DRBG;
@@ -54,18 +56,25 @@ public class SP800SecureRandomBuilder
         return this;
     }
 
-    public SP800SecureRandom build(Digest digest, boolean predictionResistant)
+    public SP800SecureRandom build(Digest digest, boolean predictionResistant, int entropyBitsRequired)
     {
         checkSettings();
 
-        return new SP800SecureRandom(random, predictionResistantSource, new HashDRBGProvider(digest, seedLength, nonce, personalizationString, securityStrength), predictionResistant);
+        return new SP800SecureRandom(random, predictionResistantSource, new HashDRBGProvider(digest, seedLength, nonce, personalizationString, securityStrength), predictionResistant, entropyBitsRequired);
     }
 
-    public SP800SecureRandom build(BlockCipher cipher, int keySizeInBits, boolean predictionResistant)
+    public SP800SecureRandom build(BlockCipher cipher, int keySizeInBits, boolean predictionResistant, int entropyBitsRequired)
     {
         checkSettings();
 
-        return new SP800SecureRandom(random, predictionResistantSource, new CTRDRBGProvider(cipher, keySizeInBits, seedLength, nonce, personalizationString, securityStrength), predictionResistant);
+        return new SP800SecureRandom(random, predictionResistantSource, new CTRDRBGProvider(cipher, keySizeInBits, seedLength, nonce, personalizationString, securityStrength), predictionResistant, entropyBitsRequired);
+    }
+
+    public SP800SecureRandom build(HMac hMac, boolean predictionResistant, int entropyBitsRequired)
+    {
+        checkSettings();
+
+        return new SP800SecureRandom(random, predictionResistantSource, new HMacDRBGProvider(hMac, nonce, personalizationString, securityStrength), predictionResistant, entropyBitsRequired);
     }
 
     private void checkSettings()
@@ -96,9 +105,32 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
-        public SP80090DRBG get(EntropySource entropySource)
+        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
         {
-            return new HashSP800DRBG(digest, seedLength, entropySource, nonce, personalizationString, securityStrength);
+            return new HashSP800DRBG(digest, seedLength, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
+        }
+    }
+
+    private static class HMacDRBGProvider
+        implements DRBGProvider
+    {
+
+        private final HMac hMac;
+        private final byte[] nonce;
+        private final byte[] personalizationString;
+        private final int securityStrength;
+
+        public HMacDRBGProvider(HMac hMac, byte[] nonce, byte[] personalizationString, int securityStrength)
+        {
+            this.hMac = hMac;
+            this.nonce = nonce;
+            this.personalizationString = personalizationString;
+            this.securityStrength = securityStrength;
+        }
+
+        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
+        {
+            return new HMacSP800DRBG(hMac, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
         }
     }
 
@@ -123,7 +155,7 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
-        public SP80090DRBG get(EntropySource entropySource)
+        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
         {
             return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, nonce, personalizationString, securityStrength);
         }

@@ -13,15 +13,17 @@ public class SP800SecureRandom
     private final boolean predictionResistant;
     private final SecureRandom randomSource;
     private final boolean randomPredictionResistant;
+    private final int entropyBitsRequired;
 
     private SP80090DRBG drbg;
 
-    SP800SecureRandom(SecureRandom randomSource, boolean randomPredictionResistant, DRBGProvider drbgProvider, boolean predictionResistant)
+    SP800SecureRandom(SecureRandom randomSource, boolean randomPredictionResistant, DRBGProvider drbgProvider, boolean predictionResistant, int entropyBitsRequired)
     {
         this.randomSource = randomSource;
         this.randomPredictionResistant = randomPredictionResistant;
         this.drbgProvider = drbgProvider;
         this.predictionResistant = predictionResistant;
+        this.entropyBitsRequired = entropyBitsRequired;
     }
 
     public void setSeed(byte[] seed)
@@ -50,7 +52,7 @@ public class SP800SecureRandom
         {
             if (drbg == null)
             {
-                drbg = drbgProvider.get(new BasicEntropySource(randomSource, randomPredictionResistant));
+                drbg = drbgProvider.get(new BasicEntropySource(randomSource, randomPredictionResistant), entropyBitsRequired);
             }
 
             drbg.generate(bytes, null, predictionResistant);
