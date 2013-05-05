@@ -33,15 +33,21 @@ public class UnreliableDatagramTransport implements DatagramTransport {
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
-        int length = transport.receive(buf, off, len, waitMillis);
-        if (length >= 0) {
-            if (lostPacket(percentPacketLossReceiving)) {
-                // TODO Better to keep waiting if time left
-                System.out.println("PACKET LOSS (" + length + " byte packet not received)");
+        long endMillis = System.currentTimeMillis() + waitMillis;
+        for (;;)
+        {
+            int length = transport.receive(buf, off, len, waitMillis);
+            if (length < 0 || !lostPacket(percentPacketLossReceiving))
+                return length;
+
+            System.out.println("PACKET LOSS (" + length + " byte packet not received)");
+
+            long now = System.currentTimeMillis();
+            if (now >= endMillis)
                 return -1;
-            }
+
+            waitMillis = (int)(endMillis - now);
         }
-        return length;
     }
 
     public void send(byte[] buf, int off, int len) throws IOException {
