@@ -76,7 +76,11 @@ class DTLSRecordLayer implements DatagramTransport {
     }
 
     void resetWriteEpoch() {
-        this.writeEpoch = currentEpoch;
+        if (retransmitEpoch != null) {
+            this.writeEpoch = retransmitEpoch;
+        } else {
+            this.writeEpoch = currentEpoch;
+        }
     }
 
     public int getReceiveLimit() throws IOException {
@@ -242,13 +246,22 @@ class DTLSRecordLayer implements DatagramTransport {
 
         short contentType = ContentType.application_data;
 
-        if (this.inHandshake) {
+        if (this.inHandshake || this.writeEpoch == this.retransmitEpoch) {
 
             contentType = ContentType.handshake;
 
             short handshakeType = TlsUtils.readUint8(buf, off);
             if (handshakeType == HandshakeType.finished) {
-                if (pendingEpoch == null) {
+                
+                DTLSEpoch nextEpoch = null;
+                if (this.inHandshake) {
+                    nextEpoch = pendingEpoch;
+                }
+                else if (this.writeEpoch == this.retransmitEpoch) {
+                    nextEpoch = currentEpoch;
+                }
+
+                if (nextEpoch == null) {
                     // TODO
                     throw new IllegalStateException();
                 }
@@ -259,7 +272,7 @@ class DTLSRecordLayer implements DatagramTransport {
                 byte[] data = new byte[] { 1 };
                 sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
 
-                writeEpoch = pendingEpoch;
+                writeEpoch = nextEpoch;
             }
         }
 
