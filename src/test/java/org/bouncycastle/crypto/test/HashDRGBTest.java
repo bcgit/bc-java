@@ -249,11 +249,11 @@ public class HashDRGBTest extends SimpleTest
         {
             tv.entropy();
             Digest digest = new SHA1Digest();
-            EntropySource tes = new TestEntropySource(Hex.decode(tv.entropy()), tv.predictionResistance());
+            EntropySource tes = new TestEntropySourceProvider(Hex.decode(tv.entropy()), tv.predictionResistance()).get(tv.securityStrength());
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            SP80090DRBG d = new HashSP800DRBG(digest, 440, tes, securityStrength, nonce, personalisationString, securityStrength);
+            SP80090DRBG d = new HashSP800DRBG(digest, 440, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

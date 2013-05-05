@@ -105,9 +105,9 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
-        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
+        public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HashSP800DRBG(digest, seedLength, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
+            return new HashSP800DRBG(digest, seedLength, entropySource, nonce, personalizationString, securityStrength);
         }
     }
 
@@ -128,9 +128,9 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
-        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
+        public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HMacSP800DRBG(hMac, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
+            return new HMacSP800DRBG(hMac, entropySource, nonce, personalizationString, securityStrength);
         }
     }
 
@@ -155,9 +155,9 @@ public class SP800SecureRandomBuilder
             this.securityStrength = securityStrength;
         }
 
-        public SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired)
+        public SP80090DRBG get(EntropySource entropySource)
         {
-            return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, entropyBitsRequired, nonce, personalizationString, securityStrength);
+            return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, nonce, personalizationString, securityStrength);
         }
     }
 }

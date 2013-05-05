@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.prng;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 public class HMacSP800DRBG
     implements SP80090DRBG
@@ -13,18 +12,17 @@ public class HMacSP800DRBG
     private int _reseedCounter;
     private EntropySource _entropySource;
     private HMac _hMac;
-    private int _entropyRequired;
 
-    public HMacSP800DRBG(HMac hMac, EntropySource entropySource, int entropyBitsRequired, byte[] nonce,
+    public HMacSP800DRBG(HMac hMac, EntropySource entropySource, byte[] nonce,
                          byte[] personalisationString, int securityStrength)
     {
         // TODO: validate security strength
 
         _entropySource = entropySource;
-        _entropyRequired = entropyBitsRequired / 8;
         _hMac = hMac;
 
-        byte[] entropy = entropySource.getEntropy(_entropyRequired);
+        // TODO: validate entropy length
+        byte[] entropy = entropySource.getEntropy();
 
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
 
@@ -126,7 +124,7 @@ public class HMacSP800DRBG
             additionalInput = new byte[0];
         }
 
-        byte[] entropy = _entropySource.getEntropy(_entropyRequired);
+        byte[] entropy = _entropySource.getEntropy();
 
         byte[] seedMaterial = new byte[entropy.length +  additionalInput.length];
 

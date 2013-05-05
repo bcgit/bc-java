@@ -130,11 +130,11 @@ public class CTRDRGBTest extends SimpleTest
         {
             tv.entropy();
             BlockCipher engine = new AESFastEngine();
-            EntropySource tes = new TestEntropySource(Hex.decode(tv.entropy()), tv.predictionResistance());
+            EntropySource tes = new TestEntropySourceProvider(Hex.decode(tv.entropy()), tv.predictionResistance()).get(256);
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
             int securityStrength = tv.securityStrength();
-            CTRSP800DRBG d = new CTRSP800DRBG(engine, 256, 256, tes, 256, nonce, personalisationString, securityStrength);
+            CTRSP800DRBG d = new CTRSP800DRBG(engine, 256, 256, tes, nonce, personalisationString, securityStrength);
             
             byte[] output = new byte[20];
             

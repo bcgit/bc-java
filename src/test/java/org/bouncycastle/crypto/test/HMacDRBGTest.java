@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.EntropySource;
+import org.bouncycastle.crypto.prng.EntropySourceProvider;
 import org.bouncycastle.crypto.prng.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.util.encoders.Hex;
@@ -37,7 +38,7 @@ public class HMacDRBGTest
             {
                 new TestVector(
                     new SHA1Digest(),
-                    new SHA1EntropySource(), 440,
+                    new SHA1EntropyProvider().get(440),
                     false,
                     "2021222324",
                     80,
@@ -48,7 +49,7 @@ public class HMacDRBGTest
                         }),
                 new TestVector(
                     new SHA1Digest(),
-                    new SHA1EntropySource(), 440,
+                    new SHA1EntropyProvider().get(440),
                     true,
                     "2021222324",
                     80,
@@ -59,7 +60,7 @@ public class HMacDRBGTest
                         }),
                 new TestVector(
                     new SHA256Digest(),
-                    new SHA256EntropySource(), 440,
+                    new SHA256EntropyProvider().get(440),
                     false,
                     "2021222324252627",
                     128,
@@ -74,7 +75,7 @@ public class HMacDRBGTest
                         }),
                 new TestVector(
                     new SHA384Digest(),
-                    new SHA384EntropySource(), 888,
+                    new SHA384EntropyProvider().get(888),
                     false,
                     "202122232425262728292A2B",
                     192,
@@ -95,7 +96,7 @@ public class HMacDRBGTest
                             "9798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAE"),
                 new TestVector(
                     new SHA512Digest(),
-                    new SHA512EntropySource(), 888,
+                    new SHA512EntropyProvider().get(888),
                     false,
                     "202122232425262728292A2B2C2D2E2F",
                     256,
@@ -120,7 +121,7 @@ public class HMacDRBGTest
                             "9798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAE"),
                 new TestVector(
                     new SHA512Digest(),
-                    new SHA512EntropySource(), 888,
+                    new SHA512EntropyProvider().get(888),
                     true,
                     "202122232425262728292A2B2C2D2E2F",
                     256,
@@ -152,7 +153,7 @@ public class HMacDRBGTest
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
 
-            SP80090DRBG d = new HMacSP800DRBG(new HMac(tv.getDigest()), tv.entropySource(), tv.entropyBits(), nonce, personalisationString, tv.securityStrength());
+            SP80090DRBG d = new HMacSP800DRBG(new HMac(tv.getDigest()), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
 
             byte[] output = new byte[tv.expectedValue()[0].length() / 2];
 
@@ -181,7 +182,6 @@ public class HMacDRBGTest
     {
         private Digest _digest;
         private EntropySource _eSource;
-        private int _eBitLength;
         private boolean _pr;
         private String _nonce;
         private String _personalisation;
@@ -189,11 +189,10 @@ public class HMacDRBGTest
         private String[] _ev;
         private List _ai = new ArrayList();
 
-        public TestVector(Digest digest, EntropySource eSource, int eBitLength, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
+        public TestVector(Digest digest, EntropySource eSource, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
         {
             _digest = digest;
             _eSource = eSource;
-            _eBitLength = eBitLength;
             _pr = predictionResistance;
             _nonce = nonce;
             _ss = securityStrength;
@@ -221,11 +220,6 @@ public class HMacDRBGTest
         public EntropySource entropySource()
         {
             return _eSource;
-        }
-
-        public int entropyBits()
-        {
-            return _eBitLength;
         }
 
         public boolean predictionResistance()
@@ -270,129 +264,70 @@ public class HMacDRBGTest
 
     }
 
-    private class SHA1EntropySource
-        implements EntropySource
+    private class SHA1EntropyProvider
+        extends TestEntropySourceProvider
     {
-        byte[] data = Hex.decode(
-            "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F30313233343536"
-                + "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6"
-                + "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6");
-
-        int index = 0;
-
-        public boolean isPredictionResistant()
+        SHA1EntropyProvider()
         {
-            return false;
-        }
-
-        public byte[] getEntropy(int length)
-        {
-            byte[] rv = new byte[length];
-
-            System.arraycopy(data, index, rv, 0, rv.length);
-
-            index += length;
-
-            return rv;
+            super(
+                Hex.decode(
+                    "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F30313233343536"
+                        + "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6"
+                        + "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6"), true);
         }
     }
 
-    private class SHA256EntropySource
-        implements EntropySource
+    private class SHA256EntropyProvider
+        extends TestEntropySourceProvider
     {
-        byte[] data = Hex.decode(
-            "00010203040506" +
-                "0708090A0B0C0D0E0F101112131415161718191A1B1C1D1E" +
-                "1F202122232425262728292A2B2C2D2E2F30313233343536" +
-                "80818283848586" +
-                "8788898A8B8C8D8E8F909192939495969798999A9B9C9D9E" +
-                "9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6" +
-                "C0C1C2C3C4C5C6" +
-                "C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDE" +
-                "DFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6");
-
-        int index = 0;
-
-        public boolean isPredictionResistant()
+        SHA256EntropyProvider()
         {
-            return false;
-        }
-
-        public byte[] getEntropy(int length)
-        {
-            byte[] rv = new byte[length];
-
-            System.arraycopy(data, index, rv, 0, rv.length);
-
-            index += length;
-
-            return rv;
+            super(Hex.decode(
+                "00010203040506" +
+                    "0708090A0B0C0D0E0F101112131415161718191A1B1C1D1E" +
+                    "1F202122232425262728292A2B2C2D2E2F30313233343536" +
+                    "80818283848586" +
+                    "8788898A8B8C8D8E8F909192939495969798999A9B9C9D9E" +
+                    "9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6" +
+                    "C0C1C2C3C4C5C6" +
+                    "C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDE" +
+                    "DFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6"), true);
         }
     }
 
-    private class SHA384EntropySource
-        implements EntropySource
+    private class SHA384EntropyProvider
+        extends TestEntropySourceProvider
     {
-        byte[] data = Hex.decode(
-            "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20212223242526"
-                + "2728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F50515253545556"
-                + "5758595A5B5C5D5E5F606162636465666768696A6B6C6D6E");
-
-        int index = 0;
-
-        public boolean isPredictionResistant()
+        SHA384EntropyProvider()
         {
-            return false;
-        }
-
-        public byte[] getEntropy(int length)
-        {
-            byte[] rv = new byte[length];
-
-            System.arraycopy(data, index, rv, 0, rv.length);
-
-            index += length;
-
-            return rv;
+            super(Hex.decode(
+                "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20212223242526"
+                    + "2728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F50515253545556"
+                    + "5758595A5B5C5D5E5F606162636465666768696A6B6C6D6E"), true);
         }
     }
 
-    private class SHA512EntropySource
-        implements EntropySource
+    private class SHA512EntropyProvider
+        extends TestEntropySourceProvider
     {
-        byte[] data = Hex.decode(
-            "000102030405060708090A0B0C0D0E" +
-                "0F101112131415161718191A1B1C1D1E1F20212223242526" +
-                "2728292A2B2C2D2E2F303132333435363738393A3B3C3D3E" +
-                "3F404142434445464748494A4B4C4D4E4F50515253545556" +
-                "5758595A5B5C5D5E5F606162636465666768696A6B6C6D6E" +
-                "808182838485868788898A8B8C8D8E" +
-                "8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6" +
-                "A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBE" +
-                "BFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6" +
-                "D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEE" +
-                "C0C1C2C3C4C5C6C7C8C9CACBCCCDCE" +
-                "CFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6" +
-                "E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6F7F8F9FAFBFCFDFE" +
-                "FF000102030405060708090A0B0C0D0E0F10111213141516" +
-                "1718191A1B1C1D1E1F202122232425262728292A2B2C2D2E");
-
-        int index = 0;
-
-        public boolean isPredictionResistant()
+        SHA512EntropyProvider()
         {
-            return false;
-        }
-
-        public byte[] getEntropy(int length)
-        {
-            byte[] rv = new byte[length];
-
-            System.arraycopy(data, index, rv, 0, rv.length);
-
-            index += length;
-
-            return rv;
+            super(Hex.decode(
+                "000102030405060708090A0B0C0D0E" +
+                    "0F101112131415161718191A1B1C1D1E1F20212223242526" +
+                    "2728292A2B2C2D2E2F303132333435363738393A3B3C3D3E" +
+                    "3F404142434445464748494A4B4C4D4E4F50515253545556" +
+                    "5758595A5B5C5D5E5F606162636465666768696A6B6C6D6E" +
+                    "808182838485868788898A8B8C8D8E" +
+                    "8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6" +
+                    "A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBE" +
+                    "BFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6" +
+                    "D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEE" +
+                    "C0C1C2C3C4C5C6C7C8C9CACBCCCDCE" +
+                    "CFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6" +
+                    "E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6F7F8F9FAFBFCFDFE" +
+                    "FF000102030405060708090A0B0C0D0E0F10111213141516" +
+                    "1718191A1B1C1D1E1F202122232425262728292A2B2C2D2E"), true);
         }
     }
 }
