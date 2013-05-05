@@ -5,5 +5,5 @@ import org.bouncycastle.crypto.prng.EntropySource;
 
 interface DRBGProvider
 {
-    SP80090DRBG get(EntropySource entropySource, int entropyBitsRequired);
+    SP80090DRBG get(EntropySource entropySource);
 }

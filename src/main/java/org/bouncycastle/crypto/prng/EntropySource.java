@@ -4,5 +4,5 @@ public interface EntropySource
 {
     boolean isPredictionResistant();
 
-    byte[] getEntropy(int length);
+    byte[] getEntropy();
 }
