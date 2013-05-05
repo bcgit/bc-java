@@ -4,14 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.DualECSP800DRBG;
 import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -46,7 +41,20 @@ public class DualECDRBGTest
                         {
                             "FF5163C388F791E96F1052D5C8F0BD6FBF7144839C4890FF85487C5C12702E4C9849AF518AE68DEB14D3A62702BBDE4B98AB211765FD87ACA12FC2A6",
                             "9A0A11F2DFB88F7260559DD8DA6134EB2B34CC0415FA8FD0474DB6B85E1A08385F41B435DF81296B1B4EDF66E0107C0844E3D28A89B05046B89177F2"
+                        }),
+                new TestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(128),
+                    false,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "C08E954FCD486D0B0934A0236692AC705A835D1A3C94D2ACD4684AB26E978D7D42E73CC06D6EC1472C63E51BED7F71518395836E2052BBD73A20CABB",
+                            "1D76DEE36FCC5F9478C112EAFA1C4CCD0635435A6F3A247A3BA3849790B5245070E95C1A67BE7A39BFB213F2C0EFCC171A3253DA6D54DA4362EA2099"
                         })
+                .addAdditionalInput("606162636465666768696A6B6C6D6E6F")
+                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF")
             };
     }
 
@@ -77,7 +85,7 @@ public class DualECDRBGTest
 
             output = new byte[tv.expectedValue()[0].length() / 2];
 
-            d.generate(output, tv.additionalInput(0), tv.predictionResistance());
+            d.generate(output, tv.additionalInput(1), tv.predictionResistance());
 
             expected = Hex.decode(tv.expectedValue()[1]);
             if (!areEqual(expected, output))
@@ -114,9 +122,11 @@ public class DualECDRBGTest
             return _digest;
         }
 
-        public void setAdditionalInput(String input)
+        public TestVector addAdditionalInput(String input)
         {
             _ai.add(input);
+
+            return this;
         }
 
         public TestVector setPersonalisationString(String p)

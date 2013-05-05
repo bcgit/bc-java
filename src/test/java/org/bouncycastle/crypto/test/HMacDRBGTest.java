@@ -168,7 +168,7 @@ public class HMacDRBGTest
 
             output = new byte[tv.expectedValue()[0].length() / 2];
 
-            d.generate(output, tv.additionalInput(0), tv.predictionResistance());
+            d.generate(output, tv.additionalInput(1), tv.predictionResistance());
 
             expected = Hex.decode(tv.expectedValue()[1]);
             if (!areEqual(expected, output))
@@ -205,9 +205,11 @@ public class HMacDRBGTest
             return _digest;
         }
 
-        public void setAdditionalInput(String input)
+        public TestVector setAdditionalInput(String input)
         {
             _ai.add(input);
+
+            return this;
         }
 
         public TestVector setPersonalisationString(String p)
@@ -261,7 +263,6 @@ public class HMacDRBGTest
             }
             return rv;
         }
-
     }
 
     private class SHA1EntropyProvider

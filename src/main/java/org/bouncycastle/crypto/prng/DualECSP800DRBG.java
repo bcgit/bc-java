@@ -129,13 +129,14 @@ public class DualECSP800DRBG
 
         if (additionalInput != null)
         {
-// TODO
+            additionalInput = hash_df(additionalInput, _seedlen);
         }
+
         int m = output.length / _outlen;
 
         for (int i = 0; i < m; i++)
         {
-            BigInteger t = new BigInteger(1, _s);
+            BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
             _s = _P.multiply(t).getX().toBigInteger().toByteArray();
 
@@ -145,11 +146,12 @@ public class DualECSP800DRBG
 
             System.arraycopy(r, r.length - _outlen, output, i * _outlen, _outlen);
             //System.err.println("R: " + new String(Hex.encode(r)));
+            additionalInput = null;
         }
 
         if (m * _outlen < output.length)
         {
-            BigInteger t = new BigInteger(1, _s);
+            BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
             _s = _P.multiply(t).getX().toBigInteger().toByteArray();
 
@@ -165,19 +167,6 @@ public class DualECSP800DRBG
         return numberOfBits;
     }
 
-    // 1. seed_material = 0x01 || V || entropy_input || additional_input.
-    //
-    // 2. seed = Hash_df (seed_material, seedlen).
-    //
-    // 3. V = seed.
-    //
-    // 4. C = Hash_df ((0x00 || V), seedlen).
-    //
-    // 5. reseed_counter = 1.
-    //
-    // 6. Return V, C, and reseed_counter for the new_working_state.
-    //
-    // Comment: Precede with a byte of all zeros.
     public void reseed(byte[] additionalInput)
     {
         if (additionalInput == null) 
@@ -231,5 +220,22 @@ public class DualECSP800DRBG
         }
 
         return temp;
+    }
+
+    private byte[] xor(byte[] a, byte[] b)
+    {
+        if (b == null)
+        {
+            return a;
+        }
+
+        byte[] rv = new byte[a.length];
+
+        for (int i = 0; i != rv.length; i++)
+        {
+            rv[i] = (byte)(a[i] ^ b[i]);
+        }
+
+        return rv;
     }
 }
