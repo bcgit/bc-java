@@ -175,7 +175,7 @@ class DTLSReliableHandshake {
         DTLSHandshakeRetransmit retransmit = null;
         if (!sending) {
             checkInboundFlight();
-        } else if (previousInboundFlight != null) {
+        } else if (currentInboundFlight != null) {
             /*
              * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
              * when in the FINISHED state, the node that transmits the last flight (the server in an
@@ -201,19 +201,25 @@ class DTLSReliableHandshake {
                     }
 
                     short msg_type = TlsUtils.readUint8(buf, off);
+
+                    // TODO This is a hack that only works until we try to support renegotiation
+                    int expectedEpoch = msg_type == HandshakeType.finished ? 1 : 0;
+                    if (epoch != expectedEpoch)
+                        return;
+
                     int length = TlsUtils.readUint24(buf, off + 1);
                     int fragment_offset = TlsUtils.readUint24(buf, off + 6);
                     if (fragment_offset + fragment_length > length) {
                         return;
                     }
 
-                    DTLSReassembler reassembler = (DTLSReassembler) previousInboundFlight.get(Integer.valueOf(seq));
+                    DTLSReassembler reassembler = (DTLSReassembler) currentInboundFlight.get(Integer.valueOf(seq));
                     if (reassembler != null) {
                         reassembler.contributeFragment(msg_type, length, buf, off + 12, fragment_offset,
                             fragment_length);
-                        if (checkAll(previousInboundFlight)) {
+                        if (checkAll(currentInboundFlight)) {
                             resendOutboundFlight();
-                            resetAll(previousInboundFlight);
+                            resetAll(currentInboundFlight);
                         }
                     }
                 }
