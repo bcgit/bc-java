@@ -25,6 +25,8 @@ public class DTLSProtocolTest extends TestCase {
 
         DatagramTransport clientTransport = network.getClient();
 
+        clientTransport = new UnreliableDatagramTransport(clientTransport, secureRandom, 0, 0);
+
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
         MockDTLSClient client = new MockDTLSClient();
@@ -41,7 +43,7 @@ public class DTLSProtocolTest extends TestCase {
 
         dtlsClient.close();
 
-        serverThread.join();
+        serverThread.shutdown();
 
         // assertTrue(Arrays.areEqual(data, echo));
     }
@@ -49,6 +51,7 @@ public class DTLSProtocolTest extends TestCase {
     static class ServerThread extends Thread {
         private final DTLSServerProtocol serverProtocol;
         private final DatagramTransport serverTransport;
+        private volatile boolean isShutdown = false;
 
         ServerThread(DTLSServerProtocol serverProtocol, DatagramTransport serverTransport) {
             this.serverProtocol = serverProtocol;
@@ -59,13 +62,23 @@ public class DTLSProtocolTest extends TestCase {
             try {
                 MockDTLSServer server = new MockDTLSServer();
                 DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport);
-                // Streams.pipeAll(serverProtocol.getInputStream(),
-                // serverProtocol.getOutputStream());
-//                byte[] buf = new byte[dtlsServer.getReceiveLimit()];
-//                dtlsServer.receive(buf, 0, buf.length, 60000);
+                byte[] buf = new byte[dtlsServer.getReceiveLimit()];
+                while (!isShutdown) {
+                    int length = dtlsServer.receive(buf, 0, buf.length, 1000);
+                    if (length >= 0) {
+                        serverTransport.send(buf, 0, length);
+                    }
+                }
                 dtlsServer.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        void shutdown() throws InterruptedException {
+            if (!isShutdown) {
+                isShutdown = true;
+                this.join();
             }
         }
     }
