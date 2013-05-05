@@ -23,6 +23,7 @@ class DTLSRecordLayer implements DatagramTransport {
     private DTLSEpoch readEpoch, writeEpoch;
 
     private DTLSHandshakeRetransmit retransmit = null;
+    private DTLSEpoch retransmitEpoch = null;
     private long retransmitExpiry = 0;
 
     DTLSRecordLayer(DatagramTransport transport, TlsContext context, TlsPeer peer, short contentType) {
@@ -62,14 +63,16 @@ class DTLSRecordLayer implements DatagramTransport {
             // TODO
             throw new IllegalStateException();
         }
-        this.inHandshake = false;
-        this.currentEpoch = pendingEpoch;
-        this.pendingEpoch = null;
 
         if (retransmit != null) {
             this.retransmit = retransmit;
+            this.retransmitEpoch = currentEpoch;
             this.retransmitExpiry = System.currentTimeMillis() + RETRANSMIT_TIMEOUT;
         }
+
+        this.inHandshake = false;
+        this.currentEpoch = pendingEpoch;
+        this.pendingEpoch = null;
     }
 
     void resetWriteEpoch() {
@@ -100,6 +103,7 @@ class DTLSRecordLayer implements DatagramTransport {
             try {
                 if (retransmit != null && System.currentTimeMillis() > retransmitExpiry) {
                     retransmit = null;
+                    retransmitEpoch = null;
                 }
 
                 int received = receiveRecord(record, 0, receiveLimit, waitMillis);
@@ -113,14 +117,6 @@ class DTLSRecordLayer implements DatagramTransport {
                 if (received != (length + RECORD_HEADER_LENGTH)) {
                     continue;
                 }
-                int epoch = TlsUtils.readUint16(record, 3);
-                if (epoch != readEpoch.getEpoch()) {
-                    continue;
-                }
-
-                long seq = TlsUtils.readUint48(record, 5);
-                if (readEpoch.getReplayWindow().shouldDiscard(seq))
-                    continue;
 
                 short type = TlsUtils.readUint8(record, 0);
 
@@ -136,16 +132,32 @@ class DTLSRecordLayer implements DatagramTransport {
                     continue;
                 }
 
-                ProtocolVersion version = TlsUtils.readVersion(record, 1);
-                if (discoveredPeerVersion != null && !discoveredPeerVersion.equals(version)) {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                int epoch = TlsUtils.readUint16(record, 3);
+
+                DTLSEpoch recordEpoch = null;
+                if (epoch == readEpoch.getEpoch()) {
+                    recordEpoch = readEpoch;
+                } else if (type == ContentType.handshake && retransmitEpoch != null
+                    && epoch == retransmitEpoch.getEpoch()) {
+                    recordEpoch = retransmitEpoch;
                 }
 
-                byte[] plaintext = readEpoch.getCipher().decodeCiphertext(
-                    getMacSequenceNumber(readEpoch.getEpoch(), seq), type, record, RECORD_HEADER_LENGTH,
+                if (recordEpoch == null)
+                    continue;
+
+                long seq = TlsUtils.readUint48(record, 5);
+                if (recordEpoch.getReplayWindow().shouldDiscard(seq))
+                    continue;
+
+                ProtocolVersion version = TlsUtils.readVersion(record, 1);
+                if (discoveredPeerVersion != null && !discoveredPeerVersion.equals(version))
+                    continue;
+
+                byte[] plaintext = recordEpoch.getCipher().decodeCiphertext(
+                    getMacSequenceNumber(recordEpoch.getEpoch(), seq), type, record, RECORD_HEADER_LENGTH,
                     received - RECORD_HEADER_LENGTH);
 
-                readEpoch.getReplayWindow().reportAuthenticated(seq);
+                recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
                 if (discoveredPeerVersion == null) {
                     discoveredPeerVersion = version;
@@ -199,7 +211,6 @@ class DTLSRecordLayer implements DatagramTransport {
                 case ContentType.handshake: {
                     if (!inHandshake) {
                         if (retransmit != null) {
-                            // TODO Need to cater to records from the previous epoch
                             retransmit.receivedHandshakeRecord(epoch, plaintext, 0, plaintext.length);
                         }
 
@@ -215,6 +226,7 @@ class DTLSRecordLayer implements DatagramTransport {
                  */
                 if (!inHandshake && retransmit != null) {
                     this.retransmit = null;
+                    this.retransmitEpoch = null;
                 }
 
                 System.arraycopy(plaintext, 0, buf, off, plaintext.length);
