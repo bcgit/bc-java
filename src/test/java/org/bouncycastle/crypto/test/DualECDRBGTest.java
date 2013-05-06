@@ -60,12 +60,48 @@ public class DualECDRBGTest
                     128,
                     new String[]
                         {
+                            "3AB095CC493A8730D70DE923108B2E4710799044FFC27D0A1156250DDF97E8B05ACE055E49F3E3F5B928CCD18317A3E68FCB0B6F0459ADF9ECF79C87",
+                            "7B902FC35B0AF50F57F8822936D08A96E41B16967C6B1AA0BC05032F0D53919DC587B664C883E2FE8F3948002FCD8BCBFC4706BCAA2075EF6BF41167"
+                        })
+                .setPersonalisationString("404142434445464748494A4B4C4D4E4F"),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(128),
+                    false,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
                             "3B68A1D95ED0312150AC1991189780F37EC50E75249F915CD806BBA0C44F9E3A919B2390805E1E90C1D2D1C823B17B96DB44535B72E0CFB62723529D",
                             "250B933475E3BD4FC85D97FD797834B599DEDEDF8B6F15474E1F31B4AF215CFA7A8C0A0296A2E374B3886BB0CC7E49DBB19324564B451E64F12864F9"
                         })
                 .setPersonalisationString("404142434445464748494A4B4C4D4E4F")
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F")
                 .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF"),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(128),
+                    true,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "8C77288EDBEA9A742464F78D55E33593C1BF5F9D8CD8609D6D53BAC4E4B42252A227A99BAD0F2358B05955CD35723B549401C71C9C1F32F8A2018E24",
+                            "56ECA61C64F69C1C232E992623C71418BD0B96D783118FAAD94A09E3A9DB74D15E805BA7F14625995CA77612B2EF7A05863699ECBABF70D3D422C014"
+                        }),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(128),
+                    true,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "A5C397DFEB540E86F0470E9625D5C5AC2D50016FB201E8DF574F2201DFBB42A799FEB9E238AAD301A493382250EEE60D2E2927E500E848E57535ABD1",
+                            "BF9894630BEBAF0A0EDFE726285EB055FD2ED678B76673803DD327F49DBEDE87D3E447A6EB73B5D5C52A40078132677F412E9E7DE32B9B1CB32421B9"
+                        })
+                    .addAdditionalInput("606162636465666768696A6B6C6D6E6F")
+                    .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF"),
                 new DRBGTestVector(
                     new SHA384Digest(),
                     new SHA384EntropyProvider().get(192),
@@ -80,6 +116,23 @@ public class DualECDRBGTest
                             "5D411729268C8BA6F90E87074D04888CE2CC5A916B7AC93F" +
                             "EDE85E2995645DFCC4CE44B9FB41F1BFCC5E9F59EE3A8E1B" +
                             "8F85247F741B7C480521EE6BF8BA319B59048E65F08FAA76"
+                        }),
+                new DRBGTestVector(
+                    new SHA384Digest(),
+                    new SHA384EntropyProvider().get(192),
+                    true,
+                    "202122232425262728292A2B",
+                    192,
+                    new String[]
+                        {
+                            "CC788F70FB08F256D9604333630D85936D400F45" +
+                            "718DC3F939A8B9F6F75D3E4EC17D68FBB924AEACB7021295" +
+                            "48FA63CE9BCB82176639B64DE890A47025B5582312FE934E" +
+                            "F0D0A12697C0F05D2DA108CCADB511BA0EB62F4051BB2354",
+                            "2C922EA620D76E4137B315EBC29E518F80951B3F" +
+                            "0E6173FA2BFD94A230EE513EE2E4EB330D802F620DD24911" +
+                            "534EC0F95A1F1D44A2125F5D57476A666FC372092B55D0D6" +
+                            "8B49738F5BC466EC206AB3CF6A972B38BCFAE5FCD53C7E21 "
                         }),
                 new DRBGTestVector(
                     new SHA512Digest(),

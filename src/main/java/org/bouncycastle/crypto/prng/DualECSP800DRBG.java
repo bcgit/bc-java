@@ -42,6 +42,7 @@ public class DualECSP800DRBG
     private ECPoint                _P;
     private ECPoint                _Q;
     private byte[]                 _s;
+    private int _sLength;
 
     public DualECSP800DRBG(Digest digest, EntropySource entropySource, byte[] nonce,
                            byte[] personalisationString, int securityStrength)
@@ -96,6 +97,7 @@ public class DualECSP800DRBG
         }
 
         _s = hash_df(seedMaterial, _seedlen);
+        _sLength = _s.length;
 
         //System.err.println(new String(Hex.encode(_s)));
         _reseedCounter = 0;
@@ -167,7 +169,8 @@ public class DualECSP800DRBG
             System.arraycopy(r, 0, output, m * _outlen, output.length - (m * _outlen));
         }
 
-        _s = BigIntegers.asUnsignedByteArray(_s.length, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
+        // Need to preserve length of S as unsigned int.
+        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
 
         _reseedCounter++;
 
@@ -192,7 +195,6 @@ public class DualECSP800DRBG
         _s = hash_df(seedMaterial, _seedlen);
 
         _reseedCounter = 0;
-
     }
 
     // 1. temp = the Null string.
