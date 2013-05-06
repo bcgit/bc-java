@@ -1,16 +1,10 @@
 package org.bouncycastle.crypto.test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.EntropySourceProvider;
 import org.bouncycastle.crypto.prng.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.util.encoders.Hex;
@@ -32,11 +26,11 @@ public class HMacDRBGTest
         runTest(new HMacDRBGTest());
     }
 
-    private TestVector[] createTestVectorData()
+    private DRBGTestVector[] createTestVectorData()
     {
-        return new TestVector[]
+        return new DRBGTestVector[]
             {
-                new TestVector(
+                new DRBGTestVector(
                     new SHA1Digest(),
                     new SHA1EntropyProvider().get(440),
                     false,
@@ -47,7 +41,20 @@ public class HMacDRBGTest
                             "5A7D3B449F481CB38DF79AD2B1FCC01E57F8135E8C0B22CD0630BFB0127FB5408C8EFC17A929896E",
                             "82cf772ec3e84b00fc74f5df104efbfb2428554e9ce367d03aeade37827fa8e9cb6a08196115d948"
                         }),
-                new TestVector(
+                new DRBGTestVector(
+                    new SHA1Digest(),
+                    new SHA1EntropyProvider().get(440),
+                    false,
+                    "2021222324",
+                    80,
+                    new String[]
+                        {
+                            "C7AAAC583C6EF6300714C2CC5D06C148CFFB40449AD0BB26FAC0497B5C57E161E36681BCC930CE80",
+                            "6EBD2B7B5E0A2AD7A24B1BF9A1DBA47D43271719B9C37B7FE81BA94045A14A7CB514B446666EA5A7"
+                        })
+                .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F90919293949596")
+                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6"),
+                new DRBGTestVector(
                     new SHA1Digest(),
                     new SHA1EntropyProvider().get(440),
                     true,
@@ -58,7 +65,7 @@ public class HMacDRBGTest
                             "FEC4597F06A3A8CC8529D59557B9E661053809C0BC0EFC282ABD87605CC90CBA9B8633DCB1DAE02E",
                             "84ADD5E2D2041C01723A4DE4335B13EFDF16B0E51A0AD39BD15E862E644F31E4A2D7D843E57C5968"
                         }),
-                new TestVector(
+                new DRBGTestVector(
                     new SHA256Digest(),
                     new SHA256EntropyProvider().get(440),
                     false,
@@ -73,7 +80,7 @@ public class HMacDRBGTest
                                 "DA9DCE3CF8274DFA1C59C108C1D0AA9B0FA38DA5C792037C" +
                                 "4D33CD070CA7CD0C5608DBA8B885654639DE2187B74CB263"
                         }),
-                new TestVector(
+                new DRBGTestVector(
                     new SHA384Digest(),
                     new SHA384EntropyProvider().get(888),
                     false,
@@ -94,7 +101,7 @@ public class HMacDRBGTest
                             "6768696A6B6C6D6E6F707172737475767778797A7B7C7D7E" +
                             "7F808182838485868788898A8B8C8D8E8F90919293949596" +
                             "9798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAE"),
-                new TestVector(
+                new DRBGTestVector(
                     new SHA512Digest(),
                     new SHA512EntropyProvider().get(888),
                     false,
@@ -119,7 +126,7 @@ public class HMacDRBGTest
                             "6768696A6B6C6D6E6F707172737475767778797A7B7C7D7E" +
                             "7F808182838485868788898A8B8C8D8E8F90919293949596" +
                             "9798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAE"),
-                new TestVector(
+                new DRBGTestVector(
                     new SHA512Digest(),
                     new SHA512EntropyProvider().get(888),
                     true,
@@ -144,11 +151,11 @@ public class HMacDRBGTest
     public void performTest()
         throws Exception
     {
-        TestVector[] tests = createTestVectorData();
+        DRBGTestVector[] tests = createTestVectorData();
 
         for (int i = 0; i != tests.length; i++)
         {
-            TestVector tv = tests[i];
+            DRBGTestVector tv = tests[i];
 
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
@@ -175,93 +182,6 @@ public class HMacDRBGTest
             {
                 fail("Test #" + (i + 1) + ".2 failed, expected " + tv.expectedValue()[1] + " got " + new String(Hex.encode(output)));
             }
-        }
-    }
-
-    private class TestVector
-    {
-        private Digest _digest;
-        private EntropySource _eSource;
-        private boolean _pr;
-        private String _nonce;
-        private String _personalisation;
-        private int _ss;
-        private String[] _ev;
-        private List _ai = new ArrayList();
-
-        public TestVector(Digest digest, EntropySource eSource, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
-        {
-            _digest = digest;
-            _eSource = eSource;
-            _pr = predictionResistance;
-            _nonce = nonce;
-            _ss = securityStrength;
-            _ev = expected;
-            _personalisation = "";
-        }
-
-        public Digest getDigest()
-        {
-            return _digest;
-        }
-
-        public TestVector setAdditionalInput(String input)
-        {
-            _ai.add(input);
-
-            return this;
-        }
-
-        public TestVector setPersonalisationString(String p)
-        {
-            _personalisation = p;
-
-            return this;
-        }
-
-        public EntropySource entropySource()
-        {
-            return _eSource;
-        }
-
-        public boolean predictionResistance()
-        {
-            return _pr;
-        }
-
-        public String nonce()
-        {
-            return _nonce;
-        }
-
-        public String personalisation()
-        {
-            return _personalisation;
-        }
-
-        public int securityStrength()
-        {
-            return _ss;
-        }
-
-        public String[] expectedValue()
-        {
-            return _ev;
-        }
-
-        public byte[] additionalInput(int position)
-        {
-            int len = _ai.size();
-            byte[] rv;
-            if (position >= len)
-            {
-                rv = null;
-            }
-            else
-            {
-                rv = Hex.decode((String)(_ai.get(position)));
-            }
-            return rv;
         }
     }
 

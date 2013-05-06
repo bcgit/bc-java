@@ -1,12 +1,9 @@
 package org.bouncycastle.crypto.test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.prng.DualECSP800DRBG;
-import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -27,11 +24,11 @@ public class DualECDRBGTest
         runTest(new DualECDRBGTest());
     }
 
-    private TestVector[] createTestVectorData()
+    private DRBGTestVector[] createTestVectorData()
     {
-        return new TestVector[]
+        return new DRBGTestVector[]
             {
-                new TestVector(
+                new DRBGTestVector(
                     new SHA256Digest(),
                     new SHA256EntropyProvider().get(128),
                     false,
@@ -42,7 +39,7 @@ public class DualECDRBGTest
                             "FF5163C388F791E96F1052D5C8F0BD6FBF7144839C4890FF85487C5C12702E4C9849AF518AE68DEB14D3A62702BBDE4B98AB211765FD87ACA12FC2A6",
                             "9A0A11F2DFB88F7260559DD8DA6134EB2B34CC0415FA8FD0474DB6B85E1A08385F41B435DF81296B1B4EDF66E0107C0844E3D28A89B05046B89177F2"
                         }),
-                new TestVector(
+                new DRBGTestVector(
                     new SHA256Digest(),
                     new SHA256EntropyProvider().get(128),
                     false,
@@ -54,18 +51,113 @@ public class DualECDRBGTest
                             "1D76DEE36FCC5F9478C112EAFA1C4CCD0635435A6F3A247A3BA3849790B5245070E95C1A67BE7A39BFB213F2C0EFCC171A3253DA6D54DA4362EA2099"
                         })
                 .addAdditionalInput("606162636465666768696A6B6C6D6E6F")
-                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF")
+                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF"),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(128),
+                    false,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "3B68A1D95ED0312150AC1991189780F37EC50E75249F915CD806BBA0C44F9E3A919B2390805E1E90C1D2D1C823B17B96DB44535B72E0CFB62723529D",
+                            "250B933475E3BD4FC85D97FD797834B599DEDEDF8B6F15474E1F31B4AF215CFA7A8C0A0296A2E374B3886BB0CC7E49DBB19324564B451E64F12864F9"
+                        })
+                .setPersonalisationString("404142434445464748494A4B4C4D4E4F")
+                .addAdditionalInput("606162636465666768696A6B6C6D6E6F")
+                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAF"),
+                new DRBGTestVector(
+                    new SHA384Digest(),
+                    new SHA384EntropyProvider().get(192),
+                    false,
+                    "202122232425262728292A2B",
+                    192,
+                    new String[]
+                        {
+                            "1F858858B65357D6360E1ED8F8475767B08DAB30718CCA01C6FAE77A4BDCE2702C76D0FB4758EA1ED6AA587CFD26B9011DC8A75D0B4154193BB2C1798FFA52BCAB208310" +
+                            "3CD2AAD44BEED56D042FC2B8915D7D9BED6437EFEB1582EE",
+                            "6E4AAB63938212C870F24BB067A32CA9E7FC2343" +
+                            "5D411729268C8BA6F90E87074D04888CE2CC5A916B7AC93F" +
+                            "EDE85E2995645DFCC4CE44B9FB41F1BFCC5E9F59EE3A8E1B" +
+                            "8F85247F741B7C480521EE6BF8BA319B59048E65F08FAA76"
+                        }),
+                new DRBGTestVector(
+                    new SHA512Digest(),
+                    new SHA512EntropyProvider().get(256),
+                    false,
+                    "202122232425262728292A2B2C2D2E2F",
+                    256,
+                    new String[]
+                        {
+                            "7A8313798EE1" +
+                            "D1898712683F2D0B0DEE5804146ABA64FDA8DB4E539CC8D1" +
+                            "E59C74EE5AA48E73E958C8EC85DD529D42E68B4F7E02FFAF" +
+                            "3E3EF8312AEA68BC08A414885E60A7DF0B55F9D90210B319" +
+                            "E9B8FD23E078A4153636F29AA3CAC8198CB1D5D846151653" +
+                            "ECE275A591089261238014E5058410065AB8229EB9115E8E",
+                            "918B5D79E646" +
+                            "64966D954BC5E2946BF48F061BF0C2701C3C2D1F75EA821E" +
+                            "1DA05D5B3C2C4EEA246E806B53BF6BDB3F3D53A3AE756C2A" +
+                            "45C72603973A3DE1BC367C283CA124A5589CEAB30E5D2D74" +
+                            "8A40DD874FF15B032CF4F4B2AAD590B0DB91A0D38FCE93C5" +
+                            "AAD4E55AC482F86FF06FAE66B7C7CCA7E45557E1A5A3B85D"
+                        }),
+                new DRBGTestVector(
+                    new SHA512Digest(),
+                    new SHA512EntropyProvider().get(256),
+                    true,
+                    "202122232425262728292A2B2C2D2E2F",
+                    256,
+                    new String[]
+                        {
+                            "C7ED88A2C690" +
+                            "1C04802BA2BB04262921B19664835A4A3C002CB9F13E35E3" +
+                            "DEB3698A436BF1C85B070E9E6977CA78A5130905AA0C01A9" +
+                            "4130F5133DF904A4ACF59A7DD01227E8FCA1C8D51F093839" +
+                            "46ECD950113104760D7E216CAF581FE9D3AACE6FC4CDDC4C" +
+                            "CD736D26A60BE8BE2A6A78CD752D1EC7CCC802638B177307",
+                            "83B78B206785" +
+                            "4412EEB24AEA86064D510C68FD96DBF94EAC1BC2022752D7" +
+                            "558AEB9F97B9CBC1B9648FE4D88E2C82A6F530675E1DB92D" +
+                            "396D6D85BDAD2A23CBD10AD808ECCCFBFC811EB68AE835E4" +
+                            "912E011DD10A4399C8DE2D9D88F81B6168B05D282B9DAC1E" +
+                            "65E0A45F61043E1FA047870DD582295E6C50DD1185B13594 "
+                        })
+                .setPersonalisationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F")
+                .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F")
+                .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBF"),
+                new DRBGTestVector(
+                    new SHA512Digest(),
+                    new SHA512EntropyProvider().get(256),
+                    true,
+                    "202122232425262728292A2B2C2D2E2F",
+                    256,
+                    new String[]
+                        {
+                            "CC7035C73040" +
+                            "5CF5DF7137ED9E10744B75B540AFFC68EB564B71C0F737E8" +
+                            "F656B6171940497FA90D8F383EFB6FC6717BA14AAA164EF5" +
+                            "6641C0F513312551DCD21D0A5B0DBDCD97F627E968DFD752" +
+                            "56C11CF2BCCA5822EAACE796A34CB7D2F8CD8CC6DBE76274" +
+                            "498289BBC4C2F1CADA6185D82605CF992EC285BC4945EE9E",
+                            "0E6C329AD1BE" +
+                            "681EB1E6F5E03A89E3D80153D6CCDD5A3ECF865003EE4A2D" +
+                            "E5A23B7F43681361CFAFC3A3FEF17777E75CF9D6685573C8" +
+                            "87A3962CB955076D45D6F1E45EE4B8CB31A4731CDA031FA2" +
+                            "815B6D34E29F2603526CE186576F4CCA3FEDF7F8ACDB37C9" +
+                            "9D762706ABE4967D44739C8CFCFCC76C58B1ED243AC394C0"
+                        })
             };
     }
 
     public void performTest()
         throws Exception
     {
-        TestVector[] tests = createTestVectorData();
+        DRBGTestVector[] tests = createTestVectorData();
 
         for (int i = 0; i != tests.length; i++)
         {
-            TestVector tv = tests[i];
+            DRBGTestVector tv = tests[i];
 
             byte[] nonce = Hex.decode(tv.nonce());
             byte[] personalisationString = Hex.decode(tv.personalisation());
@@ -95,94 +187,6 @@ public class DualECDRBGTest
         }
     }
 
-    private class TestVector
-    {
-        private Digest _digest;
-        private EntropySource _eSource;
-        private boolean _pr;
-        private String _nonce;
-        private String _personalisation;
-        private int _ss;
-        private String[] _ev;
-        private List _ai = new ArrayList();
-
-        public TestVector(Digest digest, EntropySource eSource, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
-        {
-            _digest = digest;
-            _eSource = eSource;
-            _pr = predictionResistance;
-            _nonce = nonce;
-            _ss = securityStrength;
-            _ev = expected;
-            _personalisation = "";
-        }
-
-        public Digest getDigest()
-        {
-            return _digest;
-        }
-
-        public TestVector addAdditionalInput(String input)
-        {
-            _ai.add(input);
-
-            return this;
-        }
-
-        public TestVector setPersonalisationString(String p)
-        {
-            _personalisation = p;
-
-            return this;
-        }
-
-        public EntropySource entropySource()
-        {
-            return _eSource;
-        }
-
-        public boolean predictionResistance()
-        {
-            return _pr;
-        }
-
-        public String nonce()
-        {
-            return _nonce;
-        }
-
-        public String personalisation()
-        {
-            return _personalisation;
-        }
-
-        public int securityStrength()
-        {
-            return _ss;
-        }
-
-        public String[] expectedValue()
-        {
-            return _ev;
-        }
-
-        public byte[] additionalInput(int position)
-        {
-            int len = _ai.size();
-            byte[] rv;
-            if (position >= len)
-            {
-                rv = null;
-            }
-            else
-            {
-                rv = Hex.decode((String)(_ai.get(position)));
-            }
-            return rv;
-        }
-
-    }
-
     private class SHA256EntropyProvider
         extends TestEntropySourceProvider
     {
@@ -192,6 +196,30 @@ public class DualECDRBGTest
                 "000102030405060708090A0B0C0D0E0F " +
                     "808182838485868788898A8B8C8D8E8F" +
                     "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"), true);
+        }
+    }
+
+    private class SHA384EntropyProvider
+        extends TestEntropySourceProvider
+    {
+        SHA384EntropyProvider()
+        {
+            super(Hex.decode(
+                "000102030405060708090A0B0C0D0E0F1011121314151617" +
+                "808182838485868788898A8B8C8D8E8F9091929394959697" +
+                "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7"), true);
+        }
+    }
+
+    private class SHA512EntropyProvider
+        extends TestEntropySourceProvider
+    {
+        SHA512EntropyProvider()
+        {
+            super(Hex.decode(
+                "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F" +
+                "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9F" +
+                "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF"), true);
         }
     }
 }

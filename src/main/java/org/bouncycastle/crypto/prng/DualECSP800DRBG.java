@@ -8,7 +8,6 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 public class DualECSP800DRBG
     implements SP80090DRBG
@@ -31,7 +30,6 @@ public class DualECSP800DRBG
     private static final BigInteger p521_Qx = new BigInteger("1b9fa3e518d683c6b65763694ac8efbaec6fab44f2276171a42726507dd08add4c3b3f4c1ebc5b1222ddba077f722943b24c3edfa0f85fe24d0c8c01591f0be6f63", 16);
     private static final BigInteger p521_Qy = new BigInteger("1f3bdba585295d9a1110d1df1f9430ef8442c5018976ff3437ef91b81dc0b8132c8d5c39c32d0e004a3092b7d327c0e7a4d26d2c7b69b58f9066652911e457779de", 16);
 
-    private final static byte[]     ONE = { 0x01 };
     private final static int        RESEED_MAX = 100000;
 
     private Digest                 _digest;
@@ -78,15 +76,15 @@ public class DualECSP800DRBG
         }
         else if (securityStrength <= 192)
         {
-            _seedlen = 192;
+            _seedlen = 384;
             _outlen = 368 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
             _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Px), new ECFieldElement.Fp(_curve.getQ(), p384_Py));
             _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Qx), new ECFieldElement.Fp(_curve.getQ(), p384_Qy));
         }
-        else if (securityStrength <= 260)
+        else if (securityStrength <= 256)
         {
-            _seedlen = 256;
+            _seedlen = 521;
             _outlen = 504 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
             _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p521_Px), new ECFieldElement.Fp(_curve.getQ(), p521_Py));
@@ -94,12 +92,12 @@ public class DualECSP800DRBG
         }
         else
         {
-            throw new IllegalArgumentException("security strength cannot be greater than 260 bits");
+            throw new IllegalArgumentException("security strength cannot be greater than 256 bits");
         }
 
         _s = hash_df(seedMaterial, _seedlen);
 
-        // System.err.println(new String(Hex.encode(_s)));
+        //System.err.println(new String(Hex.encode(_s)));
         _reseedCounter = 0;
 
     }
@@ -129,6 +127,7 @@ public class DualECSP800DRBG
 
         if (additionalInput != null)
         {
+            // Note: we ignore the use of pad8 on the additional input as we mandate byte arrays for it.
             additionalInput = hash_df(additionalInput, _seedlen);
         }
 
@@ -144,7 +143,15 @@ public class DualECSP800DRBG
 
             byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
 
-            System.arraycopy(r, r.length - _outlen, output, i * _outlen, _outlen);
+            if (r.length > _outlen)
+            {
+                System.arraycopy(r, r.length - _outlen, output, i * _outlen, _outlen);
+            }
+            else
+            {
+                System.arraycopy(r, 0, output, i * _outlen + (_outlen - r.length), r.length);
+            }
+
             //System.err.println("R: " + new String(Hex.encode(r)));
             additionalInput = null;
         }
@@ -160,7 +167,7 @@ public class DualECSP800DRBG
             System.arraycopy(r, 0, output, m * _outlen, output.length - (m * _outlen));
         }
 
-        _s = _P.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
+        _s = BigIntegers.asUnsignedByteArray(_s.length, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
 
         _reseedCounter++;
 
@@ -169,12 +176,22 @@ public class DualECSP800DRBG
 
     public void reseed(byte[] additionalInput)
     {
-        if (additionalInput == null) 
+        if (additionalInput == null)
         {
             additionalInput = new byte[0];
         }
 
         byte[] entropy = _entropySource.getEntropy();
+
+        byte[] seedMaterial = new byte[_s.length + entropy.length +  additionalInput.length];
+
+        System.arraycopy(pad8(_s, _seedlen), 0, seedMaterial, 0, _s.length);
+        System.arraycopy(entropy, 0, seedMaterial, _s.length, entropy.length);
+        System.arraycopy(additionalInput, 0, seedMaterial, _s.length + entropy.length, additionalInput.length);
+
+        _s = hash_df(seedMaterial, _seedlen);
+
+        _reseedCounter = 0;
 
     }
 
@@ -191,7 +208,7 @@ public class DualECSP800DRBG
     // 6. Return SUCCESS and requested_bits.
     private byte[] hash_df(byte[] seedMaterial, int seedLength)
     {
-        byte[] temp = new byte[seedLength / 8];
+        byte[] temp = new byte[(seedLength + 7) / 8];
 
         int len = temp.length / _digest.getDigestSize();
         int counter = 1;
@@ -219,6 +236,20 @@ public class DualECSP800DRBG
             counter++;
         }
 
+        // do a left shift to get rid of excess bits.
+        if (seedLength % 8 != 0)
+        {
+            int shift = 8 - (seedLength % 8);
+            int carry = 0;
+
+            for (int i = 0; i != temp.length; i++)
+            {
+                int b = temp[i] & 0xff;
+                temp[i] = (byte)((b >>> shift) | (carry << (8 - shift)));
+                carry = b;
+            }
+        }
+
         return temp;
     }
 
@@ -237,5 +268,26 @@ public class DualECSP800DRBG
         }
 
         return rv;
+    }
+
+    // Note: works in place
+    private byte[] pad8(byte[] s, int seedlen)
+    {
+        if (seedlen % 8 == 0)
+        {
+            return s;
+        }
+
+        int shift = 8 - (seedlen % 8);
+        int carry = 0;
+
+        for (int i = s.length - 1; i >= 0; i--)
+        {
+            int b = s[i] & 0xff;
+            s[i] = (byte)((b << shift) | (carry >> (8 - shift)));
+            carry = b;
+        }
+
+        return s;
     }
 }
