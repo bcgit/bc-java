@@ -41,7 +41,7 @@ public class DRBGTestVector
             return this;
         }
 
-        public DRBGTestVector setPersonalisationString(String p)
+        public DRBGTestVector setPersonalizationString(String p)
         {
             _personalisation = p;
 
