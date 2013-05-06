@@ -103,6 +103,12 @@ public class CTRSP800DRBG
         System.arraycopy(temp, temp.length-outLen-1, v, 0, outLen);
     }
     
+    private void CTR_DRBG_Reseed_algorithm(EntropySource entropy, byte[] additionalInput) 
+    {
+        
+        
+    }
+
     private void XOR(byte[] out, byte[] a, byte[] b, int bOff)
     {
         for (int i=0; i< out.length; i++) 
@@ -123,14 +129,11 @@ public class CTRSP800DRBG
     } 
     
     // -- Internal state migration ---
-    // TODO; clean up after
     
     private static final byte[] K_BITS = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
     
     private byte[] getBytes(byte[] input)
     {
-        // TODO:
-        //_underlyingCipher.update(input, 0, input.length);
         byte[] K = new byte[_keySizeInBits / 8];
         System.arraycopy(K_BITS, 0, K, 0, K.length); 
         _engine.init(true, new KeyParameter(K));
@@ -274,15 +277,6 @@ public class CTRSP800DRBG
         buf[offSet + 3] = ((byte)(value));
     }
 
-    private byte[] getByteGen(byte[] input, int length)
-    {
-        // TODO:
-        // return byteGenProcess(_underlyingCipher, input, length);
-        return byteGenProcess(_engine, input, length);
-    }
-
-    // TODO: unholy mess of wrongness to get it to compile
-    // this is so wrong, it's the capital of wrongville
     private byte[] byteGenProcess(BlockCipher engine, byte[] input, int lengthInBits)
     {
         int m = (lengthInBits / 8) / engine.getBlockSize();
@@ -309,14 +303,19 @@ public class CTRSP800DRBG
         return W;
     }
 
-    // TODO:
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        if (predictionResistant) {
+            CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
+        }
+        
+        additionalInput = null;
+        //  CTR_DRBG_Generate_algorithm(output, output.length*8, additionalInput);
+        return output.length*8;  
     }
 
     public void reseed(byte[] additionalInput)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
     }
 }

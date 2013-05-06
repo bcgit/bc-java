@@ -110,13 +110,22 @@ public class CTRDRGBTest extends SimpleTest
     {
         Collection rv = new ArrayList();
 
-        // line 3246
+        // line 3239
         TestVector tv = new TestVector(
                 "d9dc92450a03fa663613395037d50655136b3088ebe84cd3cc99d39733e2c88fa6528dff60b1f934f1ee472a20572eb7",
                 true, 
                 "d3ec0c67136ee08c", 
                 128, 
                 "e7ce8192f1c18613cd5d7ab11ca22da1"); 
+        //  rv.add(tv);
+        
+        // line 4047
+        tv = new TestVector(
+                "7c0fe58f8f62c25eadbe24600b78426a9df9a69cd131028a055e9ec1e483f37c",
+                false,
+                "d939ad1e08a80244",
+                128,
+                "3487018af191fa961fefac2854d96bf5");
         rv.add(tv);
         return rv;
         
