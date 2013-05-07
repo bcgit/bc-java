@@ -249,6 +249,20 @@ public class HashSP800DRBG implements SP80090DRBG
             counter++;
         }
 
+        // do a left shift to get rid of excess bits.
+        if (seedLength % 8 != 0)
+        {
+            int shift = 8 - (seedLength % 8);
+            int carry = 0;
+
+            for (int i = 0; i != temp.length; i++)
+            {
+                int b = temp[i] & 0xff;
+                temp[i] = (byte)((b >>> shift) | (carry << (8 - shift)));
+                carry = b;
+            }
+        }
+
         return temp;
     }
     

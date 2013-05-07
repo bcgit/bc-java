@@ -77,6 +77,7 @@ public class HMacSP800DRBG
         if (predictionResistant)
         {
             reseed(additionalInput);
+            additionalInput = null;
         }
 
         // 2.
