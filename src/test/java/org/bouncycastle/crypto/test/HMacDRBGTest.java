@@ -386,29 +386,29 @@ public class HMacDRBGTest
             DRBGTestVector tv = tests[i];
 
             byte[] nonce = Hex.decode(tv.nonce());
-            byte[] personalisationString = Hex.decode(tv.personalisation());
+            byte[] personalisationString = Hex.decode(tv.personalizationString());
 
             SP80090DRBG d = new HMacSP800DRBG(new HMac(tv.getDigest()), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
 
-            byte[] output = new byte[tv.expectedValue()[0].length() / 2];
+            byte[] output = new byte[tv.expectedValue(0).length];
 
             d.generate(output, tv.additionalInput(0), tv.predictionResistance());
 
-            byte[] expected = Hex.decode(tv.expectedValue()[0]);
+            byte[] expected = tv.expectedValue(0);
 
             if (!areEqual(expected, output))
             {
-                fail("Test #" + (i + 1) + ".1 failed, expected " + tv.expectedValue()[0] + " got " + new String(Hex.encode(output)));
+                fail("Test #" + (i + 1) + ".1 failed, expected " + new String(Hex.encode(tv.expectedValue(0))) + " got " + new String(Hex.encode(output)));
             }
 
-            output = new byte[tv.expectedValue()[0].length() / 2];
+            output = new byte[tv.expectedValue(0).length];
 
             d.generate(output, tv.additionalInput(1), tv.predictionResistance());
 
-            expected = Hex.decode(tv.expectedValue()[1]);
+            expected = tv.expectedValue(1);
             if (!areEqual(expected, output))
             {
-                fail("Test #" + (i + 1) + ".2 failed, expected " + tv.expectedValue()[1] + " got " + new String(Hex.encode(output)));
+                fail("Test #" + (i + 1) + ".2 failed, expected " + new String(Hex.encode(tv.expectedValue(1))) + " got " + new String(Hex.encode(output)));
             }
         }
     }

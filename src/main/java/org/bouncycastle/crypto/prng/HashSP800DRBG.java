@@ -1,22 +1,37 @@
 package org.bouncycastle.crypto.prng;
 
+import java.util.Hashtable;
+
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
 
 public class HashSP800DRBG implements SP80090DRBG
 {
     private final static byte[]     ONE = { 0x01 };
     private final static int        RESEED_MAX = 100000;
-    
+    private final static Hashtable  seedlens = new Hashtable();
+
+    static
+    {
+        seedlens.put("SHA-1", Integers.valueOf(440));
+        seedlens.put("SHA-224", Integers.valueOf(440));
+        seedlens.put("SHA-256", Integers.valueOf(440));
+        seedlens.put("SHA-512/256", Integers.valueOf(440));
+        seedlens.put("SHA-512/224", Integers.valueOf(440));
+        seedlens.put("SHA-384", Integers.valueOf(888));
+        seedlens.put("SHA-512", Integers.valueOf(888));
+    }
+
     private Digest                 _digest;
     private byte[]                 _V;
     private byte[]                 _C;
     private int                    _reseedCounter;
     private EntropySource          _entropySource;
     private int                    _securityStrength;
-    private int                    _seedLength;
+    private int _seedLength;
 
-    public HashSP800DRBG(Digest digest, int seedlen, EntropySource entropySource, byte[] nonce,
+    public HashSP800DRBG(Digest digest, EntropySource entropySource, byte[] nonce,
                          byte[] personalisationString, int securityStrength)
     {
         if (securityStrength > digest.getDigestSize() * 8) // TODO: this may, or may not be correct, but it's good enough for now
@@ -28,7 +43,7 @@ public class HashSP800DRBG implements SP80090DRBG
         _digest = digest;
         _entropySource = entropySource;
         _securityStrength = securityStrength;
-        _seedLength = seedlen;
+        _seedLength = ((Integer)seedlens.get(digest.getAlgorithmName())).intValue();
 
         // 1. seed_material = entropy_input || nonce || personalization_string.
         // 2. seed = Hash_df (seed_material, seedlen).

@@ -9,7 +9,7 @@ public class TestEntropySourceProvider
     private final byte[] data;
     private final boolean isPredictionResistant;
 
-    TestEntropySourceProvider(byte[] data, boolean isPredictionResistant)
+    protected TestEntropySourceProvider(byte[] data, boolean isPredictionResistant)
     {
         this.data = data;
         this.isPredictionResistant = isPredictionResistant;

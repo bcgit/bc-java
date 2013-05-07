@@ -58,14 +58,24 @@ public class DRBGTestVector
             return _pr;
         }
 
-        public String nonce()
+        public byte[] nonce()
         {
-            return _nonce;
+            if (_nonce == null)
+            {
+                return null;
+            }
+
+            return Hex.decode(_nonce);
         }
 
-        public String personalisation()
+        public byte[] personalizationString()
         {
-            return _personalisation;
+            if (_personalisation == null)
+            {
+                return null;
+            }
+
+            return Hex.decode(_personalisation);
         }
 
         public int securityStrength()
@@ -73,9 +83,9 @@ public class DRBGTestVector
             return _ss;
         }
 
-        public String[] expectedValue()
+        public byte[] expectedValue(int index)
         {
-            return _ev;
+            return Hex.decode(_ev[index]);
         }
 
         public byte[] additionalInput(int position)
