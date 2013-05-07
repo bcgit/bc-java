@@ -385,8 +385,8 @@ public class HMacDRBGTest
         {
             DRBGTestVector tv = tests[i];
 
-            byte[] nonce = Hex.decode(tv.nonce());
-            byte[] personalisationString = Hex.decode(tv.personalizationString());
+            byte[] nonce = tv.nonce();
+            byte[] personalisationString = tv.personalizationString();
 
             SP80090DRBG d = new HMacSP800DRBG(new HMac(tv.getDigest()), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
 
