@@ -104,19 +104,6 @@ public class DualECSP800DRBG
 
     }
 
-    // 1. If reseed_counter > reseed_interval, then return an indication that a
-    // reseed is required.
-    // 2. If (additional_input != Null), then do
-    // 2.1 w = Hash (0x02 || V || additional_input).
-    // 2.2 V = (V + w) mod 2^seedlen
-    // .
-    // 3. (returned_bits) = Hashgen (requested_number_of_bits, V).
-    // 4. H = Hash (0x03 || V).
-    // 5. V = (V + H + C + reseed_counter) mod 2^seedlen
-    // .
-    // 6. reseed_counter = reseed_counter + 1.
-    // 7. Return SUCCESS, returned_bits, and the new values of V, C, and
-    // reseed_counter for the new_working_state.
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
         int numberOfBits = output.length*8;

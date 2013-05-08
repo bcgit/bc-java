@@ -17,7 +17,7 @@ public class HashDRBGTest
 {
     public String getName()
     {
-        return this.getClass().getName();
+        return "HashDRBG";
     }
 
     public static void main(String[] args)
@@ -103,21 +103,36 @@ public class HashDRBGTest
                     .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F90919293949596")
                     .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6"),
                 new DRBGTestVector(
-                            new SHA256Digest(),
-                            new SHA256EntropyProvider().get(440),
-                            false,
-                            "2021222324252627",
-                            128,
-                            new String[]
-                                {
-                                    "77E05A0E7DC78AB5D8934D5E93E82C06" +
-                                    "A07C04CEE6C9C53045EEB485872777CF3B3E35C474F976B8" +
-                                    "94BF301A86FA651F463970E89D4A0534B2ECAD29EC044E7E",
-                                    "5FF4BA493C40CFFF3B01E472C575668C" +
-                                    "CE3880B9290B05BFEDE5EC96ED5E9B2898508B09BC800EEE" +
-                                    "099A3C90602ABD4B1D4F343D497C6055C87BB956D53BF351"
-                                }
-                        ),
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(440),
+                    false,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "77E05A0E7DC78AB5D8934D5E93E82C06" +
+                            "A07C04CEE6C9C53045EEB485872777CF3B3E35C474F976B8" +
+                            "94BF301A86FA651F463970E89D4A0534B2ECAD29EC044E7E",
+                            "5FF4BA493C40CFFF3B01E472C575668C" +
+                            "CE3880B9290B05BFEDE5EC96ED5E9B2898508B09BC800EEE" +
+                            "099A3C90602ABD4B1D4F343D497C6055C87BB956D53BF351"
+                        }
+                ),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new SHA256EntropyProvider().get(440),
+                    true,
+                    "2021222324252627",
+                    128,
+                    new String[]
+                        {
+                            "92275523C70E567BCF9B35EC50B933F8" +
+                            "12616DF586B7F72EE1BC7735A5C2654373CBBC72316DFF84" +
+                            "20A33BF02B97AC8D1952583F270ACD7005CC027F4CF1187E",
+                            "681A46B2AA8694A0FE4DEEA720927A84" +
+                            "EAAA985E59C19F8BE0984D8CBEF8C69B754167641946E040" +
+                            "EE2043E1CCB29DCF063C0A50830E428E6DCA262ECD77C542"
+                        }),
                 new DRBGTestVector(
                             new SHA384Digest(),
                             new SHA384EntropyProvider().get(888),
@@ -136,6 +151,24 @@ public class HashDRBGTest
                                     "114F130BB781E66C22B5B770E8AE115FF39F8ADAF66DEEDF"
                                 }
                         ),
+                new DRBGTestVector(
+                        new SHA384Digest(),
+                        new SHA384EntropyProvider().get(888),
+                        true,
+                        "202122232425262728292A2B",
+                        192,
+                        new String[]
+                            {
+                                "97993B78F7C31C0E876DC92EB7D6C408E09D608AD6B99D0E" +
+                                "A2229B05A578C426334FCC8A1C7E676ED2D89A5B4CDF5B3F" +
+                                "4ADF11936BF14F4E10909DBA9C24F4FDFFDE72351DA8E2CC" +
+                                "3B135A395373899E5F1A5955B880CA9B9E9DD4C9CA7FA4D4",
+                                "F5983946320E36C64EF283CA1F65D197CF81624EC6778E77" +
+                                "0E78949D84EF21A45CDD62D1DB76920D4C2836FC6AE5299F" +
+                                "AF1357D9701FAD10FBD88D1E2832239436D76EB271BDC3CA" +
+                                "04425EC88BC0E89A4D5C37FFCE7C6C3ABDE9C413AE6D3FEA"
+                            }
+                    ),
                 new DRBGTestVector(
                             new SHA512Digest(),
                             new SHA512EntropyProvider().get(888),
