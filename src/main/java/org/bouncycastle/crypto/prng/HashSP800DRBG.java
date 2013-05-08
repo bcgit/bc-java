@@ -4,7 +4,6 @@ import java.util.Hashtable;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.encoders.Hex;
 
 public class HashSP800DRBG implements SP80090DRBG
 {
@@ -54,9 +53,7 @@ public class HashSP800DRBG implements SP80090DRBG
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
         byte[] entropy = entropySource.getEntropy();
-        
-        System.out.println("Constructor Entropy: "+ new String(Hex.encode(entropy)));
-        
+
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
         
         System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
@@ -64,11 +61,7 @@ public class HashSP800DRBG implements SP80090DRBG
         System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length,
                 personalisationString.length);
 
-        System.out.println("Constructor SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
-
         byte[] seed = hash_df(seedMaterial, _seedLength);
-        
-        System.out.println("Constructor Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
@@ -76,8 +69,8 @@ public class HashSP800DRBG implements SP80090DRBG
         _C = hash_df(subV, _seedLength);
         _reseedCounter = 1;
         
-        System.out.println("Constructor V: "+ new String(Hex.encode(_V)));        
-        System.out.println("Constructor C: "+ new String(Hex.encode(_C)));
+//        System.out.println("Constructor V: "+ new String(Hex.encode(_V)));
+//        System.out.println("Constructor C: "+ new String(Hex.encode(_C)));
 
     }
 
@@ -140,8 +133,8 @@ public class HashSP800DRBG implements SP80090DRBG
         _reseedCounter++;
 
         System.arraycopy(rv, 0, output, 0, output.length);
-        System.out.println("Generate V: "+ new String(Hex.encode(_V)));
-        System.out.println("Generate C: "+ new String(Hex.encode(_C)));
+//        System.out.println("Generate V: "+ new String(Hex.encode(_V)));
+//        System.out.println("Generate C: "+ new String(Hex.encode(_C)));
 
         return numberOfBits;
     }
@@ -189,7 +182,7 @@ public class HashSP800DRBG implements SP80090DRBG
 
         byte[] entropy = _entropySource.getEntropy();
         
-        System.out.println("Reseed Entropy: "+ new String(Hex.encode(entropy)));
+//        System.out.println("Reseed Entropy: "+ new String(Hex.encode(entropy)));
         
         byte[] seedMaterial = new byte[1+ _V.length + entropy.length + additionalInput.length];
         
@@ -201,11 +194,11 @@ public class HashSP800DRBG implements SP80090DRBG
         pos += entropy.length;
         System.arraycopy(additionalInput, 0, seedMaterial, pos ,additionalInput.length);
 
-        System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
+//        System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 
         byte[] seed = hash_df(seedMaterial, _seedLength);
         
-        System.out.println("Reseed Seed: "+ new String(Hex.encode(seed)));
+//        System.out.println("Reseed Seed: "+ new String(Hex.encode(seed)));
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
@@ -214,8 +207,8 @@ public class HashSP800DRBG implements SP80090DRBG
         _C = hash_df(subV, _seedLength);
         _reseedCounter = 1;
         
-        System.out.println("Reseed V: "+ new String(Hex.encode(_V)));
-        System.out.println("Reseed C: "+ new String(Hex.encode(_C)));
+//        System.out.println("Reseed V: "+ new String(Hex.encode(_V)));
+//        System.out.println("Reseed C: "+ new String(Hex.encode(_C)));
     }
     
     
