@@ -23,12 +23,7 @@ public class HMacSP800DRBG
 
         // TODO: validate entropy length
         byte[] entropy = entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length, personalisationString.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
 
         _K = new byte[hMac.getMacSize()];
         _V = new byte[_K.length];
@@ -120,17 +115,8 @@ public class HMacSP800DRBG
 
     public void reseed(byte[] additionalInput)
     {
-        if (additionalInput == null)
-        {
-            additionalInput = new byte[0];
-        }
-
         byte[] entropy = _entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length +  additionalInput.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(additionalInput, 0, seedMaterial, entropy.length, additionalInput.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, additionalInput);
 
         hmac_DRBG_Update(seedMaterial);
 

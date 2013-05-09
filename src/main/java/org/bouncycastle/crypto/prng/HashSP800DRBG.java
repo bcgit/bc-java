@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.prng;
 import java.util.Hashtable;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 public class HashSP800DRBG implements SP80090DRBG
@@ -52,20 +53,8 @@ public class HashSP800DRBG implements SP80090DRBG
         // 5. reseed_counter = 1.
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
-        if (personalisationString == null)
-        {
-            personalisationString = new byte[0];
-        }
-
         byte[] entropy = entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-        
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length,
-                personalisationString.length);
-
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
         byte[] seed = hash_df(seedMaterial, _seedLength);
 
         _V = seed;
@@ -189,15 +178,7 @@ public class HashSP800DRBG implements SP80090DRBG
         
 //        System.out.println("Reseed Entropy: "+ new String(Hex.encode(entropy)));
         
-        byte[] seedMaterial = new byte[1+ _V.length + entropy.length + additionalInput.length];
-        
-        seedMaterial[0] = 0x01;
-        int pos = 1;
-        System.arraycopy(_V, 0, seedMaterial, 1, _V.length);
-        pos += _V.length;
-        System.arraycopy(entropy, 0, seedMaterial, pos, entropy.length);
-        pos += entropy.length;
-        System.arraycopy(additionalInput, 0, seedMaterial, pos ,additionalInput.length);
+        byte[] seedMaterial = Arrays.concatenate(ONE, _V, entropy, additionalInput);
 
 //        System.out.println("Reseed SeedMaterial: "+ new String(Hex.encode(seedMaterial)));
 

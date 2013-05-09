@@ -29,7 +29,7 @@ public class DRBGTestVector
             _nonce = nonce;
             _ss = securityStrength;
             _ev = expected;
-            _personalisation = "";
+            _personalisation = null;
         }
 
         public DRBGTestVector(BlockCipher cipher, int keySizeInBits, EntropySource eSource, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
@@ -41,7 +41,7 @@ public class DRBGTestVector
             _nonce = nonce;
             _ss = securityStrength;
             _ev = expected;
-            _personalisation = "";
+            _personalisation = null;
         }
 
         public Digest getDigest()

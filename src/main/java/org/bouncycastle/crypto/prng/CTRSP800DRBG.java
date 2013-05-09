@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.prng;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CTRSP800DRBG
@@ -54,14 +55,7 @@ public class CTRSP800DRBG
             personalisationString = new byte[0];
         }
 
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-
-        int pos = 0;
-        System.arraycopy(entropy, 0, seedMaterial, pos, entropy.length);
-        pos += entropy.length;
-        System.arraycopy(nonce, 0, seedMaterial, pos, nonce.length);
-        pos += nonce.length;
-        System.arraycopy(personalisationString, 0, seedMaterial, pos, personalisationString.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
 
         System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
 

@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public class DualECSP800DRBG
@@ -60,12 +61,7 @@ public class DualECSP800DRBG
 
         // TODO: validate entropy length
         byte[] entropy = entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length, personalisationString.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
 
         if (securityStrength <= 128)
         {
@@ -172,12 +168,7 @@ public class DualECSP800DRBG
         }
 
         byte[] entropy = _entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[_s.length + entropy.length +  additionalInput.length];
-
-        System.arraycopy(pad8(_s, _seedlen), 0, seedMaterial, 0, _s.length);
-        System.arraycopy(entropy, 0, seedMaterial, _s.length, entropy.length);
-        System.arraycopy(additionalInput, 0, seedMaterial, _s.length + entropy.length, additionalInput.length);
+        byte[] seedMaterial = Arrays.concatenate(_s, entropy, additionalInput);
 
         _s = hash_df(seedMaterial, _seedlen);
 

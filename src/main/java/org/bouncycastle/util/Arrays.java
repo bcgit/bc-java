@@ -659,4 +659,70 @@ public final class Arrays
         }
         return newLength;
     }
+
+    public static byte[] concatenate(byte[] a, byte[] b)
+    {
+        if (a != null && b != null)
+        {
+            byte[] rv = new byte[a.length + b.length];
+
+            System.arraycopy(a, 0, rv, 0, a.length);
+            System.arraycopy(b, 0, rv, a.length, b.length);
+
+            return rv;
+        }
+        else if (b != null)
+        {
+            return clone(b);
+        }
+        else
+        {
+            return clone(a);
+        }
+    }
+
+    public static byte[] concatenate(byte[] a, byte[] b, byte[] c)
+    {
+        if (a != null && b != null && c != null)
+        {
+            byte[] rv = new byte[a.length + b.length + c.length];
+
+            System.arraycopy(a, 0, rv, 0, a.length);
+            System.arraycopy(b, 0, rv, a.length, b.length);
+            System.arraycopy(c, 0, rv, a.length + b.length, c.length);
+
+            return rv;
+        }
+        else if (b == null)
+        {
+            return concatenate(a, c);
+        }
+        else
+        {
+            return concatenate(a, b);
+        }
+    }
+
+    public static byte[] concatenate(byte[] a, byte[] b, byte[] c, byte[] d)
+    {
+        if (a != null && b != null && c != null && d != null)
+        {
+            byte[] rv = new byte[a.length + b.length + c.length + d.length];
+
+            System.arraycopy(a, 0, rv, 0, a.length);
+            System.arraycopy(b, 0, rv, a.length, b.length);
+            System.arraycopy(c, 0, rv, a.length + b.length, c.length);
+            System.arraycopy(d, 0, rv, a.length + b.length + c.length, d.length);
+
+            return rv;
+        }
+        else if (b == null)
+        {
+            return concatenate(a, c, d);
+        }
+        else
+        {
+            return concatenate(a, b, d);
+        }
+    }
 }
