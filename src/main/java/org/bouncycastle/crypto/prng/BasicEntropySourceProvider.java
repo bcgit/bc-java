@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.prng;
 import java.security.SecureRandom;
 
 /**
- * An EntropySourceProvider where entropy generation is based on a SecureRandom.
+ * An EntropySourceProvider where entropy generation is based on a SecureRandom output using SecureRandom.generateSeed().
  */
 public class BasicEntropySourceProvider
     implements EntropySourceProvider
@@ -41,11 +41,7 @@ public class BasicEntropySourceProvider
 
             public byte[] getEntropy()
             {
-                byte[] rv = new byte[bitsRequired / 8];
-
-                _sr.nextBytes(rv);
-
-                return rv;
+                return _sr.generateSeed((bitsRequired + 7) / 8);
             }
         };
     }

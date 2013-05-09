@@ -58,7 +58,7 @@ public class SP800SecureRandomBuilder
     /**
      * Create a builder which makes creates the SecureRandom objects from a specified entropy source provider.
      * <p>
-     *     <b>Note:</b> If this constructor is used any calls to setSeed() in the resulting SecureRandom will be ignored.
+     * <b>Note:</b> If this constructor is used any calls to setSeed() in the resulting SecureRandom will be ignored.
      * </p>
      * @param entropySourceProvider a provider of EntropySource objects.
      */
@@ -68,6 +68,11 @@ public class SP800SecureRandomBuilder
         this.entropySourceProvider = entropySourceProvider;
     }
 
+    /**
+     * Set the personalization string for DRBG SecureRandoms created by this builder
+     * @param personalizationString  the personalisation string for the underlying DRBG.
+     * @return the current builder.
+     */
     public SP800SecureRandomBuilder setPersonalizationString(byte[] personalizationString)
     {
         this.personalizationString = personalizationString;
@@ -75,6 +80,12 @@ public class SP800SecureRandomBuilder
         return this;
     }
 
+    /**
+     * Set the security strength required for DRBGs used in building SecureRandom objects.
+     *
+     * @param securityStrength the security strength (in bits)
+     * @return the current builder.
+     */
     public SP800SecureRandomBuilder setSecurityStrength(int securityStrength)
     {
         this.securityStrength = securityStrength;
@@ -82,6 +93,12 @@ public class SP800SecureRandomBuilder
         return this;
     }
 
+    /**
+     * Set the amount of entropy bits required for seeding and reseeding DRBGs used in building SecureRandom objects.
+     *
+     * @param entropyBitsRequired the number of bits of entropy to be requested from the entropy source on each seed/reseed.
+     * @return the current builder.
+     */
     public SP800SecureRandomBuilder setEntropyBitsRequired(int entropyBitsRequired)
     {
         this.entropyBitsRequired = entropyBitsRequired;
@@ -102,7 +119,16 @@ public class SP800SecureRandomBuilder
         return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new HashDRBGProvider(digest, nonce, personalizationString, securityStrength), predictionResistant);
     }
 
-    public SP800SecureRandom build(BlockCipher cipher, int keySizeInBits, int seedLength, byte[] nonce, boolean predictionResistant)
+    /**
+     * Build a SecureRandom based on a SP 800-90A CTR DRBG.
+     *
+     * @param cipher the block cipher to base the DRBG on.
+     * @param keySizeInBits key size in bits to be used with the block cipher.
+     * @param nonce nonce value to use in DRBG construction.
+     * @param predictionResistant  specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
+     * @return  a SecureRandom supported by a CTR DRBG.
+     */
+    public SP800SecureRandom buildCTR(BlockCipher cipher, int keySizeInBits, byte[] nonce, boolean predictionResistant)
     {
         return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new CTRDRBGProvider(cipher, keySizeInBits, nonce, personalizationString, securityStrength), predictionResistant);
     }

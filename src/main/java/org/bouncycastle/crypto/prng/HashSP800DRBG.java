@@ -52,6 +52,11 @@ public class HashSP800DRBG implements SP80090DRBG
         // 5. reseed_counter = 1.
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
+        if (personalisationString == null)
+        {
+            personalisationString = new byte[0];
+        }
+
         byte[] entropy = entropySource.getEntropy();
 
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
