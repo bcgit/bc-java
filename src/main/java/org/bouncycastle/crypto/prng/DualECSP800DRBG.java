@@ -168,7 +168,7 @@ public class DualECSP800DRBG
         }
 
         byte[] entropy = _entropySource.getEntropy();
-        byte[] seedMaterial = Arrays.concatenate(_s, entropy, additionalInput);
+        byte[] seedMaterial = Arrays.concatenate(pad8(_s, _seedlen), entropy, additionalInput);
 
         _s = hash_df(seedMaterial, _seedlen);
 
