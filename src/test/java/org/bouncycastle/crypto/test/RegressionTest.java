@@ -115,7 +115,7 @@ public class RegressionTest
         new OCBTest(),
         new HashDRBGTest(),
         new HMacDRBGTest(),
-        new CTRDRGBTest(),
+        new CTRDRBGTest(),
         new DualECDRBGTest()
     };
 

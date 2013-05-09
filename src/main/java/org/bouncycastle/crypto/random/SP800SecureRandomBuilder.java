@@ -104,7 +104,7 @@ public class SP800SecureRandomBuilder
 
     public SP800SecureRandom build(BlockCipher cipher, int keySizeInBits, int seedLength, byte[] nonce, boolean predictionResistant)
     {
-        return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new CTRDRBGProvider(cipher, keySizeInBits, seedLength, nonce, personalizationString, securityStrength), predictionResistant);
+        return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new CTRDRBGProvider(cipher, keySizeInBits, nonce, personalizationString, securityStrength), predictionResistant);
     }
 
     /**
@@ -205,16 +205,14 @@ public class SP800SecureRandomBuilder
 
         private final BlockCipher blockCipher;
         private final int keySizeInBits;
-        private final int seedLength;
         private final byte[] nonce;
         private final byte[] personalizationString;
         private final int securityStrength;
 
-        public CTRDRBGProvider(BlockCipher blockCipher, int keySizeInBits, int seedLength, byte[] nonce, byte[] personalizationString, int securityStrength)
+        public CTRDRBGProvider(BlockCipher blockCipher, int keySizeInBits, byte[] nonce, byte[] personalizationString, int securityStrength)
         {
             this.blockCipher = blockCipher;
             this.keySizeInBits = keySizeInBits;
-            this.seedLength = seedLength;
             this.nonce = nonce;
             this.personalizationString = personalizationString;
             this.securityStrength = securityStrength;
@@ -222,7 +220,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new CTRSP800DRBG(blockCipher, keySizeInBits, seedLength, entropySource, nonce, personalizationString, securityStrength);
+            return new CTRSP800DRBG(blockCipher, keySizeInBits, entropySource, nonce, personalizationString, securityStrength);
         }
     }
 }

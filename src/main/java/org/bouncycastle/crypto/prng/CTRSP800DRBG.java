@@ -17,7 +17,7 @@ public class CTRSP800DRBG
     private byte[]                _V;
     private int                   _reseedCounter = 0;
 
-    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int seedLength, EntropySource entropySource, byte[] nonce,
+    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, EntropySource entropySource, byte[] nonce,
                         byte[] personalisationString, int securityStrength)
     {
 
@@ -25,11 +25,11 @@ public class CTRSP800DRBG
         _engine = engine;     
         
         _keySizeInBits = keySizeInBits;
-        _seedLength = seedLength;
+        _seedLength = keySizeInBits + engine.getBlockSize() * 8;
 
         int entropyLengthInBytes = securityStrength;
         
-        if (securityStrength > 128) 
+        if (securityStrength > 256)
         {
             throw new IllegalStateException(
                             "Security strength is not supported by the derivation function");            
@@ -39,17 +39,21 @@ public class CTRSP800DRBG
 
         System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
 
-        addOneTo(nonce); 
         CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalisationString);
         
-        System.out.println("Constructor V  : " + new String(Hex.encode(_V)));
-        System.out.println("Constructor Key: " + new String(Hex.encode(_Key)));
+        System.err.println("Constructor V  : " + new String(Hex.encode(_V)));
+        System.err.println("Constructor Key: " + new String(Hex.encode(_Key)));
 
     }
 
     private void CTR_DRBG_Instantiate_algorithm(byte[] entropy, byte[] nonce,
             byte[] personalisationString)
     {
+        if (personalisationString == null)
+        {
+            personalisationString = new byte[0];
+        }
+
         byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
 
         int pos = 0;
@@ -61,24 +65,26 @@ public class CTRSP800DRBG
 
         System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
 
-        byte[] seed = Block_Cipher_df(_seedLength, seedMaterial);
+        byte[] seed = Block_Cipher_df(seedMaterial, _seedLength);
 
         System.out.println("Constructor Seed: " + new String(Hex.encode(seed)));
 
         int outlen = _engine.getBlockSize();
-        _Key = new byte[outlen];
+
+        _Key = new byte[(_keySizeInBits + 7) / 8];
         _V = new byte[outlen];
 
         CTR_DRBG_Update(seed, _Key, _V); 
         // _Key & _V are modified by this call
-
+        System.out.println("Key: " + new String(Hex.encode(_Key)));
+        System.out.println("V  : " + new String(Hex.encode(_V)));
         _reseedCounter = 1;
     }
 
     private void CTR_DRBG_Update(byte[] seed, byte[] key, byte[] v)
     {
         byte[] temp = new byte[seed.length];
-        byte[] outputBlock = new byte[seed.length];
+        byte[] outputBlock = new byte[_engine.getBlockSize()];
         
         int i=0;
         int outLen = _engine.getBlockSize();
@@ -90,17 +96,17 @@ public class CTRSP800DRBG
             _engine.processBlock(v, 0, outputBlock, 0);
 
             int bytesToCopy = ((temp.length - i * outLen) > outLen)
-                    ? outLen
-                    : (temp.length - i * outLen);
+                    ? outLen : (temp.length - i * outLen);
             
             System.arraycopy(outputBlock, 0, temp, i * outLen, bytesToCopy);
             ++i;
         }
-        
-        XOR(temp, temp, seed, 0);
-        
+        System.err.println("seed: " + new String(Hex.encode(seed)));
+        System.err.println("temp: " + new String(Hex.encode(temp)));
+        XOR(temp, seed, temp, 0);
+        System.err.println("temp: " + new String(Hex.encode(temp)));
         System.arraycopy(temp, 0, key, 0, key.length);
-        System.arraycopy(temp, temp.length-outLen-1, v, 0, outLen);
+        System.arraycopy(temp, key.length, v, 0, v.length);
     }
     
     private void CTR_DRBG_Reseed_algorithm(EntropySource entropy, byte[] additionalInput) 
@@ -202,7 +208,7 @@ public class CTRSP800DRBG
     // 14. requested_bits = Leftmost number_of_bits_to_return of temp.
     //
     // 15. Return SUCCESS and requested_bits.
-    private byte[] Block_Cipher_df(int bitLength, byte[] inputString)
+    private byte[] Block_Cipher_df(byte[] inputString, int bitLength)
     {
         int outLen = _engine.getBlockSize();
         int L = inputString.length; // already in bytes
@@ -216,15 +222,16 @@ public class CTRSP800DRBG
         System.arraycopy(inputString, 0, S, 8, L);
         S[8 + L] = (byte)0x80;
         // S already padded with zeros
-        
-        byte[] temp = new byte[N+L];
+        System.err.println("S  :" + new String(Hex.encode(S)));
+        byte[] temp = new byte[_keySizeInBits / 8 + outLen];
         byte[] bccOut = new byte[outLen];
 
         byte[] IV = new byte[outLen]; 
         
         int i = 0;
         byte[] K = new byte[_keySizeInBits / 8];
-        System.arraycopy(K_BITS, 0, K, 0, K.length); 
+        System.arraycopy(K_BITS, 0, K, 0, K.length);
+
         while (i*outLen*8 < _keySizeInBits + outLen *8)
         {
             copyIntToByteArray(IV, i, 0);
@@ -237,6 +244,28 @@ public class CTRSP800DRBG
             System.arraycopy(bccOut, 0, temp, i * outLen, bytesToCopy);
             ++i;
         }
+
+        byte[] X = new byte[outLen];
+        System.arraycopy(temp, 0, K, 0, K.length);
+        System.arraycopy(temp, K.length, X, 0, X.length);
+
+        temp = new byte[bitLength / 2];
+
+        i = 0;
+        _engine.init(true, new KeyParameter(K));
+
+        while (i * outLen < temp.length)
+        {
+            _engine.processBlock(X, 0, X, 0);
+
+            int bytesToCopy = ((temp.length - i * outLen) > outLen)
+                    ? outLen
+                    : (temp.length - i * outLen);
+
+            System.arraycopy(X, 0, temp, i * outLen, bytesToCopy);
+            i++;
+        }
+
         return temp;
     }
 
@@ -258,14 +287,19 @@ public class CTRSP800DRBG
         int outlen = _engine.getBlockSize();
         byte[] chainingValue = new byte[outlen]; // initial values = 0
         int n = data.length / outlen;
-        
+
         byte[] inputBlock = new byte[outlen];
+
         _engine.init(true, new KeyParameter(k));
-        for (int i=0; i< n; i++) 
+
+        _engine.processBlock(iV, 0, chainingValue, 0);
+
+        for (int i = 0; i < n; i++)
         {
             XOR(inputBlock, chainingValue, data, i*outlen);
             _engine.processBlock(inputBlock, 0, chainingValue, 0);
         }
+
         System.arraycopy(chainingValue, 0, bccOut, 0, bccOut.length);
     }
 
@@ -277,41 +311,46 @@ public class CTRSP800DRBG
         buf[offSet + 3] = ((byte)(value));
     }
 
-    private byte[] byteGenProcess(BlockCipher engine, byte[] input, int lengthInBits)
-    {
-        int m = (lengthInBits / 8) / engine.getBlockSize();
-
-        byte[] data = new byte[input.length];
-        System.arraycopy(input, 0, data, 0, input.length);
-
-        byte[] W = new byte[lengthInBits / 8];
-
-        byte[] dig = new byte[engine.getBlockSize()];
-
-        for (int i = 0; i <= m; i++)
-        {
-            engine.processBlock(data, data.length, dig, 0);
-
-            int bytesToCopy = ((W.length - i * dig.length) > dig.length)
-                    ? dig.length
-                    : (W.length - i * dig.length);
-            System.arraycopy(dig, 0, W, i * dig.length, bytesToCopy);
-
-            addOneTo(data);
-        }
-
-        return W;
-    }
-
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
-        if (predictionResistant) {
+        if (predictionResistant)
+        {
             CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
         }
-        
-        additionalInput = null;
-        //  CTR_DRBG_Generate_algorithm(output, output.length*8, additionalInput);
-        return output.length*8;  
+
+        if (additionalInput != null)
+        {
+            additionalInput = Block_Cipher_df(additionalInput, _seedLength);
+            CTR_DRBG_Update(additionalInput, _Key, _V);
+        }
+        else
+        {
+            additionalInput = new byte[_seedLength];
+        }
+
+        byte[] out = new byte[_V.length];
+
+        _engine.init(true, new KeyParameter(_Key));
+
+        for (int i = 0; i < output.length / out.length; i++)
+        {
+            addOneTo(_V);
+
+            _engine.processBlock(_V, 0, out, 0);
+
+            int bytesToCopy = ((output.length - i * out.length) > out.length)
+                    ? out.length
+                    : (output.length - i * _V.length);
+
+            System.arraycopy(out, 0, output, i * out.length, bytesToCopy);
+        }
+
+
+        CTR_DRBG_Update(additionalInput, _Key, _V);
+
+        _reseedCounter++;
+
+        return output.length * 8;
     }
 
     public void reseed(byte[] additionalInput)
