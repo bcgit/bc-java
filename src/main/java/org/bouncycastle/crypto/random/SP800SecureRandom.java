@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.random;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.prng.BasicEntropySourceProvider;
+import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.SP80090DRBG;
 
 public class SP800SecureRandom
@@ -11,25 +11,26 @@ public class SP800SecureRandom
     private final DRBGProvider drbgProvider;
     private final boolean predictionResistant;
     private final SecureRandom randomSource;
-    private final boolean randomPredictionResistant;
-    private final int entropyBitsRequired;
+    private final EntropySource entropySource;
 
     private SP80090DRBG drbg;
 
-    SP800SecureRandom(SecureRandom randomSource, boolean randomPredictionResistant, DRBGProvider drbgProvider, boolean predictionResistant, int entropyBitsRequired)
+    SP800SecureRandom(SecureRandom randomSource, EntropySource entropySource, DRBGProvider drbgProvider, boolean predictionResistant)
     {
         this.randomSource = randomSource;
-        this.randomPredictionResistant = randomPredictionResistant;
+        this.entropySource = entropySource;
         this.drbgProvider = drbgProvider;
         this.predictionResistant = predictionResistant;
-        this.entropyBitsRequired = entropyBitsRequired;
     }
 
     public void setSeed(byte[] seed)
     {
         synchronized (this)
         {
-            this.randomSource.setSeed(seed);
+            if (randomSource != null)
+            {
+                this.randomSource.setSeed(seed);
+            }
         }
     }
 
@@ -37,7 +38,7 @@ public class SP800SecureRandom
     {
         synchronized (this)
         {
-            // this will happen when SecureRandom() is created.
+            // this will happen when SecureRandom() is created
             if (randomSource != null)
             {
                 this.randomSource.setSeed(seed);
@@ -51,7 +52,7 @@ public class SP800SecureRandom
         {
             if (drbg == null)
             {
-                drbg = drbgProvider.get(new BasicEntropySourceProvider(randomSource, randomPredictionResistant).get(entropyBitsRequired));
+                drbg = drbgProvider.get(entropySource);
             }
 
             drbg.generate(bytes, null, predictionResistant);

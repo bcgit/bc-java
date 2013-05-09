@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.util.encoders.Hex;
@@ -10,6 +11,8 @@ import org.bouncycastle.util.encoders.Hex;
 public class DRBGTestVector
 {
         private Digest _digest;
+        private BlockCipher _cipher;
+        private int _keySizeInBits;
         private EntropySource _eSource;
         private boolean _pr;
         private String _nonce;
@@ -26,12 +29,34 @@ public class DRBGTestVector
             _nonce = nonce;
             _ss = securityStrength;
             _ev = expected;
-            _personalisation = "";
+            _personalisation = null;
+        }
+
+        public DRBGTestVector(BlockCipher cipher, int keySizeInBits, EntropySource eSource, boolean predictionResistance, String nonce, int securityStrength, String[] expected)
+        {
+            _cipher = cipher;
+            _keySizeInBits = keySizeInBits;
+            _eSource = eSource;
+            _pr = predictionResistance;
+            _nonce = nonce;
+            _ss = securityStrength;
+            _ev = expected;
+            _personalisation = null;
         }
 
         public Digest getDigest()
         {
             return _digest;
+        }
+
+        public BlockCipher getCipher()
+        {
+            return _cipher;
+        }
+
+        public int keySizeInBits()
+        {
+            return _keySizeInBits;
         }
 
         public DRBGTestVector addAdditionalInput(String input)
@@ -58,14 +83,24 @@ public class DRBGTestVector
             return _pr;
         }
 
-        public String nonce()
+        public byte[] nonce()
         {
-            return _nonce;
+            if (_nonce == null)
+            {
+                return null;
+            }
+
+            return Hex.decode(_nonce);
         }
 
-        public String personalisation()
+        public byte[] personalizationString()
         {
-            return _personalisation;
+            if (_personalisation == null)
+            {
+                return null;
+            }
+
+            return Hex.decode(_personalisation);
         }
 
         public int securityStrength()
@@ -73,9 +108,9 @@ public class DRBGTestVector
             return _ss;
         }
 
-        public String[] expectedValue()
+        public byte[] expectedValue(int index)
         {
-            return _ev;
+            return Hex.decode(_ev[index]);
         }
 
         public byte[] additionalInput(int position)

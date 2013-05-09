@@ -47,7 +47,21 @@ public class DESedeEngine
 
         if (keyMaster.length != 24 && keyMaster.length != 16)
         {
-            throw new IllegalArgumentException("key size must be 16 or 24 bytes.");
+            // new style 3TDEA key without parity bits.
+            if (keyMaster.length == 21)
+            {
+                byte[] tmp = new byte[24];
+
+                padKey(keyMaster, 0, tmp, 0);
+                padKey(keyMaster, 7, tmp, 8);
+                padKey(keyMaster, 14, tmp, 16);
+
+                keyMaster = tmp;
+            }
+            else
+            {
+                throw new IllegalArgumentException("key size must be 16, 21, or 24 bytes.");
+            }
         }
 
         this.forEncryption = encrypting;
@@ -70,6 +84,18 @@ public class DESedeEngine
         {
             workingKey3 = workingKey1;
         }
+    }
+
+    private void padKey(byte[] keyMaster, int keyOff, byte[] tmp, int tmpOff)
+    {
+        tmp[tmpOff + 0] = (byte)(keyMaster[keyOff + 0] & 0xfe);
+        tmp[tmpOff + 1] = (byte)((keyMaster[keyOff + 0] << 7) | ((keyMaster[keyOff + 1] & 0xfc) >>> 1));
+        tmp[tmpOff + 2] = (byte)((keyMaster[keyOff + 1] << 6) | ((keyMaster[keyOff + 2] & 0xf8) >>> 2));
+        tmp[tmpOff + 3] = (byte)((keyMaster[keyOff + 2] << 5) | ((keyMaster[keyOff + 3] & 0xf0) >>> 3));
+        tmp[tmpOff + 4] = (byte)((keyMaster[keyOff + 3] << 4) | ((keyMaster[keyOff + 4] & 0xe0) >>> 4));
+        tmp[tmpOff + 5] = (byte)((keyMaster[keyOff + 4] << 3) | ((keyMaster[keyOff + 5] & 0xc0) >>> 5));
+        tmp[tmpOff + 6] = (byte)((keyMaster[keyOff + 5] << 2) | ((keyMaster[keyOff + 6] & 0x80) >>> 6));
+        tmp[tmpOff + 7] = (byte)(keyMaster[keyOff + 6] << 1);
     }
 
     public String getAlgorithmName()

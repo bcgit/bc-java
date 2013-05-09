@@ -1,6 +1,6 @@
 package org.bouncycastle.crypto.prng;
 
-import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
@@ -11,9 +11,9 @@ public class HMacSP800DRBG
     private byte[] _V;
     private int _reseedCounter;
     private EntropySource _entropySource;
-    private HMac _hMac;
+    private Mac _hMac;
 
-    public HMacSP800DRBG(HMac hMac, EntropySource entropySource, byte[] nonce,
+    public HMacSP800DRBG(Mac hMac, EntropySource entropySource, byte[] nonce,
                          byte[] personalisationString, int securityStrength)
     {
         // TODO: validate security strength
@@ -23,14 +23,9 @@ public class HMacSP800DRBG
 
         // TODO: validate entropy length
         byte[] entropy = entropySource.getEntropy();
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
 
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length, personalisationString.length);
-
-        _K = new byte[hMac.getUnderlyingDigest().getDigestSize()];
+        _K = new byte[hMac.getMacSize()];
         _V = new byte[_K.length];
         Arrays.fill(_V, (byte)1);
 
@@ -120,17 +115,8 @@ public class HMacSP800DRBG
 
     public void reseed(byte[] additionalInput)
     {
-        if (additionalInput == null)
-        {
-            additionalInput = new byte[0];
-        }
-
         byte[] entropy = _entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length +  additionalInput.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(additionalInput, 0, seedMaterial, entropy.length, additionalInput.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, additionalInput);
 
         hmac_DRBG_Update(seedMaterial);
 

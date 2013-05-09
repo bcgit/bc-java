@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public class DualECSP800DRBG
@@ -60,12 +61,7 @@ public class DualECSP800DRBG
 
         // TODO: validate entropy length
         byte[] entropy = entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[entropy.length + nonce.length + personalisationString.length];
-
-        System.arraycopy(entropy, 0, seedMaterial, 0, entropy.length);
-        System.arraycopy(nonce, 0, seedMaterial, entropy.length, nonce.length);
-        System.arraycopy(personalisationString, 0, seedMaterial, entropy.length + nonce.length, personalisationString.length);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
 
         if (securityStrength <= 128)
         {
@@ -104,19 +100,6 @@ public class DualECSP800DRBG
 
     }
 
-    // 1. If reseed_counter > reseed_interval, then return an indication that a
-    // reseed is required.
-    // 2. If (additional_input != Null), then do
-    // 2.1 w = Hash (0x02 || V || additional_input).
-    // 2.2 V = (V + w) mod 2^seedlen
-    // .
-    // 3. (returned_bits) = Hashgen (requested_number_of_bits, V).
-    // 4. H = Hash (0x03 || V).
-    // 5. V = (V + H + C + reseed_counter) mod 2^seedlen
-    // .
-    // 6. reseed_counter = reseed_counter + 1.
-    // 7. Return SUCCESS, returned_bits, and the new values of V, C, and
-    // reseed_counter for the new_working_state.
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
         int numberOfBits = output.length*8;
@@ -185,12 +168,7 @@ public class DualECSP800DRBG
         }
 
         byte[] entropy = _entropySource.getEntropy();
-
-        byte[] seedMaterial = new byte[_s.length + entropy.length +  additionalInput.length];
-
-        System.arraycopy(pad8(_s, _seedlen), 0, seedMaterial, 0, _s.length);
-        System.arraycopy(entropy, 0, seedMaterial, _s.length, entropy.length);
-        System.arraycopy(additionalInput, 0, seedMaterial, _s.length + entropy.length, additionalInput.length);
+        byte[] seedMaterial = Arrays.concatenate(pad8(_s, _seedlen), entropy, additionalInput);
 
         _s = hash_df(seedMaterial, _seedlen);
 

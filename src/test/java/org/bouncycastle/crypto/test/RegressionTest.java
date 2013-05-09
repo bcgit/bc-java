@@ -113,9 +113,9 @@ public class RegressionTest
         new DSTU4145Test(),
         new SipHashTest(),
         new OCBTest(),
-        new HashDRGBTest(),
+        new HashDRBGTest(),
         new HMacDRBGTest(),
-        new CTRDRGBTest(),
+        new CTRDRBGTest(),
         new DualECDRBGTest()
     };
 
