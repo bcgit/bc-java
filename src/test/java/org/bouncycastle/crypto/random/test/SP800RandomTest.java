@@ -1,19 +1,16 @@
 package org.bouncycastle.crypto.random.test;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.random.SP800SecureRandomBuilder;
 import org.bouncycastle.crypto.test.DRBGTestVector;
 import org.bouncycastle.crypto.test.TestEntropySourceProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class SP800RandomTest
@@ -25,28 +22,65 @@ public class SP800RandomTest
         return "SP800RandomTest";
     }
 
-    private void testDigestRandom()
+    private void testHashRandom()
     {
-        TestVector tv = new TestVector("a37a3e08d8393feb01c4d78cb6a4d1e210c288c89e9838176bc78946745f1c5bea44cf15e061601bfd45f7b3b95be924", true, "8243299805c0877e", 128, "a05002f98d5676e1b2e3b3d4686bb9055a830a39");
+        DRBGTestVector tv = new DRBGTestVector(
+                            new SHA1Digest(),
+                            new SHA1EntropyProvider().get(440),
+                            true,
+                            "2021222324",
+                            80,
+                            new String[]
+                                {
+                                    "532CA1165DCFF21C55592687639884AF4BC4B057DF8F41DE653AB44E2ADEC7C9303E75ABE277EDBF",
+                                    "73C2C67C696D686D0C4DBCEB5C2AF7DDF6F020B6874FAE4390F102117ECAAFF54418529A367005A0"
+                                })
+                        .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F70717273747576");
 
-        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new FixedSecureRandom(tv.entropy()), true);
+        doHashTest(0, tv);
 
-        rBuild.setPersonalizationString(tv.personalisation());
+        tv =  new DRBGTestVector(
+                            new SHA1Digest(),
+                            new SHA1EntropyProvider().get(440),
+                            false,
+                            "2021222324",
+                            80,
+                            new String[]
+                                {
+                                    "AB438BD3B01A0AF85CFEE29F7D7B71621C4908B909124D430E7B406FB1086EA994C582E0D656D989",
+                                    "29D9098F987E7005314A0F51B3DD2B8122F4AED706735DE6AD5DDBF223177C1E5F3AEBC52FAB90B9"
+                                })
+                            .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F70717273747576");
+
+        doHashTest(1, tv);
+    }
+
+    private void doHashTest(int index, DRBGTestVector tv)
+    {
+        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new SHA1EntropyProvider());
+
+        rBuild.setPersonalizationString(tv.personalizationString());
         rBuild.setSecurityStrength(tv.securityStrength());
-        rBuild.setEntropyBitsRequired(tv.securityStrength());
+        rBuild.setEntropyBitsRequired(tv.entropySource().getEntropy().length * 8);
 
-        SecureRandom random = rBuild.buildHash(new SHA1Digest(), tv.nonce(), true);
+        SecureRandom random = rBuild.buildHash(tv.getDigest(), tv.nonce(), tv.predictionResistance());
 
-        byte[] expected = tv.expectedValue();
+        byte[] expected = tv.expectedValue(0);
         byte[] produced = new byte[expected.length];
-
-        random.nextBytes(produced);
 
         random.nextBytes(produced);
 
         if (!Arrays.areEqual(expected, produced))
         {
-            fail("SP800 digest SecureRandom produced incorrect result");
+            fail(index + " SP800 Hash SecureRandom produced incorrect result (1)");
+        }
+
+        random.nextBytes(produced);
+        expected = tv.expectedValue(1);
+
+        if (!Arrays.areEqual(expected, produced))
+        {
+            fail(index + " SP800 Hash SecureRandom produced incorrect result (2)");
         }
     }
 
@@ -172,33 +206,54 @@ public class SP800RandomTest
 
     private void testCTRRandom()
     {
-        TestVector tv = new TestVector("a37a3e08d8393feb01c4d78cb6a4d1e210c288c89e9838176bc78946745f1c5bea44cf15e061601bfd45f7b3b95be924", true, "8243299805c0877e", 128, "a05002f98d5676e1b2e3b3d4686bb9055a830a39");
+        DRBGTestVector tv = new DRBGTestVector(
+                                    new DESedeEngine(), 168,
+                                    new Bit232EntropyProvider().get(232),
+                                    false,
+                                    "20212223242526",
+                                    112,
+                                    new String[]
+                                        {
+                                            "ABC88224514D0316EA3D48AEE3C9A2B4",
+                                            "D3D3F372E43E7ABDC4FA293743EED076"
+                                        }
+                                );
 
-        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new FixedSecureRandom(tv.entropy()), true);
+        doCTRTest(tv);
+    }
 
-        rBuild.setPersonalizationString(tv.personalisation());
+    private void doCTRTest(DRBGTestVector tv)
+    {
+        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new Bit232EntropyProvider());
+
+        rBuild.setPersonalizationString(tv.personalizationString());
         rBuild.setSecurityStrength(tv.securityStrength());
+        rBuild.setEntropyBitsRequired(tv.entropySource().getEntropy().length * 8);
 
-        SecureRandom random = rBuild.build(new AESFastEngine(), 192, 440, tv.nonce(), true);
+        SecureRandom random = rBuild.buildCTR(tv.getCipher(), tv.keySizeInBits(), tv.nonce(), tv.predictionResistance());
 
-        byte[] expected = tv.expectedValue();
+        byte[] expected = tv.expectedValue(0);
         byte[] produced = new byte[expected.length];
 
         random.nextBytes(produced);
+        if (!Arrays.areEqual(expected, produced))
+        {
+            fail("SP800 CTR SecureRandom produced incorrect result (1)");
+        }
 
         random.nextBytes(produced);
+        expected = tv.expectedValue(1);
 
-        // TODO:
-//        if (!Arrays.areEqual(expected, produced))
-//        {
-//            fail("SP800 CTR SecureRandom produced incorrect result");
-//        }
+        if (!Arrays.areEqual(expected, produced))
+        {
+            fail("SP800 CTR SecureRandom produced incorrect result (2)");
+        }
     }
 
     public void performTest()
         throws Exception
     {
-        testDigestRandom();
+        testHashRandom();
         testHMACRandom();
         testCTRRandom();
         testDualECRandom();
@@ -209,77 +264,7 @@ public class SP800RandomTest
         runTest(new SP800RandomTest());
     }
 
-    private class TestVector
-    {
-        private String _entropy;
-        private boolean _pr;
-        private String _nonce;
-        private String _personalisation;
-        private int _ss;
-        private String _ev;
-        private List _ai = new ArrayList();
-
-        public TestVector(String entropy, boolean predictionResistance, String nonce, int securityStrength, String expected)
-        {
-            _entropy = entropy;
-            _pr = predictionResistance;
-            _nonce = nonce;
-            _ss = securityStrength;
-            _ev = expected;
-            _personalisation = "";
-        }
-
-        public void setAdditionalInput(String input)
-        {
-            _ai.add(input);
-        }
-
-        public byte[] entropy()
-        {
-            return Hex.decode(_entropy);
-        }
-
-        public boolean predictionResistance()
-        {
-            return _pr;
-        }
-
-        public byte[] nonce()
-        {
-            return Hex.decode(_nonce);
-        }
-
-        public byte[] personalisation()
-        {
-            return Hex.decode(_personalisation);
-        }
-
-        public int securityStrength()
-        {
-            return _ss;
-        }
-
-        public byte[] expectedValue()
-        {
-            return Hex.decode(_ev);
-        }
-
-        public byte[] additionalInput(int position)
-        {
-            int len = _ai.size();
-            byte[] rv;
-            if (position >= len) {
-                rv = null;
-            }
-            else {
-                rv = Hex.decode((String)(_ai.get(position)));
-            }
-            return rv;
-        }
-    }
-
-
-    // for HMAC
+    // for HMAC/Hash
     private class SHA1EntropyProvider
         extends TestEntropySourceProvider
     {
@@ -303,6 +288,18 @@ public class SP800RandomTest
                 "000102030405060708090A0B0C0D0E0F " +
                     "808182838485868788898A8B8C8D8E8F" +
                     "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"), true);
+        }
+    }
+
+    private class Bit232EntropyProvider
+        extends TestEntropySourceProvider
+    {
+        Bit232EntropyProvider()
+        {
+            super(Hex.decode(
+               "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C" +
+               "808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C" +
+               "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDC"), true);
         }
     }
 }

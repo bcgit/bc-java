@@ -54,7 +54,7 @@ public class DRBGTestVector
             return _cipher;
         }
 
-        public int getKeySizeInBits()
+        public int keySizeInBits()
         {
             return _keySizeInBits;
         }

@@ -121,7 +121,7 @@ public class CTRDRBGTest
             byte[] nonce = tv.nonce();
             byte[] personalisationString = tv.personalizationString();
 
-            SP80090DRBG d = new CTRSP800DRBG(tv.getCipher(), tv.getKeySizeInBits(), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
+            SP80090DRBG d = new CTRSP800DRBG(tv.getCipher(), tv.keySizeInBits(), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
 
             byte[] output = new byte[tv.expectedValue(0).length];
 
