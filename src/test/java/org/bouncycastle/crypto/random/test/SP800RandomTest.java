@@ -220,6 +220,22 @@ public class SP800RandomTest
                                 );
 
         doCTRTest(tv);
+
+        tv = new DRBGTestVector(
+                    new DESedeEngine(), 168,
+                    new Bit232EntropyProvider().get(232),
+                    true,
+                    "20212223242526",
+                    112,
+                    new String[]
+                        {
+                            "64983055D014550B39DE699E43130B64",
+                            "035FDDA8582A2214EC722C410A8D95D3"
+                        }
+                )
+        .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C");
+
+        doCTRTest(tv);
     }
 
     private void doCTRTest(DRBGTestVector tv)

@@ -38,40 +38,23 @@ public class CTRSP800DRBG
             
         byte[] entropy = entropySource.getEntropy();  // Get_entropy_input
 
-        System.out.println("Constructor Entropy: " + new String(Hex.encode(entropy)));
-
         CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalisationString);
-        
-        System.err.println("Constructor V  : " + new String(Hex.encode(_V)));
-        System.err.println("Constructor Key: " + new String(Hex.encode(_Key)));
-
     }
 
     private void CTR_DRBG_Instantiate_algorithm(byte[] entropy, byte[] nonce,
             byte[] personalisationString)
     {
-        if (personalisationString == null)
-        {
-            personalisationString = new byte[0];
-        }
-
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
-
-        System.out.println("Constructor SeedMaterial: " + new String(Hex.encode(seedMaterial)));
-
         byte[] seed = Block_Cipher_df(seedMaterial, _seedLength);
-
-        System.out.println("Constructor Seed: " + new String(Hex.encode(seed)));
 
         int outlen = _engine.getBlockSize();
 
         _Key = new byte[(_keySizeInBits + 7) / 8];
         _V = new byte[outlen];
 
+         // _Key & _V are modified by this call
         CTR_DRBG_Update(seed, _Key, _V); 
-        // _Key & _V are modified by this call
-        System.out.println("Key: " + new String(Hex.encode(_Key)));
-        System.out.println("V  : " + new String(Hex.encode(_V)));
+
         _reseedCounter = 1;
     }
 
@@ -95,18 +78,22 @@ public class CTRSP800DRBG
             System.arraycopy(outputBlock, 0, temp, i * outLen, bytesToCopy);
             ++i;
         }
-        System.err.println("seed: " + new String(Hex.encode(seed)));
-        System.err.println("temp: " + new String(Hex.encode(temp)));
+
         XOR(temp, seed, temp, 0);
-        System.err.println("temp: " + new String(Hex.encode(temp)));
+
         System.arraycopy(temp, 0, key, 0, key.length);
         System.arraycopy(temp, key.length, v, 0, v.length);
     }
     
     private void CTR_DRBG_Reseed_algorithm(EntropySource entropy, byte[] additionalInput) 
     {
-        
-        
+        byte[] seedMaterial = Arrays.concatenate(entropy.getEntropy(), additionalInput);
+
+        seedMaterial = Block_Cipher_df(seedMaterial, _seedLength);
+
+        CTR_DRBG_Update(seedMaterial, _Key, _V);
+
+        _reseedCounter = 1;
     }
 
     private void XOR(byte[] out, byte[] a, byte[] b, int bOff)
@@ -216,7 +203,7 @@ public class CTRSP800DRBG
         System.arraycopy(inputString, 0, S, 8, L);
         S[8 + L] = (byte)0x80;
         // S already padded with zeros
-        System.err.println("S  :" + new String(Hex.encode(S)));
+
         byte[] temp = new byte[_keySizeInBits / 8 + outLen];
         byte[] bccOut = new byte[outLen];
 
@@ -310,6 +297,7 @@ public class CTRSP800DRBG
         if (predictionResistant)
         {
             CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
+            additionalInput = null;
         }
 
         if (additionalInput != null)
