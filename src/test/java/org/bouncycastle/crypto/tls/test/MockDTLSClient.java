@@ -6,17 +6,20 @@ import java.io.PrintStream;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.tls.AlertLevel;
+import org.bouncycastle.crypto.tls.CertificateRequest;
+import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
+import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.util.encoders.Hex;
 
 public class MockDTLSClient extends DefaultTlsClient {
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause) {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription + ")");
+        out.println("DTLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
+            + ")");
         if (message != null) {
             out.println(message);
         }
@@ -27,7 +30,8 @@ public class MockDTLSClient extends DefaultTlsClient {
 
     public void notifyAlertReceived(short alertLevel, short alertDescription) {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client received alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription + ")");
+        out.println("DTLS client received alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
+            + ")");
     }
 
     public ProtocolVersion getClientVersion() {
@@ -39,7 +43,7 @@ public class MockDTLSClient extends DefaultTlsClient {
     }
 
     public TlsAuthentication getAuthentication() throws IOException {
-        return new ServerOnlyTlsAuthentication() {
+        return new TlsAuthentication() {
             public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate)
                 throws IOException {
                 Certificate[] chain = serverCertificate.getCertificateList();
@@ -49,6 +53,20 @@ public class MockDTLSClient extends DefaultTlsClient {
                     System.out.println("    fingerprint:SHA-256 " + fingerprint(entry) + " (" + entry.getSubject()
                         + ")");
                 }
+            }
+
+            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException {
+                short[] certificateTypes = certificateRequest.getCertificateTypes();
+                if (certificateTypes != null) {
+                    for (int i = 0; i < certificateTypes.length; ++i) {
+                        if (certificateTypes[i] == ClientCertificateType.rsa_sign) {
+                            // TODO Create a distinct client certificate for use here
+                            return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem",
+                                "x509-ca.pem" }, "x509-server-key.pem");
+                        }
+                    }
+                }
+                return null;
             }
         };
     }
