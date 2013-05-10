@@ -23,7 +23,7 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * Test based on FIPS 186-2, Appendix 5, an example of DSA.
+ * Test based on FIPS 186-2, Appendix 5, an example of DSA, and FIPS 168-3 test vectors.
  */
 public class DSATest
     extends SimpleTest

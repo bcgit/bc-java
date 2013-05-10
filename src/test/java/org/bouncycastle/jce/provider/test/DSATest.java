@@ -828,6 +828,117 @@ public class DSATest
         }
     }
 
+    private void testDSA2Parameters()
+        throws Exception
+    {
+        byte[] seed = Hex.decode("4783081972865EA95D43318AB2EAF9C61A2FC7BBF1B772A09017BDF5A58F4FF0");
+
+        AlgorithmParameterGenerator a = AlgorithmParameterGenerator.getInstance("DSA", "BC");
+        a.init(2048, new DSATestSecureRandom(seed));
+        AlgorithmParameters params = a.generateParameters();
+
+        DSAParameterSpec dsaP = (DSAParameterSpec)params.getParameterSpec(DSAParameterSpec.class);
+
+        if (!dsaP.getQ().equals(new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16)))
+        {
+            fail("Q incorrect");
+        }
+
+        if (!dsaP.getP().equals(new BigInteger(
+            "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+            "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+            "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+            "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+            "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+            "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+            "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+            "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+            "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+            "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+            "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16)))
+        {
+            fail("P incorrect");
+        }
+
+        if (!dsaP.getG().equals(new BigInteger(
+            "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+            "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+            "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+            "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+            "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+            "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+            "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+            "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+            "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+            "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+            "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)))
+        {
+            fail("G incorrect");
+        }
+
+        KeyPairGenerator    g = KeyPairGenerator.getInstance("DSA", "BC");
+        g.initialize(dsaP, new FixedSecureRandom(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")));
+        KeyPair p = g.generateKeyPair();
+
+        DSAPrivateKey  sKey = (DSAPrivateKey)p.getPrivate();
+        DSAPublicKey   vKey = (DSAPublicKey)p.getPublic();
+
+        if (!vKey.getY().equals(new BigInteger(
+            "2828003D7C747199143C370FDD07A286" +
+            "1524514ACC57F63F80C38C2087C6B795B62DE1C224BF8D1D" +
+            "1424E60CE3F5AE3F76C754A2464AF292286D873A7A30B7EA" +
+            "CBBC75AAFDE7191D9157598CDB0B60E0C5AA3F6EBE425500" +
+            "C611957DBF5ED35490714A42811FDCDEB19AF2AB30BEADFF" +
+            "2907931CEE7F3B55532CFFAEB371F84F01347630EB227A41" +
+            "9B1F3F558BC8A509D64A765D8987D493B007C4412C297CAF" +
+            "41566E26FAEE475137EC781A0DC088A26C8804A98C23140E" +
+            "7C936281864B99571EE95C416AA38CEEBB41FDBFF1EB1D1D" +
+            "C97B63CE1355257627C8B0FD840DDB20ED35BE92F08C49AE" +
+            "A5613957D7E5C7A6D5A5834B4CB069E0831753ECF65BA02B", 16)))
+        {
+            fail("Y value incorrect");
+        }
+
+        if (!sKey.getX().equals(
+            new BigInteger("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C", 16)))
+        {
+            fail("X value incorrect");
+        }
+
+        byte[] encodeParams = params.getEncoded();
+
+        AlgorithmParameters a2 = AlgorithmParameters.getInstance("DSA", "BC");
+        a2.init(encodeParams);
+
+        // a and a2 should be equivalent!
+        byte[] encodeParams_2 = a2.getEncoded();
+
+        if (!areEqual(encodeParams, encodeParams_2))
+        {
+            fail("encode/decode parameters failed");
+        }
+
+        Signature           s = Signature.getInstance("DSA", "BC");
+        byte[]              data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+        s.initSign(sKey);
+
+        s.update(data);
+
+        byte[]  sigBytes = s.sign();
+
+        s = Signature.getInstance("DSA", "BC");
+
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (!s.verify(sigBytes))
+        {
+            fail("DSA verification failed");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -848,6 +959,7 @@ public class DSATest
         
         testGeneration();
         testParameters();
+        testDSA2Parameters();
     }
 
     protected BigInteger[] derDecode(
@@ -877,5 +989,29 @@ public class DSATest
         Security.addProvider(new BouncyCastleProvider());
 
         runTest(new DSATest());
+    }
+
+    private class DSATestSecureRandom
+        extends FixedSecureRandom
+    {
+        private boolean first = true;
+
+        public DSATestSecureRandom(byte[] value)
+        {
+            super(value);
+        }
+
+       public void nextBytes(byte[] bytes)
+       {
+           if (first)
+           {
+               super.nextBytes(bytes);
+               first = false;
+           }
+           else
+           {
+               bytes[bytes.length - 1] = 2;
+           }
+       }
     }
 }

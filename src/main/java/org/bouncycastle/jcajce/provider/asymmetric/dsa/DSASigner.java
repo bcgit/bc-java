@@ -52,11 +52,6 @@ public class DSASigner
     {
         CipherParameters    param;
 
-//        if (publicKey instanceof GOST3410Key)
-//        {
-//            param = GOST3410Util.generatePublicKeyParameter(publicKey);
-//        }
-//        else if (publicKey instanceof DSAKey)
         if (publicKey instanceof DSAKey)
         {
             param = DSAUtil.generatePublicKeyParameter(publicKey);
@@ -103,14 +98,7 @@ public class DSASigner
     {
         CipherParameters    param;
 
-//        if (privateKey instanceof GOST3410Key)
-//        {
-//            param = GOST3410Util.generatePrivateKeyParameter(privateKey);
-//        }
-//        else
-//        {
-            param = DSAUtil.generatePrivateKeyParameter(privateKey);
-//        }
+        param = DSAUtil.generatePrivateKeyParameter(privateKey);
 
         if (random != null)
         {

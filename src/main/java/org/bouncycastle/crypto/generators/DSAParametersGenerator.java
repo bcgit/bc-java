@@ -12,9 +12,8 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
-// TODO Update javadoc to mention FIPS 186-3 when done
 /**
- * generate suitable parameters for DSA, in line with FIPS 186-2.
+ * Generate suitable parameters for DSA, in line with FIPS 186-2, or FIPS 186-3/
  */
 public class DSAParametersGenerator
 {
@@ -59,11 +58,17 @@ public class DSAParametersGenerator
         this.random = random;
     }
 
-
+    /**
+     * Initialise the key generator for DSA 2.
+     * <p>
+     *     Use this init method if you need to generate parameters for DSA 2 keys.
+     * </p>
+     *
+     * @param params  DSA 2 key generation parameters.
+     */
     public void init(
         DSAParameterGenerationParameters params)
     {
-        // TODO Check that the (L, N) pair is in the list of acceptable (L, N pairs) (see Section 4.2)
         // TODO Should we enforce the minimum 'certainty' values as per C.3 Table C.1?
         this.use186_3 = true;
         this.L = params.getL();
@@ -71,6 +76,28 @@ public class DSAParametersGenerator
         this.certainty = params.getCertainty();
         this.random = params.getRandom();
         this.usageIndex = params.getUsageIndex();
+
+        if ((L < 1024 && L > 3027) || L % 1024 != 0)
+        {
+            throw new IllegalArgumentException("L values must be between 1024 and 3072 and a mulitple of 1024");
+        }
+        else if (L == 1024 && N != 160)
+        {
+            throw new IllegalArgumentException("N must be 160 for L = 1024");
+        }
+        else if (L == 2048 && (N != 224 && N != 256))
+        {
+            throw new IllegalArgumentException("N must be 224 or 256 for L = 2048");
+        }
+        else if (L == 3072 && N != 256)
+        {
+            throw new IllegalArgumentException("N must be 256 for L = 3072");
+        }
+
+        if (digest.getDigestSize() * 8 < N)
+        {
+            throw new IllegalArgumentException("Digest output size too small for value of N");
+        }
     }
 
     /**
@@ -275,19 +302,16 @@ public class DSAParametersGenerator
                 {
 // 11.8 If p is determined to be prime, then return VALID and the values of p, q and
 //      (optionally) the values of domain_parameter_seed and counter.
-                    // TODO Make configurable (8-bit unsigned)?
-                    BigInteger g = null;
-
                     if (usageIndex >= 0)
                     {
-                        g = calculateGenerator_FIPS186_3_Verifiable(d, p, q, seed, usageIndex);
+                        BigInteger g = calculateGenerator_FIPS186_3_Verifiable(d, p, q, seed, usageIndex);
                         if (g != null)
                         {
                            return new DSAParameters(p, q, g, new DSAValidationParameters(seed, counter, usageIndex));
                         }
                     }
 
-                    g = calculateGenerator_FIPS186_3_Unverifiable(p, q, random);
+                    BigInteger g = calculateGenerator_FIPS186_3_Unverifiable(p, q, random);
 
                     return new DSAParameters(p, q, g, new DSAValidationParameters(seed, counter));
                 }
