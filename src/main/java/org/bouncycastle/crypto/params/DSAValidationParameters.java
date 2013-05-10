@@ -4,6 +4,7 @@ import org.bouncycastle.util.Arrays;
 
 public class DSAValidationParameters
 {
+    private int usageIndex;
     private byte[]  seed;
     private int     counter;
 
@@ -11,8 +12,17 @@ public class DSAValidationParameters
         byte[]  seed,
         int     counter)
     {
+        this(seed, counter, -1);
+    }
+
+    public DSAValidationParameters(
+        byte[]  seed,
+        int     counter,
+        int     usageIndex)
+    {
         this.seed = seed;
         this.counter = counter;
+        this.usageIndex = usageIndex;
     }
 
     public int getCounter()
@@ -23,6 +33,11 @@ public class DSAValidationParameters
     public byte[] getSeed()
     {
         return seed;
+    }
+
+    public int getUsageIndex()
+    {
+        return usageIndex;
     }
 
     public int hashCode()
