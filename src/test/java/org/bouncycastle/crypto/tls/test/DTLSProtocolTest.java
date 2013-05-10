@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
 import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
+import org.bouncycastle.util.Arrays;
 
 public class DTLSProtocolTest extends TestCase {
 
@@ -32,20 +33,18 @@ public class DTLSProtocolTest extends TestCase {
         MockDTLSClient client = new MockDTLSClient();
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
-        // byte[] data = new byte[64];
-        // secureRandom.nextBytes(data);
-        //
-        // OutputStream output = clientProtocol.getOutputStream();
-        // output.write(data);
-        // output.close();
-        //
-        // byte[] echo = Streams.readAll(clientProtocol.getInputStream());
+        for (int i = 1; i <= 10; ++i) {
+            byte[] data = new byte[i];
+            Arrays.fill(data, (byte)i);
+            dtlsClient.send(data, 0, data.length);
+        }
+
+        byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+        while (dtlsClient.receive(buf, 0, buf.length, 1000) >= 0);
 
         dtlsClient.close();
 
         serverThread.shutdown();
-
-        // assertTrue(Arrays.areEqual(data, echo));
     }
 
     static class ServerThread extends Thread {
@@ -66,12 +65,12 @@ public class DTLSProtocolTest extends TestCase {
                 while (!isShutdown) {
                     int length = dtlsServer.receive(buf, 0, buf.length, 1000);
                     if (length >= 0) {
-                        serverTransport.send(buf, 0, length);
+                        dtlsServer.send(buf, 0, length);
                     }
                 }
                 dtlsServer.close();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
 
