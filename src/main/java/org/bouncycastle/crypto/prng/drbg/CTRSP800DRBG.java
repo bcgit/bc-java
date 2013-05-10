@@ -1,14 +1,15 @@
-package org.bouncycastle.crypto.prng;
+package org.bouncycastle.crypto.prng.drbg;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CTRSP800DRBG
     implements SP80090DRBG
 {
-    private EntropySource         _entropySource;
+    private EntropySource _entropySource;
     private BlockCipher           _engine;
     private int                   _keySizeInBits;
     private int                   _seedLength;

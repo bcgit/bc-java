@@ -124,5 +124,4 @@ public class VMPCRandomGenerator implements RandomGenerator
             }
         }
     }
-
 }

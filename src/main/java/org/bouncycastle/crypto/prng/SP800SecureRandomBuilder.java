@@ -1,18 +1,15 @@
-package org.bouncycastle.crypto.random;
+package org.bouncycastle.crypto.prng;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.prng.BasicEntropySourceProvider;
-import org.bouncycastle.crypto.prng.CTRSP800DRBG;
-import org.bouncycastle.crypto.prng.DualECSP800DRBG;
-import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.EntropySourceProvider;
-import org.bouncycastle.crypto.prng.HMacSP800DRBG;
-import org.bouncycastle.crypto.prng.HashSP800DRBG;
-import org.bouncycastle.crypto.prng.SP80090DRBG;
+import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.DualECSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.HMacSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
 
 /**
  * Builder class for making SecureRandom objects based on SP 800-90A Deterministic Random Bit Generators (DRBG).

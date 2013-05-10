@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.prng;
+package org.bouncycastle.crypto.prng.drbg;
 
 public interface SP80090DRBG
 {

@@ -4,8 +4,8 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.prng.HashSP800DRBG;
-import org.bouncycastle.crypto.prng.SP80090DRBG;
+import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 

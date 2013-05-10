@@ -1,9 +1,10 @@
-package org.bouncycastle.crypto.prng;
+package org.bouncycastle.crypto.prng.drbg;
 
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
@@ -35,7 +36,7 @@ public class DualECSP800DRBG
 
     private Digest                 _digest;
     private int                    _reseedCounter;
-    private EntropySource          _entropySource;
+    private EntropySource _entropySource;
     private int                    _securityStrength;
     private int                    _seedlen;
     private int                    _outlen;
