@@ -47,9 +47,10 @@ public class DESedeEngine
 
         if (keyMaster.length != 24 && keyMaster.length != 16)
         {
-            // new style 3TDEA key without parity bits.
+
             if (keyMaster.length == 21)
             {
+                // new style 3TDEA key without parity bits.
                 byte[] tmp = new byte[24];
 
                 padKey(keyMaster, 0, tmp, 0);
@@ -58,9 +59,19 @@ public class DESedeEngine
 
                 keyMaster = tmp;
             }
+            else if (keyMaster.length == 14)
+            {
+                // new style 2TDEA key without parity bits.
+                byte[] tmp = new byte[16];
+
+                padKey(keyMaster, 0, tmp, 0);
+                padKey(keyMaster, 7, tmp, 8);
+
+                keyMaster = tmp;
+            }
             else
             {
-                throw new IllegalArgumentException("key size must be 16, 21, or 24 bytes.");
+                throw new IllegalArgumentException("key size must be 14, 16, 21, or 24 bytes.");
             }
         }
 
