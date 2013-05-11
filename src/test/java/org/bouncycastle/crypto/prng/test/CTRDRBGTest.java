@@ -1,9 +1,11 @@
-package org.bouncycastle.crypto.test;
+package org.bouncycastle.crypto.prng.test;
 
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
+import org.bouncycastle.crypto.test.TestEntropySourceProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -332,6 +334,60 @@ public class CTRDRBGTest
             if (!areEqual(expected, output))
             {
                 fail("Test #" + (i + 1) + ".2 failed, expected " + new String(Hex.encode(tv.expectedValue(1))) + " got " + new String(Hex.encode(output)));
+            }
+        }
+
+        // Exception tests
+        SP80090DRBG d;
+        try
+        {
+            d = new CTRSP800DRBG(new AESEngine(), 256, 256, new Bit232EntropyProvider().get(128), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Not enough entropy for security strength required"))
+            {
+                fail("Wrong exception", e);
+            }
+        }
+
+        try
+        {
+            d = new CTRSP800DRBG(new DESedeEngine(), 256, 256, new Bit232EntropyProvider().get(232), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Requested security strength is not supported by block cipher and key size"))
+            {
+                fail("Wrong exception", e);
+            }
+        }
+
+        try
+        {
+            d = new CTRSP800DRBG(new DESedeEngine(), 168, 256, new Bit232EntropyProvider().get(232), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Requested security strength is not supported by block cipher and key size"))
+            {
+                fail("Wrong exception", e);
+            }
+        }
+
+        try
+        {
+            d = new CTRSP800DRBG(new AESEngine(), 192, 256, new Bit232EntropyProvider().get(232), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Requested security strength is not supported by block cipher and key size"))
+            {
+                fail("Wrong exception", e);
             }
         }
     }

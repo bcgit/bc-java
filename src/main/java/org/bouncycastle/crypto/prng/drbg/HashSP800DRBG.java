@@ -15,7 +15,7 @@ public class HashSP800DRBG
 {
     private final static byte[]     ONE = { 0x01 };
 
-    private final static int        RESEED_MAX = 1 << (48 - 1);
+    private final static long       RESEED_MAX = 1L << (48 - 1);
     private final static int        MAX_BITS_REQUEST = 1 << (19 - 1);
 
     private final static Hashtable  seedlens = new Hashtable();
@@ -34,14 +34,16 @@ public class HashSP800DRBG
     private Digest        _digest;
     private byte[]        _V;
     private byte[]        _C;
-    private int           _reseedCounter;
+    private long          _reseedCounter;
     private EntropySource _entropySource;
     private int           _securityStrength;
     private int           _seedLength;
 
     /**
      * Construct a SP800-90A Hash DRBG.
-     *
+     * <p>
+     * Minimum entropy requirement is the security strength requested.
+     * </p>
      * @param digest  source digest to use for DRB stream.
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
@@ -52,7 +54,7 @@ public class HashSP800DRBG
     {
         if (securityStrength > Utils.getMaxSecurityStrength(digest))
         {
-            throw new IllegalArgumentException("Security strength is not supported by the derivation function");
+            throw new IllegalArgumentException("Requested security strength is not supported by the derivation function");
         }
 
         if (entropySource.entropySize() < securityStrength)
@@ -75,12 +77,12 @@ public class HashSP800DRBG
 
         byte[] entropy = entropySource.getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
-        byte[] seed = hash_df(seedMaterial, _seedLength);
+        byte[] seed = Utils.hash_df(_digest, seedMaterial, _seedLength);
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = hash_df(subV, _seedLength);
+        _C = Utils.hash_df(_digest, subV, _seedLength);
 
         _reseedCounter = 1;
     }
@@ -211,78 +213,15 @@ public class HashSP800DRBG
         // Comment: Precede with a byte of all zeros.
         byte[] entropy = _entropySource.getEntropy();
         byte[] seedMaterial = Arrays.concatenate(ONE, _V, entropy, additionalInput);
-        byte[] seed = hash_df(seedMaterial, _seedLength);
+        byte[] seed = Utils.hash_df(_digest, seedMaterial, _seedLength);
 
         _V = seed;
         byte[] subV = new byte[_V.length + 1];
         subV[0] = 0x00;
         System.arraycopy(_V, 0, subV, 1, _V.length);
-        _C = hash_df(subV, _seedLength);
+        _C = Utils.hash_df(_digest, subV, _seedLength);
 
         _reseedCounter = 1;
-    }
-    
-    
-    // ---- Internal manipulation --- 
-    // ---- Migrating from the external HashDF class --
-    
-
-    // 1. temp = the Null string.
-    // 2. .
-    // 3. counter = an 8-bit binary value representing the integer "1".
-    // 4. For i = 1 to len do
-    // Comment : In step 4.1, no_of_bits_to_return
-    // is used as a 32-bit string.
-    // 4.1 temp = temp || Hash (counter || no_of_bits_to_return ||
-    // input_string).
-    // 4.2 counter = counter + 1.
-    // 5. requested_bits = Leftmost (no_of_bits_to_return) of temp.
-    // 6. Return SUCCESS and requested_bits.
-    private byte[] hash_df(byte[] seedMaterial, int seedLength)
-    {
-        byte[] temp = new byte[seedLength / 8];
-
-        int len = temp.length / _digest.getDigestSize();
-        int counter = 1;
-
-        byte[] dig = new byte[_digest.getDigestSize()];
-
-        for (int i = 0; i <= len; i++)
-        {
-            _digest.update((byte)counter);
-
-            _digest.update((byte)(seedLength >> 24));
-            _digest.update((byte)(seedLength >> 16));
-            _digest.update((byte)(seedLength >> 8));
-            _digest.update((byte)seedLength);
-
-            _digest.update(seedMaterial, 0, seedMaterial.length);
-
-            _digest.doFinal(dig, 0);
-
-            int bytesToCopy = ((temp.length - i * dig.length) > dig.length)
-                    ? dig.length
-                    : (temp.length - i * dig.length);
-            System.arraycopy(dig, 0, temp, i * dig.length, bytesToCopy);
-
-            counter++;
-        }
-
-        // do a left shift to get rid of excess bits.
-        if (seedLength % 8 != 0)
-        {
-            int shift = 8 - (seedLength % 8);
-            int carry = 0;
-
-            for (int i = 0; i != temp.length; i++)
-            {
-                int b = temp[i] & 0xff;
-                temp[i] = (byte)((b >>> shift) | (carry << (8 - shift)));
-                carry = b;
-            }
-        }
-
-        return temp;
     }
     
     private byte[] hash(byte[] input)

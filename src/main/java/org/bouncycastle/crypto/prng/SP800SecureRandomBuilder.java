@@ -28,7 +28,7 @@ public class SP800SecureRandomBuilder
      * predictionResistant set to false.
      * <p>
      * Any SecureRandom created from a builder constructed like this will make use of input passed to SecureRandom.setSeed() if
-     * the passed in SecureRandom does.
+     * the default SecureRandom does for its generateSeed() call.
      * </p>
      */
     public SP800SecureRandomBuilder()
@@ -41,7 +41,7 @@ public class SP800SecureRandomBuilder
      * for prediction resistance.
      * <p>
      * Any SecureRandom created from a builder constructed like this will make use of input passed to SecureRandom.setSeed() if
-     * the passed in SecureRandom does.
+     * the passed in SecureRandom does for its generateSeed() call.
      * </p>
      * @param entropySource
      * @param predictionResistant

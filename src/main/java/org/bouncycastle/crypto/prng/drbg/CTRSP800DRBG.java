@@ -6,10 +6,18 @@ import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * A SP800-90A CTR DRBG.
+ */
 public class CTRSP800DRBG
     implements SP80090DRBG
 {
-    private EntropySource _entropySource;
+    private static final long       TDEA_RESEED_MAX = 1L << (32 - 1);
+    private static final long       AES_RESEED_MAX = 1L << (48 - 1);
+    private static final int        TDEA_MAX_BITS_REQUEST = 1 << (13 - 1);
+    private static final int        AES_MAX_BITS_REQUEST = 1 << (19 - 1);
+
+    private EntropySource          _entropySource;
     private BlockCipher           _engine;
     private int                   _keySizeInBits;
     private int                   _seedLength;
@@ -17,28 +25,48 @@ public class CTRSP800DRBG
     // internal state
     private byte[]                _Key;
     private byte[]                _V;
-    private int                   _reseedCounter = 0;
+    private long                  _reseedCounter = 0;
+    private boolean               _isTDEA = false;
 
-    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int securityStrength, EntropySource entropySource, byte[] personalisationString, byte[] nonce)
+    /**
+     * Construct a SP800-90A CTR DRBG.
+     * <p>
+     * Minimum entropy requirement is the security strength requested.
+     * </p>
+     * @param engine underlying block cipher to use to support DRBG
+     * @param keySizeInBits size of the key to use with the block cipher.
+     * @param securityStrength security strength required (in bits)
+     * @param entropySource source of entropy to use for seeding/reseeding.
+     * @param personalizationString personalization string to distinguish this DRBG (may be null).
+     * @param nonce nonce to further distinguish this DRBG (may be null).
+     */
+    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
-
         _entropySource = entropySource;
         _engine = engine;     
         
         _keySizeInBits = keySizeInBits;
         _seedLength = keySizeInBits + engine.getBlockSize() * 8;
+        _isTDEA = isTDEA(engine);
 
-        int entropyLengthInBytes = securityStrength;
-        
         if (securityStrength > 256)
         {
-            throw new IllegalStateException(
-                            "Security strength is not supported by the derivation function");            
+            throw new IllegalArgumentException("Requested security strength is not supported by the derivation function");
         }
-            
+
+        if (getMaxSecurityStrength(engine, keySizeInBits) < securityStrength)
+        {
+            throw new IllegalArgumentException("Requested security strength is not supported by block cipher and key size");
+        }
+
+        if (entropySource.entropySize() < securityStrength)
+        {
+            throw new IllegalArgumentException("Not enough entropy for security strength required");
+        }
+
         byte[] entropy = entropySource.getEntropy();  // Get_entropy_input
 
-        CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalisationString);
+        CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalizationString);
     }
 
     private void CTR_DRBG_Instantiate_algorithm(byte[] entropy, byte[] nonce,
@@ -118,16 +146,6 @@ public class CTRSP800DRBG
     // -- Internal state migration ---
     
     private static final byte[] K_BITS = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
-    
-    private byte[] getBytes(byte[] input)
-    {
-        byte[] K = new byte[_keySizeInBits / 8];
-        System.arraycopy(K_BITS, 0, K, 0, K.length); 
-        _engine.init(true, new KeyParameter(K));
-        byte[] out = new byte[_engine.getBlockSize()];
-        _engine.processBlock(input, 0, out, 0);
-        return out;
-    }
 
     // 1. If (number_of_bits_to_return > max_number_of_bits), then return an
     // ERROR_FLAG.
@@ -250,7 +268,6 @@ public class CTRSP800DRBG
         return temp;
     }
 
-    
     /*
     * 1. chaining_value = 0^outlen    
     *    . Comment: Set the first chaining value to outlen zeros.
@@ -292,8 +309,42 @@ public class CTRSP800DRBG
         buf[offSet + 3] = ((byte)(value));
     }
 
+    /**
+     * Populate a passed in array with random data.
+     *
+     * @param output output array for generated bits.
+     * @param additionalInput additional input to be added to the DRBG in this step.
+     * @param predictionResistant true if a reseed should be forced, false otherwise.
+     *
+     * @return number of bits generated, -1 if a reseed required.
+     */
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
+        if (_isTDEA)
+        {
+            if (_reseedCounter > TDEA_RESEED_MAX)
+            {
+                return -1;
+            }
+
+            if (Utils.isTooLarge(output, TDEA_MAX_BITS_REQUEST / 8))
+            {
+                throw new IllegalArgumentException("Number of bits per request limited to " + TDEA_MAX_BITS_REQUEST);
+            }
+        }
+        else
+        {
+            if (_reseedCounter > AES_RESEED_MAX)
+            {
+                return -1;
+            }
+
+            if (Utils.isTooLarge(output, AES_MAX_BITS_REQUEST / 8))
+            {
+                throw new IllegalArgumentException("Number of bits per request limited to " + AES_MAX_BITS_REQUEST);
+            }
+        }
+
         if (predictionResistant)
         {
             CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
@@ -327,7 +378,6 @@ public class CTRSP800DRBG
             System.arraycopy(out, 0, output, i * out.length, bytesToCopy);
         }
 
-
         CTR_DRBG_Update(additionalInput, _Key, _V);
 
         _reseedCounter++;
@@ -335,8 +385,32 @@ public class CTRSP800DRBG
         return output.length * 8;
     }
 
+    /**
+      * Reseed the DRBG.
+      *
+      * @param additionalInput additional input to be added to the DRBG in this step.
+      */
     public void reseed(byte[] additionalInput)
     {
         CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
+    }
+
+    private boolean isTDEA(BlockCipher cipher)
+    {
+        return cipher.getAlgorithmName().equals("DESede") || cipher.getAlgorithmName().equals("TDEA");
+    }
+
+    private int getMaxSecurityStrength(BlockCipher cipher, int keySizeInBits)
+    {
+        if (isTDEA(cipher) && keySizeInBits == 168)
+        {
+            return 112;
+        }
+        if (cipher.getAlgorithmName().equals("AES"))
+        {
+            return keySizeInBits;
+        }
+
+        return -1;
     }
 }

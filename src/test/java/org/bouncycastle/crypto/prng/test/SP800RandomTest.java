@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.random.test;
+package org.bouncycastle.crypto.prng.test;
 
 import java.security.SecureRandom;
 
@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.SP800SecureRandomBuilder;
-import org.bouncycastle.crypto.test.DRBGTestVector;
 import org.bouncycastle.crypto.test.TestEntropySourceProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;

@@ -112,11 +112,7 @@ public class RegressionTest
         new NullTest(),
         new DSTU4145Test(),
         new SipHashTest(),
-        new OCBTest(),
-        new HashDRBGTest(),
-        new HMacDRBGTest(),
-        new CTRDRBGTest(),
-        new DualECDRBGTest()
+        new OCBTest()
     };
 
     public static void main(

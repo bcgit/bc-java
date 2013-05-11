@@ -11,18 +11,20 @@ import org.bouncycastle.util.Arrays;
 public class HMacSP800DRBG
     implements SP80090DRBG
 {
-    private final static int        RESEED_MAX = 1 << (48 - 1);
+    private final static long       RESEED_MAX = 1L << (48 - 1);
     private final static int        MAX_BITS_REQUEST = 1 << (19 - 1);
 
     private byte[] _K;
     private byte[] _V;
-    private int _reseedCounter;
+    private long   _reseedCounter;
     private EntropySource _entropySource;
     private Mac _hMac;
 
     /**
      * Construct a SP800-90A Hash DRBG.
-     *
+     * <p>
+     * Minimum entropy requirement is the security strength requested.
+     * </p>
      * @param hMac Hash MAC to base the DRBG on.
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
@@ -33,7 +35,7 @@ public class HMacSP800DRBG
     {
         if (securityStrength > Utils.getMaxSecurityStrength(hMac))
         {
-            throw new IllegalArgumentException("Security strength is not supported by the derivation function");
+            throw new IllegalArgumentException("Requested security strength is not supported by the derivation function");
         }
 
         if (entropySource.entropySize() < securityStrength)

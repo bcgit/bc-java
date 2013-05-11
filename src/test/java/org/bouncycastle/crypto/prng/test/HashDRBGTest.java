@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.test;
+package org.bouncycastle.crypto.prng.test;
 
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
+import org.bouncycastle.crypto.test.TestEntropySourceProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -369,6 +370,35 @@ public class HashDRBGTest
             if (!areEqual(expected, output))
             {
                 fail("Test #" + (i + 1) + ".2 failed, expected " + new String(Hex.encode(tv.expectedValue(1))) + " got " + new String(Hex.encode(output)));
+            }
+        }
+
+        // Exception tests
+        //
+        SP80090DRBG d;
+        try
+        {
+            d = new HashSP800DRBG(new SHA256Digest(), 256, new SHA256EntropyProvider().get(128), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Not enough entropy for security strength required"))
+            {
+                fail("Wrong exception", e);
+            }
+        }
+
+        try
+        {
+            d = new HashSP800DRBG(new SHA1Digest(), 256, new SHA256EntropyProvider().get(256), null, null);
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!e.getMessage().equals("Requested security strength is not supported by the derivation function"))
+            {
+                fail("Wrong exception", e);
             }
         }
     }

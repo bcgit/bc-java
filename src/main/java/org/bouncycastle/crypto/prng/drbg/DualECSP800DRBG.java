@@ -11,6 +11,9 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * A SP800-90A Dual EC DRBG.
+ */
 public class DualECSP800DRBG
     implements SP80090DRBG
 {
@@ -32,11 +35,14 @@ public class DualECSP800DRBG
     private static final BigInteger p521_Qx = new BigInteger("1b9fa3e518d683c6b65763694ac8efbaec6fab44f2276171a42726507dd08add4c3b3f4c1ebc5b1222ddba077f722943b24c3edfa0f85fe24d0c8c01591f0be6f63", 16);
     private static final BigInteger p521_Qy = new BigInteger("1f3bdba585295d9a1110d1df1f9430ef8442c5018976ff3437ef91b81dc0b8132c8d5c39c32d0e004a3092b7d327c0e7a4d26d2c7b69b58f9066652911e457779de", 16);
 
-    private final static int        RESEED_MAX = 100000;
+    private static final long       RESEED_MAX = 1L << (32 - 1);
+    private static final int        MAX_ADDITIONAL_INPUT = 1 << (13 - 1);
+    private static final int        MAX_ENTROPY_LENGTH = 1 << (13 - 1);
+    private static final int        MAX_PERSONALIZATION_STRING = 1 << (13 -1);
 
     private Digest                 _digest;
-    private int                    _reseedCounter;
-    private EntropySource _entropySource;
+    private long                   _reseedCounter;
+    private EntropySource          _entropySource;
     private int                    _securityStrength;
     private int                    _seedlen;
     private int                    _outlen;
@@ -44,11 +50,13 @@ public class DualECSP800DRBG
     private ECPoint                _P;
     private ECPoint                _Q;
     private byte[]                 _s;
-    private int _sLength;
+    private int                    _sLength;
 
     /**
      * Construct a SP800-90A Dual EC DRBG.
-     *
+     * <p>
+     * Minimum entropy requirement is the security strength requested.
+     * </p>
      * @param digest source digest to use with the DRB stream.
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
@@ -57,23 +65,29 @@ public class DualECSP800DRBG
      */
     public DualECSP800DRBG(Digest digest, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
-        if (securityStrength > digest.getDigestSize() * 8) // TODO: this may, or may not be correct, but it's good enough for now
-        {
-            throw new IllegalStateException(
-                    "Security strength is not supported by the derivation function");
-        }
-
-        // TODO: validate digest choice
         _digest = digest;
         _entropySource = entropySource;
         _securityStrength = securityStrength;
 
-        // TODO: validate entropy length
+        if (Utils.isTooLarge(personalizationString, MAX_PERSONALIZATION_STRING / 8))
+        {
+            throw new IllegalArgumentException("Personalization string too large");
+        }
+
+        if (entropySource.entropySize() < securityStrength || entropySource.entropySize() > MAX_ENTROPY_LENGTH)
+        {
+            throw new IllegalArgumentException("EntropySource must provide between " + securityStrength + " and " + MAX_ENTROPY_LENGTH + " bits");
+        }
+
         byte[] entropy = entropySource.getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
 
         if (securityStrength <= 128)
         {
+            if (Utils.getMaxSecurityStrength(digest) < 128)
+            {
+                throw new IllegalArgumentException("Requested security strength is not supported by digest");
+            }
             _seedlen = 256;
             _outlen = 240 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-256").getCurve();
@@ -82,6 +96,10 @@ public class DualECSP800DRBG
         }
         else if (securityStrength <= 192)
         {
+            if (Utils.getMaxSecurityStrength(digest) < 192)
+            {
+                throw new IllegalArgumentException("Requested security strength is not supported by digest");
+            }
             _seedlen = 384;
             _outlen = 368 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
@@ -90,6 +108,10 @@ public class DualECSP800DRBG
         }
         else if (securityStrength <= 256)
         {
+            if (Utils.getMaxSecurityStrength(digest) < 256)
+            {
+                throw new IllegalArgumentException("Requested security strength is not supported by digest");
+            }
             _seedlen = 521;
             _outlen = 504 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
@@ -101,19 +123,37 @@ public class DualECSP800DRBG
             throw new IllegalArgumentException("security strength cannot be greater than 256 bits");
         }
 
-        _s = hash_df(seedMaterial, _seedlen);
+        _s = Utils.hash_df(_digest, seedMaterial, _seedlen);
         _sLength = _s.length;
 
-        //System.err.println(new String(Hex.encode(_s)));
         _reseedCounter = 0;
-
     }
 
+    /**
+     * Populate a passed in array with random data.
+     *
+     * @param output output array for generated bits.
+     * @param additionalInput additional input to be added to the DRBG in this step.
+     * @param predictionResistant true if a reseed should be forced, false otherwise.
+     *
+     * @return number of bits generated, -1 if a reseed required.
+     */
     public int generate(byte[] output, byte[] additionalInput, boolean predictionResistant)
     {
         int numberOfBits = output.length*8;
-        
-        if (predictionResistant || _reseedCounter > RESEED_MAX) 
+        int m = output.length / _outlen;
+
+        if (Utils.isTooLarge(additionalInput, MAX_ADDITIONAL_INPUT / 8))
+        {
+            throw new IllegalArgumentException("Additional input too large");
+        }
+
+        if (_reseedCounter + m > RESEED_MAX)
+        {
+            return -1;
+        }
+
+        if (predictionResistant)
         {   
             reseed(additionalInput);
             additionalInput = null;
@@ -122,10 +162,8 @@ public class DualECSP800DRBG
         if (additionalInput != null)
         {
             // Note: we ignore the use of pad8 on the additional input as we mandate byte arrays for it.
-            additionalInput = hash_df(additionalInput, _seedlen);
+            additionalInput = Utils.hash_df(_digest, additionalInput, _seedlen);
         }
-
-        int m = output.length / _outlen;
 
         for (int i = 0; i < m; i++)
         {
@@ -148,6 +186,8 @@ public class DualECSP800DRBG
 
             //System.err.println("R: " + new String(Hex.encode(r)));
             additionalInput = null;
+
+            _reseedCounter++;
         }
 
         if (m * _outlen < output.length)
@@ -164,82 +204,27 @@ public class DualECSP800DRBG
         // Need to preserve length of S as unsigned int.
         _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
 
-        _reseedCounter++;
-
         return numberOfBits;
     }
 
+    /**
+      * Reseed the DRBG.
+      *
+      * @param additionalInput additional input to be added to the DRBG in this step.
+      */
     public void reseed(byte[] additionalInput)
     {
-        if (additionalInput == null)
+        if (Utils.isTooLarge(additionalInput, MAX_ADDITIONAL_INPUT / 8))
         {
-            additionalInput = new byte[0];
+            throw new IllegalArgumentException("Additional input string too large");
         }
 
         byte[] entropy = _entropySource.getEntropy();
         byte[] seedMaterial = Arrays.concatenate(pad8(_s, _seedlen), entropy, additionalInput);
 
-        _s = hash_df(seedMaterial, _seedlen);
+        _s = Utils.hash_df(_digest, seedMaterial, _seedlen);
 
         _reseedCounter = 0;
-    }
-
-    // 1. temp = the Null string.
-    // 2. .
-    // 3. counter = an 8-bit binary value representing the integer "1".
-    // 4. For i = 1 to len do
-    // Comment : In step 4.1, no_of_bits_to_return
-    // is used as a 32-bit string.
-    // 4.1 temp = temp || Hash (counter || no_of_bits_to_return ||
-    // input_string).
-    // 4.2 counter = counter + 1.
-    // 5. requested_bits = Leftmost (no_of_bits_to_return) of temp.
-    // 6. Return SUCCESS and requested_bits.
-    private byte[] hash_df(byte[] seedMaterial, int seedLength)
-    {
-        byte[] temp = new byte[(seedLength + 7) / 8];
-
-        int len = temp.length / _digest.getDigestSize();
-        int counter = 1;
-
-        byte[] dig = new byte[_digest.getDigestSize()];
-
-        for (int i = 0; i <= len; i++)
-        {
-            _digest.update((byte)counter);
-
-            _digest.update((byte)(seedLength >> 24));
-            _digest.update((byte)(seedLength >> 16));
-            _digest.update((byte)(seedLength >> 8));
-            _digest.update((byte)seedLength);
-
-            _digest.update(seedMaterial, 0, seedMaterial.length);
-
-            _digest.doFinal(dig, 0);
-
-            int bytesToCopy = ((temp.length - i * dig.length) > dig.length)
-                    ? dig.length
-                    : (temp.length - i * dig.length);
-            System.arraycopy(dig, 0, temp, i * dig.length, bytesToCopy);
-
-            counter++;
-        }
-
-        // do a left shift to get rid of excess bits.
-        if (seedLength % 8 != 0)
-        {
-            int shift = 8 - (seedLength % 8);
-            int carry = 0;
-
-            for (int i = 0; i != temp.length; i++)
-            {
-                int b = temp[i] & 0xff;
-                temp[i] = (byte)((b >>> shift) | (carry << (8 - shift)));
-                carry = b;
-            }
-        }
-
-        return temp;
     }
 
     private byte[] xor(byte[] a, byte[] b)

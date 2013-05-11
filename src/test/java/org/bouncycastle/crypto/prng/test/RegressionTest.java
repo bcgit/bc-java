@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.random.test;
+package org.bouncycastle.crypto.prng.test;
 
 import org.bouncycastle.util.test.Test;
 import org.bouncycastle.util.test.TestResult;
@@ -6,6 +6,10 @@ import org.bouncycastle.util.test.TestResult;
 public class RegressionTest
 {
     public static Test[]    tests = {
+        new CTRDRBGTest(),
+        new DualECDRBGTest(),
+        new HashDRBGTest(),
+        new HMacDRBGTest(),
         new SP800RandomTest()
     };
 
