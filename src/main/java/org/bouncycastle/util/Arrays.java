@@ -716,13 +716,21 @@ public final class Arrays
 
             return rv;
         }
+        else if (d == null)
+        {
+            return concatenate(a, b, c);
+        }
+        else if (c == null)
+        {
+            return concatenate(a, b, d);
+        }
         else if (b == null)
         {
             return concatenate(a, c, d);
         }
         else
         {
-            return concatenate(a, b, d);
+            return concatenate(b, c, d);
         }
     }
 }

@@ -174,7 +174,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HashSP800DRBG(digest, entropySource, nonce, personalizationString, securityStrength);
+            return new HashSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -218,7 +218,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HMacSP800DRBG(hMac, entropySource, nonce, personalizationString, securityStrength);
+            return new HMacSP800DRBG(hMac, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 

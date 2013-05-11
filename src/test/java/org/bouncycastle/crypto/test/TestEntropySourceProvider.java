@@ -36,6 +36,11 @@ public class TestEntropySourceProvider
 
                 return rv;
             }
+
+            public int entropySize()
+            {
+                return bitsRequired;
+            }
         };
     }
 }

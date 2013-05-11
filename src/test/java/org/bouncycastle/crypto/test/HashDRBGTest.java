@@ -348,7 +348,7 @@ public class HashDRBGTest
             byte[] nonce = tv.nonce();
             byte[] personalisationString = tv.personalizationString();
 
-            SP80090DRBG d = new HashSP800DRBG(tv.getDigest(), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
+            SP80090DRBG d = new HashSP800DRBG(tv.getDigest(), tv.securityStrength(), tv.entropySource(), personalisationString, nonce);
 
             byte[] output = new byte[tv.expectedValue(0).length];
 
