@@ -196,7 +196,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new DualECSP800DRBG(digest, entropySource, nonce, personalizationString, securityStrength);
+            return new DualECSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -243,7 +243,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new CTRSP800DRBG(blockCipher, keySizeInBits, entropySource, nonce, personalizationString, securityStrength);
+            return new CTRSP800DRBG(blockCipher, keySizeInBits, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 }

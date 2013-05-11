@@ -19,8 +19,7 @@ public class CTRSP800DRBG
     private byte[]                _V;
     private int                   _reseedCounter = 0;
 
-    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, EntropySource entropySource, byte[] nonce,
-                        byte[] personalisationString, int securityStrength)
+    public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int securityStrength, EntropySource entropySource, byte[] personalisationString, byte[] nonce)
     {
 
         _entropySource = entropySource;

@@ -46,8 +46,16 @@ public class DualECSP800DRBG
     private byte[]                 _s;
     private int _sLength;
 
-    public DualECSP800DRBG(Digest digest, EntropySource entropySource, byte[] nonce,
-                           byte[] personalisationString, int securityStrength)
+    /**
+     * Construct a SP800-90A Dual EC DRBG.
+     *
+     * @param digest source digest to use with the DRB stream.
+     * @param securityStrength security strength required (in bits)
+     * @param entropySource source of entropy to use for seeding/reseeding.
+     * @param personalizationString personalization string to distinguish this DRBG (may be null).
+     * @param nonce nonce to further distinguish this DRBG (may be null).
+     */
+    public DualECSP800DRBG(Digest digest, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
         if (securityStrength > digest.getDigestSize() * 8) // TODO: this may, or may not be correct, but it's good enough for now
         {
@@ -62,7 +70,7 @@ public class DualECSP800DRBG
 
         // TODO: validate entropy length
         byte[] entropy = entropySource.getEntropy();
-        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
 
         if (securityStrength <= 128)
         {

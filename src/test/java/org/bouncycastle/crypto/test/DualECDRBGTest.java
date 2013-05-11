@@ -272,7 +272,7 @@ public class DualECDRBGTest
             byte[] nonce = tv.nonce();
             byte[] personalisationString = tv.personalizationString();
 
-            SP80090DRBG d = new DualECSP800DRBG(tv.getDigest(), tv.entropySource(), nonce, personalisationString, tv.securityStrength());
+            SP80090DRBG d = new DualECSP800DRBG(tv.getDigest(), tv.securityStrength(), tv.entropySource(), personalisationString, nonce);
 
             byte[] output = new byte[tv.expectedValue(0).length];
 
