@@ -26,10 +26,10 @@ public class HMacSP800DRBG
      * @param hMac Hash MAC to base the DRBG on.
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
-     * @param personalisationString personalization string to distinguish this DRBG (may be null).
+     * @param personalizationString personalization string to distinguish this DRBG (may be null).
      * @param nonce nonce to further distinguish this DRBG (may be null).
      */
-    public HMacSP800DRBG(Mac hMac, int securityStrength, EntropySource entropySource, byte[] personalisationString, byte[] nonce)
+    public HMacSP800DRBG(Mac hMac, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
         if (securityStrength > Utils.getMaxSecurityStrength(hMac))
         {
@@ -45,7 +45,7 @@ public class HMacSP800DRBG
         _hMac = hMac;
 
         byte[] entropy = entropySource.getEntropy();
-        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
 
         _K = new byte[hMac.getMacSize()];
         _V = new byte[_K.length];

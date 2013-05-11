@@ -1,8 +1,10 @@
 package org.bouncycastle.crypto.prng.drbg;
 
+/**
+ * Interface to SP800-90A deterministic random bit generators.
+ */
 public interface SP80090DRBG
 {
-
     /**
      * Populate a passed in array with random data.
      *

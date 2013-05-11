@@ -45,10 +45,10 @@ public class HashSP800DRBG
      * @param digest  source digest to use for DRB stream.
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
-     * @param personalisationString personalization string to distinguish this DRBG (may be null).
+     * @param personalizationString personalization string to distinguish this DRBG (may be null).
      * @param nonce nonce to further distinguish this DRBG (may be null).
      */
-    public HashSP800DRBG(Digest digest, int securityStrength, EntropySource entropySource, byte[] personalisationString, byte[] nonce)
+    public HashSP800DRBG(Digest digest, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
         if (securityStrength > Utils.getMaxSecurityStrength(digest))
         {
@@ -74,7 +74,7 @@ public class HashSP800DRBG
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
         byte[] entropy = entropySource.getEntropy();
-        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalisationString);
+        byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
         byte[] seed = hash_df(seedMaterial, _seedLength);
 
         _V = seed;
