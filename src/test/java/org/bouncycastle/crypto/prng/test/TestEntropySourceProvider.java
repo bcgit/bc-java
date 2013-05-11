@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.test;
+package org.bouncycastle.crypto.prng.test;
 
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.EntropySourceProvider;

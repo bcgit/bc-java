@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
-import org.bouncycastle.crypto.test.TestEntropySourceProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
