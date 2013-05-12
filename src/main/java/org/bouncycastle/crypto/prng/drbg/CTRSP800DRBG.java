@@ -94,7 +94,7 @@ public class CTRSP800DRBG
         int i=0;
         int outLen = _engine.getBlockSize();
 
-        _engine.init(true, new KeyParameter(key));
+        _engine.init(true, new KeyParameter(expandKey(key)));
         while (i*outLen < seed.length)
         {
             addOneTo(v);
@@ -251,7 +251,7 @@ public class CTRSP800DRBG
         temp = new byte[bitLength / 2];
 
         i = 0;
-        _engine.init(true, new KeyParameter(K));
+        _engine.init(true, new KeyParameter(expandKey(K)));
 
         while (i * outLen < temp.length)
         {
@@ -288,7 +288,7 @@ public class CTRSP800DRBG
 
         byte[] inputBlock = new byte[outlen];
 
-        _engine.init(true, new KeyParameter(k));
+        _engine.init(true, new KeyParameter(expandKey(k)));
 
         _engine.processBlock(iV, 0, chainingValue, 0);
 
@@ -363,7 +363,7 @@ public class CTRSP800DRBG
 
         byte[] out = new byte[_V.length];
 
-        _engine.init(true, new KeyParameter(_Key));
+        _engine.init(true, new KeyParameter(expandKey(_Key)));
 
         for (int i = 0; i < output.length / out.length; i++)
         {
@@ -412,5 +412,36 @@ public class CTRSP800DRBG
         }
 
         return -1;
+    }
+
+    byte[] expandKey(byte[] key)
+    {
+        if (_isTDEA)
+        {
+            // expand key to 192 bits.
+            byte[] tmp = new byte[24];
+
+            padKey(key, 0, tmp, 0);
+            padKey(key, 7, tmp, 8);
+            padKey(key, 14, tmp, 16);
+
+            return tmp;
+        }
+        else
+        {
+            return key;
+        }
+    }
+
+    private void padKey(byte[] keyMaster, int keyOff, byte[] tmp, int tmpOff)
+    {
+        tmp[tmpOff + 0] = (byte)(keyMaster[keyOff + 0] & 0xfe);
+        tmp[tmpOff + 1] = (byte)((keyMaster[keyOff + 0] << 7) | ((keyMaster[keyOff + 1] & 0xfc) >>> 1));
+        tmp[tmpOff + 2] = (byte)((keyMaster[keyOff + 1] << 6) | ((keyMaster[keyOff + 2] & 0xf8) >>> 2));
+        tmp[tmpOff + 3] = (byte)((keyMaster[keyOff + 2] << 5) | ((keyMaster[keyOff + 3] & 0xf0) >>> 3));
+        tmp[tmpOff + 4] = (byte)((keyMaster[keyOff + 3] << 4) | ((keyMaster[keyOff + 4] & 0xe0) >>> 4));
+        tmp[tmpOff + 5] = (byte)((keyMaster[keyOff + 4] << 3) | ((keyMaster[keyOff + 5] & 0xc0) >>> 5));
+        tmp[tmpOff + 6] = (byte)((keyMaster[keyOff + 5] << 2) | ((keyMaster[keyOff + 6] & 0x80) >>> 6));
+        tmp[tmpOff + 7] = (byte)(keyMaster[keyOff + 6] << 1);
     }
 }
