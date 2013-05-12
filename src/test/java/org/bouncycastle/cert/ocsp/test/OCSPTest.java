@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.ocsp.test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.Security;
@@ -931,6 +932,35 @@ public class OCSPTest
         testRSA();
         testIrregularVersionReq();
         testInvalidResp();
+
+        //
+        // Empty data test
+        //
+        try
+        {
+            response = new OCSPResp(new byte[0]);
+            fail("no exception thrown");
+        }
+        catch (IOException e)
+        {
+             if (!e.getMessage().equals("malformed response: no response data found"))
+             {
+                 fail("wrong exception");
+             }
+        }
+
+        try
+        {
+            req = new OCSPReq(new byte[0]);
+            fail("no exception thrown");
+        }
+        catch (IOException e)
+        {
+             if (!e.getMessage().equals("malformed request: no request data found"))
+             {
+                 fail("wrong exception");
+             }
+        }
     }
 
     public static void main(
