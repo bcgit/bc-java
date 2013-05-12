@@ -482,8 +482,6 @@ public class CTRDRBGTest
 
             if (!Arrays.areEqual(((KeyParameter)params).getKey(), k))
             {
-                System.err.println(new String(Hex.encode(((KeyParameter)params).getKey())));
-                System.err.println(new String(Hex.encode(k))) ;
                 fail("key not odd parity");
             }
 
