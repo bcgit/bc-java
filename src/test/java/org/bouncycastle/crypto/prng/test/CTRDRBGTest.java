@@ -1,10 +1,16 @@
 package org.bouncycastle.crypto.prng.test;
 
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.params.DESedeParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -336,6 +342,15 @@ public class CTRDRBGTest
             }
         }
 
+        // DESede/TDEA key parity test
+        DRBGTestVector tv = tests[0];
+
+        SP80090DRBG drbg = new CTRSP800DRBG(new KeyParityCipher(tv.getCipher()), tv.keySizeInBits(), tv.securityStrength(), tv.entropySource(), tv.personalizationString(), tv.nonce());
+
+        byte[] output = new byte[tv.expectedValue(0).length];
+
+        drbg.generate(output, tv.additionalInput(0), tv.predictionResistance());
+
         // Exception tests
         SP80090DRBG d;
         try
@@ -447,4 +462,54 @@ public class CTRDRBGTest
             "D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEF"), true);
         }
     }
+
+    private class KeyParityCipher
+        implements BlockCipher
+    {
+        private BlockCipher cipher;
+
+        KeyParityCipher(BlockCipher cipher)
+        {
+            this.cipher = cipher;
+        }
+
+        public void init(boolean forEncryption, CipherParameters params)
+            throws IllegalArgumentException
+        {
+            byte[] k = Arrays.clone(((KeyParameter)params).getKey());
+
+            DESedeParameters.setOddParity(k);
+
+            if (!Arrays.areEqual(((KeyParameter)params).getKey(), k))
+            {
+                System.err.println(new String(Hex.encode(((KeyParameter)params).getKey())));
+                System.err.println(new String(Hex.encode(k))) ;
+                fail("key not odd parity");
+            }
+
+            cipher.init(forEncryption, params);
+        }
+
+        public String getAlgorithmName()
+        {
+            return cipher.getAlgorithmName();
+        }
+
+        public int getBlockSize()
+        {
+            return cipher.getBlockSize();
+        }
+
+        public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
+            throws DataLengthException, IllegalStateException
+        {
+            return cipher.processBlock(in, inOff, out, outOff);
+        }
+
+        public void reset()
+        {
+            cipher.reset();
+        }
+    }
+
 }

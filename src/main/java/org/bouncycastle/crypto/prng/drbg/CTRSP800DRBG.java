@@ -433,6 +433,14 @@ public class CTRSP800DRBG
         }
     }
 
+    /**
+     * Pad out a key for TDEA, setting odd parity for each byte.
+     *
+     * @param keyMaster
+     * @param keyOff
+     * @param tmp
+     * @param tmpOff
+     */
     private void padKey(byte[] keyMaster, int keyOff, byte[] tmp, int tmpOff)
     {
         tmp[tmpOff + 0] = (byte)(keyMaster[keyOff + 0] & 0xfe);
@@ -443,5 +451,18 @@ public class CTRSP800DRBG
         tmp[tmpOff + 5] = (byte)((keyMaster[keyOff + 4] << 3) | ((keyMaster[keyOff + 5] & 0xc0) >>> 5));
         tmp[tmpOff + 6] = (byte)((keyMaster[keyOff + 5] << 2) | ((keyMaster[keyOff + 6] & 0x80) >>> 6));
         tmp[tmpOff + 7] = (byte)(keyMaster[keyOff + 6] << 1);
+
+        for (int i = tmpOff; i <= tmpOff + 7; i++)
+        {
+            int b = tmp[i];
+            tmp[i] = (byte)((b & 0xfe) |
+                            ((((b >> 1) ^
+                            (b >> 2) ^
+                            (b >> 3) ^
+                            (b >> 4) ^
+                            (b >> 5) ^
+                            (b >> 6) ^
+                            (b >> 7)) ^ 0x01) & 0x01));
+        }
     }
 }
