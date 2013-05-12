@@ -79,7 +79,7 @@ public class DSAParametersGenerator
 
         if ((L < 1024 || L > 3072) || L % 1024 != 0)
         {
-            throw new IllegalArgumentException("L values must be between 1024 and 3072 and a mulitple of 1024");
+            throw new IllegalArgumentException("L values must be between 1024 and 3072 and a multiple of 1024");
         }
         else if (L == 1024 && N != 160)
         {
