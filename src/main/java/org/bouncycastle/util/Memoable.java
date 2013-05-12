@@ -17,6 +17,7 @@ public interface Memoable
      *
      * @param other an object originally {@link #copy() copied} from an object of the same type as this instance.
      * @throws ClassCastException if the provided object is not of the correct type.
+     * @throws MemoableResetException if the <b>other</b> parameter is in some other way invalid.
      */
     public void reset(Memoable other);
 }
