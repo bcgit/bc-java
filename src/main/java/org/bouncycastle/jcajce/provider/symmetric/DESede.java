@@ -366,6 +366,13 @@ public final class DESede
             provider.addAlgorithm("Cipher." + PKCSObjectIdentifiers.id_alg_CMS3DESwrap, PREFIX + "$Wrap");
             provider.addAlgorithm("Cipher.DESEDERFC3211WRAP", PREFIX + "$RFC3211");
 
+            provider.addAlgorithm("Alg.Alias.Cipher.TDEA", "DESEDE");
+            provider.addAlgorithm("Alg.Alias.Cipher.TDEAWRAP", "DESEDEWRAP");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator.TDEA", "DESEDE");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.TDEA", "DESEDE");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator.TDEA", "DESEDE");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.TDEA", "DESEDE");
+
             if (provider.hasAlgorithm("MessageDigest", "SHA-1"))
             {
                 provider.addAlgorithm("Cipher.PBEWITHSHAAND3-KEYTRIPLEDES-CBC", PREFIX + "$PBEWithSHAAndDES3Key");

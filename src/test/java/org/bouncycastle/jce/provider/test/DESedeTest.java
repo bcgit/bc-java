@@ -126,6 +126,7 @@ public class DESedeTest
     }
 
     private void wrapTest(
+        String      alg,
         int     id,
         byte[]  kek,
         byte[]  iv,
@@ -134,13 +135,13 @@ public class DESedeTest
     {
         try
         {
-            Cipher wrapper = Cipher.getInstance("DESedeWrap", "BC");
+            Cipher wrapper = Cipher.getInstance(alg + "Wrap", "BC");
 
-            wrapper.init(Cipher.WRAP_MODE, new SecretKeySpec(kek, "DESEDE"), new IvParameterSpec(iv));
+            wrapper.init(Cipher.WRAP_MODE, new SecretKeySpec(kek, alg), new IvParameterSpec(iv));
 
             try
             {
-                byte[]  cText = wrapper.wrap(new SecretKeySpec(in, "DESEDE"));
+                byte[]  cText = wrapper.wrap(new SecretKeySpec(in, alg));
                 if (!equalArray(cText, out))
                 {
                     fail("failed wrap test " + id  + " expected " + new String(Hex.encode(out)) + " got " + new String(Hex.encode(cText)));
@@ -151,11 +152,11 @@ public class DESedeTest
                 fail("failed wrap test exception " + e.toString());
             }
 
-            wrapper.init(Cipher.UNWRAP_MODE, new SecretKeySpec(kek, "DESEDE"));
+            wrapper.init(Cipher.UNWRAP_MODE, new SecretKeySpec(kek, alg));
 
             try
             {
-                Key  pText = wrapper.unwrap(out, "DESede", Cipher.SECRET_KEY);
+                Key  pText = wrapper.unwrap(out, alg, Cipher.SECRET_KEY);
                 if (!equalArray(pText.getEncoded(), in))
                 {
                     fail("failed unwrap test " + id  + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText.getEncoded())));
@@ -173,6 +174,7 @@ public class DESedeTest
     }
 
     public void test(
+        String      alg,
         int         strength,
         byte[]      input,
         byte[]      output)
@@ -191,19 +193,19 @@ public class DESedeTest
 
         try
         {
-            keyGen = KeyGenerator.getInstance("DESEDE", "BC");
+            keyGen = KeyGenerator.getInstance(alg, "BC");
             keyGen.init(strength, rand);
 
             key = keyGen.generateKey();
 
-            in = Cipher.getInstance("DESEDE/ECB/PKCS7Padding", "BC");
-            out = Cipher.getInstance("DESEDE/ECB/PKCS7Padding", "BC");
+            in = Cipher.getInstance(alg + "/ECB/PKCS7Padding", "BC");
+            out = Cipher.getInstance(alg + "/ECB/PKCS7Padding", "BC");
 
             out.init(Cipher.ENCRYPT_MODE, key, rand);
         }
         catch (Exception e)
         {
-            fail("DESEDE failed initialisation - " + e.toString());
+            fail(alg + " failed initialisation - " + e.toString());
         }
 
         try
@@ -212,7 +214,7 @@ public class DESedeTest
         }
         catch (Exception e)
         {
-            fail("DESEDE failed initialisation - " + e.toString());
+            fail(alg + " failed initialisation - " + e.toString());
         }
 
         //
@@ -233,7 +235,7 @@ public class DESedeTest
         }
         catch (IOException e)
         {
-            fail("DESEDE failed encryption - " + e.toString());
+            fail(alg + " failed encryption - " + e.toString());
         }
 
         byte[]    bytes;
@@ -242,7 +244,7 @@ public class DESedeTest
 
         if (!equalArray(bytes, output))
         {
-            fail("DESEDE failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+            fail(alg + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
         }
 
         //
@@ -266,12 +268,12 @@ public class DESedeTest
         }
         catch (Exception e)
         {
-            fail("DESEDE failed encryption - " + e.toString());
+            fail(alg + " failed encryption - " + e.toString());
         }
 
         if (!equalArray(bytes, input))
         {
-            fail("DESEDE failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
+            fail(alg + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
         }
 
         //
@@ -279,17 +281,17 @@ public class DESedeTest
         //
         try
         {
-            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DESede", "BC");
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(alg, "BC");
             DESedeKeySpec keySpec = (DESedeKeySpec)keyFactory.getKeySpec((SecretKey)key, DESedeKeySpec.class);
 
             if (!equalArray(key.getEncoded(), keySpec.getKey(), 16))
             {
-                fail("DESEDE KeySpec does not match key.");
+                fail(alg + " KeySpec does not match key.");
             }
         }
         catch (Exception e)
         {
-            fail("DESEDE failed keyspec - " + e.toString());
+            fail(alg + " failed keyspec - " + e.toString());
         }
     }
 
@@ -297,7 +299,12 @@ public class DESedeTest
     {
         for (int i = 0; i != cipherTests1.length; i += 2)
         {
-            test(Integer.parseInt(cipherTests1[i]), input1, Hex.decode(cipherTests1[i + 1]));
+            test("DESEDE", Integer.parseInt(cipherTests1[i]), input1, Hex.decode(cipherTests1[i + 1]));
+        }
+
+        for (int i = 0; i != cipherTests1.length; i += 2)
+        {
+            test("TDEA", Integer.parseInt(cipherTests1[i]), input1, Hex.decode(cipherTests1[i + 1]));
         }
 
         byte[]  kek1 = Hex.decode("255e0d1c07b646dfb3134cc843ba8aa71f025b7c0838251f");
@@ -305,7 +312,8 @@ public class DESedeTest
         byte[]  in1 = Hex.decode("2923bf85e06dd6ae529149f1f1bae9eab3a7da3d860d3e98");
         byte[]  out1 = Hex.decode("690107618ef092b3b48ca1796b234ae9fa33ebb4159604037db5d6a84eb3aac2768c632775a467d4");
 
-        wrapTest(1, kek1, iv1, in1, out1);
+        wrapTest("DESEDE", 1, kek1, iv1, in1, out1);
+        wrapTest("TDEA", 1, kek1, iv1, in1, out1);
     }
 
     public static void main(
