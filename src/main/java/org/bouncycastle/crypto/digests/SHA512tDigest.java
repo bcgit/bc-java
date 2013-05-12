@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.MemoableResetException;
+
 /**
  * FIPS 180-4 implementation of SHA-512/t
  */
@@ -47,14 +50,7 @@ public class SHA512tDigest
 
         this.digestLength = t.digestLength;
 
-        this.H1t = t.H1t;
-        this.H2t = t.H2t;
-        this.H3t = t.H3t;
-        this.H4t = t.H4t;
-        this.H5t = t.H5t;
-        this.H6t = t.H6t;
-        this.H7t = t.H7t;
-        this.H8t = t.H8t;
+        reset(t);
     }
 
     public String getAlgorithmName()
@@ -179,5 +175,31 @@ public class SHA512tDigest
             int shift = 8 * (3 - num);
             bs[off + num] = (byte)(n >>> shift);
         }
+    }
+
+    public Memoable copy()
+    {
+        return new SHA512tDigest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        SHA512tDigest t = (SHA512tDigest)other;
+
+        if (this.digestLength != t.digestLength)
+        {
+            throw new MemoableResetException("digestLength inappropriate in other");
+        }
+
+        super.copyIn(t);
+
+        this.H1t = t.H1t;
+        this.H2t = t.H2t;
+        this.H3t = t.H3t;
+        this.H4t = t.H4t;
+        this.H5t = t.H5t;
+        this.H6t = t.H6t;
+        this.H7t = t.H7t;
+        this.H8t = t.H8t;
     }
 }

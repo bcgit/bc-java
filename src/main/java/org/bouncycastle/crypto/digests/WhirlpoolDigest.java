@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 
 
 /**
@@ -10,7 +11,7 @@ import org.bouncycastle.util.Arrays;
  *  
  */
 public final class WhirlpoolDigest 
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int BYTE_LENGTH = 64;
     
@@ -136,19 +137,7 @@ public final class WhirlpoolDigest
      */
     public WhirlpoolDigest(WhirlpoolDigest originalDigest)
     {
-        System.arraycopy(originalDigest._rc, 0, _rc, 0, _rc.length);
-        
-        System.arraycopy(originalDigest._buffer, 0, _buffer, 0, _buffer.length);
-        
-        this._bufferPos = originalDigest._bufferPos;
-        System.arraycopy(originalDigest._bitCount, 0, _bitCount, 0, _bitCount.length);
-        
-        // -- internal hash state --
-        System.arraycopy(originalDigest._hash, 0, _hash, 0, _hash.length);
-        System.arraycopy(originalDigest._K, 0, _K, 0, _K.length);
-        System.arraycopy(originalDigest._L, 0, _L, 0, _L.length);
-        System.arraycopy(originalDigest._block, 0, _block, 0, _block.length);
-        System.arraycopy(originalDigest._state, 0, _state, 0, _state.length); 
+        reset(originalDigest);
     }
 
     public String getAlgorithmName()
@@ -392,5 +381,29 @@ public final class WhirlpoolDigest
     public int getByteLength()
     {
         return BYTE_LENGTH;
+    }
+
+    public Memoable copy()
+    {
+        return new WhirlpoolDigest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        WhirlpoolDigest originalDigest = (WhirlpoolDigest)other;
+
+        System.arraycopy(originalDigest._rc, 0, _rc, 0, _rc.length);
+
+        System.arraycopy(originalDigest._buffer, 0, _buffer, 0, _buffer.length);
+
+        this._bufferPos = originalDigest._bufferPos;
+        System.arraycopy(originalDigest._bitCount, 0, _bitCount, 0, _bitCount.length);
+
+        // -- internal hash state --
+        System.arraycopy(originalDigest._hash, 0, _hash, 0, _hash.length);
+        System.arraycopy(originalDigest._K, 0, _K, 0, _K.length);
+        System.arraycopy(originalDigest._L, 0, _L, 0, _L.length);
+        System.arraycopy(originalDigest._block, 0, _block, 0, _block.length);
+        System.arraycopy(originalDigest._state, 0, _state, 0, _state.length);
     }
 }

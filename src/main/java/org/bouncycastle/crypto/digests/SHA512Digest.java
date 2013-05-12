@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.util.Memoable;
 
 
 /**
@@ -84,6 +85,18 @@ public class SHA512Digest
         H6 = 0x9b05688c2b3e6c1fL;
         H7 = 0x1f83d9abfb41bd6bL;
         H8 = 0x5be0cd19137e2179L;
+    }
+
+    public Memoable copy()
+    {
+        return new SHA512Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        SHA512Digest d = (SHA512Digest)other;
+
+        copyIn(d);
     }
 }
 

@@ -112,7 +112,8 @@ public class RegressionTest
         new NullTest(),
         new DSTU4145Test(),
         new SipHashTest(),
-        new OCBTest()
+        new OCBTest(),
+        new NonMemoableDigestTest()
     };
 
     public static void main(

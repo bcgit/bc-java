@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Memoable;
 
 /**
  * HMAC implementation based on RFC2104
@@ -23,7 +24,8 @@ public class HMac
     private Digest digest;
     private int digestSize;
     private int blockLength;
-    
+    private Memoable savedState;
+
     private byte[] inputPad;
     private byte[] outputBuf;
 
@@ -134,6 +136,11 @@ public class HMac
         xorPad(outputBuf, blockLength, OPAD);
 
         digest.update(inputPad, 0, inputPad.length);
+
+        if (digest instanceof Memoable)
+        {
+            savedState = ((Memoable)digest).copy();
+        }
     }
 
     public int getMacSize()
@@ -168,7 +175,14 @@ public class HMac
             outputBuf[i] = 0;
         }
 
-        digest.update(inputPad, 0, inputPad.length);
+        if (savedState != null)
+        {
+            ((Memoable)digest).reset(savedState);
+        }
+        else
+        {
+            digest.update(inputPad, 0, inputPad.length);
+        }
 
         return len;
     }

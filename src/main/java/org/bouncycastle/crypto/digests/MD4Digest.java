@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.util.Memoable;
+
 /**
  * implementation of MD4 as RFC 1320 by R. Rivest, MIT Laboratory for
  * Computer Science and RSA Data Security, Inc.
@@ -33,6 +35,13 @@ public class MD4Digest
     public MD4Digest(MD4Digest t)
     {
         super(t);
+
+        copyIn(t);
+    }
+
+    private void copyIn(MD4Digest t)
+    {
+        super.copyIn(t);
 
         H1 = t.H1;
         H2 = t.H2;
@@ -266,5 +275,17 @@ public class MD4Digest
         {
             X[i] = 0;
         }
+    }
+
+    public Memoable copy()
+    {
+        return new MD4Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        MD4Digest d = (MD4Digest)other;
+
+        copyIn(d);
     }
 }
