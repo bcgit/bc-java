@@ -13,7 +13,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * Generate suitable parameters for DSA, in line with FIPS 186-2, or FIPS 186-3/
+ * Generate suitable parameters for DSA, in line with FIPS 186-2, or FIPS 186-3.
  */
 public class DSAParametersGenerator
 {
@@ -77,7 +77,7 @@ public class DSAParametersGenerator
         this.random = params.getRandom();
         this.usageIndex = params.getUsageIndex();
 
-        if ((L < 1024 && L > 3027) || L % 1024 != 0)
+        if ((L < 1024 || L > 3072) || L % 1024 != 0)
         {
             throw new IllegalArgumentException("L values must be between 1024 and 3072 and a mulitple of 1024");
         }
@@ -96,7 +96,7 @@ public class DSAParametersGenerator
 
         if (digest.getDigestSize() * 8 < N)
         {
-            throw new IllegalArgumentException("Digest output size too small for value of N");
+            throw new IllegalStateException("Digest output size too small for value of N");
         }
     }
 
