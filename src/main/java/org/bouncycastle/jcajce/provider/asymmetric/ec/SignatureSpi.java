@@ -199,6 +199,24 @@ public class SignatureSpi
         }
     }
 
+    static public class ecCVCDSA384
+        extends SignatureSpi
+    {
+        public ecCVCDSA384()
+        {
+            super(new SHA384Digest(), new ECDSASigner(), new CVCDSAEncoder());
+        }
+    }
+
+    static public class ecCVCDSA512
+        extends SignatureSpi
+    {
+        public ecCVCDSA512()
+        {
+            super(new SHA512Digest(), new ECDSASigner(), new CVCDSAEncoder());
+        }
+    }
+
     private static class StdDSAEncoder
         implements DSAEncoder
     {

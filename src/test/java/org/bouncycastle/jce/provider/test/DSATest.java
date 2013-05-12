@@ -477,9 +477,6 @@ public class DSATest
     private void testECDSA239bitBinary(String algorithm, DERObjectIdentifier oid)
         throws Exception
     {
-//        BigInteger r = new BigInteger("21596333210419611985018340039034612628818151486841789642455876922391552");
-//        BigInteger s = new BigInteger("197030374000731686738334997654997227052849804072198819102649413465737174");
-
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
         SecureRandom    k = new FixedSecureRandom(kData);
@@ -956,7 +953,9 @@ public class DSATest
         testECDSA239bitBinary("SHA1withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_1);
         testECDSA239bitBinary("SHA224withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_224);
         testECDSA239bitBinary("SHA256withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_256);
-        
+        testECDSA239bitBinary("SHA384withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_384);
+        testECDSA239bitBinary("SHA512withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
+
         testGeneration();
         testParameters();
         testDSA2Parameters();
