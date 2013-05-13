@@ -118,7 +118,7 @@ public class X509ExtensionUtils
         }
         catch (IOException e)
         {   // it's hard to imagine this happening, but yes it does!
-            throw new IllegalStateException("unable to calculate identifier: " + e.getMessage(), e);
+            throw new CertRuntimeException("unable to calculate identifier: " + e.getMessage(), e);
         }
 
         return calculator.getDigest();
