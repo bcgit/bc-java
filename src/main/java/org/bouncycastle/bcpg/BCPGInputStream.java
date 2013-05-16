@@ -1,10 +1,10 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.util.io.Streams;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.bouncycastle.util.io.Streams;
 
 /**
  * reader for PGP objects
