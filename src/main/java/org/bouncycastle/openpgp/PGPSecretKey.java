@@ -759,8 +759,8 @@ public class PGPSecretKey
      * password and the passed in algorithm.
      *
      * @param key the PGPSecretKey to be copied.
-     * @param oldKeyDecryptor the current password for key.
-     * @param newKeyEncryptor the encryptor for encrypting the secret key material.
+     * @param oldKeyDecryptor the current decryptor based on the current password for key.
+     * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
      */
     public static PGPSecretKey copyWithNewPassword(
         PGPSecretKey           key,
@@ -768,7 +768,7 @@ public class PGPSecretKey
         PBESecretKeyEncryptor  newKeyEncryptor)
         throws PGPException
     {
-        byte[]   rawKeyData = key.extractKeyData(oldKeyDecryptor);
+        byte[]     rawKeyData = key.extractKeyData(oldKeyDecryptor);
         int        s2kUsage = key.secret.getS2KUsage();
         byte[]      iv = null;
         S2K         s2k = null;
@@ -796,13 +796,61 @@ public class PGPSecretKey
         }
         else
         {
-            keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+            if (key.secret.getPublicKeyPacket().getVersion() < 4)
+            {
+                // Version 2 or 3 - RSA Keys only
 
-            iv = newKeyEncryptor.getCipherIV();
+                byte[] encKey = newKeyEncryptor.getKey();
+                keyData = new byte[rawKeyData.length];
 
-            s2k = newKeyEncryptor.getS2K();
+                //
+                // process 4 numbers
+                //
+                int pos = 0;
+                for (int i = 0; i != 4; i++)
+                {
+                    int encLen = (((rawKeyData[pos] << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
 
-            newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+                    keyData[pos] = rawKeyData[pos];
+                    keyData[pos + 1] = rawKeyData[pos + 1];
+
+                    byte[] tmp = newKeyEncryptor.encryptKeyData(encKey, rawKeyData, pos + 2, encLen);
+
+                    if (i == 0)
+                    {
+                        iv = newKeyEncryptor.getCipherIV();
+                    }
+                    else
+                    {
+                        // replace IV in cipher text
+                        xor(tmp, 0, newKeyEncryptor.getCipherIV(), keyData, pos + tmp.length - iv.length);
+                    }
+
+                    System.arraycopy(tmp, 0, keyData, pos + 2, tmp.length);
+                    pos += 2 + encLen;
+
+                    if (i != 0)
+                    {
+                        System.arraycopy(rawKeyData, pos - iv.length, iv, 0, iv.length);
+                    }
+                }
+
+                //
+                // copy in checksum.
+                //
+                keyData[pos] = rawKeyData[pos];
+                keyData[pos + 1] = rawKeyData[pos + 1];
+            }
+            else
+            {
+                keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+
+                iv = newKeyEncryptor.getCipherIV();
+
+                s2k = newKeyEncryptor.getS2K();
+
+                newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+            }
         }
 
         SecretKeyPacket             secret;
@@ -819,6 +867,15 @@ public class PGPSecretKey
 
         return new PGPSecretKey(secret, key.pub);
     }
+
+    private static void xor(byte[] a, int off, byte[] iv1, byte[] iv2, int iv2Off)
+    {
+        for (int i = 0; i != iv1.length; i++)
+        {
+            a[off] ^= iv1[i] ^ iv2[iv2Off + i];
+        }
+    }
+
     /**
      * Return a copy of the passed in secret key, encrypted using a new
      * password and the passed in algorithm.
