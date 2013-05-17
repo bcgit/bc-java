@@ -588,8 +588,7 @@ public class PGPSecretKey
         PBESecretKeyDecryptor decryptorFactory)
         throws PGPException
     {
-        byte[] secKeyData = secret.getSecretKeyData();
-        if (secKeyData == null || secKeyData.length < 1)
+        if (isPrivateKeyEmpty())
         {
             return null;
         }
