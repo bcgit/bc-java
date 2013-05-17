@@ -70,8 +70,17 @@ public abstract class PBESecretKeyEncryptor
     public abstract byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
         throws PGPException;
 
-    public abstract byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
-        throws PGPException;
+    /**
+     * Encrypt the passed in keyData using the key and the iv provided.
+     * <p>
+     * This method is only used for processing version 3 keys.
+     * </p>
+     */
+    public byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
+        throws PGPException
+    {
+        throw new PGPException("encryption of version 3 keys not supported.");
+    }
 
     public abstract byte[] getCipherIV();
 }

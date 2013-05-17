@@ -31,7 +31,7 @@ public class JcePBESecretKeyEncryptorBuilder
     }
 
     /**
-     * Create an SecretKeyEncryptorBuilder with the S2K count different to the default of 0x60.
+     * Create a SecretKeyEncryptorBuilder with the S2K count different to the default of 0x60.
      *
      * @param encAlgorithm encryption algorithm to use.
      * @param s2kCount iteration count to use for S2K function.
@@ -41,6 +41,13 @@ public class JcePBESecretKeyEncryptorBuilder
         this(encAlgorithm, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    /**
+     * Create a builder which will make encryptors using the passed in digest calculator. If a MD5 calculator is
+     * passed in the builder will assume the encryptors are for use with version 3 keys.
+     *
+     * @param encAlgorithm  encryption algorithm to use.
+     * @param s2kDigestCalculator digest calculator to use.
+     */
     public JcePBESecretKeyEncryptorBuilder(int encAlgorithm, PGPDigestCalculator s2kDigestCalculator)
     {
         this(encAlgorithm, s2kDigestCalculator, 0x60);

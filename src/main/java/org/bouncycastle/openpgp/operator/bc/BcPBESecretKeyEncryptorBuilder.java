@@ -32,6 +32,13 @@ public class BcPBESecretKeyEncryptorBuilder
         this(encAlgorithm, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    /**
+     * Create a builder which will make encryptors using the passed in digest calculator. If a MD5 calculator is
+     * passed in the builder will assume the encryptors are for use with version 3 keys.
+     *
+     * @param encAlgorithm  encryption algorithm to use.
+     * @param s2kDigestCalculator digest calculator to use.
+     */
     public BcPBESecretKeyEncryptorBuilder(int encAlgorithm, PGPDigestCalculator s2kDigestCalculator)
     {
         this(encAlgorithm, s2kDigestCalculator, 0x60);
