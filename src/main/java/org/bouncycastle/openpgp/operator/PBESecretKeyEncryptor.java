@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
 
@@ -43,7 +44,7 @@ public abstract class PBESecretKeyEncryptor
     public byte[] getKey()
         throws PGPException
     {
-        if (s2k == null)
+        if (s2k == null && s2kDigestCalculator.getAlgorithm() != HashAlgorithmTags.MD5)
         {
             byte[]        iv = new byte[8];
 
@@ -67,6 +68,9 @@ public abstract class PBESecretKeyEncryptor
     }
 
     public abstract byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
+        throws PGPException;
+
+    public abstract byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         throws PGPException;
 
     public abstract byte[] getCipherIV();

@@ -11,6 +11,7 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -26,6 +27,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
@@ -1264,7 +1266,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1424,7 +1426,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1545,7 +1547,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1591,7 +1593,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1697,7 +1699,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1874,7 +1876,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1920,7 +1922,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1951,7 +1953,7 @@ public class PGPKeyRingTest
     public void test10()
         throws Exception
     { 
-        PGPSecretKeyRing    secretRing = new PGPSecretKeyRing(sec10);
+        PGPSecretKeyRing    secretRing = new PGPSecretKeyRing(sec10, new JcaKeyFingerprintCalculator());
         Iterator            secretKeys = secretRing.getSecretKeys();
         
         while (secretKeys.hasNext())
@@ -2235,7 +2237,7 @@ public class PGPKeyRingTest
 
         if (rIt.hasNext())
         {
-            PGPSecretKeyRing pgpPriv = (PGPSecretKeyRing)rIt.next();
+            PGPSecretKeyRing pgpPriv= (PGPSecretKeyRing)rIt.next();
 
             Iterator it = pgpPriv.getSecretKeys();
 
@@ -2272,7 +2274,7 @@ public class PGPKeyRingTest
                 pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
                 pgpKey = PGPSecretKey.copyWithNewPassword(
                                     pgpKey,
-                                    new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(v3KeyPass),
+                                    null,
                                     new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").build(newPass));
                 pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
 
@@ -2337,8 +2339,8 @@ public class PGPKeyRingTest
                 pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
                 pgpKey = PGPSecretKey.copyWithNewPassword(
                                     pgpKey,
-                                    new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(v3KeyPass),
-                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").build(newPass));
+                                    null,
+                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5, new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.MD5)).setProvider("BC").build(newPass));
                 pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
 
                 // this should succeed
