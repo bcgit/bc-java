@@ -7,6 +7,9 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSServerProtocol extends DTLSProtocol {
@@ -366,7 +369,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         notifyClientCertificate(state, clientCertificate);
     }
 
-    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, byte[] handshakeHash)
+    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, byte[] certificateVerifyHash)
         throws IOException {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
@@ -375,7 +378,19 @@ public class DTLSServerProtocol extends DTLSProtocol {
 
         TlsProtocol.assertEmpty(buf);
 
-        // TODO Verify the signature against the client certificate
+        // Verify the CertificateVerify message contains a correct signature.
+        try {
+            TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
+            tlsSigner.init(state.serverContext);
+
+            org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
+            SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+            AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
+
+            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, certificateVerifyHash);
+        } catch (Exception e) {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body) throws IOException {
@@ -440,9 +455,9 @@ public class DTLSServerProtocol extends DTLSProtocol {
          */
         {
             /*
-             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension, or
-             * the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
-             * Including both is NOT RECOMMENDED.
+             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
+             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
+             * ClientHello. Including both is NOT RECOMMENDED.
              */
 
             /*

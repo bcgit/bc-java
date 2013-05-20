@@ -385,7 +385,7 @@ public class TlsServerProtocol extends TlsProtocol {
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 
-            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, certificateVerifyHash);
+            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, this.certificateVerifyHash);
         } catch (Exception e) {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
