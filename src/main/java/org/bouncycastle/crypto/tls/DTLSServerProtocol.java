@@ -170,6 +170,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        recordLayer.initPendingEpoch(state.server.getCipher());
+
         /*
          * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
          * capability (i.e., all certificates except those containing fixed Diffie-Hellman
@@ -185,8 +187,6 @@ public class DTLSServerProtocol extends DTLSProtocol {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
         }
-
-        recordLayer.initPendingEpoch(state.server.getCipher());
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
         byte[] clientFinishedHash = handshake.getCurrentHash();
