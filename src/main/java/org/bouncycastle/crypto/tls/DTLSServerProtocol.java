@@ -170,29 +170,31 @@ public class DTLSServerProtocol extends DTLSProtocol {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        /*
+         * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
+         * capability (i.e., all certificates except those containing fixed Diffie-Hellman
+         * parameters).
+         */
+        if (expectCertificateVerifyMessage(state)) {
+            byte[] certificateVerifyHash = handshake.getCurrentHash();
+            clientMessage = handshake.receiveMessage();
+
+            if (clientMessage.getType() == HandshakeType.certificate_verify) {
+                processCertificateVerify(state, clientMessage.getBody(), certificateVerifyHash);
+            } else {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+        }
+
         recordLayer.initPendingEpoch(state.server.getCipher());
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] handshakeHash = handshake.getCurrentHash();
+        byte[] clientFinishedHash = handshake.getCurrentHash();
         clientMessage = handshake.receiveMessage();
-
-        /*
-         * TODO RFC 5246 7.4.8 This message is only sent following a client certificate that has
-         * signing capability (i.e., all certificates except those containing fixed Diffie-Hellman
-         * parameters).
-         */
-        if (clientMessage.getType() == HandshakeType.certificate_verify) {
-            processCertificateVerify(state, clientMessage.getBody(), handshakeHash);
-
-            handshakeHash = handshake.getCurrentHash();
-            clientMessage = handshake.receiveMessage();
-        } else {
-
-        }
 
         if (clientMessage.getType() == HandshakeType.finished) {
             byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-                handshakeHash);
+                clientFinishedHash);
             processFinished(clientMessage.getBody(), expectedClientVerifyData);
         } else {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -316,9 +318,21 @@ public class DTLSServerProtocol extends DTLSProtocol {
     protected void notifyClientCertificate(ServerHandshakeState state, Certificate clientCertificate)
         throws IOException {
 
-        if (clientCertificate.getLength() == 0) {
+        if (state.certificateRequest == null) {
+            throw new IllegalStateException();
+        }
+
+        if (state.clientCertificate != null) {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        state.clientCertificate = clientCertificate;
+
+        if (clientCertificate.isEmpty()) {
             state.keyExchange.skipClientCredentials();
         } else {
+
+            state.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate);
 
             /*
              * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
@@ -498,6 +512,10 @@ public class DTLSServerProtocol extends DTLSProtocol {
         state.server.processClientSupplementalData(clientSupplementalData);
     }
 
+    protected boolean expectCertificateVerifyMessage(ServerHandshakeState state) {
+        return state.clientCertificateType >= 0 && TlsUtils.hasSigningCapability(state.clientCertificateType);
+    }
+
     protected static class ServerHandshakeState {
         TlsServer server = null;
         TlsServerContextImpl serverContext = null;
@@ -511,5 +529,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         Hashtable serverExtensions = null;
         TlsKeyExchange keyExchange = null;
         CertificateRequest certificateRequest = null;
+        short clientCertificateType = -1;
+        Certificate clientCertificate = null;
     }
 }

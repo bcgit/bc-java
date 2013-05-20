@@ -26,6 +26,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
+    protected short clientCertificateType = -1;
     protected Certificate clientCertificate = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
@@ -77,8 +78,9 @@ public class TlsServerProtocol extends TlsProtocol {
 
         switch (this.connection_state) {
         case CS_CLIENT_KEY_EXCHANGE: {
-            // TODO Check whether the client Certificate has signing capability
-            skipCertificateVerifyMessage();
+            if (expectCertificateVerifyMessage()) {
+                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            }
             // NB: Fall through to next case label
         }
         case CS_CERTIFICATE_VERIFY: {
@@ -244,10 +246,13 @@ public class TlsServerProtocol extends TlsProtocol {
             switch (this.connection_state) {
             case CS_CLIENT_KEY_EXCHANGE: {
                 /*
-                 * TODO RFC 5246 7.4.8 This message is only sent following a client certificate that
-                 * has signing capability (i.e., all certificates except those containing fixed
+                 * RFC 5246 7.4.8 This message is only sent following a client certificate that has
+                 * signing capability (i.e., all certificates except those containing fixed
                  * Diffie-Hellman parameters).
                  */
+                if (!expectCertificateVerifyMessage()) {
+                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                }
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
                 break;
@@ -314,15 +319,21 @@ public class TlsServerProtocol extends TlsProtocol {
 
     protected void notifyClientCertificate(Certificate clientCertificate) throws IOException {
 
+        if (certificateRequest == null) {
+            throw new IllegalStateException();
+        }
+
         if (this.clientCertificate != null) {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         this.clientCertificate = clientCertificate;
 
-        if (clientCertificate.getLength() == 0) {
+        if (clientCertificate.isEmpty()) {
             this.keyExchange.skipClientCredentials();
         } else {
+
+            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate);
 
             /*
              * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
@@ -633,7 +644,7 @@ public class TlsServerProtocol extends TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void skipCertificateVerifyMessage() {
-        // TODO Inform tlsServer that there's no CertificateVerify
+    protected boolean expectCertificateVerifyMessage() {
+        return this.clientCertificateType >= 0 && TlsUtils.hasSigningCapability(this.clientCertificateType);
     }
 }

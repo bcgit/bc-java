@@ -790,6 +790,25 @@ public class TlsUtils
         }
     }
 
+    public static short getClientCertificateType(Certificate clientCertificate)
+    {
+        // FIXME
+        return ClientCertificateType.rsa_sign;
+    }
+
+    public static boolean hasSigningCapability(short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+        case ClientCertificateType.ecdsa_sign:
+        case ClientCertificateType.rsa_sign:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };
     static final byte[] SSL_SERVER = { 0x53, 0x52, 0x56, 0x52 };
 
