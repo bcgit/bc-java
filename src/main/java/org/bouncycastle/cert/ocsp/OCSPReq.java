@@ -81,6 +81,10 @@ public class OCSPReq
         try
         {
             this.req = OCSPRequest.getInstance(aIn.readObject());
+            if (req == null)
+            {
+                throw new CertIOException("malformed request: no request data found");
+            }
             this.extensions = req.getTbsRequest().getRequestExtensions();
         }
         catch (IllegalArgumentException e)

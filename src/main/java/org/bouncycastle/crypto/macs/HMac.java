@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Memoable;
 
 /**
  * HMAC implementation based on RFC2104
@@ -23,7 +24,9 @@ public class HMac
     private Digest digest;
     private int digestSize;
     private int blockLength;
-    
+    private Memoable ipadState;
+    private Memoable opadState;
+
     private byte[] inputPad;
     private byte[] outputBuf;
 
@@ -133,7 +136,19 @@ public class HMac
         xorPad(inputPad, blockLength, IPAD);
         xorPad(outputBuf, blockLength, OPAD);
 
+        if (digest instanceof Memoable)
+        {
+            opadState = ((Memoable)digest).copy();
+
+            ((Digest)opadState).update(outputBuf, 0, blockLength);
+        }
+
         digest.update(inputPad, 0, inputPad.length);
+
+        if (digest instanceof Memoable)
+        {
+            ipadState = ((Memoable)digest).copy();
+        }
     }
 
     public int getMacSize()
@@ -160,7 +175,17 @@ public class HMac
         int outOff)
     {
         digest.doFinal(outputBuf, blockLength);
-        digest.update(outputBuf, 0, outputBuf.length);
+
+        if (opadState != null)
+        {
+            ((Memoable)digest).reset(opadState);
+            digest.update(outputBuf, blockLength, digest.getDigestSize());
+        }
+        else
+        {
+            digest.update(outputBuf, 0, outputBuf.length);
+        }
+
         int len = digest.doFinal(out, outOff);
 
         for (int i = blockLength; i < outputBuf.length; i++)
@@ -168,7 +193,14 @@ public class HMac
             outputBuf[i] = 0;
         }
 
-        digest.update(inputPad, 0, inputPad.length);
+        if (ipadState != null)
+        {
+            ((Memoable)digest).reset(ipadState);
+        }
+        else
+        {
+            digest.update(inputPad, 0, inputPad.length);
+        }
 
         return len;
     }

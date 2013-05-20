@@ -32,6 +32,13 @@ public class BcPBESecretKeyEncryptorBuilder
         this(encAlgorithm, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    /**
+     * Create a builder which will make encryptors using the passed in digest calculator. If a MD5 calculator is
+     * passed in the builder will assume the encryptors are for use with version 3 keys.
+     *
+     * @param encAlgorithm  encryption algorithm to use.
+     * @param s2kDigestCalculator digest calculator to use.
+     */
     public BcPBESecretKeyEncryptorBuilder(int encAlgorithm, PGPDigestCalculator s2kDigestCalculator)
     {
         this(encAlgorithm, s2kDigestCalculator, 0x60);
@@ -85,18 +92,31 @@ public class BcPBESecretKeyEncryptorBuilder
             public byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
                 throws PGPException
             {
+                return encryptKeyData(key, null, keyData, keyOff, keyLen);
+            }
+
+            public byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
+                throws PGPException
+            {
                 try
                 {
-                    if (this.random == null)
-                    {
-                        this.random = new SecureRandom();
-                    }
-
                     BlockCipher engine = BcImplProvider.createBlockCipher(this.encAlgorithm);
 
-                    iv = new byte[engine.getBlockSize()];
+                    if (iv != null)
+                    {    // to deal with V3 key encryption
+                        this.iv = iv;
+                    }
+                    else
+                    {
+                        if (this.random == null)
+                        {
+                            this.random = new SecureRandom();
+                        }
 
-                    this.random.nextBytes(iv);
+                        this.iv = iv = new byte[engine.getBlockSize()];
+
+                        this.random.nextBytes(iv);
+                    }
 
                     BufferedBlockCipher c = BcUtil.createSymmetricKeyWrapper(true, engine, key, iv);
 

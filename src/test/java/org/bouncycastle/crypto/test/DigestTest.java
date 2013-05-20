@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -64,6 +65,45 @@ public abstract class DigestTest
         if (!areEqual(lastDigest, resBuf))
         {
             fail("failing second clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        //
+        // memo test
+        //
+        Memoable m = (Memoable)digest;
+
+        digest.update(lastV, 0, lastV.length/2);
+
+        // copy the Digest
+        Memoable copy1 = m.copy();
+        Memoable copy2 = copy1.copy();
+
+        digest.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        m.reset(copy1);
+
+        digest.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        Digest md = (Digest)copy2;
+
+        md.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        md.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing memo copy vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
         }
     }
 

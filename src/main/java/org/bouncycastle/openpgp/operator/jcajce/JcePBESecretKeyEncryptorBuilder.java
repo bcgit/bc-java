@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -7,6 +8,7 @@ import java.security.SecureRandom;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jcajce.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.NamedJcaJceHelper;
@@ -29,7 +31,7 @@ public class JcePBESecretKeyEncryptorBuilder
     }
 
     /**
-     * Create an SecretKeyEncryptorBuilder with the S2K count different to the default of 0x60.
+     * Create a SecretKeyEncryptorBuilder with the S2K count different to the default of 0x60.
      *
      * @param encAlgorithm encryption algorithm to use.
      * @param s2kCount iteration count to use for S2K function.
@@ -39,6 +41,13 @@ public class JcePBESecretKeyEncryptorBuilder
         this(encAlgorithm, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    /**
+     * Create a builder which will make encryptors using the passed in digest calculator. If a MD5 calculator is
+     * passed in the builder will assume the encryptors are for use with version 3 keys.
+     *
+     * @param encAlgorithm  encryption algorithm to use.
+     * @param s2kDigestCalculator digest calculator to use.
+     */
     public JcePBESecretKeyEncryptorBuilder(int encAlgorithm, PGPDigestCalculator s2kDigestCalculator)
     {
         this(encAlgorithm, s2kDigestCalculator, 0x60);
@@ -128,6 +137,37 @@ public class JcePBESecretKeyEncryptorBuilder
                 catch (InvalidKeyException e)
                 {
                     throw new PGPException("invalid key: " + e.getMessage(), e);
+                }
+            }
+
+            public byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
+                throws PGPException
+            {
+                try
+                {
+                    c = helper.createCipher(PGPUtil.getSymmetricCipherName(this.encAlgorithm) + "/CFB/NoPadding");
+
+                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(this.encAlgorithm, key), new IvParameterSpec(iv));
+
+                    this.iv = iv;
+
+                    return c.doFinal(keyData, keyOff, keyLen);
+                }
+                catch (IllegalBlockSizeException e)
+                {
+                    throw new PGPException("illegal block size: " + e.getMessage(), e);
+                }
+                catch (BadPaddingException e)
+                {
+                    throw new PGPException("bad padding: " + e.getMessage(), e);
+                }
+                catch (InvalidKeyException e)
+                {
+                    throw new PGPException("invalid key: " + e.getMessage(), e);
+                }
+                catch (InvalidAlgorithmParameterException e)
+                {
+                    throw new PGPException("invalid iv: " + e.getMessage(), e);
                 }
             }
 

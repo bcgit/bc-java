@@ -1,12 +1,14 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.*;
+import org.bouncycastle.util.Memoable;
+
 /**
  * implementation of MD2
  * as outlined in RFC1319 by B.Kaliski from RSA Laboratories April 1992
  */
 public class MD2Digest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int DIGEST_LENGTH = 16;
 
@@ -24,7 +26,13 @@ public class MD2Digest
     {
         reset();
     }
+
     public MD2Digest(MD2Digest t)
+    {
+        copyIn(t);
+    }
+
+    private void copyIn(MD2Digest t)
     {
         System.arraycopy(t.X, 0, X, 0, t.X.length);
         xOff = t.xOff;
@@ -33,6 +41,7 @@ public class MD2Digest
         System.arraycopy(t.C, 0, C, 0, t.C.length);
         COff = t.COff;
     }
+
     /**
      * return the algorithm name
      *
@@ -232,6 +241,18 @@ public class MD2Digest
    {
       return 16;
    }
+
+    public Memoable copy()
+    {
+        return new MD2Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        MD2Digest d = (MD2Digest)other;
+
+        copyIn(d);
+    }
 }
 
 

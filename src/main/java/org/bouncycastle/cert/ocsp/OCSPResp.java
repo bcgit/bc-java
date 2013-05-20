@@ -65,6 +65,11 @@ public class OCSPResp
         {
             throw new CertIOException("malformed response: " + e.getMessage(), e);
         }
+
+        if (resp == null)
+        {
+            throw new CertIOException("malformed response: no response data found");
+        }
     }
 
     public int getStatus()

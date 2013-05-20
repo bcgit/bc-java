@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.random.test;
+package org.bouncycastle.crypto.prng.test;
 
 import java.security.SecureRandom;
 
@@ -6,9 +6,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.random.SP800SecureRandomBuilder;
-import org.bouncycastle.crypto.test.DRBGTestVector;
-import org.bouncycastle.crypto.test.TestEntropySourceProvider;
+import org.bouncycastle.crypto.prng.SP800SecureRandomBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -218,6 +216,22 @@ public class SP800RandomTest
                                             "D3D3F372E43E7ABDC4FA293743EED076"
                                         }
                                 );
+
+        doCTRTest(tv);
+
+        tv = new DRBGTestVector(
+                    new DESedeEngine(), 168,
+                    new Bit232EntropyProvider().get(232),
+                    true,
+                    "20212223242526",
+                    112,
+                    new String[]
+                        {
+                            "64983055D014550B39DE699E43130B64",
+                            "035FDDA8582A2214EC722C410A8D95D3"
+                        }
+                )
+        .setPersonalizationString("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C");
 
         doCTRTest(tv);
     }

@@ -7,12 +7,13 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.util.Pack;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 
 /**
  * implementation of GOST R 34.11-94
  */
 public class GOST3411Digest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int    DIGEST_LENGTH = 32;
 
@@ -56,22 +57,7 @@ public class GOST3411Digest
      */
     public GOST3411Digest(GOST3411Digest t)
     {
-        this.sBox = t.sBox;
-        cipher.init(true, new ParametersWithSBox(null, sBox));
-
-        reset();
-
-        System.arraycopy(t.H, 0, this.H, 0, t.H.length);
-        System.arraycopy(t.L, 0, this.L, 0, t.L.length);
-        System.arraycopy(t.M, 0, this.M, 0, t.M.length);
-        System.arraycopy(t.Sum, 0, this.Sum, 0, t.Sum.length);
-        System.arraycopy(t.C[1], 0, this.C[1], 0, t.C[1].length);
-        System.arraycopy(t.C[2], 0, this.C[2], 0, t.C[2].length);
-        System.arraycopy(t.C[3], 0, this.C[3], 0, t.C[3].length);
-        System.arraycopy(t.xBuf, 0, this.xBuf, 0, t.xBuf.length);
-        
-        this.xBufOff = t.xBufOff;
-        this.byteCount = t.byteCount;
+        reset(t);
     }
 
     public String getAlgorithmName()
@@ -344,6 +330,33 @@ public class GOST3411Digest
    {
       return 32;
    }
+
+    public Memoable copy()
+    {
+        return new GOST3411Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        GOST3411Digest t = (GOST3411Digest)other;
+
+        this.sBox = t.sBox;
+        cipher.init(true, new ParametersWithSBox(null, sBox));
+
+        reset();
+
+        System.arraycopy(t.H, 0, this.H, 0, t.H.length);
+        System.arraycopy(t.L, 0, this.L, 0, t.L.length);
+        System.arraycopy(t.M, 0, this.M, 0, t.M.length);
+        System.arraycopy(t.Sum, 0, this.Sum, 0, t.Sum.length);
+        System.arraycopy(t.C[1], 0, this.C[1], 0, t.C[1].length);
+        System.arraycopy(t.C[2], 0, this.C[2], 0, t.C[2].length);
+        System.arraycopy(t.C[3], 0, this.C[3], 0, t.C[3].length);
+        System.arraycopy(t.xBuf, 0, this.xBuf, 0, t.xBuf.length);
+
+        this.xBufOff = t.xBufOff;
+        this.byteCount = t.byteCount;
+    }
 }
 
 

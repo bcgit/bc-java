@@ -12,15 +12,17 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.engines.SEEDWrapEngine;
+import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class SEED
@@ -68,6 +70,15 @@ public final class SEED
         public KeyGen()
         {
             super("SEED", 128, new CipherKeyGenerator());
+        }
+    }
+
+    public static class GMAC
+        extends BaseMac
+    {
+        public GMAC()
+        {
+            super(new GMac(new GCMBlockCipher(new SEEDEngine())));
         }
     }
 
@@ -119,7 +130,7 @@ public final class SEED
     }
 
     public static class Mappings
-        extends AlgorithmProvider
+        extends SymmetricAlgorithmProvider
     {
         private static final String PREFIX = SEED.class.getName();
 
@@ -146,6 +157,7 @@ public final class SEED
             provider.addAlgorithm("KeyGenerator." + KISAObjectIdentifiers.id_seedCBC, PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator." + KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, PREFIX + "$KeyGen");
 
+            addGMacAlgorithm(provider, "SEED", PREFIX + "$GMAC", PREFIX + "$KeyGen");
         }
     }
 }

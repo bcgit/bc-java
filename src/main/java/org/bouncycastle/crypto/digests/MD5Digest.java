@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.util.Memoable;
+
 /**
  * implementation of MD5 as outlined in "Handbook of Applied Cryptography", pages 346 - 347.
  */
@@ -29,6 +31,13 @@ public class MD5Digest
     public MD5Digest(MD5Digest t)
     {
         super(t);
+
+        copyIn(t);
+    }
+
+    private void copyIn(MD5Digest t)
+    {
+        super.copyIn(t);
 
         H1 = t.H1;
         H2 = t.H2;
@@ -298,5 +307,17 @@ public class MD5Digest
         {
             X[i] = 0;
         }
+    }
+
+    public Memoable copy()
+    {
+        return new MD5Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        MD5Digest d = (MD5Digest)other;
+
+        copyIn(d);
     }
 }

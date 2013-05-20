@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.test;
+package org.bouncycastle.crypto.prng.test;
 
 import java.util.ArrayList;
 import java.util.List;

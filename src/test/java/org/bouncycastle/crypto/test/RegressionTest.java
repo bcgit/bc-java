@@ -96,6 +96,7 @@ public class RegressionTest
         new CMacTest(),
         new EAXTest(),
         new GCMTest(),
+        new GMacTest(),
         new HCFamilyTest(),
         new HCFamilyVecTest(),
         new ISAACTest(),
@@ -113,10 +114,9 @@ public class RegressionTest
         new DSTU4145Test(),
         new SipHashTest(),
         new OCBTest(),
-        new HashDRBGTest(),
-        new HMacDRBGTest(),
-        new CTRDRBGTest(),
-        new DualECDRBGTest()
+        new NonMemoableDigestTest(),
+        new RSAKeyEncapsulationTest(),
+        new ECIESKeyEncapsulationTest()
     };
 
     public static void main(

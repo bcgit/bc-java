@@ -379,7 +379,19 @@ public class PGPSecretKey
     {
         return pub.isMasterKey();
     }
-    
+
+    /**
+     * Detect if the Secret Key's Private Key is empty or not
+     *
+     * @return boolean whether or not the private key is empty
+     */
+    public boolean isPrivateKeyEmpty()
+    {
+        byte[] secKeyData = secret.getSecretKeyData();
+
+        return (secKeyData == null || secKeyData.length < 1);
+    }
+
     /**
      * return the algorithm the key is encrypted with.
      *
@@ -491,8 +503,11 @@ public class PGPSecretKey
                     }
 
                     //
-                    // verify checksum
+                    // verify and copy checksum
                     //
+
+                    data[pos] = encData[pos];
+                    data[pos + 1] = encData[pos + 1];
 
                     int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
                     int calcCs = 0;
@@ -573,8 +588,7 @@ public class PGPSecretKey
         PBESecretKeyDecryptor decryptorFactory)
         throws PGPException
     {
-        byte[] secKeyData = secret.getSecretKeyData();
-        if (secKeyData == null || secKeyData.length < 1)
+        if (isPrivateKeyEmpty())
         {
             return null;
         }
@@ -759,8 +773,8 @@ public class PGPSecretKey
      * password and the passed in algorithm.
      *
      * @param key the PGPSecretKey to be copied.
-     * @param oldKeyDecryptor the current password for key.
-     * @param newKeyEncryptor the encryptor for encrypting the secret key material.
+     * @param oldKeyDecryptor the current decryptor based on the current password for key.
+     * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
      */
     public static PGPSecretKey copyWithNewPassword(
         PGPSecretKey           key,
@@ -768,7 +782,12 @@ public class PGPSecretKey
         PBESecretKeyEncryptor  newKeyEncryptor)
         throws PGPException
     {
-        byte[]   rawKeyData = key.extractKeyData(oldKeyDecryptor);
+        if (key.isPrivateKeyEmpty())
+        {
+            throw new PGPException("no private key in this SecretKey - public key present only.");
+        }
+
+        byte[]     rawKeyData = key.extractKeyData(oldKeyDecryptor);
         int        s2kUsage = key.secret.getS2KUsage();
         byte[]      iv = null;
         S2K         s2k = null;
@@ -796,13 +815,67 @@ public class PGPSecretKey
         }
         else
         {
-            keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+            if (key.secret.getPublicKeyPacket().getVersion() < 4)
+            {
+                // Version 2 or 3 - RSA Keys only
 
-            iv = newKeyEncryptor.getCipherIV();
+                byte[] encKey = newKeyEncryptor.getKey();
+                keyData = new byte[rawKeyData.length];
 
-            s2k = newKeyEncryptor.getS2K();
+                if (newKeyEncryptor.getS2K() != null)
+                {
+                    throw new PGPException("MD5 Digest Calculator required for version 3 key encryptor.");
+                }
 
-            newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+                //
+                // process 4 numbers
+                //
+                int pos = 0;
+                for (int i = 0; i != 4; i++)
+                {
+                    int encLen = (((rawKeyData[pos] << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
+
+                    keyData[pos] = rawKeyData[pos];
+                    keyData[pos + 1] = rawKeyData[pos + 1];
+
+                    byte[] tmp;
+                    if (i == 0)
+                    {
+                        tmp = newKeyEncryptor.encryptKeyData(encKey, rawKeyData, pos + 2, encLen);
+                        iv = newKeyEncryptor.getCipherIV();
+
+                    }
+                    else
+                    {
+                        byte[] tmpIv = new byte[iv.length];
+
+                        System.arraycopy(keyData, pos - iv.length, tmpIv, 0, tmpIv.length);
+                        tmp = newKeyEncryptor.encryptKeyData(encKey, tmpIv, rawKeyData, pos + 2, encLen);
+                    }
+
+                    System.arraycopy(tmp, 0, keyData, pos + 2, tmp.length);
+                    pos += 2 + encLen;
+                }
+
+                //
+                // copy in checksum.
+                //
+                keyData[pos] = rawKeyData[pos];
+                keyData[pos + 1] = rawKeyData[pos + 1];
+
+                s2k = newKeyEncryptor.getS2K();
+                newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+            }
+            else
+            {
+                keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+
+                iv = newKeyEncryptor.getCipherIV();
+
+                s2k = newKeyEncryptor.getS2K();
+
+                newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+            }
         }
 
         SecretKeyPacket             secret;
@@ -819,6 +892,7 @@ public class PGPSecretKey
 
         return new PGPSecretKey(secret, key.pub);
     }
+
     /**
      * Return a copy of the passed in secret key, encrypted using a new
      * password and the passed in algorithm.

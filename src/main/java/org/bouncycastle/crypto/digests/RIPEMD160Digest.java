@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.util.Memoable;
+
 /**
  * implementation of RIPEMD see,
  * http://www.esat.kuleuven.ac.be/~bosselae/ripemd160.html
@@ -30,6 +32,13 @@ public class RIPEMD160Digest
     public RIPEMD160Digest(RIPEMD160Digest t)
     {
         super(t);
+
+        copyIn(t);
+    }
+
+    private void copyIn(RIPEMD160Digest t)
+    {
+        super.copyIn(t);
 
         H0 = t.H0;
         H1 = t.H1;
@@ -418,5 +427,17 @@ public class RIPEMD160Digest
         {
             X[i] = 0;
         }
+    }
+
+    public Memoable copy()
+    {
+        return new RIPEMD160Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        RIPEMD160Digest d = (RIPEMD160Digest)other;
+
+        copyIn(d);
     }
 }

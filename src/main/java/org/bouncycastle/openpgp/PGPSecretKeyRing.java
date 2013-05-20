@@ -20,6 +20,8 @@ import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SecretSubkeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
 /**
@@ -312,6 +314,7 @@ public class PGPSecretKeyRing
      * @param newEncAlgorithm the algorithm to be used for the encryption.
      * @param rand source of randomness.
      * @param provider name of the provider to use
+     * @deprecated  use version taking PBESecretKeyEncryptor/PBESecretKeyDecryptor
      */
     public static PGPSecretKeyRing copyWithNewPassword(
         PGPSecretKeyRing ring,
@@ -335,6 +338,7 @@ public class PGPSecretKeyRing
      * @param newEncAlgorithm the algorithm to be used for the encryption.
      * @param rand source of randomness.
      * @param provider provider to use
+     * @deprecated  use version taking PBESecretKeyEncryptor/PBESecretKeyDecryptor
      */
     public static PGPSecretKeyRing copyWithNewPassword(
         PGPSecretKeyRing ring,
@@ -350,6 +354,40 @@ public class PGPSecretKeyRing
         for (Iterator keys = ring.getSecretKeys(); keys.hasNext();)
         {
             newKeys.add(PGPSecretKey.copyWithNewPassword((PGPSecretKey)keys.next(), oldPassPhrase, newPassPhrase, newEncAlgorithm, rand, provider));
+        }
+
+        return new PGPSecretKeyRing(newKeys, ring.extraPubKeys);
+    }
+
+    /**
+     * Return a copy of the passed in secret key ring, with the private keys (where present) associated with the master key and sub keys
+     * are encrypted using a new password and the passed in algorithm.
+     *
+     * @param ring the PGPSecretKeyRing to be copied.
+     * @param oldKeyDecryptor the current decryptor based on the current password for key.
+     * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
+     * @return the updated key ring.
+     */
+    public static PGPSecretKeyRing copyWithNewPassword(
+        PGPSecretKeyRing       ring,
+        PBESecretKeyDecryptor  oldKeyDecryptor,
+        PBESecretKeyEncryptor  newKeyEncryptor)
+        throws PGPException
+    {
+        List newKeys = new ArrayList(ring.keys.size());
+
+        for (Iterator keys = ring.getSecretKeys(); keys.hasNext();)
+        {
+            PGPSecretKey key = (PGPSecretKey)keys.next();
+
+            if (key.isPrivateKeyEmpty())
+            {
+                newKeys.add(key);
+            }
+            else
+            {
+                newKeys.add(PGPSecretKey.copyWithNewPassword(key, oldKeyDecryptor, newKeyEncryptor));
+            }
         }
 
         return new PGPSecretKeyRing(newKeys, ring.extraPubKeys);

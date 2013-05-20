@@ -43,6 +43,11 @@ public class BasicEntropySourceProvider
             {
                 return _sr.generateSeed((bitsRequired + 7) / 8);
             }
+
+            public int entropySize()
+            {
+                return bitsRequired;
+            }
         };
     }
 }

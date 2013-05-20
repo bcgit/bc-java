@@ -11,6 +11,8 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -25,8 +27,10 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1095,6 +1099,48 @@ public class PGPKeyRingTest
         "iYW7+SWY76AAl+gmWIMm2jbN8bZXFk4jmIxpycHCrtoXX8rUk/0+se8NvbmAdMGK" +
         "POOoD7oxdRmJSU5hSspOCHrCwCa3");
 
+
+    // Key from http://www.angelfire.com/pr/pgpf/pgpoddities.html
+    private static final char[] v3KeyPass = "test@key.test".toCharArray();
+
+    private static final byte[] pubv3 = Base64.decode(
+        "mQENAzroPPgAAAEIANnTx/gHfag7qRMG6cVUnYZJjLcsdF6JSaVs+PUDCZ8l2+Z2" +
+        "V9tgxByp26bymIlq5qFFeoA5vCiKc8qzYiEVLJVVIIDjw/id2gq/TgmxoLAwiDQM" +
+        "TUKdCFa6pmR/uaxyrnJxfUA7+Qh0R0OjoCxNlrmyO3eiKstsJGqSUFIQq7GhcHc4" +
+        "nbV59zHhEWnH7DX7sDa9CgF11WxM3sjWp15iOoP1nixhmchDtQ7foUxLsCF36G/4" +
+        "ijcbN2NjiCDYMFburN8fXgrQzYHAIIiVFE0J+fbXNfPRmnbhQdaC8rIdiQ3tExBb" +
+        "N0qWhGPT9M4JOZd1yPdFMb9gbntd8VZkiPd6/3sABRG0FHRlc3QgPHRlc3RAa2V5" +
+        "LnRlc3Q+iQEVAwUQOug8+PFWZIj3ev97AQH7NQgAo3sH+KcsPtAbyp5U02J9h3Ro" +
+        "aiKpAYxg3rfUVo/RH6hmCWT/AlPHLPZZC/tKiPkuIm2V3Xqyum530N0sBYxNzgNp" +
+        "us8mK9QurYj2omKzf1ltN+uNHR8vjB8s7jEd/CDCARu81PqNoVq2b9JRFGpGbAde" +
+        "7kQ/a0r2/IsJ8fz0iSpCH0geoHt3sBk9MyEem4uG0e2NzlH2wBz4H8l8BNHRHBq0" +
+        "6tGH4h11ZhH3FiNzJWibT2AvzLCqar2qK+6pohKSvIp8zEP7Y/iQzCvkuOfHsUOH" +
+        "4Utgg85k09hRDZ3pRRL/4R+Z+/1uXb+n6yKbOmpmi7U7wc9IwZxtTlGXsNIf+Q=="
+    );
+
+    private static final byte[] privv3 = Base64.decode(
+        "lQOgAzroPPgAAAEIANnTx/gHfag7qRMG6cVUnYZJjLcsdF6JSaVs+PUDCZ8l2+Z2" +
+        "V9tgxByp26bymIlq5qFFeoA5vCiKc8qzYiEVLJVVIIDjw/id2gq/TgmxoLAwiDQM" +
+        "TUKdCFa6pmR/uaxyrnJxfUA7+Qh0R0OjoCxNlrmyO3eiKstsJGqSUFIQq7GhcHc4" +
+        "nbV59zHhEWnH7DX7sDa9CgF11WxM3sjWp15iOoP1nixhmchDtQ7foUxLsCF36G/4" +
+        "ijcbN2NjiCDYMFburN8fXgrQzYHAIIiVFE0J+fbXNfPRmnbhQdaC8rIdiQ3tExBb" +
+        "N0qWhGPT9M4JOZd1yPdFMb9gbntd8VZkiPd6/3sABREDXB5zk3GNdSkH/+/447Kq" +
+        "hR9uM+UnZz7wDkzmt+7xbNg9F2pr/tghVCM7D0PO1YjH4DBpU1ZRO+v1t/eBB/Jd" +
+        "3lJYdlWYHOefJkBi44gNAafZ8ysPOJk6OGOjas/sr+JRFiX9Mgzrs2IDiejmuA98" +
+        "DLuSuNtzFKbE2/DDdOBEizYUjqPLlCdn5sVEt+0WKWJiAv7YonCGguWS3RKfTaYk" +
+        "9IE9SbI+qph9JsuyTD22GLv+gTMvwCkC1DVaHIVgzURpdnlyYyz4DBh3pAgg0nh6" +
+        "gpUTsjnUmrvdh+r8qj3oXH7WBMhs6qKYvU1Go5iV3S1Cu4H/Z/+s6XUFgQShevVe" +
+        "VCy0QtmWSFeySekEACHLJIdBDa8K4dcM2wvccz587D4PtKvMG5j71raOcgVY+r1k" +
+        "e6au/fa0ACqLNvn6+vFHG+Rurn8RSKV31YmTpx7J5ixTOsB+wVcwTYbrw8uNlBWc" +
+        "+IkqPwHrtdK95GIYQykfPW95PRudsOBdxwQW4Ax/WCst3fbjo0SZww0Os+3WBADJ" +
+        "/Nv0mjikXRmqJIzfuI2yxxX4Wm6vqXJkPF7LGtSMB3VEJ3qPsysoai5TYboxA8C1" +
+        "4rQjIoQjA+87gxZ44PUVxrxBonITCLXJ3GsvDQ2PNhS6WQ9Cf89vtYW1vLW65Nex" +
+        "+7AuVRepKhx6Heqdf7S03m6UYliIglrEzgEWM1XrOwP/gLMsme4h0LjLgKfd0LBk" +
+        "qSMdu21VSl60TMTjxav149AdutzuCVa/yPBM/zLQdlvQoGYg2IbN4+7gDHKURcSx" +
+        "DgOAzCcEZxdMvRk2kaOI5RRf5gV9e+ErvEMzJ/xT8xWsi+aLOhaDMbwq2LLiK2L+" +
+        "tXV/Z3H/Ot4u3E7H+6fHPElFYbQUdGVzdCA8dGVzdEBrZXkudGVzdD4="
+    );
+
     public void test1()
         throws Exception
     {
@@ -1220,7 +1266,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1380,7 +1426,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1501,7 +1547,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1547,7 +1593,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1653,7 +1699,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1830,7 +1876,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1876,7 +1922,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1907,7 +1953,7 @@ public class PGPKeyRingTest
     public void test10()
         throws Exception
     { 
-        PGPSecretKeyRing    secretRing = new PGPSecretKeyRing(sec10);
+        PGPSecretKeyRing    secretRing = new PGPSecretKeyRing(sec10, new JcaKeyFingerprintCalculator());
         Iterator            secretKeys = secretRing.getSecretKeys();
         
         while (secretKeys.hasNext())
@@ -2182,11 +2228,74 @@ public class PGPKeyRingTest
     private void rewrapTest()
         throws Exception
     {
-        SecureRandom rand = new SecureRandom();
-
         // Read the secret key rings
         PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
                                                          new ByteArrayInputStream(rewrapKey)); 
+        char[] newPass = "fred".toCharArray();
+
+        Iterator rIt = privRings.getKeyRings();
+
+        if (rIt.hasNext())
+        {
+            PGPSecretKeyRing pgpPriv= (PGPSecretKeyRing)rIt.next();
+
+            Iterator it = pgpPriv.getSecretKeys();
+
+            while (it.hasNext())
+            {
+                PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
+
+                // re-encrypt the key with an empty password
+                pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                                    pgpKey,
+                                    new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(rewrapPass),
+                                    null);
+                pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
+            
+                // this should succeed
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(null);
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
+            }
+
+            it = pgpPriv.getSecretKeys();
+
+            while (it.hasNext())
+            {
+                PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
+
+                // re-encrypt the key with an empty password
+                pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                                    pgpKey,
+                                    null,
+                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").build(newPass));
+                pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
+
+                // this should succeed
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
+            }
+        }
+    }
+
+    private void rewrapTestV3()
+        throws Exception
+    {
+        // Read the secret key rings
+        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+                                                         new ByteArrayInputStream(privv3));
+        char[] newPass = "fred".toCharArray();
 
         Iterator rIt = privRings.getKeyRings();
 
@@ -2199,17 +2308,48 @@ public class PGPKeyRingTest
             while (it.hasNext())
             {
                 PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
+
+                // re-encrypt the key with an empty password
+                pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
+
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                    pgpKey,
+                    new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(v3KeyPass),
+                    null);
+                pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
+
+                // this should succeed
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(null);
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
+            }
+
+            it = pgpPriv.getSecretKeys();
+
+            while (it.hasNext())
+            {
+                PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
 
                 // re-encrypt the key with an empty password
                 pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
                 pgpKey = PGPSecretKey.copyWithNewPassword(
                                     pgpKey,
-                                    new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(rewrapPass),
-                                    null);
+                                    null,
+                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5, new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.MD5)).setProvider("BC").build(newPass));
                 pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
-            
+
                 // this should succeed
-                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(null);
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
             }
         }
     }
@@ -2367,6 +2507,7 @@ public class PGPKeyRingTest
             generateTest();
             generateSha1Test();
             rewrapTest();
+            rewrapTestV3();
             testPublicKeyRingWithX509();
             testSecretKeyRingWithPersonalCertificate();
             insertMasterTest();

@@ -1,18 +1,15 @@
-package org.bouncycastle.crypto.random;
+package org.bouncycastle.crypto.prng;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.prng.BasicEntropySourceProvider;
-import org.bouncycastle.crypto.prng.CTRSP800DRBG;
-import org.bouncycastle.crypto.prng.DualECSP800DRBG;
-import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.EntropySourceProvider;
-import org.bouncycastle.crypto.prng.HMacSP800DRBG;
-import org.bouncycastle.crypto.prng.HashSP800DRBG;
-import org.bouncycastle.crypto.prng.SP80090DRBG;
+import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.DualECSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.HMacSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
 
 /**
  * Builder class for making SecureRandom objects based on SP 800-90A Deterministic Random Bit Generators (DRBG).
@@ -31,7 +28,7 @@ public class SP800SecureRandomBuilder
      * predictionResistant set to false.
      * <p>
      * Any SecureRandom created from a builder constructed like this will make use of input passed to SecureRandom.setSeed() if
-     * the passed in SecureRandom does.
+     * the default SecureRandom does for its generateSeed() call.
      * </p>
      */
     public SP800SecureRandomBuilder()
@@ -44,7 +41,7 @@ public class SP800SecureRandomBuilder
      * for prediction resistance.
      * <p>
      * Any SecureRandom created from a builder constructed like this will make use of input passed to SecureRandom.setSeed() if
-     * the passed in SecureRandom does.
+     * the passed in SecureRandom does for its generateSeed() call.
      * </p>
      * @param entropySource
      * @param predictionResistant
@@ -177,7 +174,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HashSP800DRBG(digest, entropySource, nonce, personalizationString, securityStrength);
+            return new HashSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -199,7 +196,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new DualECSP800DRBG(digest, entropySource, nonce, personalizationString, securityStrength);
+            return new DualECSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -221,7 +218,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new HMacSP800DRBG(hMac, entropySource, nonce, personalizationString, securityStrength);
+            return new HMacSP800DRBG(hMac, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
@@ -246,7 +243,7 @@ public class SP800SecureRandomBuilder
 
         public SP80090DRBG get(EntropySource entropySource)
         {
-            return new CTRSP800DRBG(blockCipher, keySizeInBits, entropySource, nonce, personalizationString, securityStrength);
+            return new CTRSP800DRBG(blockCipher, keySizeInBits, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 }

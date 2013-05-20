@@ -13,15 +13,17 @@ import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.CamelliaWrapEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
+import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class Camellia
@@ -69,6 +71,15 @@ public final class Camellia
         public RFC3211Wrap()
         {
             super(new RFC3211WrapEngine(new CamelliaEngine()), 16);
+        }
+    }
+
+    public static class GMAC
+        extends BaseMac
+    {
+        public GMAC()
+        {
+            super(new GMac(new GCMBlockCipher(new CamelliaEngine())));
         }
     }
 
@@ -161,7 +172,7 @@ public final class Camellia
     }
 
     public static class Mappings
-        extends AlgorithmProvider
+        extends SymmetricAlgorithmProvider
     {
         private static final String PREFIX = Camellia.class.getName();
 
@@ -201,6 +212,7 @@ public final class Camellia
             provider.addAlgorithm("KeyGenerator." + NTTObjectIdentifiers.id_camellia192_cbc, PREFIX + "$KeyGen192");
             provider.addAlgorithm("KeyGenerator." + NTTObjectIdentifiers.id_camellia256_cbc, PREFIX + "$KeyGen256");
 
+            addGMacAlgorithm(provider, "CAMELLIA", PREFIX + "$GMAC", PREFIX + "$KeyGen");
         }
     }
 }

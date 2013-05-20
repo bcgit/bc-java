@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.Memoable;
 
 /**
  * implementation of Tiger based on:
@@ -8,7 +9,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
  *  http://www.cs.technion.ac.il/~biham/Reports/Tiger</a>
  */
 public class TigerDigest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int BYTE_LENGTH = 64;
     
@@ -570,17 +571,7 @@ public class TigerDigest
      */
     public TigerDigest(TigerDigest t)
     {
-        a = t.a;
-        b = t.b;
-        c = t.c;
-
-        System.arraycopy(t.x, 0, x, 0, t.x.length);
-        xOff = t.xOff;
-
-        System.arraycopy(t.buf, 0, buf, 0, t.buf.length);
-        bOff = t.bOff;
-
-        byteCount = t.byteCount;
+        this.reset(t);
     }
 
     public String getAlgorithmName()
@@ -862,5 +853,27 @@ public class TigerDigest
     public int getByteLength()
     {
         return BYTE_LENGTH;
+    }
+
+    public Memoable copy()
+    {
+        return new TigerDigest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        TigerDigest t = (TigerDigest)other;
+
+        a = t.a;
+        b = t.b;
+        c = t.c;
+
+        System.arraycopy(t.x, 0, x, 0, t.x.length);
+        xOff = t.xOff;
+
+        System.arraycopy(t.buf, 0, buf, 0, t.buf.length);
+        bOff = t.bOff;
+
+        byteCount = t.byteCount;
     }
 }

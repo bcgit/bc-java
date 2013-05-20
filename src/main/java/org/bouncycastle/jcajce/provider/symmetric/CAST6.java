@@ -2,10 +2,12 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.CAST6Engine;
+import org.bouncycastle.crypto.macs.GMac;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
-import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 
 public final class CAST6
 {
@@ -31,8 +33,17 @@ public final class CAST6
         }
     }
 
+    public static class GMAC
+        extends BaseMac
+    {
+        public GMAC()
+        {
+            super(new GMac(new GCMBlockCipher(new CAST6Engine())));
+        }
+    }
+
     public static class Mappings
-        extends AlgorithmProvider
+        extends SymmetricAlgorithmProvider
     {
         private static final String PREFIX = CAST6.class.getName();
 
@@ -44,6 +55,8 @@ public final class CAST6
         {
             provider.addAlgorithm("Cipher.CAST6", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.CAST6", PREFIX + "$KeyGen");
+
+            addGMacAlgorithm(provider, "CAST6", PREFIX + "$GMAC", PREFIX + "$KeyGen");
         }
     }
 }

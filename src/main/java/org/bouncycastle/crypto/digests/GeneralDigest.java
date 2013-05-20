@@ -1,13 +1,14 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.Memoable;
 
 /**
  * base implementation of MD4 family style digest as outlined in
  * "Handbook of Applied Cryptography", pages 344 - 347.
  */
 public abstract class GeneralDigest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int BYTE_LENGTH = 64;
     private byte[]  xBuf;
@@ -32,6 +33,12 @@ public abstract class GeneralDigest
     protected GeneralDigest(GeneralDigest t)
     {
         xBuf = new byte[t.xBuf.length];
+
+        copyIn(t);
+    }
+
+    protected void copyIn(GeneralDigest t)
+    {
         System.arraycopy(t.xBuf, 0, xBuf, 0, t.xBuf.length);
 
         xBufOff = t.xBufOff;

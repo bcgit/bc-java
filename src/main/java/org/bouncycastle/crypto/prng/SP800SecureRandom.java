@@ -1,9 +1,8 @@
-package org.bouncycastle.crypto.random;
+package org.bouncycastle.crypto.prng;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.prng.EntropySource;
-import org.bouncycastle.crypto.prng.SP80090DRBG;
+import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
 
 public class SP800SecureRandom
     extends SecureRandom
@@ -55,7 +54,12 @@ public class SP800SecureRandom
                 drbg = drbgProvider.get(entropySource);
             }
 
-            drbg.generate(bytes, null, predictionResistant);
+            // check if a reseed is required...
+            if (drbg.generate(bytes, null, predictionResistant) < 0)
+            {
+                drbg.reseed(entropySource.getEntropy());
+                drbg.generate(bytes, null, predictionResistant);
+            }
         }
     }
 

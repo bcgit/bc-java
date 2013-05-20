@@ -1,22 +1,23 @@
 package org.bouncycastle.crypto.generators;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.DSAParameterGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
-// TODO Update javadoc to mention FIPS 186-3 when done
 /**
- * generate suitable parameters for DSA, in line with FIPS 186-2.
+ * Generate suitable parameters for DSA, in line with FIPS 186-2, or FIPS 186-3.
  */
 public class DSAParametersGenerator
 {
+    private Digest          digest;
     private int             L, N;
     private int             certainty;
     private SecureRandom    random;
@@ -24,6 +25,19 @@ public class DSAParametersGenerator
     private static final BigInteger ZERO = BigInteger.valueOf(0);
     private static final BigInteger ONE = BigInteger.valueOf(1);
     private static final BigInteger TWO = BigInteger.valueOf(2);
+
+    private boolean use186_3;
+    private int usageIndex;
+
+    public DSAParametersGenerator()
+    {
+        this(new SHA1Digest());
+    }
+
+    public DSAParametersGenerator(Digest digest)
+    {
+        this.digest = digest;
+    }
 
     /**
      * initialise the key generator.
@@ -37,23 +51,53 @@ public class DSAParametersGenerator
         int             certainty,
         SecureRandom    random)
     {
-        init(size, getDefaultN(size), certainty, random);
-    }
-
-    // TODO Make public to enable support for DSA keys > 1024 bits
-    private void init(
-        int             L,
-        int             N,
-        int             certainty,
-        SecureRandom    random)
-    {
-        // TODO Check that the (L, N) pair is in the list of acceptable (L, N pairs) (see Section 4.2)
-        // TODO Should we enforce the minimum 'certainty' values as per C.3 Table C.1?
-
-        this.L = L;
-        this.N = N;
+        this.use186_3 = false;
+        this.L = size;
+        this.N = getDefaultN(size);
         this.certainty = certainty;
         this.random = random;
+    }
+
+    /**
+     * Initialise the key generator for DSA 2.
+     * <p>
+     *     Use this init method if you need to generate parameters for DSA 2 keys.
+     * </p>
+     *
+     * @param params  DSA 2 key generation parameters.
+     */
+    public void init(
+        DSAParameterGenerationParameters params)
+    {
+        // TODO Should we enforce the minimum 'certainty' values as per C.3 Table C.1?
+        this.use186_3 = true;
+        this.L = params.getL();
+        this.N = params.getN();
+        this.certainty = params.getCertainty();
+        this.random = params.getRandom();
+        this.usageIndex = params.getUsageIndex();
+
+        if ((L < 1024 || L > 3072) || L % 1024 != 0)
+        {
+            throw new IllegalArgumentException("L values must be between 1024 and 3072 and a multiple of 1024");
+        }
+        else if (L == 1024 && N != 160)
+        {
+            throw new IllegalArgumentException("N must be 160 for L = 1024");
+        }
+        else if (L == 2048 && (N != 224 && N != 256))
+        {
+            throw new IllegalArgumentException("N must be 224 or 256 for L = 2048");
+        }
+        else if (L == 3072 && N != 256)
+        {
+            throw new IllegalArgumentException("N must be 256 for L = 3072");
+        }
+
+        if (digest.getDigestSize() * 8 < N)
+        {
+            throw new IllegalStateException("Digest output size too small for value of N");
+        }
     }
 
     /**
@@ -64,7 +108,7 @@ public class DSAParametersGenerator
      */
     public DSAParameters generateParameters()
     {
-        return L > 1024
+        return (use186_3)
             ? generateParameters_FIPS186_3()
             : generateParameters_FIPS186_2();
     }
@@ -75,18 +119,22 @@ public class DSAParametersGenerator
         byte[]          part1 = new byte[20];
         byte[]          part2 = new byte[20];
         byte[]          u = new byte[20];
-        SHA1Digest      sha1 = new SHA1Digest();
         int             n = (L - 1) / 160;
         byte[]          w = new byte[L / 8];
+
+        if (!(digest instanceof SHA1Digest))
+        {
+            throw new IllegalStateException("can only use SHA-1 for generating FIPS 186-2 parameters");
+        }
 
         for (;;)
         {
             random.nextBytes(seed);
 
-            hash(sha1, seed, part1);
+            hash(digest, seed, part1);
             System.arraycopy(seed, 0, part2, 0, seed.length);
             inc(part2);
-            hash(sha1, part2, part2);
+            hash(digest, part2, part2);
 
             for (int i = 0; i != u.length; i++)
             {
@@ -111,12 +159,12 @@ public class DSAParametersGenerator
                 for (int k = 0; k < n; k++)
                 {
                     inc(offset);
-                    hash(sha1, offset, part1);
+                    hash(digest, offset, part1);
                     System.arraycopy(part1, 0, w, w.length - (k + 1) * part1.length, part1.length);
                 }
 
                 inc(offset);
-                hash(sha1, offset, part1);
+                hash(digest, offset, part1);
                 System.arraycopy(part1, part1.length - ((w.length - (n) * part1.length)), w, 0, w.length - n * part1.length);
 
                 w[0] |= (byte)0x80;
@@ -166,7 +214,7 @@ public class DSAParametersGenerator
     {
 // A.1.1.2 Generation of the Probable Primes p and q Using an Approved Hash Function
         // FIXME This should be configurable (digest size in bits must be >= N)
-        Digest d = new SHA256Digest();
+        Digest d = digest;
         int outlen = d.getDigestSize() * 8;
 
 // 1. Check that the (L, N) pair is in the list of acceptable (L, N pairs) (see Section 4.2). If
@@ -192,6 +240,7 @@ public class DSAParametersGenerator
 
 // 6. U = Hash (domain_parameter_seed) mod 2^(N–1).
             hash(d, seed, output);
+
             BigInteger U = new BigInteger(1, output).mod(ONE.shiftLeft(N - 1));
 
 // 7. q = 2^(N–1) + U + 1 – ( U mod 2).
@@ -253,16 +302,17 @@ public class DSAParametersGenerator
                 {
 // 11.8 If p is determined to be prime, then return VALID and the values of p, q and
 //      (optionally) the values of domain_parameter_seed and counter.
-                    // TODO Make configurable (8-bit unsigned)?
-//                    int index = 1;
-//                    BigInteger g = calculateGenerator_FIPS186_3_Verifiable(d, p, q, seed, index);
-//                    if (g != null)
-//                    {
-//                        // TODO Should 'index' be a part of the validation parameters?
-//                        return new DSAParameters(p, q, g, new DSAValidationParameters(seed, counter));
-//                    }
+                    if (usageIndex >= 0)
+                    {
+                        BigInteger g = calculateGenerator_FIPS186_3_Verifiable(d, p, q, seed, usageIndex);
+                        if (g != null)
+                        {
+                           return new DSAParameters(p, q, g, new DSAValidationParameters(seed, counter, usageIndex));
+                        }
+                    }
 
                     BigInteger g = calculateGenerator_FIPS186_3_Unverifiable(p, q, random);
+
                     return new DSAParameters(p, q, g, new DSAValidationParameters(seed, counter));
                 }
 
@@ -281,34 +331,34 @@ public class DSAParametersGenerator
         return calculateGenerator_FIPS186_2(p, q, r);
     }
 
-//    private static BigInteger calculateGenerator_FIPS186_3_Verifiable(Digest d, BigInteger p, BigInteger q,
-//        byte[] seed, int index)
-//    {
-//// A.2.3 Verifiable Canonical Generation of the Generator g
-//        BigInteger e = p.subtract(ONE).divide(q);
-//        byte[] ggen = Hex.decode("6767656E");
-//
-//        // 7. U = domain_parameter_seed || "ggen" || index || count.
-//        byte[] U = new byte[seed.length + ggen.length + 1 + 2];
-//        System.arraycopy(seed, 0, U, 0, seed.length);
-//        System.arraycopy(ggen, 0, U, seed.length, ggen.length);
-//        U[U.length - 3] = (byte)index; 
-//
-//        byte[] w = new byte[d.getDigestSize()];
-//        for (int count = 1; count < (1 << 16); ++count)
-//        {
-//            inc(U);
-//            hash(d, U, w);
-//            BigInteger W = new BigInteger(1, w);
-//            BigInteger g = W.modPow(e, p);
-//            if (g.compareTo(TWO) >= 0)
-//            {
-//                return g;
-//            }
-//        }
-//
-//        return null;
-//    }
+    private static BigInteger calculateGenerator_FIPS186_3_Verifiable(Digest d, BigInteger p, BigInteger q,
+        byte[] seed, int index)
+    {
+// A.2.3 Verifiable Canonical Generation of the Generator g
+        BigInteger e = p.subtract(ONE).divide(q);
+        byte[] ggen = Hex.decode("6767656E");
+
+        // 7. U = domain_parameter_seed || "ggen" || index || count.
+        byte[] U = new byte[seed.length + ggen.length + 1 + 2];
+        System.arraycopy(seed, 0, U, 0, seed.length);
+        System.arraycopy(ggen, 0, U, seed.length, ggen.length);
+        U[U.length - 3] = (byte)index;
+
+        byte[] w = new byte[d.getDigestSize()];
+        for (int count = 1; count < (1 << 16); ++count)
+        {
+            inc(U);
+            hash(d, U, w);
+            BigInteger W = new BigInteger(1, w);
+            BigInteger g = W.modPow(e, p);
+            if (g.compareTo(TWO) >= 0)
+            {
+                return g;
+            }
+        }
+
+        return null;
+    }
 
     private static void hash(Digest d, byte[] input, byte[] output)
     {

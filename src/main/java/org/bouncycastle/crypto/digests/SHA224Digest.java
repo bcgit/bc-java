@@ -1,8 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 
-import org.bouncycastle.crypto.digests.GeneralDigest;
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.util.Memoable;
 
 
 /**
@@ -41,6 +41,13 @@ public class SHA224Digest
     public SHA224Digest(SHA224Digest t)
     {
         super(t);
+
+        doCopy(t);
+    }
+
+    private void doCopy(SHA224Digest t)
+    {
+        super.copyIn(t);
 
         H1 = t.H1;
         H2 = t.H2;
@@ -288,5 +295,17 @@ public class SHA224Digest
         0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     };
+
+    public Memoable copy()
+    {
+        return new SHA224Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        SHA224Digest d = (SHA224Digest)other;
+
+        doCopy(d);
+    }
 }
 

@@ -550,8 +550,8 @@ public class PGPRSATest
     private void embeddedJpegTest()
         throws Exception
     {
-        PGPPublicKeyRing pgpPub = new PGPPublicKeyRing(testPubKey);
-        PGPSecretKeyRing pgpSec = new PGPSecretKeyRing(testPrivKey);
+        PGPPublicKeyRing pgpPub = new PGPPublicKeyRing(testPubKey, new JcaKeyFingerprintCalculator());
+        PGPSecretKeyRing pgpSec = new PGPSecretKeyRing(testPrivKey, new JcaKeyFingerprintCalculator());
 
         PGPPublicKey pubKey = pgpPub.getPublicKey();
 
@@ -887,7 +887,7 @@ public class PGPRSATest
 
         if (!noIDEA())
         {
-            PGPSecretKeyRing        pgpPriv = new PGPSecretKeyRing(testPrivKeyV3);
+            PGPSecretKeyRing        pgpPriv = new PGPSecretKeyRing(testPrivKeyV3, new JcaKeyFingerprintCalculator());
             PGPPrivateKey           pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(passP, "BC");
 
             //
@@ -907,7 +907,7 @@ public class PGPRSATest
         //
         // Read the private key
         //
-        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(testPrivKey);
+        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(testPrivKey, new JcaKeyFingerprintCalculator());
         PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(pass, "BC");
         
         //
@@ -979,7 +979,7 @@ public class PGPRSATest
         //
         // encrypted message - read subkey
         //
-        pgpPriv = new PGPSecretKeyRing(subKey);
+        pgpPriv = new PGPSecretKeyRing(subKey, new JcaKeyFingerprintCalculator());
 
         //
         // encrypted message

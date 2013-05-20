@@ -2,12 +2,13 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.util.Memoable;
 
 /**
  * Base class for SHA-384 and SHA-512.
  */
 public abstract class LongDigest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
     private static final int BYTE_LENGTH = 128;
     
@@ -41,6 +42,12 @@ public abstract class LongDigest
     protected LongDigest(LongDigest t)
     {
         xBuf = new byte[t.xBuf.length];
+
+        copyIn(t);
+    }
+
+    protected void copyIn(LongDigest t)
+    {
         System.arraycopy(t.xBuf, 0, xBuf, 0, t.xBuf.length);
 
         xBufOff = t.xBufOff;

@@ -23,7 +23,8 @@ public class RegressionTest
         new PGPArmoredTest(),
         new PGPSignatureTest(),
         new PGPClearSignedSignatureTest(),
-        new PGPCompressionTest()
+        new PGPCompressionTest(),
+        new PGPNoPrivateKeyTest()
     };
 
     public static void main(

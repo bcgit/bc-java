@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.util.Memoable;
+
 /**
  * implementation of RIPEMD256.
  * <p>
@@ -31,6 +33,13 @@ public class RIPEMD256Digest
     public RIPEMD256Digest(RIPEMD256Digest t)
     {
         super(t);
+
+        copyIn(t);
+    }
+
+    private void copyIn(RIPEMD256Digest t)
+    {
+        super.copyIn(t);
 
         H0 = t.H0;
         H1 = t.H1;
@@ -472,5 +481,17 @@ public class RIPEMD256Digest
         {
             X[i] = 0;
         }
+    }
+
+    public Memoable copy()
+    {
+        return new RIPEMD256Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        RIPEMD256Digest d = (RIPEMD256Digest)other;
+
+        copyIn(d);
     }
 }
