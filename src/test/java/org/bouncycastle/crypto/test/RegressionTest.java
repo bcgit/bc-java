@@ -96,6 +96,7 @@ public class RegressionTest
         new CMacTest(),
         new EAXTest(),
         new GCMTest(),
+        new GMacTest(),
         new HCFamilyTest(),
         new HCFamilyVecTest(),
         new ISAACTest(),

@@ -9,12 +9,14 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.NoekeonEngine;
+import org.bouncycastle.crypto.macs.GMac;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class Noekeon
@@ -38,6 +40,15 @@ public final class Noekeon
         public KeyGen()
         {
             super("Noekeon", 128, new CipherKeyGenerator());
+        }
+    }
+
+    public static class GMAC
+        extends BaseMac
+    {
+        public GMAC()
+        {
+            super(new GMac(new GCMBlockCipher(new NoekeonEngine())));
         }
     }
 
@@ -89,7 +100,7 @@ public final class Noekeon
     }
 
     public static class Mappings
-        extends AlgorithmProvider
+        extends SymmetricAlgorithmProvider
     {
         private static final String PREFIX = Noekeon.class.getName();
 
@@ -108,6 +119,7 @@ public final class Noekeon
 
             provider.addAlgorithm("KeyGenerator.NOEKEON", PREFIX + "$KeyGen");
 
+            addGMacAlgorithm(provider, "NOEKEON", PREFIX + "$GMAC", PREFIX + "$KeyGen");
         }
     }
 }
