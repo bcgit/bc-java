@@ -105,7 +105,8 @@ public class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         byte[] sigBytes = serverCredentials.generateCertificateSignature(hash);
         /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended from TLS 1.2
+         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
+         * from TLS 1.2
          */
         TlsUtils.writeOpaque16(sigBytes, buf);
 
@@ -116,7 +117,7 @@ public class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
 
         SecurityParameters securityParameters = context.getSecurityParameters();
 
-        Signer signer = initSigner(tlsSigner, securityParameters);
+        Signer signer = initVerifyer(tlsSigner, securityParameters);
         InputStream sigIn = new SignerInputStream(input, signer);
 
         ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, sigIn);
@@ -160,7 +161,7 @@ public class TlsECDHEKeyExchange extends TlsECDHKeyExchange {
         }
     }
 
-    protected Signer initSigner(TlsSigner tlsSigner, SecurityParameters securityParameters) {
+    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters) {
         Signer signer = tlsSigner.createVerifyer(this.serverPublicKey);
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);

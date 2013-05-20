@@ -109,7 +109,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange {
         Signer signer = null;
 
         if (tlsSigner != null) {
-            signer = initSigner(tlsSigner, securityParameters);
+            signer = initVerifyer(tlsSigner, securityParameters);
             sigIn = new SignerInputStream(input, signer);
         }
 
@@ -170,7 +170,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    protected Signer initSigner(TlsSigner tlsSigner, SecurityParameters securityParameters) {
+    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters) {
         Signer signer = tlsSigner.createVerifyer(this.serverPublicKey);
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
