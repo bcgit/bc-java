@@ -426,12 +426,6 @@ public class DTLSServerProtocol extends DTLSProtocol {
          */
         state.clientExtensions = TlsProtocol.readExtensions(buf);
 
-        /*
-         * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension, or
-         * the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
-         * Including both is NOT RECOMMENDED.
-         */
-
         state.serverContext.setClientVersion(client_version);
 
         state.server.notifyClientVersion(client_version);
@@ -445,6 +439,12 @@ public class DTLSServerProtocol extends DTLSProtocol {
          * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
         {
+            /*
+             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension, or
+             * the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
+             * Including both is NOT RECOMMENDED.
+             */
+
             /*
              * When a ClientHello is received, the server MUST check if it includes the
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag

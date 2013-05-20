@@ -433,12 +433,6 @@ public class TlsServerProtocol extends TlsProtocol {
          */
         this.clientExtensions = readExtensions(buf);
 
-        /*
-         * TODO RFC 5746 3.4. The client MUST include either an empty "renegotiation_info"
-         * extension, or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
-         * ClientHello. Including both is NOT RECOMMENDED.
-         */
-
         getContext().setClientVersion(client_version);
 
         tlsServer.notifyClientVersion(client_version);
@@ -452,6 +446,12 @@ public class TlsServerProtocol extends TlsProtocol {
          * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
         {
+            /*
+             * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
+             * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
+             * ClientHello. Including both is NOT RECOMMENDED.
+             */
+
             /*
              * When a ClientHello is received, the server MUST check if it includes the
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
