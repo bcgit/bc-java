@@ -338,26 +338,14 @@ public class TlsServerProtocol extends TlsProtocol {
             this.keyExchange.skipClientCredentials();
         } else {
 
-            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
-                this.serverCredentials.getCertificate());
-
-            /*
-             * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
-             * restrictions) has to be compatible with the certificate types listed in
-             * CertificateRequest.
-             */
-
             /*
              * TODO RFC 5246 7.4.6. If the certificate_authorities list in the certificate request
              * message was non-empty, one of the certificates in the certificate chain SHOULD be
              * issued by one of the listed CAs.
              */
 
-            /*
-             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
-             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
-             * constraints on certificate-signing algorithms found in prior versions of TLS.
-             */
+            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
+                this.serverCredentials.getCertificate());
 
             this.keyExchange.processClientCertificate(clientCertificate);
         }

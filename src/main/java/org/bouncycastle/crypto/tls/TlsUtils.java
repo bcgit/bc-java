@@ -815,7 +815,13 @@ public class TlsUtils
             }
 
             /*
-             * RFC 7.4.6. Client Certificate
+             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
+             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
+             * constraints on certificate-signing algorithms found in prior versions of TLS.
+             */
+
+            /*
+             * RFC 5246 7.4.6. Client Certificate
              */
 
             /*
