@@ -9,6 +9,9 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol extends TlsProtocol {
@@ -68,7 +71,7 @@ public class TlsServerProtocol extends TlsProtocol {
         this.tlsServer.notifyHandshakeComplete();
     }
 
-    protected TlsContext getContext() {
+    protected AbstractTlsContext getContext() {
         return tlsServerContext;
     }
 
@@ -131,7 +134,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
                 this.keyExchange = tlsServer.getKeyExchange();
-                this.keyExchange.init(this.tlsServerContext);
+                this.keyExchange.init(getContext());
 
                 TlsCredentials serverCredentials = tlsServer.getCredentials();
                 if (serverCredentials == null) {
@@ -212,8 +215,7 @@ public class TlsServerProtocol extends TlsProtocol {
                     this.keyExchange.skipClientCredentials();
                 } else {
 
-                    ProtocolVersion equivalentTLSVersion = tlsServerContext.getServerVersion()
-                        .getEquivalentTLSVersion();
+                    ProtocolVersion equivalentTLSVersion = getContext().getServerVersion().getEquivalentTLSVersion();
 
                     if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion)) {
                         /*
@@ -308,7 +310,7 @@ public class TlsServerProtocol extends TlsProtocol {
              * SSL 3.0 If the server has sent a certificate request Message, the client must send
              * either the certificate message or a no_certificate alert.
              */
-            if (tlsServerContext.getServerVersion().isSSL() && certificateRequest != null) {
+            if (getContext().getServerVersion().isSSL() && certificateRequest != null) {
                 notifyClientCertificate(Certificate.EMPTY_CHAIN);
             }
             break;
@@ -384,10 +386,19 @@ public class TlsServerProtocol extends TlsProtocol {
 
         assertEmpty(buf);
 
-        /*
-         * TODO Verify 'clientCertificateSignature' over 'this.certificateVerifyHash', against
-         * 'this.clientCertificate'.
-         */
+        // Verify the CertificateVerify message contains a correct signature.
+        try {
+            TlsSigner tlsSigner = TlsUtils.createTlsSigner(this.clientCertificateType);
+            tlsSigner.init(getContext());
+
+            org.bouncycastle.asn1.x509.Certificate x509Cert = this.clientCertificate.getCertificateAt(0);
+            SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+            AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
+
+            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, certificateVerifyHash);
+        } catch (Exception e) {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {
@@ -438,7 +449,7 @@ public class TlsServerProtocol extends TlsProtocol {
          * ClientHello. Including both is NOT RECOMMENDED.
          */
 
-        tlsServerContext.setClientVersion(client_version);
+        getContext().setClientVersion(client_version);
 
         tlsServer.notifyClientVersion(client_version);
 
@@ -494,7 +505,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         assertEmpty(buf);
 
-        establishMasterSecret(tlsServerContext, keyExchange);
+        establishMasterSecret(getContext(), keyExchange);
 
         /*
          * Initialize our cipher suite
@@ -553,14 +564,14 @@ public class TlsServerProtocol extends TlsProtocol {
         TlsUtils.writeUint24(0, buf);
 
         ProtocolVersion server_version = tlsServer.getServerVersion();
-        if (!server_version.isEqualOrEarlierVersionOf(tlsServerContext.getClientVersion())) {
+        if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion())) {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
         recordStream.setReadVersion(server_version);
         recordStream.setWriteVersion(server_version);
         recordStream.setRestrictReadVersion(true);
-        tlsServerContext.setServerVersion(server_version);
+        getContext().setServerVersion(server_version);
 
         TlsUtils.writeVersion(server_version, buf);
 

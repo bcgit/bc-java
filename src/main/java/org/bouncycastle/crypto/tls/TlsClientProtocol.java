@@ -86,7 +86,7 @@ public class TlsClientProtocol extends TlsProtocol {
         this.tlsClient.notifyHandshakeComplete();
     }
 
-    protected TlsContext getContext() {
+    protected AbstractTlsContext getContext() {
         return tlsClientContext;
     }
 
@@ -254,7 +254,7 @@ public class TlsClientProtocol extends TlsProtocol {
                  */
                 sendClientKeyExchangeMessage();
 
-                establishMasterSecret(tlsClientContext, keyExchange);
+                establishMasterSecret(getContext(), keyExchange);
 
                 /*
                  * Initialize our cipher suite
@@ -396,7 +396,7 @@ public class TlsClientProtocol extends TlsProtocol {
         this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
         this.keyExchange = tlsClient.getKeyExchange();
-        this.keyExchange.init(this.tlsClientContext);
+        this.keyExchange.init(getContext());
     }
 
     protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf) throws IOException {
@@ -420,13 +420,13 @@ public class TlsClientProtocol extends TlsProtocol {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        ProtocolVersion client_version = this.tlsClientContext.getClientVersion();
+        ProtocolVersion client_version = getContext().getClientVersion();
         if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         this.recordStream.setWriteVersion(server_version);
-        this.tlsClientContext.setServerVersion(server_version);
+        getContext().setServerVersion(server_version);
         this.tlsClient.notifyServerVersion(server_version);
 
         /*
@@ -578,7 +578,7 @@ public class TlsClientProtocol extends TlsProtocol {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
-        this.tlsClientContext.setClientVersion(client_version);
+        getContext().setClientVersion(client_version);
         TlsUtils.writeVersion(client_version, buf);
 
         buf.write(securityParameters.clientRandom);

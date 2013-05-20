@@ -78,7 +78,7 @@ public abstract class TlsProtocol {
         this.secureRandom = secureRandom;
     }
 
-    protected abstract TlsContext getContext();
+    protected abstract AbstractTlsContext getContext();
 
     protected abstract TlsPeer getPeer();
 

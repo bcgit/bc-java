@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.tls.Certificate;
@@ -17,6 +18,7 @@ import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
@@ -42,6 +44,30 @@ public class TlsTestUtils {
             + "pL26Ymz66ZAPdqv7EhOdzl3lZWT6srZUMWWgQMYGiHQg4z2R7X7XAgERo0QwQjAOBgNVHQ8BAf8EBAMCAAEwEgYDVR"
             + "0lAQH/BAgwBgYEVR0lADAcBgNVHREBAf8EEjAQgQ50ZXN0QHRlc3QudGVzdDANBgkqhkiG9w0BAQQFAANBAJg55PBS"
             + "weg6obRUKF4FF6fCrWFi6oCYSQ99LWcAeupc5BofW5MstFMhCOaEucuGVqunwT5G7/DweazzCIrSzB0=");
+
+    static String fingerprint(org.bouncycastle.asn1.x509.Certificate c) throws IOException {
+        byte[] der = c.getEncoded();
+        byte[] sha1 = sha256DigestOf(der);
+        byte[] hexBytes = Hex.encode(sha1);
+        String hex = new String(hexBytes, "ASCII").toUpperCase();
+
+        StringBuffer fp = new StringBuffer();
+        int i = 0;
+        fp.append(hex.substring(i, i + 2));
+        while ((i += 2) < hex.length()) {
+            fp.append(':');
+            fp.append(hex.substring(i, i + 2));
+        }
+        return fp.toString();
+    }
+
+    static byte[] sha256DigestOf(byte[] input) {
+        SHA256Digest d = new SHA256Digest();
+        d.update(input, 0, input.length);
+        byte[] result = new byte[d.getDigestSize()];
+        d.doFinal(result, 0);
+        return result;
+    }
 
     static TlsAgreementCredentials loadAgreementCredentials(TlsContext context,
         String[] certResources, String keyResource) throws IOException {

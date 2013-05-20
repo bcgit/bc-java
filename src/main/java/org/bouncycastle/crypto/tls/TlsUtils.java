@@ -790,9 +790,16 @@ public class TlsUtils
         }
     }
 
-    public static short getClientCertificateType(Certificate clientCertificate)
+    public static short getClientCertificateType(Certificate clientCertificate) throws IOException
     {
-        // FIXME
+        if (clientCertificate.isEmpty())
+            return -1;
+
+        org.bouncycastle.asn1.x509.Certificate x509Cert = clientCertificate.getCertificateAt(0);
+
+        // TODO Handle other types
+
+        validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
         return ClientCertificateType.rsa_sign;
     }
 
@@ -806,6 +813,20 @@ public class TlsUtils
             return true;
         default:
             return false;
+        }
+    }
+
+    public static TlsSigner createTlsSigner(short clientCertificateType) {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+            return new TlsDSSSigner();
+        case ClientCertificateType.ecdsa_sign:
+            return new TlsECDSASigner();
+        case ClientCertificateType.rsa_sign:
+            return new TlsRSASigner();
+        default:
+            throw new IllegalArgumentException("'clientCertificateType' is not a type with signing capability");
         }
     }
 
