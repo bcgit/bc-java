@@ -26,8 +26,10 @@ public class TlsServerProtocol extends TlsProtocol {
 
     protected TlsKeyExchange keyExchange = null;
     protected CertificateRequest certificateRequest = null;
+
     protected short clientCertificateType = -1;
     protected Certificate clientCertificate = null;
+    protected byte[] certificateVerifyHash = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
         super(input, output, secureRandom);
@@ -78,7 +80,7 @@ public class TlsServerProtocol extends TlsProtocol {
 
         switch (this.connection_state) {
         case CS_CLIENT_KEY_EXCHANGE: {
-            if (expectCertificateVerifyMessage()) {
+            if (this.certificateVerifyHash != null) {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
             // NB: Fall through to next case label
@@ -250,7 +252,7 @@ public class TlsServerProtocol extends TlsProtocol {
                  * signing capability (i.e., all certificates except those containing fixed
                  * Diffie-Hellman parameters).
                  */
-                if (!expectCertificateVerifyMessage()) {
+                if (this.certificateVerifyHash == null) {
                     this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                 }
                 receiveCertificateVerifyMessage(buf);
@@ -382,10 +384,10 @@ public class TlsServerProtocol extends TlsProtocol {
 
         assertEmpty(buf);
 
-        // TODO Needs to exclude the certificate verify message itself
-        byte[] md5andsha1 = recordStream.getCurrentHash(null);
-
-        // TODO Verify the signature against the client certificate
+        /*
+         * TODO Verify 'clientCertificateSignature' over 'this.certificateVerifyHash', against
+         * 'this.clientCertificate'.
+         */
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf) throws IOException {
@@ -498,6 +500,10 @@ public class TlsServerProtocol extends TlsProtocol {
          * Initialize our cipher suite
          */
         recordStream.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
+
+        if (expectCertificateVerifyMessage()) {
+            this.certificateVerifyHash = recordStream.getCurrentHash(null);
+        }
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest) throws IOException {
