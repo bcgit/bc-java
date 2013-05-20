@@ -105,13 +105,13 @@ public class DTLSServerProtocol extends DTLSProtocol {
         state.keyExchange = state.server.getKeyExchange();
         state.keyExchange.init(state.serverContext);
 
-        TlsCredentials serverCredentials = state.server.getCredentials();
-        if (serverCredentials == null) {
+        state.serverCredentials = state.server.getCredentials();
+        if (state.serverCredentials == null) {
             state.keyExchange.skipServerCredentials();
         } else {
-            state.keyExchange.processServerCredentials(serverCredentials);
+            state.keyExchange.processServerCredentials(state.serverCredentials);
 
-            byte[] certificateBody = generateCertificate(serverCredentials.getCertificate());
+            byte[] certificateBody = generateCertificate(state.serverCredentials.getCertificate());
             handshake.sendMessage(HandshakeType.certificate, certificateBody);
         }
 
@@ -120,7 +120,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
             handshake.sendMessage(HandshakeType.server_key_exchange, serverKeyExchange);
         }
 
-        if (serverCredentials != null) {
+        if (state.serverCredentials != null) {
             state.certificateRequest = state.server.getCertificateRequest();
             if (state.certificateRequest != null) {
                 state.keyExchange.validateCertificateRequest(state.certificateRequest);
@@ -332,7 +332,8 @@ public class DTLSServerProtocol extends DTLSProtocol {
             state.keyExchange.skipClientCredentials();
         } else {
 
-            state.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate);
+            state.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
+                state.serverCredentials.getCertificate());
 
             /*
              * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
@@ -528,6 +529,7 @@ public class DTLSServerProtocol extends DTLSProtocol {
         boolean expectSessionTicket = false;
         Hashtable serverExtensions = null;
         TlsKeyExchange keyExchange = null;
+        TlsCredentials serverCredentials = null;
         CertificateRequest certificateRequest = null;
         short clientCertificateType = -1;
         Certificate clientCertificate = null;

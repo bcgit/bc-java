@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
@@ -23,7 +24,12 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
@@ -790,17 +796,69 @@ public class TlsUtils
         }
     }
 
-    public static short getClientCertificateType(Certificate clientCertificate) throws IOException
+    static short getClientCertificateType(Certificate clientCertificate, Certificate serverCertificate)
+        throws IOException
     {
         if (clientCertificate.isEmpty())
+        {
             return -1;
+        }
 
         org.bouncycastle.asn1.x509.Certificate x509Cert = clientCertificate.getCertificateAt(0);
+        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+        try
+        {
+            AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
+            if (publicKey.isPrivate())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
 
-        // TODO Handle other types
+            /*
+             * RFC 7.4.6. Client Certificate
+             */
 
-        validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
-        return ClientCertificateType.rsa_sign;
+            /*
+             * RSA public key; the certificate MUST allow the key to be used for signing with the
+             * signature scheme and hash algorithm that will be employed in the certificate verify
+             * message.
+             */
+            if (publicKey instanceof RSAKeyParameters)
+            {
+                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
+                return ClientCertificateType.rsa_sign;
+            }
+
+            /*
+             * DSA public key; the certificate MUST allow the key to be used for signing with the
+             * hash algorithm that will be employed in the certificate verify message.
+             */
+            if (publicKey instanceof DSAPublicKeyParameters)
+            {
+                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
+                return ClientCertificateType.dss_sign;
+            }
+
+            /*
+             * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
+             * with the hash algorithm that will be employed in the certificate verify message; the
+             * public key MUST use a curve and point format supported by the server.
+             */
+            if (publicKey instanceof ECPublicKeyParameters)
+            {
+                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
+                // TODO Check the curve and point format
+                return ClientCertificateType.ecdsa_sign;
+            }
+
+            // TODO Add support for ClientCertificateType.*_fixed_*
+
+        }
+        catch (Exception e)
+        {
+        }
+
+        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     public static boolean hasSigningCapability(short clientCertificateType)

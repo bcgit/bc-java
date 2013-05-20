@@ -28,6 +28,7 @@ public class TlsServerProtocol extends TlsProtocol {
     protected Hashtable serverExtensions;
 
     protected TlsKeyExchange keyExchange = null;
+    protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
 
     protected short clientCertificateType = -1;
@@ -136,12 +137,12 @@ public class TlsServerProtocol extends TlsProtocol {
                 this.keyExchange = tlsServer.getKeyExchange();
                 this.keyExchange.init(getContext());
 
-                TlsCredentials serverCredentials = tlsServer.getCredentials();
-                if (serverCredentials == null) {
+                this.serverCredentials = tlsServer.getCredentials();
+                if (this.serverCredentials == null) {
                     this.keyExchange.skipServerCredentials();
                 } else {
-                    this.keyExchange.processServerCredentials(serverCredentials);
-                    sendCertificateMessage(serverCredentials.getCertificate());
+                    this.keyExchange.processServerCredentials(this.serverCredentials);
+                    sendCertificateMessage(this.serverCredentials.getCertificate());
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
@@ -151,7 +152,7 @@ public class TlsServerProtocol extends TlsProtocol {
                 }
                 this.connection_state = CS_SERVER_KEY_EXCHANGE;
 
-                if (serverCredentials != null) {
+                if (this.serverCredentials != null) {
                     this.certificateRequest = tlsServer.getCertificateRequest();
                     if (this.certificateRequest != null) {
                         this.keyExchange.validateCertificateRequest(certificateRequest);
@@ -337,7 +338,8 @@ public class TlsServerProtocol extends TlsProtocol {
             this.keyExchange.skipClientCredentials();
         } else {
 
-            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate);
+            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
+                this.serverCredentials.getCertificate());
 
             /*
              * TODO RFC 5246 7.4.6. The end-entity certificate's public key (and associated
