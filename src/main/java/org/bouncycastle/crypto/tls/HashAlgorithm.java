@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 5246 7.4.1.4.1
  */
-public class HashAlgorithm {
+public class HashAlgorithm
+{
 
     public static final short none = 0;
     public static final short md5 = 1;

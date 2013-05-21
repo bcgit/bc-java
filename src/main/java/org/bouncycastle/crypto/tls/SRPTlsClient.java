@@ -7,35 +7,43 @@ import java.util.Hashtable;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
-public abstract class SRPTlsClient extends AbstractTlsClient {
+public abstract class SRPTlsClient
+    extends AbstractTlsClient
+{
     public static final Integer EXT_SRP = Integers.valueOf(ExtensionType.srp);
 
     protected byte[] identity;
     protected byte[] password;
 
-    public SRPTlsClient(byte[] identity, byte[] password) {
+    public SRPTlsClient(byte[] identity, byte[] password)
+    {
         super();
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
     }
 
-    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password) {
+    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
+    {
         super(cipherFactory);
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
     }
 
-    public int[] getCipherSuites() {
-        return new int[] { CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
+    public int[] getCipherSuites()
+    {
+        return new int[]{CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA,
             CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA, };
+            CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA,};
     }
 
-    public Hashtable getClientExtensions() throws IOException {
+    public Hashtable getClientExtensions()
+        throws IOException
+    {
 
         Hashtable clientExtensions = super.getClientExtensions();
-        if (clientExtensions == null) {
+        if (clientExtensions == null)
+        {
             clientExtensions = new Hashtable();
         }
 
@@ -46,19 +54,26 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
         return clientExtensions;
     }
 
-    public void processServerExtensions(Hashtable serverExtensions) throws IOException {
+    public void processServerExtensions(Hashtable serverExtensions)
+        throws IOException
+    {
         // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
-        if (serverExtensions != null) {
-            byte[] extValue = (byte[]) serverExtensions.get(EXT_SRP);
-            if (extValue != null && extValue.length > 0) {
+        if (serverExtensions != null)
+        {
+            byte[] extValue = (byte[])serverExtensions.get(EXT_SRP);
+            if (extValue != null && extValue.length > 0)
+            {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
     }
 
-    public TlsKeyExchange getKeyExchange() throws IOException {
+    public TlsKeyExchange getKeyExchange()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
@@ -84,9 +99,12 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
         }
     }
 
-    public TlsCipher getCipher() throws IOException {
+    public TlsCipher getCipher()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -112,7 +130,8 @@ public abstract class SRPTlsClient extends AbstractTlsClient {
         }
     }
 
-    protected TlsKeyExchange createSRPKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
+    {
         return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, identity, password);
     }
 }

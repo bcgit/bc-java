@@ -15,28 +15,37 @@ import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
-public class TlsDHEKeyExchange extends TlsDHKeyExchange {
+public class TlsDHEKeyExchange
+    extends TlsDHKeyExchange
+{
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters) {
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    {
         super(keyExchange, supportedSignatureAlgorithms, dhParameters);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
+    public void processServerCredentials(TlsCredentials serverCredentials)
+        throws IOException
+    {
 
-        if (!(serverCredentials instanceof TlsSignerCredentials)) {
+        if (!(serverCredentials instanceof TlsSignerCredentials))
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         processServerCertificate(serverCredentials.getCertificate());
 
-        this.serverCredentials = (TlsSignerCredentials) serverCredentials;
+        this.serverCredentials = (TlsSignerCredentials)serverCredentials;
     }
 
-    public byte[] generateServerKeyExchange() throws IOException {
+    public byte[] generateServerKeyExchange()
+        throws IOException
+    {
 
-        if (this.dhParameters == null) {
+        if (this.dhParameters == null)
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -46,7 +55,7 @@ public class TlsDHEKeyExchange extends TlsDHKeyExchange {
         kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), this.dhParameters));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
-        BigInteger Ys = ((DHPublicKeyParameters) kp.getPublic()).getY();
+        BigInteger Ys = ((DHPublicKeyParameters)kp.getPublic()).getY();
 
         TlsDHUtils.writeDHParameter(dhParameters.getP(), buf);
         TlsDHUtils.writeDHParameter(dhParameters.getG(), buf);
@@ -72,7 +81,9 @@ public class TlsDHEKeyExchange extends TlsDHKeyExchange {
         return buf.toByteArray();
     }
 
-    public void processServerKeyExchange(InputStream input) throws IOException {
+    public void processServerKeyExchange(InputStream input)
+        throws IOException
+    {
 
         SecurityParameters securityParameters = context.getSecurityParameters();
 
@@ -84,14 +95,16 @@ public class TlsDHEKeyExchange extends TlsDHKeyExchange {
         BigInteger Ys = TlsDHUtils.readDHParameter(sigIn);
 
         byte[] sigBytes = TlsUtils.readOpaque16(input);
-        if (!signer.verifySignature(sigBytes)) {
+        if (!signer.verifySignature(sigBytes))
+        {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
         this.dhAgreeServerPublicKey = validateDHPublicKey(new DHPublicKeyParameters(Ys, new DHParameters(p, g)));
     }
 
-    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters) {
+    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters)
+    {
         Signer signer = tlsSigner.createVerifyer(this.serverPublicKey);
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);

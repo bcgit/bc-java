@@ -8,22 +8,27 @@ import org.bouncycastle.util.Arrays;
 /**
  * A NULL CipherSuite with optional MAC
  */
-public class TlsNullCipher implements TlsCipher {
+public class TlsNullCipher
+    implements TlsCipher
+{
     protected TlsContext context;
 
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    public TlsNullCipher(TlsContext context) {
+    public TlsNullCipher(TlsContext context)
+    {
         this.context = context;
         this.writeMac = null;
         this.readMac = null;
     }
 
     public TlsNullCipher(TlsContext context, Digest clientWriteDigest, Digest serverWriteDigest)
-        throws IOException {
+        throws IOException
+    {
 
-        if ((clientWriteDigest == null) != (serverWriteDigest == null)) {
+        if ((clientWriteDigest == null) != (serverWriteDigest == null))
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -31,7 +36,8 @@ public class TlsNullCipher implements TlsCipher {
 
         TlsMac clientWriteMac = null, serverWriteMac = null;
 
-        if (clientWriteDigest != null) {
+        if (clientWriteDigest != null)
+        {
 
             int key_block_size = clientWriteDigest.getDigestSize()
                 + serverWriteDigest.getDigestSize();
@@ -47,32 +53,40 @@ public class TlsNullCipher implements TlsCipher {
                 serverWriteDigest.getDigestSize());
             offset += serverWriteDigest.getDigestSize();
 
-            if (offset != key_block_size) {
+            if (offset != key_block_size)
+            {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
         }
 
-        if (context.isServer()) {
+        if (context.isServer())
+        {
             writeMac = serverWriteMac;
             readMac = clientWriteMac;
-        } else {
+        }
+        else
+        {
             writeMac = clientWriteMac;
             readMac = serverWriteMac;
         }
     }
 
-    public int getPlaintextLimit(int ciphertextLimit) {
+    public int getPlaintextLimit(int ciphertextLimit)
+    {
         int result = ciphertextLimit;
-        if (writeMac != null) {
+        if (writeMac != null)
+        {
             result -= writeMac.getSize();
         }
         return result;
     }
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
-        throws IOException {
+        throws IOException
+    {
 
-        if (writeMac == null) {
+        if (writeMac == null)
+        {
             return Arrays.copyOfRange(plaintext, offset, offset + len);
         }
 
@@ -84,14 +98,17 @@ public class TlsNullCipher implements TlsCipher {
     }
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
-        throws IOException {
+        throws IOException
+    {
 
-        if (readMac == null) {
+        if (readMac == null)
+        {
             return Arrays.copyOfRange(ciphertext, offset, offset + len);
         }
 
         int macSize = readMac.getSize();
-        if (len < macSize) {
+        if (len < macSize)
+        {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
@@ -100,7 +117,8 @@ public class TlsNullCipher implements TlsCipher {
         byte[] receivedMac = Arrays.copyOfRange(ciphertext, offset + macInputLen, offset + len);
         byte[] computedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, macInputLen);
 
-        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac)) {
+        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
+        {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 

@@ -1,12 +1,5 @@
 package org.bouncycastle.crypto.tls.test;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +7,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.KeyStore;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
 
 public class HTTPSServerThread
     extends Thread
@@ -70,7 +71,7 @@ public class HTTPSServerThread
 
         // set up a trust manager so we can recognize the server
         TrustManagerFactory trustFact = TrustManagerFactory.getInstance("SunX509");
-        KeyStore            trustStore = KeyStore.getInstance("JKS");
+        KeyStore trustStore = KeyStore.getInstance("JKS");
 
         trustStore.load(new ByteArrayInputStream(KeyStores.trustStore), TRUST_STORE_PASSWORD);
 

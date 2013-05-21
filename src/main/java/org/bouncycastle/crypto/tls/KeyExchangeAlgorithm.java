@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 2246
- * 
+ * <p/>
  * Note that the values here are implementation-specific and arbitrary. It is recommended not to
  * depend on the particular values (e.g. serialization).
  */
@@ -21,7 +21,7 @@ public class KeyExchangeAlgorithm
     public static final int DH_RSA_EXPORT = 10;
     public static final int DH_anon = 11;
     public static final int DH_anon_EXPORT = 12;
-    
+
     /*
      * RFC 4279
      */

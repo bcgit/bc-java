@@ -10,31 +10,40 @@ import org.bouncycastle.util.Integers;
 /**
  * RFC 5764 DTLS Extension to Establish Keys for SRTP.
  */
-public class TlsSRTPUtils {
+public class TlsSRTPUtils
+{
 
     public static final Integer EXT_use_srtp = Integers.valueOf(ExtensionType.use_srtp);
 
     public static void addUseSRTPExtension(Hashtable extensions, UseSRTPData useSRTPData)
-        throws IOException {
+        throws IOException
+    {
 
         extensions.put(EXT_use_srtp, createUseSRTPExtension(useSRTPData));
     }
 
-    public static UseSRTPData getUseSRTPExtension(Hashtable extensions) throws IOException {
+    public static UseSRTPData getUseSRTPExtension(Hashtable extensions)
+        throws IOException
+    {
 
-        if (extensions == null) {
+        if (extensions == null)
+        {
             return null;
         }
-        byte[] extensionValue = (byte[]) extensions.get(EXT_use_srtp);
-        if (extensionValue == null) {
+        byte[] extensionValue = (byte[])extensions.get(EXT_use_srtp);
+        if (extensionValue == null)
+        {
             return null;
         }
         return readUseSRTPExtension(extensionValue);
     }
 
-    public static byte[] createUseSRTPExtension(UseSRTPData useSRTPData) throws IOException {
+    public static byte[] createUseSRTPExtension(UseSRTPData useSRTPData)
+        throws IOException
+    {
 
-        if (useSRTPData == null) {
+        if (useSRTPData == null)
+        {
             throw new IllegalArgumentException("'useSRTPData' cannot be null");
         }
 
@@ -51,9 +60,12 @@ public class TlsSRTPUtils {
         return buf.toByteArray();
     }
 
-    public static UseSRTPData readUseSRTPExtension(byte[] extensionValue) throws IOException {
+    public static UseSRTPData readUseSRTPExtension(byte[] extensionValue)
+        throws IOException
+    {
 
-        if (extensionValue == null) {
+        if (extensionValue == null)
+        {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
         }
 
@@ -61,7 +73,8 @@ public class TlsSRTPUtils {
 
         // SRTPProtectionProfiles
         int length = TlsUtils.readUint16(buf);
-        if (length < 2 || (length & 1) != 0) {
+        if (length < 2 || (length & 1) != 0)
+        {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         int[] protectionProfiles = TlsUtils.readUint16Array(length / 2, buf);

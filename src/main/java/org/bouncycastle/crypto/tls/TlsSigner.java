@@ -4,11 +4,13 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
-public interface TlsSigner {
+public interface TlsSigner
+{
 
     void init(TlsContext context);
 
-    byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1) throws CryptoException;
+    byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
+        throws CryptoException;
 
     boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
         throws CryptoException;

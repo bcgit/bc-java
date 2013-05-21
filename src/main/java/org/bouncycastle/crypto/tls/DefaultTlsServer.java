@@ -5,39 +5,52 @@ import java.io.IOException;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.params.DHParameters;
 
-public abstract class DefaultTlsServer extends AbstractTlsServer {
+public abstract class DefaultTlsServer
+    extends AbstractTlsServer
+{
 
-    public DefaultTlsServer() {
+    public DefaultTlsServer()
+    {
         super();
     }
 
-    public DefaultTlsServer(TlsCipherFactory cipherFactory) {
+    public DefaultTlsServer(TlsCipherFactory cipherFactory)
+    {
         super(cipherFactory);
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException {
+    protected TlsEncryptionCredentials getRSAEncryptionCredentials()
+        throws IOException
+    {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
+    protected TlsSignerCredentials getRSASignerCredentials()
+        throws IOException
+    {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected DHParameters getDHParameters() {
+    protected DHParameters getDHParameters()
+    {
         return DHStandardGroups.rfc5114_1024_160;
     }
 
-    protected int[] getCipherSuites() {
-        return new int[] { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+    protected int[] getCipherSuites()
+    {
+        return new int[]{CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,};
     }
 
-    public TlsCredentials getCredentials() throws IOException {
+    public TlsCredentials getCredentials()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
@@ -82,9 +95,12 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
         }
     }
 
-    public TlsKeyExchange getKeyExchange() throws IOException {
+    public TlsKeyExchange getKeyExchange()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
@@ -202,9 +218,12 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
         }
     }
 
-    public TlsCipher getCipher() throws IOException {
+    public TlsCipher getCipher()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -336,25 +355,30 @@ public abstract class DefaultTlsServer extends AbstractTlsServer {
         }
     }
 
-    protected TlsKeyExchange createDHKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createDHKeyExchange(int keyExchange)
+    {
         return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHParameters());
     }
 
-    protected TlsKeyExchange createDHEKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createDHEKeyExchange(int keyExchange)
+    {
         return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHParameters());
     }
 
-    protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createECDHKeyExchange(int keyExchange)
+    {
         return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange)
+    {
         return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createRSAKeyExchange() {
+    protected TlsKeyExchange createRSAKeyExchange()
+    {
         return new TlsRSAKeyExchange(supportedSignatureAlgorithms);
     }
 }

@@ -5,7 +5,9 @@ import java.io.PrintStream;
 
 import org.bouncycastle.crypto.tls.DatagramTransport;
 
-public class LoggingDatagramTransport implements DatagramTransport {
+public class LoggingDatagramTransport
+    implements DatagramTransport
+{
 
     private static final String HEX_CHARS = "0123456789ABCDEF";
 
@@ -13,46 +15,66 @@ public class LoggingDatagramTransport implements DatagramTransport {
     private final PrintStream output;
     private final long launchTimestamp;
 
-    public LoggingDatagramTransport(DatagramTransport transport, PrintStream output) {
+    public LoggingDatagramTransport(DatagramTransport transport, PrintStream output)
+    {
         this.transport = transport;
         this.output = output;
         this.launchTimestamp = System.currentTimeMillis();
     }
 
-    public int getReceiveLimit() throws IOException {
+    public int getReceiveLimit()
+        throws IOException
+    {
         return transport.getReceiveLimit();
     }
 
-    public int getSendLimit() throws IOException {
+    public int getSendLimit()
+        throws IOException
+    {
         return transport.getSendLimit();
     }
 
-    public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
+    public int receive(byte[] buf, int off, int len, int waitMillis)
+        throws IOException
+    {
         int length = transport.receive(buf, off, len, waitMillis);
-        if (length >= 0) {
+        if (length >= 0)
+        {
             dumpDatagram("Received", buf, off, length);
         }
         return length;
     }
 
-    public void send(byte[] buf, int off, int len) throws IOException {
+    public void send(byte[] buf, int off, int len)
+        throws IOException
+    {
         dumpDatagram("Sending", buf, off, len);
         transport.send(buf, off, len);
     }
 
-    public void close() throws IOException {
+    public void close()
+        throws IOException
+    {
     }
 
-    private void dumpDatagram(String verb, byte[] buf, int off, int len) throws IOException {
+    private void dumpDatagram(String verb, byte[] buf, int off, int len)
+        throws IOException
+    {
         long timestamp = System.currentTimeMillis() - launchTimestamp;
         StringBuffer sb = new StringBuffer("(+" + timestamp + "ms) " + verb + " " + len + " byte datagram:");
-        for (int pos = 0; pos < len; ++pos) {
-            if (pos % 16 == 0) {
-                sb.append(System.lineSeparator());
+        for (int pos = 0; pos < len; ++pos)
+        {
+            if (pos % 16 == 0)
+            {
+                sb.append(System.getProperty("line.separator"));
                 sb.append("    ");
-            } else if (pos % 16 == 8) {
+            }
+            else if (pos % 16 == 8)
+            {
                 sb.append('-');
-            } else {
+            }
+            else
+            {
                 sb.append(' ');
             }
             int val = buf[off + pos] & 0xFF;
@@ -62,7 +84,8 @@ public class LoggingDatagramTransport implements DatagramTransport {
         dump(sb.toString());
     }
 
-    private synchronized void dump(String s) {
+    private synchronized void dump(String s)
+    {
         output.println(s);
     }
 }

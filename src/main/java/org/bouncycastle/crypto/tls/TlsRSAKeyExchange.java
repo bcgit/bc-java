@@ -15,7 +15,9 @@ import org.bouncycastle.util.io.Streams;
 /**
  * TLS 1.0/1.1 and SSLv3 RSA key exchange.
  */
-public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
+public class TlsRSAKeyExchange
+    extends AbstractTlsKeyExchange
+{
     protected AsymmetricKeyParameter serverPublicKey = null;
 
     protected RSAKeyParameters rsaServerPublicKey = null;
@@ -24,56 +26,73 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
 
     protected byte[] premasterSecret;
 
-    public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms) {
+    public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms)
+    {
         super(KeyExchangeAlgorithm.RSA, supportedSignatureAlgorithms);
     }
 
-    public void skipServerCredentials() throws IOException {
+    public void skipServerCredentials()
+        throws IOException
+    {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException {
+    public void processServerCredentials(TlsCredentials serverCredentials)
+        throws IOException
+    {
 
-        if (!(serverCredentials instanceof TlsEncryptionCredentials)) {
+        if (!(serverCredentials instanceof TlsEncryptionCredentials))
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         processServerCertificate(serverCredentials.getCertificate());
 
-        this.serverCredentials = (TlsEncryptionCredentials) serverCredentials;
+        this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
     }
 
-    public void processServerCertificate(Certificate serverCertificate) throws IOException {
+    public void processServerCertificate(Certificate serverCertificate)
+        throws IOException
+    {
 
-        if (serverCertificate.isEmpty()) {
+        if (serverCertificate.isEmpty())
+        {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
         org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
 
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        try {
+        try
+        {
             this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        } catch (RuntimeException e) {
+        }
+        catch (RuntimeException e)
+        {
             throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
         }
 
         // Sanity check the PublicKeyFactory
-        if (this.serverPublicKey.isPrivate()) {
+        if (this.serverPublicKey.isPrivate())
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters) this.serverPublicKey);
+        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters)this.serverPublicKey);
 
         TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyEncipherment);
 
         super.processServerCertificate(serverCertificate);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException {
+    public void validateCertificateRequest(CertificateRequest certificateRequest)
+        throws IOException
+    {
         short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i) {
-            switch (types[i]) {
+        for (int i = 0; i < types.length; ++i)
+        {
+            switch (types[i])
+            {
             case ClientCertificateType.rsa_sign:
             case ClientCertificateType.dss_sign:
             case ClientCertificateType.ecdsa_sign:
@@ -84,23 +103,33 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException {
-        if (!(clientCredentials instanceof TlsSignerCredentials)) {
+    public void processClientCredentials(TlsCredentials clientCredentials)
+        throws IOException
+    {
+        if (!(clientCredentials instanceof TlsSignerCredentials))
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    public void generateClientKeyExchange(OutputStream output) throws IOException {
+    public void generateClientKeyExchange(OutputStream output)
+        throws IOException
+    {
         this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, this.rsaServerPublicKey, output);
     }
 
-    public void processClientKeyExchange(InputStream input) throws IOException {
+    public void processClientKeyExchange(InputStream input)
+        throws IOException
+    {
 
         byte[] encryptedPreMasterSecret;
-        if (context.getServerVersion().isSSL()) {
+        if (context.getServerVersion().isSSL())
+        {
             // TODO Do any SSLv3 clients actually include the length?
             encryptedPreMasterSecret = Streams.readAll(input);
-        } else {
+        }
+        else
+        {
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
@@ -121,9 +150,12 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
             this.context.getSecureRandom().nextBytes(R);
 
             byte[] M = TlsUtils.EMPTY_BYTES;
-            try {
+            try
+            {
                 M = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 /*
                  * In any case, a TLS server MUST NOT generate an alert if processing an
                  * RSA-encrypted premaster secret message fails, or the version number is not as
@@ -132,21 +164,27 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
                  */
             }
 
-            if (M.length != 48) {
+            if (M.length != 48)
+            {
                 TlsUtils.writeVersion(clientVersion, R, 0);
                 this.premasterSecret = R;
-            } else {
+            }
+            else
+            {
                 /*
                  * If ClientHello.client_version is TLS 1.1 or higher, server implementations MUST
                  * check the version number [..].
                  */
-                if (versionNumberCheckDisabled && clientVersion.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10)) {
+                if (versionNumberCheckDisabled && clientVersion.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10))
+                {
                     /*
                      * If the version number is TLS 1.0 or earlier, server implementations SHOULD
                      * check the version number, but MAY have a configuration option to disable the
                      * check.
                      */
-                } else {
+                }
+                else
+                {
                     /*
                      * Note that explicitly constructing the pre_master_secret with the
                      * ClientHello.client_version produces an invalid master_secret if the client
@@ -159,8 +197,11 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
         }
     }
 
-    public byte[] generatePremasterSecret() throws IOException {
-        if (this.premasterSecret == null) {
+    public byte[] generatePremasterSecret()
+        throws IOException
+    {
+        if (this.premasterSecret == null)
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -198,11 +239,14 @@ public class TlsRSAKeyExchange extends AbstractTlsKeyExchange {
     // exponent));
     // }
 
-    protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key) throws IOException {
+    protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key)
+        throws IOException
+    {
         // TODO What is the minimum bit length required?
         // key.getModulus().bitLength();
 
-        if (!key.getExponent().isProbablePrime(2)) {
+        if (!key.getExponent().isProbablePrime(2))
+        {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 

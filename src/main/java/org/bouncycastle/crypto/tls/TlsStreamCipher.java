@@ -8,7 +8,9 @@ import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
-public class TlsStreamCipher implements TlsCipher {
+public class TlsStreamCipher
+    implements TlsCipher
+{
     protected TlsContext context;
 
     protected StreamCipher encryptCipher;
@@ -18,8 +20,10 @@ public class TlsStreamCipher implements TlsCipher {
     protected TlsMac readMac;
 
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize) throws IOException {
+                           StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+                           int cipherKeySize)
+        throws IOException
+    {
 
         boolean isServer = context.isServer();
 
@@ -49,19 +53,23 @@ public class TlsStreamCipher implements TlsCipher {
         KeyParameter serverWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        if (offset != key_block_size) {
+        if (offset != key_block_size)
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         CipherParameters encryptParams, decryptParams;
-        if (isServer) {
+        if (isServer)
+        {
             this.writeMac = serverWriteMac;
             this.readMac = clientWriteMac;
             this.encryptCipher = serverWriteCipher;
             this.decryptCipher = clientWriteCipher;
             encryptParams = serverWriteKey;
             decryptParams = clientWriteKey;
-        } else {
+        }
+        else
+        {
             this.writeMac = clientWriteMac;
             this.readMac = serverWriteMac;
             this.encryptCipher = clientWriteCipher;
@@ -74,11 +82,13 @@ public class TlsStreamCipher implements TlsCipher {
         this.decryptCipher.init(false, decryptParams);
     }
 
-    public int getPlaintextLimit(int ciphertextLimit) {
+    public int getPlaintextLimit(int ciphertextLimit)
+    {
         return ciphertextLimit - writeMac.getSize();
     }
 
-    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len) {
+    public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+    {
         byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
 
         byte[] outbuf = new byte[len + mac.length];
@@ -90,9 +100,11 @@ public class TlsStreamCipher implements TlsCipher {
     }
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
-        throws IOException {
+        throws IOException
+    {
         int macSize = readMac.getSize();
-        if (len < macSize) {
+        if (len < macSize)
+        {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
@@ -104,7 +116,8 @@ public class TlsStreamCipher implements TlsCipher {
         byte[] receivedMac = Arrays.copyOfRange(deciphered, macInputLen, len);
         byte[] computedMac = readMac.calculateMac(seqNo, type, deciphered, 0, macInputLen);
 
-        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac)) {
+        if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
+        {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 

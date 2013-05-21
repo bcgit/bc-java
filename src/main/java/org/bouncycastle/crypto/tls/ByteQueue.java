@@ -44,11 +44,11 @@ public class ByteQueue
 
     /**
      * Read data from the buffer.
-     * 
-     * @param buf The buffer where the read data will be copied to.
+     *
+     * @param buf    The buffer where the read data will be copied to.
      * @param offset How many bytes to skip at the beginning of buf.
-     * @param len How many bytes to read at all.
-     * @param skip How many bytes from our data to skip.
+     * @param len    How many bytes to read at all.
+     * @param skip   How many bytes from our data to skip.
      */
     public void read(byte[] buf, int offset, int len, int skip)
     {
@@ -67,10 +67,10 @@ public class ByteQueue
 
     /**
      * Add some data to our buffer.
-     * 
-     * @param data A byte-array to read data from.
+     *
+     * @param data   A byte-array to read data from.
      * @param offset How many bytes to skip at the beginning of the array.
-     * @param len How many bytes to read from the array.
+     * @param len    How many bytes to read from the array.
      */
     public void addData(byte[] data, int offset, int len)
     {
@@ -87,7 +87,7 @@ public class ByteQueue
 
     /**
      * Remove some bytes from our data from the beginning.
-     * 
+     *
      * @param i How many bytes to remove.
      */
     public void removeData(int i)

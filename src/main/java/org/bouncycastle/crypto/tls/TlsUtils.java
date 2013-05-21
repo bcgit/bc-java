@@ -74,7 +74,8 @@ public class TlsUtils
         return true;
     }
 
-    public static void writeUint8(short i, OutputStream output) throws IOException
+    public static void writeUint8(short i, OutputStream output)
+        throws IOException
     {
         output.write(i);
     }
@@ -84,7 +85,8 @@ public class TlsUtils
         buf[offset] = (byte)i;
     }
 
-    public static void writeUint16(int i, OutputStream output) throws IOException
+    public static void writeUint16(int i, OutputStream output)
+        throws IOException
     {
         output.write(i >> 8);
         output.write(i);
@@ -96,7 +98,8 @@ public class TlsUtils
         buf[offset + 1] = (byte)i;
     }
 
-    public static void writeUint24(int i, OutputStream output) throws IOException
+    public static void writeUint24(int i, OutputStream output)
+        throws IOException
     {
         output.write(i >> 16);
         output.write(i >> 8);
@@ -110,7 +113,8 @@ public class TlsUtils
         buf[offset + 2] = (byte)(i);
     }
 
-    public static void writeUint32(long i, OutputStream output) throws IOException
+    public static void writeUint32(long i, OutputStream output)
+        throws IOException
     {
         output.write((int)(i >> 24));
         output.write((int)(i >> 16));
@@ -136,7 +140,8 @@ public class TlsUtils
         buf[offset + 5] = (byte)(i);
     }
 
-    public static void writeUint64(long i, OutputStream output) throws IOException
+    public static void writeUint64(long i, OutputStream output)
+        throws IOException
     {
         output.write((int)(i >> 56));
         output.write((int)(i >> 48));
@@ -160,25 +165,29 @@ public class TlsUtils
         buf[offset + 7] = (byte)(i);
     }
 
-    public static void writeOpaque8(byte[] buf, OutputStream output) throws IOException
+    public static void writeOpaque8(byte[] buf, OutputStream output)
+        throws IOException
     {
         writeUint8((short)buf.length, output);
         output.write(buf);
     }
 
-    public static void writeOpaque16(byte[] buf, OutputStream output) throws IOException
+    public static void writeOpaque16(byte[] buf, OutputStream output)
+        throws IOException
     {
         writeUint16(buf.length, output);
         output.write(buf);
     }
 
-    public static void writeOpaque24(byte[] buf, OutputStream output) throws IOException
+    public static void writeOpaque24(byte[] buf, OutputStream output)
+        throws IOException
     {
         writeUint24(buf.length, output);
         output.write(buf);
     }
 
-    public static void writeUint8Array(short[] uints, OutputStream output) throws IOException
+    public static void writeUint8Array(short[] uints, OutputStream output)
+        throws IOException
     {
         for (int i = 0; i < uints.length; ++i)
         {
@@ -186,7 +195,8 @@ public class TlsUtils
         }
     }
 
-    public static void writeUint16Array(int[] uints, OutputStream output) throws IOException
+    public static void writeUint16Array(int[] uints, OutputStream output)
+        throws IOException
     {
         for (int i = 0; i < uints.length; ++i)
         {
@@ -194,7 +204,8 @@ public class TlsUtils
         }
     }
 
-    public static short readUint8(InputStream input) throws IOException
+    public static short readUint8(InputStream input)
+        throws IOException
     {
         int i = input.read();
         if (i < 0)
@@ -209,7 +220,8 @@ public class TlsUtils
         return (short)buf[offset];
     }
 
-    public static int readUint16(InputStream input) throws IOException
+    public static int readUint16(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -227,7 +239,8 @@ public class TlsUtils
         return n;
     }
 
-    public static int readUint24(InputStream input) throws IOException
+    public static int readUint24(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -247,7 +260,8 @@ public class TlsUtils
         return n;
     }
 
-    public static long readUint32(InputStream input) throws IOException
+    public static long readUint32(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -260,7 +274,8 @@ public class TlsUtils
         return (((long)i1) << 24) | (((long)i2) << 16) | (((long)i3) << 8) | ((long)i4);
     }
 
-    public static long readUint48(InputStream input) throws IOException
+    public static long readUint48(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -272,7 +287,7 @@ public class TlsUtils
         {
             throw new EOFException();
         }
-        return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8)  | ((long)i6);
+        return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8) | ((long)i6);
     }
 
     public static long readUint48(byte[] buf, int offset)
@@ -282,9 +297,11 @@ public class TlsUtils
         return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
-    public static byte[] readFully(int length, InputStream input) throws IOException
+    public static byte[] readFully(int length, InputStream input)
+        throws IOException
     {
-        if (length < 1) {
+        if (length < 1)
+        {
             return EMPTY_BYTES;
         }
         byte[] buf = new byte[length];
@@ -295,7 +312,8 @@ public class TlsUtils
         return buf;
     }
 
-    public static void readFully(byte[] buf, InputStream input) throws IOException
+    public static void readFully(byte[] buf, InputStream input)
+        throws IOException
     {
         int length = buf.length;
         if (length > 0 && length != Streams.readFully(input, buf))
@@ -304,25 +322,29 @@ public class TlsUtils
         }
     }
 
-    public static byte[] readOpaque8(InputStream input) throws IOException
+    public static byte[] readOpaque8(InputStream input)
+        throws IOException
     {
         short length = readUint8(input);
         return readFully(length, input);
     }
 
-    public static byte[] readOpaque16(InputStream input) throws IOException
+    public static byte[] readOpaque16(InputStream input)
+        throws IOException
     {
         int length = readUint16(input);
         return readFully(length, input);
     }
 
-    public static byte[] readOpaque24(InputStream input) throws IOException
+    public static byte[] readOpaque24(InputStream input)
+        throws IOException
     {
         int length = readUint24(input);
         return readFully(length, input);
     }
 
-    public static short[] readUint8Array(int count, InputStream input) throws IOException
+    public static short[] readUint8Array(int count, InputStream input)
+        throws IOException
     {
         short[] uints = new short[count];
         for (int i = 0; i < count; ++i)
@@ -332,7 +354,8 @@ public class TlsUtils
         return uints;
     }
 
-    public static int[] readUint16Array(int count, InputStream input) throws IOException
+    public static int[] readUint16Array(int count, InputStream input)
+        throws IOException
     {
         int[] uints = new int[count];
         for (int i = 0; i < count; ++i)
@@ -342,12 +365,14 @@ public class TlsUtils
         return uints;
     }
 
-    public static ProtocolVersion readVersion(byte[] buf, int offset) throws IOException
+    public static ProtocolVersion readVersion(byte[] buf, int offset)
+        throws IOException
     {
         return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
     }
 
-    public static ProtocolVersion readVersion(InputStream input) throws IOException
+    public static ProtocolVersion readVersion(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -358,7 +383,8 @@ public class TlsUtils
         return ProtocolVersion.get(i1, i2);
     }
 
-    public static int readVersionRaw(InputStream input) throws IOException
+    public static int readVersionRaw(InputStream input)
+        throws IOException
     {
         int i1 = input.read();
         int i2 = input.read();
@@ -378,13 +404,15 @@ public class TlsUtils
         buf[offset + 3] = (byte)t;
     }
 
-    public static void writeVersion(ProtocolVersion version, OutputStream output) throws IOException
+    public static void writeVersion(ProtocolVersion version, OutputStream output)
+        throws IOException
     {
         output.write(version.getMajorVersion());
         output.write(version.getMinorVersion());
     }
 
-    public static void writeVersion(ProtocolVersion version, byte[] buf, int offset) throws IOException
+    public static void writeVersion(ProtocolVersion version, byte[] buf, int offset)
+        throws IOException
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
@@ -412,8 +440,8 @@ public class TlsUtils
 
     /**
      * Add a 'signature_algorithms' extension to existing extensions.
-     * 
-     * @param extensions A {@link Hashtable} to add the extension to.
+     *
+     * @param extensions                   A {@link Hashtable} to add the extension to.
      * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
      * @throws IOException
      */
@@ -425,18 +453,22 @@ public class TlsUtils
 
     /**
      * Get a 'signature_algorithms' extension from extensions.
-     * 
+     *
      * @param extensions A {@link Hashtable} to get the extension from, if it is present.
      * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}, or null.
      * @throws IOException
      */
-    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions) throws IOException {
+    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
+        throws IOException
+    {
 
-        if (extensions == null) {
+        if (extensions == null)
+        {
             return null;
         }
-        byte[] extensionValue = (byte[]) extensions.get(EXT_signature_algorithms);
-        if (extensionValue == null) {
+        byte[] extensionValue = (byte[])extensions.get(EXT_signature_algorithms);
+        if (extensionValue == null)
+        {
             return null;
         }
         return readSignatureAlgorithmsExtension(extensionValue);
@@ -444,14 +476,17 @@ public class TlsUtils
 
     /**
      * Create a 'signature_algorithms' extension value.
-     * 
+     *
      * @param supportedSignatureAlgorithms A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
      * @return A byte array suitable for use as an extension value.
      * @throws IOException
      */
-    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms) throws IOException {
+    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
 
-        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1 || supportedSignatureAlgorithms.size() >= (1 << 15)) {
+        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1 || supportedSignatureAlgorithms.size() >= (1 << 15))
+        {
             throw new IllegalArgumentException(
                 "'supportedSignatureAlgorithms' must have length from 1 to (2^15 - 1)");
         }
@@ -460,7 +495,8 @@ public class TlsUtils
 
         // supported_signature_algorithms
         TlsUtils.writeUint16(2 * supportedSignatureAlgorithms.size(), buf);
-        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i) {
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+        {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
             entry.encode(buf);
         }
@@ -470,14 +506,17 @@ public class TlsUtils
 
     /**
      * Read a 'signature_algorithms' extension value.
-     * 
+     *
      * @param extensionValue The extension value.
      * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
      * @throws IOException
      */
-    public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue) throws IOException {
+    public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue)
+        throws IOException
+    {
 
-        if (extensionValue == null) {
+        if (extensionValue == null)
+        {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
         }
 
@@ -485,12 +524,14 @@ public class TlsUtils
 
         // supported_signature_algorithms
         int length = TlsUtils.readUint16(buf);
-        if (length < 2 || (length & 1) != 0) {
+        if (length < 2 || (length & 1) != 0)
+        {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         int count = length / 2;
         Vector result = new Vector(count);
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; ++i)
+        {
             SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(buf);
             result.addElement(entry);
         }
@@ -580,7 +621,8 @@ public class TlsUtils
         }
     }
 
-    static void validateKeyUsage(org.bouncycastle.asn1.x509.Certificate c, int keyUsageBits) throws IOException
+    static void validateKeyUsage(org.bouncycastle.asn1.x509.Certificate c, int keyUsageBits)
+        throws IOException
     {
         Extensions exts = c.getTBSCertificate().getExtensions();
         if (exts != null)
@@ -687,10 +729,10 @@ public class TlsUtils
 
     static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
     {
-    	if (context.getServerVersion().isSSL())
-    	{
-    	    return handshakeHash;
-    	}
+        if (context.getServerVersion().isSSL())
+        {
+            return handshakeHash;
+        }
 
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] master_secret = securityParameters.getMasterSecret();
@@ -763,7 +805,8 @@ public class TlsUtils
         }
     }
 
-    public static final short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm) {
+    public static final short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
+    {
         switch (prfAlgorithm)
         {
         case PRFAlgorithm.tls_prf_legacy:
@@ -777,8 +820,10 @@ public class TlsUtils
         }
     }
 
-    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(int hashAlgorithm) {
-        switch (hashAlgorithm) {
+    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(int hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
         case HashAlgorithm.md5:
             return PKCSObjectIdentifiers.md5;
         case HashAlgorithm.sha1:
@@ -880,7 +925,8 @@ public class TlsUtils
         }
     }
 
-    public static TlsSigner createTlsSigner(short clientCertificateType) {
+    public static TlsSigner createTlsSigner(short clientCertificateType)
+    {
         switch (clientCertificateType)
         {
         case ClientCertificateType.dss_sign:
@@ -894,8 +940,8 @@ public class TlsUtils
         }
     }
 
-    static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };
-    static final byte[] SSL_SERVER = { 0x53, 0x52, 0x56, 0x52 };
+    static final byte[] SSL_CLIENT = {0x43, 0x4C, 0x4E, 0x54};
+    static final byte[] SSL_SERVER = {0x53, 0x52, 0x56, 0x52};
 
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
     static final byte[][] SSL3_CONST = genConst();
@@ -912,7 +958,7 @@ public class TlsUtils
         }
         return arr;
     }
-    
+
     private static Vector vectorOfOne(Object obj)
     {
         Vector v = new Vector(1);

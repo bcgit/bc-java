@@ -2,7 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
-public class TlsFatalAlert extends IOException
+public class TlsFatalAlert
+    extends IOException
 {
     private static final long serialVersionUID = 3584313123679111168L;
 

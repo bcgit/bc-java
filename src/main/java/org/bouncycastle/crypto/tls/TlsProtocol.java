@@ -16,7 +16,8 @@ import org.bouncycastle.util.Integers;
 /**
  * An implementation of all high level protocols in TLS 1.0/1.1.
  */
-public abstract class TlsProtocol {
+public abstract class TlsProtocol
+{
 
     protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
@@ -73,7 +74,8 @@ public abstract class TlsProtocol {
     protected boolean secure_renegotiation = false;
     protected boolean expectSessionTicket = false;
 
-    public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
+    public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
+    {
         this.recordStream = new RecordStream(this, input, output);
         this.secureRandom = secureRandom;
     }
@@ -82,22 +84,29 @@ public abstract class TlsProtocol {
 
     protected abstract TlsPeer getPeer();
 
-    protected abstract void handleChangeCipherSpecMessage() throws IOException;
+    protected abstract void handleChangeCipherSpecMessage()
+        throws IOException;
 
-    protected abstract void handleHandshakeMessage(short type, byte[] buf) throws IOException;
+    protected abstract void handleHandshakeMessage(short type, byte[] buf)
+        throws IOException;
 
-    protected void handleWarningMessage(short description) throws IOException {
+    protected void handleWarningMessage(short description)
+        throws IOException
+    {
 
     }
 
-    protected void completeHandshake() throws IOException {
+    protected void completeHandshake()
+        throws IOException
+    {
 
         this.expected_verify_data = null;
 
         /*
          * We will now read data, until we have completed the handshake.
          */
-        while (this.connection_state != CS_SERVER_FINISHED) {
+        while (this.connection_state != CS_SERVER_FINISHED)
+        {
             safeReadRecord();
         }
 
@@ -109,7 +118,8 @@ public abstract class TlsProtocol {
         /*
          * If this was an initial handshake, we are now ready to send and receive application data.
          */
-        if (!appDataReady) {
+        if (!appDataReady)
+        {
             this.appDataReady = true;
 
             this.tlsInputStream = new TlsInputStream(this);
@@ -117,11 +127,14 @@ public abstract class TlsProtocol {
         }
     }
 
-    protected void processRecord(short protocol, byte[] buf, int offset, int len) throws IOException {
+    protected void processRecord(short protocol, byte[] buf, int offset, int len)
+        throws IOException
+    {
         /*
          * Have a look at the protocol type, and add it to the correct queue.
          */
-        switch (protocol) {
+        switch (protocol)
+        {
         case ContentType.change_cipher_spec:
             changeCipherSpecQueue.addData(buf, offset, len);
             processChangeCipherSpec();
@@ -135,7 +148,8 @@ public abstract class TlsProtocol {
             processHandshake();
             break;
         case ContentType.application_data:
-            if (!appDataReady) {
+            if (!appDataReady)
+            {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
             applicationDataQueue.addData(buf, offset, len);
@@ -150,14 +164,18 @@ public abstract class TlsProtocol {
         }
     }
 
-    private void processHandshake() throws IOException {
+    private void processHandshake()
+        throws IOException
+    {
         boolean read;
-        do {
+        do
+        {
             read = false;
             /*
              * We need the first 4 bytes, they contain type and length of the message.
              */
-            if (handshakeQueue.size() >= 4) {
+            if (handshakeQueue.size() >= 4)
+            {
                 byte[] beginning = new byte[4];
                 handshakeQueue.read(beginning, 0, 4, 0);
                 ByteArrayInputStream bis = new ByteArrayInputStream(beginning);
@@ -167,7 +185,8 @@ public abstract class TlsProtocol {
                 /*
                  * Check if we have enough bytes in the buffer to read the full message.
                  */
-                if (handshakeQueue.size() >= (len + 4)) {
+                if (handshakeQueue.size() >= (len + 4))
+                {
                     /*
                      * Read the message.
                      */
@@ -180,12 +199,15 @@ public abstract class TlsProtocol {
                      * starting at client hello up to, but not including, this finished message.
                      * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
                      */
-                    switch (type) {
+                    switch (type)
+                    {
                     case HandshakeType.hello_request:
                         break;
-                    case HandshakeType.finished: {
+                    case HandshakeType.finished:
+                    {
 
-                        if (this.expected_verify_data == null) {
+                        if (this.expected_verify_data == null)
+                        {
                             this.expected_verify_data = createVerifyData(!getContext().isServer());
                         }
 
@@ -204,10 +226,12 @@ public abstract class TlsProtocol {
                     read = true;
                 }
             }
-        } while (read);
+        }
+        while (read);
     }
 
-    private void processApplicationData() {
+    private void processApplicationData()
+    {
         /*
          * There is nothing we need to do here.
          * 
@@ -215,8 +239,11 @@ public abstract class TlsProtocol {
          */
     }
 
-    private void processAlert() throws IOException {
-        while (alertQueue.size() >= 2) {
+    private void processAlert()
+        throws IOException
+    {
+        while (alertQueue.size() >= 2)
+        {
             /*
              * An alert is always 2 bytes. Read the alert.
              */
@@ -228,27 +255,34 @@ public abstract class TlsProtocol {
 
             getPeer().notifyAlertReceived(level, description);
 
-            if (level == AlertLevel.fatal) {
+            if (level == AlertLevel.fatal)
+            {
 
                 this.failedWithError = true;
                 this.closed = true;
                 /*
                  * Now try to close the stream, ignore errors.
                  */
-                try {
+                try
+                {
                     recordStream.close();
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
 
                 }
                 throw new IOException(TLS_ERROR_MESSAGE);
-            } else {
+            }
+            else
+            {
 
                 /*
                  * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
                  * and close down the connection immediately, discarding any pending writes.
                  */
                 // TODO Can close_notify be a fatal alert?
-                if (description == AlertDescription.close_notify) {
+                if (description == AlertDescription.close_notify)
+                {
                     handleClose(false);
                 }
 
@@ -262,20 +296,23 @@ public abstract class TlsProtocol {
 
     /**
      * This method is called, when a change cipher spec message is received.
-     * 
-     * @throws IOException
-     *             If the message has an invalid content or the handshake is not in the correct
-     *             state.
+     *
+     * @throws IOException If the message has an invalid content or the handshake is not in the correct
+     * state.
      */
-    private void processChangeCipherSpec() throws IOException {
-        while (changeCipherSpecQueue.size() > 0) {
+    private void processChangeCipherSpec()
+        throws IOException
+    {
+        while (changeCipherSpecQueue.size() > 0)
+        {
             /*
              * A change cipher spec message is only one byte with the value 1.
              */
             byte[] b = new byte[1];
             changeCipherSpecQueue.read(b, 0, 1, 0);
             changeCipherSpecQueue.removeData(1);
-            if (b[0] != 1) {
+            if (b[0] != 1)
+            {
                 /*
                  * This should never happen.
                  */
@@ -291,29 +328,31 @@ public abstract class TlsProtocol {
     /**
      * Read data from the network. The method will return immediately, if there is still some data
      * left in the buffer, or block until some application data has been read from the network.
-     * 
-     * @param buf
-     *            The buffer where the data will be copied to.
-     * @param offset
-     *            The position where the data will be placed in the buffer.
-     * @param len
-     *            The maximum number of bytes to read.
+     *
+     * @param buf    The buffer where the data will be copied to.
+     * @param offset The position where the data will be placed in the buffer.
+     * @param len    The maximum number of bytes to read.
      * @return The number of bytes read.
-     * @throws IOException
-     *             If something goes wrong during reading data.
+     * @throws IOException If something goes wrong during reading data.
      */
-    protected int readApplicationData(byte[] buf, int offset, int len) throws IOException {
+    protected int readApplicationData(byte[] buf, int offset, int len)
+        throws IOException
+    {
 
-        if (len < 1) {
+        if (len < 1)
+        {
             return 0;
         }
 
-        while (applicationDataQueue.size() == 0) {
+        while (applicationDataQueue.size() == 0)
+        {
             /*
              * We need to read some data.
              */
-            if (this.closed) {
-                if (this.failedWithError) {
+            if (this.closed)
+            {
+                if (this.failedWithError)
+                {
                     /*
                      * Something went terribly wrong, we should throw an IOException
                      */
@@ -334,42 +373,66 @@ public abstract class TlsProtocol {
         return len;
     }
 
-    protected void safeReadRecord() throws IOException {
-        try {
+    protected void safeReadRecord()
+        throws IOException
+    {
+        try
+        {
             recordStream.readRecord();
-        } catch (TlsFatalAlert e) {
-            if (!this.closed) {
+        }
+        catch (TlsFatalAlert e)
+        {
+            if (!this.closed)
+            {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
             }
             throw e;
-        } catch (IOException e) {
-            if (!this.closed) {
+        }
+        catch (IOException e)
+        {
+            if (!this.closed)
+            {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
             }
             throw e;
-        } catch (RuntimeException e) {
-            if (!this.closed) {
+        }
+        catch (RuntimeException e)
+        {
+            if (!this.closed)
+            {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
             }
             throw e;
         }
     }
 
-    protected void safeWriteRecord(short type, byte[] buf, int offset, int len) throws IOException {
-        try {
+    protected void safeWriteRecord(short type, byte[] buf, int offset, int len)
+        throws IOException
+    {
+        try
+        {
             recordStream.writeRecord(type, buf, offset, len);
-        } catch (TlsFatalAlert e) {
-            if (!this.closed) {
+        }
+        catch (TlsFatalAlert e)
+        {
+            if (!this.closed)
+            {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
             }
             throw e;
-        } catch (IOException e) {
-            if (!closed) {
+        }
+        catch (IOException e)
+        {
+            if (!closed)
+            {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
             }
             throw e;
-        } catch (RuntimeException e) {
-            if (!closed) {
+        }
+        catch (RuntimeException e)
+        {
+            if (!closed)
+            {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
             }
             throw e;
@@ -380,31 +443,33 @@ public abstract class TlsProtocol {
      * Send some application data to the remote system.
      * <p/>
      * The method will handle fragmentation internally.
-     * 
-     * @param buf
-     *            The buffer with the data.
-     * @param offset
-     *            The position in the buffer where the data is placed.
-     * @param len
-     *            The length of the data.
-     * @throws IOException
-     *             If something goes wrong during sending.
+     *
+     * @param buf    The buffer with the data.
+     * @param offset The position in the buffer where the data is placed.
+     * @param len    The length of the data.
+     * @throws IOException If something goes wrong during sending.
      */
-    protected void writeData(byte[] buf, int offset, int len) throws IOException {
-        if (this.closed) {
-            if (this.failedWithError) {
+    protected void writeData(byte[] buf, int offset, int len)
+        throws IOException
+    {
+        if (this.closed)
+        {
+            if (this.failedWithError)
+            {
                 throw new IOException(TLS_ERROR_MESSAGE);
             }
 
             throw new IOException("Sorry, connection has been closed, you cannot write more data");
         }
 
-        while (len > 0) {
+        while (len > 0)
+        {
             /*
              * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
              * potentially useful as a traffic analysis countermeasure.
              */
-            if (this.writeExtraEmptyRecords) {
+            if (this.writeExtraEmptyRecords)
+            {
                 /*
                  * Protect against known IV attack!
                  * 
@@ -428,14 +493,16 @@ public abstract class TlsProtocol {
     /**
      * @return An OutputStream which can be used to send data.
      */
-    public OutputStream getOutputStream() {
+    public OutputStream getOutputStream()
+    {
         return this.tlsOutputStream;
     }
 
     /**
      * @return An InputStream which can be used to read data.
      */
-    public InputStream getInputStream() {
+    public InputStream getInputStream()
+    {
         return this.tlsInputStream;
     }
 
@@ -443,25 +510,26 @@ public abstract class TlsProtocol {
      * Terminate this connection with an alert.
      * <p/>
      * Can be used for normal closure too.
-     * 
-     * @param alertLevel
-     *            The level of the alert, an be AlertLevel.fatal or AL_warning.
-     * @param alertDescription
-     *            The exact alert message.
-     * @throws IOException
-     *             If alert was fatal.
+     *
+     * @param alertLevel       The level of the alert, an be AlertLevel.fatal or AL_warning.
+     * @param alertDescription The exact alert message.
+     * @throws IOException If alert was fatal.
      */
-    protected void failWithError(short alertLevel, short alertDescription) throws IOException {
+    protected void failWithError(short alertLevel, short alertDescription)
+        throws IOException
+    {
         /*
          * Check if the connection is still open.
          */
-        if (!closed) {
+        if (!closed)
+        {
             /*
              * Prepare the message
              */
             this.closed = true;
 
-            if (alertLevel == AlertLevel.fatal) {
+            if (alertLevel == AlertLevel.fatal)
+            {
                 /*
                  * This is a fatal message.
                  */
@@ -469,15 +537,20 @@ public abstract class TlsProtocol {
             }
             raiseAlert(alertLevel, alertDescription, null, null);
             recordStream.close();
-            if (alertLevel == AlertLevel.fatal) {
+            if (alertLevel == AlertLevel.fatal)
+            {
                 throw new IOException(TLS_ERROR_MESSAGE);
             }
-        } else {
+        }
+        else
+        {
             throw new IOException(TLS_ERROR_MESSAGE);
         }
     }
 
-    protected void processFinishedMessage(ByteArrayInputStream buf) throws IOException {
+    protected void processFinishedMessage(ByteArrayInputStream buf)
+        throws IOException
+    {
 
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
@@ -486,7 +559,8 @@ public abstract class TlsProtocol {
         /*
          * Compare both checksums.
          */
-        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data)) {
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data))
+        {
             /*
              * Wrong checksum in the finished message.
              */
@@ -495,32 +569,41 @@ public abstract class TlsProtocol {
     }
 
     protected void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
-        throws IOException {
+        throws IOException
+    {
 
         getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);
 
         byte[] error = new byte[2];
-        error[0] = (byte) alertLevel;
-        error[1] = (byte) alertDescription;
+        error[0] = (byte)alertLevel;
+        error[1] = (byte)alertDescription;
 
         safeWriteRecord(ContentType.alert, error, 0, 2);
     }
 
-    protected void raiseWarning(short alertDescription, String message) throws IOException {
+    protected void raiseWarning(short alertDescription, String message)
+        throws IOException
+    {
         raiseAlert(AlertLevel.warning, alertDescription, message, null);
     }
 
-    protected void sendCertificateMessage(Certificate certificate) throws IOException {
+    protected void sendCertificateMessage(Certificate certificate)
+        throws IOException
+    {
 
-        if (certificate == null) {
+        if (certificate == null)
+        {
             certificate = Certificate.EMPTY_CHAIN;
         }
 
-        if (certificate.getLength() == 0) {
+        if (certificate.getLength() == 0)
+        {
             TlsContext context = getContext();
-            if (!context.isServer()) {
+            if (!context.isServer())
+            {
                 ProtocolVersion serverVersion = getContext().getServerVersion();
-                if (serverVersion.isSSL()) {
+                if (serverVersion.isSSL())
+                {
                     String message = serverVersion.toString() + " client didn't provide credentials";
                     raiseWarning(AlertDescription.no_certificate, message);
                     return;
@@ -543,13 +626,17 @@ public abstract class TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendChangeCipherSpecMessage() throws IOException {
-        byte[] message = new byte[] { 1 };
+    protected void sendChangeCipherSpecMessage()
+        throws IOException
+    {
+        byte[] message = new byte[]{1};
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
         recordStream.sentWriteCipherSpec();
     }
 
-    protected void sendFinishedMessage() throws IOException {
+    protected void sendFinishedMessage()
+        throws IOException
+    {
         byte[] verify_data = createVerifyData(getContext().isServer());
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -561,7 +648,9 @@ public abstract class TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendSupplementalDataMessage(Vector supplementalData) throws IOException {
+    protected void sendSupplementalDataMessage(Vector supplementalData)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.supplemental_data, buf);
@@ -579,10 +668,12 @@ public abstract class TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected byte[] createVerifyData(boolean isServer) {
+    protected byte[] createVerifyData(boolean isServer)
+    {
         TlsContext context = getContext();
 
-        if (isServer) {
+        if (isServer)
+        {
             return TlsUtils.calculateVerifyData(context, "server finished",
                 recordStream.getCurrentHash(TlsUtils.SSL_SERVER));
         }
@@ -593,39 +684,52 @@ public abstract class TlsProtocol {
 
     /**
      * Closes this connection.
-     * 
-     * @throws IOException
-     *             If something goes wrong during closing.
+     *
+     * @throws IOException If something goes wrong during closing.
      */
-    public void close() throws IOException {
+    public void close()
+        throws IOException
+    {
         handleClose(true);
     }
 
-    protected void handleClose(boolean user_canceled) throws IOException {
-        if (!closed) {
-            if (user_canceled && !appDataReady) {
+    protected void handleClose(boolean user_canceled)
+        throws IOException
+    {
+        if (!closed)
+        {
+            if (user_canceled && !appDataReady)
+            {
                 raiseWarning(AlertDescription.user_canceled, "User canceled handshake");
             }
             this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
         }
     }
 
-    protected void flush() throws IOException {
+    protected void flush()
+        throws IOException
+    {
         recordStream.flush();
     }
 
-    protected static boolean arrayContains(short[] a, short n) {
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] == n) {
+    protected static boolean arrayContains(short[] a, short n)
+    {
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] == n)
+            {
                 return true;
             }
         }
         return false;
     }
 
-    protected static boolean arrayContains(int[] a, int n) {
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] == n) {
+    protected static boolean arrayContains(int[] a, int n)
+    {
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] == n)
+            {
                 return true;
             }
         }
@@ -634,53 +738,66 @@ public abstract class TlsProtocol {
 
     /**
      * Make sure the InputStream 'buf' now empty. Fail otherwise.
-     * 
-     * @param buf
-     *            The InputStream to check.
-     * @throws IOException
-     *             If 'buf' is not empty.
+     *
+     * @param buf The InputStream to check.
+     * @throws IOException If 'buf' is not empty.
      */
-    protected static void assertEmpty(ByteArrayInputStream buf) throws IOException {
-        if (buf.available() > 0) {
+    protected static void assertEmpty(ByteArrayInputStream buf)
+        throws IOException
+    {
+        if (buf.available() > 0)
+        {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
     }
 
-    protected static byte[] createRandomBlock(SecureRandom random) {
+    protected static byte[] createRandomBlock(SecureRandom random)
+    {
         byte[] result = new byte[32];
         random.nextBytes(result);
         TlsUtils.writeGMTUnixTime(result, 0);
         return result;
     }
 
-    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection) throws IOException {
+    protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque8(renegotiated_connection, buf);
         return buf.toByteArray();
     }
 
-    protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange) throws IOException {
+    protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
+        throws IOException
+    {
 
         byte[] pre_master_secret = keyExchange.generatePremasterSecret();
 
-        try {
+        try
+        {
             context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context, pre_master_secret);
-        } finally {
+        }
+        finally
+        {
             // TODO Is there a way to ensure the data is really overwritten?
             /*
              * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
              * master_secret has been computed.
              */
-            if (pre_master_secret != null) {
-                Arrays.fill(pre_master_secret, (byte) 0);
+            if (pre_master_secret != null)
+            {
+                Arrays.fill(pre_master_secret, (byte)0);
             }
         }
     }
 
-    protected static Hashtable readExtensions(ByteArrayInputStream input) throws IOException {
+    protected static Hashtable readExtensions(ByteArrayInputStream input)
+        throws IOException
+    {
 
-        if (input.available() < 1) {
+        if (input.available() < 1)
+        {
             return null;
         }
 
@@ -693,14 +810,16 @@ public abstract class TlsProtocol {
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
 
-        while (buf.available() > 0) {
+        while (buf.available() > 0)
+        {
             Integer extType = Integers.valueOf(TlsUtils.readUint16(buf));
             byte[] extValue = TlsUtils.readOpaque16(buf);
 
             /*
              * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
              */
-            if (null != extensions.put(extType, extValue)) {
+            if (null != extensions.put(extType, extValue))
+            {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
@@ -708,7 +827,9 @@ public abstract class TlsProtocol {
         return extensions;
     }
 
-    protected static Vector readSupplementalDataMessage(ByteArrayInputStream input) throws IOException {
+    protected static Vector readSupplementalDataMessage(ByteArrayInputStream input)
+        throws IOException
+    {
 
         byte[] supp_data = TlsUtils.readOpaque24(input);
 
@@ -718,7 +839,8 @@ public abstract class TlsProtocol {
 
         Vector supplementalData = new Vector();
 
-        while (buf.available() > 0) {
+        while (buf.available() > 0)
+        {
             int supp_data_type = TlsUtils.readUint16(buf);
             byte[] data = TlsUtils.readOpaque16(buf);
 
@@ -728,14 +850,17 @@ public abstract class TlsProtocol {
         return supplementalData;
     }
 
-    protected static void writeExtensions(OutputStream output, Hashtable extensions) throws IOException {
+    protected static void writeExtensions(OutputStream output, Hashtable extensions)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         Enumeration keys = extensions.keys();
-        while (keys.hasMoreElements()) {
-            Integer extType = (Integer) keys.nextElement();
-            byte[] extValue = (byte[]) extensions.get(extType);
+        while (keys.hasMoreElements())
+        {
+            Integer extType = (Integer)keys.nextElement();
+            byte[] extValue = (byte[])extensions.get(extType);
 
             TlsUtils.writeUint16(extType.intValue(), buf);
             TlsUtils.writeOpaque16(extValue, buf);
@@ -746,12 +871,15 @@ public abstract class TlsProtocol {
         TlsUtils.writeOpaque16(extBytes, output);
     }
 
-    protected static void writeSupplementalData(OutputStream output, Vector supplementalData) throws IOException {
+    protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        for (int i = 0; i < supplementalData.size(); ++i) {
-            SupplementalDataEntry entry = (SupplementalDataEntry) supplementalData.elementAt(i);
+        for (int i = 0; i < supplementalData.size(); ++i)
+        {
+            SupplementalDataEntry entry = (SupplementalDataEntry)supplementalData.elementAt(i);
 
             TlsUtils.writeUint16(entry.getDataType(), buf);
             TlsUtils.writeOpaque16(entry.getData(), buf);
@@ -762,9 +890,11 @@ public abstract class TlsProtocol {
         TlsUtils.writeOpaque24(supp_data, output);
     }
 
-    protected static int getPRFAlgorithm(int ciphersuite) {
+    protected static int getPRFAlgorithm(int ciphersuite)
+    {
 
-        switch (ciphersuite) {
+        switch (ciphersuite)
+        {
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:

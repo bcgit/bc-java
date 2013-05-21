@@ -7,26 +7,29 @@ import java.io.OutputStream;
 /**
  * RFC 5246 7.4.1.4.1
  */
-public class SignatureAndHashAlgorithm {
+public class SignatureAndHashAlgorithm
+{
 
     private short hash;
     private short signature;
 
     /**
-     * @param hash
-     *            {@link HashAlgorithm}
-     * @param signature
-     *            {@link SignatureAlgorithm}
+     * @param hash      {@link HashAlgorithm}
+     * @param signature {@link SignatureAlgorithm}
      */
-    public SignatureAndHashAlgorithm(short hash, short signature) {
+    public SignatureAndHashAlgorithm(short hash, short signature)
+    {
 
-        if (!TlsUtils.isValidUint8(hash)) {
+        if (!TlsUtils.isValidUint8(hash))
+        {
             throw new IllegalArgumentException("'hash' should be a uint8");
         }
-        if (!TlsUtils.isValidUint8(signature)) {
+        if (!TlsUtils.isValidUint8(signature))
+        {
             throw new IllegalArgumentException("'signature' should be a uint8");
         }
-        if (signature == SignatureAlgorithm.anonymous) {
+        if (signature == SignatureAlgorithm.anonymous)
+        {
             throw new IllegalArgumentException("'signature' MUST NOT be \"anonymous\"");
         }
 
@@ -37,50 +40,57 @@ public class SignatureAndHashAlgorithm {
     /**
      * @return {@link HashAlgorithm}
      */
-    public short getHash() {
+    public short getHash()
+    {
         return hash;
     }
 
     /**
      * @return {@link SignatureAlgorithm}
      */
-    public short getSignature() {
+    public short getSignature()
+    {
         return signature;
     }
 
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SignatureAndHashAlgorithm)) {
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof SignatureAndHashAlgorithm))
+        {
             return false;
         }
-        SignatureAndHashAlgorithm other = (SignatureAndHashAlgorithm) obj;
+        SignatureAndHashAlgorithm other = (SignatureAndHashAlgorithm)obj;
         return other.getHash() == getHash() && other.getSignature() == getSignature();
     }
 
-    public int hashCode() {
+    public int hashCode()
+    {
         return (getHash() << 8) | getSignature();
     }
 
     /**
      * Encode this {@link SignatureAndHashAlgorithm} to an {@link OutputStream}.
-     * 
-     * @param output
-     *            the {@link OutputStream} to encode to.
+     *
+     * @param output the {@link OutputStream} to encode to.
      * @throws IOException
      */
-    public void encode(OutputStream output) throws IOException {
+    public void encode(OutputStream output)
+        throws IOException
+    {
         TlsUtils.writeUint8(hash, output);
         TlsUtils.writeUint8(signature, output);
     }
 
     /**
      * Parse a {@link SignatureAndHashAlgorithm} from an {@link InputStream}.
-     * 
-     * @param input
-     *            the {@link InputStream} to parse from.
+     *
+     * @param input the {@link InputStream} to parse from.
      * @return a {@link SignatureAndHashAlgorithm} object.
      * @throws IOException
      */
-    public static SignatureAndHashAlgorithm parse(InputStream input) throws IOException {
+    public static SignatureAndHashAlgorithm parse(InputStream input)
+        throws IOException
+    {
         short hash = TlsUtils.readUint8(input);
         short signature = TlsUtils.readUint8(input);
         return new SignatureAndHashAlgorithm(hash, signature);

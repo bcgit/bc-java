@@ -3,32 +3,40 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.util.Hashtable;
 
-public abstract class DefaultTlsClient extends AbstractTlsClient {
+public abstract class DefaultTlsClient
+    extends AbstractTlsClient
+{
 
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
-    public DefaultTlsClient() {
+    public DefaultTlsClient()
+    {
         super();
     }
 
-    public DefaultTlsClient(TlsCipherFactory cipherFactory) {
+    public DefaultTlsClient(TlsCipherFactory cipherFactory)
+    {
         super(cipherFactory);
     }
 
-    public int[] getCipherSuites() {
-        return new int[] { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+    public int[] getCipherSuites()
+    {
+        return new int[]{CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA, };
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,};
     }
 
-    public Hashtable getClientExtensions() throws IOException {
+    public Hashtable getClientExtensions()
+        throws IOException
+    {
 
         Hashtable clientExtensions = super.getClientExtensions();
 
-        if (TlsECCUtils.containsECCCipherSuites(getCipherSuites())) {
+        if (TlsECCUtils.containsECCCipherSuites(getCipherSuites()))
+        {
             /*
              * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
              * appends these extensions (along with any others), enumerating the curves it supports
@@ -39,13 +47,14 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
              * TODO Could just add all the curves since we support them all, but users may not want
              * to use unnecessarily large fields. Need configuration options.
              */
-            this.namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.sect233r1, NamedCurve.secp224r1,
+            this.namedCurves = new int[]{NamedCurve.secp256r1, NamedCurve.sect233r1, NamedCurve.secp224r1,
                 NamedCurve.sect193r1, NamedCurve.secp192r1, NamedCurve.arbitrary_explicit_char2_curves,
-                NamedCurve.arbitrary_explicit_prime_curves };
-            this.clientECPointFormats = new short[] { ECPointFormat.ansiX962_compressed_char2,
-                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
+                NamedCurve.arbitrary_explicit_prime_curves};
+            this.clientECPointFormats = new short[]{ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed};
 
-            if (clientExtensions == null) {
+            if (clientExtensions == null)
+            {
                 clientExtensions = new Hashtable();
             }
 
@@ -56,26 +65,34 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         return clientExtensions;
     }
 
-    public void processServerExtensions(Hashtable serverExtensions) throws IOException {
+    public void processServerExtensions(Hashtable serverExtensions)
+        throws IOException
+    {
 
         super.processServerExtensions(serverExtensions);
 
-        if (serverExtensions != null) {
+        if (serverExtensions != null)
+        {
             int[] namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
-            if (namedCurves != null) {
+            if (namedCurves != null)
+            {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
             this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
-            if (this.serverECPointFormats != null && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite)) {
+            if (this.serverECPointFormats != null && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+            {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
     }
 
-    public TlsKeyExchange getKeyExchange() throws IOException {
+    public TlsKeyExchange getKeyExchange()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
@@ -195,9 +212,12 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         }
     }
 
-    public TlsCipher getCipher() throws IOException {
+    public TlsCipher getCipher()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -331,25 +351,30 @@ public abstract class DefaultTlsClient extends AbstractTlsClient {
         }
     }
 
-    protected TlsKeyExchange createDHKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createDHKeyExchange(int keyExchange)
+    {
         return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
-    protected TlsKeyExchange createDHEKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createDHEKeyExchange(int keyExchange)
+    {
         return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
-    protected TlsKeyExchange createECDHKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createECDHKeyExchange(int keyExchange)
+    {
         return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange)
+    {
         return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createRSAKeyExchange() {
+    protected TlsKeyExchange createRSAKeyExchange()
+    {
         return new TlsRSAKeyExchange(supportedSignatureAlgorithms);
     }
 }

@@ -4,12 +4,15 @@ import java.io.IOException;
 
 /**
  * A temporary class to use LegacyTlsAuthentication
- * 
+ *
  * @deprecated
  */
-public class LegacyTlsClient extends DefaultTlsClient
+public class LegacyTlsClient
+    extends DefaultTlsClient
 {
-    /** @deprecated */
+    /**
+     * @deprecated
+     */
     protected CertificateVerifyer verifyer;
 
     /**
@@ -22,7 +25,8 @@ public class LegacyTlsClient extends DefaultTlsClient
         this.verifyer = verifyer;
     }
 
-    public TlsAuthentication getAuthentication() throws IOException
+    public TlsAuthentication getAuthentication()
+        throws IOException
     {
         return new LegacyTlsAuthentication(verifyer);
     }

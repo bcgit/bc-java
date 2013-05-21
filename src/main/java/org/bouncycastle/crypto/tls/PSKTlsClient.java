@@ -2,31 +2,39 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
-public abstract class PSKTlsClient extends AbstractTlsClient {
+public abstract class PSKTlsClient
+    extends AbstractTlsClient
+{
     protected TlsPSKIdentity pskIdentity;
 
-    public PSKTlsClient(TlsPSKIdentity pskIdentity) {
+    public PSKTlsClient(TlsPSKIdentity pskIdentity)
+    {
         super();
         this.pskIdentity = pskIdentity;
     }
 
-    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity) {
+    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)
+    {
         super(cipherFactory);
         this.pskIdentity = pskIdentity;
     }
 
-    public int[] getCipherSuites() {
-        return new int[] { CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
+    public int[] getCipherSuites()
+    {
+        return new int[]{CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA,
             CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA,
             CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_PSK_WITH_RC4_128_SHA, };
+            CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_PSK_WITH_RC4_128_SHA,};
     }
 
-    public TlsKeyExchange getKeyExchange() throws IOException {
+    public TlsKeyExchange getKeyExchange()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA:
@@ -58,9 +66,12 @@ public abstract class PSKTlsClient extends AbstractTlsClient {
         }
     }
 
-    public TlsCipher getCipher() throws IOException {
+    public TlsCipher getCipher()
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
@@ -96,7 +107,8 @@ public abstract class PSKTlsClient extends AbstractTlsClient {
         }
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) {
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
+    {
         return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity);
     }
 }

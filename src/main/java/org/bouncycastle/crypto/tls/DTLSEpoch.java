@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
-class DTLSEpoch {
+class DTLSEpoch
+{
 
     private final DTLSReplayWindow replayWindow = new DTLSReplayWindow();
 
@@ -9,11 +10,14 @@ class DTLSEpoch {
 
     private long sequence_number = 0;
 
-    DTLSEpoch(int epoch, TlsCipher cipher) {
-        if (epoch < 0) {
+    DTLSEpoch(int epoch, TlsCipher cipher)
+    {
+        if (epoch < 0)
+        {
             throw new IllegalArgumentException("'epoch' must be >= 0");
         }
-        if (cipher == null) {
+        if (cipher == null)
+        {
             throw new IllegalArgumentException("'cipher' cannot be null");
         }
 
@@ -21,24 +25,29 @@ class DTLSEpoch {
         this.cipher = cipher;
     }
 
-    long allocateSequenceNumber() {
+    long allocateSequenceNumber()
+    {
         // TODO Check for overflow
         return sequence_number++;
     }
 
-    TlsCipher getCipher() {
+    TlsCipher getCipher()
+    {
         return cipher;
     }
 
-    int getEpoch() {
+    int getEpoch()
+    {
         return epoch;
     }
 
-    DTLSReplayWindow getReplayWindow() {
+    DTLSReplayWindow getReplayWindow()
+    {
         return replayWindow;
     }
 
-    long getSequence_number() {
+    long getSequence_number()
+    {
         return sequence_number;
     }
 }

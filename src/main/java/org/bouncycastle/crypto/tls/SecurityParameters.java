@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
-public class SecurityParameters {
+public class SecurityParameters
+{
 
     int entity = -1;
     int prfAlgorithm = -1;
@@ -13,37 +14,44 @@ public class SecurityParameters {
     /**
      * @return {@link ConnectionEnd}
      */
-    public int getEntity() {
+    public int getEntity()
+    {
         return entity;
     }
 
     /**
      * @return {@link PRFAlgorithm}
      */
-    public int getPrfAlgorithm() {
+    public int getPrfAlgorithm()
+    {
         return prfAlgorithm;
     }
 
     /**
      * @return {@link CompressionMethod}
      */
-    public short getCompressionAlgorithm() {
+    public short getCompressionAlgorithm()
+    {
         return compressionAlgorithm;
     }
 
-    public int getVerifyDataLength() {
+    public int getVerifyDataLength()
+    {
         return verifyDataLength;
     }
 
-    public byte[] getMasterSecret() {
+    public byte[] getMasterSecret()
+    {
         return masterSecret;
     }
 
-    public byte[] getClientRandom() {
+    public byte[] getClientRandom()
+    {
         return clientRandom;
     }
 
-    public byte[] getServerRandom() {
+    public byte[] getServerRandom()
+    {
         return serverRandom;
     }
 }

@@ -8,15 +8,18 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * Standard Diffie-Hellman groups from various IETF specifications.
  */
-public class DHStandardGroups {
+public class DHStandardGroups
+{
 
-    private static DHParameters fromPG(String hexP, String hexG) {
+    private static DHParameters fromPG(String hexP, String hexG)
+    {
         BigInteger p = new BigInteger(1, Hex.decode(hexP));
         BigInteger g = new BigInteger(1, Hex.decode(hexG));
         return new DHParameters(p, g);
     }
 
-    private static DHParameters fromPGQ(String hexP, String hexG, String hexQ) {
+    private static DHParameters fromPGQ(String hexP, String hexG, String hexQ)
+    {
         BigInteger p = new BigInteger(1, Hex.decode(hexP));
         BigInteger g = new BigInteger(1, Hex.decode(hexG));
         BigInteger q = new BigInteger(1, Hex.decode(hexQ));

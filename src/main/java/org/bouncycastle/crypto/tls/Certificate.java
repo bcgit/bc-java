@@ -12,26 +12,29 @@ import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * Parsing and encoding of a <i>Certificate</i> struct from RFC 4346.
- * 
+ * <p/>
  * <pre>
  * opaque ASN.1Cert<2^24-1>;
- * 
+ *
  * struct {
  *     ASN.1Cert certificate_list<0..2^24-1>;
  * } Certificate;
  * </pre>
- * 
+ *
  * @see org.bouncycastle.asn1.x509.Certificate
  */
-public class Certificate {
+public class Certificate
+{
 
     public static final Certificate EMPTY_CHAIN = new Certificate(
         new org.bouncycastle.asn1.x509.Certificate[0]);
 
     protected org.bouncycastle.asn1.x509.Certificate[] certificateList;
 
-    public Certificate(org.bouncycastle.asn1.x509.Certificate[] certificateList) {
-        if (certificateList == null) {
+    public Certificate(org.bouncycastle.asn1.x509.Certificate[] certificateList)
+    {
+        if (certificateList == null)
+        {
             throw new IllegalArgumentException("'certificateList' cannot be null");
         }
 
@@ -41,7 +44,8 @@ public class Certificate {
     /**
      * @deprecated use {@link #getCertificateList()} instead
      */
-    public org.bouncycastle.asn1.x509.Certificate[] getCerts() {
+    public org.bouncycastle.asn1.x509.Certificate[] getCerts()
+    {
         return certificateList.clone();
     }
 
@@ -49,15 +53,18 @@ public class Certificate {
      * @return an array of {@link org.bouncycastle.asn1.x509.Certificate} representing a certificate
      *         chain.
      */
-    public org.bouncycastle.asn1.x509.Certificate[] getCertificateList() {
+    public org.bouncycastle.asn1.x509.Certificate[] getCertificateList()
+    {
         return certificateList.clone();
     }
 
-    public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index) {
+    public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index)
+    {
         return certificateList[index];
     }
 
-    public int getLength() {
+    public int getLength()
+    {
         return certificateList.length;
     }
 
@@ -65,21 +72,24 @@ public class Certificate {
      * @return <code>true</code> if this certificate chain contains no certificates, or
      *         <code>false</code> otherwise.
      */
-    public boolean isEmpty() {
+    public boolean isEmpty()
+    {
         return certificateList.length == 0;
     }
 
     /**
      * Encode this {@link Certificate} to an {@link OutputStream}.
-     * 
-     * @param output
-     *            the {@link OutputStream} to encode to.
+     *
+     * @param output the {@link OutputStream} to encode to.
      * @throws IOException
      */
-    public void encode(OutputStream output) throws IOException {
+    public void encode(OutputStream output)
+        throws IOException
+    {
         Vector encCerts = new Vector(this.certificateList.length);
         int totalLength = 0;
-        for (int i = 0; i < this.certificateList.length; ++i) {
+        for (int i = 0; i < this.certificateList.length; ++i)
+        {
             byte[] encCert = certificateList[i].getEncoded(ASN1Encoding.DER);
             encCerts.addElement(encCert);
             totalLength += encCert.length + 3;
@@ -87,28 +97,32 @@ public class Certificate {
 
         TlsUtils.writeUint24(totalLength, output);
 
-        for (int i = 0; i < encCerts.size(); ++i) {
-            byte[] encCert = (byte[]) encCerts.elementAt(i);
+        for (int i = 0; i < encCerts.size(); ++i)
+        {
+            byte[] encCert = (byte[])encCerts.elementAt(i);
             TlsUtils.writeOpaque24(encCert, output);
         }
     }
 
     /**
      * Parse a {@link Certificate} from an {@link InputStream}.
-     * 
-     * @param input
-     *            the {@link InputStream} to parse from.
+     *
+     * @param input the {@link InputStream} to parse from.
      * @return a {@link Certificate} object.
      * @throws IOException
      */
-    public static Certificate parse(InputStream input) throws IOException {
+    public static Certificate parse(InputStream input)
+        throws IOException
+    {
         org.bouncycastle.asn1.x509.Certificate[] certs;
         int left = TlsUtils.readUint24(input);
-        if (left == 0) {
+        if (left == 0)
+        {
             return EMPTY_CHAIN;
         }
         Vector tmp = new Vector();
-        while (left > 0) {
+        while (left > 0)
+        {
             int size = TlsUtils.readUint24(input);
             left -= 3 + size;
 
@@ -121,8 +135,9 @@ public class Certificate {
             tmp.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1));
         }
         certs = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
-        for (int i = 0; i < tmp.size(); i++) {
-            certs[i] = (org.bouncycastle.asn1.x509.Certificate) tmp.elementAt(i);
+        for (int i = 0; i < tmp.size(); i++)
+        {
+            certs[i] = (org.bouncycastle.asn1.x509.Certificate)tmp.elementAt(i);
         }
         return new Certificate(certs);
     }

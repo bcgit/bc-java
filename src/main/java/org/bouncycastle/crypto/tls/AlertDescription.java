@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 5246 7.2.
  */
-public class AlertDescription {
+public class AlertDescription
+{
 
     /**
      * This message notifies the recipient that the sender will not send any more messages on this

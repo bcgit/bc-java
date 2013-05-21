@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 4681
  */
-public class UserMappingType {
+public class UserMappingType
+{
     /*
      * RFC 4681
      */

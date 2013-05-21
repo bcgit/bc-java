@@ -2,7 +2,8 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
-public interface TlsCipherFactory {
+public interface TlsCipherFactory
+{
 
     /**
      * See enumeration classes EncryptionAlgorithm, MACAlgorithm for appropriate argument values

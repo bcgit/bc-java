@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
-public class SRTPProtectionProfile {
+public class SRTPProtectionProfile
+{
     /*
      * RFC 5764 4.1.2.
      */

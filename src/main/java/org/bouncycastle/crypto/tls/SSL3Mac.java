@@ -8,12 +8,13 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * HMAC implementation based on original internet draft for HMAC (RFC 2104)
- * 
+ * <p/>
  * The difference is that padding is concatenated versus XORed with the key
- * 
+ * <p/>
  * H(K + opad, H(K + ipad, text))
  */
-public class SSL3Mac implements Mac
+public class SSL3Mac
+    implements Mac
 {
     private final static byte IPAD_BYTE = (byte)0x36;
     private final static byte OPAD_BYTE = (byte)0x5C;
@@ -29,7 +30,7 @@ public class SSL3Mac implements Mac
     /**
      * Base constructor for one of the standard digest algorithms that the byteLength of
      * the algorithm is know for. Behaviour is undefined for digests other than MD5 or SHA1.
-     * 
+     *
      * @param digest the digest.
      */
     public SSL3Mac(Digest digest)

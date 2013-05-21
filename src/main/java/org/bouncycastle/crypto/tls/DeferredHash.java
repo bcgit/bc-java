@@ -7,7 +7,9 @@ import org.bouncycastle.crypto.Digest;
 /**
  * Buffers input until the hash algorithm is determined.
  */
-class DeferredHash implements TlsHandshakeHash {
+class DeferredHash
+    implements TlsHandshakeHash
+{
 
     protected TlsContext context;
 
@@ -15,21 +17,25 @@ class DeferredHash implements TlsHandshakeHash {
     private int prfAlgorithm = -1;
     private Digest hash = null;
 
-    DeferredHash() {
+    DeferredHash()
+    {
         this.buf = new ByteArrayOutputStream();
         this.hash = null;
     }
 
-    private DeferredHash(Digest hash) {
+    private DeferredHash(Digest hash)
+    {
         this.buf = null;
         this.hash = hash;
     }
 
-    public void init(TlsContext context) {
+    public void init(TlsContext context)
+    {
         this.context = context;
     }
 
-    public TlsHandshakeHash commit() {
+    public TlsHandshakeHash commit()
+    {
 
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
@@ -38,8 +44,9 @@ class DeferredHash implements TlsHandshakeHash {
         byte[] data = buf.toByteArray();
         prfHash.update(data, 0, data.length);
 
-        if (prfHash instanceof TlsHandshakeHash) {
-            TlsHandshakeHash tlsPRFHash = (TlsHandshakeHash) prfHash;
+        if (prfHash instanceof TlsHandshakeHash)
+        {
+            TlsHandshakeHash tlsPRFHash = (TlsHandshakeHash)prfHash;
             tlsPRFHash.init(context);
             return tlsPRFHash.commit();
         }
@@ -51,52 +58,70 @@ class DeferredHash implements TlsHandshakeHash {
         return this;
     }
 
-    public TlsHandshakeHash fork() {
+    public TlsHandshakeHash fork()
+    {
         checkHash();
         return new DeferredHash(TlsUtils.clonePRFHash(prfAlgorithm, hash));
     }
 
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         checkHash();
         return hash.getAlgorithmName();
     }
 
-    public int getDigestSize() {
+    public int getDigestSize()
+    {
         checkHash();
         return hash.getDigestSize();
     }
 
-    public void update(byte input) {
-        if (hash == null) {
+    public void update(byte input)
+    {
+        if (hash == null)
+        {
             buf.write(input);
-        } else {
+        }
+        else
+        {
             hash.update(input);
         }
     }
 
-    public void update(byte[] input, int inOff, int len) {
-        if (hash == null) {
+    public void update(byte[] input, int inOff, int len)
+    {
+        if (hash == null)
+        {
             buf.write(input, inOff, len);
-        } else {
+        }
+        else
+        {
             hash.update(input, inOff, len);
         }
     }
 
-    public int doFinal(byte[] output, int outOff) {
+    public int doFinal(byte[] output, int outOff)
+    {
         checkHash();
         return hash.doFinal(output, outOff);
     }
 
-    public void reset() {
-        if (hash == null) {
+    public void reset()
+    {
+        if (hash == null)
+        {
             buf.reset();
-        } else {
+        }
+        else
+        {
             hash.reset();
         }
     }
 
-    protected void checkHash() {
-        if (hash == null) {
+    protected void checkHash()
+    {
+        if (hash == null)
+        {
             throw new IllegalStateException("No hash algorithm has been set");
         }
     }

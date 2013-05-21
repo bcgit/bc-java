@@ -13,7 +13,9 @@ import java.util.Vector;
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
 
-public class TlsClientProtocol extends TlsProtocol {
+public class TlsClientProtocol
+    extends TlsProtocol
+{
 
     protected TlsClient tlsClient = null;
     protected TlsClientContextImpl tlsClientContext = null;
@@ -29,7 +31,8 @@ public class TlsClientProtocol extends TlsProtocol {
     protected TlsAuthentication authentication = null;
     protected CertificateRequest certificateRequest = null;
 
-    private static SecureRandom createSecureRandom() {
+    private static SecureRandom createSecureRandom()
+    {
         /*
          * We use our threaded seed generator to generate a good random seed. If the user has a
          * better random seed, he should use the constructor with a SecureRandom.
@@ -45,26 +48,31 @@ public class TlsClientProtocol extends TlsProtocol {
         return random;
     }
 
-    public TlsClientProtocol(InputStream input, OutputStream output) {
+    public TlsClientProtocol(InputStream input, OutputStream output)
+    {
         this(input, output, createSecureRandom());
     }
 
-    public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom) {
+    public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
+    {
         super(input, output, secureRandom);
     }
 
     /**
      * Initiates a TLS handshake in the role of client
-     * 
+     *
      * @param tlsClient
-     * @throws IOException
-     *             If handshake was not successful.
+     * @throws IOException If handshake was not successful.
      */
-    public void connect(TlsClient tlsClient) throws IOException {
-        if (tlsClient == null) {
+    public void connect(TlsClient tlsClient)
+        throws IOException
+    {
+        if (tlsClient == null)
+        {
             throw new IllegalArgumentException("'tlsClient' cannot be null");
         }
-        if (this.tlsClient != null) {
+        if (this.tlsClient != null)
+        {
             throw new IllegalStateException("connect can only be called once");
         }
 
@@ -86,19 +94,26 @@ public class TlsClientProtocol extends TlsProtocol {
         this.tlsClient.notifyHandshakeComplete();
     }
 
-    protected AbstractTlsContext getContext() {
+    protected AbstractTlsContext getContext()
+    {
         return tlsClientContext;
     }
 
-    protected TlsPeer getPeer() {
+    protected TlsPeer getPeer()
+    {
         return tlsClient;
     }
 
-    protected void handleChangeCipherSpecMessage() throws IOException {
+    protected void handleChangeCipherSpecMessage()
+        throws IOException
+    {
 
-        switch (this.connection_state) {
-        case CS_CLIENT_FINISHED: {
-            if (this.expectSessionTicket) {
+        switch (this.connection_state)
+        {
+        case CS_CLIENT_FINISHED:
+        {
+            if (this.expectSessionTicket)
+            {
                 /*
                  * RFC 5077 3.3. This message MUST be sent if the server included a SessionTicket
                  * extension in the ServerHello.
@@ -115,17 +130,24 @@ public class TlsClientProtocol extends TlsProtocol {
         }
     }
 
-    protected void handleHandshakeMessage(short type, byte[] data) throws IOException {
+    protected void handleHandshakeMessage(short type, byte[] data)
+        throws IOException
+    {
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
 
-        switch (type) {
-        case HandshakeType.certificate: {
-            switch (this.connection_state) {
-            case CS_SERVER_HELLO: {
+        switch (type)
+        {
+        case HandshakeType.certificate:
+        {
+            switch (this.connection_state)
+            {
+            case CS_SERVER_HELLO:
+            {
                 handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
-            case CS_SERVER_SUPPLEMENTAL_DATA: {
+            case CS_SERVER_SUPPLEMENTAL_DATA:
+            {
                 // Parse the Certificate message and send to cipher suite
 
                 Certificate serverCertificate = Certificate.parse(buf);
@@ -147,7 +169,8 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         }
         case HandshakeType.finished:
-            switch (this.connection_state) {
+            switch (this.connection_state)
+            {
             case CS_SERVER_CHANGE_CIPHER_SPEC:
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
@@ -157,7 +180,8 @@ public class TlsClientProtocol extends TlsProtocol {
             }
             break;
         case HandshakeType.server_hello:
-            switch (this.connection_state) {
+            switch (this.connection_state)
+            {
             case CS_CLIENT_HELLO:
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
@@ -179,8 +203,10 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
             break;
-        case HandshakeType.supplemental_data: {
-            switch (this.connection_state) {
+        case HandshakeType.supplemental_data:
+        {
+            switch (this.connection_state)
+            {
             case CS_SERVER_HELLO:
                 handleSupplementalData(readSupplementalDataMessage(buf));
                 break;
@@ -190,12 +216,15 @@ public class TlsClientProtocol extends TlsProtocol {
             break;
         }
         case HandshakeType.server_hello_done:
-            switch (this.connection_state) {
-            case CS_SERVER_HELLO: {
+            switch (this.connection_state)
+            {
+            case CS_SERVER_HELLO:
+            {
                 handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
-            case CS_SERVER_SUPPLEMENTAL_DATA: {
+            case CS_SERVER_SUPPLEMENTAL_DATA:
+            {
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCredentials();
@@ -218,18 +247,23 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
-                if (clientSupplementalData != null) {
+                if (clientSupplementalData != null)
+                {
                     sendSupplementalDataMessage(clientSupplementalData);
                 }
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
                 TlsCredentials clientCreds = null;
-                if (certificateRequest == null) {
+                if (certificateRequest == null)
+                {
                     this.keyExchange.skipClientCredentials();
-                } else {
+                }
+                else
+                {
                     clientCreds = this.authentication.getClientCredentials(certificateRequest);
 
-                    if (clientCreds == null) {
+                    if (clientCreds == null)
+                    {
                         this.keyExchange.skipClientCredentials();
 
                         /*
@@ -239,7 +273,9 @@ public class TlsClientProtocol extends TlsProtocol {
                          * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                          */
                         sendCertificateMessage(Certificate.EMPTY_CHAIN);
-                    } else {
+                    }
+                    else
+                    {
                         this.keyExchange.processClientCredentials(clientCreds);
 
                         sendCertificateMessage(clientCreds.getCertificate());
@@ -263,12 +299,13 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
-                if (clientCreds != null && clientCreds instanceof TlsSignerCredentials) {
+                if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
+                {
                     /*
                      * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm
                      * prepended from TLS 1.2
                      */
-                    TlsSignerCredentials signerCreds = (TlsSignerCredentials) clientCreds;
+                    TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
                     byte[] md5andsha1 = recordStream.getCurrentHash(null);
                     byte[] clientCertificateSignature = signerCreds.generateCertificateSignature(md5andsha1);
                     sendCertificateVerifyMessage(clientCertificateSignature);
@@ -286,13 +323,17 @@ public class TlsClientProtocol extends TlsProtocol {
                 this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
             }
             break;
-        case HandshakeType.server_key_exchange: {
-            switch (this.connection_state) {
-            case CS_SERVER_HELLO: {
+        case HandshakeType.server_key_exchange:
+        {
+            switch (this.connection_state)
+            {
+            case CS_SERVER_HELLO:
+            {
                 handleSupplementalData(null);
                 // NB: Fall through to next case label
             }
-            case CS_SERVER_SUPPLEMENTAL_DATA: {
+            case CS_SERVER_SUPPLEMENTAL_DATA:
+            {
 
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCredentials();
@@ -314,8 +355,10 @@ public class TlsClientProtocol extends TlsProtocol {
             this.connection_state = CS_SERVER_KEY_EXCHANGE;
             break;
         }
-        case HandshakeType.certificate_request: {
-            switch (this.connection_state) {
+        case HandshakeType.certificate_request:
+        {
+            switch (this.connection_state)
+            {
             case CS_SERVER_CERTIFICATE:
 
                 // There was no server key exchange message; check it's OK
@@ -323,8 +366,10 @@ public class TlsClientProtocol extends TlsProtocol {
 
                 // NB: Fall through to next case label
 
-            case CS_SERVER_KEY_EXCHANGE: {
-                if (this.authentication == null) {
+            case CS_SERVER_KEY_EXCHANGE:
+            {
+                if (this.authentication == null)
+                {
                     /*
                      * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
                      * to request client identification.
@@ -347,10 +392,13 @@ public class TlsClientProtocol extends TlsProtocol {
             this.connection_state = CS_CERTIFICATE_REQUEST;
             break;
         }
-        case HandshakeType.session_ticket: {
-            switch (this.connection_state) {
+        case HandshakeType.session_ticket:
+        {
+            switch (this.connection_state)
+            {
             case CS_CLIENT_FINISHED:
-                if (!this.expectSessionTicket) {
+                if (!this.expectSessionTicket)
+                {
                     /*
                      * RFC 5077 3.3. This message MUST NOT be sent if the server did not include a
                      * SessionTicket extension in the ServerHello.
@@ -374,7 +422,8 @@ public class TlsClientProtocol extends TlsProtocol {
              * if it does not wish to renegotiate a session, or the client may, if it wishes,
              * respond with a no_renegotiation alert.
              */
-            if (this.connection_state == CS_SERVER_FINISHED) {
+            if (this.connection_state == CS_SERVER_FINISHED)
+            {
                 String message = "Renegotiation not supported";
                 raiseWarning(AlertDescription.no_renegotiation, message);
             }
@@ -390,7 +439,9 @@ public class TlsClientProtocol extends TlsProtocol {
         }
     }
 
-    protected void handleSupplementalData(Vector serverSupplementalData) throws IOException {
+    protected void handleSupplementalData(Vector serverSupplementalData)
+        throws IOException
+    {
 
         this.tlsClient.processServerSupplementalData(serverSupplementalData);
         this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
@@ -399,7 +450,9 @@ public class TlsClientProtocol extends TlsProtocol {
         this.keyExchange.init(getContext());
     }
 
-    protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf)
+        throws IOException
+    {
 
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
@@ -408,20 +461,25 @@ public class TlsClientProtocol extends TlsProtocol {
         tlsClient.notifyNewSessionTicket(newSessionTicket);
     }
 
-    protected void receiveServerHelloMessage(ByteArrayInputStream buf) throws IOException {
+    protected void receiveServerHelloMessage(ByteArrayInputStream buf)
+        throws IOException
+    {
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        if (server_version.isDTLS()) {
+        if (server_version.isDTLS())
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         // Check that this matches what the server is sending in the record layer
-        if (!server_version.equals(recordStream.getReadVersion())) {
+        if (!server_version.equals(recordStream.getReadVersion()))
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
         ProtocolVersion client_version = getContext().getClientVersion();
-        if (!server_version.isEqualOrEarlierVersionOf(client_version)) {
+        if (!server_version.isEqualOrEarlierVersionOf(client_version))
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
@@ -435,7 +493,8 @@ public class TlsClientProtocol extends TlsProtocol {
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
         byte[] sessionID = TlsUtils.readOpaque8(buf);
-        if (sessionID.length > 32) {
+        if (sessionID.length > 32)
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
@@ -448,7 +507,8 @@ public class TlsClientProtocol extends TlsProtocol {
         this.selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!arrayContains(offeredCipherSuites, this.selectedCipherSuite)
             || this.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
+            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
@@ -459,7 +519,8 @@ public class TlsClientProtocol extends TlsProtocol {
          * offered ones.
          */
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!arrayContains(offeredCompressionMethods, selectedCompressionMethod)) {
+        if (!arrayContains(offeredCompressionMethods, selectedCompressionMethod))
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
@@ -490,10 +551,12 @@ public class TlsClientProtocol extends TlsProtocol {
          * However, see RFC 5746 exception below. We always include the SCSV, so an Extended Server
          * Hello is always allowed.
          */
-        if (serverExtensions != null) {
+        if (serverExtensions != null)
+        {
             Enumeration e = serverExtensions.keys();
-            while (e.hasMoreElements()) {
-                Integer extType = (Integer) e.nextElement();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
 
                 /*
                  * RFC 5746 3.6. Note that sending a "renegotiation_info" extension in response to a
@@ -503,7 +566,8 @@ public class TlsClientProtocol extends TlsProtocol {
                  * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
                 if (!extType.equals(EXT_RenegotiationInfo)
-                    && (clientExtensions == null || clientExtensions.get(extType) == null)) {
+                    && (clientExtensions == null || clientExtensions.get(extType) == null))
+                {
                     /*
                      * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless
                      * the same extension type appeared in the corresponding ClientHello. If a
@@ -523,8 +587,9 @@ public class TlsClientProtocol extends TlsProtocol {
                  * When a ServerHello is received, the client MUST check if it includes the
                  * "renegotiation_info" extension:
                  */
-                byte[] renegExtValue = (byte[]) serverExtensions.get(EXT_RenegotiationInfo);
-                if (renegExtValue != null) {
+                byte[] renegExtValue = (byte[])serverExtensions.get(EXT_RenegotiationInfo);
+                if (renegExtValue != null)
+                {
                     /*
                      * If the extension is present, set the secure_renegotiation flag to TRUE. The
                      * client MUST then verify that the length of the "renegotiated_connection"
@@ -533,7 +598,8 @@ public class TlsClientProtocol extends TlsProtocol {
                      */
                     this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES))) {
+                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                    {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
                 }
@@ -544,12 +610,15 @@ public class TlsClientProtocol extends TlsProtocol {
 
         tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
 
-        if (clientExtensions != null) {
+        if (clientExtensions != null)
+        {
             tlsClient.processServerExtensions(serverExtensions);
         }
     }
 
-    protected void sendCertificateVerifyMessage(byte[] data) throws IOException {
+    protected void sendCertificateVerifyMessage(byte[] data)
+        throws IOException
+    {
         /*
          * Send signature of handshake messages so far to prove we are the owner of the cert See RFC
          * 2246 sections 4.7, 7.4.3 and 7.4.8
@@ -563,7 +632,9 @@ public class TlsClientProtocol extends TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendClientHelloMessage() throws IOException {
+    protected void sendClientHelloMessage()
+        throws IOException
+    {
 
         recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
@@ -574,7 +645,8 @@ public class TlsClientProtocol extends TlsProtocol {
         TlsUtils.writeUint24(0, buf);
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
-        if (client_version.isDTLS()) {
+        if (client_version.isDTLS())
+        {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
@@ -604,7 +676,8 @@ public class TlsClientProtocol extends TlsProtocol {
             boolean noRenegExt = clientExtensions == null || clientExtensions.get(EXT_RenegotiationInfo) == null;
 
             int count = offeredCipherSuites.length;
-            if (noRenegExt) {
+            if (noRenegExt)
+            {
                 // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
                 ++count;
             }
@@ -612,7 +685,8 @@ public class TlsClientProtocol extends TlsProtocol {
             TlsUtils.writeUint16(2 * count, buf);
             TlsUtils.writeUint16Array(offeredCipherSuites, buf);
 
-            if (noRenegExt) {
+            if (noRenegExt)
+            {
                 TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, buf);
             }
         }
@@ -620,11 +694,12 @@ public class TlsClientProtocol extends TlsProtocol {
         // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
-        TlsUtils.writeUint8((short) offeredCompressionMethods.length, buf);
+        TlsUtils.writeUint8((short)offeredCompressionMethods.length, buf);
         TlsUtils.writeUint8Array(offeredCompressionMethods, buf);
 
         // Extensions
-        if (clientExtensions != null) {
+        if (clientExtensions != null)
+        {
             writeExtensions(buf, clientExtensions);
         }
 
@@ -636,7 +711,9 @@ public class TlsClientProtocol extends TlsProtocol {
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
 
-    protected void sendClientKeyExchangeMessage() throws IOException {
+    protected void sendClientKeyExchangeMessage()
+        throws IOException
+    {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         TlsUtils.writeUint8(HandshakeType.client_key_exchange, bos);

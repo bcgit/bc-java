@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 2246 A.5
  */
-public class CipherSuite {
+public class CipherSuite
+{
 
     public static final int TLS_NULL_WITH_NULL_NULL = 0x0000;
     public static final int TLS_RSA_WITH_NULL_MD5 = 0x0001;

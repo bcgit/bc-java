@@ -9,9 +9,12 @@ import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
-public class TlsRSAUtils {
+public class TlsRSAUtils
+{
     public static byte[] generateEncryptedPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPublicKey,
-        OutputStream output) throws IOException {
+                                                          OutputStream output)
+        throws IOException
+    {
         /*
          * Choose a PremasterSecret and send it encrypted to the server
          */
@@ -22,16 +25,22 @@ public class TlsRSAUtils {
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
         encoding.init(true, new ParametersWithRandom(rsaServerPublicKey, context.getSecureRandom()));
 
-        try {
+        try
+        {
             byte[] encryptedPreMasterSecret = encoding.processBlock(premasterSecret, 0, premasterSecret.length);
 
-            if (context.getServerVersion().isSSL()) {
+            if (context.getServerVersion().isSSL())
+            {
                 // TODO Do any SSLv3 servers actually expect the length?
                 output.write(encryptedPreMasterSecret);
-            } else {
+            }
+            else
+            {
                 TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
             }
-        } catch (InvalidCipherTextException e) {
+        }
+        catch (InvalidCipherTextException e)
+        {
             /*
              * This should never happen, only during decryption.
              */

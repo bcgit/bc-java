@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
-public class ClientCertificateType {
+public class ClientCertificateType
+{
 
     /*
      *  RFC 4346 7.4.4

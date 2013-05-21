@@ -8,19 +8,25 @@ import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
 
-public abstract class DTLSProtocol {
+public abstract class DTLSProtocol
+{
 
     protected final SecureRandom secureRandom;
 
-    protected DTLSProtocol(SecureRandom secureRandom) {
+    protected DTLSProtocol(SecureRandom secureRandom)
+    {
 
         if (secureRandom == null)
+        {
             throw new IllegalArgumentException("'secureRandom' cannot be null");
+        }
 
         this.secureRandom = secureRandom;
     }
 
-    protected void processFinished(byte[] body, byte[] expected_verify_data) throws IOException {
+    protected void processFinished(byte[] body, byte[] expected_verify_data)
+        throws IOException
+    {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
@@ -28,19 +34,24 @@ public abstract class DTLSProtocol {
 
         TlsProtocol.assertEmpty(buf);
 
-        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data)) {
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data))
+        {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
     }
 
-    protected static byte[] generateCertificate(Certificate certificate) throws IOException {
+    protected static byte[] generateCertificate(Certificate certificate)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificate.encode(buf);
         return buf.toByteArray();
     }
 
-    protected static byte[] generateSupplementalData(Vector supplementalData) throws IOException {
+    protected static byte[] generateSupplementalData(Vector supplementalData)
+        throws IOException
+    {
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsProtocol.writeSupplementalData(buf, supplementalData);
@@ -48,9 +59,11 @@ public abstract class DTLSProtocol {
     }
 
     protected static void validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
-        throws IOException {
+        throws IOException
+    {
 
-        switch (selectedCipherSuite) {
+        switch (selectedCipherSuite)
+        {
         case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
         case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
         case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:

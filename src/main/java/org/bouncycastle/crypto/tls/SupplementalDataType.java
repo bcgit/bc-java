@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 4680
  */
-public class SupplementalDataType {
+public class SupplementalDataType
+{
     /*
      * RFC 4681
      */

@@ -8,35 +8,49 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
-public class DefaultTlsSignerCredentials implements TlsSignerCredentials {
+public class DefaultTlsSignerCredentials
+    implements TlsSignerCredentials
+{
     protected TlsContext context;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
 
     protected TlsSigner signer;
 
-    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey) {
+    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
+    {
 
-        if (certificate == null) {
+        if (certificate == null)
+        {
             throw new IllegalArgumentException("'certificate' cannot be null");
         }
-        if (certificate.isEmpty()) {
+        if (certificate.isEmpty())
+        {
             throw new IllegalArgumentException("'certificate' cannot be empty");
         }
-        if (privateKey == null) {
+        if (privateKey == null)
+        {
             throw new IllegalArgumentException("'privateKey' cannot be null");
         }
-        if (!privateKey.isPrivate()) {
+        if (!privateKey.isPrivate())
+        {
             throw new IllegalArgumentException("'privateKey' must be private");
         }
 
-        if (privateKey instanceof RSAKeyParameters) {
+        if (privateKey instanceof RSAKeyParameters)
+        {
             this.signer = new TlsRSASigner();
-        } else if (privateKey instanceof DSAPrivateKeyParameters) {
+        }
+        else if (privateKey instanceof DSAPrivateKeyParameters)
+        {
             this.signer = new TlsDSSSigner();
-        } else if (privateKey instanceof ECPrivateKeyParameters) {
+        }
+        else if (privateKey instanceof ECPrivateKeyParameters)
+        {
             this.signer = new TlsECDSASigner();
-        } else {
+        }
+        else
+        {
             throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());
         }
 
@@ -47,14 +61,20 @@ public class DefaultTlsSignerCredentials implements TlsSignerCredentials {
         this.privateKey = privateKey;
     }
 
-    public Certificate getCertificate() {
+    public Certificate getCertificate()
+    {
         return certificate;
     }
 
-    public byte[] generateCertificateSignature(byte[] md5andsha1) throws IOException {
-        try {
+    public byte[] generateCertificateSignature(byte[] md5andsha1)
+        throws IOException
+    {
+        try
+        {
             return signer.generateRawSignature(privateKey, md5andsha1);
-        } catch (CryptoException e) {
+        }
+        catch (CryptoException e)
+        {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }

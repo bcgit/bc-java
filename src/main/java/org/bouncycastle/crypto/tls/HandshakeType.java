@@ -2,9 +2,9 @@ package org.bouncycastle.crypto.tls;
 
 public class HandshakeType
 {
-	/*
-	 * RFC 2246 7.4
-	 */
+    /*
+     * RFC 2246 7.4
+     */
     public static final short hello_request = 0;
     public static final short client_hello = 1;
     public static final short server_hello = 2;

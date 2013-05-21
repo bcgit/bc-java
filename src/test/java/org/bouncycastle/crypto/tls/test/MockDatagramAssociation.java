@@ -6,12 +6,14 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.tls.DatagramTransport;
 
-public class MockDatagramAssociation {
+public class MockDatagramAssociation
+{
 
     private int mtu;
     private MockDatagramTransport client, server;
 
-    public MockDatagramAssociation(int mtu) {
+    public MockDatagramAssociation(int mtu)
+    {
 
         this.mtu = mtu;
 
@@ -22,52 +24,72 @@ public class MockDatagramAssociation {
         this.server = new MockDatagramTransport(serverQueue, clientQueue);
     }
 
-    public DatagramTransport getClient() {
+    public DatagramTransport getClient()
+    {
         return client;
     }
 
-    public DatagramTransport getServer() {
+    public DatagramTransport getServer()
+    {
         return server;
     }
 
-    private class MockDatagramTransport implements DatagramTransport {
+    private class MockDatagramTransport
+        implements DatagramTransport
+    {
 
         private Vector receiveQueue, sendQueue;
 
-        MockDatagramTransport(Vector receiveQueue, Vector sendQueue) {
+        MockDatagramTransport(Vector receiveQueue, Vector sendQueue)
+        {
             this.receiveQueue = receiveQueue;
             this.sendQueue = sendQueue;
         }
 
-        public int getReceiveLimit() throws IOException {
+        public int getReceiveLimit()
+            throws IOException
+        {
             return mtu;
         }
 
-        public int getSendLimit() throws IOException {
+        public int getSendLimit()
+            throws IOException
+        {
             return mtu;
         }
 
-        public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException {
-            synchronized (receiveQueue) {
-                if (receiveQueue.isEmpty()) {
-                    try {
+        public int receive(byte[] buf, int off, int len, int waitMillis)
+            throws IOException
+        {
+            synchronized (receiveQueue)
+            {
+                if (receiveQueue.isEmpty())
+                {
+                    try
+                    {
                         receiveQueue.wait(waitMillis);
-                    } catch (InterruptedException e) {
+                    }
+                    catch (InterruptedException e)
+                    {
                         // TODO Keep waiting until full wait expired?
                     }
-                    if (receiveQueue.isEmpty()) {
+                    if (receiveQueue.isEmpty())
+                    {
                         return -1;
                     }
                 }
-                DatagramPacket packet = (DatagramPacket) receiveQueue.remove(0);
+                DatagramPacket packet = (DatagramPacket)receiveQueue.remove(0);
                 int copyLength = Math.min(len, packet.getLength());
                 System.arraycopy(packet.getData(), packet.getOffset(), buf, off, copyLength);
                 return copyLength;
             }
         }
 
-        public void send(byte[] buf, int off, int len) throws IOException {
-            if (len > mtu) {
+        public void send(byte[] buf, int off, int len)
+            throws IOException
+        {
+            if (len > mtu)
+            {
                 // TODO Simulate rejection?
             }
 
@@ -75,13 +97,16 @@ public class MockDatagramAssociation {
             System.arraycopy(buf, off, copy, 0, len);
             DatagramPacket packet = new DatagramPacket(copy, len);
 
-            synchronized (sendQueue) {
+            synchronized (sendQueue)
+            {
                 sendQueue.addElement(packet);
                 sendQueue.notify();
             }
         }
 
-        public void close() throws IOException {
+        public void close()
+            throws IOException
+        {
             // TODO?
         }
     }

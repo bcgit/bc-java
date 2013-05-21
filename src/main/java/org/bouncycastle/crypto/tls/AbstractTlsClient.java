@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsClient {
+public abstract class AbstractTlsClient
+    extends AbstractTlsPeer
+    implements TlsClient
+{
 
     protected TlsCipherFactory cipherFactory;
 
@@ -15,15 +18,18 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
 
-    public AbstractTlsClient() {
+    public AbstractTlsClient()
+    {
         this(new DefaultTlsCipherFactory());
     }
 
-    public AbstractTlsClient(TlsCipherFactory cipherFactory) {
+    public AbstractTlsClient(TlsCipherFactory cipherFactory)
+    {
         this.cipherFactory = cipherFactory;
     }
 
-    public void init(TlsClientContext context) {
+    public void init(TlsClientContext context)
+    {
         this.context = context;
     }
 
@@ -34,7 +40,8 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
      * single value will guarantee interoperability with all old servers, but this is a complex
      * topic beyond the scope of this document."
      */
-    public ProtocolVersion getClientHelloRecordLayerVersion() {
+    public ProtocolVersion getClientHelloRecordLayerVersion()
+    {
         // "{03,00}"
         // return ProtocolVersion.SSLv3;
 
@@ -45,11 +52,14 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
         return getClientVersion();
     }
 
-    public ProtocolVersion getClientVersion() {
+    public ProtocolVersion getClientVersion()
+    {
         return ProtocolVersion.TLSv11;
     }
 
-    public Hashtable getClientExtensions() throws IOException {
+    public Hashtable getClientExtensions()
+        throws IOException
+    {
 
         Hashtable clientExtensions = null;
 
@@ -59,19 +69,22 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
          * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
          * Clients MUST NOT offer it if they are offering prior versions.
          */
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion)) {
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
+        {
 
             // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
 
-            short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1 };
+            short[] hashAlgorithms = new short[]{HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
+                HashAlgorithm.sha224, HashAlgorithm.sha1};
 
             // TODO Sort out ECDSA signatures and add them as the preferred option here
-            short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa };
+            short[] signatureAlgorithms = new short[]{SignatureAlgorithm.rsa};
 
             this.supportedSignatureAlgorithms = new Vector();
-            for (int i = 0; i < hashAlgorithms.length; ++i) {
-                for (int j = 0; j < signatureAlgorithms.length; ++j) {
+            for (int i = 0; i < hashAlgorithms.length; ++i)
+            {
+                for (int j = 0; j < signatureAlgorithms.length; ++j)
+                {
                     this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
                         signatureAlgorithms[j]));
                 }
@@ -83,7 +96,8 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
             this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1,
                 SignatureAlgorithm.dsa));
 
-            if (clientExtensions == null) {
+            if (clientExtensions == null)
+            {
                 clientExtensions = new Hashtable();
             }
 
@@ -93,34 +107,45 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
         return clientExtensions;
     }
 
-    public ProtocolVersion getMinimumVersion() {
+    public ProtocolVersion getMinimumVersion()
+    {
         return ProtocolVersion.TLSv10;
     }
 
-    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException {
-        if (!getMinimumVersion().isEqualOrEarlierVersionOf(serverVersion)) {
+    public void notifyServerVersion(ProtocolVersion serverVersion)
+        throws IOException
+    {
+        if (!getMinimumVersion().isEqualOrEarlierVersionOf(serverVersion))
+        {
             throw new TlsFatalAlert(AlertDescription.protocol_version);
         }
     }
 
-    public short[] getCompressionMethods() {
-        return new short[] { CompressionMethod._null };
+    public short[] getCompressionMethods()
+    {
+        return new short[]{CompressionMethod._null};
     }
 
-    public void notifySessionID(byte[] sessionID) {
+    public void notifySessionID(byte[] sessionID)
+    {
         // Currently ignored
     }
 
-    public void notifySelectedCipherSuite(int selectedCipherSuite) {
+    public void notifySelectedCipherSuite(int selectedCipherSuite)
+    {
         this.selectedCipherSuite = selectedCipherSuite;
     }
 
-    public void notifySelectedCompressionMethod(short selectedCompressionMethod) {
+    public void notifySelectedCompressionMethod(short selectedCompressionMethod)
+    {
         this.selectedCompressionMethod = selectedCompressionMethod;
     }
 
-    public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException {
-        if (!secureRenegotiation) {
+    public void notifySecureRenegotiation(boolean secureRenegotiation)
+        throws IOException
+    {
+        if (!secureRenegotiation)
+        {
             /*
              * RFC 5746 3.4. In this case, some clients may want to terminate the handshake instead
              * of continuing; see Section 4.1 for discussion.
@@ -129,33 +154,45 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
         }
     }
 
-    public void processServerExtensions(Hashtable serverExtensions) throws IOException {
+    public void processServerExtensions(Hashtable serverExtensions)
+        throws IOException
+    {
         /*
          * TlsProtocol implementation validates that any server extensions received correspond to
          * client extensions sent. By default, we don't send any, and this method is not called.
          */
-        if (serverExtensions != null) {
+        if (serverExtensions != null)
+        {
             /*
              * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
              */
-            if (serverExtensions.containsKey(TlsUtils.EXT_signature_algorithms)) {
+            if (serverExtensions.containsKey(TlsUtils.EXT_signature_algorithms))
+            {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
     }
 
-    public void processServerSupplementalData(Vector serverSupplementalData) throws IOException {
-        if (serverSupplementalData != null) {
+    public void processServerSupplementalData(Vector serverSupplementalData)
+        throws IOException
+    {
+        if (serverSupplementalData != null)
+        {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
-    public Vector getClientSupplementalData() throws IOException {
+    public Vector getClientSupplementalData()
+        throws IOException
+    {
         return null;
     }
 
-    public TlsCompression getCompression() throws IOException {
-        switch (selectedCompressionMethod) {
+    public TlsCompression getCompression()
+        throws IOException
+    {
+        switch (selectedCompressionMethod)
+        {
         case CompressionMethod._null:
             return new TlsNullCompression();
 
@@ -169,9 +206,13 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
         }
     }
 
-    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket) throws IOException {
+    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)
+        throws IOException
+    {
     }
 
-    public void notifyHandshakeComplete() throws IOException {
+    public void notifyHandshakeComplete()
+        throws IOException
+    {
     }
 }

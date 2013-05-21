@@ -6,7 +6,8 @@ import java.io.OutputStream;
 /**
  * An OutputStream for an TLS connection.
  */
-class TlsOutputStream extends OutputStream
+class TlsOutputStream
+    extends OutputStream
 {
     private byte[] buf = new byte[1];
     private TlsProtocol handler;
@@ -16,23 +17,27 @@ class TlsOutputStream extends OutputStream
         this.handler = handler;
     }
 
-    public void write(byte buf[], int offset, int len) throws IOException
+    public void write(byte buf[], int offset, int len)
+        throws IOException
     {
         this.handler.writeData(buf, offset, len);
     }
 
-    public void write(int arg0) throws IOException
+    public void write(int arg0)
+        throws IOException
     {
         buf[0] = (byte)arg0;
         this.write(buf, 0, 1);
     }
 
-    public void close() throws IOException
+    public void close()
+        throws IOException
     {
         handler.close();
     }
 
-    public void flush() throws IOException
+    public void flush()
+        throws IOException
     {
         handler.flush();
     }

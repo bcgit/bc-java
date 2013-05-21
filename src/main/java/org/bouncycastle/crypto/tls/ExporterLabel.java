@@ -3,7 +3,8 @@ package org.bouncycastle.crypto.tls;
 /**
  * RFC 5705
  */
-public class ExporterLabel {
+public class ExporterLabel
+{
     /*
      * RFC 5246
      */

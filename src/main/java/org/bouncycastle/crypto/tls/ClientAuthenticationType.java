@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
-public class ClientAuthenticationType {
+public class ClientAuthenticationType
+{
 
     /*
      * RFC 5077 4

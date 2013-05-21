@@ -11,13 +11,16 @@ import org.bouncycastle.crypto.tls.UDPTransport;
 
 /**
  * A simple test designed to conduct a DTLS handshake with an external DTLS server.
- * 
+ * <p/>
  * Please refer to GnuTLSSetup.txt or OpenSSLSetup.txt, and x509-*.pem files in this package for
  * help configuring an external DTLS server.
  */
-public class DTLSClientTest {
+public class DTLSClientTest
+{
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args)
+        throws Exception
+    {
 
         SecureRandom secureRandom = new SecureRandom();
 
@@ -46,7 +49,8 @@ public class DTLSClientTest {
 
         byte[] response = new byte[dtlsClient.getReceiveLimit()];
         int received = dtlsClient.receive(response, 0, response.length, 30000);
-        if (received >= 0) {
+        if (received >= 0)
+        {
             System.out.println(new String(response, 0, received, "UTF-8"));
         }
 
