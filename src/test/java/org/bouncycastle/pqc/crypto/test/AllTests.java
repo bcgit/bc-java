@@ -38,6 +38,9 @@ public class AllTests
         suite.addTestSuite(NTRUEncryptionParametersTest.class);
         suite.addTestSuite(NTRUEncryptTest.class);
         suite.addTestSuite(NTRUSignatureParametersTest.class);
+        suite.addTestSuite(NTRUSignatureKeyTest.class);
+        suite.addTestSuite(NTRUSignerTest.class);
+        suite.addTestSuite(NTRUSigningParametersTest.class);
 
         return suite;
     }
