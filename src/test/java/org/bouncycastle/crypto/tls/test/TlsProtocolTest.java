@@ -120,8 +120,9 @@ public class TlsProtocolTest
                 {
                     Certificate[] chain = serverCertificate.getCertificateList();
                     System.out.println("Received server certificate chain of length " + chain.length);
-                    for (Certificate entry : chain)
+                    for (int i = 0; i != chain.length; i++)
                     {
+                        Certificate entry = chain[i];
                         // TODO Create fingerprint based on certificate signature algorithm digest
                         System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                             + entry.getSubject() + ")");
@@ -186,8 +187,9 @@ public class TlsProtocolTest
         {
             Certificate[] chain = clientCertificate.getCertificateList();
             System.out.println("Received client certificate chain of length " + chain.length);
-            for (Certificate entry : chain)
+            for (int i = 0; i != chain.length; i++)
             {
+                Certificate entry = chain[i];
                 // TODO Create fingerprint based on certificate signature algorithm digest
                 System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                     + entry.getSubject() + ")");

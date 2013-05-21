@@ -35,8 +35,8 @@ public class GMacTest
     private void checkRegistrations()
         throws Exception
     {
-        List<String> missingMacs = new ArrayList<String>();
-        List<String> missingKeyGens = new ArrayList<String>();
+        List missingMacs = new ArrayList();
+        List missingKeyGens = new ArrayList();
 
         String[] ciphers = new String[] { "AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "RC6", "CAMELLIA" };
         String[] macs = new String[]
@@ -96,7 +96,7 @@ public class GMacTest
         }
     }
 
-    private void checkMac(String name, List<String> missingMacs, List<String> missingKeyGens, String macOutput)
+    private void checkMac(String name, List missingMacs, List missingKeyGens, String macOutput)
     {
         try
         {

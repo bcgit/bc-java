@@ -46,7 +46,7 @@ public class Certificate
      */
     public org.bouncycastle.asn1.x509.Certificate[] getCerts()
     {
-        return certificateList.clone();
+        return clone(certificateList);
     }
 
     /**
@@ -55,7 +55,7 @@ public class Certificate
      */
     public org.bouncycastle.asn1.x509.Certificate[] getCertificateList()
     {
-        return certificateList.clone();
+        return clone(certificateList);
     }
 
     public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index)
@@ -140,5 +140,14 @@ public class Certificate
             certs[i] = (org.bouncycastle.asn1.x509.Certificate)tmp.elementAt(i);
         }
         return new Certificate(certs);
+    }
+
+    private org.bouncycastle.asn1.x509.Certificate[] clone(org.bouncycastle.asn1.x509.Certificate[] list)
+    {
+        org.bouncycastle.asn1.x509.Certificate[] rv = new org.bouncycastle.asn1.x509.Certificate[list.length];
+
+        System.arraycopy(list, 0, rv, 0, rv.length);
+
+        return rv;
     }
 }

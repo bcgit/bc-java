@@ -63,7 +63,8 @@ public class GMac implements Mac
 
             // GCM is always operated in encrypt mode to calculate MAC
             cipher.init(true, new AEADParameters(keyParam, macSizeBits, iv));
-        } else
+        }
+        else
         {
             throw new IllegalArgumentException("GMAC requires ParametersWithIV");
         }
@@ -84,20 +85,23 @@ public class GMac implements Mac
         cipher.processAADByte(in);
     }
 
-    public void update(byte[] in, int inOff, int len) throws DataLengthException, IllegalStateException
+    public void update(byte[] in, int inOff, int len)
+        throws DataLengthException, IllegalStateException
     {
         cipher.processAADBytes(in, inOff, len);
     }
 
-    public int doFinal(byte[] out, int outOff) throws DataLengthException, IllegalStateException
+    public int doFinal(byte[] out, int outOff)
+        throws DataLengthException, IllegalStateException
     {
         try
         {
             return cipher.doFinal(out, outOff);
-        } catch (InvalidCipherTextException e)
+        }
+        catch (InvalidCipherTextException e)
         {
             // Impossible in encrypt mode
-            throw new IllegalStateException(e);
+            throw new IllegalStateException(e.toString());
         }
     }
 

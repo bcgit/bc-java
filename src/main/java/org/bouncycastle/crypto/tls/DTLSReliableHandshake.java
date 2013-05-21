@@ -6,6 +6,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Integers;
+
 class DTLSReliableHandshake
 {
 
@@ -72,7 +74,7 @@ class DTLSReliableHandshake
 
         // Check if we already have the next message waiting
         {
-            DTLSReassembler next = (DTLSReassembler)currentInboundFlight.get(Integer.valueOf(next_receive_seq));
+            DTLSReassembler next = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(next_receive_seq));
             if (next != null)
             {
                 byte[] body = next.getBodyIfComplete();
@@ -139,7 +141,7 @@ class DTLSReliableHandshake
                          */
                         if (previousInboundFlight != null)
                         {
-                            DTLSReassembler reassembler = (DTLSReassembler)previousInboundFlight.get(Integer
+                            DTLSReassembler reassembler = (DTLSReassembler)previousInboundFlight.get(Integers
                                 .valueOf(seq));
                             if (reassembler != null)
                             {
@@ -166,11 +168,11 @@ class DTLSReliableHandshake
                     else
                     {
 
-                        DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integer.valueOf(seq));
+                        DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(seq));
                         if (reassembler == null)
                         {
                             reassembler = new DTLSReassembler(msg_type, length);
-                            currentInboundFlight.put(Integer.valueOf(seq), reassembler);
+                            currentInboundFlight.put(Integers.valueOf(seq), reassembler);
                         }
 
                         reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset, fragment_length);
@@ -258,7 +260,7 @@ class DTLSReliableHandshake
                         return;
                     }
 
-                    DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integer.valueOf(seq));
+                    DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(seq));
                     if (reassembler != null)
                     {
                         reassembler.contributeFragment(msg_type, length, buf, off + 12, fragment_offset,

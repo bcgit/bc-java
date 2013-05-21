@@ -93,8 +93,9 @@ public class TlsClientTest
                 {
                     Certificate[] chain = serverCertificate.getCertificateList();
                     System.out.println("Received server certificate chain with " + chain.length + " entries");
-                    for (Certificate entry : chain)
+                    for (int i = 0; i != chain.length; i++)
                     {
+                        Certificate entry = chain[i];
                         System.out.println("    " + entry.getSubject());
                     }
                 }

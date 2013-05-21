@@ -126,7 +126,8 @@ public class GMacTest extends SimpleTest
             GMac mac = new GMac(new GCMBlockCipher(new AESFastEngine()), size);
             mac.init(new ParametersWithIV(null, new byte[16]));
             fail("Expected failure for illegal mac size " + size);
-        } catch (IllegalArgumentException e)
+        }
+        catch (IllegalArgumentException e)
         {
         }
     }
