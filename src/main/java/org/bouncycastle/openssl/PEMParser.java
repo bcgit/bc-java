@@ -10,10 +10,10 @@ import java.util.StringTokenizer;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -22,11 +22,11 @@ import org.bouncycastle.asn1.pkcs.RSAPublicKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.util.encoders.Hex;
@@ -67,7 +67,7 @@ public class PEMParser
         parsers.put("X509 CRL", new X509CRLParser());
         parsers.put("PKCS7", new PKCS7Parser());
         parsers.put("ATTRIBUTE CERTIFICATE", new X509AttributeCertificateParser());
-        parsers.put("EC PARAMETERS", new ECNamedCurveSpecParser());
+        parsers.put("EC PARAMETERS", new ECCurveParamsParser());
         parsers.put("PUBLIC KEY", new PublicKeyParser());
         parsers.put("RSA PUBLIC KEY", new RSAPublicKeyParser());
         parsers.put("RSA PRIVATE KEY", new KeyPairParser(new RSAKeyPairParser()));
@@ -425,7 +425,7 @@ public class PEMParser
         }
     }
 
-    private class ECNamedCurveSpecParser
+    private class ECCurveParamsParser
         implements PemObjectParser
     {
         public Object parseObject(PemObject obj)
@@ -433,16 +433,20 @@ public class PEMParser
         {
             try
             {
-                DERObjectIdentifier oid = (DERObjectIdentifier)ASN1Primitive.fromByteArray(obj.getContent());
+                Object param = ASN1Primitive.fromByteArray(obj.getContent());
 
-                Object params = ECNamedCurveTable.getParameterSpec(oid.getId());
-
-                if (params == null)
+                if (param instanceof ASN1ObjectIdentifier)
                 {
-                    throw new IOException("object ID not found in EC curve table");
+                    return ASN1Primitive.fromByteArray(obj.getContent());
                 }
-
-                return params;
+                else if (param instanceof ASN1Sequence)
+                {
+                    return X9ECParameters.getInstance(param);
+                }
+                else
+                {
+                    return null;  // implicitly CA
+                }
             }
             catch (IOException e)
             {

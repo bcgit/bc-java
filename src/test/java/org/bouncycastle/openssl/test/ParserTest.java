@@ -20,18 +20,20 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
+import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
@@ -79,7 +81,6 @@ public class ParserTest
     public void performTest()
         throws Exception
     {
-        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build("secret".toCharArray());
         PEMParser       pemRd = openPEMResource("test.pem");
         Object          o;
         PEMKeyPair      pemPair;
@@ -126,7 +127,8 @@ public class ParserTest
         // ECKey
         //
         pemRd = openPEMResource("eckey.pem");
-        ECNamedCurveParameterSpec spec = (ECNamedCurveParameterSpec)pemRd.readObject();
+        ASN1ObjectIdentifier ecOID = (ASN1ObjectIdentifier)pemRd.readObject();
+        X9ECParameters ecSpec = ECNamedCurveTable.getByOID(ecOID);
 
         pemPair = (PEMKeyPair)pemRd.readObject();
 
@@ -141,6 +143,45 @@ public class ParserTest
         sgr.update(message);
 
         byte[]  sigBytes = sgr.sign();
+
+        sgr.initVerify(pair.getPublic());
+
+        sgr.update(message);
+
+        if (!sgr.verify(sigBytes))
+        {
+            fail("EC verification failed");
+        }
+
+        if (!pair.getPublic().getAlgorithm().equals("ECDSA"))
+        {
+            fail("wrong algorithm name on public got: " + pair.getPublic().getAlgorithm());
+        }
+
+        if (!pair.getPrivate().getAlgorithm().equals("ECDSA"))
+        {
+            fail("wrong algorithm name on private");
+        }
+
+        //
+        // ECKey -- explicit parameters
+        //
+        pemRd = openPEMResource("ecexpparam.pem");
+        ecSpec = (X9ECParameters)pemRd.readObject();
+
+        pemPair = (PEMKeyPair)pemRd.readObject();
+
+        pair = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(pemPair);
+
+        sgr = Signature.getInstance("ECDSA", "BC");
+
+        sgr.initSign(pair.getPrivate());
+
+        message = new byte[] { (byte)'a', (byte)'b', (byte)'c' };
+
+        sgr.update(message);
+
+        sigBytes = sgr.sign();
 
         sgr.initVerify(pair.getPublic());
 
