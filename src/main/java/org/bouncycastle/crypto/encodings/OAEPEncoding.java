@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.security.SecureRandom;
 
@@ -16,7 +17,6 @@ public class OAEPEncoding
     implements AsymmetricBlockCipher
 {
     private byte[]                  defHash;
-    private Digest                  hash;
     private Digest                  mgf1Hash;
 
     private AsymmetricBlockCipher   engine;
@@ -51,9 +51,10 @@ public class OAEPEncoding
         byte[]                      encodingParams)
     {
         this.engine = cipher;
-        this.hash = hash;
         this.mgf1Hash = mgf1Hash;
         this.defHash = new byte[hash.getDigestSize()];
+
+        hash.reset();
 
         if (encodingParams != null)
         {
@@ -326,9 +327,9 @@ public class OAEPEncoding
         byte[]  C = new byte[4];
         int     counter = 0;
 
-        hash.reset();
+        mgf1Hash.reset();
 
-        do
+        while (counter < (length / hashBuf.length))
         {
             ItoOSP(counter, C);
 
@@ -337,8 +338,9 @@ public class OAEPEncoding
             mgf1Hash.doFinal(hashBuf, 0);
 
             System.arraycopy(hashBuf, 0, mask, counter * hashBuf.length, hashBuf.length);
+
+            counter++;
         }
-        while (++counter < (length / hashBuf.length));
 
         if ((counter * hashBuf.length) < length)
         {

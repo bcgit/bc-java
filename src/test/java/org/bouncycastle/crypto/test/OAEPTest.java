@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.pkcs.RSAPublicKey;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.encodings.OAEPEncoding;
 import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -777,6 +779,47 @@ public class OAEPTest
         oaepVecTest(1027, 4, pubParam, privParam, seed_1027_4, input_1027_4, output_1027_4);
         oaepVecTest(1027, 5, pubParam, privParam, seed_1027_5, input_1027_5, output_1027_5);
         oaepVecTest(1027, 6, pubParam, privParam, seed_1027_6, input_1027_6, output_1027_6);
+
+        //
+        // OAEP - public encrypt, private decrypt  differring hashes
+        //
+        AsymmetricBlockCipher cipher = new OAEPEncoding(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), new byte[10]);
+
+        cipher.init(true, new ParametersWithRandom(pubParam, new SecureRandom()));
+
+        byte[] input = new byte[10];
+
+        byte[] out = cipher.processBlock(input, 0, input.length);
+
+        cipher.init(false, privParam);
+
+        out = cipher.processBlock(out, 0, out.length);
+
+        for (int i = 0; i != input.length; i++)
+        {
+            if (out[i] != input[i])
+            {
+                fail("mixed digest failed decoding");
+            }
+        }
+
+        cipher = new OAEPEncoding(new RSAEngine(), new SHA1Digest(), new SHA256Digest(), new byte[10]);
+
+        cipher.init(true, new ParametersWithRandom(pubParam, new SecureRandom()));
+
+        out = cipher.processBlock(input, 0, input.length);
+
+        cipher.init(false, privParam);
+
+        out = cipher.processBlock(out, 0, out.length);
+
+        for (int i = 0; i != input.length; i++)
+        {
+            if (out[i] != input[i])
+            {
+                fail("mixed digest failed decoding");
+            }
+        }
     }
 
     public static void main(
