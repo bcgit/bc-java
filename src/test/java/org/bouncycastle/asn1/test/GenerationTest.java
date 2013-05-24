@@ -4,11 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OutputStream;
@@ -348,7 +350,60 @@ public class GenerationTest
         //
         // check we can add a custom reason
         //
-        gen.addCRLEntry(new ASN1Integer(1), new Time(new Date(1000)), 128);
+        gen.addCRLEntry(new ASN1Integer(1), new Time(new Date(1000)), CRLReason.aACompromise);
+
+        //
+        // check invalidity date
+        gen.addCRLEntry(new ASN1Integer(2), new Time(new Date(1000)), CRLReason.affiliationChanged, new ASN1GeneralizedTime(new Date(2000)));
+
+        TBSCertList crl = gen.generateTBSCertList();
+
+        TBSCertList.CRLEntry[] entries = crl.getRevokedCertificates();
+        for (int i = 0; i != entries.length; i++)
+        {
+            TBSCertList.CRLEntry entry = entries[i];
+
+            if (entry.getUserCertificate().equals(new ASN1Integer(1)))
+            {
+                Extensions extensions = entry.getExtensions();
+                Extension ext = extensions.getExtension(Extension.reasonCode);
+
+                CRLReason r = CRLReason.getInstance(ext.getParsedValue());
+
+                if (r.getValue().intValue() != CRLReason.aACompromise)
+                {
+                    fail("reason code mismatch");
+                }
+            }
+            else if (entry.getUserCertificate().equals(new ASN1Integer(2)))
+            {
+                Extensions extensions = entry.getExtensions();
+                Extension ext = extensions.getExtension(Extension.reasonCode);
+
+                CRLReason r = CRLReason.getInstance(ext.getParsedValue());
+
+                if (r.getValue().intValue() != CRLReason.affiliationChanged)
+                {
+                    fail("reason code mismatch");
+                }
+
+                ext = extensions.getExtension(Extension.invalidityDate);
+
+                ASN1GeneralizedTime t = ASN1GeneralizedTime.getInstance(ext.getParsedValue());
+
+                try
+                {
+                    if (!t.getDate().equals(new Date(2000)))
+                    {
+                        fail("invalidity date mismatch");
+                    }
+                }
+                catch (ParseException e)
+                {
+                    fail("can't parse date", e);
+                }
+            }
+        }
     }
     
     public void performTest()

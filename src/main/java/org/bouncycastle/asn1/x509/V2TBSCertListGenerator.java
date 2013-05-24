@@ -149,7 +149,7 @@ public class V2TBSCertListGenerator
 
             if (invalidityDate != null)
             {
-                v.add(createInvalidityDateExtension(revocationDate));
+                v.add(createInvalidityDateExtension(invalidityDate));
             }
 
             internalAddCRLEntry(userCertificate, revocationDate, new DERSequence(v));
@@ -158,7 +158,7 @@ public class V2TBSCertListGenerator
         {
             ASN1EncodableVector v = new ASN1EncodableVector();
 
-            v.add(createInvalidityDateExtension(revocationDate));
+            v.add(createInvalidityDateExtension(invalidityDate));
 
             internalAddCRLEntry(userCertificate, revocationDate, new DERSequence(v));
         }
@@ -262,7 +262,7 @@ public class V2TBSCertListGenerator
         return new DERSequence(v);
     }
 
-    private static ASN1Sequence createInvalidityDateExtension(Time invalidityDate)
+    private static ASN1Sequence createInvalidityDateExtension(ASN1GeneralizedTime invalidityDate)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
