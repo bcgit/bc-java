@@ -17,6 +17,9 @@ import org.bouncycastle.util.BigIntegers;
 public class RSAKeyEncapsulation
 	implements KeyEncapsulation
 {
+    private static final BigInteger ZERO = BigInteger.valueOf(0);
+    private static final BigInteger ONE = BigInteger.valueOf(1);
+
 	private DerivationFunction kdf;
 	private SecureRandom       rnd;
 	private RSAKeyParameters   key;
@@ -75,7 +78,7 @@ public class RSAKeyEncapsulation
 		BigInteger e = key.getExponent();
 
 		// Generate the ephemeral random and encode it	
-		BigInteger r = BigIntegers.createRandomInRange(BigInteger.ZERO, n.subtract(BigInteger.ONE), rnd);
+		BigInteger r = BigIntegers.createRandomInRange(ZERO, n.subtract(ONE), rnd);
 		byte[] R = BigIntegers.asUnsignedByteArray((n.bitLength()+7)/8, r);
 
 		// Encrypt the random and encode it 	

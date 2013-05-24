@@ -18,6 +18,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA1
@@ -133,8 +134,8 @@ public class SHA1
                 int scheme = PKCS5S2;
                 int digest = SHA1;
                 int keySize = pbeSpec.getKeyLength();
-                int ivSize = -1;
-                CipherParameters param = Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+                int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
+                CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
 
                 return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
             }

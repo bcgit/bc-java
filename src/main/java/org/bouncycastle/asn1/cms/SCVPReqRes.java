@@ -46,7 +46,8 @@ public class SCVPReqRes
 
     public SCVPReqRes(ContentInfo response)
     {
-        this(null, response);
+        this.request = null;       // use of this confuses earlier JDKs
+        this.response = response;
     }
 
     public SCVPReqRes(ContentInfo request, ContentInfo response)

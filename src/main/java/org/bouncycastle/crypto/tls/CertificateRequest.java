@@ -91,7 +91,7 @@ public class CertificateRequest
             int totalLength = 0;
             for (int i = 0; i < certificateAuthorities.size(); ++i)
             {
-                X500Name authorityDN = (X500Name)certificateAuthorities.get(i);
+                X500Name authorityDN = (X500Name)certificateAuthorities.elementAt(i);
                 byte[] encDN = authorityDN.getEncoded(ASN1Encoding.DER);
                 encDNs.addElement(encDN);
                 totalLength += encDN.length;

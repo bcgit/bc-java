@@ -73,7 +73,7 @@ class DTLSReplayWindow
             }
             else
             {
-                bitmap <<= diff;
+                bitmap <<= (int)diff;        // for earlier JDKs
                 bitmap |= 1;
             }
             latestConfirmedSeq = seq;

@@ -54,7 +54,7 @@ class DTLSReassembler
 
         for (int i = 0; i < missing.size(); ++i)
         {
-            Range range = (Range)missing.get(i);
+            Range range = (Range)missing.elementAt(i);
             if (range.getStart() >= fragment_end)
             {
                 break;
@@ -98,7 +98,7 @@ class DTLSReassembler
 
     void reset()
     {
-        this.missing.clear();
+        this.missing.removeAllElements();
         this.missing.addElement(new Range(0, body.length));
     }
 

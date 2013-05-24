@@ -434,7 +434,6 @@ public class PGPPublicKey
      * @param provider provider to construct the key for.
      * @return a JCE/JCA public key.
      * @throws PGPException if the key algorithm is not recognised.
-     * @throws NoSuchProviderException if the provider cannot be found.
      * @deprecated use a JcaPGPKeyConverter
      */
     public PublicKey getKey(

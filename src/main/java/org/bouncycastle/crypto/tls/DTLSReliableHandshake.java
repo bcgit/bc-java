@@ -51,7 +51,7 @@ class DTLSReliableHandshake
         {
             checkInboundFlight();
             sending = true;
-            outboundFlight.clear();
+            outboundFlight.removeAllElements();
         }
 
         Message message = new Message(message_seq++, msg_type, body);

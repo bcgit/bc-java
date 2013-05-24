@@ -1,12 +1,11 @@
 package org.bouncycastle.crypto.macs;
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Implementation of SipHash as specified in "SipHash: a fast short-input PRF", by Jean-Philippe
@@ -35,7 +34,9 @@ public class SipHash
      */
     public SipHash()
     {
-        this(2, 4);
+        // use of this confuses flow analyser on earlier JDKs.
+        this.c = 2;
+        this.d = 4;
     }
 
     /**

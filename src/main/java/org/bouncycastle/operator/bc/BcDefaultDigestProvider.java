@@ -28,9 +28,9 @@ import org.bouncycastle.operator.OperatorCreationException;
 public class BcDefaultDigestProvider
     implements BcDigestProvider
 {
-    private static final Map lookup;
+    private static final Map lookup = createTable();
 
-    static
+    private static Map createTable()
     {
         Map table = new HashMap();
 
@@ -119,7 +119,7 @@ public class BcDefaultDigestProvider
             }
         });
 
-        lookup = Collections.unmodifiableMap(table);
+        return Collections.unmodifiableMap(table);
     }
 
     public static final BcDigestProvider INSTANCE = new BcDefaultDigestProvider();

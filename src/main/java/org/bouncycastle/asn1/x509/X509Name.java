@@ -751,7 +751,7 @@ public class X509Name
         {
             while (buf.charAt(buf.length() - 1) == ' ' && lastEscaped != (buf.length() - 1))
             {
-                buf.deleteCharAt(buf.length() - 1);
+                buf.setLength(buf.length() - 1);
             }
         }
 

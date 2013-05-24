@@ -51,7 +51,8 @@ public class MiscPEMGenerator
 
     public MiscPEMGenerator(Object o)
     {
-        this(o, null);
+        this.obj = o;              // use of this confuses some earlier JDKs.
+        this.encryptor = null;
     }
 
     public MiscPEMGenerator(Object o, PEMEncryptor encryptor)

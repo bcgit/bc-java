@@ -31,7 +31,9 @@ public class GMac implements Mac
      */
     public GMac(final GCMBlockCipher cipher)
     {
-        this(cipher, 128);
+        // use of this confused flow analyser in some earlier JDKs
+        this.cipher = cipher;
+        this.macSizeBits = 128;
     }
 
     /**
