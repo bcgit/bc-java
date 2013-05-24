@@ -20,6 +20,8 @@ import org.bouncycastle.util.BigIntegers;
 public class ECIESKeyEncapsulation
 	implements KeyEncapsulation
 {
+    private static final BigInteger ONE = BigInteger.valueOf(1);
+
 	private DerivationFunction kdf;
 	private SecureRandom       rnd;
 	private ECKeyParameters    key;
@@ -108,7 +110,7 @@ public class ECIESKeyEncapsulation
 		BigInteger h = key.getParameters().getH();
 
 		// Generate the ephemeral key pair	
-		BigInteger r = BigIntegers.createRandomInRange(BigInteger.ONE, n, rnd);
+		BigInteger r = BigIntegers.createRandomInRange(ONE, n, rnd);
 		ECPoint gTilde = key.getParameters().getG().multiply(r);
 
 		// Encode the ephemeral public key

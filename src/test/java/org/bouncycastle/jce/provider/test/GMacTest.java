@@ -91,7 +91,6 @@ public class GMacTest
         }
         if (missingKeyGens.size() != 0)
         {
-            Collections.sort(missingKeyGens);
             fail("Did not find GMAC KeyGenerator registrations for the following macs: " + missingKeyGens);
         }
     }

@@ -6,12 +6,12 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUSigner;
 import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUSigningParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigner;
 import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
 import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
 import org.bouncycastle.util.Arrays;
