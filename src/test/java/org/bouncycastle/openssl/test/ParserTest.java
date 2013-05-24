@@ -130,7 +130,7 @@ public class ParserTest
         ASN1ObjectIdentifier ecOID = (ASN1ObjectIdentifier)pemRd.readObject();
         X9ECParameters ecSpec = ECNamedCurveTable.getByOID(ecOID);
 
-        if (ecSpec != null)
+        if (ecSpec == null)
         {
             fail("ecSpec not found for named curve");
         }
