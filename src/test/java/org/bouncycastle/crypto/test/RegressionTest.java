@@ -116,7 +116,8 @@ public class RegressionTest
         new OCBTest(),
         new NonMemoableDigestTest(),
         new RSAKeyEncapsulationTest(),
-        new ECIESKeyEncapsulationTest()
+        new ECIESKeyEncapsulationTest(),
+        new HashCommitmentTest()
     };
 
     public static void main(
