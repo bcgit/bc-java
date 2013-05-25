@@ -1,0 +1,16 @@
+<html>
+<body bgcolor="#ffffff">
+High level classes for dealing with OpenPGP objects.
+<p>
+<b>Note</b>: These are based on the org.bouncycastle.bcpg classes and use a streaming
+model, so for some objects which have an input stream associated it is necessary
+to read to the end of the input stream on the object before trying to read
+another object from the orginal input stream.
+<p>
+A word on key ring files. For the purpose of this package a PGP key ring is a master key and
+a collection of sub-keys associated with it. These public and secret key rings are handled by
+the PGPPublicKey ring class and the PGPSecretKeyRing class respectively. In the case where
+you are trying to read an key file which has multiple key rings in it, use PGPSecretKeyRingCollection
+for the secret key file and PGPPublicKeyRingCollection for the public key file.
+</body>
+</html>
