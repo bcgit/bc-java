@@ -189,7 +189,7 @@ public class PGPSecretKey
         PGPSignatureSubpacketVector unhashedPcks,
         PGPContentSignerBuilder     certificationSignerBuilder,
         PBESecretKeyEncryptor       keyEncryptor)
-        throws PGPException, NoSuchProviderException
+        throws PGPException
     {
         this(certificationLevel, keyPair, id, null, hashedPcks, unhashedPcks, certificationSignerBuilder, keyEncryptor);
     }
