@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 
 class StreamUtil
 {
@@ -33,7 +34,8 @@ class StreamUtil
         {
             try
             {
-                long  size = ((FileInputStream)in).getChannel().size();
+                FileChannel channel = ((FileInputStream)in).getChannel();
+                long  size = (channel != null) ? channel.size() : Integer.MAX_VALUE;
 
                 if (size < Integer.MAX_VALUE)
                 {
