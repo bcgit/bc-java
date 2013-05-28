@@ -32,43 +32,43 @@ public class SHA3
             return d;
         }
     }
-    
+
     static public class Digest224
         extends DigestSHA3
+    {
+        public Digest224()
         {
-            public Digest224()
-            {
-                super(224);
-            }
+            super(224);
         }
+    }
 
     static public class Digest256
-    extends DigestSHA3
+        extends DigestSHA3
     {
         public Digest256()
         {
             super(256);
         }
     }
-    
+
     static public class Digest384
-    extends DigestSHA3
+        extends DigestSHA3
     {
         public Digest384()
         {
             super(384);
         }
     }
-    
+
     static public class Digest512
-    extends DigestSHA3
+        extends DigestSHA3
     {
         public Digest512()
         {
             super(512);
         }
     }
-    
+
     /**
      * SHA3 HMac
      */
@@ -80,19 +80,21 @@ public class SHA3
             super(new HMac(new SHA3Digest(224)));
         }
     }
-    
+
     public static class HashMac256
         extends BaseMac
     {
-        public HashMac256() {
+        public HashMac256()
+        {
             super(new HMac(new SHA3Digest(256)));
         }
     }
-        
+
     public static class HashMac384
-    extends BaseMac
+        extends BaseMac
     {
-        public HashMac384() {
+        public HashMac384()
+        {
             super(new HMac(new SHA3Digest(384)));
         }
     }
@@ -100,7 +102,8 @@ public class SHA3
     public static class HashMac512
         extends BaseMac
     {
-        public HashMac512() {
+        public HashMac512()
+        {
             super(new HMac(new SHA3Digest(512)));
         }
     }
@@ -117,7 +120,8 @@ public class SHA3
     public static class KeyGenerator256
         extends BaseKeyGenerator
     {
-        public KeyGenerator256() {
+        public KeyGenerator256()
+        {
             super("HMACSHA3-256", 256, new CipherKeyGenerator());
         }
     }
@@ -125,19 +129,21 @@ public class SHA3
     public static class KeyGenerator384
         extends BaseKeyGenerator
     {
-        public KeyGenerator384() {
+        public KeyGenerator384()
+        {
             super("HMACSHA3-384", 384, new CipherKeyGenerator());
         }
     }
-    
+
     public static class KeyGenerator512
         extends BaseKeyGenerator
     {
-        public KeyGenerator512() {
+        public KeyGenerator512()
+        {
             super("HMACSHA3-512", 512, new CipherKeyGenerator());
         }
     }
-    
+
     public static class Mappings
         extends DigestAlgorithmProvider
     {

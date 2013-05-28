@@ -7,15 +7,9 @@ import java.security.spec.KeySpec;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactorySpi;
-import javax.crypto.spec.DESKeySpec;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.DESParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 public class BaseSecretKeyFactory
     extends SecretKeyFactorySpi
