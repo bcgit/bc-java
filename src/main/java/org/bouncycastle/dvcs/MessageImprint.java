@@ -30,4 +30,9 @@ public class MessageImprint
 
         return false;
     }
+
+    public int hashCode()
+    {
+        return messageImprint.hashCode();
+    }
 }

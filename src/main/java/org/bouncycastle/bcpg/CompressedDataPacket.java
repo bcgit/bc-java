@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * generic compressed data object.

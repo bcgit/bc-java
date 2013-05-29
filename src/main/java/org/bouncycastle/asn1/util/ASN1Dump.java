@@ -184,7 +184,8 @@ public class ASN1Dump
             {
                 buf.append(dumpBinaryDataAsString(indent, oct.getOctets()));
             }
-            else{
+            else
+            {
                 buf.append(nl);
             }
         }
@@ -208,7 +209,8 @@ public class ASN1Dump
             {
                 buf.append(dumpBinaryDataAsString(indent, bt.getBytes()));
             }
-            else{
+            else
+            {
                 buf.append(nl);
             }
         }

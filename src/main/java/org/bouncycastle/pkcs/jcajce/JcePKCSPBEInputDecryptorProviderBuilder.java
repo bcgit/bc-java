@@ -2,7 +2,6 @@ package org.bouncycastle.pkcs.jcajce;
 
 import java.io.InputStream;
 import java.security.Provider;
-import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;

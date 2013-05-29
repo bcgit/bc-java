@@ -89,7 +89,7 @@ public class Features
                         System.arraycopy(data, 0, temp, 0, i);
                         System.arraycopy(data, i + 1, temp, i, temp.length - i);
                         data = temp;
-                        i = data.length + 1;
+                        break;
                     }
                 }
             }

@@ -74,7 +74,8 @@ public class PKIFreeText
         String[] strs)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i = 0; i < strs.length; i++) {
+        for (int i = 0; i < strs.length; i++)
+        {
             v.add(new DERUTF8String(strs[i]));
         }
         strings = new DERSequence(v);

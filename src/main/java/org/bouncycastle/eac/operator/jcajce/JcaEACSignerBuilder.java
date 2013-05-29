@@ -152,16 +152,18 @@ public class JcaEACSignerBuilder
         return ret;
     }
 
-    private static int unsignedIntLength(byte [] i)
+    private static int unsignedIntLength(byte[] i)
     {
         int len = i.length;
         if (i[0] == 0)
+        {
             len--;
+        }
 
         return len;
     }
 
-    private static void copyUnsignedInt(byte [] src, byte [] dst, int offset)
+    private static void copyUnsignedInt(byte[] src, byte[] dst, int offset)
     {
         int len = src.length;
         int readoffset = 0;

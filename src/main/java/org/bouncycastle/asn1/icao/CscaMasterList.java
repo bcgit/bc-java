@@ -13,17 +13,17 @@ import org.bouncycastle.asn1.x509.Certificate;
 /**
  * The CscaMasterList object. This object can be wrapped in a
  * CMSSignedData to be published in LDAP.
- *
+ * <p/>
  * <pre>
  * CscaMasterList ::= SEQUENCE {
  *   version                CscaMasterListVersion,
  *   certList               SET OF Certificate }
- *   
+ *
  * CscaMasterListVersion :: INTEGER {v0(0)}
  * </pre>
  */
 
-public class CscaMasterList 
+public class CscaMasterList
     extends ASN1Object
 {
     private ASN1Integer version = new ASN1Integer(0);
@@ -38,29 +38,31 @@ public class CscaMasterList
         }
         else if (obj != null)
         {
-            return new CscaMasterList(ASN1Sequence.getInstance(obj));            
+            return new CscaMasterList(ASN1Sequence.getInstance(obj));
         }
 
         return null;
-    }    
-    
+    }
+
     private CscaMasterList(
         ASN1Sequence seq)
     {
         if (seq == null || seq.size() == 0)
         {
             throw new IllegalArgumentException(
-                    "null or empty sequence passed.");
+                "null or empty sequence passed.");
         }
-        if (seq.size() != 2) {
+        if (seq.size() != 2)
+        {
             throw new IllegalArgumentException(
-                    "Incorrect sequence size: " + seq.size());
+                "Incorrect sequence size: " + seq.size());
         }
-        
+
         version = ASN1Integer.getInstance(seq.getObjectAt(0));
         ASN1Set certSet = ASN1Set.getInstance(seq.getObjectAt(1));
         certList = new Certificate[certSet.size()];
-        for (int i = 0; i < certList.length; i++) {
+        for (int i = 0; i < certList.length; i++)
+        {
             certList[i]
                 = Certificate.getInstance(certSet.getObjectAt(i));
         }
@@ -101,12 +103,12 @@ public class CscaMasterList
         seq.add(version);
 
         ASN1EncodableVector certSet = new ASN1EncodableVector();
-        for (int i = 0; i < certList.length; i++) 
+        for (int i = 0; i < certList.length; i++)
         {
             certSet.add(certList[i]);
-        }            
-        seq.add(new DERSet(certSet));                   
+        }
+        seq.add(new DERSet(certSet));
 
         return new DERSequence(seq);
-    }          
+    }
 }
