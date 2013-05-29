@@ -11,10 +11,10 @@ import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <pre>
- * 	DVCSResponse ::= CHOICE
+ *     DVCSResponse ::= CHOICE
  *     {
- * 	    dvCertInfo         DVCSCertInfo ,
- * 	    dvErrorNote        [0] DVCSErrorNotice
+ *         dvCertInfo         DVCSCertInfo ,
+ *         dvErrorNote        [0] DVCSErrorNotice
  *     }
  * </pre>
  */

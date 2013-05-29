@@ -100,7 +100,7 @@ public class Salsa20Engine
 
         if (index == 0)
         {
-			generateKeyStream(keyStream);
+            generateKeyStream(keyStream);
 
             if (++engineState[8] == 0)
             {
@@ -145,7 +145,7 @@ public class Salsa20Engine
         {
             if (index == 0)
             {
-				generateKeyStream(keyStream);
+                generateKeyStream(keyStream);
 
                 if (++engineState[8] == 0)
                 {
@@ -208,11 +208,11 @@ public class Salsa20Engine
         initialised = true;
     }
 
-	private void generateKeyStream(byte[] output)
-	{
-		salsaCore(20, engineState, x);
-		Pack.intToLittleEndian(x, output, 0);
-	}
+    private void generateKeyStream(byte[] output)
+    {
+        salsaCore(20, engineState, x);
+        Pack.intToLittleEndian(x, output, 0);
+    }
 
     /**
      * Salsa20 function
@@ -227,7 +227,7 @@ public class Salsa20Engine
 
         System.arraycopy(input, 0, x, 0, input.length);
 
-		for (int i = rounds; i > 0; i -= 2)
+        for (int i = rounds; i > 0; i -= 2)
         {
             x[ 4] ^= rotl((x[ 0]+x[12]), 7);
             x[ 8] ^= rotl((x[ 4]+x[ 0]), 9);
@@ -263,10 +263,10 @@ public class Salsa20Engine
             x[15] ^= rotl((x[14]+x[13]),18);
         }
 
-		for (int i = 0; i < STATE_SIZE; ++i)
-		{
-			x[i] += input[i];
-		}
+        for (int i = 0; i < STATE_SIZE; ++i)
+        {
+            x[i] += input[i];
+        }
     }
 
     /**
@@ -307,8 +307,8 @@ public class Salsa20Engine
      */
     private boolean limitExceeded(int len)
     {
-		cW0 += len;
-		if (cW0 < len && cW0 >= 0)
+        cW0 += len;
+        if (cW0 < len && cW0 >= 0)
         {
             if (++cW1 == 0)
             {

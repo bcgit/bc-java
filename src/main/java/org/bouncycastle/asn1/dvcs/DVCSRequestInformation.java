@@ -18,16 +18,16 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 
 /**
  * <pre>
- * 	DVCSRequestInformation ::= SEQUENCE  {
- * 	    version                      INTEGER DEFAULT 1 ,
- * 	    service                      ServiceType,
- * 	    nonce                        Nonce OPTIONAL,
- * 	    requestTime                  DVCSTime OPTIONAL,
- * 	    requester                    [0] GeneralNames OPTIONAL,
- * 	    requestPolicy                [1] PolicyInformation OPTIONAL,
- * 	    dvcs                         [2] GeneralNames OPTIONAL,
- * 	    dataLocations                [3] GeneralNames OPTIONAL,
- * 	    extensions                   [4] IMPLICIT Extensions OPTIONAL
+ *     DVCSRequestInformation ::= SEQUENCE  {
+ *         version                      INTEGER DEFAULT 1 ,
+ *         service                      ServiceType,
+ *         nonce                        Nonce OPTIONAL,
+ *         requestTime                  DVCSTime OPTIONAL,
+ *         requester                    [0] GeneralNames OPTIONAL,
+ *         requestPolicy                [1] PolicyInformation OPTIONAL,
+ *         dvcs                         [2] GeneralNames OPTIONAL,
+ *         dataLocations                [3] GeneralNames OPTIONAL,
+ *         extensions                   [4] IMPLICIT Extensions OPTIONAL
  *     }
  * </pre>
  */

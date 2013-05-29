@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.dvcs.DVCSObjectIdentifiers;
@@ -14,13 +12,7 @@ import org.bouncycastle.asn1.dvcs.Data;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSProcessableByteArray;
-import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
-import org.bouncycastle.cms.SignerInfoGenerator;
-import org.bouncycastle.util.Store;
 
 /**
  * Common base class for client DVCRequest builders.

@@ -1,9 +1,6 @@
 package org.bouncycastle.cert.jcajce;
 
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.cert.CRLException;
 import java.security.cert.CertStore;

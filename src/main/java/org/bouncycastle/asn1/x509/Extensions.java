@@ -4,12 +4,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -18,18 +16,18 @@ import org.bouncycastle.asn1.DERSequence;
 public class Extensions
     extends ASN1Object
 {
-    private Hashtable               extensions = new Hashtable();
-    private Vector                  ordering = new Vector();
+    private Hashtable extensions = new Hashtable();
+    private Vector ordering = new Vector();
 
     public static Extensions getInstance(
         ASN1TaggedObject obj,
-        boolean          explicit)
+        boolean explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
     public static Extensions getInstance(
-        Object  obj)
+        Object obj)
     {
         if (obj instanceof Extensions)
         {
@@ -45,7 +43,7 @@ public class Extensions
 
     /**
      * Constructor from ASN1Sequence.
-     *
+     * <p/>
      * the extensions are a list of constructed sequences, either with (OID, OctetString) or (OID, Boolean, OctetString)
      */
     private Extensions(
@@ -55,7 +53,7 @@ public class Extensions
 
         while (e.hasMoreElements())
         {
-            Extension            ext = Extension.getInstance(e.nextElement());
+            Extension ext = Extension.getInstance(e.nextElement());
 
             extensions.put(ext.getExtnId(), ext);
             ordering.addElement(ext.getExtnId());
@@ -76,7 +74,7 @@ public class Extensions
 
     /**
      * Base Constructor
-     * 
+     *
      * @param extensions an array of extensions.
      */
     public Extensions(
@@ -90,7 +88,7 @@ public class Extensions
             this.extensions.put(ext.getExtnId(), ext);
         }
     }
-    
+
     /**
      * return an Enumeration of the extension field's object ids.
      */
@@ -142,11 +140,11 @@ public class Extensions
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector vec = new ASN1EncodableVector();
-        Enumeration             e = ordering.elements();
+        Enumeration e = ordering.elements();
 
         while (e.hasMoreElements())
         {
-            ASN1ObjectIdentifier     oid = (ASN1ObjectIdentifier)e.nextElement();
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
             Extension ext = (Extension)extensions.get(oid);
 
             vec.add(ext);
@@ -163,11 +161,11 @@ public class Extensions
             return false;
         }
 
-        Enumeration     e1 = extensions.keys();
+        Enumeration e1 = extensions.keys();
 
         while (e1.hasMoreElements())
         {
-            Object  key = e1.nextElement();
+            Object key = e1.nextElement();
 
             if (!extensions.get(key).equals(other.extensions.get(key)))
             {
@@ -182,7 +180,7 @@ public class Extensions
     {
         return toOidArray(ordering);
     }
-    
+
     public ASN1ObjectIdentifier[] getNonCriticalExtensionOIDs()
     {
         return getExtensionOIDs(false);

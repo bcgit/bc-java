@@ -15,10 +15,10 @@ import org.bouncycastle.asn1.DERSequence;
  * <p/>
  * <pre>
  *  Certificate Holder Authorization ::= SEQUENCE {
- *  	// modulus should be at least 1024bit and a multiple of 512.
- *  	DERTaggedObject		modulus,
- *  	// access rights	exponent
- *  	DERTaggedObject	accessRights,
+ *      // modulus should be at least 1024bit and a multiple of 512.
+ *      DERTaggedObject        modulus,
+ *      // access rights    exponent
+ *      DERTaggedObject    accessRights,
  *  }
  * </pre>
  */

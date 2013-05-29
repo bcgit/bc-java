@@ -75,10 +75,10 @@ public class JcaPublicKeyConverter
         throws EACException, InvalidKeySpecException
     {
         ECParameterSpec spec = getParams(key);
-		ECCurve curve = spec.getCurve();
+        ECCurve curve = spec.getCurve();
 
-		ECPoint point = curve.decodePoint(key.getPublicPointY());
-		ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, spec);
+        ECPoint point = curve.decodePoint(key.getPublicPointY());
+        ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, spec);
 
         KeyFactory factk;
         try
@@ -95,27 +95,27 @@ public class JcaPublicKeyConverter
         }
 
         return factk.generatePublic(pubKeySpec);
-	}
+    }
 
     private ECParameterSpec getParams(ECDSAPublicKey key)
-	{
-		if (!key.hasParameters())
+    {
+        if (!key.hasParameters())
         {
-			throw new IllegalArgumentException("Public key does not contains EC Params");
+            throw new IllegalArgumentException("Public key does not contains EC Params");
         }
 
-		BigInteger p = key.getPrimeModulusP();
-		ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB());
+        BigInteger p = key.getPrimeModulusP();
+        ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB());
 
-		ECPoint G = curve.decodePoint(key.getBasePointG());
+        ECPoint G = curve.decodePoint(key.getBasePointG());
 
-		BigInteger order = key.getOrderOfBasePointR();
-		BigInteger coFactor = key.getCofactorF();
+        BigInteger order = key.getOrderOfBasePointR();
+        BigInteger coFactor = key.getCofactorF();
                    // TODO: update to use JDK 1.5 EC API
-		ECParameterSpec ecspec = new ECParameterSpec(curve, G, order, coFactor);
+        ECParameterSpec ecspec = new ECParameterSpec(curve, G, order, coFactor);
 
-		return ecspec;
-	}
+        return ecspec;
+    }
 
     public PublicKeyDataObject getPublicKeyDataObject(ASN1ObjectIdentifier usage, PublicKey publicKey)
     {

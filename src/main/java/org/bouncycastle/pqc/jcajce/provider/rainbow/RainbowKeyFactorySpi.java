@@ -106,10 +106,10 @@ public class RainbowKeyFactorySpi
      * <pre>
      *    RainbowPublicKey ::= SEQUENCE {
      *      oid            OBJECT IDENTIFIER        -- OID identifying the algorithm
-     *      docLength      Integer      	        -- length of signable msg
+     *      docLength      Integer                  -- length of signable msg
      *      coeffquadratic SEQUENCE OF OCTET STRING -- quadratic (mixed) coefficients
      *      coeffsingular  SEQUENCE OF OCTET STRING -- singular coefficients
-     *      coeffscalar	   OCTET STRING             -- scalar coefficients
+     *      coeffscalar       OCTET STRING             -- scalar coefficients
      *       }
      * </pre>
      * <p/>

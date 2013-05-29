@@ -913,7 +913,7 @@ public class CMSSignedDataStreamGenerator
 
         for (Iterator it = signerInfoGens.iterator(); it.hasNext();)
         {
-        	SignerInfoGenerator s = (SignerInfoGenerator)it.next();
+            SignerInfoGenerator s = (SignerInfoGenerator)it.next();
 
             if (s.getGeneratedVersion().getValue().intValue() == 3)
             {

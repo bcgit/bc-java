@@ -15,7 +15,7 @@ public class POPOSigningKey
 {
     private POPOSigningKeyInput poposkInput;
     private AlgorithmIdentifier algorithmIdentifier;
-    private DERBitString        signature;
+    private DERBitString signature;
 
     private POPOSigningKey(ASN1Sequence seq)
     {
@@ -24,7 +24,7 @@ public class POPOSigningKey
         if (seq.getObjectAt(index) instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject tagObj
-                = (ASN1TaggedObject) seq.getObjectAt(index++);
+                = (ASN1TaggedObject)seq.getObjectAt(index++);
             if (tagObj.getTagNo() != 0)
             {
                 throw new IllegalArgumentException(
@@ -58,11 +58,12 @@ public class POPOSigningKey
 
     /**
      * Creates a new Proof of Possession object for a signing key.
-     * @param poposkIn the POPOSigningKeyInput structure, or null if the
-     *     CertTemplate includes both subject and publicKey values.
-     * @param aid the AlgorithmIdentifier used to sign the proof of possession.
+     *
+     * @param poposkIn  the POPOSigningKeyInput structure, or null if the
+     *                  CertTemplate includes both subject and publicKey values.
+     * @param aid       the AlgorithmIdentifier used to sign the proof of possession.
      * @param signature a signature over the DER-encoded value of poposkIn,
-     *     or the DER-encoded value of certReq if poposkIn is null.
+     *                  or the DER-encoded value of certReq if poposkIn is null.
      */
     public POPOSigningKey(
         POPOSigningKeyInput poposkIn,
@@ -74,15 +75,18 @@ public class POPOSigningKey
         this.signature = signature;
     }
 
-    public POPOSigningKeyInput getPoposkInput() {
+    public POPOSigningKeyInput getPoposkInput()
+    {
         return poposkInput;
     }
 
-    public AlgorithmIdentifier getAlgorithmIdentifier() {
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
         return algorithmIdentifier;
     }
 
-    public DERBitString getSignature() {
+    public DERBitString getSignature()
+    {
         return signature;
     }
 
@@ -103,6 +107,7 @@ public class POPOSigningKey
      *  -- not present in both the poposkInput and CertReqMsg certReq
      *  -- CertTemplate fields.
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

@@ -4,15 +4,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.dvcs.DVCSRequestInformation;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
@@ -21,16 +15,16 @@ import org.bouncycastle.util.BigIntegers;
 
 /**
  * <pre>
- * 	DVCSRequestInformation ::= SEQUENCE  {
- * 	    version                      INTEGER DEFAULT 1 ,
- * 	    service                      ServiceType,
- * 	    nonce                        Nonce OPTIONAL,
- * 	    requestTime                  DVCSTime OPTIONAL,
- * 	    requester                    [0] GeneralNames OPTIONAL,
- * 	    requestPolicy                [1] PolicyInformation OPTIONAL,
- * 	    dvcs                         [2] GeneralNames OPTIONAL,
- * 	    dataLocations                [3] GeneralNames OPTIONAL,
- * 	    extensions                   [4] IMPLICIT Extensions OPTIONAL
+ *     DVCSRequestInformation ::= SEQUENCE  {
+ *         version                      INTEGER DEFAULT 1 ,
+ *         service                      ServiceType,
+ *         nonce                        Nonce OPTIONAL,
+ *         requestTime                  DVCSTime OPTIONAL,
+ *         requester                    [0] GeneralNames OPTIONAL,
+ *         requestPolicy                [1] PolicyInformation OPTIONAL,
+ *         dvcs                         [2] GeneralNames OPTIONAL,
+ *         dataLocations                [3] GeneralNames OPTIONAL,
+ *         extensions                   [4] IMPLICIT Extensions OPTIONAL
  *     }
  * </pre>
  */

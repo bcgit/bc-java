@@ -11,9 +11,9 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 
 /**
  * <pre>
- * 	DVCSTime ::= CHOICE  {
- * 	    genTime                      GeneralizedTime,
- * 	    timeStampToken               ContentInfo
+ *     DVCSTime ::= CHOICE  {
+ *         genTime                      GeneralizedTime,
+ *         timeStampToken               ContentInfo
  *     }
  * </pre>
  */

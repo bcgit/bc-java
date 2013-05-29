@@ -10,10 +10,10 @@ import org.bouncycastle.asn1.x509.GeneralName;
 
 /**
  * <pre>
- * 	DVCSRequest ::= SEQUENCE  {
- * 	    requestInformation         DVCSRequestInformation,
- * 	    data                       Data,
- * 	    transactionIdentifier      GeneralName OPTIONAL
+ *     DVCSRequest ::= SEQUENCE  {
+ *         requestInformation         DVCSRequestInformation,
+ *         data                       Data,
+ *         transactionIdentifier      GeneralName OPTIONAL
  *     }
  * </pre>
  */

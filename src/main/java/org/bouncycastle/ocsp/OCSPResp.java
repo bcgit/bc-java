@@ -101,7 +101,7 @@ public class OCSPResp
     public byte[] getEncoded()
         throws IOException
     {
-    	return resp.getEncoded();
+        return resp.getEncoded();
     }
     
     public boolean equals(Object o)

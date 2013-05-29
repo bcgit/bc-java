@@ -41,7 +41,8 @@ public class CertReqMessages
         CertReqMsg[] msgs)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i = 0; i < msgs.length; i++) {
+        for (int i = 0; i < msgs.length; i++)
+        {
             v.add(msgs[i]);
         }
         content = new DERSequence(v);
@@ -58,11 +59,12 @@ public class CertReqMessages
 
         return result;
     }
-    
+
     /**
      * <pre>
      * CertReqMessages ::= SEQUENCE SIZE (1..MAX) OF CertReqMsg
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

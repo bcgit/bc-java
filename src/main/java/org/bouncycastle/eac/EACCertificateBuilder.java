@@ -42,23 +42,23 @@ public class EACCertificateBuilder
     }
 
     private CertificateBody buildBody()
-	{
-		DERApplicationSpecific  certificateProfileIdentifier;
+    {
+        DERApplicationSpecific  certificateProfileIdentifier;
 
-		certificateProfileIdentifier = new DERApplicationSpecific(
-				EACTags.INTERCHANGE_PROFILE, ZeroArray);
+        certificateProfileIdentifier = new DERApplicationSpecific(
+                EACTags.INTERCHANGE_PROFILE, ZeroArray);
 
-		CertificateBody body = new CertificateBody(
-				certificateProfileIdentifier,
-				certificationAuthorityReference,
-				publicKey,
-				certificateHolderReference,
-				certificateHolderAuthorization,
-				certificateEffectiveDate,
-				certificateExpirationDate);
+        CertificateBody body = new CertificateBody(
+                certificateProfileIdentifier,
+                certificationAuthorityReference,
+                publicKey,
+                certificateHolderReference,
+                certificateHolderAuthorization,
+                certificateEffectiveDate,
+                certificateExpirationDate);
 
-		return body;
-	}
+        return body;
+    }
 
     public EACCertificateHolder build(EACSigner signer)
         throws EACException

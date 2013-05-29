@@ -86,7 +86,7 @@ public class DSTU4145BinaryField
     /**
      * BinaryField ::= SEQUENCE {
      * M INTEGER,
-     * CHOICE {Trinomial,	Pentanomial}
+     * CHOICE {Trinomial,    Pentanomial}
      * Trinomial::= INTEGER
      * Pentanomial::= SEQUENCE {
      * k INTEGER,

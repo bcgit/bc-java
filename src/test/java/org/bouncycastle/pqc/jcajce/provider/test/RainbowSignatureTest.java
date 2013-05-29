@@ -91,7 +91,7 @@ public class RainbowSignatureTest
         throws Exception
     {
         // generate new signature instance for verification
-        //			sigVerify = (Signature) sig.getClass().newInstance();
+        //            sigVerify = (Signature) sig.getClass().newInstance();
         sigVerify = Signature.getInstance("SHA384WITHRainbow");
 
         for (int j = 0; j < numPassesKPG; j++)

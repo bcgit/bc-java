@@ -11,9 +11,9 @@ import org.bouncycastle.asn1.x509.GeneralName;
 
 /**
  * <pre>
- * 	DVCSErrorNotice ::= SEQUENCE {
- * 	    transactionStatus           PKIStatusInfo ,
- * 	    transactionIdentifier       GeneralName OPTIONAL
+ *     DVCSErrorNotice ::= SEQUENCE {
+ *         transactionStatus           PKIStatusInfo ,
+ *         transactionIdentifier       GeneralName OPTIONAL
  *     }
  * </pre>
  */

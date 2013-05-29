@@ -39,7 +39,8 @@ public class Controls
     public Controls(AttributeTypeAndValue[] atvs)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        for (int i = 0; i < atvs.length; i++) {
+        for (int i = 0; i < atvs.length; i++)
+        {
             v.add(atvs[i]);
         }
         content = new DERSequence(v);
@@ -61,6 +62,7 @@ public class Controls
      * <pre>
      * Controls  ::= SEQUENCE SIZE(1..MAX) OF AttributeTypeAndValue
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

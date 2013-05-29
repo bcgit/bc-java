@@ -123,9 +123,9 @@ public class JcaEACSignerBuilder
     }
 
     public static int max(int el1, int el2)
-	{
-		return el1 > el2 ? el1 : el2;
-	}
+    {
+        return el1 > el2 ? el1 : el2;
+    }
 
     private static byte[] reencode(byte[] rawSign)
     {
@@ -153,26 +153,26 @@ public class JcaEACSignerBuilder
     }
 
     private static int unsignedIntLength(byte [] i)
-	{
-		int len = i.length;
-		if (i[0] == 0)
-			len--;
+    {
+        int len = i.length;
+        if (i[0] == 0)
+            len--;
 
-		return len;
-	}
+        return len;
+    }
 
-	private static void copyUnsignedInt(byte [] src, byte [] dst, int offset)
-	{
-		int len = src.length;
-		int readoffset = 0;
-		if (src[0] == 0)
-		{
-			len--;
-			readoffset = 1;
-		}
+    private static void copyUnsignedInt(byte [] src, byte [] dst, int offset)
+    {
+        int len = src.length;
+        int readoffset = 0;
+        if (src[0] == 0)
+        {
+            len--;
+            readoffset = 1;
+        }
 
-		System.arraycopy(src, readoffset, dst, offset, len);
-	}
+        System.arraycopy(src, readoffset, dst, offset, len);
+    }
 
     private class SignatureOutputStream
         extends OutputStream

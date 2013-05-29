@@ -76,11 +76,11 @@ public class PGPUnicodeTest
             BigInteger keyId = new BigInteger("362961283C48132B9F14C5C3EC87272EFCB986D2", 16);
 
             String passphrase = new String("Händle".getBytes("UTF-16"), "UTF-16");
-//			FileInputStream passwordFile = new FileInputStream("testdata/passphrase_for_test.txt");
-//			byte[] password = new byte[passwordFile.available()];
-//			passwordFile.read(password);
-//			passwordFile.close();
-//			String passphrase = new String(password);			
+//            FileInputStream passwordFile = new FileInputStream("testdata/passphrase_for_test.txt");
+//            byte[] password = new byte[passwordFile.available()];
+//            passwordFile.read(password);
+//            passwordFile.close();
+//            String passphrase = new String(password);            
 
             test_key(keyId, passphrase);
 
@@ -125,12 +125,12 @@ public class PGPUnicodeTest
             // XXX The password text file must not have the UTF-8 BOM !
             // Ref: http://stackoverflow.com/questions/2223882/whats-different-between-utf-8-and-utf-8-without-bom
 
-			FileInputStream passwordFile = new FileInputStream(getDataHome() + "passphrase_cyr.txt");
-			Reader reader = new InputStreamReader(passwordFile, Charset.forName("UTF-8"));
-			BufferedReader in = new BufferedReader(reader);
-			String passphrase = in.readLine();
-			in.close();
-			passwordFile.close();
+            FileInputStream passwordFile = new FileInputStream(getDataHome() + "passphrase_cyr.txt");
+            Reader reader = new InputStreamReader(passwordFile, Charset.forName("UTF-8"));
+            BufferedReader in = new BufferedReader(reader);
+            String passphrase = in.readLine();
+            in.close();
+            passwordFile.close();
 
             test_key(keyId, passphrase);
 

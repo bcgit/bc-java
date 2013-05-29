@@ -126,7 +126,7 @@ public class PGPNoPrivateKeyTest
         // Check isPrivateKeyEmpty() is public
         //
 
-	    if (isFullEmpty || !isEmptyEmpty)
+        if (isFullEmpty || !isEmptyEmpty)
         {
             fail("Empty private keys not detected correctly.");
         }

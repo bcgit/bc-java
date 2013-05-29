@@ -21,6 +21,6 @@ public class EphemeralKeyPairGenerator
         AsymmetricCipherKeyPair eph = gen.generateKeyPair();
 
         // Encode the ephemeral public key
-     	return new EphemeralKeyPair(eph, keyEncoder);
+         return new EphemeralKeyPair(eph, keyEncoder);
     }
 }

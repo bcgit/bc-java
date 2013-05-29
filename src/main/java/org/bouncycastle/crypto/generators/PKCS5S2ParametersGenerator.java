@@ -28,7 +28,7 @@ public class PKCS5S2ParametersGenerator
      */
     public PKCS5S2ParametersGenerator()
     {
-    	this(new SHA1Digest());
+        this(new SHA1Digest());
     }
 
     public PKCS5S2ParametersGenerator(Digest digest)

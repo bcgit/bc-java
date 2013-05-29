@@ -107,21 +107,21 @@ public class JcaEACSignatureVerifierBuilder
     }
 
     private static byte[] derEncode(byte[] rawSign) throws IOException
-	{
-		int len = rawSign.length / 2;
+    {
+        int len = rawSign.length / 2;
 
-		byte[] r = new byte[len];
-		byte[] s = new byte[len];
-		System.arraycopy(rawSign, 0, r, 0, len);
-		System.arraycopy(rawSign, len, s, 0, len);
+        byte[] r = new byte[len];
+        byte[] s = new byte[len];
+        System.arraycopy(rawSign, 0, r, 0, len);
+        System.arraycopy(rawSign, len, s, 0, len);
 
-		ASN1EncodableVector v = new ASN1EncodableVector();
-		v.add(new DERInteger(new BigInteger(1, r)));
-		v.add(new DERInteger(new BigInteger(1, s)));
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new DERInteger(new BigInteger(1, r)));
+        v.add(new DERInteger(new BigInteger(1, s)));
 
-		DERSequence seq = new DERSequence(v);
-		return seq.getEncoded();
-	}
+        DERSequence seq = new DERSequence(v);
+        return seq.getEncoded();
+    }
 
     private class SignatureOutputStream
         extends OutputStream

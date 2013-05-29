@@ -26,19 +26,19 @@ public class RSAKeyEncapsulationTest
     public void performTest()
         throws Exception
     {
-    	// Generate RSA key pair
-		RSAKeyPairGenerator		rsaGen = new RSAKeyPairGenerator();
-		rsaGen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(65537), new SecureRandom(), 1024, 5));
-		AsymmetricCipherKeyPair	keys   = rsaGen.generateKeyPair();
-    	
-		// Set RSA-KEM parameters
-    	RSAKeyEncapsulation 	kem;
-		KDF2BytesGenerator		kdf = new KDF2BytesGenerator(new SHA1Digest());
-		SecureRandom			rnd = new SecureRandom();
-		byte[]					out = new byte[128];
-    	KeyParameter			key1, key2;
-		
-		// Test RSA-KEM
+        // Generate RSA key pair
+        RSAKeyPairGenerator        rsaGen = new RSAKeyPairGenerator();
+        rsaGen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(65537), new SecureRandom(), 1024, 5));
+        AsymmetricCipherKeyPair    keys   = rsaGen.generateKeyPair();
+        
+        // Set RSA-KEM parameters
+        RSAKeyEncapsulation     kem;
+        KDF2BytesGenerator        kdf = new KDF2BytesGenerator(new SHA1Digest());
+        SecureRandom            rnd = new SecureRandom();
+        byte[]                    out = new byte[128];
+        KeyParameter            key1, key2;
+        
+        // Test RSA-KEM
         kem = new RSAKeyEncapsulation(kdf, rnd);
         
         kem.init(keys.getPublic());

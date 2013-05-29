@@ -21,16 +21,16 @@ import org.bouncycastle.asn1.x509.Extension;
 /**
  * <pre>
  * CertEtcToken ::= CHOICE {
- * 	    certificate                  [0] IMPLICIT Certificate ,
- * 	    esscertid                    [1] ESSCertId ,
- * 	    pkistatus                    [2] IMPLICIT PKIStatusInfo ,
- * 	    assertion                    [3] ContentInfo ,
- * 	    crl                          [4] IMPLICIT CertificateList,
- * 	    ocspcertstatus               [5] CertStatus,
- * 	    oscpcertid                   [6] IMPLICIT CertId ,
- * 	    oscpresponse                 [7] IMPLICIT OCSPResponse,
- * 	    capabilities                 [8] SMIMECapabilities,
- * 	    extension                    Extension
+ *         certificate                  [0] IMPLICIT Certificate ,
+ *         esscertid                    [1] ESSCertId ,
+ *         pkistatus                    [2] IMPLICIT PKIStatusInfo ,
+ *         assertion                    [3] ContentInfo ,
+ *         crl                          [4] IMPLICIT CertificateList,
+ *         ocspcertstatus               [5] CertStatus,
+ *         oscpcertid                   [6] IMPLICIT CertId ,
+ *         oscpresponse                 [7] IMPLICIT OCSPResponse,
+ *         capabilities                 [8] SMIMECapabilities,
+ *         extension                    Extension
  * }
  * </pre>
  */
@@ -49,9 +49,9 @@ public class CertEtcToken
     public static final int TAG_CAPABILITIES = 8;
 
     private static final boolean[] explicit = new boolean[]
-    {
-        false, true, false, true, false, true, false, false, true
-    };
+        {
+            false, true, false, true, false, true, false, false, true
+        };
 
     private int tagNo;
     private ASN1Encodable value;

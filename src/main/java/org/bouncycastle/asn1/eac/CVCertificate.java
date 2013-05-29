@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.DEROctetString;
  * <p/>
  * <pre>
  *  Certificate ::= SEQUENCE {
- *      CertificateBody 		Iso7816CertificateBody,
+ *      CertificateBody         Iso7816CertificateBody,
  *      signature               DER Application specific
  *  }
  * </pre>

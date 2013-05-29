@@ -59,8 +59,8 @@ public class PKIMessage
     /**
      * Creates a new PKIMessage.
      *
-     * @param header message header
-     * @param body message body
+     * @param header     message header
+     * @param body       message body
      * @param protection message protection (may be null)
      * @param extraCerts extra certificates (may be null)
      */
@@ -73,9 +73,11 @@ public class PKIMessage
         this.header = header;
         this.body = body;
         this.protection = protection;
-        if (extraCerts != null) {
+        if (extraCerts != null)
+        {
             ASN1EncodableVector v = new ASN1EncodableVector();
-            for (int i = 0; i < extraCerts.length; i++) {
+            for (int i = 0; i < extraCerts.length; i++)
+            {
                 v.add(extraCerts[i]);
             }
             this.extraCerts = new DERSequence(v);
@@ -92,7 +94,7 @@ public class PKIMessage
 
     public PKIMessage(
         PKIHeader header,
-        PKIBody   body)
+        PKIBody body)
     {
         this(header, body, null, null);
     }
@@ -138,6 +140,7 @@ public class PKIMessage
      *                                                                     OPTIONAL
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
@@ -152,7 +155,7 @@ public class PKIMessage
 
         return new DERSequence(v);
     }
-    
+
     private void addOptional(ASN1EncodableVector v, int tagNo, ASN1Encodable obj)
     {
         if (obj != null)

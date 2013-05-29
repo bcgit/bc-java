@@ -11,11 +11,11 @@ import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <pre>
- * 	TargetEtcChain ::= SEQUENCE {
- * 	    target                       CertEtcToken,
- * 	    chain                        SEQUENCE SIZE (1..MAX) OF
- * 	                                    CertEtcToken OPTIONAL,
- * 	    pathProcInput                [0] PathProcInput OPTIONAL
+ *     TargetEtcChain ::= SEQUENCE {
+ *         target                       CertEtcToken,
+ *         chain                        SEQUENCE SIZE (1..MAX) OF
+ *                                         CertEtcToken OPTIONAL,
+ *         pathProcInput                [0] PathProcInput OPTIONAL
  *     }
  * </pre>
  */

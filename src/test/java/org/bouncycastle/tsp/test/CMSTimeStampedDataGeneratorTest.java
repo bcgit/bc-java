@@ -170,16 +170,16 @@ public class CMSTimeStampedDataGeneratorTest
         for (int i = 0; i < 3; i++) {
             switch (i) {
             case 0:
-                algIdentifier =	NISTObjectIdentifiers.id_sha224;
+                algIdentifier =    NISTObjectIdentifiers.id_sha224;
                 break;
             case 1:
-                algIdentifier =	NISTObjectIdentifiers.id_sha256;
+                algIdentifier =    NISTObjectIdentifiers.id_sha256;
                 break;
             case 2:
-                algIdentifier =	NISTObjectIdentifiers.id_sha384;
+                algIdentifier =    NISTObjectIdentifiers.id_sha384;
                 break;
             case 3:
-                algIdentifier =	NISTObjectIdentifiers.id_sha512;
+                algIdentifier =    NISTObjectIdentifiers.id_sha512;
                 break;
             }
             hashCalculator = calculatorProvider.get(new AlgorithmIdentifier(algIdentifier));

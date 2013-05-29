@@ -57,8 +57,8 @@ public class LDSVersionInfo
     /**
      * <pre>
      * LDSVersionInfo ::= SEQUENCE {
-	 *    ldsVersion PRINTABLE STRING
-	 *    unicodeVersion PRINTABLE STRING
+     *    ldsVersion PRINTABLE STRING
+     *    unicodeVersion PRINTABLE STRING
      *  }
      * </pre>
      * @return

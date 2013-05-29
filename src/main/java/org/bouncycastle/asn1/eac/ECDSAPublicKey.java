@@ -18,13 +18,13 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * <p/>
  * <pre>
  *  Certificate Holder Authorization ::= SEQUENCE {
- *  	ASN1TaggedObject primeModulusP;		// OPTIONAL
- *  	ASN1TaggedObject firstCoefA;			// OPTIONAL
- *  	ASN1TaggedObject secondCoefB;		// OPTIONAL
- *  	ASN1TaggedObject basePointG;			// OPTIONAL
- *  	ASN1TaggedObject orderOfBasePointR;	// OPTIONAL
- *  	ASN1TaggedObject publicPointY;		//REQUIRED
- *  	ASN1TaggedObject	cofactorF;			// OPTIONAL
+ *      ASN1TaggedObject primeModulusP;        // OPTIONAL
+ *      ASN1TaggedObject firstCoefA;            // OPTIONAL
+ *      ASN1TaggedObject secondCoefB;        // OPTIONAL
+ *      ASN1TaggedObject basePointG;            // OPTIONAL
+ *      ASN1TaggedObject orderOfBasePointR;    // OPTIONAL
+ *      ASN1TaggedObject publicPointY;        //REQUIRED
+ *      ASN1TaggedObject    cofactorF;            // OPTIONAL
  *  }
  * </pre>
  */

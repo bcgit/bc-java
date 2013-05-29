@@ -7,13 +7,13 @@ public class RainbowKeyParameters
 {
     private int docLength;
 
-	public RainbowKeyParameters(
-			boolean         isPrivate,
+    public RainbowKeyParameters(
+            boolean         isPrivate,
             int             docLength)
-	{
-		super(isPrivate);
+    {
+        super(isPrivate);
         this.docLength = docLength;
-	}
+    }
 
     /**
      * @return the docLength

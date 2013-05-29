@@ -17,18 +17,18 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 
 /**
  * <pre>
- * 	DVCSCertInfo::= SEQUENCE  {
- * 	    version             Integer DEFAULT 1 ,
- * 	    dvReqInfo           DVCSRequestInformation,
- * 	    messageImprint      DigestInfo,
- * 	    serialNumber        Integer,
- * 	    responseTime        DVCSTime,
- * 	    dvStatus            [0] PKIStatusInfo OPTIONAL,
- * 	    policy              [1] PolicyInformation OPTIONAL,
- * 	    reqSignature        [2] SignerInfos  OPTIONAL,
- * 	    certs               [3] SEQUENCE SIZE (1..MAX) OF
- * 	                            TargetEtcChain OPTIONAL,
- * 	    extensions          Extensions OPTIONAL
+ *     DVCSCertInfo::= SEQUENCE  {
+ *         version             Integer DEFAULT 1 ,
+ *         dvReqInfo           DVCSRequestInformation,
+ *         messageImprint      DigestInfo,
+ *         serialNumber        Integer,
+ *         responseTime        DVCSTime,
+ *         dvStatus            [0] PKIStatusInfo OPTIONAL,
+ *         policy              [1] PolicyInformation OPTIONAL,
+ *         reqSignature        [2] SignerInfos  OPTIONAL,
+ *         certs               [3] SEQUENCE SIZE (1..MAX) OF
+ *                                 TargetEtcChain OPTIONAL,
+ *         extensions          Extensions OPTIONAL
  *     }
  * </pre>
  */

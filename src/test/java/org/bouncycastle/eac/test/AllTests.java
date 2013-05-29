@@ -44,9 +44,9 @@ public class AllTests
         }
     }
 
-	public void testLoadCertificate() throws Exception
-	{
-		EACCertificateHolder certHolder = new EACCertificateHolder(getInput("Belgique CVCA-02032010.7816.cvcert"));
+    public void testLoadCertificate() throws Exception
+    {
+        EACCertificateHolder certHolder = new EACCertificateHolder(getInput("Belgique CVCA-02032010.7816.cvcert"));
 
         PublicKey pubKey = new JcaPublicKeyConverter().setProvider(BC).getKey(certHolder.getPublicKeyDataObject());
         EACSignatureVerifier verifier = new JcaEACSignatureVerifierBuilder().build(certHolder.getPublicKeyDataObject().getUsage(), pubKey);
@@ -55,7 +55,7 @@ public class AllTests
         {
             fail("signature test failed");
         }
-	}
+    }
 
     private byte[] getInput(String name)
         throws IOException
@@ -63,10 +63,10 @@ public class AllTests
         return Streams.readAll(getClass().getResourceAsStream(name));
     }
 
-	public void testLoadInvalidRequest() throws Exception
-	{
+    public void testLoadInvalidRequest() throws Exception
+    {
         // this request contains invalid unsigned integers (see D 2.1.1)
-		EACCertificateRequestHolder requestHolder = new EACCertificateRequestHolder(getInput("REQ_18102010.csr"));
+        EACCertificateRequestHolder requestHolder = new EACCertificateRequestHolder(getInput("REQ_18102010.csr"));
 
         PublicKey pubKey = new JcaPublicKeyConverter().setProvider(BC).getKey(requestHolder.getPublicKeyDataObject());
         EACSignatureVerifier verifier = new JcaEACSignatureVerifierBuilder().build(requestHolder.getPublicKeyDataObject().getUsage(), pubKey);
@@ -75,14 +75,14 @@ public class AllTests
         {
             fail("signature test failed");
         }
-	}
+    }
 
-	public void testLoadRefCert() throws Exception
-	{
+    public void testLoadRefCert() throws Exception
+    {
         EACCertificateHolder certHolder = new EACCertificateHolder(getInput("at_cert_19a.cvcert"));
 
 
-	}
+    }
 
     public void testGenerateEC()
         throws Exception
@@ -95,7 +95,7 @@ public class AllTests
         EACSigner signer = signerBuilder.build("SHA256withECDSA", kp.getPrivate());
 
         int role = CertificateHolderAuthorization.CVCA;
-		int rights = CertificateHolderAuthorization.RADG3 | CertificateHolderAuthorization.RADG4;
+        int rights = CertificateHolderAuthorization.RADG3 | CertificateHolderAuthorization.RADG4;
 
         EACCertificateBuilder certBuilder = new EACCertificateBuilder(
             new CertificationAuthorityReference("AU", "BC TEST", "12345"),
@@ -105,7 +105,7 @@ public class AllTests
             new PackedDate("110101"),
             new PackedDate("120101"));
 
-		EACCertificateHolder certHolder = certBuilder.build(signer);
+        EACCertificateHolder certHolder = certBuilder.build(signer);
 
         EACSignatureVerifier verifier = new JcaEACSignatureVerifierBuilder().build(certHolder.getPublicKeyDataObject().getUsage(), kp.getPublic());
 
@@ -133,7 +133,7 @@ public class AllTests
         EACSigner signer = signerBuilder.build("SHA256withRSA", kp.getPrivate());
 
         int role = CertificateHolderAuthorization.CVCA;
-		int rights = CertificateHolderAuthorization.RADG3 | CertificateHolderAuthorization.RADG4;
+        int rights = CertificateHolderAuthorization.RADG3 | CertificateHolderAuthorization.RADG4;
 
         EACCertificateBuilder certBuilder = new EACCertificateBuilder(
             new CertificationAuthorityReference("AU", "BC TEST", "12345"),
@@ -143,7 +143,7 @@ public class AllTests
             new PackedDate("110101"),
             new PackedDate("120101"));
 
-		EACCertificateHolder certHolder = certBuilder.build(signer);
+        EACCertificateHolder certHolder = certBuilder.build(signer);
 
         EACSignatureVerifier verifier = new JcaEACSignatureVerifierBuilder().build(certHolder.getPublicKeyDataObject().getUsage(), kp.getPublic());
 
@@ -162,24 +162,24 @@ public class AllTests
     }
 
     private KeyPair generateECKeyPair(ECParameterSpec spec) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException
-	{
-		KeyPairGenerator gen = KeyPairGenerator.getInstance("ECDSA",BC);
+    {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("ECDSA",BC);
 
-		gen.initialize(spec, new SecureRandom());
+        gen.initialize(spec, new SecureRandom());
 
-		KeyPair generatedKeyPair = gen.generateKeyPair();
-		return generatedKeyPair;
-	}
+        KeyPair generatedKeyPair = gen.generateKeyPair();
+        return generatedKeyPair;
+    }
 
     private KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException
-	{
-		KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA",BC);
+    {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA",BC);
 
-		gen.initialize(1024, new SecureRandom());
+        gen.initialize(1024, new SecureRandom());
 
-		KeyPair generatedKeyPair = gen.generateKeyPair();
-		return generatedKeyPair;
-	}
+        KeyPair generatedKeyPair = gen.generateKeyPair();
+        return generatedKeyPair;
+    }
 
     public static void main(String[] args)
         throws Exception

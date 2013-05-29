@@ -79,14 +79,14 @@ public class DHIESTest
         doTest("DHIES with 1024-bit", g, "DHIES", params);
 
         c1 = new IESCipher(new IESEngine(new DHBasicAgreement(), 
-				new KDF2BytesGenerator(new SHA1Digest()),
-				new HMac(new SHA1Digest()),
-				new PaddedBufferedBlockCipher(new DESEngine())));
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));
         
         c2 = new IESCipher(new IESEngine(new DHBasicAgreement(), 
-				new KDF2BytesGenerator(new SHA1Digest()),
-				new HMac(new SHA1Digest()),
-				new PaddedBufferedBlockCipher(new DESEngine())));  
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));  
     
         params = new IESParameterSpec(derivation, encoding, 128, 192);
       
@@ -123,13 +123,13 @@ public class DHIESTest
     }
 
     public void doTest(
-    	String				testname,
-        KeyPairGenerator 	g,
+        String                testname,
+        KeyPairGenerator     g,
         String              cipher,
-        IESParameterSpec	p)
+        IESParameterSpec    p)
         throws Exception
     {
-    	
+        
         byte[] message = Hex.decode("0102030405060708090a0b0c0d0e0f10111213141516");
         byte[] out1, out2;
   

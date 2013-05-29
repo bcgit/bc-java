@@ -57,7 +57,7 @@ public class DSTU4145Test
     
     private void generationTest() throws Exception
     {
-    	ECCurve.F2m curve = new ECCurve.F2m(173, 1, 2, 10, BigInteger.ZERO, new BigInteger("108576C80499DB2FC16EDDF6853BBB278F6B6FB437D9", 16));
+        ECCurve.F2m curve = new ECCurve.F2m(173, 1, 2, 10, BigInteger.ZERO, new BigInteger("108576C80499DB2FC16EDDF6853BBB278F6B6FB437D9", 16));
 
         ECParameterSpec spec = new ECParameterSpec(
             curve,

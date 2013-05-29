@@ -116,12 +116,12 @@ public class DSTU4145ECBinary
 
     /**
      * ECBinary  ::= SEQUENCE {
-     * version	 	 [0] EXPLICIT INTEGER    DEFAULT 0,
-     * f 	BinaryField,
-     * a	INTEGER (0..1),
-     * b	OCTET STRING,
-     * n	INTEGER,
-     * bp	OCTET STRING}
+     * version          [0] EXPLICIT INTEGER    DEFAULT 0,
+     * f     BinaryField,
+     * a    INTEGER (0..1),
+     * b    OCTET STRING,
+     * n    INTEGER,
+     * bp    OCTET STRING}
      */
     public ASN1Primitive toASN1Primitive()
     {

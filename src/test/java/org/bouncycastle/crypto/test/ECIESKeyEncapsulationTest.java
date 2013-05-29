@@ -28,24 +28,24 @@ public class ECIESKeyEncapsulationTest
     public void performTest()
         throws Exception
     {
-    	
-    	// Set EC domain parameters and generate key pair
-		X9ECParameters			spec     = SECNamedCurves.getByName("secp224r1");
-		ECDomainParameters		ecDomain = new ECDomainParameters(spec.getCurve(), spec.getG(), spec.getN());
-		ECKeyPairGenerator		ecGen    = new ECKeyPairGenerator();
+        
+        // Set EC domain parameters and generate key pair
+        X9ECParameters            spec     = SECNamedCurves.getByName("secp224r1");
+        ECDomainParameters        ecDomain = new ECDomainParameters(spec.getCurve(), spec.getG(), spec.getN());
+        ECKeyPairGenerator        ecGen    = new ECKeyPairGenerator();
 
-		ecGen.init(new ECKeyGenerationParameters(ecDomain, new SecureRandom()));
+        ecGen.init(new ECKeyGenerationParameters(ecDomain, new SecureRandom()));
 
-		AsymmetricCipherKeyPair	keys 	 = ecGen.generateKeyPair();
-    	
-		// Set ECIES-KEM parameters
-    	ECIESKeyEncapsulation 	kem;
-		KDF2BytesGenerator		kdf = new KDF2BytesGenerator(new SHA1Digest());
-		SecureRandom			rnd = new SecureRandom();
-		byte[]					out = new byte[57];
-    	KeyParameter			key1, key2;
-		
-		// Test basic ECIES-KEM
+        AsymmetricCipherKeyPair    keys      = ecGen.generateKeyPair();
+        
+        // Set ECIES-KEM parameters
+        ECIESKeyEncapsulation     kem;
+        KDF2BytesGenerator        kdf = new KDF2BytesGenerator(new SHA1Digest());
+        SecureRandom            rnd = new SecureRandom();
+        byte[]                    out = new byte[57];
+        KeyParameter            key1, key2;
+        
+        // Test basic ECIES-KEM
         kem = new ECIESKeyEncapsulation(kdf, rnd);
         
         kem.init(keys.getPublic());

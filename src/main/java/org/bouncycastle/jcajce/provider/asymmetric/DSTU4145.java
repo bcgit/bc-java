@@ -7,7 +7,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 
 public class DSTU4145 
 {
-	private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".dstu.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".dstu.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider

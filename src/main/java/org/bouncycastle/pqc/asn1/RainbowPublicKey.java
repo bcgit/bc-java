@@ -22,10 +22,10 @@ import org.bouncycastle.pqc.crypto.rainbow.util.RainbowUtil;
  *         oid        OBJECT IDENTIFIER         -- OID identifying the algorithm
  *         version    INTEGER                    -- 0
  *         }
- *         docLength        Integer      	     -- length of the code
+ *         docLength        Integer               -- length of the code
  *         coeffquadratic   SEQUENCE OF OCTET STRING -- quadratic (mixed) coefficients
- *         coeffsingular	SEQUENCE OF OCTET STRING -- singular coefficients
- *         coeffscalar	SEQUENCE OF OCTET STRING -- scalar coefficients
+ *         coeffsingular    SEQUENCE OF OCTET STRING -- singular coefficients
+ *         coeffscalar    SEQUENCE OF OCTET STRING -- scalar coefficients
  *       }
  * </pre>
  */

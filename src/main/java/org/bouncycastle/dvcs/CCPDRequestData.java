@@ -1,10 +1,6 @@
 package org.bouncycastle.dvcs;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.dvcs.Data;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.DigestInfo;
-import org.bouncycastle.operator.DigestCalculator;
 
 /**
  * Data piece of DVCRequest for CCPD service (Certify Claim of Possession of Data).

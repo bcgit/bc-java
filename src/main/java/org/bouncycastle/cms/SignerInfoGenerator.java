@@ -123,12 +123,12 @@ public class SignerInfoGenerator
 
     public SignerIdentifier getSID()
     {
-    	return signerIdentifier;
+        return signerIdentifier;
     }
 
     public ASN1Integer getGeneratedVersion()
     {
-    	return new ASN1Integer(signerIdentifier.isTagged() ? 3 : 1);
+        return new ASN1Integer(signerIdentifier.isTagged() ? 3 : 1);
     }
 
     public boolean hasAssociatedCertificate()

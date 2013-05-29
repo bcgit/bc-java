@@ -16,11 +16,11 @@ import org.bouncycastle.util.Integers;
  * <p/>
  * <pre>
  *  Certificate Holder Authorization ::= SEQUENCE {
- *  	// specifies the format and the rules for the evaluation of the authorization
- *  	// level
- *  	ASN1ObjectIdentifier		oid,
- *  	// access rights
- *  	DERApplicationSpecific	accessRights,
+ *      // specifies the format and the rules for the evaluation of the authorization
+ *      // level
+ *      ASN1ObjectIdentifier        oid,
+ *      // access rights
+ *      DERApplicationSpecific    accessRights,
  *  }
  * </pre>
  */

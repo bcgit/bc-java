@@ -63,14 +63,14 @@ public class ECIESTest
 
         
         c1 = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
-				new KDF2BytesGenerator(new SHA1Digest()),
-				new HMac(new SHA1Digest()),
-				new PaddedBufferedBlockCipher(new DESEngine())));
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));
         
         c2 = new IESCipher(new IESEngine(new ECDHBasicAgreement(), 
-				new KDF2BytesGenerator(new SHA1Digest()),
-				new HMac(new SHA1Digest()),
-				new PaddedBufferedBlockCipher(new DESEngine())));  
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));  
     
         params = new IESParameterSpec(derivation, encoding, 128, 128);
       
@@ -106,13 +106,13 @@ public class ECIESTest
     }
 
     public void doTest(
-    	String				testname,
-        KeyPairGenerator 	g,
+        String                testname,
+        KeyPairGenerator     g,
         String              cipher,
-        IESParameterSpec	p)
+        IESParameterSpec    p)
         throws Exception
     {
-    	
+        
         byte[] message = Hex.decode("0102030405060708090a0b0c0d0e0f10111213141516");
         byte[] out1, out2;
 

@@ -106,13 +106,13 @@ public abstract class Pack
     }
 
     public static void littleEndianToInt(byte[] bs, int off, int[] ns)
-	{
-		for (int i = 0; i < ns.length; ++i)
-		{
-			ns[i] = littleEndianToInt(bs, off);
-			off += 4;
-		}
-	}
+    {
+        for (int i = 0; i < ns.length; ++i)
+        {
+            ns[i] = littleEndianToInt(bs, off);
+            off += 4;
+        }
+    }
 
     public static byte[] intToLittleEndian(int n)
     {
@@ -136,14 +136,14 @@ public abstract class Pack
         return bs;
     }
 
-	public static void intToLittleEndian(int[] ns, byte[] bs, int off)
-	{
-		for (int i = 0; i < ns.length; ++i)
-		{
-			intToLittleEndian(ns[i], bs, off);
-			off += 4;
-		}
-	}
+    public static void intToLittleEndian(int[] ns, byte[] bs, int off)
+    {
+        for (int i = 0; i < ns.length; ++i)
+        {
+            intToLittleEndian(ns[i], bs, off);
+            off += 4;
+        }
+    }
 
     public static long littleEndianToLong(byte[] bs, int off)
     {

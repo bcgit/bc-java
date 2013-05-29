@@ -93,7 +93,7 @@ public class PKIStatusInfo
         PKIFreeText    statusString,
         PKIFailureInfo failInfo)
     {
-        this.status = ASN1Integer.getInstance(status.toASN1Primitive());;
+        this.status = ASN1Integer.getInstance(status.toASN1Primitive());
         this.statusString = statusString;
         this.failInfo = failInfo;
     }

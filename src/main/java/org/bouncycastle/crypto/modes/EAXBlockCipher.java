@@ -297,15 +297,15 @@ public class EAXBlockCipher
 
     public int getUpdateOutputSize(int len)
     {
-    	int totalData = len + bufOff;
-    	if (!forEncryption)
-    	{
-    	    if (totalData < macSize)
-    	    {
-    	        return 0;
-    	    }
-    	    totalData -= macSize;
-    	}
+        int totalData = len + bufOff;
+        if (!forEncryption)
+        {
+            if (totalData < macSize)
+            {
+                return 0;
+            }
+            totalData -= macSize;
+        }
         return totalData - totalData % blockSize;
     }
 

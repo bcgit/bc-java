@@ -41,12 +41,12 @@ public class McElieceCCA2ParameterSpec
     {
         // check whether message digest is available
         // TODO: this method not used!
-//		try {
-//			Registry.getMessageDigest(mdName);
-//		} catch (NoSuchAlgorithmException nsae) {
-//			throw new InvalidParameterException("Message digest '" + mdName
-//					+ "' not found'.");
-//		}
+//        try {
+//            Registry.getMessageDigest(mdName);
+//        } catch (NoSuchAlgorithmException nsae) {
+//            throw new InvalidParameterException("Message digest '" + mdName
+//                    + "' not found'.");
+//        }
 
         // assign message digest name
         this.mdName = mdName;

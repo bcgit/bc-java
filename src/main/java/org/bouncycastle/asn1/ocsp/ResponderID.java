@@ -65,24 +65,24 @@ public class ResponderID
 
     public byte[] getKeyHash()
     {
-		if (this.value instanceof ASN1OctetString)
-		{
-			ASN1OctetString octetString = (ASN1OctetString)this.value;
-			return octetString.getOctets();
-		}
+        if (this.value instanceof ASN1OctetString)
+        {
+            ASN1OctetString octetString = (ASN1OctetString)this.value;
+            return octetString.getOctets();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public X500Name getName()
-	{
-		if (this.value instanceof ASN1OctetString)
-		{
-			return null;
-		}
+    public X500Name getName()
+    {
+        if (this.value instanceof ASN1OctetString)
+        {
+            return null;
+        }
 
-		return X500Name.getInstance(value);
-	}
+        return X500Name.getInstance(value);
+    }
 
     /**
      * Produce an object suitable for an ASN1OutputStream.

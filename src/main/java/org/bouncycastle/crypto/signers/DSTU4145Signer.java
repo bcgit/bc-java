@@ -126,22 +126,22 @@ public class DSTU4145Signer
     }
     
     private static void reverseBytes(byte[] bytes)
-	{
-		byte tmp;
-		
-		for (int i=0; i<bytes.length/2; i++)
-		{
-			tmp=bytes[i];
-			bytes[i]=bytes[bytes.length-1-i];
-			bytes[bytes.length-1-i]=tmp;
-		}
-	}
+    {
+        byte tmp;
+        
+        for (int i=0; i<bytes.length/2; i++)
+        {
+            tmp=bytes[i];
+            bytes[i]=bytes[bytes.length-1-i];
+            bytes[bytes.length-1-i]=tmp;
+        }
+    }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)
     {
-    	byte[] data = Arrays.clone(hash);
-    	reverseBytes(data);
-    	BigInteger num = new BigInteger(1, data);
+        byte[] data = Arrays.clone(hash);
+        reverseBytes(data);
+        BigInteger num = new BigInteger(1, data);
         while (num.bitLength() >= curve.getFieldSize())
         {
             num = num.clearBit(num.bitLength() - 1);

@@ -38,8 +38,8 @@ public class PKIHeader
     private ASN1OctetString transactionID;
     private ASN1OctetString senderNonce;
     private ASN1OctetString recipNonce;
-    private PKIFreeText     freeText;
-    private ASN1Sequence    generalInfo;
+    private PKIFreeText freeText;
+    private ASN1Sequence generalInfo;
 
     private PKIHeader(ASN1Sequence seq)
     {
@@ -147,42 +147,44 @@ public class PKIHeader
     }
 
     public ASN1OctetString getSenderKID()
-    {   
+    {
         return senderKID;
     }
 
     public ASN1OctetString getRecipKID()
-    {   
+    {
         return recipKID;
     }
 
     public ASN1OctetString getTransactionID()
-    {   
+    {
         return transactionID;
     }
 
     public ASN1OctetString getSenderNonce()
-    {   
+    {
         return senderNonce;
     }
 
     public ASN1OctetString getRecipNonce()
-    {   
+    {
         return recipNonce;
     }
 
     public PKIFreeText getFreeText()
-    {   
+    {
         return freeText;
     }
 
     public InfoTypeAndValue[] getGeneralInfo()
     {
-        if (generalInfo == null) {
+        if (generalInfo == null)
+        {
             return null;
         }
         InfoTypeAndValue[] results = new InfoTypeAndValue[generalInfo.size()];
-        for (int i = 0; i < results.length; i++) {
+        for (int i = 0; i < results.length; i++)
+        {
             results[i]
                 = InfoTypeAndValue.getInstance(generalInfo.getObjectAt(i));
         }
@@ -225,6 +227,7 @@ public class PKIHeader
      *            -- (this field not primarily intended for human consumption)
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
