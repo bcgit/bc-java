@@ -204,6 +204,16 @@ public class RFC4519Style
         return new DERUTF8String(value);
     }
 
+    public String oidToDisplayName(ASN1ObjectIdentifier oid)
+    {
+        return (String)DefaultSymbols.get(oid);
+    }
+
+    public String[] oidToAttrNames(ASN1ObjectIdentifier oid)
+    {
+        return IETFUtils.findAttrNamesForOID(oid, DefaultLookUp);
+    }
+
     public ASN1ObjectIdentifier attrNameToOID(String attrName)
     {
         return IETFUtils.decodeAttrName(attrName, DefaultLookUp);

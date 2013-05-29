@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.x500.style;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -226,6 +227,34 @@ public class IETFUtils
         }
 
         return tmp;
+    }
+
+    public static String[] findAttrNamesForOID(
+        ASN1ObjectIdentifier oid,
+        Hashtable            lookup)
+    {
+        int count = 0;
+        for (Enumeration en = lookup.elements(); en.hasMoreElements();)
+        {
+            if (oid.equals(en.nextElement()))
+            {
+                count++;
+            }
+        }
+
+        String[] aliases = new String[count];
+        count = 0;
+
+        for (Enumeration en = lookup.keys(); en.hasMoreElements();)
+        {
+            String key = (String)en.nextElement();
+            if (oid.equals(lookup.get(key)))
+            {
+                aliases[count++] = key;
+            }
+        }
+
+        return aliases;
     }
 
     public static ASN1ObjectIdentifier decodeAttrName(

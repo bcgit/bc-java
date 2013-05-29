@@ -635,6 +635,36 @@ public class X500NameTest
         {
             fail("telephonenumber escaped + not reduced properly");
         }
+
+        // test query methods
+        if (!"E".equals(BCStyle.INSTANCE.oidToDisplayName(BCStyle.EmailAddress)))
+        {
+            fail("display name for E incorrect");
+        }
+
+        String[] aliases = BCStyle.INSTANCE.oidToAttrNames(BCStyle.EmailAddress);
+        if (aliases.length != 2)
+        {
+            fail("no aliases found");
+        }
+        if (!("e".equals(aliases[0]) || "e".equals(aliases[1])))
+        {
+            fail("first alias name for E incorrect");
+        }
+        if (!("emailaddress".equals(aliases[0]) || "emailaddress".equals(aliases[1])))
+        {
+            fail("second alias name for E incorrect");
+        }
+
+        if (BCStyle.INSTANCE.oidToDisplayName(new ASN1ObjectIdentifier("1.2.1")) != null)
+        {
+            fail("unknown oid matched!");
+        }
+
+        if (BCStyle.INSTANCE.oidToAttrNames(new ASN1ObjectIdentifier("1.2.1")).length != 0)
+        {
+            fail("unknown oid matched aliases!");
+        }
     }
 
     private String getValue(RDN vl)
