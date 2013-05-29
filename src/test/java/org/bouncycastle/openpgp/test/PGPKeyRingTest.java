@@ -27,6 +27,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -2354,6 +2355,72 @@ public class PGPKeyRingTest
         }
     }
 
+    private void rewrapTestMD5()
+        throws Exception
+    {
+        // Read the secret key rings
+        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+                                                         new ByteArrayInputStream(rewrapKey));
+        char[] newPass = "fred".toCharArray();
+
+        Iterator rIt = privRings.getKeyRings();
+
+        if (rIt.hasNext())
+        {
+            PGPSecretKeyRing pgpPriv= (PGPSecretKeyRing)rIt.next();
+
+            Iterator it = pgpPriv.getSecretKeys();
+
+            PGPDigestCalculatorProvider calcProvider = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build();
+
+            while (it.hasNext())
+            {
+                PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
+
+                // re-encrypt the key with an empty password
+                pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                                    pgpKey,
+                                    new JcePBESecretKeyDecryptorBuilder(calcProvider).setProvider("BC").build(rewrapPass),
+                                    null);
+                pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
+
+                // this should succeed
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(null);
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
+            }
+
+            it = pgpPriv.getSecretKeys();
+
+            while (it.hasNext())
+            {
+                PGPSecretKey pgpKey = (PGPSecretKey)it.next();
+                long oldKeyID = pgpKey.getKeyID();
+
+                // re-encrypt the key with an empty password
+                pgpPriv = PGPSecretKeyRing.removeSecretKey(pgpPriv, pgpKey);
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                                    pgpKey,
+                                    null,
+                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5, calcProvider.get(HashAlgorithmTags.MD5)).setProvider("BC").build(newPass));
+                pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
+
+                // this should succeed
+                PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(calcProvider).setProvider("BC").build(newPass));
+
+                if (pgpKey.getKeyID() != oldKeyID)
+                {
+                    fail("key ID mismatch");
+                }
+            }
+        }
+    }
+
     private void testPublicKeyRingWithX509()
         throws Exception
     {
@@ -2508,6 +2575,7 @@ public class PGPKeyRingTest
             generateSha1Test();
             rewrapTest();
             rewrapTestV3();
+            rewrapTestMD5();
             testPublicKeyRingWithX509();
             testSecretKeyRingWithPersonalCertificate();
             insertMasterTest();

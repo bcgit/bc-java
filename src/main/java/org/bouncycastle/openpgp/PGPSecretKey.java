@@ -822,7 +822,7 @@ public class PGPSecretKey
                 byte[] encKey = newKeyEncryptor.getKey();
                 keyData = new byte[rawKeyData.length];
 
-                if (newKeyEncryptor.getS2K() != null)
+                if (newKeyEncryptor.getHashAlgorithm() != HashAlgorithmTags.MD5)
                 {
                     throw new PGPException("MD5 Digest Calculator required for version 3 key encryptor.");
                 }

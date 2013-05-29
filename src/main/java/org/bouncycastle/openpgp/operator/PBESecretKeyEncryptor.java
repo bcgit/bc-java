@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.operator;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
 
@@ -41,18 +40,19 @@ public abstract class PBESecretKeyEncryptor
         return encAlgorithm;
     }
 
+    public int getHashAlgorithm()
+    {
+        if (s2kDigestCalculator != null)
+        {
+            return s2kDigestCalculator.getAlgorithm();
+        }
+
+        return -1;
+    }
+
     public byte[] getKey()
         throws PGPException
     {
-        if (s2k == null && s2kDigestCalculator.getAlgorithm() != HashAlgorithmTags.MD5)
-        {
-            byte[]        iv = new byte[8];
-
-            random.nextBytes(iv);
-
-            s2k = new S2K(s2kDigestCalculator.getAlgorithm(), iv, s2kCount);
-        }
-
         return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, encAlgorithm, s2k, passPhrase);
     }
 
@@ -61,9 +61,27 @@ public abstract class PBESecretKeyEncryptor
         return s2k;
     }
 
+    /**
+     * Key encryption method invoked for V4 keys and greater.
+     *
+     * @param keyData raw key data
+     * @param keyOff offset into rawe key data
+     * @param keyLen length of key data to use.
+     * @return an encryption of the passed in keyData.
+     * @throws PGPException on error in the underlying encryption process.
+     */
     public byte[] encryptKeyData(byte[] keyData, int keyOff, int keyLen)
         throws PGPException
     {
+        if (s2k == null)
+        {
+            byte[]        iv = new byte[8];
+
+            random.nextBytes(iv);
+
+            s2k = new S2K(s2kDigestCalculator.getAlgorithm(), iv, s2kCount);
+        }
+
         return encryptKeyData(getKey(), keyData, keyOff, keyLen);
     }
 
