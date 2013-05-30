@@ -1,0 +1,70 @@
+Message-id: <4AA5FD7D.70502@djigzo.com>
+Date: Tue, 08 Sep 2009 08:45:17 +0200 (16:45 EST)
+From: Martijn Brinkers <martijn@djigzo.com>
+User-agent: Thunderbird 2.0.0.23 (X11/20090817)
+Mime-version: 1.0
+To: David Hook <dgh@lockboxlabs.com>
+Subject: Re: Verification fails
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1;
+  boundary="----=_Part_0_1891120562.1252227015696"
+
+------=_Part_0_1891120562.1252227015696
+Content-Type: multipart/mixed; boundary="----RIM_0_1252227013353_1978_08_20"
+Content-Transfer-Encoding: 7bit
+
+
+------RIM_0_1252227013353_1978_08_20
+Content-Type: text/xml
+Content-Transfer-Encoding: 7bit
+Content-Description: Djigzo for BlackBerry Meta Info
+
+<?xml version="1.0" encoding="UTF-8"?><BlackBerryRelay version="1" timestamp="1252227013353"><recipient><email>FF</email></recipient></BlackBerryRelay>
+------RIM_0_1252227013353_1978_08_20
+Content-Type: message/rfc822;
+    name=secure-message.eml
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="secure-message.eml"
+
+From: simulation@this.machine
+To: FF
+Subject: Stest
+Date: Sun, 6 Sep 2009 08:50:13 +0000
+MIME-Version: 1.0
+Content-Type: text/plain;
+    charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+
+Test
+------RIM_0_1252227013353_1978_08_20--
+
+
+------=_Part_0_1891120562.1252227015696
+Content-Type: application/pkcs7-signature; name=smime.p7s; smime-type=signed-data
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIIEygYJKoZIhvcNAQcCoIIEuzCCBLcCAQExCzAJBgUrDgMCGgUAMAsGCSqGSIb3DQEHAaCCAzMw
+ggMvMIICmKADAgECAhABFf0OXumQ2UJsk96nIOlwMA0GCSqGSIb3DQEBBQUAMGQxCzAJBgNVBAYT
+Ak5MMQswCQYDVQQIDAJOSDESMBAGA1UEBwwJQW1zdGVyZGFtMRUwEwYDVQQDDAxNSVRNIFRlc3Qg
+Q0ExHTAbBgkqhkiG9w0BCQEWDmNhQGV4YW1wbGUuY29tMB4XDTA3MTEwMTExNTIzNVoXDTI3MTEy
+MTExNTIzNVowTzELMAkGA1UEBhMCTkwxCzAJBgNVBAgMAk5IMRIwEAYDVQQHDAlBbXN0ZXJkYW0x
+HzAdBgkqhkiG9w0BCQEWEHRlc3RAZXhhbXBsZS5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJ
+AoGBAIyFNEWoO3mTGD2O0koeuESL3ohHVcUTQaIBaDQ9KpurWUd+ZDpXF+W76pNdrFHKo6P7/4kF
+m+nWv2r41zlb3oyMRfia60UwgFOH80Akkd781SMDHy73CFxj23G/6eJTeJKfWzwLU+Dgc+XtcyHe
+HtZWTjhyUM7yeN0Vp3J4JGIPAgMBAAGjgfYwgfMwDgYDVR0PAQH/BAQDAgXgMB0GA1UdJQQWMBQG
+CCsGAQUFBwMCBggrBgEFBQcDBDAeBgNVHREBAf8EFDASgRB0ZXN0QGV4YW1wbGUuY29tMIGhBgNV
+HSMEgZkwgZaAFCgcMtAhe+dQPgYTRQq7MLNgBtJ2oWykajBoMQswCQYDVQQGEwJOTDELMAkGA1UE
+CAwCTkgxEjAQBgNVBAcMCUFtc3RlcmRhbTEXMBUGA1UEAwwOTUlUTSBUZXN0IFJvb3QxHzAdBgkq
+hkiG9w0BCQEWEHJvb3RAZXhhbXBsZS5jb22CEAEV/K1rU2/Y1J5ykizR8NowDQYJKoZIhvcNAQEF
+BQADgYEAW2F41M5JCkUUuv/oWpTA6weAti43ZbOz9CaCmuGyPZ9nH4tA+PgIJCJE5+m8uSBGSfiH
+oDe5ho+buit6uAr0AtfSZ4KzIN+NjTLKymtVIB9CwASA/Q+1c/BtuHkj3MIS2TshGQ0BPbUx6wmg
+wb4FhFTF50ksRyu51D95gJVX9lcxggFfMIIBWwIBATB4MGQxCzAJBgNVBAYTAk5MMQswCQYDVQQI
+DAJOSDESMBAGA1UEBwwJQW1zdGVyZGFtMRUwEwYDVQQDDAxNSVRNIFRlc3QgQ0ExHTAbBgkqhkiG
+9w0BCQEWDmNhQGV4YW1wbGUuY29tAhABFf0OXumQ2UJsk96nIOlwMAkGBSsOAwIaBQCgPzAYBgkq
+hkiG9w0BCQMxCwYJKoZIhvcNAQcBMCMGCSqGSIb3DQEJBDEWBBQOP97YHKFoE/zVQEpktr9KVACK
+JzANBgkqhkiG9w0BAQEFAASBgGGr31bH+iIQhBPYQS40Vmvy5fZfpNuSGFIHdDS9kvfZC/MstMh9
+n5yYe4ctUy1lUlwOvfU6KWqZDqKqgwTF91LpM45ysiizKbMQnvS4SzNeON9q0LJdwTodj9V9AzT/
+X4ug10KDIoKdx8aspMktXRtx6glWbrCe1BHYsDMocQ8/
+------=_Part_0_1891120562.1252227015696--
+
