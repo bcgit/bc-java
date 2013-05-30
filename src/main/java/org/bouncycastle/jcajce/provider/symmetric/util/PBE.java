@@ -39,6 +39,7 @@ public interface PBE
     static final int        PKCS5S2     = 1;
     static final int        PKCS12      = 2;
     static final int        OPENSSL     = 3;
+    static final int        PBKDF2      = 4;
 
     /**
      * uses the appropriate mixer to generate the key and IV if necessary.
@@ -68,7 +69,7 @@ public interface PBE
                     throw new IllegalStateException("PKCS5 scheme 1 only supports MD2, MD5 and SHA1.");
                 }
             }
-            else if (type == PKCS5S2)
+            else if (type == PKCS5S2 || type == PBKDF2)
             {
                 generator = new PKCS5S2ParametersGenerator();
             }
@@ -218,16 +219,9 @@ public interface PBE
             PBEParametersGenerator  generator = makePBEGenerator(type, hash);
             byte[]                  key;
             CipherParameters        param;
-    
-            if (type == PKCS12)
-            {
-                key = PBEParametersGenerator.PKCS12PasswordToBytes(keySpec.getPassword());
-            }
-            else
-            {   
-                key = PBEParametersGenerator.PKCS5PasswordToBytes(keySpec.getPassword());
-            }
-            
+
+            key = convertPassword(type, keySpec);
+
             generator.init(key, keySpec.getSalt(), keySpec.getIterationCount());
     
             if (ivSize != 0)
@@ -246,7 +240,8 @@ public interface PBE
     
             return param;
         }
-    
+
+
         /**
          * generate a PBE based key suitable for a MAC algorithm, the
          * key size is chosen according the MAC size, or the hashing algorithm,
@@ -262,14 +257,7 @@ public interface PBE
             byte[]                  key;
             CipherParameters        param;
     
-            if (type == PKCS12)
-            {
-                key = PBEParametersGenerator.PKCS12PasswordToBytes(keySpec.getPassword());
-            }
-            else
-            {   
-                key = PBEParametersGenerator.PKCS5PasswordToBytes(keySpec.getPassword());
-            }
+            key = convertPassword(type, keySpec);
             
             generator.init(key, keySpec.getSalt(), keySpec.getIterationCount());
     
@@ -281,6 +269,25 @@ public interface PBE
             }
     
             return param;
+        }
+
+        private static byte[] convertPassword(int type, PBEKeySpec keySpec)
+        {
+            byte[] key;
+
+            if (type == PKCS12)
+            {
+                key = PBEParametersGenerator.PKCS12PasswordToBytes(keySpec.getPassword());
+            }
+            else if (type == PBKDF2)
+            {
+                key = PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(keySpec.getPassword());
+            }
+            else
+            {
+                key = PBEParametersGenerator.PKCS5PasswordToBytes(keySpec.getPassword());
+            }
+            return key;
         }
     }
 }

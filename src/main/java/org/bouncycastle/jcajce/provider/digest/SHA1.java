@@ -131,7 +131,7 @@ public class SHA1
                     throw new IllegalArgumentException("password empty");
                 }
 
-                int scheme = PKCS5S2;
+                int scheme = PBKDF2;
                 int digest = SHA1;
                 int keySize = pbeSpec.getKeyLength();
                 int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.

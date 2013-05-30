@@ -4,6 +4,7 @@ import java.security.AlgorithmParameters;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -607,6 +608,19 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHA256AND128BITAES-CBC-BC", "AES/CBC/PKCS5Padding");
         testCipherNameWithWrap("PBEWITHSHAAND40BITRC4", "RC4");
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
+
+        SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "BC");
+        KeySpec ks1 = new PBEKeySpec("\u0141\u0142".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(Hex.decode("f14687fc31a66e2f7cc01d0a65f687961bd27e20"), f.generateSecret(ks1).getEncoded()))
+        {
+            fail("wrong PBKDF2 k1 key generated");
+        }
+
+        KeySpec ks2 = new PBEKeySpec("\u0041\u0042".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(Hex.decode("6f6579193d6433a3e4600b243bb390674f04a615"), f.generateSecret(ks2).getEncoded()))
+        {
+            fail("wrong PBKDF2 k2 key generated");
+        }
     }
 
     public String getName()
