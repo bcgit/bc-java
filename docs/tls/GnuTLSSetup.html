@@ -1,0 +1,27 @@
+<html>
+<body>
+<h3>Instructions for setting up a GnuTLS server for use with DTLSClientTest</h3>
+<ul>
+<li> Download GnuTLS from <a href="http://www.gnutls.org/download.html">http://www.gnutls.org/download.html</a></li>
+
+<li> Unpack to folder and add ${GNUTLS_HOME}/bin to PATH</li>
+
+<li> Make a working folder somewhere and copy the <a href="../../src/test/resources/org/bouncycastle/crypto/tls/test/">x509-*.pem</a> from this link to there.</li>
+
+<li> Go to working folder and start GnuTLS server (defaults to port 5556):
+<ul>
+<li>TLS:
+<pre>
+    gnutls-serv --http --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
+</pre></li>
+<li>DTLS:
+<pre>
+    gnutls-serv --echo --udp --mtu 1500 --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
+</pre></li>
+</ul>
+</li>
+<li> Further information in GnuTLS documentation at <a href="http://www.gnutls.org/documentation.html">http://www.gnutls.org/documentation.html</a>
+    see "7.2. Invoking gnutls-serv", section titled "gnutls-serv Examples" if you want to generate your own keys and certificates.</li>
+</ul>
+</body>
+</html>
