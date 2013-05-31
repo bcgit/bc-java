@@ -1,0 +1,64 @@
+X-Account-Key: account3
+Received: from xfe0.d.ethz.ch ([82.130.124.40]) by EX0.d.ethz.ch with
+	Microsoft SMTPSVC(6.0.3790.2499); Tue, 15 Aug 2006 16:15:12 +0200
+Received: from cwlappi ([85.1.15.108]) by xfe0.d.ethz.ch over TLS secured
+	channel with Microsoft SMTPSVC(6.0.3790.2499); Tue, 15 Aug 2006 16:15:12
+	+0200
+Message-ID: <001001c6c075$08fe0690$1200000a@cwlappi>
+From: =?utf-8?Q?Armin_H=C3=A4berling?= <arminha@student.ethz.ch>
+To: <arminha@student.ethz.ch>
+Subject: testmail
+Date: Tue, 15 Aug 2006 16:12:31 +0200
+MIME-Version: 1.0
+Content-Type: multipart/signed; protocol="application/x-pkcs7-signature"; micalg=SHA1; boundary="----=_NextPart_000_000B_01C6C085.9C581740"
+X-Priority: 3
+X-MSMail-Priority: Normal
+X-Mailer: Microsoft Outlook Express 6.00.2800.1409
+X-MimeOLE: Produced By Microsoft MimeOLE V6.00.2800.1409
+Return-Path: arminha@student.ethz.ch
+X-OriginalArrivalTime: 15 Aug 2006 14:15:12.0469 (UTC)
+	FILETIME=[38E22850:01C6C075]
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_000B_01C6C085.9C581740
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+This is a testmail with a very long line that needs to be broken and =
+some non-ascii chars to enforce quoted-printable encoding: =
+=C3=A0=C3=A9=C3=A8
+------=_NextPart_000_000B_01C6C085.9C581740
+Content-Type: application/x-pkcs7-signature;
+	name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+	filename="smime.p7s"
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIICnzCCApsw
+ggIEoAMCAQICAQEwDQYJKoZIhvcNAQEFBQAwcjEnMCUGA1UEAx4eAEEAcgBtAGkAbgAgAEgA5ABi
+AGUAcgBsAGkAbgBnMQswCQYDVQQGEwJDSDESMBAGA1UEBxMJT3R0ZW5iYWNoMSYwJAYJKoZIhvcN
+AQkBFhdhcm1pbmhhQHN0dWRlbnQuZXRoei5jaDAeFw0wNjA1MDgxMzM2MjNaFw0wNzA1MDgxMzM2
+MjNaMHIxJzAlBgNVBAMeHgBBAHIAbQBpAG4AIABIAOQAYgBlAHIAbABpAG4AZzELMAkGA1UEBhMC
+Q0gxEjAQBgNVBAcTCU90dGVuYmFjaDEmMCQGCSqGSIb3DQEJARYXYXJtaW5oYUBzdHVkZW50LmV0
+aHouY2gwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAM/WQ3bS/o+4qdxcZmf517QuUopWmPZp
+a5QHEyu36dh2tIWMQSc0Qk1mRiV4eA4ZdHVkWzBKrEdus4xsT/iVNTmeOmQ/Py4uDqVgrRJqeqtM
+AcgWk+SBPxITEmdgGtnAeIGu7VYcYhcLCHR5vhbXKPbSTswHD6qh/OsaSQ2Zfew5AgMBAAGjQTA/
+MAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgeAMCIGA1UdEQQbMBmBF2FybWluaGFAc3R1ZGVudC5l
+dGh6LmNoMA0GCSqGSIb3DQEBBQUAA4GBAAtm1j2ATEh3fi9HAYD8Dev+6VI/mPNXvSCFWtY7UoyH
+0fy41dmLWyJZ81KcSR5804CdpGNrr4cKIWGfXZXEL9DOScaArgLsaO3nJThaTrc6koqvFgevUtNG
+VKRDogEbDvZjsx7lZzSJz6Ioum4uM0zGIcCAgLz6FIAmqOO1SUZOMYIB2jCCAdYCAQEwdzByMScw
+JQYDVQQDHh4AQQByAG0AaQBuACAASADkAGIAZQByAGwAaQBuAGcxCzAJBgNVBAYTAkNIMRIwEAYD
+VQQHEwlPdHRlbmJhY2gxJjAkBgkqhkiG9w0BCQEWF2FybWluaGFAc3R1ZGVudC5ldGh6LmNoAgEB
+MAkGBSsOAwIaBQCggbowGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcN
+MDYwODE1MTQxMjMxWjAjBgkqhkiG9w0BCQQxFgQUcfo6jNgOyesiBRskKXFqJtqkg3IwWwYJKoZI
+hvcNAQkPMU4wTDAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYF
+Kw4DAgcwDQYIKoZIhvcNAwICASgwBwYFKw4DAh0wDQYJKoZIhvcNAQEBBQAEgYBLQB3SDXom8ruD
+eoESk6zJQxLxZCgR92FCTHuWlSLHjLZWEAYU+i3Tn87tP5p9+fpj1nHZ1lQdZULONpYzpHjCzVUC
+mQ2KQAhiY81UDA3+ctjnAaYUnZXy+bUVCNinNux8dshsSXO8pcFZKf/n75K7Im/aMznYCuSMgkU7
+sUsz4QAAAAAAAA==
+
+------=_NextPart_000_000B_01C6C085.9C581740--
+
+

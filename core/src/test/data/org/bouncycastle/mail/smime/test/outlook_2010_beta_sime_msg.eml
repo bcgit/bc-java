@@ -1,0 +1,25 @@
+To: <john.doe@example.net>
+Subject: A broken S/MIME encrypted message
+Message-ID: <000c01cadd1e$d8e3b700$8aab2500$@Domain>
+MIME-Version: 1.0
+Content-Type: application/pkcs7-mime;
+	smime-type=enveloped-data;
+	name="smime.p7m"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+	filename="smime.p7m"
+X-Mailer: Microsoft Outlook 14.0
+Content-Language: de-ch
+Thread-Index: AQFr/6ANUmscMMg1FM+V1UOpE+aAWw==
+X-OlkEid: 6BA45F2275AB6A6FE4DFFB4B935BAE4D26E31DCF
+
+MIAGCSqGSIb3DQEHA6CAMIACAQIxggEwMIIBLAIBAoAUIhnlBNV1CzfSDMkwsUEp4aLlg7EwDQYJ
+KoZIhvcNAQEBBQAEggEAn/Bn8zPfBT1xi5ECKKN43RnEnWZt/cDSfmCkyhX/6lI8VNlnJQhdWonN
+2H6TCKB4YEWZ1Lyr6NrE7kxjW8w1F5AxYnlpY66soBbQib1a3bdmu7Oz8JxEqVlfmDpM7n2yGQPQ
+e9PP8j3UGyC7AtprwERkpuTBetH2FYfwM3uRgypLCRDsKYiy8QOna6Ii+3+lphCCn3SOo/Gmcv+7
+lh2W1w4MkX1zdWR5SuCt3tBZlz5VkMngB/Uzo9EE3zDWxqvzEHqvME57hc+GPht+4OZ7kQKOiGV8
+2kK9o+KkSy69IT/3kpspoSdv2T0drsWtHv3MlybdU9RGj2Lycx16xtSnhTCABgkqhkiG9w0BBwEw
+FAYIKoZIhvcNAwcECPd/Rxmju5lYoIAEgYjp+9tsQvSJJqpmZIWdheOfOWc7JH3yyaiVk8JG2pmc
+Brrqpsufu0U61JYVkc6K6UtwCwaN8frbNkuDZgp7uIHYgwxdFB5n5HQC0rS7X+pc5/UQ64ymi02O
+8J6ARYi9+VkvWOOjpOBwMoN6oTrqHmW7Tl1ES7mqaK8ICFY3TvxAD38gmX0CIM3+AAAAAAAAAAAA
+AA==
