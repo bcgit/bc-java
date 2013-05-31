@@ -78,7 +78,7 @@ public class BCPBEKey
             {
                 return PBEParametersGenerator.PKCS12PasswordToBytes(pbeKeySpec.getPassword());
             }
-            else if (type == PBE.PBKDF2)
+            else if (type == PBE.PKCS5S2_UTF8)
             {
                 return PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(pbeKeySpec.getPassword());
             }

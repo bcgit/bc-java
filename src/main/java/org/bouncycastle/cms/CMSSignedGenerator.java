@@ -36,6 +36,7 @@ import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.interfaces.GOST3410PrivateKey;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509Store;
@@ -160,7 +161,7 @@ public class CMSSignedGenerator
         Map param = new HashMap();
         param.put(CMSAttributeTableGenerator.CONTENT_TYPE, contentType);
         param.put(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER, digAlgId);
-        param.put(CMSAttributeTableGenerator.DIGEST,  hash.clone());
+        param.put(CMSAttributeTableGenerator.DIGEST, Arrays.clone(hash));
         return param;
     }
 

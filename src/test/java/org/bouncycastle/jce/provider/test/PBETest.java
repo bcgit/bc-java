@@ -609,17 +609,50 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND40BITRC4", "RC4");
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
-        SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "BC");
+        checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+    }
+
+    private void checkPBE(String baseAlg, boolean defIsUTF8, String utf8, String eightBit)
+        throws Exception
+    {
+        byte[] utf8K = Hex.decode(utf8);
+        byte[] ascK = Hex.decode(eightBit);
+
+        SecretKeyFactory f = SecretKeyFactory.getInstance(baseAlg, "BC");
         KeySpec ks1 = new PBEKeySpec("\u0141\u0142".toCharArray(), new byte[20], 4096, 160);
-        if (!Arrays.areEqual(Hex.decode("f14687fc31a66e2f7cc01d0a65f687961bd27e20"), f.generateSecret(ks1).getEncoded()))
+        if (!Arrays.areEqual((defIsUTF8) ? utf8K : ascK, f.generateSecret(ks1).getEncoded()))
         {
-            fail("wrong PBKDF2 k1 key generated");
+            fail(baseAlg + " wrong PBKDF2 k1 key generated, got : " + new String(Hex.encode(f.generateSecret(ks1).getEncoded())));
         }
 
         KeySpec ks2 = new PBEKeySpec("\u0041\u0042".toCharArray(), new byte[20], 4096, 160);
-        if (!Arrays.areEqual(Hex.decode("6f6579193d6433a3e4600b243bb390674f04a615"), f.generateSecret(ks2).getEncoded()))
+        if (!Arrays.areEqual(ascK, f.generateSecret(ks2).getEncoded()))
         {
-            fail("wrong PBKDF2 k2 key generated");
+            fail(baseAlg + " wrong PBKDF2 k2 key generated");
+        }
+        f = SecretKeyFactory.getInstance(baseAlg + "AndUTF8", "BC");
+        ks1 = new PBEKeySpec("\u0141\u0142".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(utf8K, f.generateSecret(ks1).getEncoded()))
+        {
+            fail(baseAlg + " wrong PBKDF2 k1 utf8 key generated");
+        }
+
+        ks2 = new PBEKeySpec("\u0041\u0042".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(ascK, f.generateSecret(ks2).getEncoded()))
+        {
+            fail(baseAlg + " wrong PBKDF2 k2 utf8 key generated");
+        }
+        f = SecretKeyFactory.getInstance(baseAlg + "And8BIT", "BC");
+        ks1 = new PBEKeySpec("\u0141\u0142".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(ascK, f.generateSecret(ks1).getEncoded()))
+        {
+            fail(baseAlg + " wrong PBKDF2 k1 8bit key generated");
+        }
+
+        ks2 = new PBEKeySpec("\u0041\u0042".toCharArray(), new byte[20], 4096, 160);
+        if (!Arrays.areEqual(ascK, f.generateSecret(ks2).getEncoded()))
+        {
+            fail(baseAlg + " wrong PBKDF2 k2 8bit key generated");
         }
     }
 

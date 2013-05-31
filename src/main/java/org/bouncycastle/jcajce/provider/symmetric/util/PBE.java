@@ -27,19 +27,20 @@ public interface PBE
     //
     // PBE Based encryption constants - by default we do PKCS12 with SHA-1
     //
-    static final int        MD5         = 0;
-    static final int        SHA1        = 1;
-    static final int        RIPEMD160   = 2;
-    static final int        TIGER       = 3;
-    static final int        SHA256      = 4;
-    static final int        MD2         = 5;
-    static final int        GOST3411    = 6;
+    static final int        MD5          = 0;
+    static final int        SHA1         = 1;
+    static final int        RIPEMD160    = 2;
+    static final int        TIGER        = 3;
+    static final int        SHA256       = 4;
+    static final int        MD2          = 5;
+    static final int        GOST3411     = 6;
 
-    static final int        PKCS5S1     = 0;
-    static final int        PKCS5S2     = 1;
-    static final int        PKCS12      = 2;
-    static final int        OPENSSL     = 3;
-    static final int        PBKDF2      = 4;
+    static final int        PKCS5S1      = 0;
+    static final int        PKCS5S2      = 1;
+    static final int        PKCS12       = 2;
+    static final int        OPENSSL      = 3;
+    static final int        PKCS5S1_UTF8 = 4;
+    static final int        PKCS5S2_UTF8 = 5;
 
     /**
      * uses the appropriate mixer to generate the key and IV if necessary.
@@ -52,7 +53,7 @@ public interface PBE
         {
             PBEParametersGenerator  generator;
     
-            if (type == PKCS5S1)
+            if (type == PKCS5S1 || type == PKCS5S1_UTF8)
             {
                 switch (hash)
                 {
@@ -69,7 +70,7 @@ public interface PBE
                     throw new IllegalStateException("PKCS5 scheme 1 only supports MD2, MD5 and SHA1.");
                 }
             }
-            else if (type == PKCS5S2 || type == PBKDF2)
+            else if (type == PKCS5S2 || type == PKCS5S2_UTF8)
             {
                 generator = new PKCS5S2ParametersGenerator();
             }
@@ -279,7 +280,7 @@ public interface PBE
             {
                 key = PBEParametersGenerator.PKCS12PasswordToBytes(keySpec.getPassword());
             }
-            else if (type == PBKDF2)
+            else if (type == PKCS5S2_UTF8 || type == PKCS5S1_UTF8)
             {
                 key = PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(keySpec.getPassword());
             }
