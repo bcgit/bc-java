@@ -29,7 +29,7 @@ Release 1.49
 <li>The handling of escaped characters in X500 names is much improved.</li>
 <li>The BC CertificateFactory no longer returns null for CertificateFactory.getCertPathEncodings().</li>
 <li>PKCS10CertificationRequestBuilder now encodes no attributes as empty by default. Encoding as absent is still available via a boolean flag.</li>
-<li>DERT61String has been reverted back to its previous implementaion. A new class DERT61UTF8String has been introduced which defaults to UTF-8 encoding.</li>
+<li>DERT61String has been reverted back to its previous implementation. A new class DERT61UTF8String has been introduced which defaults to UTF-8 encoding.</li>
 <li>OAEPEncoding could throw an array output bounds exception for small keys with large mask function digests. This has been fixed.</li>
 <li>PEMParser would throw a NullPointerException if it ran into explicit EC curve parameters, it would also throw an Exception if the named curve was not already defined. The parser now returns X9ECParmameters for explicit parameters and returns an ASN1ObjectIdentifier for a named curve.</li>
 <li>The V2TBSCertListGenerator was adding the wrong date type for CRL invalidity date extensions. This has been fixed.</li>
