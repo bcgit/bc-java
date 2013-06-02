@@ -48,6 +48,7 @@ Release 1.49
 <li>The SipHash MAC algorithm has been added to the lightweight API and the provider.</li>
 <li>ISO9796-2 PSS signatures can now be initialised with a signature to allow the signer to deal with odd recovered message lengths on verification.</li>
 <li>The 4 DRBGs described in NIST SP 800-90A have been added to the prng package together with SecureRandom builders.</li>
+<li>Support has been added for OCB mode in the lightweight API.</li>
 <li>DSA version 2 parameter and key generation is now supported in the provider and lightweight API.</li>
 <li>A new interface Memoable has been added for objects that can copy in and out their state. The digest classes now support this. A special
 class NonMemoableDigest has been added which hides the Memoable interface where it should not be available.</li>
