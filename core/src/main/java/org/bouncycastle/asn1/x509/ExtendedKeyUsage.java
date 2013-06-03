@@ -25,6 +25,13 @@ public class ExtendedKeyUsage
     Hashtable     usageTable = new Hashtable();
     ASN1Sequence  seq;
 
+    /**
+     * Return an ExtendedKeyUsage from the passed in tagged object.
+     *
+     * @param obj the tagged object containing the ExtendedKeyUsage
+     * @param explicit true if the tagged object should be interpreted as explicitly tagged, false if implicit.
+     * @return the ExtendedKeyUsage contained.
+     */
     public static ExtendedKeyUsage getInstance(
         ASN1TaggedObject obj,
         boolean          explicit)
@@ -32,6 +39,12 @@ public class ExtendedKeyUsage
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
+    /**
+     * Return an ExtendedKeyUsage from the passed in object.
+     *
+     * @param obj an ExtendedKeyUsage, some form or encoding of one, or null.
+     * @return  an ExtendedKeyUsage object, or null if null is passed in.
+     */
     public static ExtendedKeyUsage getInstance(
         Object obj)
     {
@@ -47,11 +60,22 @@ public class ExtendedKeyUsage
         return null;
     }
 
+    /**
+     * Retrieve an ExtendedKeyUsage for a passed in Extensions object, if present.
+     *
+     * @param extensions the extensions object to be examined.
+     * @return  the ExtendedKeyUsage, null if the extension is not present.
+     */
     public static ExtendedKeyUsage fromExtensions(Extensions extensions)
     {
         return ExtendedKeyUsage.getInstance(extensions.getExtensionParsedValue(Extension.extendedKeyUsage));
     }
 
+    /**
+     * Base constructor, from a single KeyPurposeId.
+     *
+     * @param usage the keyPurposeId to be included.
+     */
     public ExtendedKeyUsage(
         KeyPurposeId  usage)
     {
@@ -78,6 +102,11 @@ public class ExtendedKeyUsage
         }
     }
 
+    /**
+     * Base constructor, from multiple KeyPurposeIds.
+     *
+     * @param usages an array of KeyPurposeIds.
+     */
     public ExtendedKeyUsage(
         KeyPurposeId[]  usages)
     {
@@ -112,6 +141,12 @@ public class ExtendedKeyUsage
         this.seq = new DERSequence(v);
     }
 
+    /**
+     * Return true if this ExtendedKeyUsage object contains the passed in keyPurposeId.
+     *
+     * @param keyPurposeId  the KeyPurposeId of interest.
+     * @return true if the keyPurposeId is present, false otherwise.
+     */
     public boolean hasKeyPurposeId(
         KeyPurposeId keyPurposeId)
     {
@@ -120,7 +155,7 @@ public class ExtendedKeyUsage
     
     /**
      * Returns all extended key usages.
-     * The returned vector contains DERObjectIdentifiers.
+     *
      * @return An array with all key purposes.
      */
     public KeyPurposeId[] getUsages()
@@ -135,11 +170,21 @@ public class ExtendedKeyUsage
         return temp;
     }
 
+    /**
+     * Return the number of KeyPurposeIds present in this ExtendedKeyUsage.
+     *
+     * @return the number of KeyPurposeIds
+     */
     public int size()
     {
         return usageTable.size();
     }
-    
+
+    /**
+     * Return the ASN.1 primitive form of this object.
+     *
+     * @return an ASN1Sequence.
+     */
     public ASN1Primitive toASN1Primitive()
     {
         return seq;
