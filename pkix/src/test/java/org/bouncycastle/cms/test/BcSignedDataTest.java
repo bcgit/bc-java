@@ -61,6 +61,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.BufferingContentSigner;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
@@ -553,6 +554,46 @@ public class BcSignedDataTest
 
         gen.addSignerInfoGenerator(signerInfoGeneratorBuilder.build(sha1Signer, _origCert));
         gen.addSignerInfoGenerator(signerInfoGeneratorBuilder.build(md5Signer, _origCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg);
+
+        MessageDigest sha1 = MessageDigest.getInstance("SHA1", BC);
+        MessageDigest md5 = MessageDigest.getInstance("MD5", BC);
+        Map hashes = new HashMap();
+        byte[] sha1Hash = sha1.digest(data);
+        byte[] md5Hash = md5.digest(data);
+
+        hashes.put(CMSAlgorithm.SHA1, sha1Hash);
+        hashes.put(CMSAlgorithm.MD5, md5Hash);
+
+        s = new CMSSignedData(hashes, s.getEncoded());
+
+        verifySignatures(s, null);
+    }
+
+    public void testDetachedVerificationWithBufferingContentSigner()
+        throws Exception
+    {
+        byte[]              data = "Hello World!".getBytes();
+        List certList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray(data);
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        JcaSignerInfoGeneratorBuilder signerInfoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(digProvider);
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+        ContentSigner md5Signer = new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(signerInfoGeneratorBuilder.build(new BufferingContentSigner(sha1Signer), _origCert));
+        gen.addSignerInfoGenerator(signerInfoGeneratorBuilder.build(new BufferingContentSigner(md5Signer), _origCert));
 
         gen.addCertificates(certs);
 
