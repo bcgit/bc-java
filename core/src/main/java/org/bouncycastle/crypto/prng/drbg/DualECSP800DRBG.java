@@ -165,6 +165,9 @@ public class DualECSP800DRBG
             additionalInput = Utils.hash_df(_digest, additionalInput, _seedlen);
         }
 
+        // make sure we start with a clean output array.
+        Arrays.fill(output, (byte)0);
+
         for (int i = 0; i < m; i++)
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
@@ -198,7 +201,16 @@ public class DualECSP800DRBG
 
             byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
 
-            System.arraycopy(r, 0, output, m * _outlen, output.length - (m * _outlen));
+            int required = output.length - (m * _outlen);
+
+            if (r.length > _outlen)
+            {
+                System.arraycopy(r, r.length - _outlen, output, m * _outlen, required);
+            }
+            else
+            {
+                System.arraycopy(r, 0, output, m * _outlen + (_outlen - r.length), required);
+            }
         }
 
         // Need to preserve length of S as unsigned int.

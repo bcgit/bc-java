@@ -257,6 +257,42 @@ public class DualECDRBGTest
                             "87A3962CB955076D45D6F1E45EE4B8CB31A4731CDA031FA2" +
                             "815B6D34E29F2603526CE186576F4CCA3FEDF7F8ACDB37C9" +
                             "9D762706ABE4967D44739C8CFCFCC76C58B1ED243AC394C0"
+                        }),
+                // From http://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip
+                // modified to test partial block processing.
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new TestEntropySourceProvider(Hex.decode("a826f1cd3fa24b9e71c316e5bf2bafff"), false).get(128),
+                    false,
+                    "82bc3bf050614b34",
+                    128,
+                    new String[]
+                        {
+                            "14949b876e30f832331f59f2e687350bea9ba22b78549521a70748ca916c74ebff0b638266aa" +
+                            "d81e089545eb60bfe332f7d134d91ed3c104f975fae0f71391add71e3380a725251ed5552a84" +
+                            "650637eddfc88b5ab26311277cbc429aa152b2cfac61c67846512d7564114177a622f25e870a" +
+                            "acec37c0977d",
+                            "7050bf74a887809673ecd295071f7a457d1e2e227f68ef4b4445e34f3904b95d4833180ee522" +
+                            "104bfc996234063e2c76173937b883c66b0e64a56643877228cad5212cddbf839270ef80889b" +
+                            "c83424c141c2419f2231004c8860f8fd95435e2c9f8ac7409fcbfb6a74851fadc7d99bf5d68b" +
+                            "591892f0e3a1"
+                        }),
+                new DRBGTestVector(
+                    new SHA256Digest(),
+                    new TestEntropySourceProvider(Hex.decode("a826f1cd3fa24b9e71c316e5bf2bafff"), false).get(128),
+                    false,
+                    "82bc3bf050614b34",
+                    128,
+                    new String[]
+                        {
+                            "14949b876e30f832331f59f2e687350bea9ba22b78549521a70748ca916c74ebff0b638266aa" +
+                            "d81e089545eb60bfe332f7d134d91ed3c104f975fae0f71391add71e3380a725251ed5552a84" +
+                            "650637eddfc88b5ab26311277cbc429aa152b2cfac61c67846512d7564114177a622f25e870a" +
+                            "acec37c0977d",
+                            "7050bf74a887809673ecd295071f7a457d1e2e227f68ef4b4445e34f3904b95d4833180ee522" +
+                            "104bfc996234063e2c76173937b883c66b0e64a56643877228cad5212cddbf839270ef80889b" +
+                            "c83424c141c2419f2231004c8860f8fd95435e2c9f8ac7409fcbfb6a74851fadc7d99bf5d68b" +
+                            "591892f0e3"
                         })
             };
     }
@@ -300,6 +336,7 @@ public class DualECDRBGTest
         // Exception tests
         //
         SP80090DRBG d;
+
         try
         {
             d = new DualECSP800DRBG(new SHA256Digest(), 256, new SHA256EntropyProvider().get(128), null, null);
