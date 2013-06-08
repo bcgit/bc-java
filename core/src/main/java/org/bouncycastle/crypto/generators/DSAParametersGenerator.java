@@ -226,10 +226,10 @@ public class DSAParametersGenerator
         int seedlen = N;
         byte[] seed = new byte[seedlen / 8];
 
-// 3. n = ceiling(L ⁄ outlen) – 1.
+// 3. n = ceiling(L / outlen) - 1.
         int n = (L - 1) / outlen;
 
-// 4. b = L – 1 – (n ∗ outlen).
+// 4. b = L - 1 - (n * outlen).
         int b = (L - 1) % outlen;
 
         byte[] output = new byte[d.getDigestSize()];
