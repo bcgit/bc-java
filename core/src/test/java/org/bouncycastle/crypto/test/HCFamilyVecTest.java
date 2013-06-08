@@ -53,7 +53,7 @@ public class HCFamilyVecTest
 
     public String getName()
     {
-        return "HC-128 and HC-256";
+        return "HC-128 and HC-256 (ecrypt)";
     }
 
     public void performTest() throws Exception
