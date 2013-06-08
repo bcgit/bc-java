@@ -25,8 +25,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class HCFamilyVecTest
     extends SimpleTest
 {
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     private static class PeekableLineReader extends BufferedReader
     {
         public PeekableLineReader(Reader r) throws IOException
