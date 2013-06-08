@@ -61,17 +61,19 @@ public class LocalizedMessageTest extends TestCase
         msg = new LocalizedMessage(TEST_RESOURCE, timeTestId, args);
         assertEquals("It's 1:12:00 PM GMT at Aug 17, 2006.", msg.getEntry(
                 "text", Locale.ENGLISH, TimeZone.getTimeZone("GMT")));
-        assertEquals("Es ist 13.12 Uhr GMT am 17.08.2006.", msg.getEntry(
-                "text", Locale.GERMAN, TimeZone.getTimeZone("GMT")));
-        
+        // NOTE: Older JDKs appear to use '.' as the time separator for German locale
+        assertEquals("Es ist 13:12 Uhr GMT am 17.08.2006.", msg.getEntry(
+                "text", Locale.GERMAN, TimeZone.getTimeZone("GMT")).replace("13.12", "13:12"));
+
         // test time with filter
         args = new Object[] { new TrustedInput(testDate) };
         msg = new LocalizedMessage(TEST_RESOURCE, timeTestId, args);
         msg.setFilter(new HTMLFilter());
         assertEquals("It's 1:12:00 PM GMT at Aug 17, 2006.", msg.getEntry(
                 "text", Locale.ENGLISH, TimeZone.getTimeZone("GMT")));
-        assertEquals("Es ist 13.12 Uhr GMT am 17.08.2006.", msg.getEntry(
-                "text", Locale.GERMAN, TimeZone.getTimeZone("GMT")));
+        // NOTE: Older JDKs appear to use '.' as the time separator for German locale
+        assertEquals("Es ist 13:12 Uhr GMT am 17.08.2006.", msg.getEntry(
+                "text", Locale.GERMAN, TimeZone.getTimeZone("GMT")).replace("13.12", "13:12"));
         
         // test number
         args = new Object[] { new TrustedInput(new Float(0.2))  };
