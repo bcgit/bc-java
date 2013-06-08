@@ -1440,30 +1440,31 @@ public class BigInteger
 
         int pow = m.bitLength() - 1;
 
-        if (pow <= 64)
+        long inv64 = modInverse64(longValue());
+        if (pow < 64)
         {
-            long inv = modInverse64(longValue());
-            if (pow < 64)
+            inv64 &= ((1L << pow) - 1);
+        }
+
+        BigInteger x = BigInteger.valueOf(inv64);
+
+        if (pow > 64)
+        {
+            BigInteger d = this.remainder(m);
+            int bitsCorrect = 64;
+
+            do
             {
-                inv &= (m.longValue() - 1);
+                BigInteger t = x.multiply(d).remainder(m);
+                x = x.multiply(TWO.subtract(t)).remainder(m);
+                bitsCorrect <<= 1;
             }
-            return BigInteger.valueOf(inv);
-        }
+            while (bitsCorrect < pow);
 
-        BigInteger d = this.remainder(m);
-        BigInteger x = d;
-        int bitsCorrect = 3;
-
-        while (bitsCorrect < pow)
-        {
-            BigInteger t = x.multiply(d).remainder(m);
-            x = x.multiply(TWO.subtract(t)).remainder(m);
-            bitsCorrect <<= 1;
-        }
-
-        if (x.sign < 0)
-        {
-            x = x.add(m);
+            if (x.sign < 0)
+            {
+                x = x.add(m);
+            }
         }
 
         return x;
@@ -1471,27 +1472,25 @@ public class BigInteger
 
     private static int modInverse32(int d)
     {
-        // Newton-Raphson division (roughly)
-        int x = d;        // d.x == 1 mod 2**3
-        x *= 2 - d * x;   // d.x == 1 mod 2**6
-        x *= 2 - d * x;   // d.x == 1 mod 2**12
-        x *= 2 - d * x;   // d.x == 1 mod 2**24
-        x *= 2 - d * x;   // d.x == 1 mod 2**48
-//        assert d * x == 1;
-        return  x;
+        // Newton's method with initial estimate "correct to 4 bits"
+        int x = d + (((d + 1) & 4) << 1);   // d.x == 1 mod 2**4
+        x *= 2 - d * x;                     // d.x == 1 mod 2**8
+        x *= 2 - d * x;                     // d.x == 1 mod 2**16
+        x *= 2 - d * x;                     // d.x == 1 mod 2**32
+//      assert d * x == 1;
+        return x;
     }
 
     private static long modInverse64(long d)
     {
-        // Newton-Raphson division (roughly)
-        long x = d;       // d.x == 1 mod 2**3
-        x *= 2 - d * x;   // d.x == 1 mod 2**6
-        x *= 2 - d * x;   // d.x == 1 mod 2**12
-        x *= 2 - d * x;   // d.x == 1 mod 2**24
-        x *= 2 - d * x;   // d.x == 1 mod 2**48
-        x *= 2 - d * x;   // d.x == 1 mod 2**96
-//        assert d * x == 1L;
-        return  x;
+        // Newton's method with initial estimate "correct to 4 bits"
+        long x = d + (((d + 1L) & 4L) << 1);    // d.x == 1 mod 2**4
+        x *= 2 - d * x;                         // d.x == 1 mod 2**8
+        x *= 2 - d * x;                         // d.x == 1 mod 2**16
+        x *= 2 - d * x;                         // d.x == 1 mod 2**32
+        x *= 2 - d * x;                         // d.x == 1 mod 2**64
+//      assert d * x == 1L;
+        return x;
     }
 
     /**
