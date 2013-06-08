@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.util.Strings;
@@ -14,8 +14,6 @@ import org.bouncycastle.util.test.SimpleTest;
  */
 public class SCryptTest extends SimpleTest
 {
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     public String getName()
     {
         return "SCrypt";
@@ -23,7 +21,8 @@ public class SCryptTest extends SimpleTest
 
     public void performTest() throws Exception
     {
-        BufferedReader br = new BufferedReader(new FileReader(getDataHome() + "/TestVectors.txt"));
+        BufferedReader br = new BufferedReader(new InputStreamReader(
+            getClass().getResourceAsStream("SCryptTestVectors.txt")));
 
         int count = 0;
         String line = br.readLine();
@@ -88,18 +87,6 @@ public class SCryptTest extends SimpleTest
     private static int extractInteger(String arg)
     {
         return Integer.parseInt(arg.trim());
-    }
-
-    private static String getDataHome()
-    {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-
-        return dataHome + "/scrypt";
     }
 
     public static void main(String[] args)
