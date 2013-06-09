@@ -111,7 +111,6 @@ public class OCBBlockCipher
     public void init(boolean forEncryption, CipherParameters parameters)
         throws IllegalArgumentException
     {
-
         this.forEncryption = forEncryption;
         this.macBlock = null;
 
@@ -156,6 +155,15 @@ public class OCBBlockCipher
             N = new byte[0];
         }
 
+        /*
+         * TODO There's currently a thread on CFRG
+         * (http://www.ietf.org/mail-archive/web/cfrg/current/msg03433.html) debating including
+         * (macSize % 128) in the nonce, in which case this test becomes simpler:
+         */
+//        if (N.length > 15)
+//        {
+//            throw new IllegalArgumentException("IV must be no more than 120 bits");
+//        }
         if (N.length > 16 || (N.length == 16 && (N[0] & 0x80) != 0))
         {
             /*
@@ -169,10 +177,9 @@ public class OCBBlockCipher
          * KEY-DEPENDENT INITIALISATION
          */
 
-        // if keyParam is null we're reusing the last key.
-        if (keyParameter != null)
+        if (keyParameter == null)
         {
-            // TODO
+            // TODO If 'keyParameter' is null we're re-using the last key.
         }
 
         // hashCipher always used in forward mode
@@ -193,6 +200,14 @@ public class OCBBlockCipher
 
         byte[] nonce = new byte[16];
         System.arraycopy(N, 0, nonce, nonce.length - N.length, N.length);
+        
+        /*
+         * TODO There's currently a thread on CFRG
+         * (http://www.ietf.org/mail-archive/web/cfrg/current/msg03433.html) debating including
+         * (macSize % 128) in the nonce, in which case this code becomes simpler:
+         */
+//        nonce[0] = (byte)(macSize << 4);
+//        nonce[15 - N.length] |= 1;
         if (N.length == 16)
         {
             nonce[0] &= 0x80;
@@ -314,7 +329,6 @@ public class OCBBlockCipher
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-
         int resultLen = 0;
 
         for (int i = 0; i < len; ++i)
@@ -334,7 +348,6 @@ public class OCBBlockCipher
         throws IllegalStateException,
         InvalidCipherTextException
     {
-
         /*
          * For decryption, get the tag from the end of the message
          */
@@ -483,7 +496,6 @@ public class OCBBlockCipher
 
     protected void reset(boolean clearMac)
     {
-
         hashCipher.reset();
         mainCipher.reset();
 
