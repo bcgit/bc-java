@@ -1,14 +1,8 @@
 package org.bouncycastle.cms;
 
-import java.io.IOException;
-import java.security.Provider;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -35,14 +29,8 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.x509.NoSuchStoreException;
-import org.bouncycastle.x509.X509CollectionStoreParameters;
-import org.bouncycastle.x509.X509Store;
-import org.bouncycastle.x509.X509V2AttributeCertificate;
 
 class CMSSignedHelper
 {
@@ -159,95 +147,6 @@ class CMSSignedHelper
         }
 
         return encryptionAlgOID;
-    }
-
-    X509Store createAttributeStore(
-        String type,
-        Provider provider,
-        Store certStore)
-        throws NoSuchStoreException, CMSException
-    {
-        try
-        {
-            Collection certHldrs = certStore.getMatches(null);
-            List       certs = new ArrayList(certHldrs.size());
-
-            for (Iterator it = certHldrs.iterator(); it.hasNext();)
-            {
-                certs.add(new X509V2AttributeCertificate(((X509AttributeCertificateHolder)it.next()).getEncoded()));
-            }
-
-            return X509Store.getInstance(
-                         "AttributeCertificate/" +type, new X509CollectionStoreParameters(certs), provider);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
-    }
-
-    X509Store createCertificateStore(
-        String type,
-        Provider provider,
-        Store certStore)
-        throws NoSuchStoreException, CMSException
-    {
-        try
-        {
-            JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider(provider);
-            Collection certHldrs = certStore.getMatches(null);
-            List       certs = new ArrayList(certHldrs.size());
-
-            for (Iterator it = certHldrs.iterator(); it.hasNext();)
-            {
-                certs.add(converter.getCertificate((X509CertificateHolder)it.next()));
-            }
-
-            return X509Store.getInstance(
-                         "Certificate/" +type, new X509CollectionStoreParameters(certs), provider);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
-        catch (CertificateException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
-    }
-
-    X509Store createCRLsStore(
-        String type,
-        Provider provider,
-        Store    crlStore)
-        throws NoSuchStoreException, CMSException
-    {
-        try
-        {
-            JcaX509CRLConverter converter = new JcaX509CRLConverter().setProvider(provider);
-            Collection crlHldrs = crlStore.getMatches(null);
-            List       crls = new ArrayList(crlHldrs.size());
-
-            for (Iterator it = crlHldrs.iterator(); it.hasNext();)
-            {
-                crls.add(converter.getCRL((X509CRLHolder)it.next()));
-            }
-
-            return X509Store.getInstance(
-                         "CRL/" +type, new X509CollectionStoreParameters(crls), provider);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
-        catch (CRLException e)
-        {
-            throw new CMSException("can't setup the X509Store", e);
-        }
     }
 
     AlgorithmIdentifier fixAlgID(AlgorithmIdentifier algId)
