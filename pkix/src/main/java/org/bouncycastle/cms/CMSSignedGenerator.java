@@ -1,6 +1,5 @@
 package org.bouncycastle.cms;
 
-import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.CertStore;
@@ -17,7 +16,6 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -30,7 +28,6 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
@@ -38,8 +35,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.interfaces.GOST3410PrivateKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.x509.X509AttributeCertificate;
-import org.bouncycastle.x509.X509Store;
 
 public class CMSSignedGenerator
 {
@@ -297,40 +292,7 @@ public class CMSSignedGenerator
     }
 
     /**
-     * Add the attribute certificates contained in the passed in store to the
-     * generator.
-     *
-     * @param store a store of Version 2 attribute certificates
-     * @throws CMSException if an error occurse processing the store.
-     * @deprecated use basic Store method
-     */
-    public void addAttributeCertificates(
-        X509Store store)
-        throws CMSException
-    {
-        try
-        {
-            for (Iterator it = store.getMatches(null).iterator(); it.hasNext();)
-            {
-                X509AttributeCertificate attrCert = (X509AttributeCertificate)it.next();
-
-                certs.add(new DERTaggedObject(false, 2,
-                             AttributeCertificate.getInstance(ASN1Primitive.fromByteArray(attrCert.getEncoded()))));
-            }
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("error processing attribute certs", e);
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("error processing attribute certs", e);
-        }
-    }
-
-
-    /**
-     * Add a store of precalculated signers to the generator.
+     * Add a store of pre-calculated signers to the generator.
      *
      * @param signerStore store of signers
      */

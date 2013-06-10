@@ -45,11 +45,11 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.x509.X509AttributeCertificate;
-import org.bouncycastle.x509.X509CollectionStoreParameters;
-import org.bouncycastle.x509.X509Store;
 
 public class SignedDataTest
     extends TestCase
@@ -477,8 +477,8 @@ public class SignedDataTest
         Collection certColl = certStore.getCertificates(null);
         Collection crlColl = certStore.getCRLs(null);
 
-        assertEquals(certColl.size(), s.getCertificates("Collection", BC).getMatches(null).size());
-        assertEquals(crlColl.size(), s.getCRLs("Collection", BC).getMatches(null).size());
+        assertEquals(certColl.size(), s.getCertificates().getMatches(null).size());
+        assertEquals(crlColl.size(), s.getCRLs().getMatches(null).size());
     }
 
     private void verifySignatures(CMSSignedData s) 
@@ -1249,8 +1249,7 @@ public class SignedDataTest
 
         X509AttributeCertificate attrCert = CMSTestUtil.getAttributeCertificate();
 
-        X509Store store = X509Store.getInstance("AttributeCertificate/Collection",
-                                    new X509CollectionStoreParameters(Collections.singleton(attrCert)), BC);
+        Store store = new CollectionStore(Collections.singleton(attrCert));
 
         gen.addAttributeCertificates(store);
 
@@ -1258,7 +1257,7 @@ public class SignedDataTest
 
         assertEquals(4, sd.getVersion());
 
-        store = sd.getAttributeCertificates("Collection", BC);
+        store = sd.getAttributeCertificates();
 
         Collection coll = store.getMatches(null);
 

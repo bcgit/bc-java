@@ -1,13 +1,16 @@
 package org.bouncycastle.x509;
 
-import org.bouncycastle.util.Selector;
-import org.bouncycastle.util.Store;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.util.Collection;
 
+import org.bouncycastle.util.Selector;
+import org.bouncycastle.util.Store;
+
+/**
+ * @deprecated use CollectionStore - this class will be removed.
+ */
 public class X509Store
     implements Store
 {

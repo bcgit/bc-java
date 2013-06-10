@@ -134,8 +134,8 @@ public class MiscDataStreamTest
         Collection certColl = certStore.getCertificates(null);
         Collection crlColl = certStore.getCRLs(null);
 
-        assertEquals(certColl.size(), sp.getCertificates("Collection", BC).getMatches(null).size());
-        assertEquals(crlColl.size(), sp.getCRLs("Collection", BC).getMatches(null).size());
+        assertEquals(certColl.size(), sp.getCertificates().getMatches(null).size());
+        assertEquals(crlColl.size(), sp.getCRLs().getMatches(null).size());
     }
 
     private void verifySignatures(CMSSignedDataParser sp)
