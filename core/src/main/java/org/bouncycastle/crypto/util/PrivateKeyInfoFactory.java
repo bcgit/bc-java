@@ -2,17 +2,23 @@ package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
+import org.bouncycastle.asn1.x9.X962Parameters;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 
@@ -42,6 +48,31 @@ public class PrivateKeyInfoFactory
             DSAParameters params = priv.getParameters();
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa, new DSAParameter(params.getP(), params.getQ(), params.getG())), new ASN1Integer(priv.getX()));
+        }
+        else if (privateKey instanceof ECPrivateKeyParameters)
+        {
+            ECPrivateKeyParameters priv = (ECPrivateKeyParameters)privateKey;
+            ECDomainParameters domainParams = priv.getParameters();
+            ASN1Encodable params;
+
+            // TODO: need to handle named curves
+            if (domainParams == null)
+            {
+                params = new X962Parameters(DERNull.INSTANCE);      // Implicitly CA
+            }
+            else
+            {
+                X9ECParameters ecP = new X9ECParameters(
+                    domainParams.getCurve(),
+                    domainParams.getG(),
+                    domainParams.getN(),
+                    domainParams.getH(),
+                    domainParams.getSeed());
+
+                params = new X962Parameters(ecP);
+            }
+
+            return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(priv.getD(), params));
         }
         else
         {
