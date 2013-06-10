@@ -62,7 +62,7 @@ public class ECPrivateKey
 
     public ECPrivateKey(
         BigInteger key,
-        ASN1Object parameters)
+        ASN1Encodable parameters)
     {
         this(key, null, parameters);
     }
@@ -70,7 +70,7 @@ public class ECPrivateKey
     public ECPrivateKey(
         BigInteger key,
         DERBitString publicKey,
-        ASN1Object parameters)
+        ASN1Encodable parameters)
     {
         byte[] bytes = BigIntegers.asUnsignedByteArray(key);
 
