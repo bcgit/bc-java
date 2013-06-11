@@ -39,11 +39,21 @@ public class X9ECParameters
         }
 
         X9Curve     x9c = new X9Curve(
-                        new X9FieldID((ASN1Sequence)seq.getObjectAt(1)),
-                        (ASN1Sequence)seq.getObjectAt(2));
+                        X9FieldID.getInstance(seq.getObjectAt(1)),
+                        ASN1Sequence.getInstance(seq.getObjectAt(2)));
 
         this.curve = x9c.getCurve();
-        this.g = new X9ECPoint(curve, (ASN1OctetString)seq.getObjectAt(3)).getPoint();
+        Object p = seq.getObjectAt(3);
+
+        if (p instanceof X9ECPoint)
+        {
+            this.g = ((X9ECPoint)p).getPoint();
+        }
+        else
+        {
+            this.g = new X9ECPoint(curve, (ASN1OctetString)p).getPoint();
+        }
+
         this.n = ((ASN1Integer)seq.getObjectAt(4)).getValue();
         this.seed = x9c.getSeed();
 

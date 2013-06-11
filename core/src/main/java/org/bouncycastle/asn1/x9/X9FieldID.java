@@ -71,11 +71,26 @@ public class X9FieldID
         this.parameters = new DERSequence(fieldIdParams);
     }
 
-    public X9FieldID(
+    private X9FieldID(
         ASN1Sequence  seq)
     {
-        this.id = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        this.parameters = (ASN1Primitive)seq.getObjectAt(1);
+        this.id = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        this.parameters = seq.getObjectAt(1).toASN1Primitive();
+    }
+
+    public static X9FieldID getInstance(Object obj)
+    {
+        if (obj instanceof X9FieldID)
+        {
+            return (X9FieldID)obj;
+        }
+
+        if (obj != null)
+        {
+            return new X9FieldID(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
 
     public ASN1ObjectIdentifier getIdentifier()
