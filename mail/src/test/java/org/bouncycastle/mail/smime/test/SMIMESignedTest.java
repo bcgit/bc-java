@@ -58,6 +58,7 @@ import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMESignedParser;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CollectionStoreParameters;
 import org.bouncycastle.x509.X509Store;
@@ -768,7 +769,7 @@ public class SMIMESignedTest
 
         verifySigners(s.getCertificatesAndCRLs("Collection", "BC"), s.getSignerInfos());
 
-        X509Store attrCerts = s.getAttributeCertificates("Collection", "BC");
+        Store attrCerts = s.getAttributeCertificates();
 
         assertTrue(attrCerts.getMatches(null).contains(attrCert));
     }
