@@ -1472,13 +1472,14 @@ public class BigInteger
 
     private static int modInverse32(int d)
     {
-        // Newton's method with initial estimate "correct to 4 bits"
-        int x = d + (((d + 1) & 4) << 1);   // d.x == 1 mod 2**4
-        x *= 2 - d * x;                     // d.x == 1 mod 2**8
-        x *= 2 - d * x;                     // d.x == 1 mod 2**16
-        x *= 2 - d * x;                     // d.x == 1 mod 2**32
-//      assert d * x == 1;
-        return x;
+        // Newton-Raphson division (roughly)
+        int x = d;        // d.x == 1 mod 2**3
+        x *= 2 - d * x;   // d.x == 1 mod 2**6
+        x *= 2 - d * x;   // d.x == 1 mod 2**12
+        x *= 2 - d * x;   // d.x == 1 mod 2**24
+        x *= 2 - d * x;   // d.x == 1 mod 2**48
+//        assert d * x == 1;
+        return  x;
     }
 
     private static long modInverse64(long d)
