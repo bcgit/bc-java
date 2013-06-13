@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERBoolean;
 
 /**
  * an object for the elements in the X.509 V3 extension block.
+ * @deprecated use Extension
  */
 public class X509Extension
 {
