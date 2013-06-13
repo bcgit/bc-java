@@ -11,7 +11,6 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -24,11 +23,11 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
@@ -50,7 +49,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 /**
  **/
@@ -463,28 +461,23 @@ public class PKCS10Test
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
         keyGen.initialize(1024, new SecureRandom());
         KeyPair pair = keyGen.generateKeyPair();
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
-        Vector oids = new Vector();
-        Vector values = new Vector();
-        oids.add(X509Extension.basicConstraints);
-        values.add(new X509Extension(true, new DEROctetString(new BasicConstraints(true))));
-        oids.add(X509Extension.keyUsage);
-        values.add(new X509Extension(true, new DEROctetString(
-            new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))));
-        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(pair.getPublic());
-        X509Extension ski = new X509Extension(false, new DEROctetString(subjectKeyIdentifier));
-        oids.add(X509Extension.subjectKeyIdentifier);
-        values.add(ski);
+        Extension[] ext = new Extension[] {
+            new Extension(Extension.basicConstraints, true, new DEROctetString(new BasicConstraints(true))),
+            new Extension(Extension.keyUsage, true, new DEROctetString(new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))),
+            new Extension(Extension.subjectKeyIdentifier, false, new DEROctetString(extUtils.createSubjectKeyIdentifier(pair.getPublic())))
+        };
 
         PKCS10CertificationRequest p1 = new JcaPKCS10CertificationRequestBuilder(
             new X500Name("cn=csr"),
             pair.getPublic())
-            .addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new X509Extensions(oids, values))
+            .addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new Extensions(ext))
             .build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(pair.getPrivate()));
         PKCS10CertificationRequest p2 = new JcaPKCS10CertificationRequestBuilder(
             new X500Name("cn=csr"),
             pair.getPublic())
-            .addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new X509Extensions(oids, values))
+            .addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new Extensions(ext))
             .build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(pair.getPrivate()));
 
         if (!p1.equals(p2))

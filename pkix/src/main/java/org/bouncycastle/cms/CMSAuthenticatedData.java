@@ -180,7 +180,7 @@ public class CMSAuthenticatedData
      */
     public String getMacAlgOID()
     {
-        return macAlg.getObjectId().getId();
+        return macAlg.getAlgorithm().getId();
     }
 
     /**

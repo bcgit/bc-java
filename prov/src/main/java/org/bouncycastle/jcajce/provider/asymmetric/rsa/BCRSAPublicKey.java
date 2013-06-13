@@ -1,6 +1,9 @@
 package org.bouncycastle.jcajce.provider.asymmetric.rsa;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OptionalDataException;
 import java.math.BigInteger;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
@@ -15,14 +18,18 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 public class BCRSAPublicKey
     implements RSAPublicKey
 {
+    private static final AlgorithmIdentifier DEFAULT_ALGORITHM_IDENTIFIER = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
+
     static final long serialVersionUID = 2675817738516720772L;
-    
+
     private BigInteger modulus;
     private BigInteger publicExponent;
+    private transient AlgorithmIdentifier algorithmIdentifier;
 
     BCRSAPublicKey(
         RSAKeyParameters key)
     {
+        this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = key.getModulus();
         this.publicExponent = key.getExponent();
     }
@@ -30,6 +37,7 @@ public class BCRSAPublicKey
     BCRSAPublicKey(
         RSAPublicKeySpec spec)
     {
+        this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = spec.getModulus();
         this.publicExponent = spec.getPublicExponent();
     }
@@ -37,6 +45,7 @@ public class BCRSAPublicKey
     BCRSAPublicKey(
         RSAPublicKey key)
     {
+        this.algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         this.modulus = key.getModulus();
         this.publicExponent = key.getPublicExponent();
     }
@@ -44,10 +53,16 @@ public class BCRSAPublicKey
     BCRSAPublicKey(
         SubjectPublicKeyInfo info)
     {
+        populateFromPublicKeyInfo(info);
+    }
+
+    private void populateFromPublicKeyInfo(SubjectPublicKeyInfo info)
+    {
         try
         {
             org.bouncycastle.asn1.pkcs.RSAPublicKey  pubKey = org.bouncycastle.asn1.pkcs.RSAPublicKey.getInstance(info.parsePublicKey());
 
+            this.algorithmIdentifier = info.getAlgorithm();
             this.modulus = pubKey.getModulus();
             this.publicExponent = pubKey.getPublicExponent();
         }
@@ -89,7 +104,7 @@ public class BCRSAPublicKey
 
     public byte[] getEncoded()
     {
-        return KeyUtil.getEncodedSubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), new org.bouncycastle.asn1.pkcs.RSAPublicKey(getModulus(), getPublicExponent()));
+        return KeyUtil.getEncodedSubjectPublicKeyInfo(algorithmIdentifier, new org.bouncycastle.asn1.pkcs.RSAPublicKey(getModulus(), getPublicExponent()));
     }
 
     public int hashCode()
@@ -125,5 +140,33 @@ public class BCRSAPublicKey
         buf.append("    public exponent: ").append(this.getPublicExponent().toString(16)).append(nl);
 
         return buf.toString();
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        try
+        {
+            algorithmIdentifier = AlgorithmIdentifier.getInstance(in.readObject());
+        }
+        catch (OptionalDataException e)
+        {
+            algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
+        }
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        if (!algorithmIdentifier.equals(DEFAULT_ALGORITHM_IDENTIFIER))
+        {
+            out.writeObject(algorithmIdentifier.getEncoded());
+        }
     }
 }

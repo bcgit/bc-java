@@ -46,10 +46,9 @@ import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
 import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaAttrCertStore;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cert.jcajce.JcaX509AttributeCertificateHolder;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -62,8 +61,8 @@ import org.bouncycastle.mail.smime.SMIMESignedParser;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.x509.X509AttributeCertificate;
 
 public class NewSMIMESignedTest
     extends TestCase
@@ -808,9 +807,13 @@ public class NewSMIMESignedTest
 
         gen.addCertificates(certs);
 
-        X509AttributeCertificate attrCert = CMSTestUtil.getAttributeCertificate();
+        X509AttributeCertificateHolder attrCert = CMSTestUtil.getAttributeCertificate();
 
-        Store store = new JcaAttrCertStore(attrCert);
+        List attrCertList = new ArrayList();
+
+        attrCertList.add(attrCert);
+
+        Store store = new CollectionStore(attrCertList);
 
         gen.addAttributeCertificates(store);
 
@@ -822,7 +825,7 @@ public class NewSMIMESignedTest
 
         Store attrCerts = s.getAttributeCertificates();
 
-        assertTrue(attrCerts.getMatches(null).contains(new JcaX509AttributeCertificateHolder(attrCert)));
+        assertTrue(attrCerts.getMatches(null).contains(attrCert));
     }
 
     private void rsaPSSTest(String digest, String digestOID)

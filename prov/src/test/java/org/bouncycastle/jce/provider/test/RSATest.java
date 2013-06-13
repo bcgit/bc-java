@@ -43,6 +43,7 @@ import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -644,6 +645,29 @@ public class RSATest
         if (pubKey.hashCode() != copyKey.hashCode())
         {
             fail("public key hashCode check failed");
+        }
+
+        //
+        // test an OAEP key
+        //
+        SubjectPublicKeyInfo oaepKey = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, new RSAESOAEPparams()),
+                                                  SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).parsePublicKey());
+
+        copyKey = (RSAPublicKey)serializeDeserialize(keyFact.generatePublic(new X509EncodedKeySpec(oaepKey.getEncoded())));
+
+        if (!pubKey.equals(copyKey))
+        {
+            fail("public key equality check failed");
+        }
+
+        if (pubKey.hashCode() != copyKey.hashCode())
+        {
+            fail("public key hashCode check failed");
+        }
+
+        if (!Arrays.areEqual(copyKey.getEncoded(), oaepKey.getEncoded()))
+        {
+            fail("encoding does not match");
         }
 
         oaepCompatibilityTest("SHA-1", priv2048Key, pub2048Key);
