@@ -5,7 +5,6 @@ package org.bouncycastle.crypto.tls;
  */
 public class CipherSuite
 {
-
     public static final int TLS_NULL_WITH_NULL_NULL = 0x0000;
     public static final int TLS_RSA_WITH_NULL_MD5 = 0x0001;
     public static final int TLS_RSA_WITH_NULL_SHA = 0x0002;
@@ -226,4 +225,24 @@ public class CipherSuite
      * RFC 5746
      */
     public static final int TLS_EMPTY_RENEGOTIATION_INFO_SCSV = 0x00FF;
+
+    /*
+     * RFC 6655
+     */
+    public static final int TLS_RSA_WITH_AES_128_CCM = 0xC09C;
+    public static final int TLS_RSA_WITH_AES_256_CCM = 0xC09D;
+    public static final int TLS_DHE_RSA_WITH_AES_128_CCM = 0xC09E;
+    public static final int TLS_DHE_RSA_WITH_AES_256_CCM = 0xC09F;
+    public static final int TLS_RSA_WITH_AES_128_CCM_8 = 0xC0A0;
+    public static final int TLS_RSA_WITH_AES_256_CCM_8 = 0xC0A1;
+    public static final int TLS_DHE_RSA_WITH_AES_128_CCM_8 = 0xC0A2;
+    public static final int TLS_DHE_RSA_WITH_AES_256_CCM_8 = 0xC0A3;
+    public static final int TLS_PSK_WITH_AES_128_CCM = 0xC0A4;
+    public static final int TLS_PSK_WITH_AES_256_CCM = 0xC0A5;
+    public static final int TLS_DHE_PSK_WITH_AES_128_CCM = 0xC0A6;
+    public static final int TLS_DHE_PSK_WITH_AES_256_CCM = 0xC0A7;
+    public static final int TLS_PSK_WITH_AES_128_CCM_8 = 0xC0A8;
+    public static final int TLS_PSK_WITH_AES_256_CCM_8 = 0xC0A9;
+    public static final int TLS_PSK_DHE_WITH_AES_128_CCM_8 = 0xC0AA;
+    public static final int TLS_PSK_DHE_WITH_AES_256_CCM_8 = 0xC0AB;
 }
