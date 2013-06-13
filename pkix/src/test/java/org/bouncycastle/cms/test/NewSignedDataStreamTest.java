@@ -33,7 +33,6 @@ import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cert.jcajce.JcaX509AttributeCertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.OCSPResp;
@@ -957,7 +956,7 @@ public class NewSignedDataStreamTest
 
         gen.addCertificates(certs);
 
-        X509AttributeCertificateHolder attrCert = new JcaX509AttributeCertificateHolder(CMSTestUtil.getAttributeCertificate());
+        X509AttributeCertificateHolder attrCert = CMSTestUtil.getAttributeCertificate();
 
         Store store = new CollectionStore(Collections.singleton(attrCert));
 

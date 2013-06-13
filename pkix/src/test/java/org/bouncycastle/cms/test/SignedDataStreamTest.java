@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSProcessable;
 import org.bouncycastle.cms.CMSProcessableByteArray;
@@ -47,7 +48,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.x509.X509AttributeCertificate;
 
 public class SignedDataStreamTest
     extends TestCase
@@ -818,7 +818,7 @@ public class SignedDataStreamTest
 
         gen.addCertificatesAndCRLs(certs);
 
-        X509AttributeCertificate attrCert = CMSTestUtil.getAttributeCertificate();
+        X509AttributeCertificateHolder attrCert = CMSTestUtil.getAttributeCertificate();
 
         Store store = new CollectionStore(Collections.singleton(attrCert));
 

@@ -57,7 +57,11 @@ public class RSAESOAEPparams
         this.maskGenAlgorithm = maskGenAlgorithm;
         this.pSourceAlgorithm = pSourceAlgorithm;
     }
-    
+
+    /**
+     * @deprecated use getInstance()
+     * @param seq
+     */
     public RSAESOAEPparams(
         ASN1Sequence seq)
     {
