@@ -201,6 +201,28 @@ public class CipherSuite
     public static final int TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384 = 0xC032;
 
     /*
+     * RFC 5487
+     */
+    public static final int TLS_PSK_WITH_AES_128_GCM_SHA256 = 0x00A8;
+    public static final int TLS_PSK_WITH_AES_256_GCM_SHA384 = 0x00A9;
+    public static final int TLS_DHE_PSK_WITH_AES_128_GCM_SHA256 = 0x00AA;
+    public static final int TLS_DHE_PSK_WITH_AES_256_GCM_SHA384 = 0x00AB;
+    public static final int TLS_RSA_PSK_WITH_AES_128_GCM_SHA256 = 0x00AC;
+    public static final int TLS_RSA_PSK_WITH_AES_256_GCM_SHA384 = 0x00AD;
+    public static final int TLS_PSK_WITH_AES_128_CBC_SHA256 = 0x00AE;
+    public static final int TLS_PSK_WITH_AES_256_CBC_SHA384 = 0x00AF;
+    public static final int TLS_PSK_WITH_NULL_SHA256 = 0x00B0;
+    public static final int TLS_PSK_WITH_NULL_SHA384 = 0x00B1;
+    public static final int TLS_DHE_PSK_WITH_AES_128_CBC_SHA256 = 0x00B2;
+    public static final int TLS_DHE_PSK_WITH_AES_256_CBC_SHA384 = 0x00B3;
+    public static final int TLS_DHE_PSK_WITH_NULL_SHA256 = 0x00B4;
+    public static final int TLS_DHE_PSK_WITH_NULL_SHA384 = 0x00B5;
+    public static final int TLS_RSA_PSK_WITH_AES_128_CBC_SHA256 = 0x00B6;
+    public static final int TLS_RSA_PSK_WITH_AES_256_CBC_SHA384 = 0x00B7;
+    public static final int TLS_RSA_PSK_WITH_NULL_SHA256 = 0x00B8;
+    public static final int TLS_RSA_PSK_WITH_NULL_SHA384 = 0x00B9;
+
+    /*
      * RFC 5746
      */
     public static final int TLS_EMPTY_RENEGOTIATION_INFO_SCSV = 0x00FF;

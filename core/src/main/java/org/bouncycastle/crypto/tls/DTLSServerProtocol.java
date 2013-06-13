@@ -110,7 +110,7 @@ public class DTLSServerProtocol
 
         // TODO This block could really be done before actually sending the hello
         {
-            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
+            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext, state.selectedCipherSuite);
             securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
 
             /*
