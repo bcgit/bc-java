@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.x509.X509Name;
  * PrincipalUtil class.
  * </p>
  * @see org.bouncycastle.jce.PrincipalUtil
+ * @deprecated use the X500Name class.
  */
 public class X509Principal
     extends X509Name

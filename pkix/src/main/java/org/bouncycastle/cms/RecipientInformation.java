@@ -71,7 +71,7 @@ public abstract class RecipientInformation
      */
     public String getKeyEncryptionAlgOID()
     {
-        return keyEncAlg.getObjectId().getId();
+        return keyEncAlg.getAlgorithm().getId();
     }
 
     /**
