@@ -13,7 +13,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Test vectors from the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-00">The OCB Authenticated-Encryption
+ * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-03">The OCB Authenticated-Encryption
  * Algorithm</a>
  */
 public class OCBTest
@@ -82,9 +82,15 @@ public class OCBTest
             runTestCase("Test Case " + i, TEST_VECTORS[i]);
         }
 
-        runLongerTestCase(128, Hex.decode("B2B41CBF9B05037DA7F16C24A35C1C94"));
-        runLongerTestCase(192, Hex.decode("1529F894659D2B51B776740211E7D083"));
-        runLongerTestCase(256, Hex.decode("42B83106E473C0EEE086C8D631FD4C7B"));
+        runLongerTestCase(128, 128, Hex.decode("B2B41CBF9B05037DA7F16C24A35C1C94"));
+        runLongerTestCase(192, 128, Hex.decode("1529F894659D2B51B776740211E7D083"));
+        runLongerTestCase(256, 128, Hex.decode("42B83106E473C0EEE086C8D631FD4C7B"));
+        runLongerTestCase(128, 96, Hex.decode("1A4F0654277709A5BDA0D380"));
+        runLongerTestCase(192, 96, Hex.decode("AD819483E01DD648978F4522"));
+        runLongerTestCase(256, 96, Hex.decode("CD2E41379C7E7C4458CCFB4A"));
+        runLongerTestCase(128, 64, Hex.decode("B7ECE9D381FE437F"));
+        runLongerTestCase(192, 64, Hex.decode("DE0574C87FF06DF9"));
+        runLongerTestCase(256, 64, Hex.decode("833E45FF7D332F7E"));
     }
 
     private void runTestCase(String testName, String[] testVector)
@@ -179,15 +185,14 @@ public class OCBTest
         }
     }
 
-    private void runLongerTestCase(int aesKeySize, byte[] expectedOutput)
+    private void runLongerTestCase(int aesKeySize, int tagLen, byte[] expectedOutput)
         throws InvalidCipherTextException
     {
-
         KeyParameter key = new KeyParameter(new byte[aesKeySize / 8]);
         byte[] N = new byte[12];
 
         AEADBlockCipher c1 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
-        c1.init(true, new ParametersWithIV(key, N));
+        c1.init(true, new AEADParameters(key, tagLen, N));
 
         AEADBlockCipher c2 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
 
@@ -199,14 +204,16 @@ public class OCBTest
         {
             N[11] = (byte)i;
 
-            c2.init(true, new ParametersWithIV(key, N));
+            c2.init(true, new AEADParameters(key, tagLen, N));
 
             total += updateCiphers(c1, c2, S, i, true, true);
             total += updateCiphers(c1, c2, S, i, false, true);
             total += updateCiphers(c1, c2, S, i, true, false);
         }
 
-        if (total != 22400L)
+        long expectedTotal = 16256 + (48 * tagLen);
+
+        if (total != expectedTotal)
         {
             fail("test generated the wrong amount of input: " + total);
         }

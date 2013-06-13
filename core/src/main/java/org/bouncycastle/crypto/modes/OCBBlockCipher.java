@@ -13,7 +13,7 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-00">The OCB Authenticated-Encryption
+ * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-03">The OCB Authenticated-Encryption
  * Algorithm</a>, licensed per:
  * <p/>
  * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
@@ -155,22 +155,9 @@ public class OCBBlockCipher
             N = new byte[0];
         }
 
-        /*
-         * TODO There's currently a thread on CFRG
-         * (http://www.ietf.org/mail-archive/web/cfrg/current/msg03433.html) debating including
-         * (macSize % 128) in the nonce, in which case this test becomes simpler:
-         */
-//        if (N.length > 15)
-//        {
-//            throw new IllegalArgumentException("IV must be no more than 120 bits");
-//        }
-        if (N.length > 16 || (N.length == 16 && (N[0] & 0x80) != 0))
+        if (N.length > 15)
         {
-            /*
-             * NOTE: We don't just ignore bit 128 because it would hide from the caller the fact
-             * that two nonces differing only in bit 128 are not different.
-             */
-            throw new IllegalArgumentException("IV must be no more than 127 bits");
+            throw new IllegalArgumentException("IV must be no more than 15 bytes");
         }
 
         /*
@@ -200,25 +187,10 @@ public class OCBBlockCipher
 
         byte[] nonce = new byte[16];
         System.arraycopy(N, 0, nonce, nonce.length - N.length, N.length);
-        
-        /*
-         * TODO There's currently a thread on CFRG
-         * (http://www.ietf.org/mail-archive/web/cfrg/current/msg03433.html) debating including
-         * (macSize % 128) in the nonce, in which case this code becomes simpler:
-         */
-//        nonce[0] = (byte)(macSize << 4);
-//        nonce[15 - N.length] |= 1;
-        if (N.length == 16)
-        {
-            nonce[0] &= 0x80;
-        }
-        else
-        {
-            nonce[15 - N.length] = 1;
-        }
+        nonce[0] = (byte)(macSize << 4);
+        nonce[15 - N.length] |= 1;
 
         int bottom = nonce[15] & 0x3F;
-        // System.out.println("bottom: " + bottom);
 
         byte[] Ktop = new byte[16];
         nonce[15] &= 0xC0;
