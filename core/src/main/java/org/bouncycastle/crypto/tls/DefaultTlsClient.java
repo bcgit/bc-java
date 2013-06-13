@@ -6,7 +6,6 @@ import java.util.Hashtable;
 public abstract class DefaultTlsClient
     extends AbstractTlsClient
 {
-
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
@@ -32,7 +31,6 @@ public abstract class DefaultTlsClient
     public Hashtable getClientExtensions()
         throws IOException
     {
-
         Hashtable clientExtensions = super.getClientExtensions();
 
         if (TlsECCUtils.containsECCCipherSuites(getCipherSuites()))
@@ -68,7 +66,6 @@ public abstract class DefaultTlsClient
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
-
         super.processServerExtensions(serverExtensions);
 
         if (serverExtensions != null)
@@ -90,7 +87,6 @@ public abstract class DefaultTlsClient
     public TlsKeyExchange getKeyExchange()
         throws IOException
     {
-
         switch (selectedCipherSuite)
         {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -132,9 +128,13 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
@@ -188,9 +188,13 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
@@ -215,7 +219,6 @@ public abstract class DefaultTlsClient
     public TlsCipher getCipher()
         throws IOException
     {
-
         switch (selectedCipherSuite)
         {
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -251,6 +254,14 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha256);
 
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CCM, MACAlgorithm._null);
+
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM_8:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CCM_8, MACAlgorithm._null);
+
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
@@ -285,6 +296,14 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha384);
+
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CCM, MACAlgorithm._null);
+
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CCM_8, MACAlgorithm._null);
 
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:

@@ -25,6 +25,12 @@ public class EncryptionAlgorithm
     public static final int AES_256_CBC = 9;
 
     /*
+     * RFC 5289
+     */
+    public static final int AES_128_GCM = 10;
+    public static final int AES_256_GCM = 11;
+
+    /*
      * RFC 4132
      */
     public static final int CAMELLIA_128_CBC = 12;
@@ -36,8 +42,10 @@ public class EncryptionAlgorithm
     public static final int SEED_CBC = 14;
 
     /*
-     * RFC 5289
+     * RFC 6655
      */
-    public static final int AES_128_GCM = 10;
-    public static final int AES_256_GCM = 11;
+    public static final int AES_128_CCM = 15;
+    public static final int AES_128_CCM_8 = 16;
+    public static final int AES_256_CCM = 17;
+    public static final int AES_256_CCM_8 = 18;
 }

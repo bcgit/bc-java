@@ -30,7 +30,7 @@ public class TlsAEADCipher
         this.context = context;
         this.macSize = macSize;
 
-        // NOTE: Valid for RFC 5288 ciphers but may need review for other AEAD ciphers
+        // NOTE: Valid for RFC 5288/6655 ciphers but may need review for other AEAD ciphers
         this.nonce_explicit_length = 8;
 
         // TODO SecurityParameters.fixed_iv_length
@@ -95,7 +95,7 @@ public class TlsAEADCipher
         System.arraycopy(encryptImplicitNonce, 0, nonce, 0, encryptImplicitNonce.length);
 
         /*
-         * RFC 5288 The nonce_explicit MAY be the 64-bit sequence number.
+         * RFC 5288/6655 The nonce_explicit MAY be the 64-bit sequence number.
          * 
          * (May need review for other AEAD ciphers).
          */
