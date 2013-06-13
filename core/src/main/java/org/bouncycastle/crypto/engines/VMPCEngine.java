@@ -44,13 +44,14 @@ public class VMPCEngine implements StreamCipher
         }
 
         ParametersWithIV ivParams = (ParametersWithIV) params;
-        KeyParameter key = (KeyParameter) ivParams.getParameters();
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
             throw new IllegalArgumentException(
                 "VMPC init parameters must include a key");
         }
+
+        KeyParameter key = (KeyParameter) ivParams.getParameters();
 
         this.workingIV = ivParams.getIV();
 
