@@ -4,6 +4,7 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
@@ -17,12 +18,23 @@ public class JceKeyTransRecipientInfoGenerator
     public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert)
         throws CertificateEncodingException
     {
-        super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), new JceAsymmetricKeyWrapper(recipientCert.getPublicKey()));
+        super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), new JceAsymmetricKeyWrapper(recipientCert));
     }
 
     public JceKeyTransRecipientInfoGenerator(byte[] subjectKeyIdentifier, PublicKey publicKey)
     {
         super(subjectKeyIdentifier, new JceAsymmetricKeyWrapper(publicKey));
+    }
+
+    public JceKeyTransRecipientInfoGenerator(X509Certificate recipientCert, AlgorithmParameterSpec parameterSpec)
+        throws CertificateEncodingException
+    {
+        super(new IssuerAndSerialNumber(new JcaX509CertificateHolder(recipientCert).toASN1Structure()), new JceAsymmetricKeyWrapper(recipientCert, parameterSpec));
+    }
+
+    public JceKeyTransRecipientInfoGenerator(byte[] subjectKeyIdentifier, PublicKey publicKey, AlgorithmParameterSpec parameterSpec)
+    {
+        super(subjectKeyIdentifier, new JceAsymmetricKeyWrapper(publicKey, parameterSpec));
     }
 
     public JceKeyTransRecipientInfoGenerator setProvider(String providerName)

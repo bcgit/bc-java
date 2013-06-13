@@ -20,32 +20,38 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLReason;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509ExtensionUtils;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v2CRLBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.x509.X509AttributeCertificate;
-import org.bouncycastle.x509.X509StreamParser;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
 public class CMSTestUtil
 {
     public static SecureRandom     rand;
     public static KeyPairGenerator kpg;
+
     public static KeyPairGenerator gostKpg;
     public static KeyPairGenerator dsaKpg;
     public static KeyPairGenerator ecGostKpg;
@@ -114,7 +120,10 @@ public class CMSTestUtil
 
             kpg  = KeyPairGenerator.getInstance("RSA", "BC");
             kpg.initialize(1024, rand);
-            
+
+            kpg  = KeyPairGenerator.getInstance("RSA", "BC");
+            kpg.initialize(1024, rand);
+
             gostKpg  = KeyPairGenerator.getInstance("GOST3410", "BC");
             GOST3410ParameterSpec gost3410P = new GOST3410ParameterSpec(CryptoProObjectIdentifiers.gostR3410_94_CryptoPro_A.getId());
             
@@ -189,14 +198,10 @@ public class CMSTestUtil
         return buf.toString();
     }
 
-    public static X509AttributeCertificate getAttributeCertificate()
+    public static X509AttributeCertificateHolder getAttributeCertificate()
         throws Exception
     {
-        X509StreamParser parser = X509StreamParser.getInstance("AttributeCertificate", "BC");
-
-        parser.init(CMSTestUtil.attrCert);
-
-        return (X509AttributeCertificate)parser.read();
+        return  new X509AttributeCertificateHolder(CMSTestUtil.attrCert);
     }
 
     public static KeyPair makeKeyPair()
@@ -273,60 +278,44 @@ public class CMSTestUtil
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
             String _subDN, KeyPair _issKP, String _issDN)
-            throws GeneralSecurityException, IOException
+        throws GeneralSecurityException, IOException, OperatorCreationException
     {
-
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, false);
+    }
+
+    public static X509Certificate makeOaepCertificate(KeyPair _subKP,
+            String _subDN, KeyPair _issKP, String _issDN)
+        throws GeneralSecurityException, IOException, OperatorCreationException
+    {
+        return makeOaepCertificate(_subKP, _subDN, _issKP, _issDN, false);
     }
 
     public static X509Certificate makeCACertificate(KeyPair _subKP,
             String _subDN, KeyPair _issKP, String _issDN)
-            throws GeneralSecurityException, IOException
+        throws GeneralSecurityException, IOException, OperatorCreationException
     {
-
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, true);
     }
 
     public static X509Certificate makeV1Certificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN)
-        throws GeneralSecurityException, IOException
+        throws GeneralSecurityException, IOException, OperatorCreationException
     {
 
         PublicKey  subPub  = subKP.getPublic();
         PrivateKey issPriv = issKP.getPrivate();
         PublicKey  issPub  = issKP.getPublic();
 
-        X509V1CertificateGenerator v1CertGen = new X509V1CertificateGenerator();
+        X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            subPub);
 
-        v1CertGen.reset();
-        v1CertGen.setSerialNumber(allocateSerialNumber());
-        v1CertGen.setIssuerDN(new X509Name(_issDN));
-        v1CertGen.setNotBefore(new Date(System.currentTimeMillis()));
-        v1CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)));
-        v1CertGen.setSubjectDN(new X509Name(_subDN));
-        v1CertGen.setPublicKey(subPub);
+        JcaContentSignerBuilder contentSignerBuilder = makeContentSignerBuilder(issPub);
 
-        if (issPub instanceof RSAPublicKey)
-        {
-            v1CertGen.setSignatureAlgorithm("SHA1WithRSA");
-        }
-        else if (issPub.getAlgorithm().equals("DSA"))
-        {
-            v1CertGen.setSignatureAlgorithm("SHA1withDSA");
-        }
-        else if (issPub.getAlgorithm().equals("ECDSA"))
-        {
-            v1CertGen.setSignatureAlgorithm("SHA1withECDSA");
-        }
-        else if (issPub.getAlgorithm().equals("ECGOST3410"))
-        {
-            v1CertGen.setSignatureAlgorithm("GOST3411withECGOST3410");
-        }
-        else
-        {
-            v1CertGen.setSignatureAlgorithm("GOST3411WithGOST3410");
-        }
-
-        X509Certificate _cert = v1CertGen.generate(issPriv);
+        X509Certificate _cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(v1CertGen.build(contentSignerBuilder.build(issPriv)));
 
         _cert.checkValidity(new Date());
         _cert.verify(issPub);
@@ -335,78 +324,128 @@ public class CMSTestUtil
     }
 
     public static X509Certificate makeCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN, boolean _ca)
-        throws GeneralSecurityException, IOException
+        throws GeneralSecurityException, IOException, OperatorCreationException
     {
 
         PublicKey  subPub  = subKP.getPublic();
         PrivateKey issPriv = issKP.getPrivate();
         PublicKey  issPub  = issKP.getPublic();
         
-        X509V3CertificateGenerator v3CertGen = new X509V3CertificateGenerator();
-        
-        v3CertGen.reset();
-        v3CertGen.setSerialNumber(allocateSerialNumber());
-        v3CertGen.setIssuerDN(new X509Name(_issDN));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis()));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)));
-        v3CertGen.setSubjectDN(new X509Name(_subDN));
-        v3CertGen.setPublicKey(subPub);
-        
-        if (issPub instanceof RSAPublicKey)
-        {
-            v3CertGen.setSignatureAlgorithm("SHA1WithRSA");
-        }
-        else if (issPub.getAlgorithm().equals("DSA"))
-        {
-            v3CertGen.setSignatureAlgorithm("SHA1withDSA");
-        }
-        else if (issPub.getAlgorithm().equals("ECDSA"))
-        {
-            v3CertGen.setSignatureAlgorithm("SHA1withECDSA");
-        }
-        else if (issPub.getAlgorithm().equals("ECGOST3410"))
-        {
-            v3CertGen.setSignatureAlgorithm("GOST3411withECGOST3410");
-        }
-        else
-        {
-            v3CertGen.setSignatureAlgorithm("GOST3411WithGOST3410");
-        }
+        X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            subPub);
+
+        JcaContentSignerBuilder contentSignerBuilder = makeContentSignerBuilder(issPub);
 
         v3CertGen.addExtension(
-            X509Extension.subjectKeyIdentifier,
+            Extension.subjectKeyIdentifier,
             false,
             createSubjectKeyId(subPub));
 
         v3CertGen.addExtension(
-            X509Extension.authorityKeyIdentifier,
+            Extension.authorityKeyIdentifier,
             false,
             createAuthorityKeyId(issPub));
 
         v3CertGen.addExtension(
-            X509Extension.basicConstraints,
+            Extension.basicConstraints,
             false,
             new BasicConstraints(_ca));
 
-        X509Certificate _cert = v3CertGen.generate(issPriv);
+        X509Certificate _cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(v3CertGen.build(contentSignerBuilder.build(issPriv)));
 
         _cert.checkValidity(new Date());
         _cert.verify(issPub);
 
         return _cert;
     }
-    
+
+    public static X509Certificate makeOaepCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN, boolean _ca)
+        throws GeneralSecurityException, IOException, OperatorCreationException
+    {
+
+        SubjectPublicKeyInfo  subPub  = SubjectPublicKeyInfo.getInstance(subKP.getPublic().getEncoded());
+        PrivateKey issPriv = issKP.getPrivate();
+        PublicKey  issPub  = issKP.getPublic();
+
+        X509v3CertificateBuilder v3CertGen = new X509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, new RSAESOAEPparams()), subPub.parsePublicKey()));
+
+        JcaContentSignerBuilder contentSignerBuilder = makeContentSignerBuilder(issPub);
+
+        v3CertGen.addExtension(
+            Extension.subjectKeyIdentifier,
+            false,
+            createSubjectKeyId(subPub));
+
+        v3CertGen.addExtension(
+            Extension.authorityKeyIdentifier,
+            false,
+            createAuthorityKeyId(issPub));
+
+        v3CertGen.addExtension(
+            Extension.basicConstraints,
+            false,
+            new BasicConstraints(_ca));
+
+        X509Certificate _cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(v3CertGen.build(contentSignerBuilder.build(issPriv)));
+
+        _cert.checkValidity(new Date());
+        _cert.verify(issPub);
+
+        return _cert;
+    }
+
+    private static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
+    {
+        JcaContentSignerBuilder contentSignerBuilder;
+        if (issPub instanceof RSAPublicKey)
+        {
+            contentSignerBuilder = new JcaContentSignerBuilder("SHA1WithRSA");
+        }
+        else if (issPub.getAlgorithm().equals("DSA"))
+        {
+            contentSignerBuilder = new JcaContentSignerBuilder("SHA1withDSA");
+        }
+        else if (issPub.getAlgorithm().equals("ECDSA"))
+        {
+            contentSignerBuilder = new JcaContentSignerBuilder("SHA1withECDSA");
+        }
+        else if (issPub.getAlgorithm().equals("ECGOST3410"))
+        {
+            contentSignerBuilder = new JcaContentSignerBuilder("GOST3411withECGOST3410");
+        }
+        else
+        {
+            contentSignerBuilder = new JcaContentSignerBuilder("GOST3411WithGOST3410");
+        }
+
+        contentSignerBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME);
+
+        return contentSignerBuilder;
+    }
+
     public static X509CRL makeCrl(KeyPair pair)
         throws Exception
     {
         Date                 now = new Date();
         X509v2CRLBuilder crlGen = new X509v2CRLBuilder(new X500Name("CN=Test CA"), now);
+        JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
 
         crlGen.setNextUpdate(new Date(now.getTime() + 100000));
 
         crlGen.addCRLEntry(BigInteger.ONE, now, CRLReason.privilegeWithdrawn);
 
-        crlGen.addExtension(X509Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extensionUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
         return new JcaX509CRLConverter().setProvider("BC").getCRL(crlGen.build(new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider("BC").build(pair.getPrivate())));
     }
@@ -424,6 +463,13 @@ public class CMSTestUtil
         throws IOException
     {
         return extUtils.createAuthorityKeyIdentifier(SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded()));
+    }
+
+    static SubjectKeyIdentifier createSubjectKeyId(
+        SubjectPublicKeyInfo _pubKey)
+        throws IOException
+    {
+        return extUtils.createSubjectKeyIdentifier(_pubKey);
     }
 
     static SubjectKeyIdentifier createSubjectKeyId(
