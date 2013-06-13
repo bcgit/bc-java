@@ -1,20 +1,25 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
-import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.test.SimpleTest;
-
-import javax.crypto.interfaces.DHPrivateKey;
-import javax.crypto.interfaces.DHPublicKey;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
+
+import javax.crypto.interfaces.DHPrivateKey;
+import javax.crypto.interfaces.DHPublicKey;
+
+import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
+import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class SerialisationTest
     extends SimpleTest
@@ -55,6 +60,11 @@ public class SerialisationTest
               + "AAQf2RvbOpsxhCjGK1vhd7+g3hzcQB+AAb///////////////7////+AAAAAXVxAH4ACgAAABDNKm1zRn/cYal03dRjdxK9"
               + "eHNxAH4ABv///////////////v////4AAAABdXEAfgAKAAAAEMDh3xza3MJ4XNak/35BYPt4c3EAfgAG///////////////"
               + "+/////gAAAAF1cQB+AAoAAAADAQABeA==");
+
+    private static byte[] rsaPub2 = Base64.decode(
+                 "rO0ABXNyAD5vcmcuYm91bmN5Y2FzdGxlLmpjYWpjZS5wcm92aWRlci5hc3ltbWV0cmljLnJzYS5CQ1JTQVB1YmxpY0tleS"
+              +  "Uiag5b+myEAgACTAAHbW9kdWx1c3QAFkxqYXZhL21hdGgvQmlnSW50ZWdlcjtMAA5wdWJsaWNFeHBvbmVudHEAfgABeHBz"
+              +  "cgAUamF2YS5tYXRoLkJpZ0ludGVnZXKM/J8fqTv7HQMABkkACGJpdENvdW50SQAJYml0TGVuZ3RoSQATZmlyc3ROb256ZXJvQnl0ZU51bUkADGxvd2VzdFNldEJpdEkABnNpZ251bVsACW1hZ25pdHVkZXQAAltCeHIAEGphdmEubGFuZy5OdW1iZXKGrJUdC5TgiwIAAHhw///////////////+/////gAAAAF1cgACW0Ks8xf4BghU4AIAAHhwAAAAIJqU1y+8k0wz3jgpbPO4fYxeQpuJbXQ4TMZBv0H0wz9PeHNxAH4AA////////////////v////4AAAABdXEAfgAHAAAAAwEAAXg=");
 
     private static BigInteger elGamalY = new BigInteger("89822212135401014750127909969755994242838935150891306006689219384134393835581");
     private static BigInteger elGamalX = new BigInteger("23522982289275336984843296896007818700866293719703239515258104457243931686357");
@@ -165,6 +175,32 @@ public class SerialisationTest
         if (!pubExp.equals(pub.getPublicExponent()))
         {
             fail("public key exponent mismatch");
+        }
+
+        RSAPublicKey pub2 = (RSAPublicKey)readObject(rsaPub2);
+
+        if (!mod.equals(pub2.getModulus()))
+        {
+            fail("public key 2 modulus mismatch");
+        }
+        if (!pubExp.equals(pub2.getPublicExponent()))
+        {
+            fail("public key 2 exponent mismatch");
+        }
+        try
+        {
+            java.security.Security.addProvider(new BouncyCastleProvider());
+            java.security.KeyFactory fact = java.security.KeyFactory.getInstance("RSA", "BC");
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            ObjectOutputStream oOUt = new ObjectOutputStream(bOut);
+            oOUt.writeObject(fact.generatePublic(new X509EncodedKeySpec(pub.getEncoded())));
+            oOUt.close();
+
+            new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray())).readObject();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
         RSAPrivateCrtKey priv = (RSAPrivateCrtKey)readObject(rsaPriv);
