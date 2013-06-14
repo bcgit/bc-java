@@ -10,7 +10,6 @@ import org.bouncycastle.util.Arrays;
 public class TlsAEADCipher
     implements TlsCipher
 {
-
     protected TlsContext context;
     protected int macSize;
     protected int nonce_explicit_length;
@@ -21,10 +20,8 @@ public class TlsAEADCipher
     protected byte[] encryptImplicitNonce, decryptImplicitNonce;
 
     public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
-                         int cipherKeySize, int macSize)
-        throws IOException
+        int cipherKeySize, int macSize) throws IOException
     {
-
         if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -33,7 +30,7 @@ public class TlsAEADCipher
         this.context = context;
         this.macSize = macSize;
 
-        // NOTE: Valid for RFC 5288 ciphers but may need review for other AEAD ciphers
+        // NOTE: Valid for RFC 5288/6655 ciphers but may need review for other AEAD ciphers
         this.nonce_explicit_length = 8;
 
         // TODO SecurityParameters.fixed_iv_length
@@ -94,12 +91,11 @@ public class TlsAEADCipher
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
         throws IOException
     {
-
         byte[] nonce = new byte[this.encryptImplicitNonce.length + nonce_explicit_length];
         System.arraycopy(encryptImplicitNonce, 0, nonce, 0, encryptImplicitNonce.length);
 
         /*
-         * RFC 5288 The nonce_explicit MAY be the 64-bit sequence number.
+         * RFC 5288/6655 The nonce_explicit MAY be the 64-bit sequence number.
          * 
          * (May need review for other AEAD ciphers).
          */
@@ -113,12 +109,13 @@ public class TlsAEADCipher
         System.arraycopy(nonce, encryptImplicitNonce.length, output, 0, nonce_explicit_length);
         int outputPos = nonce_explicit_length;
 
-        encryptCipher.init(true,
-            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type, plaintextLength)));
+        byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
+        AEADParameters parameters = new AEADParameters(null, 8 * macSize, nonce, additionalData);
 
-        outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength, output, outputPos);
         try
         {
+            encryptCipher.init(true, parameters);
+            outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength, output, outputPos);
             outputPos += encryptCipher.doFinal(output, outputPos);
         }
         catch (Exception e)
@@ -138,7 +135,6 @@ public class TlsAEADCipher
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
         throws IOException
     {
-
         if (getPlaintextLimit(len) < 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -155,13 +151,13 @@ public class TlsAEADCipher
         byte[] output = new byte[plaintextLength];
         int outputPos = 0;
 
-        decryptCipher.init(false,
-            new AEADParameters(null, 8 * macSize, nonce, getAdditionalData(seqNo, type, plaintextLength)));
-
-        outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
+        byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
+        AEADParameters parameters = new AEADParameters(null, 8 * macSize, nonce, additionalData);
 
         try
         {
+            decryptCipher.init(false, parameters);
+            outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
             outputPos += decryptCipher.doFinal(output, outputPos);
         }
         catch (Exception e)

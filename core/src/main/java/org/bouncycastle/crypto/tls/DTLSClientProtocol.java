@@ -111,7 +111,7 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.selectedCipherSuite);
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.clientContext, state.selectedCipherSuite);
         securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
 
         /*

@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 public class DefaultTlsCipherFactory
@@ -26,13 +27,24 @@ public class DefaultTlsCipherFactory
     public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
-
         switch (encryptionAlgorithm)
         {
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return createDESedeCipher(context, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CBC:
             return createAESCipher(context, 16, macAlgorithm);
+        case EncryptionAlgorithm.AES_128_CCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 16, 16);
+        case EncryptionAlgorithm.AES_128_CCM_8:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 16, 8);
+        case EncryptionAlgorithm.AES_256_CCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 32, 16);
+        case EncryptionAlgorithm.AES_256_CCM_8:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 32, 8);
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(context, 16, 16);
@@ -61,6 +73,13 @@ public class DefaultTlsCipherFactory
     {
         return new TlsBlockCipher(context, createAESBlockCipher(), createAESBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+    }
+
+    protected TlsAEADCipher createCipher_AES_CCM(TlsContext context, int cipherKeySize, int macSize)
+        throws IOException
+    {
+        return new TlsAEADCipher(context, createAEADBlockCipher_AES_CCM(),
+            createAEADBlockCipher_AES_CCM(), cipherKeySize, macSize);
     }
 
     protected TlsAEADCipher createCipher_AES_GCM(TlsContext context, int cipherKeySize, int macSize)
@@ -116,6 +135,11 @@ public class DefaultTlsCipherFactory
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(new AESFastEngine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
+    {
+        return new CCMBlockCipher(new AESFastEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
