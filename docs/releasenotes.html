@@ -27,10 +27,11 @@ Release 1.50
 <ul>
 <li>The DualECSP800DRBG sometimes truncated the last block in the generated stream incorrectly. This has been fixed.</li>
 <li>Keys produced from RSA certificates with specialised parameters would lose the parameter settings. This has been fixed.</li>
+<li>OAEP parameters were being ignored on CMS key trans recipient processing. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
-<li>Addtional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages.</li>
+<li>Addtional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages and allow for non-default parameters.</li>
 <li>OCB implementation updated to account for changes in draft-irtf-cfrg-ocb-03.</li>
 </ul>
 
