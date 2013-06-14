@@ -136,7 +136,7 @@ public class TlsServerProtocol
 
                 // TODO This block could really be done before actually sending the hello
                 {
-                    securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+                    securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
                     securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
 
                     /*

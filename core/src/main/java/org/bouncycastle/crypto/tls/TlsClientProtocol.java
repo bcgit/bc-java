@@ -186,7 +186,7 @@ public class TlsClientProtocol
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.prfAlgorithm = getPRFAlgorithm(selectedCipherSuite);
+                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
                 securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
 
                 /*

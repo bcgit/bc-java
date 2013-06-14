@@ -65,6 +65,7 @@ public class CCMBlockCipher
     {
         this.forEncryption = forEncryption;
 
+        CipherParameters cipherParameters;
         if (params instanceof AEADParameters)
         {
             AEADParameters param = (AEADParameters)params;
@@ -72,7 +73,7 @@ public class CCMBlockCipher
             nonce = param.getNonce();
             initialAssociatedText = param.getAssociatedText();
             macSize = param.getMacSize() / 8;
-            keyParam = param.getKey();
+            cipherParameters = param.getKey();
         }
         else if (params instanceof ParametersWithIV)
         {
@@ -81,11 +82,17 @@ public class CCMBlockCipher
             nonce = param.getIV();
             initialAssociatedText = null;
             macSize = macBlock.length / 2;
-            keyParam = param.getParameters();
+            cipherParameters = param.getParameters();
         }
         else
         {
             throw new IllegalArgumentException("invalid parameters passed to CCM");
+        }
+
+        // NOTE: Very basic support for key re-use, but no performance gain from it
+        if (cipherParameters != null)
+        {
+            keyParam = cipherParameters;
         }
 
         if (nonce == null || nonce.length < 7 || nonce.length > 13)

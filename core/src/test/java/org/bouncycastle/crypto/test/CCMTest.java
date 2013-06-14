@@ -140,7 +140,7 @@ public class CCMTest
         checkVectors(count, ccm, "all initial associated data", k, macSize, n, a, null, p, t, c);
         checkVectors(count, ccm, "subsequent associated data", k, macSize, n, null, a, p, t, c);
         checkVectors(count, ccm, "split associated data", k, macSize, n, fa, la, p, t, c);
-//      checkVectors(count, ccm, "reuse key", null, macSize, n, fa, la, p, t, c);
+        checkVectors(count, ccm, "reuse key", null, macSize, n, fa, la, p, t, c);
     }
 
     private void checkVectors(
