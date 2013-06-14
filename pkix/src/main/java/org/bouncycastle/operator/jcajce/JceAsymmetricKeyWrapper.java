@@ -1,5 +1,6 @@
 package org.bouncycastle.operator.jcajce;
 
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.ProviderException;
@@ -100,11 +101,20 @@ public class JceAsymmetricKeyWrapper
         throws OperatorException
     {
         Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+        AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+
         byte[] encryptedKeyBytes = null;
 
         try
         {
-            keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
+            if (algParams != null)
+            {
+                keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
+            }
+            else
+            {
+                keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
+            }
             encryptedKeyBytes = keyEncryptionCipher.wrap(OperatorUtils.getJceKey(encryptionKey));
         }
         catch (GeneralSecurityException e)
