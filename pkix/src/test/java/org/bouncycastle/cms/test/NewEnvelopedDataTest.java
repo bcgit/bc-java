@@ -402,7 +402,19 @@ public class NewEnvelopedDataTest
         doTestKeyTransOAEPDefaultNamed("SHA-256");
     }
 
+    public void testKeyTransOAEPSHA1AndSHA256()
+            throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed("SHA-1", "SHA-256");
+    }
+
     private void doTestKeyTransOAEPDefaultNamed(String digest)
+        throws Exception
+    {
+        doTestKeyTransOAEPDefaultNamed(digest, digest);
+    }
+
+    private void doTestKeyTransOAEPDefaultNamed(String digest, String mgfDigest)
         throws Exception
     {
         byte[]          data     = "WallaWallaWashington".getBytes();
@@ -410,7 +422,7 @@ public class NewEnvelopedDataTest
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
         JcaAlgorithmParametersConverter  paramsConverter = new JcaAlgorithmParametersConverter();
 
-        OAEPParameterSpec oaepSpec = new OAEPParameterSpec(digest, "MGF1", new MGF1ParameterSpec(digest), new PSource.PSpecified(new byte[]{1, 2, 3, 4, 5}));
+        OAEPParameterSpec oaepSpec = new OAEPParameterSpec(digest, "MGF1", new MGF1ParameterSpec(mgfDigest), new PSource.PSpecified(new byte[]{1, 2, 3, 4, 5}));
         AlgorithmIdentifier oaepAlgId = paramsConverter.getAlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, oaepSpec);
 
         edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert, oaepAlgId).setProvider(BC));

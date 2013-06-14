@@ -3,7 +3,9 @@ package org.bouncycastle.operator.jcajce;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
 
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
@@ -15,7 +17,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 
 public class JcaAlgorithmParametersConverter
@@ -25,7 +26,7 @@ public class JcaAlgorithmParametersConverter
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier(ASN1ObjectIdentifier algId, AlgorithmParameters parameters)
-        throws CMSException
+        throws InvalidAlgorithmParameterException
     {
         try
         {
@@ -35,12 +36,12 @@ public class JcaAlgorithmParametersConverter
         }
         catch (IOException e)
         {
-            throw new CMSException("can't parse parameters", e);
+            throw new InvalidAlgorithmParameterException("unable to encode parameters object: " + e.getMessage());
         }
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier(ASN1ObjectIdentifier algorithm, AlgorithmParameterSpec algorithmSpec)
-        throws CMSException
+        throws InvalidAlgorithmParameterException
     {
         if (algorithmSpec instanceof OAEPParameterSpec)
         {
@@ -54,13 +55,19 @@ public class JcaAlgorithmParametersConverter
                 OAEPParameterSpec oaepSpec = (OAEPParameterSpec)algorithmSpec;
                 PSource pSource = oaepSpec.getPSource();
 
+                if (!oaepSpec.getMGFAlgorithm().equals(OAEPParameterSpec.DEFAULT.getMGFAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("only " + OAEPParameterSpec.DEFAULT.getMGFAlgorithm() + " mask generator supported.");
+                }
+
                 AlgorithmIdentifier hashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(oaepSpec.getDigestAlgorithm());
+                AlgorithmIdentifier mgf1HashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find((((MGF1ParameterSpec)oaepSpec.getMGFParameters()).getDigestAlgorithm()));
                 return new AlgorithmIdentifier(algorithm,
-                                    new RSAESOAEPparams(hashAlgorithm, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgorithm),
+                                    new RSAESOAEPparams(hashAlgorithm, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgf1HashAlgorithm),
                                                         new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(((PSource.PSpecified)pSource).getValue()))));
             }
         }
 
-        throw new IllegalArgumentException("unknown parameter spec passed.");
+        throw new InvalidAlgorithmParameterException("unknown parameter spec passed.");
     }
 }

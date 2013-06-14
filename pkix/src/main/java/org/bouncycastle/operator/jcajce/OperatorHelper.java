@@ -181,6 +181,41 @@ class OperatorHelper
         }
     }
 
+    AlgorithmParameters createAlgorithmParameters(AlgorithmIdentifier cipherAlgId)
+        throws OperatorCreationException
+    {
+        AlgorithmParameters parameters;
+
+        if (cipherAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption))
+        {
+            return null;
+        }
+
+        try
+        {
+            parameters = helper.createAlgorithmParameters(cipherAlgId.getAlgorithm().getId());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            return null;   // There's a good chance there aren't any!
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new OperatorCreationException("cannot create algorithm parameters: " + e.getMessage(), e);
+        }
+
+        try
+        {
+            parameters.init(cipherAlgId.getParameters().toASN1Primitive().getEncoded());
+        }
+        catch (IOException e)
+        {
+            throw new OperatorCreationException("cannot initialise algorithm parameters: " + e.getMessage(), e);
+        }
+
+        return parameters;
+    }
+
     MessageDigest createDigest(AlgorithmIdentifier digAlgId)
         throws GeneralSecurityException
     {

@@ -1,5 +1,6 @@
 package org.bouncycastle.operator.jcajce;
 
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -80,10 +81,18 @@ public class JceAsymmetricKeyUnwrapper
             Key sKey = null;
 
             Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+            AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
             try
             {
-                keyCipher.init(Cipher.UNWRAP_MODE, privKey);
+                if (algParams != null)
+                {
+                    keyCipher.init(Cipher.UNWRAP_MODE, privKey, algParams);
+                }
+                else
+                {
+                    keyCipher.init(Cipher.UNWRAP_MODE, privKey);
+                }
                 sKey = keyCipher.unwrap(encryptedKey, helper.getKeyAlgorithmName(encryptedKeyAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
             }
             catch (GeneralSecurityException e)
