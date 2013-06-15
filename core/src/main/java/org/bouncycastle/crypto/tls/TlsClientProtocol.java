@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 public class TlsClientProtocol
     extends TlsProtocol
@@ -168,6 +169,22 @@ public class TlsClientProtocol
             this.connection_state = CS_SERVER_CERTIFICATE;
             break;
         }
+        case HandshakeType.certificate_status:
+            switch (this.connection_state)
+            {
+            case CS_SERVER_CERTIFICATE:
+                /*
+                 * TODO[RFC 3546] Parse the CertificateStatus message. We should bundle any
+                 * CertificateStatus message with the actual Certificate since the authentication
+                 * will want to use it.
+                 */
+                Streams.drain(buf);
+                this.connection_state = CS_CERTIFICATE_STATUS;
+                break;
+            default:
+                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            }
+            break;
         case HandshakeType.finished:
             switch (this.connection_state)
             {
@@ -233,6 +250,7 @@ public class TlsClientProtocol
                 // NB: Fall through to next case label
             }
             case CS_SERVER_CERTIFICATE:
+            case CS_CERTIFICATE_STATUS:
 
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
@@ -342,6 +360,7 @@ public class TlsClientProtocol
                 // NB: Fall through to next case label
             }
             case CS_SERVER_CERTIFICATE:
+            case CS_CERTIFICATE_STATUS:
 
                 this.keyExchange.processServerKeyExchange(buf);
 
@@ -360,6 +379,7 @@ public class TlsClientProtocol
             switch (this.connection_state)
             {
             case CS_SERVER_CERTIFICATE:
+            case CS_CERTIFICATE_STATUS:
 
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();

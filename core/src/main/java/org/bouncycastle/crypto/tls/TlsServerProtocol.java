@@ -160,6 +160,9 @@ public class TlsServerProtocol
                 this.keyExchange.init(getContext());
 
                 this.serverCredentials = tlsServer.getCredentials();
+
+                Certificate serverCertificate = null;
+
                 if (this.serverCredentials == null)
                 {
                     this.keyExchange.skipServerCredentials();
@@ -167,9 +170,17 @@ public class TlsServerProtocol
                 else
                 {
                     this.keyExchange.processServerCredentials(this.serverCredentials);
-                    sendCertificateMessage(this.serverCredentials.getCertificate());
+
+                    serverCertificate = this.serverCredentials.getCertificate();
+                    sendCertificateMessage(serverCertificate);
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
+
+                if (serverCertificate != null && !serverCertificate.isEmpty())
+                {
+                    // TODO[RFC 3546] Get certificate status, if any, and send
+                }
+                this.connection_state = CS_CERTIFICATE_STATUS;
 
                 byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
                 if (serverKeyExchange != null)
