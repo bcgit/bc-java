@@ -16,12 +16,12 @@ import org.bouncycastle.util.Store;
 public class CRLValidation
     implements CertPathValidation
 {
-    private final Store crls;
-
+    private Store crls;
     private X500Name workingIssuerName;
 
-    public CRLValidation(Store crls)
+    public CRLValidation(X500Name trustAnchorName, Store crls)
     {
+        this.workingIssuerName = trustAnchorName;
         this.crls = crls;
     }
 
@@ -44,6 +44,11 @@ public class CRLValidation
             }
         });
 
+        if (matches.isEmpty())
+        {
+            throw new CertPathValidationException("CRL for " + workingIssuerName + " not found");
+        }
+
         for (Iterator it = matches.iterator(); it.hasNext();)
         {
             X509CRLHolder crl = (X509CRLHolder)it.next();
@@ -60,11 +65,14 @@ public class CRLValidation
 
     public Memoable copy()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new CRLValidation(workingIssuerName, crls);
     }
 
     public void reset(Memoable other)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        CRLValidation v = (CRLValidation)other;
+
+        this.workingIssuerName = v.workingIssuerName;
+        this.crls = v.crls;
     }
 }

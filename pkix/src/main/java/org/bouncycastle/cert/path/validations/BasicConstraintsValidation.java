@@ -3,6 +3,7 @@ package org.bouncycastle.cert.path.validations;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationContext;
@@ -12,8 +13,7 @@ import org.bouncycastle.util.Memoable;
 public class BasicConstraintsValidation
     implements CertPathValidation
 {
-    private final boolean isMandatory;
-
+    private boolean          isMandatory;
     private BasicConstraints bc;
     private int              maxPathLength;
 
@@ -34,6 +34,8 @@ public class BasicConstraintsValidation
         {
             throw new CertPathValidationException("BasicConstraints path length exceeded");
         }
+
+        context.addHandledExtension(Extension.basicConstraints);
 
         BasicConstraints certBC = BasicConstraints.fromExtensions(certificate.getExtensions());
 
@@ -87,6 +89,10 @@ public class BasicConstraintsValidation
 
     public void reset(Memoable other)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        BasicConstraintsValidation v = (BasicConstraintsValidation)other;
+
+        this.isMandatory = v.isMandatory;
+        this.bc = v.bc;
+        this.maxPathLength = v.maxPathLength;
     }
 }

@@ -7,19 +7,19 @@ public class CertPathValidationResult
 
     private int[] certIndexes;
 
-    public CertPathValidationResult()
+    public CertPathValidationResult(CertPathValidationContext context)
     {
         this.isValid = true;
         cause = null;
     }
 
-    public CertPathValidationResult(int certIndex, int ruleIndex, CertPathValidationException cause)
+    public CertPathValidationResult(CertPathValidationContext context, int certIndex, int ruleIndex, CertPathValidationException cause)
     {
         this.isValid = false;
         this.cause = cause;
     }
 
-    public CertPathValidationResult(int[] certIndexes, int[] ruleIndexes, CertPathValidationException[] cause)
+    public CertPathValidationResult(CertPathValidationContext context, int[] certIndexes, int[] ruleIndexes, CertPathValidationException[] cause)
     {
         // TODO
         this.isValid = false;

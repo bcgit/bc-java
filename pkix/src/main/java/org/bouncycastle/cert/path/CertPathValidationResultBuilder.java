@@ -4,7 +4,7 @@ class CertPathValidationResultBuilder
 {
     public CertPathValidationResult build()
     {
-        return new CertPathValidationResult(0, 0, null);
+        return new CertPathValidationResult(null, 0, 0, null);
     }
 
     public void addException(CertPathValidationException exception)

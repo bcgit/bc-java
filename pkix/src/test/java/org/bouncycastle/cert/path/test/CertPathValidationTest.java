@@ -257,7 +257,7 @@ public class CertPathValidationTest
 
         Store crls = new CollectionStore(crlList);
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), crls)});
 
         if (!result.isValid())
         {

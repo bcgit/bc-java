@@ -30,12 +30,12 @@ public class CertPath
                 }
                 catch (CertPathValidationException e)
                 {
-                    return new CertPathValidationResult(j, i, e);
+                    return new CertPathValidationResult(context, j, i, e);
                 }
             }
         }
 
-        return new CertPathValidationResult();
+        return new CertPathValidationResult(context);
     }
 
     public CertPathValidationResult evaluate(CertPathValidation[] ruleSet)
