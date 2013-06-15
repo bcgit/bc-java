@@ -17,6 +17,12 @@ public class HandshakeType
     public static final short finished = 20;
 
     /*
+     * RFC 3546 2.4
+     */
+    public static final short certificate_url = 21;
+    public static final short certificate_status = 22;
+
+    /*
      *  (DTLS) RFC 4347 4.3.2
      */
     public static final short hello_verify_request = 3;
