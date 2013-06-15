@@ -76,7 +76,7 @@ public class BasicConstraintsValidation
             }
         }
 
-        if (isMandatory && bc != null)
+        if (isMandatory && bc == null)
         {
             throw new CertPathValidationException("BasicConstraints not present in path");
         }
@@ -84,7 +84,12 @@ public class BasicConstraintsValidation
 
     public Memoable copy()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        BasicConstraintsValidation v = new BasicConstraintsValidation(isMandatory);
+
+        v.bc = this.bc;
+        v.maxPathLength = this.maxPathLength;
+
+        return v;
     }
 
     public void reset(Memoable other)

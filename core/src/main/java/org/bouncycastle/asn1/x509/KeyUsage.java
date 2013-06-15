@@ -74,6 +74,17 @@ public class KeyUsage
         this.bitString = bitString;
     }
 
+    /**
+     * Return true if a given usage bit is set, false otherwise.
+     *
+     * @param usages combination of usage flags.
+     * @return true if all bits are set, false otherwise.
+     */
+    public boolean hasUsages(int usages)
+    {
+        return (bitString.intValue() & usages) == usages;
+    }
+
     public byte[] getBytes()
     {
         return bitString.getBytes();
