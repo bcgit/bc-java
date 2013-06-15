@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 public class NewSessionTicket
 {
-
     protected long ticketLifetimeHint;
     protected byte[] ticket;
 
@@ -26,6 +25,12 @@ public class NewSessionTicket
         return ticket;
     }
 
+    /**
+     * Encode this {@link NewSessionTicket} to an {@link OutputStream}.
+     *
+     * @param output the {@link OutputStream} to encode to.
+     * @throws IOException
+     */
     public void encode(OutputStream output)
         throws IOException
     {
@@ -33,6 +38,13 @@ public class NewSessionTicket
         TlsUtils.writeOpaque16(ticket, output);
     }
 
+    /**
+     * Parse a {@link NewSessionTicket} from an {@link InputStream}.
+     *
+     * @param input the {@link InputStream} to parse from.
+     * @return a {@link NewSessionTicket} object.
+     * @throws IOException
+     */
     public static NewSessionTicket parse(InputStream input)
         throws IOException
     {
