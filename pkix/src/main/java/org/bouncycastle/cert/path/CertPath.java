@@ -18,7 +18,7 @@ public class CertPath
 
     public CertPathValidationResult validate(CertPathValidation[] ruleSet)
     {
-        CertPathValidationContext context = new CertPathValidationContext();
+        CertPathValidationContext context = new CertPathValidationContext(CertPathUtils.getCriticalExtensionsOIDs(certificates));
 
         for (int i = 0; i != ruleSet.length; i++)
         {
@@ -26,10 +26,11 @@ public class CertPath
             {
                 try
                 {
+                    context.setIsEndEntity(j == 0);
                     ruleSet[i].validate(context, certificates[j]);
                 }
                 catch (CertPathValidationException e)
-                {
+                {   // TODO: introduce object to hold (i and e)
                     return new CertPathValidationResult(context, j, i, e);
                 }
             }
@@ -40,7 +41,8 @@ public class CertPath
 
     public CertPathValidationResult evaluate(CertPathValidation[] ruleSet)
     {
-        CertPathValidationContext context = new CertPathValidationContext();
+        CertPathValidationContext context = new CertPathValidationContext(CertPathUtils.getCriticalExtensionsOIDs(certificates));
+
         CertPathValidationResultBuilder builder = new CertPathValidationResultBuilder();
 
         for (int i = 0; i != ruleSet.length; i++)
@@ -49,6 +51,7 @@ public class CertPath
             {
                 try
                 {
+                    context.setIsEndEntity(j == 0);
                     ruleSet[i].validate(context, certificates[j]);
                 }
                 catch (CertPathValidationException e)

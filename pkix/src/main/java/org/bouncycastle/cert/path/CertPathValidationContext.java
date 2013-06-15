@@ -9,11 +9,44 @@ import org.bouncycastle.util.Memoable;
 public class CertPathValidationContext
     implements Memoable
 {
+    private Set criticalExtensions;
+
     private Set handledExtensions = new HashSet();
+    private boolean endEntity;
+    private int index;
+
+    public CertPathValidationContext(Set criticalExtensionsOIDs)
+    {
+        this.criticalExtensions = criticalExtensionsOIDs;
+    }
 
     public void addHandledExtension(ASN1ObjectIdentifier extensionIdentifier)
     {
         this.handledExtensions.add(extensionIdentifier);
+    }
+
+    public void setIsEndEntity(boolean isEndEntity)
+    {
+        this.endEntity = isEndEntity;
+    }
+
+    public Set getUnhandledCriticalExtensionOIDs()
+    {
+        Set rv = new HashSet(criticalExtensions);
+
+        rv.removeAll(handledExtensions);
+
+        return rv;
+    }
+
+    /**
+     * Returns true if the current certificate is the end-entity certificate.
+     *
+     * @return if current cert end-entity, false otherwise.
+     */
+    public boolean isEndEntity()
+    {
+        return endEntity;
     }
 
     public Memoable copy()

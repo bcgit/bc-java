@@ -19,7 +19,7 @@ import org.bouncycastle.util.Memoable;
 public class ParentCertIssuedValidation
     implements CertPathValidation
 {
-    private final X509ContentVerifierProviderBuilder contentVerifierProvider;
+    private X509ContentVerifierProviderBuilder contentVerifierProvider;
 
     private X500Name workingIssuerName;
     private SubjectPublicKeyInfo workingPublicKey;
@@ -106,11 +106,22 @@ public class ParentCertIssuedValidation
 
     public Memoable copy()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        ParentCertIssuedValidation v = new ParentCertIssuedValidation(contentVerifierProvider);
+
+        v.workingAlgId = this.workingAlgId;
+        v.workingIssuerName = this.workingIssuerName;
+        v.workingPublicKey = this.workingPublicKey;
+
+        return v;
     }
 
     public void reset(Memoable other)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        ParentCertIssuedValidation v = (ParentCertIssuedValidation)other;
+
+        this.contentVerifierProvider = v.contentVerifierProvider;
+        this.workingAlgId = v.workingAlgId;
+        this.workingIssuerName = v.workingIssuerName;
+        this.workingPublicKey = v.workingPublicKey;
     }
 }

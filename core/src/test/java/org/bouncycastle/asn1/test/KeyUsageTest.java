@@ -25,6 +25,26 @@ public class KeyUsageTest
         BitStringConstantTester.testFlagValueCorrect(6, KeyUsage.cRLSign);
         BitStringConstantTester.testFlagValueCorrect(7, KeyUsage.encipherOnly);
         BitStringConstantTester.testFlagValueCorrect(8, KeyUsage.decipherOnly);
+
+        if (!new KeyUsage(KeyUsage.keyCertSign).hasUsages(KeyUsage.keyCertSign))
+        {
+            fail("usages bit test failed 1");
+        }
+
+        if (new KeyUsage(KeyUsage.cRLSign).hasUsages(KeyUsage.keyCertSign))
+        {
+            fail("usages bit test failed 2");
+        }
+
+        if (!new KeyUsage(KeyUsage.cRLSign | KeyUsage.decipherOnly).hasUsages(KeyUsage.cRLSign | KeyUsage.decipherOnly))
+        {
+            fail("usages bit test failed 3");
+        }
+
+        if (new KeyUsage(KeyUsage.cRLSign | KeyUsage.decipherOnly).hasUsages(KeyUsage.cRLSign | KeyUsage.decipherOnly | KeyUsage.keyCertSign))
+        {
+            fail("usages bit test failed 4");
+        }
     }
 
     public static void main(

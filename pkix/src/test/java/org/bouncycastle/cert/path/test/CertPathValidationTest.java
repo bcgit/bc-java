@@ -4,6 +4,7 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ContentVerifierProviderBuilder;
@@ -11,7 +12,9 @@ import org.bouncycastle.cert.jcajce.JcaX509ContentVerifierProviderBuilder;
 import org.bouncycastle.cert.path.CertPath;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationResult;
+import org.bouncycastle.cert.path.validations.BasicConstraintsValidation;
 import org.bouncycastle.cert.path.validations.CRLValidation;
+import org.bouncycastle.cert.path.validations.KeyUsageValidation;
 import org.bouncycastle.cert.path.validations.ParentCertIssuedValidation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.CollectionStore;
@@ -243,11 +246,11 @@ public class CertPathValidationTest
         CertPath path = new CertPath(new X509CertificateHolder[] { finalCert, interCert });
         X509ContentVerifierProviderBuilder verifier = new JcaX509ContentVerifierProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME);
 
-        CertPathValidationResult result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier)});
+        CertPathValidationResult result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation()});
 
         if (!result.isValid())
         {
-            fail("basic validation not working");
+            fail("basic validation (1) not working");
         }
 
         List crlList = new ArrayList();
@@ -257,11 +260,28 @@ public class CertPathValidationTest
 
         Store crls = new CollectionStore(crlList);
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), crls)});
 
         if (!result.isValid())
         {
-            fail("basic validation not working");
+            fail("basic validation (2) not working");
+        }
+
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), crls)});
+
+        if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 1
+            || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints))
+        {
+            fail("basic validation (3) not working");
+        }
+
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), crls)});
+
+        if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 2
+            || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints)
+            || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.keyUsage))
+        {
+            fail("basic validation (4) not working");
         }
 
         path = new CertPath(new X509CertificateHolder[] { interCert, finalCert });
