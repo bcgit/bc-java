@@ -5,7 +5,9 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.path.CertPathValidation;
+import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
+import org.bouncycastle.util.Memoable;
 
 public class BasicConstraintsValidation
     implements CertPathValidation
@@ -25,7 +27,7 @@ public class BasicConstraintsValidation
         this.isMandatory = isMandatory;
     }
 
-    public void validate(int index, X509CertificateHolder certificate)
+    public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
         if (maxPathLength < 0)
@@ -76,5 +78,15 @@ public class BasicConstraintsValidation
         {
             throw new CertPathValidationException("BasicConstraints not present in path");
         }
+    }
+
+    public Memoable copy()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void reset(Memoable other)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

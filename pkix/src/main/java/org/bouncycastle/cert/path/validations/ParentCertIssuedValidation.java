@@ -11,8 +11,10 @@ import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ContentVerifierProviderBuilder;
 import org.bouncycastle.cert.path.CertPathValidation;
+import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Memoable;
 
 public class ParentCertIssuedValidation
     implements CertPathValidation
@@ -28,7 +30,7 @@ public class ParentCertIssuedValidation
         this.contentVerifierProvider = contentVerifierProvider;
     }
 
-    public void validate(int index, X509CertificateHolder certificate)
+    public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
         if (workingIssuerName != null)
@@ -100,5 +102,15 @@ public class ParentCertIssuedValidation
     private boolean isNull(ASN1Encodable obj)
     {
         return obj == null || obj instanceof ASN1Null;
+    }
+
+    public Memoable copy()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void reset(Memoable other)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
