@@ -9,7 +9,9 @@ import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -393,6 +395,17 @@ public class TlsUtils
             throw new EOFException();
         }
         return (i1 << 8) | i2;
+    }
+
+    public static ASN1Primitive readASN1Object(byte[] encoding) throws IOException
+    {
+        ASN1InputStream asn1 = new ASN1InputStream(encoding);
+        ASN1Primitive result = asn1.readObject();
+        if (null != asn1.readObject())
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return result;
     }
 
     public static void writeGMTUnixTime(byte[] buf, int offset)
