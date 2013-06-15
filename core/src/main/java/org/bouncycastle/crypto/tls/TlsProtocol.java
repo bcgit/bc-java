@@ -32,18 +32,19 @@ public abstract class TlsProtocol
     protected static final short CS_SERVER_HELLO = 2;
     protected static final short CS_SERVER_SUPPLEMENTAL_DATA = 3;
     protected static final short CS_SERVER_CERTIFICATE = 4;
-    protected static final short CS_SERVER_KEY_EXCHANGE = 5;
-    protected static final short CS_CERTIFICATE_REQUEST = 6;
-    protected static final short CS_SERVER_HELLO_DONE = 7;
-    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 8;
-    protected static final short CS_CLIENT_CERTIFICATE = 9;
-    protected static final short CS_CLIENT_KEY_EXCHANGE = 10;
-    protected static final short CS_CERTIFICATE_VERIFY = 11;
-    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 12;
-    protected static final short CS_CLIENT_FINISHED = 13;
-    protected static final short CS_SERVER_SESSION_TICKET = 14;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 15;
-    protected static final short CS_SERVER_FINISHED = 16;
+    protected static final short CS_CERTIFICATE_STATUS = 5;
+    protected static final short CS_SERVER_KEY_EXCHANGE = 6;
+    protected static final short CS_CERTIFICATE_REQUEST = 7;
+    protected static final short CS_SERVER_HELLO_DONE = 8;
+    protected static final short CS_CLIENT_SUPPLEMENTAL_DATA = 9;
+    protected static final short CS_CLIENT_CERTIFICATE = 10;
+    protected static final short CS_CLIENT_KEY_EXCHANGE = 11;
+    protected static final short CS_CERTIFICATE_VERIFY = 12;
+    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 13;
+    protected static final short CS_CLIENT_FINISHED = 14;
+    protected static final short CS_SERVER_SESSION_TICKET = 15;
+    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 16;
+    protected static final short CS_SERVER_FINISHED = 17;
 
     /*
      * Queues for data from some protocols.
