@@ -18,13 +18,15 @@ public class CertPath
 
     public CertPathValidationResult validate(CertPathValidation[] ruleSet)
     {
+        CertPathValidationContext context = new CertPathValidationContext();
+
         for (int i = 0; i != ruleSet.length; i++)
         {
             for (int j = certificates.length - 1; j >= 0; j--)
             {
                 try
                 {
-                    ruleSet[i].validate(i, certificates[j]);
+                    ruleSet[i].validate(context, certificates[j]);
                 }
                 catch (CertPathValidationException e)
                 {
@@ -38,6 +40,7 @@ public class CertPath
 
     public CertPathValidationResult evaluate(CertPathValidation[] ruleSet)
     {
+        CertPathValidationContext context = new CertPathValidationContext();
         CertPathValidationResultBuilder builder = new CertPathValidationResultBuilder();
 
         for (int i = 0; i != ruleSet.length; i++)
@@ -46,7 +49,7 @@ public class CertPath
             {
                 try
                 {
-                    ruleSet[i].validate(i, certificates[j]);
+                    ruleSet[i].validate(context, certificates[j]);
                 }
                 catch (CertPathValidationException e)
                 {

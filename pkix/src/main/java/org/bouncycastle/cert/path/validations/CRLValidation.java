@@ -7,7 +7,9 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.path.CertPathValidation;
+import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 
@@ -23,7 +25,7 @@ public class CRLValidation
         this.crls = crls;
     }
 
-    public void validate(int index, X509CertificateHolder certificate)
+    public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
         // TODO: add handling of delta CRLs
@@ -54,5 +56,15 @@ public class CRLValidation
         }
 
         this.workingIssuerName = certificate.getSubject();
+    }
+
+    public Memoable copy()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void reset(Memoable other)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
