@@ -4,14 +4,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PSSParameterSpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +33,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jcajce.JcaJceHelper;
@@ -399,6 +404,33 @@ class OperatorHelper
         catch (NoSuchProviderException e)
         {
             throw new OpCertificateException("cannot find factory provider: " + e.getMessage(), e);
+        }
+    }
+
+    public PublicKey convertPublicKey(SubjectPublicKeyInfo publicKeyInfo)
+        throws OperatorCreationException
+    {
+        try
+        {
+            KeyFactory keyFact = helper.createKeyFactory(publicKeyInfo.getAlgorithm().getAlgorithm().getId());
+
+            return keyFact.generatePublic(new X509EncodedKeySpec(publicKeyInfo.getEncoded()));
+        }
+        catch (IOException e)
+        {
+            throw new OperatorCreationException("cannot get encoded form of key: " + e.getMessage(), e);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new OperatorCreationException("cannot create key factory: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new OperatorCreationException("cannot find factory provider: " + e.getMessage(), e);
+        }
+        catch (InvalidKeySpecException e)
+        {
+            throw new OperatorCreationException("cannot create key factory: " + e.getMessage(), e);
         }
     }
 
