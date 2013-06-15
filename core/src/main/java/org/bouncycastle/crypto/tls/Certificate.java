@@ -127,11 +127,7 @@ public class Certificate
             left -= 3 + size;
 
             byte[] buf = TlsUtils.readFully(size, input);
-
-            ByteArrayInputStream bis = new ByteArrayInputStream(buf);
-            ASN1Primitive asn1 = new ASN1InputStream(bis).readObject();
-            TlsProtocol.assertEmpty(bis);
-
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(buf);
             tmp.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1));
         }
         certs = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
