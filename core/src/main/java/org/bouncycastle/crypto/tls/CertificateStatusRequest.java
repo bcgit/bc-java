@@ -25,7 +25,8 @@ public class CertificateStatusRequest
         return statusType;
     }
 
-    public Object getRequest() {
+    public Object getRequest()
+    {
         return request;
     }
 
