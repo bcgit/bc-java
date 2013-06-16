@@ -50,9 +50,15 @@
     <property name="lcrypto.target.classes.dir" value="${lcrypto.target.dir}/classes" />
     <property name="lcrypto.target.docs.dir" value="${lcrypto.target.dir}/docs" />
 
+    <path id="project.classpath">
+      <pathelement location="/opt/javamail/mail.jar" />
+      <pathelement location="/opt/jaf/activation.jar" />
+      <pathelement location="/opt/junit/junit.jar" />
+    </path>
+
     <target name="pack200-on" if="pack200.enabled">
         <taskdef name="pack200" classname="com.sun.tools.apache.ant.pack200.Pack200Task"
-            classpath="lib/Pack200Task.jar"/>
+                 classpath="lib/Pack200Task.jar"/>
         <macrodef name="packJar">
             <attribute name="jarbase" />
             <element name="manifest-element" />
@@ -97,9 +103,10 @@
                     destdir="${build.dir}/@{target}/classes"
                     debug="${release.debug}">
                     <classpath>
-                        <fileset dir="${artifacts.jars.dir}">
-                            <include name="**/*.jar" />
-                        </fileset>
+                      <path refid="project.classpath" />
+                      <fileset dir="${artifacts.jars.dir}">
+                        <include name="**/*.jar" />
+                      </fileset>
                     </classpath>
                 </javac>
                 <copy todir="${build.dir}/@{target}/classes">
@@ -132,9 +139,10 @@
                     destdir="${build.dir}/@{target}/classes"
                     debug="${release.debug}">
                     <classpath>
-                        <fileset dir="${artifacts.jars.dir}">
-                            <include name="**/*.jar" />
-                        </fileset>
+                      <path refid="project.classpath" />
+                      <fileset dir="${artifacts.jars.dir}">
+                        <include name="**/*.jar" />
+                      </fileset>
                     </classpath>
                 </javac>
                 <copy todir="${build.dir}/@{target}/classes">
@@ -194,10 +202,10 @@
                 <docElements/>
                 <arg value="${javadoc.args}" />
                 <classpath>
-                    <fileset dir="${artifacts.jars.dir}">
-                        <include name="**/*.jar" />
-                    </fileset>
-                    <pathelement path="${env.CLASSPATH}" />
+                  <path refid="project.classpath" />
+                  <fileset dir="${artifacts.jars.dir}">
+                    <include name="**/*.jar" />
+                  </fileset>
                 </classpath>
             </javadoc>
             </sequential>
@@ -237,6 +245,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/bcpg/**/*.java" />
+                 <include name="org/bouncycastle/openpgp/PGPException.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
@@ -612,10 +621,11 @@
     <target name="test">
         <junit fork="yes" dir="${basedir}" failureProperty="test.failed">
             <classpath>
-                <fileset dir="${artifacts.jars.dir}">
-                    <include name="**/*.jar" />
-                    <exclude name="**/bcprov-jdk*.jar" />
-                </fileset>
+              <path refid="project.classpath" />
+              <fileset dir="${artifacts.jars.dir}">
+                <include name="**/*.jar" />
+                <exclude name="**/bcprov-jdk*.jar" />
+              </fileset>
             </classpath>
             <sysproperty key="bc.test.data.home" value="core/src/test/data" />
 
@@ -641,10 +651,11 @@
     <target name="test-lw">
         <junit fork="yes" dir="${basedir}" failureProperty="test.failed">
             <classpath>
-                <fileset dir="${artifacts.jars.dir}">
-                    <include name="**/*.jar" />
-                    <exclude name="**/bcprov-jdk*.jar" />
-                </fileset>
+              <path refid="project.classpath" />
+              <fileset dir="${artifacts.jars.dir}">
+                <include name="**/*.jar" />
+                <exclude name="**/bcprov-jdk*.jar" />
+              </fileset>
             </classpath>
 
             <formatter type="xml" />
