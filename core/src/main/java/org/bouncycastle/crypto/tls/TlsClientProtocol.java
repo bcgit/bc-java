@@ -29,6 +29,7 @@ public class TlsClientProtocol
 
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
+    protected CertificateStatus certificateStatus = null;
     protected CertificateRequest certificateRequest = null;
 
     private static SecureRandom createSecureRandom()
@@ -187,12 +188,12 @@ public class TlsClientProtocol
                     this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                 }
 
-                /*
-                 * TODO[RFC 3546] Parse the CertificateStatus message. We should bundle any
-                 * CertificateStatus message with the actual Certificate since the authentication
-                 * will want to use it.
-                 */
-                Streams.drain(buf);
+                this.certificateStatus = CertificateStatus.parse(buf);
+
+                assertEmpty(buf);
+
+                // TODO[RFC 3546] Figure out how to provide this to the client/authentication.
+
                 this.connection_state = CS_CERTIFICATE_STATUS;
                 break;
             default:
