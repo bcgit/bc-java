@@ -11,13 +11,23 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
+import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
+import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -29,6 +39,7 @@ import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
 import org.bouncycastle.jce.spec.ElGamalPublicKeySpec;
@@ -91,6 +102,22 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("ElGamal");
 
                 return fact.generatePublic(elSpec);
+            case PublicKeyAlgorithmTags.EC:
+                ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
+                ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
+                                                    new ECPoint(ecdhK.getPoint().getX().toBigInteger(), ecdhK.getPoint().getY().toBigInteger()),
+                                                    convertX9Parameters(ecdhK.getCurveOID(), NISTNamedCurves.getByOID(ecdhK.getCurveOID())));
+                fact = helper.createKeyFactory("ECDH");
+
+                return fact.generatePublic(ecDhSpec);
+            case PublicKeyAlgorithmTags.ECDSA:
+                ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
+                ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
+                                                    new ECPoint(ecdsaK.getPoint().getX().toBigInteger(), ecdsaK.getPoint().getY().toBigInteger()),
+                                                    convertX9Parameters(ecdsaK.getCurveOID(), NISTNamedCurves.getByOID(ecdsaK.getCurveOID())));
+                fact = helper.createKeyFactory("ECDSA");
+
+                return fact.generatePublic(ecDsaSpec);
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
@@ -193,6 +220,24 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("DSA");
 
                 return fact.generatePrivate(dsaPrivSpec);
+            case PublicKeyAlgorithmTags.EC:
+                ECDHPublicBCPGKey ecdhPub = (ECDHPublicBCPGKey)pubPk.getKey();
+                ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
+                ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
+                                                    ecdhK.getX(),
+                                                    convertX9Parameters(ecdhPub.getCurveOID(), NISTNamedCurves.getByOID(ecdhPub.getCurveOID())));
+                fact = helper.createKeyFactory("ECDH");
+
+                return fact.generatePrivate(ecDhSpec);
+            case PublicKeyAlgorithmTags.ECDSA:
+                ECDSAPublicBCPGKey ecdsaPub = (ECDSAPublicBCPGKey)pubPk.getKey();
+                ECSecretBCPGKey ecdsaK = (ECSecretBCPGKey)privPk;
+                ECPrivateKeySpec ecDsaSpec = new ECPrivateKeySpec(
+                                                    ecdsaK.getX(),
+                                                    convertX9Parameters(ecdsaPub.getCurveOID(), NISTNamedCurves.getByOID(ecdsaPub.getCurveOID())));
+                fact = helper.createKeyFactory("ECDSA");
+
+                return fact.generatePrivate(ecDsaSpec);
             case PGPPublicKey.ELGAMAL_ENCRYPT:
             case PGPPublicKey.ELGAMAL_GENERAL:
                 ElGamalPublicBCPGKey elPub = (ElGamalPublicBCPGKey)pubPk.getKey();
@@ -254,5 +299,15 @@ public class JcaPGPKeyConverter
         }
 
         return new PGPPrivateKey(pub.getKeyID(), pub.getPublicKeyPacket(), privPk);
+    }
+
+    private ECParameterSpec convertX9Parameters(ASN1ObjectIdentifier curveOid, X9ECParameters curveParameters)
+    {
+        return new ECNamedCurveSpec(curveOid.getId(),
+                                    curveParameters.getCurve(),
+                                    curveParameters.getG(),
+                                    curveParameters.getN(),
+                                    curveParameters.getH(),
+                                    curveParameters.getSeed());
     }
 }
