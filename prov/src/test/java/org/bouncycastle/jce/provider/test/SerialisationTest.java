@@ -1,23 +1,19 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -186,21 +182,6 @@ public class SerialisationTest
         if (!pubExp.equals(pub2.getPublicExponent()))
         {
             fail("public key 2 exponent mismatch");
-        }
-        try
-        {
-            java.security.Security.addProvider(new BouncyCastleProvider());
-            java.security.KeyFactory fact = java.security.KeyFactory.getInstance("RSA", "BC");
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            ObjectOutputStream oOUt = new ObjectOutputStream(bOut);
-            oOUt.writeObject(fact.generatePublic(new X509EncodedKeySpec(pub.getEncoded())));
-            oOUt.close();
-
-            new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray())).readObject();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
         RSAPrivateCrtKey priv = (RSAPrivateCrtKey)readObject(rsaPriv);
