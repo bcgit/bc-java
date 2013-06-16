@@ -90,9 +90,9 @@ public class Certificate
         int totalLength = 0;
         for (int i = 0; i < this.certificateList.length; ++i)
         {
-            byte[] encCert = certificateList[i].getEncoded(ASN1Encoding.DER);
-            encCerts.addElement(encCert);
-            totalLength += encCert.length + 3;
+            byte[] derEncoding = certificateList[i].getEncoded(ASN1Encoding.DER);
+            encCerts.addElement(derEncoding);
+            totalLength += derEncoding.length + 3;
         }
 
         TlsUtils.writeUint24(totalLength, output);
@@ -126,8 +126,8 @@ public class Certificate
             int size = TlsUtils.readUint24(input);
             left -= 3 + size;
 
-            byte[] buf = TlsUtils.readFully(size, input);
-            ASN1Primitive asn1 = TlsUtils.readASN1Object(buf);
+            byte[] derEncoding = TlsUtils.readFully(size, input);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
             tmp.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1));
         }
         certs = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
