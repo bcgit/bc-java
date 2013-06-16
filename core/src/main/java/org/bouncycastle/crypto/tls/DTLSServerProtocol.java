@@ -154,11 +154,11 @@ public class DTLSServerProtocol
 
         if (state.allowCertificateStatus)
         {
-            // TODO[RFC 3546] Get certificate status, if any, and send
-            CertificateStatus certificateStatus = null; //tlsServer.getCertificateStatus();
+            CertificateStatus certificateStatus = state.server.getCertificateStatus();
             if (certificateStatus != null)
             {
-//                sendCertificateStatusMessage(certificateStatus);
+                byte[] certificateStatusBody = generateCertificateStatus(state, certificateStatus);
+                handshake.sendMessage(HandshakeType.certificate_status, certificateStatusBody);
             }
         }
 
@@ -294,6 +294,14 @@ public class DTLSServerProtocol
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificateRequest.encode(buf);
+        return buf.toByteArray();
+    }
+
+    protected byte[] generateCertificateStatus(ServerHandshakeState state, CertificateStatus certificateStatus)
+        throws IOException
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        certificateStatus.encode(buf);
         return buf.toByteArray();
     }
 

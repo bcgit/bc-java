@@ -180,11 +180,10 @@ public class TlsServerProtocol
 
                 if (this.allowCertificateStatus)
                 {
-                    // TODO[RFC 3546] Get certificate status, if any, and send
-                    CertificateStatus certificateStatus = null; //tlsServer.getCertificateStatus();
+                    CertificateStatus certificateStatus = tlsServer.getCertificateStatus();
                     if (certificateStatus != null)
                     {
-//                        sendCertificateStatusMessage(certificateStatus);
+                        sendCertificateStatusMessage(certificateStatus);
                     }
                 }
 
@@ -627,6 +626,24 @@ public class TlsServerProtocol
         TlsUtils.writeUint24(0, buf);
 
         certificateRequest.encode(buf);
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
+
+        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+    }
+
+    protected void sendCertificateStatusMessage(CertificateStatus certificateStatus)
+        throws IOException
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        TlsUtils.writeUint8(HandshakeType.certificate_status, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
+        certificateStatus.encode(buf);
         byte[] message = buf.toByteArray();
 
         // Patch actual length back in
