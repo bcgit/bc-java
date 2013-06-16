@@ -145,11 +145,21 @@ public class DTLSClientProtocol
             state.keyExchange.skipServerCredentials();
         }
 
+        // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
+        if (serverCertificate == null || serverCertificate.isEmpty())
+        {
+            state.allowCertificateStatus = false;
+        }
+
         if (serverMessage.getType() == HandshakeType.certificate_status)
         {
-            // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
-            if (serverCertificate == null || serverCertificate.isEmpty())
+            if (!state.allowCertificateStatus)
             {
+                /*
+                 * RFC 3546 3.6. If a server returns a "CertificateStatus" message, then the
+                 * server MUST have included an extension of type "status_request" with empty
+                 * "extension_data" in the extended server hello..
+                 */
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
@@ -558,6 +568,8 @@ public class DTLSClientProtocol
                 }
             }
 
+            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
+            state.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
             state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
         }
 
@@ -636,6 +648,7 @@ public class DTLSClientProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;

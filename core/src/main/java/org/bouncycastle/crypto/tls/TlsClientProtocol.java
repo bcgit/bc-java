@@ -17,7 +17,6 @@ import org.bouncycastle.util.io.Streams;
 public class TlsClientProtocol
     extends TlsProtocol
 {
-
     protected TlsClient tlsClient = null;
     protected TlsClientContextImpl tlsClientContext = null;
 
@@ -108,7 +107,6 @@ public class TlsClientProtocol
     protected void handleChangeCipherSpecMessage()
         throws IOException
     {
-
         switch (this.connection_state)
         {
         case CS_CLIENT_FINISHED:
@@ -155,6 +153,12 @@ public class TlsClientProtocol
 
                 assertEmpty(buf);
 
+                // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
+                if (serverCertificate == null || serverCertificate.isEmpty())
+                {
+                    this.allowCertificateStatus = false;
+                }
+
                 this.keyExchange.processServerCertificate(serverCertificate);
 
                 this.authentication = tlsClient.getAuthentication();
@@ -173,6 +177,16 @@ public class TlsClientProtocol
             switch (this.connection_state)
             {
             case CS_SERVER_CERTIFICATE:
+                if (!this.allowCertificateStatus)
+                {
+                    /*
+                     * RFC 3546 3.6. If a server returns a "CertificateStatus" message, then the
+                     * server MUST have included an extension of type "status_request" with empty
+                     * "extension_data" in the extended server hello..
+                     */
+                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                }
+
                 /*
                  * TODO[RFC 3546] Parse the CertificateStatus message. We should bundle any
                  * CertificateStatus message with the actual Certificate since the authentication
@@ -462,7 +476,6 @@ public class TlsClientProtocol
     protected void handleSupplementalData(Vector serverSupplementalData)
         throws IOException
     {
-
         this.tlsClient.processServerSupplementalData(serverSupplementalData);
         this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
@@ -473,7 +486,6 @@ public class TlsClientProtocol
     protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
         TlsProtocol.assertEmpty(buf);
@@ -484,7 +496,6 @@ public class TlsClientProtocol
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
         if (server_version.isDTLS())
         {
@@ -625,6 +636,8 @@ public class TlsClientProtocol
                 }
             }
 
+            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
+            this.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
             this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
         }
 
@@ -655,7 +668,6 @@ public class TlsClientProtocol
     protected void sendClientHelloMessage()
         throws IOException
     {
-
         recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
