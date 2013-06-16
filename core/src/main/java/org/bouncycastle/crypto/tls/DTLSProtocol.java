@@ -10,12 +10,10 @@ import org.bouncycastle.util.Arrays;
 
 public abstract class DTLSProtocol
 {
-
     protected final SecureRandom secureRandom;
 
     protected DTLSProtocol(SecureRandom secureRandom)
     {
-
         if (secureRandom == null)
         {
             throw new IllegalArgumentException("'secureRandom' cannot be null");
@@ -27,7 +25,6 @@ public abstract class DTLSProtocol
     protected void processFinished(byte[] body, byte[] expected_verify_data)
         throws IOException
     {
-
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
@@ -43,7 +40,6 @@ public abstract class DTLSProtocol
     protected static byte[] generateCertificate(Certificate certificate)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificate.encode(buf);
         return buf.toByteArray();
@@ -52,7 +48,6 @@ public abstract class DTLSProtocol
     protected static byte[] generateSupplementalData(Vector supplementalData)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsProtocol.writeSupplementalData(buf, supplementalData);
         return buf.toByteArray();
@@ -61,7 +56,6 @@ public abstract class DTLSProtocol
     protected static void validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
         throws IOException
     {
-
         switch (selectedCipherSuite)
         {
         case CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5:
