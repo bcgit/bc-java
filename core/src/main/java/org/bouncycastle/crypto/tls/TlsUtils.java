@@ -401,6 +401,10 @@ public class TlsUtils
     {
         ASN1InputStream asn1 = new ASN1InputStream(encoding);
         ASN1Primitive result = asn1.readObject();
+        if (null == result)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
         if (null != asn1.readObject())
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);

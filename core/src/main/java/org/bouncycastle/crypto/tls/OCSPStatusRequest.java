@@ -108,10 +108,6 @@ public class OCSPStatusRequest
                 {
                     byte[] derEncoding = TlsUtils.readOpaque16(buf);
                     ResponderID responderID = ResponderID.getInstance(TlsUtils.readASN1Object(derEncoding));
-                    if (responderID == null)
-                    {
-                        throw new TlsFatalAlert(AlertDescription.decode_error);
-                    }
                     responderIDList.addElement(responderID);
                 }
                 while (buf.available() > 0);
@@ -125,10 +121,6 @@ public class OCSPStatusRequest
             {
                 byte[] derEncoding = TlsUtils.readFully(length, input);
                 requestExtensions = Extensions.getInstance(TlsUtils.readASN1Object(derEncoding));
-                if (requestExtensions == null)
-                {
-                    throw new TlsFatalAlert(AlertDescription.decode_error);
-                }
             }
         }
 
