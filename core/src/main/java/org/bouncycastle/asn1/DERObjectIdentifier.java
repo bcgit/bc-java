@@ -38,7 +38,22 @@ public class DERObjectIdentifier
 
         if (obj instanceof byte[])
         {
-            return ASN1ObjectIdentifier.fromOctetString((byte[])obj);
+            byte[] enc = (byte[])obj;
+            if (enc[0] == BERTags.OBJECT_IDENTIFIER)
+            {
+                try
+                {
+                    return (ASN1ObjectIdentifier)fromByteArray(enc);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("failed to construct sequence from byte[]: " + e.getMessage());
+                }
+            }
+            else
+            {    // TODO: this really shouldn't be supported here...
+                return ASN1ObjectIdentifier.fromOctetString((byte[])obj);
+            }
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
