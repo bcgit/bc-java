@@ -146,9 +146,20 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.certificate, certificateBody);
         }
 
-        if (serverCertificate != null && !serverCertificate.isEmpty())
+        // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
+        if (serverCertificate == null || serverCertificate.isEmpty())
+        {
+            state.allowCertificateStatus = false;
+        }
+
+        if (state.allowCertificateStatus)
         {
             // TODO[RFC 3546] Get certificate status, if any, and send
+            CertificateStatus certificateStatus = null; //tlsServer.getCertificateStatus();
+            if (certificateStatus != null)
+            {
+//                sendCertificateStatusMessage(certificateStatus);
+            }
         }
 
         byte[] serverKeyExchange = state.keyExchange.generateServerKeyExchange();
@@ -376,7 +387,10 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
+            state.allowCertificateStatus = state.serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
             state.expectSessionTicket = state.serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
+
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
         }
 
@@ -617,6 +631,7 @@ public class DTLSServerProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         Hashtable serverExtensions = null;
         TlsKeyExchange keyExchange = null;

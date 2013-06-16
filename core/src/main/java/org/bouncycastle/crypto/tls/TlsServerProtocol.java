@@ -17,7 +17,6 @@ import org.bouncycastle.util.Arrays;
 public class TlsServerProtocol
     extends TlsProtocol
 {
-
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
 
@@ -51,7 +50,6 @@ public class TlsServerProtocol
     public void accept(TlsServer tlsServer)
         throws IOException
     {
-
         if (tlsServer == null)
         {
             throw new IllegalArgumentException("'tlsServer' cannot be null");
@@ -91,7 +89,6 @@ public class TlsServerProtocol
     protected void handleChangeCipherSpecMessage()
         throws IOException
     {
-
         switch (this.connection_state)
         {
         case CS_CLIENT_KEY_EXCHANGE:
@@ -117,7 +114,6 @@ public class TlsServerProtocol
     protected void handleHandshakeMessage(short type, byte[] data)
         throws IOException
     {
-
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
 
         switch (type)
@@ -176,10 +172,22 @@ public class TlsServerProtocol
                 }
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
-                if (serverCertificate != null && !serverCertificate.isEmpty())
+                // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
+                if (serverCertificate == null || serverCertificate.isEmpty())
+                {
+                    this.allowCertificateStatus = false;
+                }
+
+                if (this.allowCertificateStatus)
                 {
                     // TODO[RFC 3546] Get certificate status, if any, and send
+                    CertificateStatus certificateStatus = null; //tlsServer.getCertificateStatus();
+                    if (certificateStatus != null)
+                    {
+//                        sendCertificateStatusMessage(certificateStatus);
+                    }
                 }
+
                 this.connection_state = CS_CERTIFICATE_STATUS;
 
                 byte[] serverKeyExchange = this.keyExchange.generateServerKeyExchange();
@@ -346,7 +354,7 @@ public class TlsServerProtocol
                 processFinishedMessage(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
-                if (expectSessionTicket)
+                if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
                 }
@@ -404,7 +412,6 @@ public class TlsServerProtocol
     protected void notifyClientCertificate(Certificate clientCertificate)
         throws IOException
     {
-
         if (certificateRequest == null)
         {
             throw new IllegalStateException();
@@ -450,7 +457,6 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         Certificate clientCertificate = Certificate.parse(buf);
 
         assertEmpty(buf);
@@ -461,7 +467,6 @@ public class TlsServerProtocol
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         byte[] clientCertificateSignature = TlsUtils.readOpaque16(buf);
 
         assertEmpty(buf);
@@ -487,7 +492,6 @@ public class TlsServerProtocol
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
         if (client_version.isDTLS())
         {
@@ -596,7 +600,6 @@ public class TlsServerProtocol
     protected void receiveClientKeyExchangeMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         this.keyExchange.processClientKeyExchange(buf);
 
         assertEmpty(buf);
@@ -617,7 +620,6 @@ public class TlsServerProtocol
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
 
@@ -636,7 +638,6 @@ public class TlsServerProtocol
     protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket)
         throws IOException
     {
-
         if (newSessionTicket == null)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -660,7 +661,6 @@ public class TlsServerProtocol
     protected void sendServerHelloMessage()
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.server_hello, buf);
 
@@ -740,7 +740,10 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
+            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
+            this.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
             this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
+
             writeExtensions(buf, this.serverExtensions);
         }
 
@@ -755,7 +758,6 @@ public class TlsServerProtocol
     protected void sendServerHelloDoneMessage()
         throws IOException
     {
-
         byte[] message = new byte[4];
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
         TlsUtils.writeUint24(0, message, 1);

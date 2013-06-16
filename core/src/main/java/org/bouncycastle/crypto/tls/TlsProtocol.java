@@ -18,7 +18,6 @@ import org.bouncycastle.util.Integers;
  */
 public abstract class TlsProtocol
 {
-
     protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
 
@@ -73,6 +72,7 @@ public abstract class TlsProtocol
 
     protected short connection_state = CS_START;
     protected boolean secure_renegotiation = false;
+    protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
 
     public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
@@ -94,13 +94,11 @@ public abstract class TlsProtocol
     protected void handleWarningMessage(short description)
         throws IOException
     {
-
     }
 
     protected void completeHandshake()
         throws IOException
     {
-
         this.expected_verify_data = null;
 
         /*
@@ -339,7 +337,6 @@ public abstract class TlsProtocol
     protected int readApplicationData(byte[] buf, int offset, int len)
         throws IOException
     {
-
         if (len < 1)
         {
             return 0;
@@ -552,7 +549,6 @@ public abstract class TlsProtocol
     protected void processFinishedMessage(ByteArrayInputStream buf)
         throws IOException
     {
-
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         assertEmpty(buf);
@@ -572,7 +568,6 @@ public abstract class TlsProtocol
     protected void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
         throws IOException
     {
-
         getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);
 
         byte[] error = new byte[2];
@@ -591,7 +586,6 @@ public abstract class TlsProtocol
     protected void sendCertificateMessage(Certificate certificate)
         throws IOException
     {
-
         if (certificate == null)
         {
             certificate = Certificate.EMPTY_CHAIN;
@@ -652,7 +646,6 @@ public abstract class TlsProtocol
     protected void sendSupplementalDataMessage(Vector supplementalData)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeUint8(HandshakeType.supplemental_data, buf);
 
@@ -763,7 +756,6 @@ public abstract class TlsProtocol
     protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         TlsUtils.writeOpaque8(renegotiated_connection, buf);
         return buf.toByteArray();
@@ -772,7 +764,6 @@ public abstract class TlsProtocol
     protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
         throws IOException
     {
-
         byte[] pre_master_secret = keyExchange.generatePremasterSecret();
 
         try
@@ -796,7 +787,6 @@ public abstract class TlsProtocol
     protected static Hashtable readExtensions(ByteArrayInputStream input)
         throws IOException
     {
-
         if (input.available() < 1)
         {
             return null;
@@ -831,7 +821,6 @@ public abstract class TlsProtocol
     protected static Vector readSupplementalDataMessage(ByteArrayInputStream input)
         throws IOException
     {
-
         byte[] supp_data = TlsUtils.readOpaque24(input);
 
         assertEmpty(input);
@@ -854,7 +843,6 @@ public abstract class TlsProtocol
     protected static void writeExtensions(OutputStream output, Hashtable extensions)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         Enumeration keys = extensions.keys();
@@ -875,7 +863,6 @@ public abstract class TlsProtocol
     protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
         throws IOException
     {
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         for (int i = 0; i < supplementalData.size(); ++i)
