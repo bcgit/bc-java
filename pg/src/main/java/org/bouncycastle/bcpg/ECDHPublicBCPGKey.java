@@ -24,11 +24,14 @@ public class ECDHPublicBCPGKey
     {
         super(in);
 
-        byte[] kdfParameters = readBytesOfEncodedLength(in);
+        int length = in.read();
+        byte[] kdfParameters =  new byte[length];
         if (kdfParameters.length != 3)
         {
-            throw new IllegalArgumentException("kdf parameters size of 3 expected.");
+            throw new IllegalStateException("kdf parameters size of 3 expected.");
         }
+
+        in.read(kdfParameters);
 
         reserved = kdfParameters[0];
         hashFunctionId = kdfParameters[1];
@@ -39,12 +42,12 @@ public class ECDHPublicBCPGKey
     }
 
     public ECDHPublicBCPGKey(
-        ECPoint point,
         ASN1ObjectIdentifier oid,
+        ECPoint point,
         int hashAlgorithm,
         int symmetricKeyAlgorithm)
     {
-        super(point, oid);
+        super(oid, point);
 
         reserved = 1;
         hashFunctionId = (byte)hashAlgorithm;

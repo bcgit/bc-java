@@ -29,11 +29,12 @@ public abstract class ECPublicBCPGKey
         throws IOException
     {
         this.oid = ASN1ObjectIdentifier.getInstance(ASN1Primitive.fromByteArray(readBytesOfEncodedLength(in)));
+        this.point = decodePoint(new MPInteger(in).getValue(), oid);
     }
 
     protected ECPublicBCPGKey(
-        ECPoint point,
-        ASN1ObjectIdentifier oid)
+        ASN1ObjectIdentifier oid,
+        ECPoint point)
     {
         this.point = point;
         this.oid = oid;
@@ -118,8 +119,10 @@ public abstract class ECPublicBCPGKey
             throw new IOException("future extensions not yet implemented.");
         }
 
-        byte[] buffer = new byte[length];
-        in.readFully(buffer);
+        byte[] buffer = new byte[length + 2];
+        in.readFully(buffer, 2, buffer.length - 2);
+        buffer[0] = (byte)0x06;
+        buffer[1] = (byte)length;
         return buffer;
     }
 

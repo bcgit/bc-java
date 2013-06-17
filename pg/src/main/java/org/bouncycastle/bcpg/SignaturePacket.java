@@ -1,13 +1,13 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.bcpg.sig.IssuerKeyID;
-import org.bouncycastle.bcpg.sig.SignatureCreationTime;
-import org.bouncycastle.util.Arrays;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
+
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
+import org.bouncycastle.bcpg.sig.SignatureCreationTime;
+import org.bouncycastle.util.Arrays;
 
 /**
  * generic signature packet
@@ -153,6 +153,14 @@ public class SignaturePacket
             signature[0] = p;
             signature[1] = g;
             signature[2] = y;
+            break;
+        case ECDSA:
+            MPInteger    ecR = new MPInteger(in);
+            MPInteger    ecS = new MPInteger(in);
+
+            signature = new MPInteger[2];
+            signature[0] = ecR;
+            signature[1] = ecS;
             break;
         default:
             if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)

@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -42,6 +43,12 @@ public class PublicKeyPacket
         case ELGAMAL_ENCRYPT:
         case ELGAMAL_GENERAL:
             key = new ElGamalPublicBCPGKey(in);
+            break;
+        case EC:
+            key = new ECDHPublicBCPGKey(in);
+            break;
+        case ECDSA:
+            key = new ECDSAPublicBCPGKey(in);
             break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered");

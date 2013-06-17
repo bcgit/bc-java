@@ -9,7 +9,7 @@ import java.security.SignatureException;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -493,8 +493,8 @@ public class PGPSignature
                 try
                 {
                     ASN1EncodableVector v = new ASN1EncodableVector();
-                    v.add(new DERInteger(sigValues[0].getValue()));
-                    v.add(new DERInteger(sigValues[1].getValue()));
+                    v.add(new ASN1Integer(sigValues[0].getValue()));
+                    v.add(new ASN1Integer(sigValues[1].getValue()));
 
                     signature = new DERSequence(v).getEncoded();
                 }

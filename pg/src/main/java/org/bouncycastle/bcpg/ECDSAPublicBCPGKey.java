@@ -22,10 +22,10 @@ public class ECDSAPublicBCPGKey
     }
 
     protected ECDSAPublicBCPGKey(
-        ECPoint point,
-        ASN1ObjectIdentifier oid)
+        ASN1ObjectIdentifier oid,
+        ECPoint point)
     {
-        super(point, oid);
+        super(oid, point);
     }
 
 }
