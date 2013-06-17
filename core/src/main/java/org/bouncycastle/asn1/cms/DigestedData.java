@@ -12,13 +12,13 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /** 
- * RFC 3274 - CMS Digest Data.
+ * <a href="http://tools.ietf.org/html/rfc5652#section-7">RFC 5652</a> DigestedData object.
  * <pre>
  * DigestedData ::= SEQUENCE {
- *               version CMSVersion,
- *               digestAlgorithm DigestAlgorithmIdentifier,
- *               encapContentInfo EncapsulatedContentInfo,
- *               digest Digest }
+ *       version CMSVersion,
+ *       digestAlgorithm DigestAlgorithmIdentifier,
+ *       encapContentInfo EncapsulatedContentInfo,
+ *       digest Digest }
  * </pre>
  */
 public class DigestedData
@@ -50,7 +50,7 @@ public class DigestedData
     }
 
     /**
-     * return a CompressedData object from a tagged object.
+     * return a DigestedData object from a tagged object.
      *
      * @param _ato the tagged object holding the object we want.
      * @param _explicit true if the object is meant to be explicitly
@@ -66,7 +66,7 @@ public class DigestedData
     }
     
     /**
-     * return a CompressedData object from the given object.
+     * return a DigestedData object from the given object.
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.

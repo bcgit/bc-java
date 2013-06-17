@@ -11,8 +11,26 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * containing class for an CMS AuthEnveloped Data object
+ * Containing class for an CMS AuthEnveloped Data object
+ * per RFC 5083.
+ * <p>
+ * ASN.1:
+ * <pre>
+ *     id-ct-authEnvelopedData OBJECT IDENTIFIER ::= { iso(1)
+ *       member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
+ *       smime(16) ct(1) 23 }
+ *
+ *     AuthEnvelopedData ::= SEQUENCE {
+ *       version CMSVersion,
+ *       originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
+ *       recipientInfos RecipientInfos,
+ *       authEncryptedContentInfo EncryptedContentInfo,
+ *       authAttrs [1] IMPLICIT AuthAttributes OPTIONAL,
+ *       mac MessageAuthenticationCode,
+ *       unauthAttrs [2] IMPLICIT UnauthAttributes OPTIONAL }
+ * </pre>
  */
+
 class CMSAuthEnvelopedData
 {
     RecipientInformationStore recipientInfoStore;

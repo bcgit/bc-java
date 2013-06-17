@@ -10,6 +10,16 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#page-14">RFC 5652</a>
+ * <pre>
+ * Attribute ::= SEQUENCE {
+ *     attrType OBJECT IDENTIFIER,
+ *     attrValues SET OF AttributeValue
+ * }
+ * </pre>
+ */
+
 public class Attribute
     extends ASN1Object
 {
@@ -17,7 +27,14 @@ public class Attribute
     private ASN1Set             attrValues;
 
     /**
-     * return an Attribute object from the given object.
+     * Return an Attribute object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link Attribute} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats
+     * <li> null -> null
+     * </ul>
      *
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -81,12 +98,6 @@ public class Attribute
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * Attribute ::= SEQUENCE {
-     *     attrType OBJECT IDENTIFIER,
-     *     attrValues SET OF AttributeValue
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

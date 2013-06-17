@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * Produce an object suitable for an ASN1OutputStream.
+ * Parse {@link AuthenticatedData} stream.
  * <pre>
  * AuthenticatedData ::= SEQUENCE {
  *       version CMSVersion,
