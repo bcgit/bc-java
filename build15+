@@ -9,9 +9,6 @@
 if [ "${JDKPATH}" = "" ] 
 then
 	JDKPATH=/opt/jdk1.5.0   # JDK 1.5 location
-	JAVA_MAIL_HOME=/opt/javamail
-	JAVA_ACTIVATION_HOME=/opt/jaf
-	JUNIT_HOME=/opt/junit
 fi
 
 JAVA_HOME=$JDKPATH
@@ -19,9 +16,6 @@ export JAVA_HOME
 
 PATH=$JDKPATH/bin:$PATH
 export PATH
-
-CLASSPATH=$JAVA_MAIL_HOME/mail.jar:$JAVA_ACTIVATION_HOME/activation.jar:$JUNIT_HOME/junit.jar:$CLASSPATH
-export CLASSPATH
 
 if [ "$1" = "test" ]
 then
