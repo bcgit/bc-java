@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.openpgp.PGPException;
 
 /**
  * base class for an ECDH Public Key.
@@ -18,18 +17,17 @@ public class ECDHPublicBCPGKey
 
     /**
      * @param in the stream to read the packet from.
-     * @throws PGPException
      */
     public ECDHPublicBCPGKey(
         BCPGInputStream in)
-        throws IOException, PGPException
+        throws IOException
     {
         super(in);
 
         byte[] kdfParameters = readBytesOfEncodedLength(in);
         if (kdfParameters.length != 3)
         {
-            throw new PGPException("kdf parameters size of 3 expected.");
+            throw new IllegalArgumentException("kdf parameters size of 3 expected.");
         }
 
         reserved = kdfParameters[0];
@@ -45,7 +43,6 @@ public class ECDHPublicBCPGKey
         ASN1ObjectIdentifier oid,
         int hashAlgorithm,
         int symmetricKeyAlgorithm)
-        throws PGPException
     {
         super(point, oid);
 
@@ -84,7 +81,6 @@ public class ECDHPublicBCPGKey
     }
 
     private void verifyHashAlgorithm()
-        throws PGPException
     {
         switch (hashFunctionId)
         {
@@ -94,12 +90,11 @@ public class ECDHPublicBCPGKey
             break;
 
         default:
-            throw new PGPException("Hash algorithm must be SHA-256 or stronger.");
+            throw new IllegalStateException("Hash algorithm must be SHA-256 or stronger.");
         }
     }
 
     private void verifySymmetricKeyAlgorithm()
-        throws PGPException
     {
         switch (symAlgorithmId)
         {
@@ -109,7 +104,7 @@ public class ECDHPublicBCPGKey
             break;
 
         default:
-            throw new PGPException("Symmetric key algorithm must be AES-128 or stronger.");
+            throw new IllegalStateException("Symmetric key algorithm must be AES-128 or stronger.");
         }
     }
 }
