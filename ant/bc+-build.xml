@@ -17,38 +17,44 @@
     <property name="jce.target" value="jce-${target.name}" />
     <property name="jce.target.dir" value="${artifacts.dir}/${jce.target}" />
     <property name="jce.target.src.dir" value="${jce.target.dir}/src" />
-    <property name="jce.target.docs.dir" value="${jce.target.dir}/docs" />
+    <property name="jce.target.docs.dir" value="${jce.target.dir}/javadoc" />
     <property name="jce.target.src.zip" value="${jce.target.dir}/src.zip" />
 
     <property name="provider.target" value="bcprov-${target.name}" />
     <property name="provider.target.dir" value="${artifacts.dir}/${provider.target}" />
     <property name="provider.target.src.dir" value="${provider.target.dir}/src" />
-    <property name="provider.target.docs.dir" value="${provider.target.dir}/docs" />
+    <property name="provider.target.docs.dir" value="${provider.target.dir}/javadoc" />
     <property name="provider.target.src.zip" value="${provider.target.dir}/src.zip" />
 
     <property name="mail.target" value="bcmail-${target.name}" />
     <property name="mail.target.dir" value="${artifacts.dir}/${mail.target}" />
     <property name="mail.target.src.dir" value="${mail.target.dir}/src" />
-    <property name="mail.target.docs.dir" value="${mail.target.dir}/docs" />
+    <property name="mail.target.docs.dir" value="${mail.target.dir}/javadoc" />
     <property name="mail.target.src.zip" value="${mail.target.dir}/src.zip" />
 
     <property name="pkix.target" value="bcpkix-${target.name}" />
     <property name="pkix.target.dir" value="${artifacts.dir}/${pkix.target}" />
     <property name="pkix.target.src.dir" value="${pkix.target.dir}/src" />
-    <property name="pkix.target.docs.dir" value="${pkix.target.dir}/docs" />
+    <property name="pkix.target.docs.dir" value="${pkix.target.dir}/javadoc" />
     <property name="pkix.target.src.zip" value="${pkix.target.dir}/src.zip" />
 
     <property name="pg.target" value="bcpg-${target.name}" />
     <property name="pg.target.dir" value="${artifacts.dir}/${pg.target}" />
     <property name="pg.target.src.dir" value="${pg.target.dir}/src" />
-    <property name="pg.target.docs.dir" value="${pg.target.dir}/docs" />
+    <property name="pg.target.docs.dir" value="${pg.target.dir}/javadoc" />
     <property name="pg.target.src.zip" value="${pg.target.dir}/src.zip" />
 
     <property name="lcrypto.target" value="lcrypto-${target.name}" />
     <property name="lcrypto.target.dir" value="${artifacts.dir}/${lcrypto.target}" />
     <property name="lcrypto.target.src.dir" value="${lcrypto.target.dir}/src" />
     <property name="lcrypto.target.classes.dir" value="${lcrypto.target.dir}/classes" />
-    <property name="lcrypto.target.docs.dir" value="${lcrypto.target.dir}/docs" />
+    <property name="lcrypto.target.docs.dir" value="${lcrypto.target.dir}/javadoc" />
+
+    <path id="project.classpath">
+        <pathelement location="${mail.jar.home}" />
+        <pathelement location="${activation.jar.home}" />
+        <pathelement location="${junit.jar.home}" />
+    </path> 
 
     <target name="pack200-on" if="pack200.enabled">
         <taskdef name="pack200" classname="com.sun.tools.apache.ant.pack200.Pack200Task"
@@ -97,6 +103,7 @@
                     destdir="${build.dir}/@{target}/classes"
                     debug="${release.debug}">
                     <classpath>
+                        <path refid="project.classpath" /> 
                         <fileset dir="${artifacts.jars.dir}">
                             <include name="**/*.jar" />
                         </fileset>
@@ -132,6 +139,7 @@
                     destdir="${build.dir}/@{target}/classes"
                     debug="${release.debug}">
                     <classpath>
+                        <path refid="project.classpath" /> 
                         <fileset dir="${artifacts.jars.dir}">
                             <include name="**/*.jar" />
                         </fileset>
@@ -194,6 +202,7 @@
                 <docElements/>
                 <arg value="${javadoc.args}" />
                 <classpath>
+                    <path refid="project.classpath" /> 
                     <fileset dir="${artifacts.jars.dir}">
                         <include name="**/*.jar" />
                     </fileset>
@@ -208,7 +217,12 @@
             <sequential>
                 <copy toDir="@{toDir}">
                      <fileset dir="${basedir}">
-                         <include name="*.html" />
+                         <include name="**/*.html" />
+                     </fileset>
+                </copy>
+                <copy toDir="@{toDir}/docs">
+                     <fileset dir="${basedir}/docs">
+                         <include name="**/*.html" />
                      </fileset>
                 </copy>
             </sequential>
