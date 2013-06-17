@@ -226,6 +226,11 @@ public class BCECPrivateKey
 
             if (ecP == null) // GOST Curve
             {
+                // TODO: This special treatment of GOST3410 should be removed;
+                //       The ecP has getECDomainParameters() method returning the same data,
+                //       and only difference is that GOST3410 does not contain X9 FieldID
+                //       (but it is trivial to add too)
+
                 ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
                 EllipticCurve ellipticCurve = EC5Util.convertCurve(gParam.getCurve(), gParam.getSeed());
 
