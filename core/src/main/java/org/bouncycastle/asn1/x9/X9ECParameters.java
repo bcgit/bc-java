@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -20,47 +21,54 @@ public class X9ECParameters
     extends ASN1Object
     implements X9ObjectIdentifiers
 {
-    private static final BigInteger   ONE = BigInteger.valueOf(1);
+    private final X9FieldID    fieldID;
+    private final ECDomainParameters dp;
 
-    private X9FieldID           fieldID;
-    private ECCurve             curve;
-    private ECPoint             g;
-    private BigInteger          n;
-    private BigInteger          h;
-    private byte[]              seed;
-
-    private X9ECParameters(
-        ASN1Sequence  seq)
+    private X9ECParameters( final ASN1Sequence seq )
     {
         if (!(seq.getObjectAt(0) instanceof ASN1Integer)
-           || !((ASN1Integer)seq.getObjectAt(0)).getValue().equals(ONE))
+           || !((ASN1Integer)seq.getObjectAt(0)).getValue().equals(BigInteger.ONE))
         {
             throw new IllegalArgumentException("bad version in X9ECParameters");
         }
 
-        X9Curve     x9c = new X9Curve(
+        final X9Curve x9c = new X9Curve(
                         X9FieldID.getInstance(seq.getObjectAt(1)),
                         ASN1Sequence.getInstance(seq.getObjectAt(2)));
 
-        this.curve = x9c.getCurve();
-        Object p = seq.getObjectAt(3);
+        final ECCurve curve = x9c.getCurve();
+        final ECPoint g;
 
-        if (p instanceof X9ECPoint)
-        {
-            this.g = ((X9ECPoint)p).getPoint();
-        }
-        else
-        {
-            this.g = new X9ECPoint(curve, (ASN1OctetString)p).getPoint();
+        final Object p = seq.getObjectAt(3);
+        if (p instanceof X9ECPoint) {
+            g = ((X9ECPoint)p).getPoint();
+        } else {
+            g = new X9ECPoint(curve, (ASN1OctetString)p).getPoint();
         }
 
-        this.n = ((ASN1Integer)seq.getObjectAt(4)).getValue();
-        this.seed = x9c.getSeed();
+        final BigInteger n = ((ASN1Integer)seq.getObjectAt(4)).getValue();
+        final byte[] seed = x9c.getSeed();
 
-        if (seq.size() == 6)
-        {
-            this.h = ((ASN1Integer)seq.getObjectAt(5)).getValue();
+        final BigInteger h;
+        if (seq.size() == 6) {
+            h = ((ASN1Integer)seq.getObjectAt(5)).getValue();
+        } else {
+            h = null;
         }
+
+        this.dp = new ECDomainParameters(curve, g, n, h, seed);
+        this.fieldID = determineFieldID(curve);
+    }
+
+    private static X9FieldID determineFieldID( final ECCurve curve ) {
+        if (curve instanceof ECCurve.Fp) {
+            return new X9FieldID(((ECCurve.Fp)curve).getQ());
+        } else if (curve instanceof ECCurve.F2m) {
+            final ECCurve.F2m curveF2m = (ECCurve.F2m)curve;
+            return new X9FieldID(curveF2m.getM(), curveF2m.getK1(),
+                                 curveF2m.getK2(), curveF2m.getK3());
+        }
+        return null;
     }
 
     public static X9ECParameters getInstance(Object obj)
@@ -78,12 +86,18 @@ public class X9ECParameters
         return null;
     }
 
+    public X9ECParameters( final ECDomainParameters dp )
+    {
+        this.dp = dp;
+        this.fieldID = determineFieldID(dp.getCurve());
+    }
+
     public X9ECParameters(
         ECCurve     curve,
         ECPoint     g,
         BigInteger  n)
     {
-        this(curve, g, n, ONE, null);
+        this(curve, g, n, BigInteger.ONE, null);
     }
 
     public X9ECParameters(
@@ -102,55 +116,41 @@ public class X9ECParameters
         BigInteger  h,
         byte[]      seed)
     {
-        this.curve = curve;
-        this.g = g;
-        this.n = n;
-        this.h = h;
-        this.seed = seed;
+        this.dp = new ECDomainParameters(curve, g, n, h, seed);
+        this.fieldID = determineFieldID(curve);
+    }
 
-        if (curve instanceof ECCurve.Fp)
-        {
-            this.fieldID = new X9FieldID(((ECCurve.Fp)curve).getQ());
-        }
-        else
-        {
-            if (curve instanceof ECCurve.F2m)
-            {
-                ECCurve.F2m curveF2m = (ECCurve.F2m)curve;
-                this.fieldID = new X9FieldID(curveF2m.getM(), curveF2m.getK1(),
-                    curveF2m.getK2(), curveF2m.getK3());
-            }
-        }
+    public ECDomainParameters getECDomainParameters()
+    {
+        return this.dp;
     }
 
     public ECCurve getCurve()
     {
-        return curve;
+        return this.dp.getCurve();
     }
 
     public ECPoint getG()
     {
-        return g;
+        return this.dp.getG();
     }
 
     public BigInteger getN()
     {
-        return n;
+        return this.dp.getN();
     }
 
     public BigInteger getH()
     {
-        if (h == null)
-        {
-            return ONE;        // TODO - this should be calculated, it will cause issues with custom curves.
-        }
+        BigInteger h = this.dp.getH();
+        if (h != null) return h;
 
-        return h;
+        return BigInteger.ONE; // TODO - this should be calculated, it will cause issues with custom curves.
     }
 
     public byte[] getSeed()
     {
-        return seed;
+        return this.dp.getSeed();
     }
 
     /**
@@ -172,10 +172,11 @@ public class X9ECParameters
 
         v.add(new ASN1Integer(1));
         v.add(fieldID);
-        v.add(new X9Curve(curve, seed));
-        v.add(new X9ECPoint(g));
-        v.add(new ASN1Integer(n));
+        v.add(new X9Curve(this.dp.getCurve(), this.dp.getSeed()));
+        v.add(new X9ECPoint(this.dp.getG()));
+        v.add(new ASN1Integer(this.dp.getN()));
 
+        BigInteger h = this.dp.getH();
         if (h != null)
         {
             v.add(new ASN1Integer(h));
