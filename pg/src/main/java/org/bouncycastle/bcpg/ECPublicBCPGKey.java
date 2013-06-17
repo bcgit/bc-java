@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.openpgp.PGPException;
 
 /**
  * base class for an EC Public Key.
@@ -24,11 +23,10 @@ public abstract class ECPublicBCPGKey
 
     /**
      * @param in the stream to read the packet from.
-     * @throws PGPException
      */
     protected ECPublicBCPGKey(
         BCPGInputStream in)
-        throws IOException, PGPException
+        throws IOException
     {
         this.oid = ASN1ObjectIdentifier.getInstance(ASN1Primitive.fromByteArray(readBytesOfEncodedLength(in)));
     }
@@ -44,7 +42,7 @@ public abstract class ECPublicBCPGKey
     protected ECPublicBCPGKey(
         BigInteger encodedPoint,
         ASN1ObjectIdentifier oid)
-        throws PGPException
+        throws IOException
     {
         this.point = decodePoint(encodedPoint, oid);
         this.oid = oid;
@@ -112,12 +110,12 @@ public abstract class ECPublicBCPGKey
 
     protected static byte[] readBytesOfEncodedLength(
         BCPGInputStream in)
-        throws PGPException, IOException
+        throws IOException
     {
         int length = in.read();
         if (length == 0 || length == 0xFF)
         {
-            throw new PGPException("future extensions not yet implemented.");
+            throw new IOException("future extensions not yet implemented.");
         }
 
         byte[] buffer = new byte[length];
@@ -128,19 +126,18 @@ public abstract class ECPublicBCPGKey
     private static ECPoint decodePoint(
         BigInteger encodedPoint,
         ASN1ObjectIdentifier oid)
-        throws PGPException
+        throws IOException
     {
         X9ECParameters curve = ECNamedCurveTable.getByOID(oid);
         if (curve == null)
         {
-            throw new PGPException(oid.getId() + " does not match any known curve.");
+            throw new IOException(oid.getId() + " does not match any known curve.");
         }
         if (!(curve.getCurve() instanceof ECCurve.Fp))
         {
-            throw new PGPException("Only FPCurves are supported.");
+            throw new IOException("Only FPCurves are supported.");
         }
 
         return curve.getCurve().decodePoint(encodedPoint.toByteArray());
     }
-
 }

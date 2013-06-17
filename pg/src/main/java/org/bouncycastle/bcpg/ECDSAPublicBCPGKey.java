@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.openpgp.PGPException;
 
 /**
  * base class for an ECDSA Public Key.
@@ -14,11 +13,10 @@ public class ECDSAPublicBCPGKey
 {
     /**
      * @param in the stream to read the packet from.
-     * @throws PGPException
      */
     protected ECDSAPublicBCPGKey(
         BCPGInputStream in)
-        throws IOException, PGPException
+        throws IOException
     {
         super(in);
     }
