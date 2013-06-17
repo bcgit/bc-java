@@ -21,7 +21,7 @@ public class ECDSAPublicBCPGKey
         super(in);
     }
 
-    protected ECDSAPublicBCPGKey(
+    public ECDSAPublicBCPGKey(
         ASN1ObjectIdentifier oid,
         ECPoint point)
     {
