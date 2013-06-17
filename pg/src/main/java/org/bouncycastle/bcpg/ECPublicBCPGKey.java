@@ -86,8 +86,7 @@ public abstract class ECPublicBCPGKey
         throws IOException
     {
         byte[] oid = this.oid.getEncoded();
-        out.write(oid.length);
-        out.write(oid);
+        out.write(oid, 1, oid.length - 1);
 
         MPInteger point = new MPInteger(new BigInteger(1, this.point.getEncoded()));
         out.writeObject(point);
@@ -123,6 +122,7 @@ public abstract class ECPublicBCPGKey
         in.readFully(buffer, 2, buffer.length - 2);
         buffer[0] = (byte)0x06;
         buffer[1] = (byte)length;
+
         return buffer;
     }
 
