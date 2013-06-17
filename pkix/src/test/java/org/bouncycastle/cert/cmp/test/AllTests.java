@@ -36,6 +36,7 @@ import org.bouncycastle.cert.cmp.CertificateStatus;
 import org.bouncycastle.cert.cmp.GeneralPKIMessage;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessage;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessageBuilder;
+import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.cert.crmf.CertificateRequestMessageBuilder;
 import org.bouncycastle.cert.crmf.PKMACBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
@@ -222,6 +223,50 @@ public class AllTests
         CertReqMsg reqMsg = reqMsgs.toCertReqMsgArray()[0];
 
         assertEquals(ProofOfPossession.TYPE_KEY_ENCIPHERMENT, reqMsg.getPopo().getType());
+    }
+
+    public void testNotBeforeNotAfter()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+
+        doNotBeforeNotAfterTest(kp, new Date(0L), new Date(60000L));
+        doNotBeforeNotAfterTest(kp, null, new Date(60000L));
+        doNotBeforeNotAfterTest(kp, new Date(0L), null);
+    }
+
+    private void doNotBeforeNotAfterTest(KeyPair kp, Date notBefore, Date notAfter)
+        throws Exception
+    {
+        CertificateRequestMessageBuilder builder = new JcaCertificateRequestMessageBuilder(
+                    BigInteger.valueOf(1)).setPublicKey(kp.getPublic()).setProofOfPossessionSubsequentMessage(
+                    SubsequentMessage.encrCert);
+
+        builder.setValidity(notBefore, notAfter);
+
+        CertificateRequestMessage message = builder.build();
+
+        if (notBefore != null)
+        {
+            assertEquals(notBefore.getTime(), message.getCertTemplate().getValidity().getNotBefore().getDate().getTime());
+        }
+        else
+        {
+            assertNull(message.getCertTemplate().getValidity().getNotBefore());
+        }
+
+        if (notAfter != null)
+        {
+            assertEquals(notAfter.getTime(), message.getCertTemplate().getValidity().getNotAfter().getDate().getTime());
+        }
+        else
+        {
+            assertNull(message.getCertTemplate().getValidity().getNotAfter());
+        }
     }
 
     private static X509CertificateHolder makeV3Certificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN)
