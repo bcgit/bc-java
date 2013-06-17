@@ -153,22 +153,7 @@ public class DTLSClientProtocol
 
         if (serverMessage.getType() == HandshakeType.certificate_status)
         {
-            if (!state.allowCertificateStatus)
-            {
-                /*
-                 * RFC 3546 3.6. If a server returns a "CertificateStatus" message, then the
-                 * server MUST have included an extension of type "status_request" with empty
-                 * "extension_data" in the extended server hello..
-                 */
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
-
-            /*
-             * TODO[RFC 3546] Parse the CertificateStatus message. We should bundle any
-             * CertificateStatus message with the actual Certificate since the authentication
-             * will want to use it.
-             */
-
+            processCertificateStatus(state, serverMessage.getBody());
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -418,6 +403,28 @@ public class DTLSClientProtocol
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
     }
 
+    protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        if (!state.allowCertificateStatus)
+        {
+            /*
+             * RFC 3546 3.6. If a server returns a "CertificateStatus" message, then the
+             * server MUST have included an extension of type "status_request" with empty
+             * "extension_data" in the extended server hello..
+             */
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        state.certificateStatus = CertificateStatus.parse(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        // TODO[RFC 3546] Figure out how to provide this to the client/authentication.
+    }
+
     protected void processNewSessionTicket(ClientHandshakeState state, byte[] body)
         throws IOException
     {
@@ -652,6 +659,7 @@ public class DTLSClientProtocol
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;
+        CertificateStatus certificateStatus = null;
         CertificateRequest certificateRequest = null;
         TlsCredentials clientCredentials = null;
     }
