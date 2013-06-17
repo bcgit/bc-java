@@ -52,8 +52,10 @@ public class PGPECDSATest
 
             certification.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKeyRing.getPublicKey());
 
-            // TODO: it appears test key not self signed....
-            System.err.print(certification.verifyCertification((String)pubKeyRing.getPublicKey().getUserIDs().next(), pubKeyRing.getPublicKey()));
+            if (!certification.verifyCertification((String)pubKeyRing.getPublicKey().getUserIDs().next(), pubKeyRing.getPublicKey()))
+            {
+                fail("self certification does not verify");
+            }
         }
 
         //
