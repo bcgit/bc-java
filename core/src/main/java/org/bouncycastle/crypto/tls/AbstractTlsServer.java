@@ -249,7 +249,14 @@ public abstract class AbstractTlsServer
         return null;
     }
 
+    public CertificateStatus getCertificateStatus()
+        throws IOException
+    {
+        return null;
+    }
+
     public CertificateRequest getCertificateRequest()
+        throws IOException
     {
         return null;
     }
