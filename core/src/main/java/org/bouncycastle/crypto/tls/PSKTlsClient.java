@@ -179,6 +179,6 @@ public abstract class PSKTlsClient
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
     {
-        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity);
+        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentity);
     }
 }
