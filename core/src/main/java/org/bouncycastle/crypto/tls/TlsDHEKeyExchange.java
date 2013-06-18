@@ -13,12 +13,12 @@ import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
 public class TlsDHEKeyExchange
     extends TlsDHKeyExchange
 {
-
     protected TlsSignerCredentials serverCredentials = null;
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
@@ -29,7 +29,6 @@ public class TlsDHEKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
-
         if (!(serverCredentials instanceof TlsSignerCredentials))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -43,7 +42,6 @@ public class TlsDHEKeyExchange
     public byte[] generateServerKeyExchange()
         throws IOException
     {
-
         if (this.dhParameters == null)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -54,6 +52,7 @@ public class TlsDHEKeyExchange
         DHKeyPairGenerator kpg = new DHKeyPairGenerator();
         kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), this.dhParameters));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+        this.dhAgreeServerPrivateKey = (DHPrivateKeyParameters)kp.getPrivate();
 
         BigInteger Ys = ((DHPublicKeyParameters)kp.getPublic()).getY();
 
@@ -84,7 +83,6 @@ public class TlsDHEKeyExchange
     public void processServerKeyExchange(InputStream input)
         throws IOException
     {
-
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         Signer signer = initVerifyer(tlsSigner, securityParameters);
