@@ -20,6 +20,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 
 class PGPExampleUtil
 {
@@ -40,7 +41,7 @@ class PGPExampleUtil
      * @param pgpSec a secret key ring collection.
      * @param keyID keyID we want.
      * @param pass passphrase to decrypt secret key with.
-     * @return
+     * @return the private key.
      * @throws PGPException
      * @throws NoSuchProviderException
      */
@@ -54,7 +55,7 @@ class PGPExampleUtil
             return null;
         }
 
-        return pgpSecKey.extractPrivateKey(pass, "BC");
+        return pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(pass));
     }
 
     static PGPPublicKey readPublicKey(String fileName) throws IOException, PGPException
@@ -69,8 +70,8 @@ class PGPExampleUtil
      * A simple routine that opens a key ring file and loads the first available key
      * suitable for encryption.
      * 
-     * @param input
-     * @return
+     * @param input data stream containing the public key data
+     * @return the first public key found.
      * @throws IOException
      * @throws PGPException
      */
