@@ -20,7 +20,6 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
-
     protected static final BigInteger ONE = BigInteger.valueOf(1);
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
@@ -32,11 +31,11 @@ public class TlsDHKeyExchange
     protected TlsAgreementCredentials agreementCredentials;
     protected DHPrivateKeyParameters dhAgreeClientPrivateKey;
 
+    protected DHPrivateKeyParameters dhAgreeServerPrivateKey;
     protected DHPublicKeyParameters dhAgreeClientPublicKey;
 
     public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
     {
-
         super(keyExchange, supportedSignatureAlgorithms);
 
         switch (keyExchange)
@@ -77,7 +76,6 @@ public class TlsDHKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-
         if (serverCertificate.isEmpty())
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
@@ -196,7 +194,17 @@ public class TlsDHKeyExchange
             return agreementCredentials.generateAgreement(dhAgreeServerPublicKey);
         }
 
-        return calculateDHBasicAgreement(dhAgreeServerPublicKey, dhAgreeClientPrivateKey);
+        if (dhAgreeServerPrivateKey != null)
+        {
+            return calculateDHBasicAgreement(dhAgreeClientPublicKey, dhAgreeServerPrivateKey);
+        }
+
+        if (dhAgreeClientPrivateKey != null)
+        {
+            return calculateDHBasicAgreement(dhAgreeServerPublicKey, dhAgreeClientPrivateKey);
+        }
+
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected boolean areCompatibleParameters(DHParameters a, DHParameters b)
