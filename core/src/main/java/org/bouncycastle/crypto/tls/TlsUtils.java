@@ -478,7 +478,6 @@ public class TlsUtils
     public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
         throws IOException
     {
-
         if (extensions == null)
         {
             return null;
@@ -501,7 +500,6 @@ public class TlsUtils
     public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
         throws IOException
     {
-
         if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1 || supportedSignatureAlgorithms.size() >= (1 << 15))
         {
             throw new IllegalArgumentException(
@@ -531,7 +529,6 @@ public class TlsUtils
     public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue)
         throws IOException
     {
-
         if (extensionValue == null)
         {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
