@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.Digest;
  */
 class RecordStream
 {
-
     private static int PLAINTEXT_LIMIT = (1 << 14);
     private static int COMPRESSED_LIMIT = PLAINTEXT_LIMIT + 1024;
     private static int CIPHERTEXT_LIMIT = COMPRESSED_LIMIT + 1024;
@@ -126,7 +125,6 @@ class RecordStream
     public void readRecord()
         throws IOException
     {
-
         short type = TlsUtils.readUint8(input);
 
         // TODO In earlier RFCs, it was "SHOULD ignore"; should this be version-dependent?
@@ -165,7 +163,6 @@ class RecordStream
     protected byte[] decodeAndVerify(short type, InputStream input, int len)
         throws IOException
     {
-
         checkLength(len, CIPHERTEXT_LIMIT, AlertDescription.record_overflow);
 
         byte[] buf = TlsUtils.readFully(len, input);
@@ -198,7 +195,6 @@ class RecordStream
     protected void writeRecord(short type, byte[] plaintext, int plaintextOffset, int plaintextLength)
         throws IOException
     {
-
         /*
          * RFC 5264 6. Implementations MUST NOT send record types not defined in this document
          * unless negotiated by some extension.
@@ -332,7 +328,6 @@ class RecordStream
     private static void checkType(short type, short alertDescription)
         throws IOException
     {
-
         switch (type)
         {
         case ContentType.change_cipher_spec:

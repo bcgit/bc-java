@@ -5,7 +5,6 @@ package org.bouncycastle.crypto.tls;
  */
 public class HashAlgorithm
 {
-
     public static final short none = 0;
     public static final short md5 = 1;
     public static final short sha1 = 2;
