@@ -207,9 +207,7 @@ public class DTLSServerProtocol
             }
             else
             {
-                ProtocolVersion equivalentTLSVersion = state.serverContext.getServerVersion().getEquivalentTLSVersion();
-
-                if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion))
+                if (TlsUtils.isTLSv12(state.serverContext))
                 {
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a

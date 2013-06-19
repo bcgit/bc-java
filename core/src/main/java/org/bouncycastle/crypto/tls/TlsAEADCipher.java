@@ -22,7 +22,7 @@ public class TlsAEADCipher
     public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
         int cipherKeySize, int macSize) throws IOException
     {
-        if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion()))
+        if (!TlsUtils.isTLSv12(context))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

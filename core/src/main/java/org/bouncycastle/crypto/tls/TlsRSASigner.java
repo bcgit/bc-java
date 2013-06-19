@@ -53,7 +53,7 @@ public class TlsRSASigner
     protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp)
     {
         Signer s;
-        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion()))
+        if (TlsUtils.isTLSv12(context))
         {
             /*
              * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated

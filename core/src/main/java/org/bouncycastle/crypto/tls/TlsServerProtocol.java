@@ -279,10 +279,7 @@ public class TlsServerProtocol
                 }
                 else
                 {
-
-                    ProtocolVersion equivalentTLSVersion = getContext().getServerVersion().getEquivalentTLSVersion();
-
-                    if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion))
+                    if (TlsUtils.isTLSv12(getContext()))
                     {
                         /*
                          * RFC 5246 If no suitable certificate is available, the client MUST send a
@@ -292,7 +289,7 @@ public class TlsServerProtocol
                          */
                         this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                     }
-                    else if (equivalentTLSVersion.isSSL())
+                    else if (TlsUtils.isSSL(getContext()))
                     {
                         if (clientCertificate == null)
                         {

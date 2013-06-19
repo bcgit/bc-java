@@ -57,7 +57,7 @@ public class DigitallySigned
     public static DigitallySigned parse(TlsContext context, InputStream input) throws IOException
     {
         SignatureAndHashAlgorithm algorithm = null;
-        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion()))
+        if (TlsUtils.isTLSv12(context))
         {
             algorithm = SignatureAndHashAlgorithm.parse(input);
         }

@@ -880,8 +880,7 @@ public abstract class TlsProtocol
 
     protected static int getPRFAlgorithm(TlsContext context, int ciphersuite) throws IOException
     {
-        boolean isTLSv12 = ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(
-            context.getServerVersion().getEquivalentTLSVersion());
+        boolean isTLSv12 = TlsUtils.isTLSv12(context);
 
         switch (ciphersuite)
         {
