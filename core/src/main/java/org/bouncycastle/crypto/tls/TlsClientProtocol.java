@@ -412,7 +412,7 @@ public class TlsClientProtocol
                     this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
 
-                this.certificateRequest = CertificateRequest.parse(buf);
+                this.certificateRequest = CertificateRequest.parse(getContext(), buf);
 
                 assertEmpty(buf);
 
