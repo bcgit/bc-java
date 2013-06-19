@@ -9,7 +9,6 @@ import java.io.OutputStream;
  */
 public class SignatureAndHashAlgorithm
 {
-
     private short hash;
     private short signature;
 
@@ -19,7 +18,6 @@ public class SignatureAndHashAlgorithm
      */
     public SignatureAndHashAlgorithm(short hash, short signature)
     {
-
         if (!TlsUtils.isValidUint8(hash))
         {
             throw new IllegalArgumentException("'hash' should be a uint8");
