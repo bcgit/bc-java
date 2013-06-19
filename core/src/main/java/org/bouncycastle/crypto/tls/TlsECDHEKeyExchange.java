@@ -19,11 +19,10 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 public class TlsECDHEKeyExchange
     extends TlsECDHKeyExchange
 {
-
     protected TlsSignerCredentials serverCredentials = null;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
-                               short[] clientECPointFormats, short[] serverECPointFormats)
+        short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats, serverECPointFormats);
     }
@@ -31,7 +30,6 @@ public class TlsECDHEKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
-
         if (!(serverCredentials instanceof TlsSignerCredentials))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -45,7 +43,6 @@ public class TlsECDHEKeyExchange
     public byte[] generateServerKeyExchange()
         throws IOException
     {
-
         /*
          * First we try to find a supported named curve from the client's list.
          */
@@ -139,7 +136,6 @@ public class TlsECDHEKeyExchange
     public void processServerKeyExchange(InputStream input)
         throws IOException
     {
-
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         Signer signer = initVerifyer(tlsSigner, securityParameters);
