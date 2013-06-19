@@ -177,19 +177,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void generateClientKeyExchange(OutputStream output) throws IOException
     {
-        if (agreementCredentials != null)
+        if (agreementCredentials == null)
         {
-            return;
+            this.ecAgreeClientPrivateKey = TlsECCUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(), serverECPointFormats,
+                ecAgreeServerPublicKey.getParameters(), output);
         }
-
-        AsymmetricCipherKeyPair ecAgreeClientKeyPair = TlsECCUtils.generateECKeyPair(context.getSecureRandom(),
-            ecAgreeServerPublicKey.getParameters());
-        this.ecAgreeClientPrivateKey = (ECPrivateKeyParameters) ecAgreeClientKeyPair.getPrivate();
-
-        byte[] point = TlsECCUtils.serializeECPublicKey(serverECPointFormats,
-            (ECPublicKeyParameters) ecAgreeClientKeyPair.getPublic());
-
-        TlsUtils.writeOpaque8(point, output);
     }
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
