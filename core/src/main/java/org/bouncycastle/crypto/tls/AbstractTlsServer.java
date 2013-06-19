@@ -8,7 +8,6 @@ public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer
 {
-
     protected TlsCipherFactory cipherFactory;
 
     protected TlsServerContext context;
@@ -57,7 +56,6 @@ public abstract class AbstractTlsServer
 
     protected boolean supportsClientECCCapabilities(int[] namedCurves, short[] ecPointFormats)
     {
-
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
         if (namedCurves == null)
@@ -122,12 +120,10 @@ public abstract class AbstractTlsServer
     public void processClientExtensions(Hashtable clientExtensions)
         throws IOException
     {
-
         this.clientExtensions = clientExtensions;
 
         if (clientExtensions != null)
         {
-
             this.supportedSignatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
             if (this.supportedSignatureAlgorithms != null)
             {
@@ -176,7 +172,6 @@ public abstract class AbstractTlsServer
     public int getSelectedCipherSuite()
         throws IOException
     {
-
         /*
          * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate
          * cipher suites against the "signature_algorithms" extension before selecting them. This is
@@ -224,7 +219,6 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
-
         if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
         {
             /*

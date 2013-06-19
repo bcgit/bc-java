@@ -19,11 +19,10 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 public class TlsECDHEKeyExchange
     extends TlsECDHKeyExchange
 {
-
     protected TlsSignerCredentials serverCredentials = null;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
-                               short[] clientECPointFormats, short[] serverECPointFormats)
+        short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats, serverECPointFormats);
     }
@@ -31,7 +30,6 @@ public class TlsECDHEKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
-
         if (!(serverCredentials instanceof TlsSignerCredentials))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -45,7 +43,6 @@ public class TlsECDHEKeyExchange
     public byte[] generateServerKeyExchange()
         throws IOException
     {
-
         /*
          * First we try to find a supported named curve from the client's list.
          */
@@ -99,9 +96,6 @@ public class TlsECDHEKeyExchange
         AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters)kp.getPrivate();
 
-        byte[] publicBytes = TlsECCUtils.serializeECPublicKey(clientECPointFormats,
-            (ECPublicKeyParameters)kp.getPublic());
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         if (namedCurve < 0)
@@ -113,7 +107,8 @@ public class TlsECDHEKeyExchange
             TlsECCUtils.writeNamedECParameters(namedCurve, buf);
         }
 
-        TlsUtils.writeOpaque8(publicBytes, buf);
+        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
+        TlsECCUtils.writeECPoint(clientECPointFormats, ecPublicKey.getQ(), buf);
 
         byte[] digestInput = buf.toByteArray();
 
@@ -126,12 +121,13 @@ public class TlsECDHEKeyExchange
         byte[] hash = new byte[d.getDigestSize()];
         d.doFinal(hash, 0);
 
-        byte[] sigBytes = serverCredentials.generateCertificateSignature(hash);
+        byte[] signature = serverCredentials.generateCertificateSignature(hash);
+
         /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
-         * from TLS 1.2
+         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        TlsUtils.writeOpaque16(sigBytes, buf);
+        DigitallySigned signed_params = new DigitallySigned(null, signature);
+        signed_params.encode(buf);
 
         return buf.toByteArray();
     }
@@ -139,7 +135,6 @@ public class TlsECDHEKeyExchange
     public void processServerKeyExchange(InputStream input)
         throws IOException
     {
-
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         Signer signer = initVerifyer(tlsSigner, securityParameters);
@@ -149,8 +144,9 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(sigIn);
 
-        byte[] sigByte = TlsUtils.readOpaque16(input);
-        if (!signer.verifySignature(sigByte))
+        DigitallySigned signed_params = DigitallySigned.parse(context, input);
+
+        if (!signer.verifySignature(signed_params.getSignature()))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }

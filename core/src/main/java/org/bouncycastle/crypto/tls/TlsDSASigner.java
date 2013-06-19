@@ -14,11 +14,9 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 public abstract class TlsDSASigner
     extends AbstractTlsSigner
 {
-
     public byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
         throws CryptoException
     {
-
         // Note: Only use the SHA1 part of the hash
         Signer signer = makeSigner(new NullDigest(), true,
             new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
@@ -29,7 +27,6 @@ public abstract class TlsDSASigner
     public boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
         throws CryptoException
     {
-
         // Note: Only use the SHA1 part of the hash
         Signer signer = makeSigner(new NullDigest(), false, publicKey);
         signer.update(md5AndSha1, 16, 20);

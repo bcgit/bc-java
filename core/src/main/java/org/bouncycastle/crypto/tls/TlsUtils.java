@@ -76,6 +76,21 @@ public class TlsUtils
         return true;
     }
 
+    public static boolean isSSL(TlsContext context)
+    {
+        return context.getServerVersion().isSSL();
+    }
+
+    public static boolean isTLSv11(TlsContext context)
+    {
+        return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+    }
+
+    public static boolean isTLSv12(TlsContext context)
+    {
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+    }
+
     public static void writeUint8(short i, OutputStream output)
         throws IOException
     {
@@ -478,7 +493,6 @@ public class TlsUtils
     public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
         throws IOException
     {
-
         if (extensions == null)
         {
             return null;
@@ -501,22 +515,10 @@ public class TlsUtils
     public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
         throws IOException
     {
-
-        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1 || supportedSignatureAlgorithms.size() >= (1 << 15))
-        {
-            throw new IllegalArgumentException(
-                "'supportedSignatureAlgorithms' must have length from 1 to (2^15 - 1)");
-        }
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         // supported_signature_algorithms
-        TlsUtils.writeUint16(2 * supportedSignatureAlgorithms.size(), buf);
-        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
-        {
-            SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
-            entry.encode(buf);
-        }
+        encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, false, buf);
 
         return buf.toByteArray();
     }
@@ -531,7 +533,6 @@ public class TlsUtils
     public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue)
         throws IOException
     {
-
         if (extensionValue == null)
         {
             throw new IllegalArgumentException("'extensionValue' cannot be null");
@@ -540,22 +541,66 @@ public class TlsUtils
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
 
         // supported_signature_algorithms
-        int length = TlsUtils.readUint16(buf);
+        Vector supported_signature_algorithms = parseSupportedSignatureAlgorithms(false, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return supported_signature_algorithms;
+    }
+
+    public static void encodeSupportedSignatureAlgorithms(Vector supportedSignatureAlgorithms, boolean allowAnonymous,
+        OutputStream output) throws IOException
+    {
+        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1
+            || supportedSignatureAlgorithms.size() >= (1 << 15))
+        {
+            throw new IllegalArgumentException(
+                "'supportedSignatureAlgorithms' must have length from 1 to (2^15 - 1)");
+        }
+
+        // supported_signature_algorithms
+        TlsUtils.writeUint16(2 * supportedSignatureAlgorithms.size(), output);
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+        {
+            SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            if (!allowAnonymous && entry.getSignature() == SignatureAlgorithm.anonymous)
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1 The "anonymous" value is meaningless in this context but used
+                 * in Section 7.4.3. It MUST NOT appear in this extension.
+                 */
+                throw new IllegalArgumentException(
+                    "SignatureAlgorithm.anonymous MUST NOT appear in the signature_algorithms extension");
+            }
+            entry.encode(output);
+        }
+    }
+
+    public static Vector parseSupportedSignatureAlgorithms(boolean allowAnonymous, InputStream input)
+        throws IOException
+    {
+        // supported_signature_algorithms
+        int length = TlsUtils.readUint16(input);
         if (length < 2 || (length & 1) != 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         int count = length / 2;
-        Vector result = new Vector(count);
+        Vector supportedSignatureAlgorithms = new Vector(count);
         for (int i = 0; i < count; ++i)
         {
-            SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(buf);
-            result.addElement(entry);
+            SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(input);
+            if (!allowAnonymous && entry.getSignature() == SignatureAlgorithm.anonymous)
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1 The "anonymous" value is meaningless in this context but used
+                 * in Section 7.4.3. It MUST NOT appear in this extension.
+                 */
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            supportedSignatureAlgorithms.addElement(entry);
         }
-
-        TlsProtocol.assertEmpty(buf);
-
-        return result;
+        return supportedSignatureAlgorithms;
     }
 
     public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
@@ -574,7 +619,7 @@ public class TlsUtils
 
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion()))
+            if (!isTLSv12(context))
             {
                 return PRF_legacy(secret, label, labelSeed, size);
             }
