@@ -47,8 +47,7 @@ public class TlsBlockCipher
         this.randomData = new byte[256];
         context.getSecureRandom().nextBytes(randomData);
 
-        this.useExplicitIV = ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(context.getServerVersion()
-            .getEquivalentTLSVersion());
+        this.useExplicitIV = TlsUtils.isTLSv11(context);
 
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();

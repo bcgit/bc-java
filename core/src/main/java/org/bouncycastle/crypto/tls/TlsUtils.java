@@ -76,6 +76,21 @@ public class TlsUtils
         return true;
     }
 
+    public static boolean isSSL(TlsContext context)
+    {
+        return context.getServerVersion().isSSL();
+    }
+
+    public static boolean isTLSv11(TlsContext context)
+    {
+        return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+    }
+
+    public static boolean isTLSv12(TlsContext context)
+    {
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+    }
+
     public static void writeUint8(short i, OutputStream output)
         throws IOException
     {
@@ -588,7 +603,7 @@ public class TlsUtils
 
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            if (!ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion()))
+            if (!isTLSv12(context))
             {
                 return PRF_legacy(secret, label, labelSeed, size);
             }
