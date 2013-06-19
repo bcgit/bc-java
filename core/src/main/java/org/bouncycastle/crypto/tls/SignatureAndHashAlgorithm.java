@@ -9,8 +9,8 @@ import java.io.OutputStream;
  */
 public class SignatureAndHashAlgorithm
 {
-    private short hash;
-    private short signature;
+    protected short hash;
+    protected short signature;
 
     /**
      * @param hash      {@link HashAlgorithm}
@@ -63,7 +63,7 @@ public class SignatureAndHashAlgorithm
 
     public int hashCode()
     {
-        return (getHash() << 8) | getSignature();
+        return (getHash() << 16) | getSignature();
     }
 
     /**
