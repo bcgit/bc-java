@@ -5,13 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 
 public class TlsDHEKeyExchange
     extends TlsDHKeyExchange
@@ -60,11 +57,13 @@ public class TlsDHEKeyExchange
         byte[] hash = new byte[d.getDigestSize()];
         d.doFinal(hash, 0);
 
-        byte[] sigBytes = serverCredentials.generateCertificateSignature(hash);
+        byte[] signature = serverCredentials.generateCertificateSignature(hash);
+
         /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended from TLS 1.2
+         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        TlsUtils.writeOpaque16(sigBytes, buf);
+        DigitallySigned signed_params = new DigitallySigned(null, signature);
+        signed_params.encode(buf);
 
         return buf.toByteArray();
     }
@@ -77,15 +76,16 @@ public class TlsDHEKeyExchange
         Signer signer = initVerifyer(tlsSigner, securityParameters);
         InputStream sigIn = new SignerInputStream(input, signer);
 
-        ServerDHParams serverDHParams = ServerDHParams.parse(sigIn);
+        ServerDHParams params = ServerDHParams.parse(sigIn);
 
-        byte[] sigBytes = TlsUtils.readOpaque16(input);
-        if (!signer.verifySignature(sigBytes))
+        DigitallySigned signed_params = DigitallySigned.parse(context, input);
+
+        if (!signer.verifySignature(signed_params.getSignature()))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(serverDHParams.getPublicKey());
+        this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(params.getPublicKey());
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters)
