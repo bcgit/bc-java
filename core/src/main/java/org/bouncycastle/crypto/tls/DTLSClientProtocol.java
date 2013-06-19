@@ -239,7 +239,7 @@ public class DTLSClientProtocol
 
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
 
-        if (state.clientCredentials instanceof TlsSignerCredentials)
+        if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
             /*
              * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
