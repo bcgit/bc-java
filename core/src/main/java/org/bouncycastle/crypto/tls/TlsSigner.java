@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 public interface TlsSigner
 {
-
     void init(TlsContext context);
 
     byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)

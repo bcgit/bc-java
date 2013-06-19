@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 public class TlsECDSASigner
     extends TlsDSASigner
 {
-
     public boolean isValidPublicKey(AsymmetricKeyParameter publicKey)
     {
         return publicKey instanceof ECPublicKeyParameters;
