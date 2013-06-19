@@ -513,6 +513,15 @@ public class TlsUtils
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            if (entry.getSignature() == SignatureAlgorithm.anonymous)
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1 The "anonymous" value is meaningless in this context but used
+                 * in Section 7.4.3. It MUST NOT appear in this extension.
+                 */
+                throw new IllegalArgumentException(
+                    "SignatureAlgorithm.anonymous MUST NOT appear in the signature_algorithms extension");
+            }
             entry.encode(buf);
         }
 
@@ -547,6 +556,14 @@ public class TlsUtils
         for (int i = 0; i < count; ++i)
         {
             SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(buf);
+            if (entry.getSignature() == SignatureAlgorithm.anonymous)
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1 The "anonymous" value is meaningless in this context but used
+                 * in Section 7.4.3. It MUST NOT appear in this extension.
+                 */
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
             result.addElement(entry);
         }
 
