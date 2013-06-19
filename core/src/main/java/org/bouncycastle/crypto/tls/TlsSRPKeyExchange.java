@@ -21,10 +21,8 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * TLS 1.1 SRP key exchange (RFC 5054).
  */
-public class TlsSRPKeyExchange
-    extends AbstractTlsKeyExchange
+public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 {
-
     protected TlsSigner tlsSigner;
     protected byte[] identity;
     protected byte[] password;
@@ -37,7 +35,6 @@ public class TlsSRPKeyExchange
 
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity, byte[] password)
     {
-
         super(keyExchange, supportedSignatureAlgorithms);
 
         switch (keyExchange)
@@ -64,14 +61,12 @@ public class TlsSRPKeyExchange
     {
         super.init(context);
 
-        if (this.tlsSigner != null)
-        {
+        if (this.tlsSigner != null) {
             this.tlsSigner.init(context);
         }
     }
 
-    public void skipServerCredentials()
-        throws IOException
+    public void skipServerCredentials() throws IOException
     {
         if (tlsSigner != null)
         {
@@ -79,10 +74,8 @@ public class TlsSRPKeyExchange
         }
     }
 
-    public void processServerCertificate(Certificate serverCertificate)
-        throws IOException
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-
         if (tlsSigner == null)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -119,10 +112,8 @@ public class TlsSRPKeyExchange
         return true;
     }
 
-    public void processServerKeyExchange(InputStream input)
-        throws IOException
+    public void processServerKeyExchange(InputStream input) throws IOException
     {
-
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         InputStream sigIn = input;
@@ -173,28 +164,24 @@ public class TlsSRPKeyExchange
         this.srpClient.init(N, g, new SHA1Digest(), context.getSecureRandom());
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
-    public void processClientCredentials(TlsCredentials clientCredentials)
-        throws IOException
+    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public void generateClientKeyExchange(OutputStream output)
-        throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
         byte[] keData = BigIntegers.asUnsignedByteArray(srpClient.generateClientCredentials(s, this.identity,
             this.password));
         TlsUtils.writeOpaque16(keData, output);
     }
 
-    public byte[] generatePremasterSecret()
-        throws IOException
+    public byte[] generatePremasterSecret() throws IOException
     {
         try
         {
