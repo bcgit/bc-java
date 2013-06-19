@@ -1,13 +1,11 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
@@ -25,7 +23,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
  */
 public class Certificate
 {
-
     public static final Certificate EMPTY_CHAIN = new Certificate(
         new org.bouncycastle.asn1.x509.Certificate[0]);
 
