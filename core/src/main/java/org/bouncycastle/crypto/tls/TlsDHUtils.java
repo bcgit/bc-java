@@ -20,6 +20,11 @@ public class TlsDHUtils
     static final BigInteger ONE = BigInteger.valueOf(1);
     static final BigInteger TWO = BigInteger.valueOf(2);
 
+    public static boolean areCompatibleParameters(DHParameters a, DHParameters b)
+    {
+        return a.getP().equals(b.getP()) && a.getG().equals(b.getG());
+    }
+
     public static byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey, DHPrivateKeyParameters privateKey)
     {
         DHBasicAgreement basicAgreement = new DHBasicAgreement();
@@ -40,17 +45,26 @@ public class TlsDHUtils
         return dhGen.generateKeyPair();
     }
 
-    public static DHPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, DHParameters dhParams,
+    public static DHPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, DHParameters dhParameters,
         OutputStream output) throws IOException
     {
-        AsymmetricCipherKeyPair dhAgreeClientKeyPair = generateDHKeyPair(random, dhParams);
-        DHPrivateKeyParameters dhAgreeClientPrivateKey = (DHPrivateKeyParameters) dhAgreeClientKeyPair.getPrivate();
+        AsymmetricCipherKeyPair dhAgreeClientKeyPair = generateDHKeyPair(random, dhParameters);
 
-        BigInteger Yc = ((DHPublicKeyParameters) dhAgreeClientKeyPair.getPublic()).getY();
-        byte[] keData = BigIntegers.asUnsignedByteArray(Yc);
-        TlsUtils.writeOpaque16(keData, output);
+        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters) dhAgreeClientKeyPair.getPublic();
+        writeDHParameter(dhPublicKey.getY(), output);
 
-        return dhAgreeClientPrivateKey;
+        return (DHPrivateKeyParameters) dhAgreeClientKeyPair.getPrivate();
+    }
+
+    public static DHPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, DHParameters dhParameters,
+        OutputStream output) throws IOException
+    {
+        AsymmetricCipherKeyPair kp = TlsDHUtils.generateDHKeyPair(random, dhParameters);
+
+        ServerDHParams serverDHParams = new ServerDHParams((DHPublicKeyParameters)kp.getPublic());
+        serverDHParams.encode(output);
+
+        return (DHPrivateKeyParameters)kp.getPrivate();
     }
 
     public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException

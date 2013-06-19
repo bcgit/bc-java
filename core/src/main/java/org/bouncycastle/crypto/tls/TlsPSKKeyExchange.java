@@ -105,16 +105,8 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            DHKeyPairGenerator kpg = new DHKeyPairGenerator();
-            kpg.init(new DHKeyGenerationParameters(context.getSecureRandom(), this.dhParameters));
-            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
-            this.dhAgreeServerPrivateKey = (DHPrivateKeyParameters)kp.getPrivate();
-
-            BigInteger Ys = ((DHPublicKeyParameters) kp.getPublic()).getY();
-            
-            TlsDHUtils.writeDHParameter(dhParameters.getP(), buf);
-            TlsDHUtils.writeDHParameter(dhParameters.getG(), buf);
-            TlsDHUtils.writeDHParameter(Ys, buf);
+            this.dhAgreeServerPrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
+                this.dhParameters, buf);
         }
 
         return buf.toByteArray();
@@ -169,16 +161,9 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            byte[] pBytes = TlsUtils.readOpaque16(input);
-            byte[] gBytes = TlsUtils.readOpaque16(input);
-            byte[] YsBytes = TlsUtils.readOpaque16(input);
+            ServerDHParams serverDHParams = ServerDHParams.parse(input);
 
-            BigInteger p = new BigInteger(1, pBytes);
-            BigInteger g = new BigInteger(1, gBytes);
-            BigInteger Ys = new BigInteger(1, YsBytes);
-
-            this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Ys,
-                new DHParameters(p, g)));
+            this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(serverDHParams.getPublicKey());
         }
     }
 
