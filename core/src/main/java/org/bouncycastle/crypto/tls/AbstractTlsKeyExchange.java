@@ -7,7 +7,6 @@ import java.util.Vector;
 public abstract class AbstractTlsKeyExchange
     implements TlsKeyExchange
 {
-
     protected int keyExchange;
     protected Vector supportedSignatureAlgorithms;
 
@@ -27,7 +26,6 @@ public abstract class AbstractTlsKeyExchange
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
-
             /*
              * RFC 5264 7.4.1.4.1. If the client does not send the signature_algorithms extension,
              * the server MUST do the following:
@@ -45,7 +43,6 @@ public abstract class AbstractTlsKeyExchange
             {
                 switch (keyExchange)
                 {
-
                 case KeyExchangeAlgorithm.DH_DSS:
                 case KeyExchangeAlgorithm.DHE_DSS:
                 case KeyExchangeAlgorithm.SRP_DSS:
@@ -73,6 +70,11 @@ public abstract class AbstractTlsKeyExchange
                     break;
                 }
 
+                case KeyExchangeAlgorithm.DHE_PSK:
+                case KeyExchangeAlgorithm.PSK:
+                case KeyExchangeAlgorithm.SRP:
+                    break;
+
                 default:
                     throw new IllegalStateException("unsupported key exchange algorithm");
                 }
@@ -88,7 +90,6 @@ public abstract class AbstractTlsKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-
         if (supportedSignatureAlgorithms == null)
         {
             /*
