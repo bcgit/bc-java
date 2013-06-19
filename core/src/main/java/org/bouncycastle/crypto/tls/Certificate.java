@@ -43,7 +43,7 @@ public class Certificate
      */
     public org.bouncycastle.asn1.x509.Certificate[] getCerts()
     {
-        return clone(certificateList);
+        return getCertificateList();
     }
 
     /**
@@ -52,7 +52,7 @@ public class Certificate
      */
     public org.bouncycastle.asn1.x509.Certificate[] getCertificateList()
     {
-        return clone(certificateList);
+        return cloneCertificateList();
     }
 
     public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index)
@@ -83,21 +83,21 @@ public class Certificate
     public void encode(OutputStream output)
         throws IOException
     {
-        Vector encCerts = new Vector(this.certificateList.length);
+        Vector derEncodings = new Vector(this.certificateList.length);
         int totalLength = 0;
         for (int i = 0; i < this.certificateList.length; ++i)
         {
             byte[] derEncoding = certificateList[i].getEncoded(ASN1Encoding.DER);
-            encCerts.addElement(derEncoding);
+            derEncodings.addElement(derEncoding);
             totalLength += derEncoding.length + 3;
         }
 
         TlsUtils.writeUint24(totalLength, output);
 
-        for (int i = 0; i < encCerts.size(); ++i)
+        for (int i = 0; i < derEncodings.size(); ++i)
         {
-            byte[] encCert = (byte[])encCerts.elementAt(i);
-            TlsUtils.writeOpaque24(encCert, output);
+            byte[] derEncoding = (byte[])derEncodings.elementAt(i);
+            TlsUtils.writeOpaque24(derEncoding, output);
         }
     }
 
@@ -111,12 +111,12 @@ public class Certificate
     public static Certificate parse(InputStream input)
         throws IOException
     {
-        org.bouncycastle.asn1.x509.Certificate[] certs;
         int left = TlsUtils.readUint24(input);
         if (left == 0)
         {
             return EMPTY_CHAIN;
         }
+
         Vector tmp = new Vector();
         while (left > 0)
         {
@@ -127,20 +127,19 @@ public class Certificate
             ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
             tmp.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1));
         }
-        certs = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
+
+        org.bouncycastle.asn1.x509.Certificate[] certificateList = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
         for (int i = 0; i < tmp.size(); i++)
         {
-            certs[i] = (org.bouncycastle.asn1.x509.Certificate)tmp.elementAt(i);
+            certificateList[i] = (org.bouncycastle.asn1.x509.Certificate)tmp.elementAt(i);
         }
-        return new Certificate(certs);
+        return new Certificate(certificateList);
     }
 
-    private org.bouncycastle.asn1.x509.Certificate[] clone(org.bouncycastle.asn1.x509.Certificate[] list)
+    protected org.bouncycastle.asn1.x509.Certificate[] cloneCertificateList()
     {
-        org.bouncycastle.asn1.x509.Certificate[] rv = new org.bouncycastle.asn1.x509.Certificate[list.length];
-
-        System.arraycopy(list, 0, rv, 0, rv.length);
-
-        return rv;
+        org.bouncycastle.asn1.x509.Certificate[] result = new org.bouncycastle.asn1.x509.Certificate[certificateList.length];
+        System.arraycopy(certificateList, 0, result, 0, result.length);
+        return result;
     }
 }
