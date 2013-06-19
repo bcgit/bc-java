@@ -463,7 +463,7 @@ public class TlsServerProtocol
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        byte[] clientCertificateSignature = TlsUtils.readOpaque16(buf);
+        DigitallySigned clientCertificateVerify = DigitallySigned.parse(getContext(), buf);
 
         assertEmpty(buf);
 
@@ -477,7 +477,7 @@ public class TlsServerProtocol
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 
-            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, this.certificateVerifyHash);
+            tlsSigner.verifyRawSignature(clientCertificateVerify.getSignature(), publicKey, this.certificateVerifyHash);
         }
         catch (Exception e)
         {

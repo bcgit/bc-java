@@ -121,12 +121,13 @@ public class TlsECDHEKeyExchange
         byte[] hash = new byte[d.getDigestSize()];
         d.doFinal(hash, 0);
 
-        byte[] sigBytes = serverCredentials.generateCertificateSignature(hash);
+        byte[] signature = serverCredentials.generateCertificateSignature(hash);
+
         /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
-         * from TLS 1.2
+         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        TlsUtils.writeOpaque16(sigBytes, buf);
+        DigitallySigned signed_params = new DigitallySigned(null, signature);
+        signed_params.encode(buf);
 
         return buf.toByteArray();
     }
@@ -143,8 +144,9 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(sigIn);
 
-        byte[] sigByte = TlsUtils.readOpaque16(input);
-        if (!signer.verifySignature(sigByte))
+        DigitallySigned signed_params = DigitallySigned.parse(context, input);
+
+        if (!signer.verifySignature(signed_params.getSignature()))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }

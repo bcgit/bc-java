@@ -241,14 +241,14 @@ public class DTLSClientProtocol
 
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
-            /*
-             * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm prepended
-             * from TLS 1.2
-             */
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials)state.clientCredentials;
             byte[] md5andsha1 = handshake.getCurrentHash();
             byte[] signature = signerCredentials.generateCertificateSignature(md5andsha1);
-            byte[] certificateVerifyBody = generateCertificateVerify(state, signature);
+            /*
+             * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+             */
+            DigitallySigned certificateVerify = new DigitallySigned(null, signature);
+            byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
@@ -293,11 +293,11 @@ public class DTLSClientProtocol
         return new DTLSTransport(recordLayer);
     }
 
-    protected byte[] generateCertificateVerify(ClientHandshakeState state, byte[] signature)
+    protected byte[] generateCertificateVerify(ClientHandshakeState state, DigitallySigned certificateVerify)
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeOpaque16(signature, buf);
+        certificateVerify.encode(buf);
         return buf.toByteArray();
     }
 

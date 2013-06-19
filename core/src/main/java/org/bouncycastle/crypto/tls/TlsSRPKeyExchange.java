@@ -132,9 +132,9 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
         if (signer != null)
         {
-            byte[] sigByte = TlsUtils.readOpaque16(input);
+            DigitallySigned signed_params = DigitallySigned.parse(context, input);
 
-            if (!signer.verifySignature(sigByte))
+            if (!signer.verifySignature(signed_params.getSignature()))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }
@@ -176,9 +176,8 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void generateClientKeyExchange(OutputStream output) throws IOException
     {
-        byte[] keData = BigIntegers.asUnsignedByteArray(srpClient.generateClientCredentials(s, this.identity,
-            this.password));
-        TlsUtils.writeOpaque16(keData, output);
+        BigInteger A = srpClient.generateClientCredentials(s, this.identity, this.password);
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(A), output);
     }
 
     public byte[] generatePremasterSecret() throws IOException
