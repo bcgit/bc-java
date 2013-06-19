@@ -375,9 +375,19 @@ public class TlsECCUtils
     public static AsymmetricCipherKeyPair generateECKeyPair(SecureRandom random, ECDomainParameters ecParams)
     {
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(ecParams, random);
-        keyPairGenerator.init(keyGenerationParameters);
+        keyPairGenerator.init(new ECKeyGenerationParameters(ecParams, random));
         return keyPairGenerator.generateKeyPair();
+    }
+
+    public static ECPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, short[] ecPointFormats,
+        ECDomainParameters ecParams, OutputStream output) throws IOException
+    {
+        AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(random, ecParams);
+
+        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
+        writeECPoint(ecPointFormats, ecPublicKey.getQ(), output);
+
+        return (ECPrivateKeyParameters) kp.getPrivate();
     }
 
     public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key) throws IOException
@@ -556,6 +566,11 @@ public class TlsECCUtils
         TlsUtils.writeOpaque8(serializeECPoint(ecPointFormats, ecParameters.getG()), output);
         writeECParameter(ecParameters.getN(), output);
         writeECParameter(ecParameters.getH(), output);
+    }
+
+    public static void writeECPoint(short[] ecPointFormats, ECPoint point, OutputStream output) throws IOException
+    {
+        TlsUtils.writeOpaque8(TlsECCUtils.serializeECPoint(ecPointFormats, point), output);
     }
 
     public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException

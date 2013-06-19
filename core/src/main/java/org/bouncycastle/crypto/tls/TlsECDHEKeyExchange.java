@@ -96,9 +96,6 @@ public class TlsECDHEKeyExchange
         AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
         this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters)kp.getPrivate();
 
-        byte[] publicBytes = TlsECCUtils.serializeECPublicKey(clientECPointFormats,
-            (ECPublicKeyParameters)kp.getPublic());
-
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         if (namedCurve < 0)
@@ -110,7 +107,8 @@ public class TlsECDHEKeyExchange
             TlsECCUtils.writeNamedECParameters(namedCurve, buf);
         }
 
-        TlsUtils.writeOpaque8(publicBytes, buf);
+        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
+        TlsECCUtils.writeECPoint(clientECPointFormats, ecPublicKey.getQ(), buf);
 
         byte[] digestInput = buf.toByteArray();
 
