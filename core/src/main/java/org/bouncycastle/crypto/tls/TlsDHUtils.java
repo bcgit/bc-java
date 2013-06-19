@@ -45,23 +45,24 @@ public class TlsDHUtils
         return dhGen.generateKeyPair();
     }
 
-    public static DHPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, DHParameters dhParameters,
+    public static DHPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, DHParameters dhParams,
         OutputStream output) throws IOException
     {
-        AsymmetricCipherKeyPair dhAgreeClientKeyPair = generateDHKeyPair(random, dhParameters);
+        AsymmetricCipherKeyPair kp = generateDHKeyPair(random, dhParams);
 
-        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters) dhAgreeClientKeyPair.getPublic();
+        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters) kp.getPublic();
         writeDHParameter(dhPublicKey.getY(), output);
 
-        return (DHPrivateKeyParameters) dhAgreeClientKeyPair.getPrivate();
+        return (DHPrivateKeyParameters) kp.getPrivate();
     }
 
-    public static DHPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, DHParameters dhParameters,
+    public static DHPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, DHParameters dhParams,
         OutputStream output) throws IOException
     {
-        AsymmetricCipherKeyPair kp = TlsDHUtils.generateDHKeyPair(random, dhParameters);
+        AsymmetricCipherKeyPair kp = TlsDHUtils.generateDHKeyPair(random, dhParams);
 
-        ServerDHParams serverDHParams = new ServerDHParams((DHPublicKeyParameters)kp.getPublic());
+        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters)kp.getPublic();
+        ServerDHParams serverDHParams = new ServerDHParams(dhPublicKey);
         serverDHParams.encode(output);
 
         return (DHPrivateKeyParameters)kp.getPrivate();
