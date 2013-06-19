@@ -50,8 +50,8 @@ public class TlsDHUtils
     {
         AsymmetricCipherKeyPair kp = generateDHKeyPair(random, dhParams);
 
-        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters) kp.getPublic();
-        writeDHParameter(dhPublicKey.getY(), output);
+        DHPublicKeyParameters dh_public = (DHPublicKeyParameters) kp.getPublic();
+        writeDHParameter(dh_public.getY(), output);
 
         return (DHPrivateKeyParameters) kp.getPrivate();
     }
@@ -62,8 +62,8 @@ public class TlsDHUtils
         AsymmetricCipherKeyPair kp = TlsDHUtils.generateDHKeyPair(random, dhParams);
 
         DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters)kp.getPublic();
-        ServerDHParams serverDHParams = new ServerDHParams(dhPublicKey);
-        serverDHParams.encode(output);
+        ServerDHParams params = new ServerDHParams(dhPublicKey);
+        params.encode(output);
 
         return (DHPrivateKeyParameters)kp.getPrivate();
     }
