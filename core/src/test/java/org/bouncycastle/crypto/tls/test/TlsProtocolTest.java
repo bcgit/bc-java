@@ -179,7 +179,7 @@ public class TlsProtocolTest
 
         public CertificateRequest getCertificateRequest()
         {
-            return new CertificateRequest(new short[]{ClientCertificateType.rsa_sign}, null);
+            return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, null, null);
         }
 
         public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate)

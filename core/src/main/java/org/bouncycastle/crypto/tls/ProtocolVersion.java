@@ -4,7 +4,6 @@ import java.io.IOException;
 
 public final class ProtocolVersion
 {
-
     public static final ProtocolVersion SSLv3 = new ProtocolVersion(0x0300, "SSL 3.0");
     public static final ProtocolVersion TLSv10 = new ProtocolVersion(0x0301, "TLS 1.0");
     public static final ProtocolVersion TLSv11 = new ProtocolVersion(0x0302, "TLS 1.1");

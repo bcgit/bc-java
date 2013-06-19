@@ -207,9 +207,7 @@ public class DTLSServerProtocol
             }
             else
             {
-                ProtocolVersion equivalentTLSVersion = state.serverContext.getServerVersion().getEquivalentTLSVersion();
-
-                if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(equivalentTLSVersion))
+                if (TlsUtils.isTLSv12(state.serverContext))
                 {
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
@@ -467,7 +465,7 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        byte[] clientCertificateSignature = TlsUtils.readOpaque16(buf);
+        DigitallySigned clientCertificateVerify = DigitallySigned.parse(state.serverContext, buf);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -481,7 +479,7 @@ public class DTLSServerProtocol
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 
-            tlsSigner.verifyRawSignature(clientCertificateSignature, publicKey, certificateVerifyHash);
+            tlsSigner.verifyRawSignature(clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
         }
         catch (Exception e)
         {

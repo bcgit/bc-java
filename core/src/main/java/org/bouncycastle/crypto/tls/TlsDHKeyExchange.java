@@ -7,7 +7,6 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
@@ -97,7 +96,7 @@ public class TlsDHKeyExchange
         {
             try
             {
-                this.dhAgreeServerPublicKey = validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
+                this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
             }
             catch (ClassCastException e)
             {
@@ -196,35 +195,14 @@ public class TlsDHKeyExchange
 
         if (dhAgreeServerPrivateKey != null)
         {
-            return calculateDHBasicAgreement(dhAgreeClientPublicKey, dhAgreeServerPrivateKey);
+            return TlsDHUtils.calculateDHBasicAgreement(dhAgreeClientPublicKey, dhAgreeServerPrivateKey);
         }
 
         if (dhAgreeClientPrivateKey != null)
         {
-            return calculateDHBasicAgreement(dhAgreeServerPublicKey, dhAgreeClientPrivateKey);
+            return TlsDHUtils.calculateDHBasicAgreement(dhAgreeServerPublicKey, dhAgreeClientPrivateKey);
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected boolean areCompatibleParameters(DHParameters a, DHParameters b)
-    {
-        return a.getP().equals(b.getP()) && a.getG().equals(b.getG());
-    }
-
-    protected byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey, DHPrivateKeyParameters privateKey)
-    {
-        return TlsDHUtils.calculateDHBasicAgreement(publicKey, privateKey);
-    }
-
-    protected AsymmetricCipherKeyPair generateDHKeyPair(DHParameters dhParams)
-    {
-        return TlsDHUtils.generateDHKeyPair(context.getSecureRandom(), dhParams);
-    }
-
-    protected DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key)
-        throws IOException
-    {
-        return TlsDHUtils.validateDHPublicKey(key);
     }
 }

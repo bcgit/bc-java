@@ -8,7 +8,6 @@ public abstract class AbstractTlsClient
     extends AbstractTlsPeer
     implements TlsClient
 {
-
     protected TlsCipherFactory cipherFactory;
 
     protected TlsClientContext context;
@@ -60,7 +59,6 @@ public abstract class AbstractTlsClient
     public Hashtable getClientExtensions()
         throws IOException
     {
-
         Hashtable clientExtensions = null;
 
         ProtocolVersion clientVersion = context.getClientVersion();
@@ -71,14 +69,13 @@ public abstract class AbstractTlsClient
          */
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
-
             // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
 
-            short[] hashAlgorithms = new short[]{HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1};
+            short[] hashAlgorithms = new short[]{ HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
+                HashAlgorithm.sha224, HashAlgorithm.sha1 };
 
             // TODO Sort out ECDSA signatures and add them as the preferred option here
-            short[] signatureAlgorithms = new short[]{SignatureAlgorithm.rsa};
+            short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa };
 
             this.supportedSignatureAlgorithms = new Vector();
             for (int i = 0; i < hashAlgorithms.length; ++i)

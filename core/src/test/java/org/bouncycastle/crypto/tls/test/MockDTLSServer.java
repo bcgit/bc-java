@@ -15,7 +15,6 @@ import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 public class MockDTLSServer
     extends DefaultTlsServer
 {
-
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
@@ -40,7 +39,7 @@ public class MockDTLSServer
 
     public CertificateRequest getCertificateRequest()
     {
-        return new CertificateRequest(new short[]{ClientCertificateType.rsa_sign}, null);
+        return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, null, null);
     }
 
     public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate)

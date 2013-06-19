@@ -17,11 +17,9 @@ import org.bouncycastle.util.Arrays;
 public class TlsRSASigner
     extends AbstractTlsSigner
 {
-
     public byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
         throws CryptoException
     {
-
         AsymmetricBlockCipher engine = createRSAImpl();
         engine.init(true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
         return engine.processBlock(md5AndSha1, 0, md5AndSha1.length);
@@ -30,7 +28,6 @@ public class TlsRSASigner
     public boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
         throws CryptoException
     {
-
         AsymmetricBlockCipher engine = createRSAImpl();
         engine.init(false, publicKey);
         byte[] signed = engine.processBlock(sigBytes, 0, sigBytes.length);
@@ -56,7 +53,7 @@ public class TlsRSASigner
     protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp)
     {
         Signer s;
-        if (ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion()))
+        if (TlsUtils.isTLSv12(context))
         {
             /*
              * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated

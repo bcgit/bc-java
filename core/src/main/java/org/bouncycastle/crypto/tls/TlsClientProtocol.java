@@ -334,14 +334,14 @@ public class TlsClientProtocol
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
-                    /*
-                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm
-                     * prepended from TLS 1.2
-                     */
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
                     byte[] md5andsha1 = recordStream.getCurrentHash(null);
-                    byte[] clientCertificateSignature = signerCreds.generateCertificateSignature(md5andsha1);
-                    sendCertificateVerifyMessage(clientCertificateSignature);
+                    byte[] signature = signerCreds.generateCertificateSignature(md5andsha1);
+                    /*
+                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+                     */
+                    DigitallySigned certificateVerify = new DigitallySigned(null, signature);
+                    sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
@@ -412,7 +412,7 @@ public class TlsClientProtocol
                     this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
 
-                this.certificateRequest = CertificateRequest.parse(buf);
+                this.certificateRequest = CertificateRequest.parse(getContext(), buf);
 
                 assertEmpty(buf);
 
@@ -650,18 +650,22 @@ public class TlsClientProtocol
         }
     }
 
-    protected void sendCertificateVerifyMessage(byte[] data)
+    protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify)
         throws IOException
     {
-        /*
-         * Send signature of handshake messages so far to prove we are the owner of the cert See RFC
-         * 2246 sections 4.7, 7.4.3 and 7.4.8
-         */
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate_verify, bos);
-        TlsUtils.writeUint24(data.length + 2, bos);
-        TlsUtils.writeOpaque16(data, bos);
-        byte[] message = bos.toByteArray();
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        TlsUtils.writeUint8(HandshakeType.certificate_verify, buf);
+
+        // Reserve space for length
+        TlsUtils.writeUint24(0, buf);
+
+        certificateVerify.encode(buf);
+
+        byte[] message = buf.toByteArray();
+
+        // Patch actual length back in
+        TlsUtils.writeUint24(message.length - 4, message, 1);
 
         safeWriteRecord(ContentType.handshake, message, 0, message.length);
     }
