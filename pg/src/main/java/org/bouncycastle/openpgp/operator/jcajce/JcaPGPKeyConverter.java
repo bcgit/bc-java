@@ -35,10 +35,12 @@ import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
@@ -48,7 +50,9 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
 import org.bouncycastle.jce.spec.ElGamalPublicKeySpec;
+import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
@@ -144,11 +148,12 @@ public class JcaPGPKeyConverter
      * to do this once for a JCA key, or make sure you keep track of the time you used.
      *
      * @param algorithm asymmetric algorithm type representing the public key.
+     * @param algorithmParameters additional parameters to be stored against the public key.
      * @param pubKey    actual public key to associate.
      * @param time      date of creation.
      * @throws PGPException on key creation problem.
      */
-    public PGPPublicKey getPGPPublicKey(int algorithm, PublicKey pubKey, Date time)
+    public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date time)
         throws PGPException
     {
         BCPGKey bcpgKey;
@@ -186,8 +191,14 @@ public class JcaPGPKeyConverter
             X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
 
             if (algorithm == PGPPublicKey.EC)
-            {                                                    // TODO: fix kdf parameters...
-                bcpgKey = new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), 0, 0);
+            {
+                PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
+                if (kdfParams == null)
+                {
+                    // We default to these as they are specified as mandatory in RFC 6631.
+                    kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+                }
+                bcpgKey = new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
             }
             else
             {
@@ -200,6 +211,23 @@ public class JcaPGPKeyConverter
         }
 
         return new PGPPublicKey(new PublicKeyPacket(algorithm, time, bcpgKey), fingerPrintCalculator);
+    }
+
+    /**
+     * Create a PGPPublicKey from the passed in JCA one.
+     * <p/>
+     * Note: the time passed in affects the value of the key's keyID, so you probably only want
+     * to do this once for a JCA key, or make sure you keep track of the time you used.
+     *
+     * @param algorithm asymmetric algorithm type representing the public key.
+     * @param pubKey    actual public key to associate.
+     * @param time      date of creation.
+     * @throws PGPException on key creation problem.
+     */
+    public PGPPublicKey getPGPPublicKey(int algorithm, PublicKey pubKey, Date time)
+        throws PGPException
+    {
+        return getPGPPublicKey(algorithm, null, pubKey, time);
     }
 
     public PrivateKey getPrivateKey(PGPPrivateKey privKey)
@@ -246,7 +274,7 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("DSA");
 
                 return fact.generatePrivate(dsaPrivSpec);
-            case PublicKeyAlgorithmTags.EC:
+            case PublicKeyAlgorithmTags.ECDH:
                 ECDHPublicBCPGKey ecdhPub = (ECDHPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
