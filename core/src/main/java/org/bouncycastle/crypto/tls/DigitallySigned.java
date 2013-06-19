@@ -20,6 +20,9 @@ public class DigitallySigned
         this.signature = signature;
     }
 
+    /**
+     * @return a {@link SignatureAndHashAlgorithm} (or null before TLS 1.2).
+     */
     public SignatureAndHashAlgorithm getAlgorithm()
     {
         return algorithm;
