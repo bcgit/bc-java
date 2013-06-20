@@ -8,6 +8,15 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * <pre>
+ * RecipientEncryptedKey ::= SEQUENCE {
+ *     rid KeyAgreeRecipientIdentifier,
+ *     encryptedKey EncryptedKey
+ * }
+ * </pre>
+ */
 
 public class RecipientEncryptedKey
     extends ASN1Object
@@ -40,6 +49,13 @@ public class RecipientEncryptedKey
     
     /**
      * return a RecipientEncryptedKey object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link RecipientEncryptedKey} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with RecipientEncryptedKey structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -80,12 +96,6 @@ public class RecipientEncryptedKey
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * RecipientEncryptedKey ::= SEQUENCE {
-     *     rid KeyAgreeRecipientIdentifier,
-     *     encryptedKey EncryptedKey
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

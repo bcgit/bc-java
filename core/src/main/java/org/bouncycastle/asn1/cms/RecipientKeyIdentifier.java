@@ -10,6 +10,18 @@ import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * <pre>
+ * RecipientKeyIdentifier ::= SEQUENCE {
+ *     subjectKeyIdentifier SubjectKeyIdentifier,
+ *     date GeneralizedTime OPTIONAL,
+ *     other OtherKeyAttribute OPTIONAL 
+ * }
+ *
+ * SubjectKeyIdentifier ::= OCTET STRING
+ * </pre>
+ */
 public class RecipientKeyIdentifier
     extends ASN1Object
 {
@@ -88,6 +100,13 @@ public class RecipientKeyIdentifier
     
     /**
      * return a RecipientKeyIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link RecipientKeyIdentifier} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with RecipientKeyIdentifier structure inside
+     * </ul>
      *
      * @param _obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -125,15 +144,6 @@ public class RecipientKeyIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * RecipientKeyIdentifier ::= SEQUENCE {
-     *     subjectKeyIdentifier SubjectKeyIdentifier,
-     *     date GeneralizedTime OPTIONAL,
-     *     other OtherKeyAttribute OPTIONAL 
-     * }
-     *
-     * SubjectKeyIdentifier ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

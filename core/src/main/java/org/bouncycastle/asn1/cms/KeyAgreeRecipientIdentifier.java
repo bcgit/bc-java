@@ -7,6 +7,14 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * <pre>
+ * KeyAgreeRecipientIdentifier ::= CHOICE {
+ *     issuerAndSerialNumber IssuerAndSerialNumber,
+ *     rKeyId [0] IMPLICIT RecipientKeyIdentifier }
+ * </pre>
+ */
 public class KeyAgreeRecipientIdentifier
     extends ASN1Object
     implements ASN1Choice
@@ -32,6 +40,15 @@ public class KeyAgreeRecipientIdentifier
     
     /**
      * return an KeyAgreeRecipientIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link KeyAgreeRecipientIdentifier} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with IssuerAndSerialNumber structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} with tag value 0: a KeyAgreeRecipientIdentifier data structure
+     * </ul>
+     * <p>
+     * Note: no byte[] input!
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -84,12 +101,6 @@ public class KeyAgreeRecipientIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * KeyAgreeRecipientIdentifier ::= CHOICE {
-     *     issuerAndSerialNumber IssuerAndSerialNumber,
-     *     rKeyId [0] IMPLICIT RecipientKeyIdentifier
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
