@@ -11,6 +11,7 @@ public class TlsExtensionsUtils
 {
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
+    public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
 
     public static void addServerNameExtension(Hashtable extensions, ServerNameList serverNameList)
         throws IOException
@@ -22,6 +23,11 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_status_request, createStatusRequestExtension(statusRequest));
+    }
+
+    public static void addTruncatedHMacExtension(Hashtable extensions)
+    {
+        extensions.put(EXT_truncated_hmac, createTruncatedHMacExtension());
     }
 
     public static ServerNameList getServerNameExtension(Hashtable extensions)
@@ -36,6 +42,17 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_status_request);
         return extensionData == null ? null : readStatusRequestExtension(extensionData);
+    }
+
+    public static boolean hasTruncatedHMacExtension(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_truncated_hmac);
+        return extensionData == null ? false : readTruncatedHMacExtension(extensionData);
+    }
+
+    public static byte[] createEmptyExtensionData()
+    {
+        return TlsUtils.EMPTY_BYTES;
     }
 
     public static byte[] createServerNameExtension(ServerNameList serverNameList)
@@ -66,6 +83,11 @@ public class TlsExtensionsUtils
         statusRequest.encode(buf);
 
         return buf.toByteArray();
+    }
+
+    public static byte[] createTruncatedHMacExtension()
+    {
+        return createEmptyExtensionData();
     }
 
     public static ServerNameList readServerNameExtension(byte[] extensionData)
@@ -100,5 +122,20 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return statusRequest;
+    }
+
+    private static boolean readTruncatedHMacExtension(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        if (extensionData.length != 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return true;
     }
 }
