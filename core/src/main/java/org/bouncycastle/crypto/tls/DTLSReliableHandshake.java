@@ -10,7 +10,6 @@ import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
 {
-
     private final static int MAX_RECEIVE_AHEAD = 10;
 
     private final DTLSRecordLayer recordLayer;
@@ -46,7 +45,6 @@ class DTLSReliableHandshake
     void sendMessage(short msg_type, byte[] body)
         throws IOException
     {
-
         if (!sending)
         {
             checkInboundFlight();
@@ -65,7 +63,6 @@ class DTLSReliableHandshake
     Message receiveMessage()
         throws IOException
     {
-
         if (sending)
         {
             sending = false;
@@ -93,7 +90,6 @@ class DTLSReliableHandshake
 
         for (; ; )
         {
-
             int receiveLimit = recordLayer.getReceiveLimit();
             if (buf == null || buf.length < receiveLimit)
             {
@@ -337,7 +333,6 @@ class DTLSReliableHandshake
     private void writeMessage(Message message)
         throws IOException
     {
-
         int sendLimit = recordLayer.getSendLimit();
         int fragmentLimit = sendLimit - 12;
 
@@ -364,18 +359,15 @@ class DTLSReliableHandshake
     private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length)
         throws IOException
     {
+        RecordLayerBuffer fragment = new RecordLayerBuffer(12 + fragment_length);
+        TlsUtils.writeUint8(message.getType(), fragment);
+        TlsUtils.writeUint24(message.getBody().length, fragment);
+        TlsUtils.writeUint16(message.getSeq(), fragment);
+        TlsUtils.writeUint24(fragment_offset, fragment);
+        TlsUtils.writeUint24(fragment_length, fragment);
+        fragment.write(message.getBody(), fragment_offset, fragment_length);
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(message.getType(), buf);
-        TlsUtils.writeUint24(message.getBody().length, buf);
-        TlsUtils.writeUint16(message.getSeq(), buf);
-        TlsUtils.writeUint24(fragment_offset, buf);
-        TlsUtils.writeUint24(fragment_length, buf);
-        buf.write(message.getBody(), fragment_offset, fragment_length);
-
-        byte[] fragment = buf.toByteArray();
-
-        recordLayer.send(fragment, 0, fragment.length);
+        fragment.sendToRecordLayer(recordLayer);
     }
 
     private static boolean checkAll(Hashtable inboundFlight)
@@ -427,6 +419,20 @@ class DTLSReliableHandshake
         public byte[] getBody()
         {
             return body;
+        }
+    }
+
+    private static class RecordLayerBuffer extends ByteArrayOutputStream
+    {
+        RecordLayerBuffer(int size)
+        {
+            super(size);
+        }
+
+        void sendToRecordLayer(DTLSRecordLayer recordLayer) throws IOException
+        {
+            recordLayer.send(buf, 0, count);
+            buf = null;
         }
     }
 }

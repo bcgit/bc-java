@@ -46,30 +46,14 @@ public class TlsECCUtils
 
     public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException
     {
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[]) extensions.get(EXT_elliptic_curves);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readSupportedEllipticCurvesExtension(extensionValue);
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_elliptic_curves);
+        return extensionData == null ? null : readSupportedEllipticCurvesExtension(extensionData);
     }
 
     public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
     {
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[]) extensions.get(EXT_ec_point_formats);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readSupportedPointFormatsExtension(extensionValue);
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_ec_point_formats);
+        return extensionData == null ? null : readSupportedPointFormatsExtension(extensionData);
     }
 
     public static byte[] createSupportedEllipticCurvesExtension(int[] namedCurves) throws IOException
@@ -112,14 +96,14 @@ public class TlsECCUtils
         return buf.toByteArray();
     }
 
-    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionValue) throws IOException
+    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData) throws IOException
     {
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         int length = TlsUtils.readUint16(buf);
         if (length < 2 || (length & 1) != 0)
@@ -134,14 +118,14 @@ public class TlsECCUtils
         return namedCurves;
     }
 
-    public static short[] readSupportedPointFormatsExtension(byte[] extensionValue) throws IOException
+    public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
     {
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         short length = TlsUtils.readUint8(buf);
         if (length < 1)

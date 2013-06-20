@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.tls;
 
 public class SecurityParameters
 {
-
     int entity = -1;
     int prfAlgorithm = -1;
     short compressionAlgorithm = -1;
@@ -10,6 +9,9 @@ public class SecurityParameters
     byte[] masterSecret = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
+
+    // TODO Keep this internal, since it's not the ideal place for it
+    boolean truncatedHMac = false;
 
     /**
      * @return {@link ConnectionEnd}

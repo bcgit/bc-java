@@ -26,7 +26,6 @@ public class TlsNullCipher
     public TlsNullCipher(TlsContext context, Digest clientWriteDigest, Digest serverWriteDigest)
         throws IOException
     {
-
         if ((clientWriteDigest == null) != (serverWriteDigest == null))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -38,7 +37,6 @@ public class TlsNullCipher
 
         if (clientWriteDigest != null)
         {
-
             int key_block_size = clientWriteDigest.getDigestSize()
                 + serverWriteDigest.getDigestSize();
             byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
@@ -84,7 +82,6 @@ public class TlsNullCipher
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
         throws IOException
     {
-
         if (writeMac == null)
         {
             return Arrays.copyOfRange(plaintext, offset, offset + len);
@@ -100,7 +97,6 @@ public class TlsNullCipher
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
         throws IOException
     {
-
         if (readMac == null)
         {
             return Arrays.copyOfRange(ciphertext, offset, offset + len);
