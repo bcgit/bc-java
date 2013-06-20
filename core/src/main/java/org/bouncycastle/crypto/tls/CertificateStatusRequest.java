@@ -85,7 +85,7 @@ public class CertificateStatusRequest
         return new CertificateStatusRequest(status_type, result);
     }
 
-    private static boolean isCorrectType(short statusType, Object request)
+    protected static boolean isCorrectType(short statusType, Object request)
     {
         switch (statusType)
         {
