@@ -477,9 +477,9 @@ public abstract class TlsProtocol
             }
 
             /*
-             * We are only allowed to write fragments up to 2^14 bytes.
+             * We are only allowed to write fragments up to 2^14 bytes (or less via max_fragment_length extension).
              */
-            int toWrite = Math.min(len, 1 << 14);
+            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
 
             safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
 
