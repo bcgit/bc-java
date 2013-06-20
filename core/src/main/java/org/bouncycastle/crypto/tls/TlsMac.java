@@ -15,7 +15,6 @@ import org.bouncycastle.util.Arrays;
  */
 public class TlsMac
 {
-
     protected TlsContext context;
     protected byte[] secret;
     protected Mac mac;
@@ -51,7 +50,7 @@ public class TlsMac
             this.digestOverhead = 8;
         }
 
-        if (context.getServerVersion().isSSL())
+        if (TlsUtils.isSSL(context))
         {
             this.mac = new SSL3Mac(digest);
 
@@ -102,30 +101,18 @@ public class TlsMac
      */
     public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
     {
-
         ProtocolVersion serverVersion = context.getServerVersion();
         boolean isSSL = serverVersion.isSSL();
 
-        ByteArrayOutputStream bosMac = new ByteArrayOutputStream(isSSL ? 11 : 13);
-        try
+        byte[] macHeader = new byte[isSSL ? 11 : 13];
+        TlsUtils.writeUint64(seqNo, macHeader, 0);
+        TlsUtils.writeUint8(type, macHeader, 8);
+        if (!isSSL)
         {
-            TlsUtils.writeUint64(seqNo, bosMac);
-            TlsUtils.writeUint8(type, bosMac);
-
-            if (!isSSL)
-            {
-                TlsUtils.writeVersion(serverVersion, bosMac);
-            }
-
-            TlsUtils.writeUint16(length, bosMac);
+            TlsUtils.writeVersion(serverVersion, macHeader, 9);
         }
-        catch (IOException e)
-        {
-            // This should never happen
-            throw new IllegalStateException("Internal error during mac calculation");
-        }
+        TlsUtils.writeUint16(length, macHeader, macHeader.length - 2);
 
-        byte[] macHeader = bosMac.toByteArray();
         mac.update(macHeader, 0, macHeader.length);
         mac.update(message, offset, length);
 
@@ -135,9 +122,8 @@ public class TlsMac
     }
 
     public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
-                                           int fullLength, byte[] dummyData)
+        int fullLength, byte[] dummyData)
     {
-
         /*
          * Actual MAC only calculated on 'length' bytes...
          */
