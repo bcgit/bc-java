@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,7 +11,6 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.Streams;
 
 public class TlsClientProtocol
     extends TlsProtocol
@@ -668,21 +666,11 @@ public class TlsClientProtocol
     protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate_verify);
 
-        TlsUtils.writeUint8(HandshakeType.certificate_verify, buf);
+        certificateVerify.encode(message);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
-
-        certificateVerify.encode(buf);
-
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendClientHelloMessage()
@@ -690,11 +678,7 @@ public class TlsClientProtocol
     {
         recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.client_hello, buf);
-
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
         if (client_version.isDTLS())
@@ -703,12 +687,12 @@ public class TlsClientProtocol
         }
 
         getContext().setClientVersion(client_version);
-        TlsUtils.writeVersion(client_version, buf);
+        TlsUtils.writeVersion(client_version, message);
 
-        buf.write(securityParameters.clientRandom);
+        message.write(securityParameters.clientRandom);
 
         // Session id
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
 
         /*
          * Cipher suites
@@ -735,51 +719,37 @@ public class TlsClientProtocol
                 ++count;
             }
 
-            TlsUtils.writeUint16(2 * count, buf);
-            TlsUtils.writeUint16Array(offeredCipherSuites, buf);
+            TlsUtils.writeUint16(2 * count, message);
+            TlsUtils.writeUint16Array(offeredCipherSuites, message);
 
             if (noRenegExt)
             {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, buf);
+                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, message);
             }
         }
 
         // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
-        TlsUtils.writeUint8((short)offeredCompressionMethods.length, buf);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, buf);
+        TlsUtils.writeUint8((short)offeredCompressionMethods.length, message);
+        TlsUtils.writeUint8Array(offeredCompressionMethods, message);
 
         // Extensions
         if (clientExtensions != null)
         {
-            writeExtensions(buf, clientExtensions);
+            writeExtensions(message, clientExtensions);
         }
 
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendClientKeyExchangeMessage()
         throws IOException
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_key_exchange);
 
-        TlsUtils.writeUint8(HandshakeType.client_key_exchange, bos);
+        this.keyExchange.generateClientKeyExchange(message);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, bos);
-
-        this.keyExchange.generateClientKeyExchange(bos);
-        byte[] message = bos.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 }
