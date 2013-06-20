@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
@@ -35,6 +36,17 @@ public abstract class DTLSProtocol
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
+    }
+
+    protected static short evaluateMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription) throws IOException
+    {
+        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
+        if (maxFragmentLength >= 0 && maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
+        {
+            throw new TlsFatalAlert(alertDescription);
+        }
+        return maxFragmentLength;
     }
 
     protected static byte[] generateCertificate(Certificate certificate)

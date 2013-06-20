@@ -635,17 +635,7 @@ public class TlsClientProtocol
                 }
             }
 
-//            short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-//            if (maxFragmentLength >= 0)
-//            {
-//                if (maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
-//                {
-//                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-//                }
-//
-//                int plainTextLimit = 1 << (8 + maxFragmentLength);
-//                recordStream.setPlaintextLimit(plainTextLimit);
-//            }
+            processMaxFragmentLengthExtension(clientExtensions, serverExtensions, AlertDescription.illegal_parameter);
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
