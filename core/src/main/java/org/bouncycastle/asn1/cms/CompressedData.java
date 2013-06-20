@@ -10,7 +10,8 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /** 
- * RFC 3274 - CMS Compressed Data.
+ * <a href="http://tools.ietf.org/html/rfc3274">RFC 3274</a>: CMS Compressed Data.
+ * 
  * <pre>
  * CompressedData ::= SEQUENCE {
  *  version CMSVersion,

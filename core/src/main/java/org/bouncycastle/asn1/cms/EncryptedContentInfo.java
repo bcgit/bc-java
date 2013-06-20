@@ -11,6 +11,17 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EncryptedContentInfo object.
+ *
+ * <pre>
+ * EncryptedContentInfo ::= SEQUENCE {
+ *     contentType ContentType,
+ *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
+ *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
+ * }
+ * </pre>
+ */
 public class EncryptedContentInfo
     extends ASN1Object
 {
@@ -84,13 +95,6 @@ public class EncryptedContentInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * EncryptedContentInfo ::= SEQUENCE {
-     *     contentType ContentType,
-     *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
-     *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

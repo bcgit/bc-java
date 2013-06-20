@@ -14,6 +14,29 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-9.1">RFC 5652</a>
+ *
+ * <pre>
+ * AuthenticatedData ::= SEQUENCE {
+ *       version CMSVersion,
+ *       originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
+ *       recipientInfos RecipientInfos,
+ *       macAlgorithm MessageAuthenticationCodeAlgorithm,
+ *       digestAlgorithm [1] DigestAlgorithmIdentifier OPTIONAL,
+ *       encapContentInfo EncapsulatedContentInfo,
+ *       authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
+ *       mac MessageAuthenticationCode,
+ *       unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }
+ *
+ * AuthAttributes ::= SET SIZE (1..MAX) OF Attribute
+ *
+ * UnauthAttributes ::= SET SIZE (1..MAX) OF Attribute
+ *
+ * MessageAuthenticationCode ::= OCTET STRING
+ * </pre>
+ */
+
 public class AuthenticatedData
     extends ASN1Object
 {
@@ -186,24 +209,6 @@ public class AuthenticatedData
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * AuthenticatedData ::= SEQUENCE {
-     *       version CMSVersion,
-     *       originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-     *       recipientInfos RecipientInfos,
-     *       macAlgorithm MessageAuthenticationCodeAlgorithm,
-     *       digestAlgorithm [1] DigestAlgorithmIdentifier OPTIONAL,
-     *       encapContentInfo EncapsulatedContentInfo,
-     *       authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
-     *       mac MessageAuthenticationCode,
-     *       unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }
-     *
-     * AuthAttributes ::= SET SIZE (1..MAX) OF Attribute
-     *
-     * UnauthAttributes ::= SET SIZE (1..MAX) OF Attribute
-     *
-     * MessageAuthenticationCode ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

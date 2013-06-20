@@ -10,6 +10,24 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> ContentInfo object.
+ *
+ * <pre>
+ * ContentInfo ::= SEQUENCE {
+ *     contentType ContentType,
+ *     content [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL }
+ * </pre>
+ *
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.2">RFC 5652</a> EncapsulatedContentInfo object.
+ * <pre>
+ * EncapsulatedContentInfo ::= SEQUENCE {
+ *     eContentType ContentType,
+ *     eContent [0] EXPLICIT OCTET STRING OPTIONAL }
+ * </pre>
+ */
+
+
 public class ContentInfo
     extends ASN1Object
     implements CMSObjectIdentifiers
@@ -84,12 +102,6 @@ public class ContentInfo
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * ContentInfo ::= SEQUENCE {
-     *          contentType ContentType,
-     *          content
-     *          [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
