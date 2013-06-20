@@ -10,8 +10,8 @@ public class MaxFragmentLength
     public static short pow2_11 = 3;
     public static short pow2_12 = 4;
 
-    public static boolean isValid(short s)
+    public static boolean isValid(short maxFragmentLength)
     {
-        return s >= pow2_9 && s <= pow2_12;
+        return maxFragmentLength >= pow2_9 && maxFragmentLength <= pow2_12;
     }
 }
