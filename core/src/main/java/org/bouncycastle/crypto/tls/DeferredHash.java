@@ -10,16 +10,15 @@ import org.bouncycastle.crypto.Digest;
 class DeferredHash
     implements TlsHandshakeHash
 {
-
     protected TlsContext context;
 
-    private ByteArrayOutputStream buf = new ByteArrayOutputStream();
+    private DigestInputBuffer buf = new DigestInputBuffer();
     private int prfAlgorithm = -1;
     private Digest hash = null;
 
     DeferredHash()
     {
-        this.buf = new ByteArrayOutputStream();
+        this.buf = new DigestInputBuffer();
         this.hash = null;
     }
 
@@ -36,13 +35,11 @@ class DeferredHash
 
     public TlsHandshakeHash commit()
     {
-
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
         Digest prfHash = TlsUtils.createPRFHash(prfAlgorithm);
 
-        byte[] data = buf.toByteArray();
-        prfHash.update(data, 0, data.length);
+        buf.updateDigest(prfHash);
 
         if (prfHash instanceof TlsHandshakeHash)
         {
@@ -123,6 +120,14 @@ class DeferredHash
         if (hash == null)
         {
             throw new IllegalStateException("No hash algorithm has been set");
+        }
+    }
+
+    private static class DigestInputBuffer extends ByteArrayOutputStream
+    {
+        void updateDigest(Digest d)
+        {
+            d.update(buf, 0, count);
         }
     }
 }
