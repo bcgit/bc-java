@@ -641,7 +641,7 @@ public class PGPSignatureTest
             {
                 if (expected[i] != prefAlgs[i])
                 {
-                    fail("wrong algorithm found for " + type + ": expected " + expected[i] + " got " + prefAlgs);
+                    fail("wrong algorithm found for " + type + ": expected " + expected[i] + " got " + prefAlgs[i]);
                 }
             }
         }
