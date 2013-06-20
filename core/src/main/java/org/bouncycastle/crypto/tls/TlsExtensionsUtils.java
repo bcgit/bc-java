@@ -41,7 +41,7 @@ public class TlsExtensionsUtils
         throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_max_fragment_length);
-        return extensionData == null ? null : readMaxFragmentLengthExtension(extensionData);
+        return extensionData == null ? -1 : readMaxFragmentLengthExtension(extensionData);
     }
 
     public static ServerNameList getServerNameExtension(Hashtable extensions)
