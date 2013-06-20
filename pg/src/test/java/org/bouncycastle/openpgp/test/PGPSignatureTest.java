@@ -16,6 +16,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
@@ -33,6 +34,10 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -99,9 +104,9 @@ public class PGPSignatureTest
         //
         // RSA tests
         //
-        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(rsaKeyRing);         
-        PGPSecretKey secretKey = pgpPriv.getSecretKey();        
-        PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(rsaPass, "BC");
+        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(rsaKeyRing, new JcaKeyFingerprintCalculator());
+        PGPSecretKey secretKey = pgpPriv.getSecretKey();
+        PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(rsaPass));
 
         try
         {
@@ -113,7 +118,7 @@ public class PGPSignatureTest
         {
             // expected
         }
-        
+
         try
         {
             testSigV3(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey);
@@ -128,30 +133,30 @@ public class PGPSignatureTest
         //
         // certifications
         //
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, "BC");
-        
-        sGen.initSign(PGPSignature.KEY_REVOCATION, pgpPrivKey);
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1).setProvider("BC"));
+
+        sGen.init(PGPSignature.KEY_REVOCATION, pgpPrivKey);
 
         PGPSignature sig = sGen.generateCertification(secretKey.getPublicKey());
-        
-        sig.initVerify(secretKey.getPublicKey(), "BC");
-        
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretKey.getPublicKey());
+
         if (!sig.verifyCertification(secretKey.getPublicKey()))
         {
             fail("revocation verification failed.");
         }
-        
-        PGPSecretKeyRing pgpDSAPriv = new PGPSecretKeyRing(dsaKeyRing);         
-        PGPSecretKey secretDSAKey = pgpDSAPriv.getSecretKey();        
-        PGPPrivateKey pgpPrivDSAKey = secretDSAKey.extractPrivateKey(dsaPass, "BC");
-        
-        sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, "BC");
-        
-        sGen.initSign(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
+
+        PGPSecretKeyRing pgpDSAPriv = new PGPSecretKeyRing(dsaKeyRing, new JcaKeyFingerprintCalculator());
+        PGPSecretKey secretDSAKey = pgpDSAPriv.getSecretKey();
+        PGPPrivateKey pgpPrivDSAKey = secretDSAKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(dsaPass));
+
+        sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1).setProvider("BC"));
+
+        sGen.init(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
 
         PGPSignatureSubpacketGenerator    unhashedGen = new PGPSignatureSubpacketGenerator();
         PGPSignatureSubpacketGenerator    hashedGen = new PGPSignatureSubpacketGenerator();
-        
+
         hashedGen.setSignatureExpirationTime(false, TEST_EXPIRATION_TIME);
         hashedGen.setSignerUserID(true, TEST_USER_ID);
         hashedGen.setPreferredCompressionAlgorithms(false, PREFERRED_COMPRESSION_ALGORITHMS);
@@ -160,25 +165,25 @@ public class PGPSignatureTest
 
         sGen.setHashedSubpackets(hashedGen.generate());
         sGen.setUnhashedSubpackets(unhashedGen.generate());
-        
+
         sig = sGen.generateCertification(secretDSAKey.getPublicKey(), secretKey.getPublicKey());
 
         byte[] sigBytes = sig.getEncoded();
-        
+
         PGPObjectFactory f = new PGPObjectFactory(sigBytes);
-        
+
         sig = ((PGPSignatureList) f.nextObject()).get(0);
-        
-        sig.initVerify(secretDSAKey.getPublicKey(), "BC");
-        
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretDSAKey.getPublicKey());
+
         if (!sig.verifyCertification(secretDSAKey.getPublicKey(), secretKey.getPublicKey()))
         {
             fail("subkey binding verification failed.");
         }
-        
+
         PGPSignatureSubpacketVector hashedPcks = sig.getHashedSubPackets();
         PGPSignatureSubpacketVector unhashedPcks = sig.getUnhashedSubPackets();
-        
+
         if (hashedPcks.size() != 6)
         {
             fail("wrong number of hashed packets found.");
@@ -193,108 +198,108 @@ public class PGPSignatureTest
         {
             fail("test userid not matching");
         }
-        
+
         if (hashedPcks.getSignatureExpirationTime() != TEST_EXPIRATION_TIME)
         {
             fail("test signature expiration time not matching");
         }
-        
+
         if (unhashedPcks.getIssuerKeyID() != secretDSAKey.getKeyID())
         {
             fail("wrong issuer key ID found in certification");
         }
-        
+
         int[] prefAlgs = hashedPcks.getPreferredCompressionAlgorithms();
         preferredAlgorithmCheck("compression", PREFERRED_COMPRESSION_ALGORITHMS, prefAlgs);
 
         prefAlgs = hashedPcks.getPreferredHashAlgorithms();
         preferredAlgorithmCheck("hash", PREFERRED_HASH_ALGORITHMS, prefAlgs);
-        
+
         prefAlgs = hashedPcks.getPreferredSymmetricAlgorithms();
         preferredAlgorithmCheck("symmetric", PREFERRED_SYMMETRIC_ALGORITHMS, prefAlgs);
-        
+
         int[] criticalHashed = hashedPcks.getCriticalTags();
-        
+
         if (criticalHashed.length != 1)
         {
             fail("wrong number of critical packets found.");
         }
-        
+
         if (criticalHashed[0] != SignatureSubpacketTags.SIGNER_USER_ID)
         {
             fail("wrong critical packet found in tag list.");
         }
-        
+
         //
         // no packets passed
         //
-        sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, "BC");
-        
-        sGen.initSign(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
+        sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1).setProvider("BC"));
+
+        sGen.init(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
 
         sGen.setHashedSubpackets(null);
         sGen.setUnhashedSubpackets(null);
 
         sig = sGen.generateCertification(TEST_USER_ID, secretKey.getPublicKey());
-        
-        sig.initVerify(secretDSAKey.getPublicKey(), "BC");
-        
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretDSAKey.getPublicKey());
+
         if (!sig.verifyCertification(TEST_USER_ID, secretKey.getPublicKey()))
         {
             fail("subkey binding verification failed.");
         }
-        
+
         hashedPcks = sig.getHashedSubPackets();
-        
+
         if (hashedPcks.size() != 1)
         {
             fail("found wrong number of hashed packets");
         }
-        
+
         unhashedPcks = sig.getUnhashedSubPackets();
-        
+
         if (unhashedPcks.size() != 1)
         {
             fail("found wrong number of unhashed packets");
         }
-        
+
         try
         {
             sig.verifyCertification(secretKey.getPublicKey());
-            
+
             fail("failed to detect non-key signature.");
         }
         catch (PGPException e)
         {
             // expected
         }
-        
+
         //
         // override hash packets
         //
-        sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, "BC");
-        
-        sGen.initSign(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
+        sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1).setProvider("BC"));
+
+        sGen.init(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
 
         hashedGen = new PGPSignatureSubpacketGenerator();
-        
+
         hashedGen.setSignatureCreationTime(false, new Date(0L));
-        
+
         sGen.setHashedSubpackets(hashedGen.generate());
-        
+
         sGen.setUnhashedSubpackets(null);
 
         sig = sGen.generateCertification(TEST_USER_ID, secretKey.getPublicKey());
-        
-        sig.initVerify(secretDSAKey.getPublicKey(), "BC");
-        
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretDSAKey.getPublicKey());
+
         if (!sig.verifyCertification(TEST_USER_ID, secretKey.getPublicKey()))
         {
             fail("subkey binding verification failed.");
         }
-        
+
         hashedPcks = sig.getHashedSubPackets();
-        
+
         if (hashedPcks.size() != 1)
         {
             fail("found wrong number of hashed packets in override test");
@@ -304,50 +309,50 @@ public class PGPSignatureTest
         {
             fail("hasSubpacket test for creation time failed");
         }
-        
+
         if (!hashedPcks.getSignatureCreationTime().equals(new Date(0L)))
         {
             fail("creation of overriden date failed.");
         }
-        
+
         prefAlgs = hashedPcks.getPreferredCompressionAlgorithms();
         preferredAlgorithmCheck("compression", NO_PREFERENCES, prefAlgs);
 
         prefAlgs = hashedPcks.getPreferredHashAlgorithms();
         preferredAlgorithmCheck("hash", NO_PREFERENCES, prefAlgs);
-        
+
         prefAlgs = hashedPcks.getPreferredSymmetricAlgorithms();
         preferredAlgorithmCheck("symmetric", NO_PREFERENCES, prefAlgs);
-        
+
         if (hashedPcks.getKeyExpirationTime() != 0)
         {
             fail("unexpected key expiration time found");
         }
-        
+
         if (hashedPcks.getSignatureExpirationTime() != 0)
         {
             fail("unexpected signature expiration time found");
         }
-        
+
         if (hashedPcks.getSignerUserID() != null)
         {
             fail("unexpected signer user ID found");
         }
-        
+
         criticalHashed = hashedPcks.getCriticalTags();
-        
+
         if (criticalHashed.length != 0)
         {
             fail("critical packets found when none expected");
         }
-        
+
         unhashedPcks = sig.getUnhashedSubPackets();
-        
+
         if (unhashedPcks.size() != 1)
         {
             fail("found wrong number of unhashed packets in override test");
         }
-        
+
         //
         // general signatures
         //
@@ -359,14 +364,14 @@ public class PGPSignatureTest
         testTextSig(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
         testTextSigV3(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
         testTextSigV3(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
-        
+
         //
         // DSA Tests
         //
-        pgpPriv = new PGPSecretKeyRing(dsaKeyRing);         
-        secretKey = pgpPriv.getSecretKey();        
-        pgpPrivKey = secretKey.extractPrivateKey(dsaPass, "BC");
-        
+        pgpPriv = new PGPSecretKeyRing(dsaKeyRing, new JcaKeyFingerprintCalculator());
+        secretKey = pgpPriv.getSecretKey();
+        pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(dsaPass));
+
         try
         {
             testSig(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey);
@@ -377,7 +382,7 @@ public class PGPSignatureTest
         {
             // expected
         }
-        
+
         try
         {
             testSigV3(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey);
@@ -388,22 +393,142 @@ public class PGPSignatureTest
         {
             // expected
         }
-        
+
         testSig(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey);
         testSigV3(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey);
         testTextSig(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
         testTextSig(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
         testTextSigV3(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
         testTextSigV3(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1, secretKey.getPublicKey(), pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
-        
+
         // special cases
         //
         testMissingSubpackets(nullPacketsSubKeyBinding);
-        
+
         testMissingSubpackets(generateV3BinarySig(pgpPrivKey, PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1));
 
         // keyflags
         testKeyFlagsValues();
+
+        testSubpacketGenerator();
+    }
+
+    private void testSubpacketGenerator()
+    {
+        PGPSignatureSubpacketGenerator sGen = new PGPSignatureSubpacketGenerator();
+
+        String name1 = genString(64);
+        String value1 = genString(72);
+
+        sGen.setNotationData(true, true, name1, value1);
+
+        PGPSignatureSubpacketVector sVec = sGen.generate();
+
+        NotationData[] nd = sVec.getNotationDataOccurences();
+
+        if (nd.length != 1 || !nd[0].isHumanReadable())
+        {
+            fail("length and readability test 1 failed");
+        }
+
+        if (!nd[0].getNotationName().equals(name1) || !nd[0].getNotationValue().equals(value1))
+        {
+            fail("name/value test 1 failed");
+        }
+
+        String name2 = genString(256);
+        String value2 = genString(264);
+
+        sGen.setNotationData(true, false, name2, value2);
+
+        sVec = sGen.generate();
+
+        nd = sVec.getNotationDataOccurences();
+
+        if (nd.length != 2 || !nd[0].isHumanReadable() || nd[1].isHumanReadable())
+        {
+            fail("length and readability test 2 failed");
+        }
+
+        if (!nd[0].getNotationName().equals(name1) || !nd[0].getNotationValue().equals(value1))
+        {
+            fail("name/value test 2.1 failed");
+        }
+
+        if (!nd[1].getNotationName().equals(name2) || !nd[1].getNotationValue().equals(value2))
+        {
+            fail("name/value test 2.2 failed");
+        }
+
+        String name3 = genString(0xffff);
+        String value3 = genString(0xffff);
+
+        sGen.setNotationData(true, false, name3, value3);
+
+        sVec = sGen.generate();
+
+        nd = sVec.getNotationDataOccurences();
+
+        if (nd.length != 3 || !nd[0].isHumanReadable() || nd[1].isHumanReadable() || nd[2].isHumanReadable())
+        {
+            fail("length and readability test 3 failed");
+        }
+
+        if (!nd[0].getNotationName().equals(name1) || !nd[0].getNotationValue().equals(value1))
+        {
+            fail("name/value test 3.1 failed");
+        }
+
+        if (!nd[1].getNotationName().equals(name2) || !nd[1].getNotationValue().equals(value2))
+        {
+            fail("name/value test 3.2 failed");
+        }
+
+        if (!nd[2].getNotationName().equals(name3) || !nd[2].getNotationValue().equals(value3))
+        {
+            fail("name/value test 3.3 failed");
+        }
+
+        String name4 = genString(0xffff1);
+        String value4 = genString(0xfffff);
+
+        try
+        {
+            sGen.setNotationData(true, false, name4, value4);
+            fail("truncation occurs silently");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!"notationName exceeds maximum length.".equals(e.getMessage()))
+            {
+                fail("wrong message");
+            }
+        }
+
+        try
+        {
+            sGen.setNotationData(true, false, name3, value4);
+            fail("truncation occurs silently");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!"notationValue exceeds maximum length.".equals(e.getMessage()))
+            {
+                fail("wrong message");
+            }
+        }
+    }
+
+    private String genString(int length)
+    {
+        char[] chars = new char[length];
+
+        for (int i = 0; i != length; i++)
+        {
+            chars[i] = (char)('a' + (i % 26));
+        }
+
+        return new String(chars);
     }
 
     private void testKeyFlagsValues()
@@ -531,9 +656,9 @@ public class PGPSignatureTest
     {            
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ByteArrayInputStream  testIn = new ByteArrayInputStream(TEST_DATA);
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(encAlgorithm, hashAlgorithm, "BC");
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, hashAlgorithm).setProvider("BC"));
         
-        sGen.initSign(PGPSignature.BINARY_DOCUMENT, privKey);
+        sGen.init(PGPSignature.BINARY_DOCUMENT, privKey);
         sGen.generateOnePassVersion(false).encode(bOut);
     
         PGPLiteralDataGenerator    lGen = new PGPLiteralDataGenerator();
@@ -570,12 +695,12 @@ public class PGPSignatureTest
         byte[]         canonicalData)
         throws Exception
     {            
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(encAlgorithm, HashAlgorithmTags.SHA1, "BC");  
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, HashAlgorithmTags.SHA1).setProvider("BC"));
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ByteArrayInputStream  testIn = new ByteArrayInputStream(data);
         Date                  creationTime = new Date();
         
-        sGen.initSign(PGPSignature.CANONICAL_TEXT_DOCUMENT, privKey);
+        sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, privKey);
         sGen.generateOnePassVersion(false).encode(bOut);
 
         PGPLiteralDataGenerator    lGen = new PGPLiteralDataGenerator();
@@ -627,9 +752,9 @@ public class PGPSignatureTest
     {
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
         ByteArrayInputStream    testIn = new ByteArrayInputStream(TEST_DATA);
-        PGPV3SignatureGenerator sGen = new PGPV3SignatureGenerator(encAlgorithm, hashAlgorithm, "BC");
+        PGPV3SignatureGenerator sGen = new PGPV3SignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, hashAlgorithm).setProvider("BC"));
         
-        sGen.initSign(PGPSignature.BINARY_DOCUMENT, privKey);
+        sGen.init(PGPSignature.BINARY_DOCUMENT, privKey);
         sGen.generateOnePassVersion(false).encode(bOut);
     
         PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
@@ -666,11 +791,11 @@ public class PGPSignatureTest
         byte[]         canonicalData)
         throws Exception
     {            
-        PGPV3SignatureGenerator sGen = new PGPV3SignatureGenerator(encAlgorithm, HashAlgorithmTags.SHA1, "BC");
+        PGPV3SignatureGenerator sGen = new PGPV3SignatureGenerator(new JcaPGPContentSignerBuilder(encAlgorithm, HashAlgorithmTags.SHA1).setProvider("BC"));
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
         ByteArrayInputStream    testIn = new ByteArrayInputStream(data);
         
-        sGen.initSign(PGPSignature.CANONICAL_TEXT_DOCUMENT, privKey);
+        sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, privKey);
         sGen.generateOnePassVersion(false).encode(bOut);
 
         PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
@@ -718,7 +843,7 @@ public class PGPSignatureTest
         PGPLiteralData          p2 = (PGPLiteralData)pgpFact.nextObject();
         InputStream             dIn = p2.getInputStream();
     
-        ops.initVerify(pubKey, "BC");
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
         
         int ch;
 
@@ -750,7 +875,7 @@ public class PGPSignatureTest
             fail("Failed generated signature check - " + hashAlgorithm);
         }
         
-        sig.initVerify(pubKey, "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
         
         for (int i = 0; i != original.length; i++)
         {

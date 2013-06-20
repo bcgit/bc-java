@@ -1,10 +1,10 @@
 package org.bouncycastle.bcpg.sig;
 
+import java.io.ByteArrayOutputStream;
+
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Strings;
-
-import java.io.ByteArrayOutputStream;
 
 /**
  * Class provided a NotationData object according to
@@ -50,10 +50,19 @@ public class NotationData
         int nameLength, valueLength;
 
         nameData = Strings.toUTF8ByteArray(notationName);
-        nameLength = Math.min(nameData.length, 0xFF);
+        nameLength = Math.min(nameData.length, 0xFFFF);
+
+        if (nameLength != nameData.length)
+        {
+            throw new IllegalArgumentException("notationName exceeds maximum length.");
+        }
 
         valueData = Strings.toUTF8ByteArray(notationValue);
-        valueLength = Math.min(valueData.length, 0xFF);
+        valueLength = Math.min(valueData.length, 0xFFFF);
+        if (valueLength != valueData.length)
+        {
+            throw new IllegalArgumentException("notationValue exceeds maximum length.");
+        }
 
         // name length
         out.write((nameLength >>> 8) & 0xFF);
@@ -79,7 +88,7 @@ public class NotationData
 
     public String getNotationName()
     {
-        int nameLength = ((data[HEADER_FLAG_LENGTH] << 8) + (data[HEADER_FLAG_LENGTH + 1] << 0));
+        int nameLength = (((data[HEADER_FLAG_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + 1] & 0xff));
 
         byte bName[] = new byte[nameLength];
         System.arraycopy(data, HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + HEADER_VALUE_LENGTH, bName, 0, nameLength);
@@ -94,8 +103,8 @@ public class NotationData
 
     public byte[] getNotationValueBytes()
     {
-        int nameLength = ((data[HEADER_FLAG_LENGTH] << 8) + (data[HEADER_FLAG_LENGTH + 1] << 0));
-        int valueLength = ((data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH] << 8) + (data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + 1] << 0));
+        int nameLength = (((data[HEADER_FLAG_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + 1] & 0xff));
+        int valueLength = (((data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH] & 0xff) << 8) + (data[HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + 1] & 0xff));
 
         byte bValue[] = new byte[valueLength];
         System.arraycopy(data, HEADER_FLAG_LENGTH + HEADER_NAME_LENGTH + HEADER_VALUE_LENGTH + nameLength, bValue, 0, valueLength);
