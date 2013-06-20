@@ -10,6 +10,17 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.3">RFC 5652</a>:
+ * <pre>
+ * KEKRecipientInfo ::= SEQUENCE {
+ *     version CMSVersion,  -- always set to 4
+ *     kekid KEKIdentifier,
+ *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
+ *     encryptedKey EncryptedKey 
+ * }
+ * </pre>
+ */
 public class KEKRecipientInfo
     extends ASN1Object
 {
@@ -56,6 +67,13 @@ public class KEKRecipientInfo
     
     /**
      * return a KEKRecipientInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link KEKRecipientInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with KEKRecipientInfo structure inside
+     * <li> null -> null
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -98,14 +116,6 @@ public class KEKRecipientInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * KEKRecipientInfo ::= SEQUENCE {
-     *     version CMSVersion,  -- always set to 4
-     *     kekid KEKIdentifier,
-     *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
-     *     encryptedKey EncryptedKey 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

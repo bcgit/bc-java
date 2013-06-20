@@ -11,6 +11,28 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5083">RFC 5083</a>:
+ *
+ * CMS AuthEnveloped Data object.
+ * <p>
+ * ASN.1:
+ * <pre>
+ *     id-ct-authEnvelopedData OBJECT IDENTIFIER ::= { iso(1)
+ *       member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
+ *       smime(16) ct(1) 23 }
+ *
+ *     AuthEnvelopedData ::= SEQUENCE {
+ *       version CMSVersion,
+ *       originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
+ *       recipientInfos RecipientInfos,
+ *       authEncryptedContentInfo EncryptedContentInfo,
+ *       authAttrs [1] IMPLICIT AuthAttributes OPTIONAL,
+ *       mac MessageAuthenticationCode,
+ *       unauthAttrs [2] IMPLICIT UnauthAttributes OPTIONAL }
+ * </pre>
+ */
+
 public class AuthEnvelopedData
     extends ASN1Object
 {
@@ -51,6 +73,11 @@ public class AuthEnvelopedData
         this.unauthAttrs = unauthAttrs;
     }
 
+    /**
+     * Constructs AuthEnvelopedData by parsing supplied ASN1Sequence
+     * <p>
+     * @param seq An ASN1Sequence with AuthEnvelopedData
+     */
     public AuthEnvelopedData(
         ASN1Sequence seq)
     {
@@ -98,8 +125,14 @@ public class AuthEnvelopedData
     }
 
     /**
-     * return an AuthEnvelopedData object from a tagged object.
+     * Return an AuthEnvelopedData object from a tagged object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link ASN1Sequence org.bouncycastle.asn1.ASN1Sequence} input formats
+     * </ul>
      *
+
      * @param obj      the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
@@ -115,9 +148,15 @@ public class AuthEnvelopedData
 
     /**
      * return an AuthEnvelopedData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link AuthEnvelopedData} object
+     * <li> {@link ASN1Sequence org.bouncycastle.asn1.ASN1Sequence} input formats with AuthEnvelopedData structure inside
+     * </ul>
      *
-     * @param obj the object we want converted.
-     * @throws IllegalArgumentException if the object cannot be converted.
+     * @param obj The object we want converted.
+     * @throws IllegalArgumentException if the object cannot be converted, or was null.
      */
     public static AuthEnvelopedData getInstance(
         Object obj)
@@ -172,16 +211,6 @@ public class AuthEnvelopedData
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * AuthEnvelopedData ::= SEQUENCE {
-     *   version CMSVersion,
-     *   originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-     *   recipientInfos RecipientInfos,
-     *   authEncryptedContentInfo EncryptedContentInfo,
-     *   authAttrs [1] IMPLICIT AuthAttributes OPTIONAL,
-     *   mac MessageAuthenticationCode,
-     *   unauthAttrs [2] IMPLICIT UnauthAttributes OPTIONAL }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

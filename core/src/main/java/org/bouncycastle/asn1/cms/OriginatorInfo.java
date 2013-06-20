@@ -9,6 +9,36 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>:
+ * <pre>
+ * RFC 3369:
+ *
+ * OriginatorInfo ::= SEQUENCE {
+ *     certs [0] IMPLICIT CertificateSet OPTIONAL,
+ *     crls  [1] IMPLICIT CertificateRevocationLists OPTIONAL 
+ * }
+ * CertificateRevocationLists ::= SET OF CertificateList (from X.509)
+ *
+ * RFC 3582 / 5652:
+ *
+ * OriginatorInfo ::= SEQUENCE {
+ *     certs [0] IMPLICIT CertificateSet OPTIONAL,
+ *     crls  [1] IMPLICIT RevocationInfoChoices OPTIONAL
+ * }
+ * RevocationInfoChoices ::= SET OF RevocationInfoChoice
+ * RevocationInfoChoice ::= CHOICE {
+ *     crl CertificateList,
+ *     other [1] IMPLICIT OtherRevocationInfoFormat }
+ *
+ * OtherRevocationInfoFormat ::= SEQUENCE {
+ *     otherRevInfoFormat OBJECT IDENTIFIER,
+ *     otherRevInfo ANY DEFINED BY otherRevInfoFormat }
+ * </pre>
+ * <p>
+ * TODO: RevocationInfoChoices / RevocationInfoChoice.
+ *       Constructor using CertificateSet, CertificationInfoChoices
+ */
 public class OriginatorInfo
     extends ASN1Object
 {
@@ -71,6 +101,13 @@ public class OriginatorInfo
     
     /**
      * return an OriginatorInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link OriginatorInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OriginatorInfo structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -78,16 +115,11 @@ public class OriginatorInfo
     public static OriginatorInfo getInstance(
         Object obj)
     {
-        if (obj instanceof OriginatorInfo)
+        if (obj == null || obj instanceof OriginatorInfo)
         {
             return (OriginatorInfo)obj;
         }
-        else if (obj != null)
-        {
-            return new OriginatorInfo(ASN1Sequence.getInstance(obj));
-        }
-        
-        return null;
+        return new OriginatorInfo(ASN1Sequence.getInstance(obj));
     }
     
     public ASN1Set getCertificates()
@@ -102,12 +134,6 @@ public class OriginatorInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * OriginatorInfo ::= SEQUENCE {
-     *     certs [0] IMPLICIT CertificateSet OPTIONAL,
-     *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
