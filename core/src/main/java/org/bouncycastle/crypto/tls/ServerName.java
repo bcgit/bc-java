@@ -56,6 +56,10 @@ public class ServerName
         {
         case NameType.host_name:
             byte[] utf8Encoding = Strings.toUTF8ByteArray((String)name);
+            if (utf8Encoding.length < 1)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
             TlsUtils.writeOpaque16(utf8Encoding, output);
             break;
         default:
@@ -81,6 +85,10 @@ public class ServerName
         case NameType.host_name:
         {
             byte[] utf8Encoding = TlsUtils.readOpaque16(input);
+            if (utf8Encoding.length < 1)
+            {
+                throw new TlsFatalAlert(AlertDescription.decode_error);
+            }
             name = Strings.fromUTF8ByteArray(utf8Encoding);
             break;
         }
