@@ -598,7 +598,7 @@ public class TlsClientProtocol
                  * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
                 if (!extType.equals(EXT_RenegotiationInfo)
-                    && (clientExtensions == null || clientExtensions.get(extType) == null))
+                    && null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
                     /*
                      * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless
@@ -619,8 +619,8 @@ public class TlsClientProtocol
                  * When a ServerHello is received, the client MUST check if it includes the
                  * "renegotiation_info" extension:
                  */
-                byte[] renegExtValue = (byte[])serverExtensions.get(EXT_RenegotiationInfo);
-                if (renegExtValue != null)
+                byte[] renegExtData = (byte[])serverExtensions.get(EXT_RenegotiationInfo);
+                if (renegExtData != null)
                 {
                     /*
                      * If the extension is present, set the secure_renegotiation flag to TRUE. The
@@ -630,7 +630,7 @@ public class TlsClientProtocol
                      */
                     this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                    if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                     {
                         this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                     }
@@ -710,7 +710,8 @@ public class TlsClientProtocol
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = clientExtensions == null || clientExtensions.get(EXT_RenegotiationInfo) == null;
+            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             int count = offeredCipherSuites.length;
             if (noRenegExt)

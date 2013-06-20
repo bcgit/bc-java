@@ -12,36 +12,24 @@ import org.bouncycastle.util.Integers;
  */
 public class TlsSRTPUtils
 {
-
     public static final Integer EXT_use_srtp = Integers.valueOf(ExtensionType.use_srtp);
 
     public static void addUseSRTPExtension(Hashtable extensions, UseSRTPData useSRTPData)
         throws IOException
     {
-
         extensions.put(EXT_use_srtp, createUseSRTPExtension(useSRTPData));
     }
 
     public static UseSRTPData getUseSRTPExtension(Hashtable extensions)
         throws IOException
     {
-
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[])extensions.get(EXT_use_srtp);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readUseSRTPExtension(extensionValue);
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_use_srtp);
+        return extensionData == null ? null : readUseSRTPExtension(extensionData);
     }
 
     public static byte[] createUseSRTPExtension(UseSRTPData useSRTPData)
         throws IOException
     {
-
         if (useSRTPData == null)
         {
             throw new IllegalArgumentException("'useSRTPData' cannot be null");
@@ -60,16 +48,15 @@ public class TlsSRTPUtils
         return buf.toByteArray();
     }
 
-    public static UseSRTPData readUseSRTPExtension(byte[] extensionValue)
+    public static UseSRTPData readUseSRTPExtension(byte[] extensionData)
         throws IOException
     {
-
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         // SRTPProtectionProfiles
         int length = TlsUtils.readUint16(buf);

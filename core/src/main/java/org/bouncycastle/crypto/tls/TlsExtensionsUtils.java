@@ -27,31 +27,15 @@ public class TlsExtensionsUtils
     public static ServerNameList getServerNameExtension(Hashtable extensions)
         throws IOException
     {
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[])extensions.get(EXT_server_name);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readServerNameExtension(extensionValue);
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_name);
+        return extensionData == null ? null : readServerNameExtension(extensionData);
     }
 
     public static CertificateStatusRequest getStatusRequestExtension(Hashtable extensions)
         throws IOException
     {
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[])extensions.get(EXT_status_request);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readStatusRequestExtension(extensionValue);
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_status_request);
+        return extensionData == null ? null : readStatusRequestExtension(extensionData);
     }
 
     public static byte[] createServerNameExtension(ServerNameList serverNameList)
@@ -84,15 +68,15 @@ public class TlsExtensionsUtils
         return buf.toByteArray();
     }
 
-    public static ServerNameList readServerNameExtension(byte[] extensionValue)
+    public static ServerNameList readServerNameExtension(byte[] extensionData)
         throws IOException
     {
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         ServerNameList serverNameList = ServerNameList.parse(buf);
 
@@ -101,15 +85,15 @@ public class TlsExtensionsUtils
         return serverNameList;
     }
 
-    public static CertificateStatusRequest readStatusRequestExtension(byte[] extensionValue)
+    public static CertificateStatusRequest readStatusRequestExtension(byte[] extensionData)
         throws IOException
     {
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         CertificateStatusRequest statusRequest = CertificateStatusRequest.parse(buf);
 
