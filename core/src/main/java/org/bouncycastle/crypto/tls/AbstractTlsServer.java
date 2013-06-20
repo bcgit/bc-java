@@ -17,6 +17,7 @@ public abstract class AbstractTlsServer
     protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
+    protected boolean truncatedHMacOffered;
     protected Vector supportedSignatureAlgorithms;
     protected boolean eccCipherSuitesOffered;
     protected int[] namedCurves;
@@ -35,6 +36,20 @@ public abstract class AbstractTlsServer
     public AbstractTlsServer(TlsCipherFactory cipherFactory)
     {
         this.cipherFactory = cipherFactory;
+    }
+
+    protected boolean allowTruncatedHMac()
+    {
+        return false;
+    }
+
+    protected Hashtable checkServerExtensions()
+    {
+        if (this.serverExtensions == null)
+        {
+            this.serverExtensions = new Hashtable();
+        }
+        return serverExtensions;
     }
 
     protected abstract int[] getCipherSuites();
@@ -124,6 +139,8 @@ public abstract class AbstractTlsServer
 
         if (clientExtensions != null)
         {
+            this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
+
             this.supportedSignatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
             if (this.supportedSignatureAlgorithms != null)
             {
@@ -219,6 +236,11 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
+        if (this.truncatedHMacOffered && allowTruncatedHMac())
+        {
+            TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
+        }
+
         if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
         {
             /*
@@ -226,15 +248,13 @@ public abstract class AbstractTlsServer
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
-            this.serverECPointFormats = new short[]{ECPointFormat.ansiX962_compressed_char2,
-                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed};
+            this.serverECPointFormats = new short[]{ ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
 
-            this.serverExtensions = new Hashtable();
-            TlsECCUtils.addSupportedPointFormatsExtension(serverExtensions, serverECPointFormats);
-            return serverExtensions;
+            TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), serverECPointFormats);
         }
 
-        return null;
+        return serverExtensions;
     }
 
     public Vector getServerSupplementalData()
