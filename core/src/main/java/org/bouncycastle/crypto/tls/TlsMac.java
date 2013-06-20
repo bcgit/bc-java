@@ -17,13 +17,14 @@ public class TlsMac
     protected Mac mac;
     protected int digestBlockSize;
     protected int digestOverhead;
+    protected int macLength;
 
     /**
      * Generate a new instance of an TlsMac.
      *
      * @param context the TLS client context
      * @param digest  The digest to use.
-     * @param key     A byte-array where the key for this mac is located.
+     * @param key     A byte-array where the key for this MAC is located.
      * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
      * @param len     The length of the key.
      */
@@ -69,6 +70,12 @@ public class TlsMac
         }
 
         this.mac.init(keyParameter);
+
+        this.macLength = mac.getMacSize();
+        if (context.getSecurityParameters().truncatedHMac)
+        {
+            this.macLength = Math.min(this.macLength, 10);
+        }
     }
 
     /**
@@ -80,11 +87,11 @@ public class TlsMac
     }
 
     /**
-     * @return The Keysize of the mac.
+     * @return The output length of this MAC.
      */
     public int getSize()
     {
-        return mac.getMacSize();
+        return macLength;
     }
 
     /**
@@ -115,7 +122,7 @@ public class TlsMac
 
         byte[] result = new byte[mac.getMacSize()];
         mac.doFinal(result, 0);
-        return result;
+        return truncate(result);
     }
 
     public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
@@ -147,9 +154,19 @@ public class TlsMac
         return result;
     }
 
-    private int getDigestBlockCount(int inputLength)
+    protected int getDigestBlockCount(int inputLength)
     {
         // NOTE: This calculation assumes a minimum of 1 pad byte
         return (inputLength + digestOverhead) / digestBlockSize;
+    }
+
+    protected byte[] truncate(byte[] bs)
+    {
+        if (bs.length <= macLength)
+        {
+            return bs;
+        }
+
+        return Arrays.copyOf(bs, macLength);
     }
 }

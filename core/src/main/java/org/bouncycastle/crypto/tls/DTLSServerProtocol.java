@@ -314,6 +314,8 @@ public class DTLSServerProtocol
     protected byte[] generateServerHello(ServerHandshakeState state)
         throws IOException
     {
+        SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         ProtocolVersion server_version = state.server.getServerVersion();
@@ -330,7 +332,7 @@ public class DTLSServerProtocol
 
         TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
 
-        buf.write(state.serverContext.getSecurityParameters().serverRandom);
+        buf.write(securityParameters.serverRandom);
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached
@@ -392,8 +394,11 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
+
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
             state.allowCertificateStatus = state.serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+
             state.expectSessionTicket = state.serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
 
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
