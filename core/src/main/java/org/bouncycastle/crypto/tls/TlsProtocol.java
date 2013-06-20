@@ -695,6 +695,22 @@ public abstract class TlsProtocol
         recordStream.flush();
     }
 
+    protected void processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
+        throws IOException
+    {
+        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
+        if (maxFragmentLength >= 0)
+        {
+            if (maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+
+            int plainTextLimit = 1 << (8 + maxFragmentLength);
+            recordStream.setPlaintextLimit(plainTextLimit);
+        }
+    }
+
     protected static boolean arrayContains(short[] a, short n)
     {
         for (int i = 0; i < a.length; ++i)

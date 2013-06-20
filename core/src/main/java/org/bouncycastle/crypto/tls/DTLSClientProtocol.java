@@ -101,6 +101,11 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
             processServerHello(state, serverMessage.getBody());
+            if (state.maxFragmentLength >= 0)
+            {
+                int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+                recordLayer.setPlaintextLimit(plainTextLimit);
+            }
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -575,6 +580,9 @@ public class DTLSClientProtocol
                 }
             }
 
+            state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, serverExtensions,
+                AlertDescription.illegal_parameter);
+
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
@@ -658,6 +666,7 @@ public class DTLSClientProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        short maxFragmentLength = -1;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;

@@ -78,7 +78,7 @@ public class DTLSServerProtocol
         }
     }
 
-    public DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
+    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
         throws IOException
     {
         SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
@@ -103,6 +103,11 @@ public class DTLSServerProtocol
         }
 
         byte[] serverHelloBody = generateServerHello(state);
+        if (state.maxFragmentLength >= 0)
+        {
+            int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+            recordLayer.setPlaintextLimit(plainTextLimit);
+        }
         handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
 
         // TODO This block could really be done before actually sending the hello
@@ -394,6 +399,9 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, state.serverExtensions,
+                AlertDescription.internal_error);
+
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
 
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
@@ -637,6 +645,7 @@ public class DTLSServerProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        short maxFragmentLength = -1;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         Hashtable serverExtensions = null;

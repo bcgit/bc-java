@@ -722,6 +722,8 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
+            processMaxFragmentLengthExtension(clientExtensions, serverExtensions, AlertDescription.internal_error);
+
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
