@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -111,27 +112,28 @@ public class Certificate
     public static Certificate parse(InputStream input)
         throws IOException
     {
-        int left = TlsUtils.readUint24(input);
-        if (left == 0)
+        int totalLength = TlsUtils.readUint24(input);
+        if (totalLength == 0)
         {
             return EMPTY_CHAIN;
         }
 
-        Vector tmp = new Vector();
-        while (left > 0)
-        {
-            int size = TlsUtils.readUint24(input);
-            left -= 3 + size;
+        byte[] certListData = TlsUtils.readFully(totalLength, input);
 
-            byte[] derEncoding = TlsUtils.readFully(size, input);
-            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
-            tmp.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1));
+        ByteArrayInputStream buf = new ByteArrayInputStream(certListData);
+
+        Vector certificate_list = new Vector();
+        while (buf.available() > 0)
+        {
+            byte[] derEncoding = TlsUtils.readOpaque24(buf);
+            ASN1Primitive asn1Cert = TlsUtils.readASN1Object(derEncoding);
+            certificate_list.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1Cert));
         }
 
-        org.bouncycastle.asn1.x509.Certificate[] certificateList = new org.bouncycastle.asn1.x509.Certificate[tmp.size()];
-        for (int i = 0; i < tmp.size(); i++)
+        org.bouncycastle.asn1.x509.Certificate[] certificateList = new org.bouncycastle.asn1.x509.Certificate[certificate_list.size()];
+        for (int i = 0; i < certificate_list.size(); i++)
         {
-            certificateList[i] = (org.bouncycastle.asn1.x509.Certificate)tmp.elementAt(i);
+            certificateList[i] = (org.bouncycastle.asn1.x509.Certificate)certificate_list.elementAt(i);
         }
         return new Certificate(certificateList);
     }

@@ -60,8 +60,8 @@ public abstract class SRPTlsClient
         // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
         if (serverExtensions != null)
         {
-            byte[] extValue = (byte[])serverExtensions.get(EXT_SRP);
-            if (extValue != null && extValue.length > 0)
+            byte[] extension_data = (byte[])serverExtensions.get(EXT_SRP);
+            if (extension_data != null && extension_data.length > 0)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }

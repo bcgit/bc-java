@@ -16,7 +16,6 @@ import org.bouncycastle.util.Arrays;
 public class TlsBlockCipher
     implements TlsCipher
 {
-
     protected TlsContext context;
     protected byte[] randomData;
     protected boolean useExplicitIV;
@@ -38,10 +37,8 @@ public class TlsBlockCipher
     }
 
     public TlsBlockCipher(TlsContext context, BlockCipher clientWriteCipher, BlockCipher serverWriteCipher,
-                          Digest clientWriteDigest, Digest serverWriteDigest, int cipherKeySize)
-        throws IOException
+        Digest clientWriteDigest, Digest serverWriteDigest, int cipherKeySize) throws IOException
     {
-
         this.context = context;
 
         this.randomData = new byte[256];

@@ -92,7 +92,7 @@ public class CertificateStatus
         return new CertificateStatus(status_type, response);
     }
 
-    private static boolean isCorrectType(short statusType, Object response)
+    protected static boolean isCorrectType(short statusType, Object response)
     {
         switch (statusType)
         {

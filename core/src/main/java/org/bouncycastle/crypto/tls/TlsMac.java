@@ -1,8 +1,5 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.LongDigest;
@@ -15,19 +12,19 @@ import org.bouncycastle.util.Arrays;
  */
 public class TlsMac
 {
-
     protected TlsContext context;
     protected byte[] secret;
     protected Mac mac;
     protected int digestBlockSize;
     protected int digestOverhead;
+    protected int macLength;
 
     /**
      * Generate a new instance of an TlsMac.
      *
      * @param context the TLS client context
      * @param digest  The digest to use.
-     * @param key     A byte-array where the key for this mac is located.
+     * @param key     A byte-array where the key for this MAC is located.
      * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
      * @param len     The length of the key.
      */
@@ -51,7 +48,7 @@ public class TlsMac
             this.digestOverhead = 8;
         }
 
-        if (context.getServerVersion().isSSL())
+        if (TlsUtils.isSSL(context))
         {
             this.mac = new SSL3Mac(digest);
 
@@ -73,6 +70,12 @@ public class TlsMac
         }
 
         this.mac.init(keyParameter);
+
+        this.macLength = mac.getMacSize();
+        if (context.getSecurityParameters().truncatedHMac)
+        {
+            this.macLength = Math.min(this.macLength, 10);
+        }
     }
 
     /**
@@ -84,11 +87,11 @@ public class TlsMac
     }
 
     /**
-     * @return The Keysize of the mac.
+     * @return The output length of this MAC.
      */
     public int getSize()
     {
-        return mac.getMacSize();
+        return macLength;
     }
 
     /**
@@ -102,42 +105,29 @@ public class TlsMac
      */
     public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
     {
-
         ProtocolVersion serverVersion = context.getServerVersion();
         boolean isSSL = serverVersion.isSSL();
 
-        ByteArrayOutputStream bosMac = new ByteArrayOutputStream(isSSL ? 11 : 13);
-        try
+        byte[] macHeader = new byte[isSSL ? 11 : 13];
+        TlsUtils.writeUint64(seqNo, macHeader, 0);
+        TlsUtils.writeUint8(type, macHeader, 8);
+        if (!isSSL)
         {
-            TlsUtils.writeUint64(seqNo, bosMac);
-            TlsUtils.writeUint8(type, bosMac);
-
-            if (!isSSL)
-            {
-                TlsUtils.writeVersion(serverVersion, bosMac);
-            }
-
-            TlsUtils.writeUint16(length, bosMac);
+            TlsUtils.writeVersion(serverVersion, macHeader, 9);
         }
-        catch (IOException e)
-        {
-            // This should never happen
-            throw new IllegalStateException("Internal error during mac calculation");
-        }
+        TlsUtils.writeUint16(length, macHeader, macHeader.length - 2);
 
-        byte[] macHeader = bosMac.toByteArray();
         mac.update(macHeader, 0, macHeader.length);
         mac.update(message, offset, length);
 
         byte[] result = new byte[mac.getMacSize()];
         mac.doFinal(result, 0);
-        return result;
+        return truncate(result);
     }
 
     public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
-                                           int fullLength, byte[] dummyData)
+        int fullLength, byte[] dummyData)
     {
-
         /*
          * Actual MAC only calculated on 'length' bytes...
          */
@@ -164,9 +154,19 @@ public class TlsMac
         return result;
     }
 
-    private int getDigestBlockCount(int inputLength)
+    protected int getDigestBlockCount(int inputLength)
     {
         // NOTE: This calculation assumes a minimum of 1 pad byte
         return (inputLength + digestOverhead) / digestBlockSize;
+    }
+
+    protected byte[] truncate(byte[] bs)
+    {
+        if (bs.length <= macLength)
+        {
+            return bs;
+        }
+
+        return Arrays.copyOf(bs, macLength);
     }
 }
