@@ -444,7 +444,6 @@ public class TlsUtils
     }
 
     public static void writeVersion(ProtocolVersion version, byte[] buf, int offset)
-        throws IOException
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
