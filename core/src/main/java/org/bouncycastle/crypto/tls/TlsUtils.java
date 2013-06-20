@@ -464,6 +464,11 @@ public class TlsUtils
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
     }
 
+    public static byte[] getExtensionData(Hashtable extensions, Integer extensionType)
+    {
+        return extensions == null ? null : (byte[])extensions.get(extensionType);
+    }
+
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
     {
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
@@ -492,16 +497,8 @@ public class TlsUtils
     public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
         throws IOException
     {
-        if (extensions == null)
-        {
-            return null;
-        }
-        byte[] extensionValue = (byte[])extensions.get(EXT_signature_algorithms);
-        if (extensionValue == null)
-        {
-            return null;
-        }
-        return readSignatureAlgorithmsExtension(extensionValue);
+        byte[] extensionData = getExtensionData(extensions, EXT_signature_algorithms);
+        return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
     }
 
     /**
@@ -523,21 +520,21 @@ public class TlsUtils
     }
 
     /**
-     * Read a 'signature_algorithms' extension value.
+     * Read 'signature_algorithms' extension data.
      *
-     * @param extensionValue The extension value.
+     * @param extensionData The extension data.
      * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
      * @throws IOException
      */
-    public static Vector readSignatureAlgorithmsExtension(byte[] extensionValue)
+    public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
         throws IOException
     {
-        if (extensionValue == null)
+        if (extensionData == null)
         {
-            throw new IllegalArgumentException("'extensionValue' cannot be null");
+            throw new IllegalArgumentException("'extensionData' cannot be null");
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionValue);
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
 
         // supported_signature_algorithms
         Vector supported_signature_algorithms = parseSupportedSignatureAlgorithms(false, buf);

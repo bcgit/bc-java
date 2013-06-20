@@ -565,22 +565,19 @@ public class TlsServerProtocol
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            if (clientExtensions != null)
+            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
+            if (renegExtData != null)
             {
-                byte[] renegExtValue = (byte[])clientExtensions.get(EXT_RenegotiationInfo);
-                if (renegExtValue != null)
-                {
-                    /*
-                     * If the extension is present, set secure_renegotiation flag to TRUE. The
-                     * server MUST then verify that the length of the "renegotiated_connection"
-                     * field is zero, and if it is not, MUST abort the handshake.
-                     */
-                    this.secure_renegotiation = true;
+                /*
+                 * If the extension is present, set secure_renegotiation flag to TRUE. The
+                 * server MUST then verify that the length of the "renegotiated_connection"
+                 * field is zero, and if it is not, MUST abort the handshake.
+                 */
+                this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
-                    {
-                        this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-                    }
+                if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                {
+                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
             }
         }
@@ -726,9 +723,8 @@ public class TlsServerProtocol
          */
         if (this.secure_renegotiation)
         {
-
-            boolean noRenegExt = this.serverExtensions == null
-                || !this.serverExtensions.containsKey(EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(this.serverExtensions, EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             if (noRenegExt)
             {

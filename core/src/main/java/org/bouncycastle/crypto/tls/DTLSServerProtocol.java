@@ -364,9 +364,8 @@ public class DTLSServerProtocol
          */
         if (state.secure_renegotiation)
         {
-
-            boolean noRenegExt = state.serverExtensions == null
-                || !state.serverExtensions.containsKey(TlsProtocol.EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(state.serverExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             if (noRenegExt)
             {
@@ -573,23 +572,19 @@ public class DTLSServerProtocol
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            if (state.clientExtensions != null)
+            byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            if (renegExtData != null)
             {
-                byte[] renegExtValue = (byte[])state.clientExtensions.get(TlsProtocol.EXT_RenegotiationInfo);
-                if (renegExtValue != null)
-                {
-                    /*
-                     * If the extension is present, set secure_renegotiation flag to TRUE. The
-                     * server MUST then verify that the length of the "renegotiated_connection"
-                     * field is zero, and if it is not, MUST abort the handshake.
-                     */
-                    state.secure_renegotiation = true;
+                /*
+                 * If the extension is present, set secure_renegotiation flag to TRUE. The
+                 * server MUST then verify that the length of the "renegotiated_connection"
+                 * field is zero, and if it is not, MUST abort the handshake.
+                 */
+                state.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
-                    {
-                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                    }
+                if (!Arrays.constantTimeAreEqual(renegExtData, TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
             }
         }

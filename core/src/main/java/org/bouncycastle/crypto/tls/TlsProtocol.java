@@ -803,13 +803,13 @@ public abstract class TlsProtocol
 
         while (buf.available() > 0)
         {
-            Integer extType = Integers.valueOf(TlsUtils.readUint16(buf));
-            byte[] extValue = TlsUtils.readOpaque16(buf);
+            Integer extension_type = Integers.valueOf(TlsUtils.readUint16(buf));
+            byte[] extension_data = TlsUtils.readOpaque16(buf);
 
             /*
              * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
              */
-            if (null != extensions.put(extType, extValue))
+            if (null != extensions.put(extension_type, extension_data))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -848,11 +848,11 @@ public abstract class TlsProtocol
         Enumeration keys = extensions.keys();
         while (keys.hasMoreElements())
         {
-            Integer extType = (Integer)keys.nextElement();
-            byte[] extValue = (byte[])extensions.get(extType);
+            Integer extension_type = (Integer)keys.nextElement();
+            byte[] extension_data = (byte[])extensions.get(extension_type);
 
-            TlsUtils.writeUint16(extType.intValue(), buf);
-            TlsUtils.writeOpaque16(extValue, buf);
+            TlsUtils.writeUint16(extension_type.intValue(), buf);
+            TlsUtils.writeOpaque16(extension_data, buf);
         }
 
         byte[] extBytes = buf.toByteArray();
