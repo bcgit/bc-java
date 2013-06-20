@@ -5,7 +5,6 @@ import java.io.IOException;
 class DTLSRecordLayer
     implements DatagramTransport
 {
-
     private static final int RECORD_HEADER_LENGTH = 13;
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
     private static final long TCP_MSL = 1000L * 60 * 2;
@@ -21,6 +20,7 @@ class DTLSRecordLayer
     private volatile boolean failed = false;
     private volatile ProtocolVersion discoveredPeerVersion = null;
     private volatile boolean inHandshake;
+    private volatile int plaintextLimit;
     private DTLSEpoch currentEpoch, pendingEpoch;
     private DTLSEpoch readEpoch, writeEpoch;
 
@@ -40,6 +40,13 @@ class DTLSRecordLayer
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;
+
+        setPlaintextLimit(MAX_FRAGMENT_LENGTH);
+    }
+
+    void setPlaintextLimit(int plaintextLimit)
+    {
+        this.plaintextLimit = plaintextLimit;
     }
 
     ProtocolVersion getDiscoveredPeerVersion()
@@ -99,26 +106,24 @@ class DTLSRecordLayer
     public int getReceiveLimit()
         throws IOException
     {
-        return Math.min(MAX_FRAGMENT_LENGTH,
+        return Math.min(this.plaintextLimit,
             readEpoch.getCipher().getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int getSendLimit()
         throws IOException
     {
-        return Math.min(MAX_FRAGMENT_LENGTH,
+        return Math.min(this.plaintextLimit,
             writeEpoch.getCipher().getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH));
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis)
         throws IOException
     {
-
         byte[] record = null;
 
-        for (; ; )
+        for (;;)
         {
-
             int receiveLimit = Math.min(len, getReceiveLimit()) + RECORD_HEADER_LENGTH;
             if (record == null || record.length < receiveLimit)
             {
@@ -199,6 +204,11 @@ class DTLSRecordLayer
 
                 recordEpoch.getReplayWindow().reportAuthenticated(seq);
 
+                if (plaintext.length > this.plaintextLimit)
+                {
+                    continue;
+                }
+
                 if (discoveredPeerVersion == null)
                 {
                     discoveredPeerVersion = version;
@@ -208,7 +218,6 @@ class DTLSRecordLayer
                 {
                 case ContentType.alert:
                 {
-
                     if (plaintext.length == 2)
                     {
                         short alertLevel = plaintext[0];
@@ -300,18 +309,15 @@ class DTLSRecordLayer
     public void send(byte[] buf, int off, int len)
         throws IOException
     {
-
         short contentType = ContentType.application_data;
 
         if (this.inHandshake || this.writeEpoch == this.retransmitEpoch)
         {
-
             contentType = ContentType.handshake;
 
             short handshakeType = TlsUtils.readUint8(buf, off);
             if (handshakeType == HandshakeType.finished)
             {
-
                 DTLSEpoch nextEpoch = null;
                 if (this.inHandshake)
                 {
@@ -331,7 +337,7 @@ class DTLSRecordLayer
                 // Implicitly send change_cipher_spec and change to pending cipher state
 
                 // TODO Send change_cipher_spec and finished records in single datagram?
-                byte[] data = new byte[]{1};
+                byte[] data = new byte[]{ 1 };
                 sendRecord(ContentType.change_cipher_spec, data, 0, data.length);
 
                 writeEpoch = nextEpoch;
@@ -410,7 +416,6 @@ class DTLSRecordLayer
     private void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
         throws IOException
     {
-
         peer.notifyAlertRaised(alertLevel, alertDescription, message, cause);
 
         byte[] error = new byte[2];
@@ -457,6 +462,10 @@ class DTLSRecordLayer
     private void sendRecord(short contentType, byte[] buf, int off, int len)
         throws IOException
     {
+        if (len > this.plaintextLimit)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         /*
          * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
@@ -473,10 +482,7 @@ class DTLSRecordLayer
         byte[] ciphertext = writeEpoch.getCipher().encodePlaintext(
             getMacSequenceNumber(recordEpoch, recordSequenceNumber), contentType, buf, off, len);
 
-        if (ciphertext.length > MAX_FRAGMENT_LENGTH)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        // TODO Check the ciphertext length?
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
