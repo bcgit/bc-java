@@ -12,6 +12,14 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-11.3">RFC 5652</a>:
+ * <pre>
+ * Time ::= CHOICE {
+ *     utcTime        UTCTime,
+ *     generalTime    GeneralizedTime }
+ * </pre>
+ */
 public class Time
     extends ASN1Object
     implements ASN1Choice
@@ -63,6 +71,20 @@ public class Time
         }
     }
 
+    /**
+     * return a Time object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link Time} object
+     * <li> {@link org.bouncycastle.asn1.DERUTCTime DERUTCTime} object
+     * <li> {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime} object
+     * </ul>
+     *
+     * @param _obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static Time getInstance(
         Object  obj)
     {
@@ -115,11 +137,6 @@ public class Time
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * Time ::= CHOICE {
-     *             utcTime        UTCTime,
-     *             generalTime    GeneralizedTime }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

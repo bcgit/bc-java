@@ -11,6 +11,17 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-10.2.7">RFC 5652</a>:
+ * <pre>
+ * PasswordRecipientInfo ::= SEQUENCE {
+ *     version       CMSVersion,   -- Always set to 0
+ *     keyDerivationAlgorithm [0] KeyDerivationAlgorithmIdentifier
+ *                             OPTIONAL,
+ *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
+ *     encryptedKey  EncryptedKey }
+ * </pre>
+ */
 public class PasswordRecipientInfo
     extends ASN1Object
 {
@@ -74,6 +85,13 @@ public class PasswordRecipientInfo
     
     /**
      * return a PasswordRecipientInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link PasswordRecipientInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with PasswordRecipientInfo structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -116,14 +134,6 @@ public class PasswordRecipientInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * PasswordRecipientInfo ::= SEQUENCE {
-     *   version CMSVersion,   -- Always set to 0
-     *   keyDerivationAlgorithm [0] KeyDerivationAlgorithmIdentifier
-     *                             OPTIONAL,
-     *  keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
-     *  encryptedKey EncryptedKey }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

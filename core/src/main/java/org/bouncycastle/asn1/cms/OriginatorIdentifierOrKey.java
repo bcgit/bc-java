@@ -9,6 +9,18 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * <pre>
+ * OriginatorIdentifierOrKey ::= CHOICE {
+ *     issuerAndSerialNumber IssuerAndSerialNumber,
+ *     subjectKeyIdentifier [0] SubjectKeyIdentifier,
+ *     originatorKey [1] OriginatorPublicKey 
+ * }
+ *
+ * SubjectKeyIdentifier ::= OCTET STRING
+ * </pre>
+ */
 public class OriginatorIdentifierOrKey
     extends ASN1Object
     implements ASN1Choice
@@ -75,6 +87,15 @@ public class OriginatorIdentifierOrKey
     
     /**
      * return an OriginatorIdentifierOrKey object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link OriginatorIdentifierOrKey} object
+     * <li> {@link IssuerAndSerialNumber} object
+     * <li> {@link SubjectKeyIdentifier} object
+     * <li> {@link OriginatorPublicKey} object
+     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} input formats with IssuerAndSerialNumber structure inside
+     * </ul>
      *
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -148,15 +169,6 @@ public class OriginatorIdentifierOrKey
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * OriginatorIdentifierOrKey ::= CHOICE {
-     *     issuerAndSerialNumber IssuerAndSerialNumber,
-     *     subjectKeyIdentifier [0] SubjectKeyIdentifier,
-     *     originatorKey [1] OriginatorPublicKey 
-     * }
-     *
-     * SubjectKeyIdentifier ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

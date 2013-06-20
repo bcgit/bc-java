@@ -9,7 +9,13 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.OriginatorPublicKey;
-
+/**
+ * <pre>
+ * MQVuserKeyingMaterial ::= SEQUENCE {
+ *   ephemeralPublicKey OriginatorPublicKey,
+ *   addedukm [0] EXPLICIT UserKeyingMaterial OPTIONAL  }
+ * </pre>
+ */
 public class MQVuserKeyingMaterial
     extends ASN1Object
 {
@@ -91,11 +97,6 @@ public class MQVuserKeyingMaterial
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * MQVuserKeyingMaterial ::= SEQUENCE {
-     *   ephemeralPublicKey OriginatorPublicKey,
-     *   addedukm [0] EXPLICIT UserKeyingMaterial OPTIONAL  }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

@@ -9,6 +9,14 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.5">RFC 5652</a>:
+ * <pre>
+ * OtherRecipientInfo ::= SEQUENCE {
+ *    oriType OBJECT IDENTIFIER,
+ *    oriValue ANY DEFINED BY oriType }
+ * </pre>
+ */
 public class OtherRecipientInfo
     extends ASN1Object
 {
@@ -52,6 +60,13 @@ public class OtherRecipientInfo
     
     /**
      * return a OtherRecipientInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link PasswordRecipientInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OtherRecipientInfo structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -59,17 +74,12 @@ public class OtherRecipientInfo
     public static OtherRecipientInfo getInstance(
         Object obj)
     {
-        if (obj instanceof OtherRecipientInfo)
+        if (obj == null || obj instanceof OtherRecipientInfo)
         {
             return (OtherRecipientInfo)obj;
         }
         
-        if (obj != null)
-        {
-            return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
-        }
-        
-        return null;
+        return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
     }
 
     public ASN1ObjectIdentifier getType()
@@ -84,11 +94,6 @@ public class OtherRecipientInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * OtherRecipientInfo ::= SEQUENCE {
-     *    oriType OBJECT IDENTIFIER,
-     *    oriValue ANY DEFINED BY oriType }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

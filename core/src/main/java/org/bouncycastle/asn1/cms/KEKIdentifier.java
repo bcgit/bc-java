@@ -10,6 +10,16 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.3">RFC 5652</a>:
+ * <pre>
+ * KEKIdentifier ::= SEQUENCE {
+ *     keyIdentifier OCTET STRING,
+ *     date GeneralizedTime OPTIONAL,
+ *     other OtherKeyAttribute OPTIONAL 
+ * }
+ * </pre>
+ */
 public class KEKIdentifier
     extends ASN1Object
 {
@@ -73,6 +83,12 @@ public class KEKIdentifier
     
     /**
      * return a KEKIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> {@link KEKIdentifier} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with KEKIdentifier structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -110,13 +126,6 @@ public class KEKIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * KEKIdentifier ::= SEQUENCE {
-     *     keyIdentifier OCTET STRING,
-     *     date GeneralizedTime OPTIONAL,
-     *     other OtherKeyAttribute OPTIONAL 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

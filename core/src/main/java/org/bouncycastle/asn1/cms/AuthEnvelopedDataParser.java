@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.BERTags;
 
 /**
- * Produce an object suitable for an ASN1OutputStream.
+ * Parse {@link AuthEnvelopedData} input stream.
  * 
  * <pre>
  * AuthEnvelopedData ::= SEQUENCE {
