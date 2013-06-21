@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
 
 public class IssuerSerial
     extends ASN1Object
@@ -56,6 +57,13 @@ public class IssuerSerial
         {
             issuerUID = DERBitString.getInstance(seq.getObjectAt(2));
         }
+    }
+
+    public IssuerSerial(
+        X500Name   issuer,
+        BigInteger serial)
+    {
+        this(new GeneralNames(new GeneralName(issuer)), new ASN1Integer(serial));
     }
 
     public IssuerSerial(

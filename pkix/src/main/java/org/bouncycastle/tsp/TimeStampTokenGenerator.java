@@ -44,6 +44,9 @@ import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.IssuerSerial;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
@@ -134,6 +137,29 @@ public class TimeStampTokenGenerator
         ASN1ObjectIdentifier            tsaPolicy)
         throws IllegalArgumentException, TSPException
     {
+        this(signerInfoGen, digestCalculator, tsaPolicy, false);
+    }
+
+    /**
+     * Basic Constructor - set up a calculator based on signerInfoGen with a ESSCertID calculated from
+     * the signer's associated certificate using the sha1DigestCalculator. If alternate values are required
+     * for id-aa-signingCertificate they should be added to the signerInfoGen object before it is passed in,
+     * otherwise a standard digest based value will be added.
+     *
+     * @param signerInfoGen the generator for the signer we are using.
+     * @param digestCalculator calculator for to use for digest of certificate.
+     * @param tsaPolicy tasPolicy to send.
+     * @param isIssuerSerialIncluded should issuerSerial be included in the ESSCertIDs, true if yes, by default false.
+     * @throws IllegalArgumentException if calculator is not SHA-1 or there is no associated certificate for the signer,
+     * @throws TSPException if the signer certificate cannot be processed.
+     */
+    public TimeStampTokenGenerator(
+        final SignerInfoGenerator       signerInfoGen,
+        DigestCalculator                digestCalculator,
+        ASN1ObjectIdentifier            tsaPolicy,
+        boolean                         isIssuerSerialIncluded)
+        throws IllegalArgumentException, TSPException
+    {
         this.signerInfoGen = signerInfoGen;
         this.tsaPolicyOID = tsaPolicy;
 
@@ -142,19 +168,22 @@ public class TimeStampTokenGenerator
             throw new IllegalArgumentException("SignerInfoGenerator must have an associated certificate");
         }
 
-        TSPUtil.validateCertificate(signerInfoGen.getAssociatedCertificate());
+        X509CertificateHolder assocCert = signerInfoGen.getAssociatedCertificate();
+        TSPUtil.validateCertificate(assocCert);
 
         try
         {
             OutputStream dOut = digestCalculator.getOutputStream();
 
-            dOut.write(signerInfoGen.getAssociatedCertificate().getEncoded());
+            dOut.write(assocCert.getEncoded());
 
             dOut.close();
 
             if (digestCalculator.getAlgorithmIdentifier().getAlgorithm().equals(OIWObjectIdentifiers.idSHA1))
             {
-                final ESSCertID essCertid = new ESSCertID(digestCalculator.getDigest());
+                final ESSCertID essCertid = new ESSCertID(digestCalculator.getDigest(),
+                                            isIssuerSerialIncluded ? new IssuerSerial(new GeneralNames(new GeneralName(assocCert.getIssuer())), assocCert.getSerialNumber())
+                                                                   : null);
 
                 this.signerInfoGen = new SignerInfoGenerator(signerInfoGen, new CMSAttributeTableGenerator()
                 {
@@ -175,7 +204,9 @@ public class TimeStampTokenGenerator
             else
             {
                 AlgorithmIdentifier digAlgID = new AlgorithmIdentifier(digestCalculator.getAlgorithmIdentifier().getAlgorithm());
-                final ESSCertIDv2   essCertid = new ESSCertIDv2(digAlgID, digestCalculator.getDigest());
+                final ESSCertIDv2   essCertid = new ESSCertIDv2(digAlgID, digestCalculator.getDigest(),
+                                                    isIssuerSerialIncluded ? new IssuerSerial(new GeneralNames(new GeneralName(assocCert.getIssuer())), new ASN1Integer(assocCert.getSerialNumber()))
+                                                                           : null);
 
                 this.signerInfoGen = new SignerInfoGenerator(signerInfoGen, new CMSAttributeTableGenerator()
                 {
