@@ -615,12 +615,7 @@ public class TlsUtils
 
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            if (!isTLSv12(context))
-            {
-                return PRF_legacy(secret, label, labelSeed, size);
-            }
-
-            prfAlgorithm = PRFAlgorithm.tls_prf_sha256;
+            return PRF_legacy(secret, label, labelSeed, size);
         }
 
         Digest prfDigest = createPRFHash(prfAlgorithm);
