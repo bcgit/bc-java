@@ -42,6 +42,18 @@ public class HashCommitmentTest
             fail("commitment validated!!");
         }
 
+        try
+        {
+            committer.isRevealed(c, new byte[data.length + 1]);
+        }
+        catch (Exception e)
+        {
+            if (!e.getMessage().equals("Message and witness secret lengths do not match."))
+            {
+                fail("exception thrown but wrong message");
+            }
+        }
+
         // SHA1 has a block size of 512 bits, try a message that's too big
 
         try
