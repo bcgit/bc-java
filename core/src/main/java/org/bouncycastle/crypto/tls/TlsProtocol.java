@@ -942,6 +942,13 @@ public abstract class TlsProtocol
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256:
@@ -980,6 +987,8 @@ public abstract class TlsProtocol
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384:
