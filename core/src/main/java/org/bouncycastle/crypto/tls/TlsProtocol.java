@@ -940,27 +940,6 @@ public abstract class TlsProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256:
-        {
-            if (isTLSv12)
-            {
-                return PRFAlgorithm.tls_prf_sha256;
-            }
-            return PRFAlgorithm.tls_prf_legacy;
-        }
-
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
@@ -1002,7 +981,13 @@ public abstract class TlsProtocol
         }
 
         default:
+        {
+            if (isTLSv12)
+            {
+                return PRFAlgorithm.tls_prf_sha256;
+            }
             return PRFAlgorithm.tls_prf_legacy;
+        }
         }
     }
 
