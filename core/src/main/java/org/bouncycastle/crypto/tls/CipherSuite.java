@@ -222,6 +222,19 @@ public class CipherSuite
     public static final int TLS_RSA_PSK_WITH_NULL_SHA384 = 0x00B9;
 
     /*
+     * RFC 5489
+     */
+    public static final int TLS_ECDHE_PSK_WITH_RC4_128_SHA = 0xC033;
+    public static final int TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA = 0xC034;
+    public static final int TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA = 0xC035;
+    public static final int TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA = 0xC036;
+    public static final int TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 = 0xC037;
+    public static final int TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 = 0xC038;
+    public static final int TLS_ECDHE_PSK_WITH_NULL_SHA = 0xC039;
+    public static final int TLS_ECDHE_PSK_WITH_NULL_SHA256 = 0xC03A;
+    public static final int TLS_ECDHE_PSK_WITH_NULL_SHA384 = 0xC03B;
+
+    /*
      * RFC 5746
      */
     public static final int TLS_EMPTY_RENEGOTIATION_INFO_SCSV = 0x00FF;

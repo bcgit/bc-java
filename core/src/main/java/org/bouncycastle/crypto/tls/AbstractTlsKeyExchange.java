@@ -71,6 +71,7 @@ public abstract class AbstractTlsKeyExchange
                 }
 
                 case KeyExchangeAlgorithm.DHE_PSK:
+                case KeyExchangeAlgorithm.ECDHE_PSK:
                 case KeyExchangeAlgorithm.PSK:
                 case KeyExchangeAlgorithm.SRP:
                     break;
