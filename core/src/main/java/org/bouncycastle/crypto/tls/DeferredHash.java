@@ -13,7 +13,6 @@ class DeferredHash
     protected TlsContext context;
 
     private DigestInputBuffer buf = new DigestInputBuffer();
-    private int prfAlgorithm = -1;
     private Digest hash = null;
 
     DeferredHash()
@@ -48,7 +47,6 @@ class DeferredHash
             return tlsPRFHash.commit();
         }
 
-        this.prfAlgorithm = prfAlgorithm;
         this.hash = prfHash;
         this.buf = null;
 
@@ -58,6 +56,7 @@ class DeferredHash
     public TlsHandshakeHash fork()
     {
         checkHash();
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
         return new DeferredHash(TlsUtils.clonePRFHash(prfAlgorithm, hash));
     }
 
