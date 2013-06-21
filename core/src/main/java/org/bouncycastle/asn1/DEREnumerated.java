@@ -5,6 +5,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Use ASN1Enumerated instead of this.
+ */
 public class DEREnumerated
     extends ASN1Primitive
 {
@@ -68,18 +71,27 @@ public class DEREnumerated
         }
     }
 
+    /**
+     * @deprecated use ASN1Enumerated
+     */
     public DEREnumerated(
         int         value)
     {
         bytes = BigInteger.valueOf(value).toByteArray();
     }
 
+    /**
+     * @deprecated use ASN1Enumerated
+     */
     public DEREnumerated(
         BigInteger   value)
     {
         bytes = value.toByteArray();
     }
 
+    /**
+     * @deprecated use ASN1Enumerated
+     */
     public DEREnumerated(
         byte[]   bytes)
     {

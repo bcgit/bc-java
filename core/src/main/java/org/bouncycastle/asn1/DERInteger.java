@@ -5,6 +5,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Use ASN1Integer instead of this,
+ */
 public class DERInteger
     extends ASN1Primitive
 {
@@ -67,18 +70,27 @@ public class DERInteger
         }
     }
 
+    /**
+     * @deprecated use ASN1Integer constructor
+     */
     public DERInteger(
         long         value)
     {
         bytes = BigInteger.valueOf(value).toByteArray();
     }
 
+    /**
+     * @deprecated use ASN1Integer constructor
+     */
     public DERInteger(
         BigInteger   value)
     {
         bytes = value.toByteArray();
     }
 
+    /**
+     * @deprecated use ASN1Integer constructor
+     */
     public DERInteger(
         byte[]   bytes)
     {

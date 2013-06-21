@@ -6,6 +6,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Use ASN1ObjectIdentifier instead of this,
+ */
 public class DERObjectIdentifier
     extends ASN1Primitive
 {
@@ -163,6 +166,9 @@ public class DERObjectIdentifier
         this.body = Arrays.clone(bytes);
     }
 
+    /**
+     * @deprecated use ASN1ObjectIdentifier constructor.
+     */
     public DERObjectIdentifier(
         String identifier)
     {
