@@ -54,6 +54,14 @@ public class TlsUtils
         }
     }
 
+    public static void checkUint8(int i) throws IOException
+    {
+        if (!isValidUint8(i))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
     public static void checkUint16(int i) throws IOException
     {
         if (!isValidUint16(i))
@@ -95,6 +103,11 @@ public class TlsUtils
     }
 
     public static boolean isValidUint8(short i)
+    {
+        return (i & 0xFF) == i;
+    }
+
+    public static boolean isValidUint8(int i)
     {
         return (i & 0xFF) == i;
     }
@@ -145,7 +158,18 @@ public class TlsUtils
         output.write(i);
     }
 
+    public static void writeUint8(int i, OutputStream output)
+        throws IOException
+    {
+        output.write(i);
+    }
+
     public static void writeUint8(short i, byte[] buf, int offset)
+    {
+        buf[offset] = (byte)i;
+    }
+
+    public static void writeUint8(int i, byte[] buf, int offset)
     {
         buf[offset] = (byte)i;
     }
@@ -233,13 +257,15 @@ public class TlsUtils
     public static void writeOpaque8(byte[] buf, OutputStream output)
         throws IOException
     {
-        writeUint8((short)buf.length, output);
+        checkUint8(buf.length);
+        writeUint8(buf.length, output);
         output.write(buf);
     }
 
     public static void writeOpaque16(byte[] buf, OutputStream output)
         throws IOException
     {
+        checkUint16(buf.length);
         writeUint16(buf.length, output);
         output.write(buf);
     }
@@ -247,6 +273,7 @@ public class TlsUtils
     public static void writeOpaque24(byte[] buf, OutputStream output)
         throws IOException
     {
+        checkUint24(buf.length);
         writeUint24(buf.length, output);
         output.write(buf);
     }
