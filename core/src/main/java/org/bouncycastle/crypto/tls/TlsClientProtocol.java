@@ -91,6 +91,19 @@ public class TlsClientProtocol
         completeHandshake();
     }
 
+    protected void cleanupHandshake()
+    {
+        super.cleanupHandshake();
+
+        this.offeredCipherSuites = null;
+        this.offeredCompressionMethods = null;
+        this.clientExtensions = null;
+        this.keyExchange = null;
+        this.authentication = null;
+        this.certificateStatus = null;
+        this.certificateRequest = null;
+    }
+
     protected AbstractTlsContext getContext()
     {
         return tlsClientContext;
