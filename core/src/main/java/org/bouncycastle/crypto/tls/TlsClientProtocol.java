@@ -656,7 +656,8 @@ public class TlsClientProtocol
             this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
                 TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
-            this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
+            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+                TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
         }
 
         tlsClient.notifySecureRenegotiation(this.secure_renegotiation);

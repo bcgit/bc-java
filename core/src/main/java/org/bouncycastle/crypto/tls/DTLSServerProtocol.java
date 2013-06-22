@@ -407,7 +407,8 @@ public class DTLSServerProtocol
             state.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
                 TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error);
 
-            state.expectSessionTicket = state.serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
+            state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
 
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
         }
