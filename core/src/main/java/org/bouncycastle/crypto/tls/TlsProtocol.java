@@ -204,9 +204,7 @@ public abstract class TlsProtocol
                     /*
                      * Read the message.
                      */
-                    byte[] buf = new byte[len];
-                    handshakeQueue.read(buf, 0, len, 4);
-                    handshakeQueue.removeData(len + 4);
+                    byte[] buf = handshakeQueue.removeData(len, 4);
 
                     /*
                      * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
@@ -260,9 +258,7 @@ public abstract class TlsProtocol
             /*
              * An alert is always 2 bytes. Read the alert.
              */
-            byte[] tmp = new byte[2];
-            alertQueue.read(tmp, 0, 2, 0);
-            alertQueue.removeData(2);
+            byte[] tmp = alertQueue.removeData(2, 0);
             short level = tmp[0];
             short description = tmp[1];
 
@@ -321,9 +317,7 @@ public abstract class TlsProtocol
             /*
              * A change cipher spec message is only one byte with the value 1.
              */
-            byte[] b = new byte[1];
-            changeCipherSpecQueue.read(b, 0, 1, 0);
-            changeCipherSpecQueue.removeData(1);
+            byte[] b = changeCipherSpecQueue.removeData(1, 0);
             if (b[0] != 1)
             {
                 /*
@@ -379,9 +373,9 @@ public abstract class TlsProtocol
 
             safeReadRecord();
         }
+
         len = Math.min(len, applicationDataQueue.size());
-        applicationDataQueue.read(buf, offset, len, 0);
-        applicationDataQueue.removeData(len);
+        applicationDataQueue.removeData(buf, offset, len, 0);
         return len;
     }
 

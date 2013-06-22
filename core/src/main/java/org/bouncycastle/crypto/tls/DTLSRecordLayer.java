@@ -439,8 +439,7 @@ class DTLSRecordLayer
             }
 
             int received = Math.min(recordQueue.size(), RECORD_HEADER_LENGTH + length);
-            recordQueue.read(buf, off, received, 0);
-            recordQueue.removeData(received);
+            recordQueue.removeData(buf, off, received, 0);
             return received;
         }
 
