@@ -243,6 +243,7 @@ public class DTLSClientProtocol
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
 
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
+        recordLayer.initPendingEpoch(state.client.getCipher());
 
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
@@ -256,8 +257,6 @@ public class DTLSClientProtocol
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
-
-        recordLayer.initPendingEpoch(state.client.getCipher());
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "client finished",

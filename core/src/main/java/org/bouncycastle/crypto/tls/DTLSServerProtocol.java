@@ -236,6 +236,7 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
 
         /*
@@ -619,8 +620,6 @@ public class DTLSServerProtocol
         state.keyExchange.processClientKeyExchange(buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
     }
 
     protected void processClientSupplementalData(ServerHandshakeState state, byte[] body)
