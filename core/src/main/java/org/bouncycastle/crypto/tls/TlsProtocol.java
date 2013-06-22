@@ -285,6 +285,11 @@ public abstract class TlsProtocol
 
             if (level == AlertLevel.fatal)
             {
+                /*
+                 * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
+                 * without proper close_notify messages with level equal to warning.
+                 */
+                invalidateSession();
 
                 this.failedWithError = true;
                 this.closed = true;
@@ -565,8 +570,11 @@ public abstract class TlsProtocol
             if (alertLevel == AlertLevel.fatal)
             {
                 /*
-                 * This is a fatal message.
+                 * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
+                 * without proper close_notify messages with level equal to warning.
                  */
+                invalidateSession();
+
                 this.failedWithError = true;
             }
             raiseAlert(alertLevel, alertDescription, null, null);
@@ -579,6 +587,15 @@ public abstract class TlsProtocol
         else
         {
             throw new IOException(TLS_ERROR_MESSAGE);
+        }
+    }
+
+    protected void invalidateSession()
+    {
+        if (this.tlsSession != null)
+        {
+            this.tlsSession.close();
+            this.tlsSession = null;
         }
     }
 
