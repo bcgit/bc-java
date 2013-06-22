@@ -653,7 +653,8 @@ public class TlsClientProtocol
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
-            processServerStatusExtension(serverExtensions, AlertDescription.illegal_parameter);
+            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+                TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
             this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
         }

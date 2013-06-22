@@ -469,6 +469,21 @@ public class TlsUtils
         return extensions == null ? null : (byte[])extensions.get(extensionType);
     }
 
+    public static boolean hasExpectedEmptyExtensionData(Hashtable extensions, Integer extensionType,
+        short alertDescription) throws IOException
+    {
+        byte[] extension_data = getExtensionData(extensions, extensionType);
+        if (extension_data == null)
+        {
+            return false;
+        }
+        if (extension_data.length != 0)
+        {
+            throw new TlsFatalAlert(alertDescription);
+        }
+        return true;
+    }
+
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
     {
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
