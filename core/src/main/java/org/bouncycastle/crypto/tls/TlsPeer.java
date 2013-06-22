@@ -4,6 +4,9 @@ import java.io.IOException;
 
 public interface TlsPeer
 {
+    TlsCompression getCompression() throws IOException;
+
+    TlsCipher getCipher() throws IOException;
 
     /**
      * This method will be called when an alert is raised by the protocol.
