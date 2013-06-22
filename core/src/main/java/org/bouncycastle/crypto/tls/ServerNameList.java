@@ -11,6 +11,9 @@ public class ServerNameList
 {
     protected Vector serverNameList;
 
+    /**
+     * @param serverNameList a {@link Vector} of {@link ServerName}.
+     */
     public ServerNameList(Vector serverNameList)
     {
         if (serverNameList == null || serverNameList.isEmpty())
@@ -21,6 +24,9 @@ public class ServerNameList
         this.serverNameList = serverNameList;
     }
 
+    /**
+     * @return a {@link Vector} of {@link ServerName}.
+     */
     public Vector getServerNameList()
     {
         return serverNameList;
