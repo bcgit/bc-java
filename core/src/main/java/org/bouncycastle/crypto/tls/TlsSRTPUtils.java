@@ -39,7 +39,9 @@ public class TlsSRTPUtils
 
         // SRTPProtectionProfiles
         int[] protectionProfiles = useSRTPData.getProtectionProfiles();
-        TlsUtils.writeUint16(2 * protectionProfiles.length, buf);
+        int length = 2 * protectionProfiles.length;
+        TlsUtils.checkUint16(length);
+        TlsUtils.writeUint16(length, buf);
         TlsUtils.writeUint16Array(protectionProfiles, buf);
 
         // srtp_mki

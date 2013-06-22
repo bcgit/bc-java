@@ -49,6 +49,7 @@ public class ServerNameList
             entry.encode(buf);
         }
 
+        TlsUtils.checkUint16(buf.size());
         TlsUtils.writeUint16(buf.size(), output);
         buf.writeTo(output);
     }

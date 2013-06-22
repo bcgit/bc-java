@@ -85,6 +85,7 @@ public class Certificate
         throws IOException
     {
         Vector derEncodings = new Vector(this.certificateList.length);
+
         int totalLength = 0;
         for (int i = 0; i < this.certificateList.length; ++i)
         {
@@ -93,6 +94,7 @@ public class Certificate
             totalLength += derEncoding.length + 3;
         }
 
+        TlsUtils.checkUint24(totalLength);
         TlsUtils.writeUint24(totalLength, output);
 
         for (int i = 0; i < derEncodings.size(); ++i)

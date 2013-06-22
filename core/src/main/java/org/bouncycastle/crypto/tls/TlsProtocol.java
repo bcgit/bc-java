@@ -867,10 +867,12 @@ public abstract class TlsProtocol
         Enumeration keys = extensions.keys();
         while (keys.hasMoreElements())
         {
-            Integer extension_type = (Integer)keys.nextElement();
-            byte[] extension_data = (byte[])extensions.get(extension_type);
+            Integer key = (Integer)keys.nextElement();
+            int extension_type = key.intValue();
+            byte[] extension_data = (byte[])extensions.get(key);
 
-            TlsUtils.writeUint16(extension_type.intValue(), buf);
+            TlsUtils.checkUint16(extension_type);
+            TlsUtils.writeUint16(extension_type, buf);
             TlsUtils.writeOpaque16(extension_data, buf);
         }
 
@@ -888,7 +890,9 @@ public abstract class TlsProtocol
         {
             SupplementalDataEntry entry = (SupplementalDataEntry)supplementalData.elementAt(i);
 
-            TlsUtils.writeUint16(entry.getDataType(), buf);
+            int supp_data_type = entry.getDataType();
+            TlsUtils.checkUint16(supp_data_type);
+            TlsUtils.writeUint16(supp_data_type, buf);
             TlsUtils.writeOpaque16(entry.getData(), buf);
         }
 
@@ -1023,7 +1027,9 @@ public abstract class TlsProtocol
         void writeToRecordStream() throws IOException
         {
             // Patch actual length back in
-            TlsUtils.writeUint24(count - 4, buf, 1);
+            int length = count - 4;
+            TlsUtils.checkUint24(length);
+            TlsUtils.writeUint24(length, buf, 1);
             writeHandshakeMessage(buf, 0, count);
             buf = null;
         }

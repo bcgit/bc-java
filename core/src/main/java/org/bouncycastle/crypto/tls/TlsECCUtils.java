@@ -64,7 +64,9 @@ public class TlsECCUtils
         }
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint16(2 * namedCurves.length, buf);
+        int length = 2 * namedCurves.length;
+        TlsUtils.checkUint16(length);
+        TlsUtils.writeUint16(length, buf);
         TlsUtils.writeUint16Array(namedCurves, buf);
         return buf.toByteArray();
     }
@@ -91,7 +93,8 @@ public class TlsECCUtils
         }
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8((short) ecPointFormats.length, buf);
+        TlsUtils.checkUint8(ecPointFormats.length);
+        TlsUtils.writeUint8(ecPointFormats.length, buf);
         TlsUtils.writeUint8Array(ecPointFormats, buf);
         return buf.toByteArray();
     }
@@ -524,7 +527,9 @@ public class TlsECCUtils
             TlsUtils.writeUint8(ECCurveType.explicit_char2, output);
 
             ECCurve.F2m f2m = (ECCurve.F2m) curve;
-            TlsUtils.writeUint16(f2m.getM(), output);
+            int m = f2m.getM();
+            TlsUtils.checkUint16(m);
+            TlsUtils.writeUint16(m, output);
 
             if (f2m.isTrinomial())
             {
@@ -570,6 +575,7 @@ public class TlsECCUtils
         }
 
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
+        TlsUtils.checkUint16(namedCurve);
         TlsUtils.writeUint16(namedCurve, output);
     }
 }

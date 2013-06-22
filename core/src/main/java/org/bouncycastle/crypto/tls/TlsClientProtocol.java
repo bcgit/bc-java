@@ -724,7 +724,9 @@ public class TlsClientProtocol
                 ++count;
             }
 
-            TlsUtils.writeUint16(2 * count, message);
+            int length = 2 * count;
+            TlsUtils.checkUint16(length);
+            TlsUtils.writeUint16(length, message);
             TlsUtils.writeUint16Array(offeredCipherSuites, message);
 
             if (noRenegExt)
@@ -736,7 +738,8 @@ public class TlsClientProtocol
         // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
-        TlsUtils.writeUint8((short)offeredCompressionMethods.length, message);
+        TlsUtils.checkUint8(offeredCompressionMethods.length);
+        TlsUtils.writeUint8(offeredCompressionMethods.length, message);
         TlsUtils.writeUint8Array(offeredCompressionMethods, message);
 
         // Extensions

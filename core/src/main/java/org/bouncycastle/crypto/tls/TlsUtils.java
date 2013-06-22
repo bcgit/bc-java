@@ -656,7 +656,9 @@ public class TlsUtils
         }
 
         // supported_signature_algorithms
-        TlsUtils.writeUint16(2 * supportedSignatureAlgorithms.size(), output);
+        int length = 2 * supportedSignatureAlgorithms.size();
+        TlsUtils.checkUint16(length);
+        TlsUtils.writeUint16(length, output);
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
