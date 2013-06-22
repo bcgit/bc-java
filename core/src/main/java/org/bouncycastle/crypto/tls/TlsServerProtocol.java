@@ -718,6 +718,12 @@ public class TlsServerProtocol
             }
         }
 
+        /*
+         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
+         * extensions appearing in the client hello, and send a server hello containing no
+         * extensions.
+         */
+
         if (this.serverExtensions != null)
         {
             processMaxFragmentLengthExtension(clientExtensions, this.serverExtensions, AlertDescription.internal_error);
