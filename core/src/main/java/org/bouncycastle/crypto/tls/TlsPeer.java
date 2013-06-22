@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.IOException;
+
 public interface TlsPeer
 {
 
@@ -20,4 +22,9 @@ public interface TlsPeer
      * @param alertDescription {@link AlertDescription}
      */
     void notifyAlertReceived(short alertLevel, short alertDescription);
+
+    /**
+     * This method will be called once the handshake has been successfully completed.
+     */
+    void notifyHandshakeComplete() throws IOException;
 }

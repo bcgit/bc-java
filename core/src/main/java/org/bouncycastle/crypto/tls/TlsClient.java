@@ -70,7 +70,4 @@ public interface TlsClient
      */
     void notifyNewSessionTicket(NewSessionTicket newSessionTicket)
         throws IOException;
-
-    void notifyHandshakeComplete()
-        throws IOException;
 }
