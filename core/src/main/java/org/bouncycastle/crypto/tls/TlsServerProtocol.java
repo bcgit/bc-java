@@ -20,13 +20,13 @@ public class TlsServerProtocol
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
 
-    protected int[] offeredCipherSuites;
-    protected short[] offeredCompressionMethods;
-    protected Hashtable clientExtensions;
+    protected int[] offeredCipherSuites = null;
+    protected short[] offeredCompressionMethods = null;
+    protected Hashtable clientExtensions = null;
 
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
-    protected Hashtable serverExtensions;
+    protected Hashtable serverExtensions = null;
 
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
@@ -72,6 +72,21 @@ public class TlsServerProtocol
         this.recordStream.setRestrictReadVersion(false);
 
         completeHandshake();
+    }
+
+    protected void cleanupHandshake()
+    {
+        super.cleanupHandshake();
+        
+        this.offeredCipherSuites = null;
+        this.offeredCompressionMethods = null;
+        this.clientExtensions = null;
+        this.serverExtensions = null;
+        this.keyExchange = null;
+        this.serverCredentials = null;
+        this.certificateRequest = null;
+        this.clientCertificate = null;
+        this.certificateVerifyHash = null;
     }
 
     protected AbstractTlsContext getContext()

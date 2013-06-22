@@ -96,35 +96,49 @@ public abstract class TlsProtocol
     {
     }
 
+    protected void cleanupHandshake()
+    {
+        if (this.expected_verify_data != null)
+        {
+            Arrays.fill(this.expected_verify_data, (byte)0);
+            this.expected_verify_data = null;
+        }
+    }
+
     protected void completeHandshake()
         throws IOException
     {
-        this.expected_verify_data = null;
-
-        /*
-         * We will now read data, until we have completed the handshake.
-         */
-        while (this.connection_state != CS_SERVER_FINISHED)
+        try
         {
-            safeReadRecord();
+            /*
+             * We will now read data, until we have completed the handshake.
+             */
+            while (this.connection_state != CS_SERVER_FINISHED)
+            {
+                safeReadRecord();
+            }
+
+            this.recordStream.finaliseHandshake();
+
+            this.writeExtraEmptyRecords = !TlsUtils.isTLSv11(getContext());
+
+            /*
+             * If this was an initial handshake, we are now ready to send and receive application data.
+             */
+            if (!appDataReady)
+            {
+                this.appDataReady = true;
+
+                this.tlsInputStream = new TlsInputStream(this);
+                this.tlsOutputStream = new TlsOutputStream(this);
+            }
+
+            getPeer().notifyHandshakeComplete();
         }
-
-        this.recordStream.finaliseHandshake();
-
-        this.writeExtraEmptyRecords = !TlsUtils.isTLSv11(getContext());
-
-        /*
-         * If this was an initial handshake, we are now ready to send and receive application data.
-         */
-        if (!appDataReady)
+        finally
         {
-            this.appDataReady = true;
-
-            this.tlsInputStream = new TlsInputStream(this);
-            this.tlsOutputStream = new TlsOutputStream(this);
+            cleanupHandshake();
         }
-
-        getPeer().notifyHandshakeComplete();
     }
 
     protected void processRecord(short protocol, byte[] buf, int offset, int len)
@@ -205,7 +219,6 @@ public abstract class TlsProtocol
                         break;
                     case HandshakeType.finished:
                     {
-
                         if (this.expected_verify_data == null)
                         {
                             this.expected_verify_data = createVerifyData(!getContext().isServer());
