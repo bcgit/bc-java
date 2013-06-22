@@ -117,31 +117,6 @@ public class TlsClientProtocol
         return tlsClient;
     }
 
-    protected void handleChangeCipherSpecMessage()
-        throws IOException
-    {
-        switch (this.connection_state)
-        {
-        case CS_CLIENT_FINISHED:
-        {
-            if (this.expectSessionTicket)
-            {
-                /*
-                 * RFC 5077 3.3. This message MUST be sent if the server included a SessionTicket
-                 * extension in the ServerHello.
-                 */
-                this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-            }
-            // NB: Fall through to next case label
-        }
-        case CS_SERVER_SESSION_TICKET:
-            this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
-            break;
-        default:
-            this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-        }
-    }
-
     protected void handleHandshakeMessage(short type, byte[] data)
         throws IOException
     {
@@ -215,7 +190,7 @@ public class TlsClientProtocol
         case HandshakeType.finished:
             switch (this.connection_state)
             {
-            case CS_SERVER_CHANGE_CIPHER_SPEC:
+            case CS_CLIENT_FINISHED:
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 break;
@@ -334,15 +309,10 @@ public class TlsClientProtocol
                  * in our CipherSuite.
                  */
                 sendClientKeyExchangeMessage();
+                this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
                 establishMasterSecret(getContext(), keyExchange);
-
-                /*
-                 * Initialize our cipher suite
-                 */
-                recordStream.setPendingConnectionState(tlsClient.getCompression(), tlsClient.getCipher());
-
-                this.connection_state = CS_CLIENT_KEY_EXCHANGE;
+                recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
@@ -359,8 +329,6 @@ public class TlsClientProtocol
                 }
 
                 sendChangeCipherSpecMessage();
-                this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
-
                 sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
                 break;

@@ -39,17 +39,14 @@ public abstract class TlsProtocol
     protected static final short CS_CLIENT_CERTIFICATE = 10;
     protected static final short CS_CLIENT_KEY_EXCHANGE = 11;
     protected static final short CS_CERTIFICATE_VERIFY = 12;
-    protected static final short CS_CLIENT_CHANGE_CIPHER_SPEC = 13;
-    protected static final short CS_CLIENT_FINISHED = 14;
-    protected static final short CS_SERVER_SESSION_TICKET = 15;
-    protected static final short CS_SERVER_CHANGE_CIPHER_SPEC = 16;
-    protected static final short CS_SERVER_FINISHED = 17;
+    protected static final short CS_CLIENT_FINISHED = 13;
+    protected static final short CS_SERVER_SESSION_TICKET = 14;
+    protected static final short CS_SERVER_FINISHED = 15;
 
     /*
      * Queues for data from some protocols.
      */
     private ByteQueue applicationDataQueue = new ByteQueue();
-    private ByteQueue changeCipherSpecQueue = new ByteQueue();
     private ByteQueue alertQueue = new ByteQueue();
     private ByteQueue handshakeQueue = new ByteQueue();
 
@@ -71,6 +68,7 @@ public abstract class TlsProtocol
     protected SecurityParameters securityParameters = null;
 
     protected short connection_state = CS_START;
+    protected boolean receivedChangeCipherSpec = false;
     protected boolean secure_renegotiation = false;
     protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
@@ -85,8 +83,9 @@ public abstract class TlsProtocol
 
     protected abstract TlsPeer getPeer();
 
-    protected abstract void handleChangeCipherSpecMessage()
-        throws IOException;
+    protected void handleChangeCipherSpecMessage() throws IOException
+    {
+    }
 
     protected abstract void handleHandshakeMessage(short type, byte[] buf)
         throws IOException;
@@ -103,6 +102,11 @@ public abstract class TlsProtocol
             Arrays.fill(this.expected_verify_data, (byte)0);
             this.expected_verify_data = null;
         }
+
+        this.receivedChangeCipherSpec = false;
+        this.secure_renegotiation = false;
+        this.allowCertificateStatus = false;
+        this.expectSessionTicket = false;
     }
 
     protected void completeHandshake()
@@ -150,8 +154,7 @@ public abstract class TlsProtocol
         switch (protocol)
         {
         case ContentType.change_cipher_spec:
-            changeCipherSpecQueue.addData(buf, offset, len);
-            processChangeCipherSpec();
+            processChangeCipherSpec(buf, offset, len);
             break;
         case ContentType.alert:
             alertQueue.addData(buf, offset, len);
@@ -309,27 +312,25 @@ public abstract class TlsProtocol
      * @throws IOException If the message has an invalid content or the handshake is not in the correct
      * state.
      */
-    private void processChangeCipherSpec()
+    private void processChangeCipherSpec(byte[] buf, int off, int len)
         throws IOException
     {
-        while (changeCipherSpecQueue.size() > 0)
+        if (len != 1 || buf[off] != 1)
         {
-            /*
-             * A change cipher spec message is only one byte with the value 1.
-             */
-            byte[] b = changeCipherSpecQueue.removeData(1, 0);
-            if (b[0] != 1)
-            {
-                /*
-                 * This should never happen.
-                 */
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
-
-            recordStream.receivedReadCipherSpec();
-
-            handleChangeCipherSpecMessage();
+            // TODO Is this the right AlertDescription for an incorrect ChangeCipherSpec?
+            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
         }
+
+        if (this.receivedChangeCipherSpec)
+        {
+            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+        }
+
+        this.receivedChangeCipherSpec = true;
+
+        recordStream.receivedReadCipherSpec();
+
+        handleChangeCipherSpecMessage();
     }
 
     /**
@@ -388,6 +389,7 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlert e)
         {
+            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -396,6 +398,7 @@ public abstract class TlsProtocol
         }
         catch (IOException e)
         {
+            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
@@ -404,6 +407,7 @@ public abstract class TlsProtocol
         }
         catch (RuntimeException e)
         {
+            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
