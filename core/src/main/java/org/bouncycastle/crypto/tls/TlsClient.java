@@ -7,7 +7,6 @@ import java.util.Vector;
 public interface TlsClient
     extends TlsPeer
 {
-
     void init(TlsClientContext context);
 
     ProtocolVersion getClientHelloRecordLayerVersion();
@@ -50,12 +49,6 @@ public interface TlsClient
 
     // Vector is (SupplementalDataEntry)
     Vector getClientSupplementalData()
-        throws IOException;
-
-    TlsCompression getCompression()
-        throws IOException;
-
-    TlsCipher getCipher()
         throws IOException;
 
     /**
