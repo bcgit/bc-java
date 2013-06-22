@@ -735,14 +735,15 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
-            processMaxFragmentLengthExtension(clientExtensions, serverExtensions, AlertDescription.internal_error);
+            processMaxFragmentLengthExtension(clientExtensions, this.serverExtensions, AlertDescription.internal_error);
 
-            this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
+            this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(this.serverExtensions);
 
-            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions,
                 TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error);
 
-            this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
+            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions,
+                TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
 
             writeExtensions(message, this.serverExtensions);
         }

@@ -588,7 +588,8 @@ public class DTLSClientProtocol
             state.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
                 TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
-            state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
+            state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+                TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
         }
 
         state.client.notifySecureRenegotiation(state.secure_renegotiation);
