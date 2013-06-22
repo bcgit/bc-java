@@ -51,10 +51,6 @@ abstract class AbstractTlsContext
 
     public TlsSession getSession()
     {
-        /*
-         * TODO RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
-         * without proper close_notify messages with level equal to warning.
-         */
         return session;
     }
 

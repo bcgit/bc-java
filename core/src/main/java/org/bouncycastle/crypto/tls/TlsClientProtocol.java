@@ -270,11 +270,7 @@ public class TlsClientProtocol
                 }
                 else
                 {
-                    if (this.tlsSession != null)
-                    {
-                        this.tlsSession.close();
-                        this.tlsSession = null;
-                    }
+                    invalidateSession();
 
                     if (this.selectedSessionID.length > 0)
                     {
