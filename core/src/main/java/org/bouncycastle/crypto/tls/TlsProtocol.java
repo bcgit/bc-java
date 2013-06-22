@@ -111,8 +111,7 @@ public abstract class TlsProtocol
 
         this.recordStream.finaliseHandshake();
 
-        ProtocolVersion version = getContext().getServerVersion();
-        this.writeExtraEmptyRecords = version.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10);
+        this.writeExtraEmptyRecords = !TlsUtils.isTLSv11(getContext());
 
         /*
          * If this was an initial handshake, we are now ready to send and receive application data.
