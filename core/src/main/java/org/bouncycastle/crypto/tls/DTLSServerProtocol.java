@@ -78,7 +78,7 @@ public class DTLSServerProtocol
         }
     }
 
-    public DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
+    protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
         throws IOException
     {
         SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
@@ -103,6 +103,11 @@ public class DTLSServerProtocol
         }
 
         byte[] serverHelloBody = generateServerHello(state);
+        if (state.maxFragmentLength >= 0)
+        {
+            int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+            recordLayer.setPlaintextLimit(plainTextLimit);
+        }
         handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
 
         // TODO This block could really be done before actually sending the hello
@@ -314,6 +319,8 @@ public class DTLSServerProtocol
     protected byte[] generateServerHello(ServerHandshakeState state)
         throws IOException
     {
+        SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         ProtocolVersion server_version = state.server.getServerVersion();
@@ -330,7 +337,7 @@ public class DTLSServerProtocol
 
         TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
 
-        buf.write(state.serverContext.getSecurityParameters().serverRandom);
+        buf.write(securityParameters.serverRandom);
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached
@@ -364,9 +371,8 @@ public class DTLSServerProtocol
          */
         if (state.secure_renegotiation)
         {
-
-            boolean noRenegExt = state.serverExtensions == null
-                || !state.serverExtensions.containsKey(TlsProtocol.EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(state.serverExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             if (noRenegExt)
             {
@@ -393,8 +399,14 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, state.serverExtensions,
+                AlertDescription.internal_error);
+
+            securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
+
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
             state.allowCertificateStatus = state.serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+
             state.expectSessionTicket = state.serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
 
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
@@ -573,23 +585,19 @@ public class DTLSServerProtocol
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            if (state.clientExtensions != null)
+            byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            if (renegExtData != null)
             {
-                byte[] renegExtValue = (byte[])state.clientExtensions.get(TlsProtocol.EXT_RenegotiationInfo);
-                if (renegExtValue != null)
-                {
-                    /*
-                     * If the extension is present, set secure_renegotiation flag to TRUE. The
-                     * server MUST then verify that the length of the "renegotiated_connection"
-                     * field is zero, and if it is not, MUST abort the handshake.
-                     */
-                    state.secure_renegotiation = true;
+                /*
+                 * If the extension is present, set secure_renegotiation flag to TRUE. The
+                 * server MUST then verify that the length of the "renegotiated_connection"
+                 * field is zero, and if it is not, MUST abort the handshake.
+                 */
+                state.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue,
-                        TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
-                    {
-                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                    }
+                if (!Arrays.constantTimeAreEqual(renegExtData, TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
             }
         }
@@ -637,6 +645,7 @@ public class DTLSServerProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        short maxFragmentLength = -1;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         Hashtable serverExtensions = null;

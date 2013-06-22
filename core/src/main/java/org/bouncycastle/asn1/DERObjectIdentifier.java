@@ -6,10 +6,14 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Use ASN1ObjectIdentifier instead of this,
+ */
 public class DERObjectIdentifier
     extends ASN1Primitive
 {
-    private String identifier;
+    String identifier;
+
     private byte[] body;
 
     /**
@@ -51,7 +55,7 @@ public class DERObjectIdentifier
             }
             else
             {    // TODO: this really shouldn't be supported here...
-                return DERObjectIdentifier.fromOctetString((byte[])obj);
+                return ASN1ObjectIdentifier.fromOctetString((byte[])obj);
             }
         }
 
@@ -79,7 +83,7 @@ public class DERObjectIdentifier
         }
         else
         {
-            return DERObjectIdentifier.fromOctetString(ASN1OctetString.getInstance(obj.getObject()).getOctets());
+            return ASN1ObjectIdentifier.fromOctetString(ASN1OctetString.getInstance(obj.getObject()).getOctets());
         }
     }
 
@@ -88,131 +92,14 @@ public class DERObjectIdentifier
     DERObjectIdentifier(
         byte[] bytes)
     {
-        this.body = Arrays.copyOf(bytes, bytes.length);
-    }
-
-    public DERObjectIdentifier(
-        String identifier)
-    {
-        if (identifier == null)
-        {
-            throw new IllegalArgumentException("'identifier' cannot be null");
-        }
-        if (!isValidIdentifier(identifier))
-        {
-            throw new IllegalArgumentException("string " + identifier + " not an OID");
-        }
-
-        this.identifier = identifier;
-    }
-
-    DERObjectIdentifier(DERObjectIdentifier oid, String branchID)
-    {
-        if (!isValidBranchID(branchID, 0))
-        {
-            throw new IllegalArgumentException("string " + branchID + " not a valid OID branch");
-        }
-
-        this.identifier = oid.getId() + "." + branchID;
-    }
-
-    /**
-     * Extend OID on a byte-array stem with one integer value.
-     * The extending value must be positive (0..LONG_MAX)
-     */
-    DERObjectIdentifier(DERObjectIdentifier oid, long branchID1)
-    {
-        if (branchID1 < 0) {
-            throw new IllegalArgumentException("long "+branchID1+" is not a valid OID branch value");
-        }
-        // Get stem
-        byte[] oid_stem  = oid.getBody();
-        // Find out necessary new space
-        int    encodeLen = encodeLength(branchID1);
-        // Allocate new array + copy over the stem
-        this.body = Arrays.copyOf(oid_stem, oid_stem.length + encodeLen);
-        // Encode the new value
-        encodeValue(this.body, oid_stem.length, encodeLen, branchID1);
-    }
-
-    /**
-     * Extend OID on a byte-array stem with two integer values.
-     * <p>
-     * The extending values must be positive (0..LONG_MAX)
-     */
-    DERObjectIdentifier(DERObjectIdentifier oid, long branchID1, long branchID2)
-    {
-        if (branchID1 < 0) {
-            throw new IllegalArgumentException("long "+branchID1+" is not a valid OID branch value");
-        }
-        if (branchID2 < 0) {
-            throw new IllegalArgumentException("long "+branchID2+" is not a valid OID branch value");
-        }
-        // Get stem
-        byte[] oid_stem  = oid.getBody();
-        // Find out necessary new space
-        int    encodeLen1 = encodeLength(branchID1);
-        int    encodeLen2 = encodeLength(branchID2);
-        // Allocate new array + copy over the stem
-        this.body = Arrays.copyOf(oid_stem, oid_stem.length + encodeLen1 + encodeLen2);
-        // Encode first
-        int offset = encodeValue(this.body, oid_stem.length, encodeLen1, branchID1);
-        // Encode second
-        encodeValue(this.body, offset, encodeLen2, branchID2);
-    }
-
-    /**
-     * Calculate encoding length for a value
-     */
-    private int encodeLength(long val) {
-        int n = 1;
-        while (val > 127) {
-            val >>= 7;
-            ++n;
-        }
-        return n;
-    }
-
-    /**
-     * Encode positive long value to pre-existing space at OID byte array.
-     *
-     * @param buf where to encode
-     * @param offset start offset within the buffer
-     * @param len how long was this encode calculated to be?
-     * @param val the value being encoded
-     * @returns offset at the end of the encode
-     */
-    private int encodeValue(final byte[] buf, final int offset, final int len, long val) {
-        int n = len;
-        for ( ; n > 0 ; ) {
-            --n;
-            if (val < 128) {
-                buf[offset+n] = (byte)val;
-            } else {
-                buf[offset+n] = (byte)(0x80 | (val & 0x7F));
-            }
-            val >>= 7;
-        }
-        return offset+len;
-    }
-
-    /**
-     * Get String form of the OID value
-     */
-    public String getId()
-    {
-        // Return it, if it already exists
-        if (identifier != null) return identifier;
-
-        // Produce it..
         StringBuffer objId = new StringBuffer();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;
 
-        for (int i = 0; i < body.length; ++i)
+        for (int i = 0; i != bytes.length; i++)
         {
-            int b = body[i] & 0xff;
+            int b = bytes[i] & 0xff;
 
             if (value <= LONG_LIMIT)
             {
@@ -276,7 +163,39 @@ public class DERObjectIdentifier
         }
 
         this.identifier = objId.toString();
+        this.body = Arrays.clone(bytes);
+    }
 
+    /**
+     * @deprecated use ASN1ObjectIdentifier constructor.
+     */
+    public DERObjectIdentifier(
+        String identifier)
+    {
+        if (identifier == null)
+        {
+            throw new IllegalArgumentException("'identifier' cannot be null");
+        }
+        if (!isValidIdentifier(identifier))
+        {
+            throw new IllegalArgumentException("string " + identifier + " not an OID");
+        }
+
+        this.identifier = identifier;
+    }
+
+    DERObjectIdentifier(DERObjectIdentifier oid, String branchID)
+    {
+        if (!isValidBranchID(branchID, 0))
+        {
+            throw new IllegalArgumentException("string " + branchID + " not a valid OID branch");
+        }
+
+        this.identifier = oid.getId() + "." + branchID;
+    }
+
+    public String getId()
+    {
         return identifier;
     }
 

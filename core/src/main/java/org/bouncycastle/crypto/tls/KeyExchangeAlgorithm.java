@@ -44,4 +44,9 @@ public class KeyExchangeAlgorithm
     public static final int SRP = 21;
     public static final int SRP_DSS = 22;
     public static final int SRP_RSA = 23;
+    
+    /*
+     * RFC 5489
+     */
+    public static final int ECDHE_PSK = 24;
 }

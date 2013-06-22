@@ -76,11 +76,20 @@ public class ByteQueue
     {
         if ((skipped + available + len) > databuf.length)
         {
-            byte[] tmp = new byte[ByteQueue.nextTwoPow(data.length)];
-            System.arraycopy(databuf, skipped, tmp, 0, available);
+            int desiredSize = ByteQueue.nextTwoPow(available + len);
+            if (desiredSize > databuf.length)
+            {
+                byte[] tmp = new byte[desiredSize];
+                System.arraycopy(databuf, skipped, tmp, 0, available);
+                databuf = tmp;
+            }
+            else
+            {
+                System.arraycopy(databuf, skipped, databuf, 0, available);
+            }
             skipped = 0;
-            databuf = tmp;
         }
+
         System.arraycopy(data, offset, databuf, skipped + available, len);
         available += len;
     }
@@ -102,15 +111,6 @@ public class ByteQueue
          */
         available -= i;
         skipped += i;
-
-        /*
-         * If more than half of our data is skipped, we will move the data in the buffer.
-         */
-        if (skipped > (databuf.length / 2))
-        {
-            System.arraycopy(databuf, skipped, databuf, 0, available);
-            skipped = 0;
-        }
     }
 
     /**

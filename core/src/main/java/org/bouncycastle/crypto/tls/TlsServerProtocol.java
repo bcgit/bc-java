@@ -565,22 +565,19 @@ public class TlsServerProtocol
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            if (clientExtensions != null)
+            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
+            if (renegExtData != null)
             {
-                byte[] renegExtValue = (byte[])clientExtensions.get(EXT_RenegotiationInfo);
-                if (renegExtValue != null)
-                {
-                    /*
-                     * If the extension is present, set secure_renegotiation flag to TRUE. The
-                     * server MUST then verify that the length of the "renegotiated_connection"
-                     * field is zero, and if it is not, MUST abort the handshake.
-                     */
-                    this.secure_renegotiation = true;
+                /*
+                 * If the extension is present, set secure_renegotiation flag to TRUE. The
+                 * server MUST then verify that the length of the "renegotiated_connection"
+                 * field is zero, and if it is not, MUST abort the handshake.
+                 */
+                this.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
-                    {
-                        this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-                    }
+                if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                {
+                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
                 }
             }
         }
@@ -616,37 +613,21 @@ public class TlsServerProtocol
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate_request, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate_request);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        certificateRequest.encode(message);
 
-        certificateRequest.encode(buf);
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendCertificateStatusMessage(CertificateStatus certificateStatus)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate_status, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate_status);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        certificateStatus.encode(message);
 
-        certificateStatus.encode(buf);
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendNewSessionTicketMessage(NewSessionTicket newSessionTicket)
@@ -657,29 +638,17 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.session_ticket, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.session_ticket);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        newSessionTicket.encode(message);
 
-        newSessionTicket.encode(buf);
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendServerHelloMessage()
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.server_hello, buf);
-
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
 
         ProtocolVersion server_version = tlsServer.getServerVersion();
         if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
@@ -692,15 +661,15 @@ public class TlsServerProtocol
         recordStream.setRestrictReadVersion(true);
         getContext().setServerVersion(server_version);
 
-        TlsUtils.writeVersion(server_version, buf);
+        TlsUtils.writeVersion(server_version, message);
 
-        buf.write(this.securityParameters.serverRandom);
+        message.write(this.securityParameters.serverRandom);
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached
          * and therefore cannot be resumed.
          */
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
 
         this.selectedCipherSuite = tlsServer.getSelectedCipherSuite();
         if (!arrayContains(this.offeredCipherSuites, this.selectedCipherSuite)
@@ -716,8 +685,8 @@ public class TlsServerProtocol
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
 
-        TlsUtils.writeUint16(this.selectedCipherSuite, buf);
-        TlsUtils.writeUint8(this.selectedCompressionMethod, buf);
+        TlsUtils.writeUint16(this.selectedCipherSuite, message);
+        TlsUtils.writeUint8(this.selectedCompressionMethod, message);
 
         this.serverExtensions = tlsServer.getServerExtensions();
 
@@ -726,9 +695,8 @@ public class TlsServerProtocol
          */
         if (this.secure_renegotiation)
         {
-
-            boolean noRenegExt = this.serverExtensions == null
-                || !this.serverExtensions.containsKey(EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(this.serverExtensions, EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             if (noRenegExt)
             {
@@ -754,19 +722,19 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
+            processMaxFragmentLengthExtension(clientExtensions, serverExtensions, AlertDescription.internal_error);
+
+            this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
+
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
             this.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+
             this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
 
-            writeExtensions(buf, this.serverExtensions);
+            writeExtensions(message, this.serverExtensions);
         }
 
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendServerHelloDoneMessage()
@@ -776,20 +744,17 @@ public class TlsServerProtocol
         TlsUtils.writeUint8(HandshakeType.server_hello_done, message, 0);
         TlsUtils.writeUint24(0, message, 1);
 
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        writeHandshakeMessage(message, 0, message.length);
     }
 
     protected void sendServerKeyExchangeMessage(byte[] serverKeyExchange)
         throws IOException
     {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_key_exchange, serverKeyExchange.length);
 
-        TlsUtils.writeUint8(HandshakeType.server_key_exchange, bos);
-        TlsUtils.writeUint24(serverKeyExchange.length, bos);
-        bos.write(serverKeyExchange);
-        byte[] message = bos.toByteArray();
+        message.write(serverKeyExchange);
 
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected boolean expectCertificateVerifyMessage()

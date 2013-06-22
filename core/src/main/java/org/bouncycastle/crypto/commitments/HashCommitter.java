@@ -55,7 +55,7 @@ public class HashCommitter
     }
 
     /**
-     * Return true if the passed in commitment represents a commitment to the passed in maessage.
+     * Return true if the passed in commitment represents a commitment to the passed in message.
      *
      * @param commitment a commitment previously generated.
      * @param message the message that was expected to have been committed to.
@@ -63,6 +63,11 @@ public class HashCommitter
      */
     public boolean isRevealed(Commitment commitment, byte[] message)
     {
+        if (message.length + commitment.getSecret().length != byteLength)
+        {
+            throw new DataLengthException("Message and witness secret lengths do not match.");
+        }
+
         byte[] calcCommitment = calculateCommitment(commitment.getSecret(), message);
 
         return Arrays.constantTimeAreEqual(commitment.getCommitment(), calcCommitment);

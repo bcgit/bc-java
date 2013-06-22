@@ -476,14 +476,22 @@ public abstract class TlsProtocol
                 safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
             }
 
-            /*
-             * We are only allowed to write fragments up to 2^14 bytes.
-             */
-            int toWrite = Math.min(len, 1 << 14);
-
+            // Fragment data according to the current fragment limit.
+            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
             safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
-
             offset += toWrite;
+            len -= toWrite;
+        }
+    }
+
+    protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
+    {
+        while (len > 0)
+        {
+            // Fragment data according to the current fragment limit.
+            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
+            safeWriteRecord(ContentType.handshake, buf, off, toWrite);
+            off += toWrite;
             len -= toWrite;
         }
     }
@@ -606,25 +614,17 @@ public abstract class TlsProtocol
             }
         }
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.certificate, bos);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, bos);
+        certificate.encode(message);
 
-        certificate.encode(bos);
-        byte[] message = bos.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected void sendChangeCipherSpecMessage()
         throws IOException
     {
-        byte[] message = new byte[]{1};
+        byte[] message = new byte[]{ 1 };
         safeWriteRecord(ContentType.change_cipher_spec, message, 0, message.length);
         recordStream.sentWriteCipherSpec();
     }
@@ -634,32 +634,21 @@ public abstract class TlsProtocol
     {
         byte[] verify_data = createVerifyData(getContext().isServer());
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.finished, bos);
-        TlsUtils.writeUint24(verify_data.length, bos);
-        bos.write(verify_data);
-        byte[] message = bos.toByteArray();
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.finished, verify_data.length);
 
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.write(verify_data);
+
+        message.writeToRecordStream();
     }
 
     protected void sendSupplementalDataMessage(Vector supplementalData)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8(HandshakeType.supplemental_data, buf);
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.supplemental_data);
 
-        // Reserve space for length
-        TlsUtils.writeUint24(0, buf);
+        writeSupplementalData(message, supplementalData);
 
-        writeSupplementalData(buf, supplementalData);
-
-        byte[] message = buf.toByteArray();
-
-        // Patch actual length back in
-        TlsUtils.writeUint24(message.length - 4, message, 1);
-
-        safeWriteRecord(ContentType.handshake, message, 0, message.length);
+        message.writeToRecordStream();
     }
 
     protected byte[] createVerifyData(boolean isServer)
@@ -704,6 +693,22 @@ public abstract class TlsProtocol
         throws IOException
     {
         recordStream.flush();
+    }
+
+    protected void processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
+        throws IOException
+    {
+        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
+        if (maxFragmentLength >= 0)
+        {
+            if (maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+
+            int plainTextLimit = 1 << (8 + maxFragmentLength);
+            recordStream.setPlaintextLimit(plainTextLimit);
+        }
     }
 
     protected static boolean arrayContains(short[] a, short n)
@@ -803,13 +808,13 @@ public abstract class TlsProtocol
 
         while (buf.available() > 0)
         {
-            Integer extType = Integers.valueOf(TlsUtils.readUint16(buf));
-            byte[] extValue = TlsUtils.readOpaque16(buf);
+            Integer extension_type = Integers.valueOf(TlsUtils.readUint16(buf));
+            byte[] extension_data = TlsUtils.readOpaque16(buf);
 
             /*
              * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
              */
-            if (null != extensions.put(extType, extValue))
+            if (null != extensions.put(extension_type, extension_data))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -848,11 +853,11 @@ public abstract class TlsProtocol
         Enumeration keys = extensions.keys();
         while (keys.hasMoreElements())
         {
-            Integer extType = (Integer)keys.nextElement();
-            byte[] extValue = (byte[])extensions.get(extType);
+            Integer extension_type = (Integer)keys.nextElement();
+            byte[] extension_data = (byte[])extensions.get(extension_type);
 
-            TlsUtils.writeUint16(extType.intValue(), buf);
-            TlsUtils.writeOpaque16(extValue, buf);
+            TlsUtils.writeUint16(extension_type.intValue(), buf);
+            TlsUtils.writeOpaque16(extension_data, buf);
         }
 
         byte[] extBytes = buf.toByteArray();
@@ -935,20 +940,6 @@ public abstract class TlsProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256:
-        {
-            if (isTLSv12)
-            {
-                return PRFAlgorithm.tls_prf_sha256;
-            }
-            return PRFAlgorithm.tls_prf_legacy;
-        }
-
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
@@ -975,6 +966,8 @@ public abstract class TlsProtocol
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384:
@@ -988,7 +981,37 @@ public abstract class TlsProtocol
         }
 
         default:
+        {
+            if (isTLSv12)
+            {
+                return PRFAlgorithm.tls_prf_sha256;
+            }
             return PRFAlgorithm.tls_prf_legacy;
+        }
+        }
+    }
+
+    class HandshakeMessage extends ByteArrayOutputStream
+    {
+        HandshakeMessage(short handshakeType) throws IOException
+        {
+            this(handshakeType, 60);
+        }
+
+        HandshakeMessage(short handshakeType, int length) throws IOException
+        {
+            super(length + 4);
+            TlsUtils.writeUint8(handshakeType, this);
+            // Reserve space for length
+            count += 3;
+        }
+
+        void writeToRecordStream() throws IOException
+        {
+            // Patch actual length back in
+            TlsUtils.writeUint24(count - 4, buf, 1);
+            writeHandshakeMessage(buf, 0, count);
+            buf = null;
         }
     }
 }

@@ -380,7 +380,7 @@ public class PGPPublicKey
         int algorithm = publicPk.getAlgorithm();
 
         return ((algorithm == RSA_GENERAL) || (algorithm == RSA_ENCRYPT)
-                || (algorithm == ELGAMAL_ENCRYPT) || (algorithm == ELGAMAL_GENERAL));
+                || (algorithm == ELGAMAL_ENCRYPT) || (algorithm == ELGAMAL_GENERAL) || algorithm == ECDH);
     }
 
     /**

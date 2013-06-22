@@ -12,9 +12,7 @@ import org.bouncycastle.crypto.Digest;
  */
 class RecordStream
 {
-    private static int PLAINTEXT_LIMIT = (1 << 14);
-    private static int COMPRESSED_LIMIT = PLAINTEXT_LIMIT + 1024;
-    private static int CIPHERTEXT_LIMIT = COMPRESSED_LIMIT + 1024;
+    private static int DEFAULT_PLAINTEXT_LIMIT = (1 << 14);
 
     private TlsProtocol handler;
     private InputStream input;
@@ -30,6 +28,8 @@ class RecordStream
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
 
+    private int plaintextLimit, compressedLimit, ciphertextLimit;
+
     RecordStream(TlsProtocol handler, InputStream input, OutputStream output)
     {
         this.handler = handler;
@@ -39,6 +39,8 @@ class RecordStream
         this.writeCompression = this.readCompression;
         this.readCipher = new TlsNullCipher(context);
         this.writeCipher = this.readCipher;
+
+        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     void init(TlsContext context)
@@ -46,6 +48,18 @@ class RecordStream
         this.context = context;
         this.hash = new DeferredHash();
         this.hash.init(context);
+    }
+
+    int getPlaintextLimit()
+    {
+        return plaintextLimit;
+    }
+
+    void setPlaintextLimit(int plaintextLimit)
+    {
+        this.plaintextLimit = plaintextLimit;
+        this.compressedLimit = this.plaintextLimit + 1024;
+        this.ciphertextLimit = this.compressedLimit + 1024;
     }
 
     ProtocolVersion getReadVersion()
@@ -163,12 +177,12 @@ class RecordStream
     protected byte[] decodeAndVerify(short type, InputStream input, int len)
         throws IOException
     {
-        checkLength(len, CIPHERTEXT_LIMIT, AlertDescription.record_overflow);
+        checkLength(len, ciphertextLimit, AlertDescription.record_overflow);
 
         byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
-        checkLength(decoded.length, COMPRESSED_LIMIT, AlertDescription.record_overflow);
+        checkLength(decoded.length, compressedLimit, AlertDescription.record_overflow);
 
         /*
          * TODO RFC5264 6.2.2. Implementation note: Decompression functions are responsible for
@@ -187,7 +201,7 @@ class RecordStream
          * would decompress to a length in excess of 2^14 bytes, it should report a fatal
          * decompression failure error.
          */
-        checkLength(decoded.length, PLAINTEXT_LIMIT, AlertDescription.decompression_failure);
+        checkLength(decoded.length, plaintextLimit, AlertDescription.decompression_failure);
 
         return decoded;
     }
@@ -204,7 +218,7 @@ class RecordStream
         /*
          * RFC 5264 6.2.1 The length should not exceed 2^14.
          */
-        checkLength(plaintextLength, PLAINTEXT_LIMIT, AlertDescription.internal_error);
+        checkLength(plaintextLength, plaintextLimit, AlertDescription.internal_error);
 
         /*
          * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
@@ -245,7 +259,7 @@ class RecordStream
         /*
          * RFC 5264 6.2.3. The length may not exceed 2^14 + 2048.
          */
-        checkLength(ciphertext.length, CIPHERTEXT_LIMIT, AlertDescription.internal_error);
+        checkLength(ciphertext.length, ciphertextLimit, AlertDescription.internal_error);
 
         byte[] record = new byte[ciphertext.length + 5];
         TlsUtils.writeUint8(type, record, 0);

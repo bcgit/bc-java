@@ -21,16 +21,15 @@ public abstract class PSKTlsClient
 
     public int[] getCipherSuites()
     {
-        return new int[]{CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
+        return new int[]{ CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA,
             CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA,
             CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA, CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_PSK_WITH_RC4_128_SHA,};
+            CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_PSK_WITH_RC4_128_SHA, };
     }
 
-    public TlsKeyExchange getKeyExchange()
-        throws IOException
+    public TlsKeyExchange getKeyExchange() throws IOException
     {
         switch (selectedCipherSuite)
         {
@@ -50,6 +49,17 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
             return createPSKKeyExchange(KeyExchangeAlgorithm.DHE_PSK);
+
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+            return createPSKKeyExchange(KeyExchangeAlgorithm.ECDHE_PSK);
 
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
@@ -91,22 +101,24 @@ public abstract class PSKTlsClient
         }
     }
 
-    public TlsCipher getCipher()
-        throws IOException
+    public TlsCipher getCipher() throws IOException
     {
         switch (selectedCipherSuite)
         {
         case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm._3DES_EDE_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_CBC, MACAlgorithm.hmac_sha256);
@@ -125,11 +137,13 @@ public abstract class PSKTlsClient
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_128_GCM, MACAlgorithm._null);
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_CBC, MACAlgorithm.hmac_sha384);
@@ -148,21 +162,25 @@ public abstract class PSKTlsClient
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_GCM, MACAlgorithm._null);
 
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_sha1);
 
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_sha256);
 
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_sha384);
 
         case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128, MACAlgorithm.hmac_sha1);

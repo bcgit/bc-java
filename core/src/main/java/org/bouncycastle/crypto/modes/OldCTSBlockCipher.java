@@ -8,8 +8,12 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 /**
  * A Cipher Text Stealing (CTS) mode cipher. CTS allows block ciphers to
  * be used to produce cipher text which is the same length as the plain text.
+ * <p>
+ * This version applies the CTS algorithm from one block up, rather than following the errata update issued in 2004, where CTS mode is applied
+ * from greater than 1 block up and the first block is processed using CBC mode.
+ * </p>
  */
-public class CTSBlockCipher
+public class OldCTSBlockCipher
     extends BufferedBlockCipher
 {
     private int     blockSize;
@@ -19,8 +23,8 @@ public class CTSBlockCipher
      *
      * @param cipher the underlying block cipher this buffering object wraps.
      */
-    public CTSBlockCipher(
-        BlockCipher     cipher)
+    public OldCTSBlockCipher(
+        BlockCipher cipher)
     {
         if ((cipher instanceof OFBBlockCipher) || (cipher instanceof CFBBlockCipher))
         {
@@ -36,7 +40,7 @@ public class CTSBlockCipher
     }
 
     /**
-     * return the size of the output buffer required for an update 
+     * return the size of the output buffer required for an update
      * an input of len bytes.
      *
      * @param len the length of the input.
@@ -78,7 +82,7 @@ public class CTSBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
+     * @exception org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
      * @exception IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
@@ -111,7 +115,7 @@ public class CTSBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
+     * @exception org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
      * @exception IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
@@ -129,7 +133,7 @@ public class CTSBlockCipher
 
         int blockSize   = getBlockSize();
         int length      = getUpdateOutputSize(len);
-        
+
         if (length > 0)
         {
             if ((outOff + length) > out.length)
@@ -177,11 +181,11 @@ public class CTSBlockCipher
      * @param out the array the block currently being held is copied into.
      * @param outOff the offset at which the copying starts.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there is insufficient space in out for
+     * @exception org.bouncycastle.crypto.DataLengthException if there is insufficient space in out for
      * the output.
      * @exception IllegalStateException if the underlying cipher is not
      * initialised.
-     * @exception InvalidCipherTextException if cipher text decrypts wrongly (in
+     * @exception org.bouncycastle.crypto.InvalidCipherTextException if cipher text decrypts wrongly (in
      * case the exception will never get thrown).
      */
     public int doFinal(
@@ -200,42 +204,35 @@ public class CTSBlockCipher
 
         if (forEncryption)
         {
+            cipher.processBlock(buf, 0, block, 0);
+            
             if (bufOff < blockSize)
             {
                 throw new DataLengthException("need at least one block of input for CTS");
             }
 
-            cipher.processBlock(buf, 0, block, 0);
-
-            if (bufOff > blockSize)
+            for (int i = bufOff; i != buf.length; i++)
             {
-                for (int i = bufOff; i != buf.length; i++)
-                {
-                    buf[i] = block[i - blockSize];
-                }
+                buf[i] = block[i - blockSize];
+            }
 
-                for (int i = blockSize; i != bufOff; i++)
-                {
-                    buf[i] ^= block[i - blockSize];
-                }
+            for (int i = blockSize; i != bufOff; i++)
+            {
+                buf[i] ^= block[i - blockSize];
+            }
 
-                if (cipher instanceof CBCBlockCipher)
-                {
-                    BlockCipher c = ((CBCBlockCipher)cipher).getUnderlyingCipher();
+            if (cipher instanceof CBCBlockCipher)
+            {
+                BlockCipher c = ((CBCBlockCipher)cipher).getUnderlyingCipher();
 
-                    c.processBlock(buf, blockSize, out, outOff);
-                }
-                else
-                {
-                    cipher.processBlock(buf, blockSize, out, outOff);
-                }
-
-                System.arraycopy(block, 0, out, outOff + blockSize, len);
+                c.processBlock(buf, blockSize, out, outOff);
             }
             else
             {
-                System.arraycopy(block, 0, out, outOff, blockSize);
+                cipher.processBlock(buf, blockSize, out, outOff);
             }
+
+            System.arraycopy(block, 0, out, outOff + blockSize, len);
         }
         else
         {
@@ -252,22 +249,15 @@ public class CTSBlockCipher
                 cipher.processBlock(buf, 0, block, 0);
             }
 
-            if (bufOff > blockSize)
+            for (int i = blockSize; i != bufOff; i++)
             {
-                for (int i = blockSize; i != bufOff; i++)
-                {
-                    lastBlock[i - blockSize] = (byte)(block[i - blockSize] ^ buf[i]);
-                }
-
-                System.arraycopy(buf, blockSize, block, 0, len);
-
-                cipher.processBlock(block, 0, out, outOff);
-                System.arraycopy(lastBlock, 0, out, outOff + blockSize, len);
+                lastBlock[i - blockSize] = (byte)(block[i - blockSize] ^ buf[i]);
             }
-            else
-            {
-                System.arraycopy(block, 0, out, outOff, blockSize);
-            }
+
+            System.arraycopy(buf, blockSize, block, 0, len);
+
+            cipher.processBlock(block, 0, out, outOff);
+            System.arraycopy(lastBlock, 0, out, outOff + blockSize, len);
         }
 
         int offset = bufOff;

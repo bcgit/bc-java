@@ -101,6 +101,11 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
             processServerHello(state, serverMessage.getBody());
+            if (state.maxFragmentLength >= 0)
+            {
+                int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+                recordLayer.setPlaintextLimit(plainTextLimit);
+            }
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -338,8 +343,8 @@ public class DTLSClientProtocol
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = state.clientExtensions == null
-                || state.clientExtensions.get(TlsProtocol.EXT_RenegotiationInfo) == null;
+            byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            boolean noRenegExt = (null == renegExtData);
 
             int count = state.offeredCipherSuites.length;
             if (noRenegExt)
@@ -534,7 +539,7 @@ public class DTLSClientProtocol
                  * MUST continue to comply with Section 7.4.1.4 for all other extensions.
                  */
                 if (!extType.equals(TlsProtocol.EXT_RenegotiationInfo)
-                    && (state.clientExtensions == null || state.clientExtensions.get(extType) == null))
+                    && null == TlsUtils.getExtensionData(state.clientExtensions, extType))
                 {
                     /*
                      * RFC 3546 2.3 Note that for all extension types (including those defined in
@@ -556,8 +561,8 @@ public class DTLSClientProtocol
                  * When a ServerHello is received, the client MUST check if it includes the
                  * "renegotiation_info" extension:
                  */
-                byte[] renegExtValue = (byte[])serverExtensions.get(TlsProtocol.EXT_RenegotiationInfo);
-                if (renegExtValue != null)
+                byte[] renegExtData = (byte[])serverExtensions.get(TlsProtocol.EXT_RenegotiationInfo);
+                if (renegExtData != null)
                 {
                     /*
                      * If the extension is present, set the secure_renegotiation flag to TRUE. The
@@ -567,7 +572,7 @@ public class DTLSClientProtocol
                      */
                     state.secure_renegotiation = true;
 
-                    if (!Arrays.constantTimeAreEqual(renegExtValue,
+                    if (!Arrays.constantTimeAreEqual(renegExtData,
                         TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                     {
                         throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -575,8 +580,14 @@ public class DTLSClientProtocol
                 }
             }
 
+            state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, serverExtensions,
+                AlertDescription.illegal_parameter);
+
+            securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
+
             // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
             state.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+
             state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
         }
 
@@ -655,6 +666,7 @@ public class DTLSClientProtocol
         int selectedCipherSuite = -1;
         short selectedCompressionMethod = -1;
         boolean secure_renegotiation = false;
+        short maxFragmentLength = -1;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
