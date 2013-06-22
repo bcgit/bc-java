@@ -89,8 +89,6 @@ public class TlsClientProtocol
         this.connection_state = CS_CLIENT_HELLO;
 
         completeHandshake();
-
-        this.tlsClient.notifyHandshakeComplete();
     }
 
     protected AbstractTlsContext getContext()

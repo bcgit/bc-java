@@ -72,8 +72,6 @@ public class TlsServerProtocol
         this.recordStream.setRestrictReadVersion(false);
 
         completeHandshake();
-
-        this.tlsServer.notifyHandshakeComplete();
     }
 
     protected AbstractTlsContext getContext()
