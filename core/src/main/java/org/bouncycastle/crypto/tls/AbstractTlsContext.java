@@ -10,6 +10,7 @@ abstract class AbstractTlsContext
 
     private ProtocolVersion clientVersion = null;
     private ProtocolVersion serverVersion = null;
+    private TlsSession session = null;
     private Object userObject = null;
 
     AbstractTlsContext(SecureRandom secureRandom, SecurityParameters securityParameters)
@@ -33,7 +34,7 @@ abstract class AbstractTlsContext
         return clientVersion;
     }
 
-    public void setClientVersion(ProtocolVersion clientVersion)
+    void setClientVersion(ProtocolVersion clientVersion)
     {
         this.clientVersion = clientVersion;
     }
@@ -43,9 +44,23 @@ abstract class AbstractTlsContext
         return serverVersion;
     }
 
-    public void setServerVersion(ProtocolVersion serverVersion)
+    void setServerVersion(ProtocolVersion serverVersion)
     {
         this.serverVersion = serverVersion;
+    }
+
+    public TlsSession getSession()
+    {
+        /*
+         * TODO RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
+         * without proper close_notify messages with level equal to warning.
+         */
+        return session;
+    }
+
+    void setSession(TlsSession session)
+    {
+        this.session = session;
     }
 
     public Object getUserObject()
