@@ -219,6 +219,17 @@ public class TlsUtils
         buf[offset + 3] = (byte)(i);
     }
 
+    public static void writeUint48(long i, OutputStream output)
+        throws IOException
+    {
+        output.write((byte)(i >> 40));
+        output.write((byte)(i >> 32));
+        output.write((byte)(i >> 24));
+        output.write((byte)(i >> 16));
+        output.write((byte)(i >> 8));
+        output.write((byte)(i));
+    }
+
     public static void writeUint48(long i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >> 40);
@@ -232,14 +243,14 @@ public class TlsUtils
     public static void writeUint64(long i, OutputStream output)
         throws IOException
     {
-        output.write((int)(i >> 56));
-        output.write((int)(i >> 48));
-        output.write((int)(i >> 40));
-        output.write((int)(i >> 32));
-        output.write((int)(i >> 24));
-        output.write((int)(i >> 16));
-        output.write((int)(i >> 8));
-        output.write((int)(i));
+        output.write((byte)(i >> 56));
+        output.write((byte)(i >> 48));
+        output.write((byte)(i >> 40));
+        output.write((byte)(i >> 32));
+        output.write((byte)(i >> 24));
+        output.write((byte)(i >> 16));
+        output.write((byte)(i >> 8));
+        output.write((byte)(i));
     }
 
     public static void writeUint64(long i, byte[] buf, int offset)
