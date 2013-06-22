@@ -112,8 +112,9 @@ public class DTLSServerProtocol
 
         // TODO This block could really be done before actually sending the hello
         {
-            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext, state.selectedCipherSuite);
+            securityParameters.cipherSuite = state.selectedCipherSuite;
             securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
+            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext, state.selectedCipherSuite);
 
             /*
              * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length
@@ -338,7 +339,7 @@ public class DTLSServerProtocol
 
         TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
 
-        buf.write(securityParameters.serverRandom);
+        buf.write(securityParameters.getServerRandom());
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached
