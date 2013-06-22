@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -97,31 +96,6 @@ public class TlsServerProtocol
     protected TlsPeer getPeer()
     {
         return tlsServer;
-    }
-
-    protected void handleChangeCipherSpecMessage()
-        throws IOException
-    {
-        switch (this.connection_state)
-        {
-        case CS_CLIENT_KEY_EXCHANGE:
-        {
-            if (this.certificateVerifyHash != null)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
-            // NB: Fall through to next case label
-        }
-        case CS_CERTIFICATE_VERIFY:
-        {
-            this.connection_state = CS_CLIENT_CHANGE_CIPHER_SPEC;
-            break;
-        }
-        default:
-        {
-            this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
-        }
-        }
     }
 
     protected void handleHandshakeMessage(short type, byte[] data)
@@ -359,22 +333,30 @@ public class TlsServerProtocol
         {
             switch (this.connection_state)
             {
-            case CS_CLIENT_CHANGE_CIPHER_SPEC:
+            case CS_CLIENT_KEY_EXCHANGE:
+            {
+                if (this.certificateVerifyHash != null)
+                {
+                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                }
+                // NB: Fall through to next case label
+            }
+            case CS_CERTIFICATE_VERIFY:
+            {
                 processFinishedMessage(buf);
                 this.connection_state = CS_CLIENT_FINISHED;
 
                 if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
+                    sendChangeCipherSpecMessage();
                 }
                 this.connection_state = CS_SERVER_SESSION_TICKET;
-
-                sendChangeCipherSpecMessage();
-                this.connection_state = CS_SERVER_CHANGE_CIPHER_SPEC;
 
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
                 break;
+            }
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
             }
@@ -611,11 +593,12 @@ public class TlsServerProtocol
         assertEmpty(buf);
 
         establishMasterSecret(getContext(), keyExchange);
+        recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
-        /*
-         * Initialize our cipher suite
-         */
-        recordStream.setPendingConnectionState(tlsServer.getCompression(), tlsServer.getCipher());
+        if (!expectSessionTicket)
+        {
+            sendChangeCipherSpecMessage();
+        }
 
         if (expectCertificateVerifyMessage())
         {
