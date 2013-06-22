@@ -203,6 +203,15 @@ class RecordStream
          */
         checkLength(decoded.length, plaintextLimit, AlertDescription.decompression_failure);
 
+        /*
+         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * or ChangeCipherSpec content types.
+         */
+        if (decoded.length < 1 && type != ContentType.application_data)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         return decoded;
     }
 
