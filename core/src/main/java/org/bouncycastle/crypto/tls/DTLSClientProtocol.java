@@ -585,8 +585,8 @@ public class DTLSClientProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
-            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
-            state.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+            state.allowCertificateStatus = evaluateStatusRequestExtension(serverExtensions,
+                AlertDescription.illegal_parameter);
 
             state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
         }
