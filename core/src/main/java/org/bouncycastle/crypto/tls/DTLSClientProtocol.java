@@ -585,8 +585,8 @@ public class DTLSClientProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
-            state.allowCertificateStatus = evaluateStatusRequestExtension(serverExtensions,
-                AlertDescription.illegal_parameter);
+            state.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+                TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
             state.expectSessionTicket = serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
         }
