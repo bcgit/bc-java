@@ -96,7 +96,4 @@ public interface TlsServer
      */
     NewSessionTicket getNewSessionTicket()
         throws IOException;
-
-    void notifyHandshakeComplete()
-        throws IOException;
 }

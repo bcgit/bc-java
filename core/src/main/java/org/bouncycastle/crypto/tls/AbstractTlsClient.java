@@ -207,9 +207,4 @@ public abstract class AbstractTlsClient
         throws IOException
     {
     }
-
-    public void notifyHandshakeComplete()
-        throws IOException
-    {
-    }
 }

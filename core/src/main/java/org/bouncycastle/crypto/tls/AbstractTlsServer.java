@@ -324,9 +324,4 @@ public abstract class AbstractTlsServer
          */
         return new NewSessionTicket(0L, TlsUtils.EMPTY_BYTES);
     }
-
-    public void notifyHandshakeComplete()
-        throws IOException
-    {
-    }
 }
