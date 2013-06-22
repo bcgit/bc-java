@@ -55,7 +55,7 @@ public class TlsServerProtocol
         }
         if (this.tlsServer != null)
         {
-            throw new IllegalStateException("accept can only be called once");
+            throw new IllegalStateException("'accept' can only be called once");
         }
 
         this.tlsServer = tlsServer;
@@ -119,8 +119,9 @@ public class TlsServerProtocol
 
                 // TODO This block could really be done before actually sending the hello
                 {
-                    securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
+                    securityParameters.cipherSuite = this.selectedCipherSuite;
                     securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
+                    securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
 
                     /*
                      * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
@@ -355,6 +356,7 @@ public class TlsServerProtocol
 
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
+                this.connection_state = CS_END;
                 break;
             }
             default:

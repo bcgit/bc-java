@@ -42,6 +42,7 @@ public abstract class TlsProtocol
     protected static final short CS_CLIENT_FINISHED = 13;
     protected static final short CS_SERVER_SESSION_TICKET = 14;
     protected static final short CS_SERVER_FINISHED = 15;
+    protected static final short CS_END = 16;
 
     /*
      * Queues for data from some protocols.
@@ -65,9 +66,11 @@ public abstract class TlsProtocol
     private volatile boolean writeExtraEmptyRecords = true;
     private byte[] expected_verify_data = null;
 
+    protected TlsSession tlsSession = null;
     protected SecurityParameters securityParameters = null;
 
     protected short connection_state = CS_START;
+    protected boolean resumedSession = false;
     protected boolean receivedChangeCipherSpec = false;
     protected boolean secure_renegotiation = false;
     protected boolean allowCertificateStatus = false;
@@ -97,12 +100,15 @@ public abstract class TlsProtocol
 
     protected void cleanupHandshake()
     {
+        this.securityParameters.clear();
+
         if (this.expected_verify_data != null)
         {
             Arrays.fill(this.expected_verify_data, (byte)0);
             this.expected_verify_data = null;
         }
 
+        this.resumedSession = false;
         this.receivedChangeCipherSpec = false;
         this.secure_renegotiation = false;
         this.allowCertificateStatus = false;
@@ -117,7 +123,7 @@ public abstract class TlsProtocol
             /*
              * We will now read data, until we have completed the handshake.
              */
-            while (this.connection_state != CS_SERVER_FINISHED)
+            while (this.connection_state != CS_END)
             {
                 safeReadRecord();
             }
@@ -135,6 +141,16 @@ public abstract class TlsProtocol
 
                 this.tlsInputStream = new TlsInputStream(this);
                 this.tlsOutputStream = new TlsOutputStream(this);
+            }
+
+            if (tlsSession != null)
+            {
+                if (tlsSession.getSecurityParameters() == null)
+                {
+                    this.tlsSession = new TlsSessionImpl(tlsSession.getSessionID(), securityParameters);
+                }
+
+                getContext().setSession(tlsSession);
             }
 
             getPeer().notifyHandshakeComplete();

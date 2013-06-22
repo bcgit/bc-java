@@ -22,6 +22,7 @@ public class TlsClientProtocol
     protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
 
+    protected byte[] selectedSessionID = null;
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
 
@@ -62,11 +63,22 @@ public class TlsClientProtocol
     /**
      * Initiates a TLS handshake in the role of client
      *
-     * @param tlsClient
+     * @param tlsClient The {@link TlsClient} to use for the handshake.
      * @throws IOException If handshake was not successful.
      */
-    public void connect(TlsClient tlsClient)
-        throws IOException
+    public void connect(TlsClient tlsClient) throws IOException
+    {
+        connect(tlsClient, null);
+    }
+
+    /**
+     * Initiates a TLS handshake in the role of client, resuming the provided session if possible.
+     *
+     * @param tlsClient The {@link TlsClient} to use for the handshake.
+     * @param tlsSession The {@link TlsSession} to try to resume, or null.
+     * @throws IOException If handshake was not successful.
+     */
+    public void connect(TlsClient tlsClient, TlsSession tlsSession) throws IOException
     {
         if (tlsClient == null)
         {
@@ -74,10 +86,11 @@ public class TlsClientProtocol
         }
         if (this.tlsClient != null)
         {
-            throw new IllegalStateException("connect can only be called once");
+            throw new IllegalStateException("'connect' can only be called once");
         }
 
         this.tlsClient = tlsClient;
+        this.tlsSession = tlsSession;
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
@@ -100,6 +113,7 @@ public class TlsClientProtocol
         this.offeredCipherSuites = null;
         this.offeredCompressionMethods = null;
         this.clientExtensions = null;
+        this.selectedSessionID = null;
         this.keyExchange = null;
         this.authentication = null;
         this.serverCertificate = null;
@@ -121,6 +135,23 @@ public class TlsClientProtocol
         throws IOException
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(data);
+
+        if (this.resumedSession)
+        {
+            if (type != HandshakeType.finished || this.connection_state != CS_SERVER_HELLO)
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+
+            processFinishedMessage(buf);
+            this.connection_state = CS_SERVER_FINISHED;
+
+            sendFinishedMessage();
+            this.connection_state = CS_CLIENT_FINISHED;
+            this.connection_state = CS_END;
+
+            return;
+        }
 
         switch (type)
         {
@@ -193,6 +224,7 @@ public class TlsClientProtocol
             case CS_CLIENT_FINISHED:
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
+                this.connection_state = CS_END;
                 break;
             default:
                 this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
@@ -205,8 +237,9 @@ public class TlsClientProtocol
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
+                securityParameters.cipherSuite = this.selectedCipherSuite;
                 securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
+                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
 
                 /*
                  * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
@@ -216,6 +249,38 @@ public class TlsClientProtocol
                 securityParameters.verifyDataLength = 12;
 
                 recordStream.notifyHelloComplete();
+
+                this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
+                    && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
+
+                if (this.resumedSession)
+                {
+                    SecurityParameters sessionParameters = this.tlsSession.getSecurityParameters();
+
+                    if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
+                        || securityParameters.getCompressionAlgorithm() != sessionParameters.getCompressionAlgorithm())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                    }
+
+                    securityParameters.masterSecret = Arrays.clone(sessionParameters.masterSecret);
+                    recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
+
+                    sendChangeCipherSpecMessage();
+                }
+                else
+                {
+                    if (this.tlsSession != null)
+                    {
+                        this.tlsSession.close();
+                        this.tlsSession = null;
+                    }
+
+                    if (this.selectedSessionID.length > 0)
+                    {
+                        this.tlsSession = new TlsSessionImpl(this.selectedSessionID, null);
+                    }
+                }
 
                 break;
             default:
@@ -437,7 +502,7 @@ public class TlsClientProtocol
              * if it does not wish to renegotiate a session, or the client may, if it wishes,
              * respond with a no_renegotiation alert.
              */
-            if (this.connection_state == CS_SERVER_FINISHED)
+            if (this.connection_state == CS_END)
             {
                 String message = "Renegotiation not supported";
                 raiseWarning(AlertDescription.no_renegotiation, message);
@@ -504,13 +569,13 @@ public class TlsClientProtocol
          */
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
-        byte[] sessionID = TlsUtils.readOpaque8(buf);
-        if (sessionID.length > 32)
+        this.selectedSessionID = TlsUtils.readOpaque8(buf);
+        if (this.selectedSessionID.length > 32)
         {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        this.tlsClient.notifySessionID(sessionID);
+        this.tlsClient.notifySessionID(this.selectedSessionID);
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
@@ -649,9 +714,7 @@ public class TlsClientProtocol
     protected void sendClientHelloMessage()
         throws IOException
     {
-        recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
-
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
+        this.recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
         if (client_version.isDTLS())
@@ -660,20 +723,47 @@ public class TlsClientProtocol
         }
 
         getContext().setClientVersion(client_version);
-        TlsUtils.writeVersion(client_version, message);
 
-        message.write(securityParameters.clientRandom);
-
-        // Session id
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
+        // Session ID
+        byte[] session_id = TlsUtils.EMPTY_BYTES;
+        if (this.tlsSession != null)
+        {
+            session_id = this.tlsSession.getSessionID();
+            if (session_id == null || session_id.length > 32)
+            {
+                session_id = TlsUtils.EMPTY_BYTES;
+            }
+        }
 
         /*
          * Cipher suites
          */
         this.offeredCipherSuites = this.tlsClient.getCipherSuites();
 
+        // Compression methods
+        this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
+
+        if (session_id.length > 0)
+        {
+            SecurityParameters sessionParameters = this.tlsSession.getSecurityParameters();
+
+            if (!arrayContains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
+                || !arrayContains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
+            {
+                session_id = TlsUtils.EMPTY_BYTES;
+            }
+        }
+
         // Integer -> byte[]
         this.clientExtensions = this.tlsClient.getClientExtensions();
+
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
+
+        TlsUtils.writeVersion(client_version, message);
+
+        message.write(this.securityParameters.getClientRandom());
+
+        TlsUtils.writeOpaque8(session_id, message);
 
         // Cipher Suites (and SCSV)
         {
@@ -702,9 +792,6 @@ public class TlsClientProtocol
                 TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, message);
             }
         }
-
-        // Compression methods
-        this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
         TlsUtils.checkUint8(offeredCompressionMethods.length);
         TlsUtils.writeUint8(offeredCompressionMethods.length, message);
