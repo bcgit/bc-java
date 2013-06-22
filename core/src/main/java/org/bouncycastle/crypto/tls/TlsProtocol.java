@@ -123,6 +123,8 @@ public abstract class TlsProtocol
             this.tlsInputStream = new TlsInputStream(this);
             this.tlsOutputStream = new TlsOutputStream(this);
         }
+
+        getPeer().notifyHandshakeComplete();
     }
 
     protected void processRecord(short protocol, byte[] buf, int offset, int len)
