@@ -27,6 +27,8 @@ public class TlsClientProtocol
 
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
+
+    protected Certificate serverCertificate = null;
     protected CertificateStatus certificateStatus = null;
     protected CertificateRequest certificateRequest = null;
 
@@ -100,6 +102,7 @@ public class TlsClientProtocol
         this.clientExtensions = null;
         this.keyExchange = null;
         this.authentication = null;
+        this.serverCertificate = null;
         this.certificateStatus = null;
         this.certificateRequest = null;
     }
@@ -159,20 +162,20 @@ public class TlsClientProtocol
             {
                 // Parse the Certificate message and send to cipher suite
 
-                Certificate serverCertificate = Certificate.parse(buf);
+                this.serverCertificate = Certificate.parse(buf);
 
                 assertEmpty(buf);
 
                 // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
-                if (serverCertificate == null || serverCertificate.isEmpty())
+                if (this.serverCertificate == null || this.serverCertificate.isEmpty())
                 {
                     this.allowCertificateStatus = false;
                 }
 
-                this.keyExchange.processServerCertificate(serverCertificate);
+                this.keyExchange.processServerCertificate(this.serverCertificate);
 
                 this.authentication = tlsClient.getAuthentication();
-                this.authentication.notifyServerCertificate(serverCertificate);
+                this.authentication.notifyServerCertificate(this.serverCertificate);
 
                 break;
             }
