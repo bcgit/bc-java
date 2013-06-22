@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 public interface TlsContext
 {
-
     SecureRandom getSecureRandom();
 
     SecurityParameters getSecurityParameters();
@@ -14,6 +13,8 @@ public interface TlsContext
     ProtocolVersion getClientVersion();
 
     ProtocolVersion getServerVersion();
+
+    TlsSession getSession();
 
     Object getUserObject();
 
