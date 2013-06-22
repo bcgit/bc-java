@@ -113,8 +113,9 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.clientContext, state.selectedCipherSuite);
+        securityParameters.cipherSuite = state.selectedCipherSuite;
         securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.clientContext, state.selectedCipherSuite);
 
         /*
          * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
