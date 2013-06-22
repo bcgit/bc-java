@@ -653,8 +653,7 @@ public class TlsClientProtocol
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
-            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
-            this.allowCertificateStatus = serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+            processServerStatusExtension(serverExtensions, AlertDescription.illegal_parameter);
 
             this.expectSessionTicket = serverExtensions.containsKey(EXT_SessionTicket);
         }

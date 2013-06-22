@@ -49,6 +49,21 @@ public abstract class DTLSProtocol
         return maxFragmentLength;
     }
 
+    protected static boolean evaluateStatusRequestExtension(Hashtable serverExtensions, short alertDescription)
+        throws IOException
+    {
+        byte[] statusRequest = TlsUtils.getExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request);
+        if (statusRequest == null)
+        {
+            return false;
+        }
+        if (statusRequest.length != 0)
+        {
+            throw new TlsFatalAlert(alertDescription);
+        }
+        return true;
+    }
+
     protected static byte[] generateCertificate(Certificate certificate)
         throws IOException
     {

@@ -725,6 +725,20 @@ public abstract class TlsProtocol
         }
     }
 
+    protected void processServerStatusExtension(Hashtable serverExtensions, short alertDescription)
+        throws IOException
+    {
+        byte[] statusRequest = TlsUtils.getExtensionData(serverExtensions, TlsExtensionsUtils.EXT_status_request);
+        if (statusRequest != null)
+        {
+            if (statusRequest.length != 0)
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+            this.allowCertificateStatus = true;
+        }
+    }
+
     protected static boolean arrayContains(short[] a, short n)
     {
         for (int i = 0; i < a.length; ++i)
