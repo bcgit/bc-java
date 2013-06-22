@@ -6,7 +6,6 @@ class TlsClientContextImpl
     extends AbstractTlsContext
     implements TlsClientContext
 {
-
     TlsClientContextImpl(SecureRandom secureRandom, SecurityParameters securityParameters)
     {
         super(secureRandom, securityParameters);
