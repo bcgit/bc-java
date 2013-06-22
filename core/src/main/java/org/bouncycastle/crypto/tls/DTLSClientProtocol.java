@@ -353,7 +353,9 @@ public class DTLSClientProtocol
                 ++count;
             }
 
-            TlsUtils.writeUint16(2 * count, buf);
+            int length = 2 * count;
+            TlsUtils.checkUint16(length);
+            TlsUtils.writeUint16(length, buf);
             TlsUtils.writeUint16Array(state.offeredCipherSuites, buf);
 
             if (noRenegExt)
@@ -365,9 +367,10 @@ public class DTLSClientProtocol
         // TODO Add support for compression
         // Compression methods
         // state.offeredCompressionMethods = client.getCompressionMethods();
-        state.offeredCompressionMethods = new short[]{CompressionMethod._null};
+        state.offeredCompressionMethods = new short[]{ CompressionMethod._null };
 
-        TlsUtils.writeUint8((short)state.offeredCompressionMethods.length, buf);
+        TlsUtils.checkUint8(state.offeredCompressionMethods.length);
+        TlsUtils.writeUint8(state.offeredCompressionMethods.length, buf);
         TlsUtils.writeUint8Array(state.offeredCompressionMethods, buf);
 
         // Extensions
@@ -649,7 +652,8 @@ public class DTLSClientProtocol
 
         byte[] patched = new byte[clientHelloBody.length + cookie.length];
         System.arraycopy(clientHelloBody, 0, patched, 0, cookieLengthPos);
-        TlsUtils.writeUint8((short)cookie.length, patched, cookieLengthPos);
+        TlsUtils.checkUint8(cookie.length);
+        TlsUtils.writeUint8(cookie.length, patched, cookieLengthPos);
         System.arraycopy(cookie, 0, patched, cookiePos, cookie.length);
         System.arraycopy(clientHelloBody, cookiePos, patched, cookiePos + cookie.length, clientHelloBody.length
             - cookiePos);

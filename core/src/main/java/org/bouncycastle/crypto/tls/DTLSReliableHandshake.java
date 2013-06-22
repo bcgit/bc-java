@@ -45,6 +45,8 @@ class DTLSReliableHandshake
     void sendMessage(short msg_type, byte[] body)
         throws IOException
     {
+        TlsUtils.checkUint24(body.length);
+
         if (!sending)
         {
             checkInboundFlight();
@@ -394,7 +396,6 @@ class DTLSReliableHandshake
 
     static class Message
     {
-
         private final int message_seq;
         private final short msg_type;
         private final byte[] body;

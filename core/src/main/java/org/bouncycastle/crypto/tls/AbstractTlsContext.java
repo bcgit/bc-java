@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 abstract class AbstractTlsContext
     implements TlsContext
 {
-
     private SecureRandom secureRandom;
     private SecurityParameters securityParameters;
 
@@ -61,6 +60,10 @@ abstract class AbstractTlsContext
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
     {
+        if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
+        {
+            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+        }
 
         SecurityParameters sp = getSecurityParameters();
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
