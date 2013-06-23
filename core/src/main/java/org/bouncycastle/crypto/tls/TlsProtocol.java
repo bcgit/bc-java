@@ -151,10 +151,14 @@ public abstract class TlsProtocol
                 this.tlsOutputStream = new TlsOutputStream(this);
             }
 
-            if (this.tlsSession != null && this.sessionParameters == null)
+            if (this.tlsSession != null)
             {
-                this.sessionParameters = new SessionParameters(this.peerCertificate, this.securityParameters);
-                this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
+                if (this.sessionParameters == null)
+                {
+                    this.sessionParameters = new SessionParameters(this.peerCertificate, this.securityParameters);
+                    this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
+                }
+
                 getContext().setResumableSession(this.tlsSession);
             }
 
