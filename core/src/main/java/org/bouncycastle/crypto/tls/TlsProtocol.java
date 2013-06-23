@@ -192,7 +192,7 @@ public abstract class TlsProtocol
         case ContentType.application_data:
             if (!appDataReady)
             {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             applicationDataQueue.addData(buf, offset, len);
             processApplicationData();
@@ -348,12 +348,12 @@ public abstract class TlsProtocol
         if (len != 1 || buf[off] != 1)
         {
             // TODO Is this the right AlertDescription for an incorrect ChangeCipherSpec?
-            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         if (this.receivedChangeCipherSpec)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
         this.receivedChangeCipherSpec = true;
@@ -628,7 +628,7 @@ public abstract class TlsProtocol
             /*
              * Wrong checksum in the finished message.
              */
-            this.failWithError(AlertLevel.fatal, AlertDescription.decrypt_error);
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
     }
 

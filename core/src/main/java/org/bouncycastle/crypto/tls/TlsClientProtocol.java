@@ -180,7 +180,7 @@ public class TlsClientProtocol
                 break;
             }
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
             this.connection_state = CS_SERVER_CERTIFICATE;
@@ -197,7 +197,7 @@ public class TlsClientProtocol
                      * server MUST have included an extension of type "status_request" with empty
                      * "extension_data" in the extended server hello..
                      */
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
 
                 this.certificateStatus = CertificateStatus.parse(buf);
@@ -209,7 +209,7 @@ public class TlsClientProtocol
                 this.connection_state = CS_CERTIFICATE_STATUS;
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         case HandshakeType.finished:
@@ -221,7 +221,7 @@ public class TlsClientProtocol
                 this.connection_state = CS_END;
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         case HandshakeType.server_hello:
@@ -270,7 +270,7 @@ public class TlsClientProtocol
 
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         case HandshakeType.supplemental_data:
@@ -281,7 +281,7 @@ public class TlsClientProtocol
                 handleSupplementalData(readSupplementalDataMessage(buf));
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -384,7 +384,7 @@ public class TlsClientProtocol
                 this.connection_state = CS_CLIENT_FINISHED;
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
             break;
         case HandshakeType.server_key_exchange:
@@ -414,7 +414,7 @@ public class TlsClientProtocol
                 break;
 
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
             this.connection_state = CS_SERVER_KEY_EXCHANGE;
@@ -440,7 +440,7 @@ public class TlsClientProtocol
                      * RFC 2246 7.4.4. It is a fatal handshake_failure alert for an anonymous server
                      * to request client identification.
                      */
-                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
 
                 this.certificateRequest = CertificateRequest.parse(getContext(), buf);
@@ -452,7 +452,7 @@ public class TlsClientProtocol
                 break;
             }
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
             this.connection_state = CS_CERTIFICATE_REQUEST;
@@ -469,17 +469,17 @@ public class TlsClientProtocol
                      * RFC 5077 3.3. This message MUST NOT be sent if the server did not include a
                      * SessionTicket extension in the ServerHello.
                      */
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
                 receiveNewSessionTicketMessage(buf);
                 this.connection_state = CS_SERVER_SESSION_TICKET;
                 break;
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
         }
         case HandshakeType.hello_request:
-
+        {
             assertEmpty(buf);
 
             /*
@@ -494,14 +494,13 @@ public class TlsClientProtocol
                 raiseWarning(AlertDescription.no_renegotiation, message);
             }
             break;
+        }
+        case HandshakeType.client_hello:
         case HandshakeType.client_key_exchange:
         case HandshakeType.certificate_verify:
-        case HandshakeType.client_hello:
         case HandshakeType.hello_verify_request:
         default:
-            // We do not support this!
-            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            break;
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
@@ -531,19 +530,19 @@ public class TlsClientProtocol
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
         if (server_version.isDTLS())
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         // Check that this matches what the server is sending in the record layer
         if (!server_version.equals(recordStream.getReadVersion()))
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         ProtocolVersion client_version = getContext().getClientVersion();
         if (!server_version.isEqualOrEarlierVersionOf(client_version))
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         this.recordStream.setWriteVersion(server_version);
@@ -558,7 +557,7 @@ public class TlsClientProtocol
         this.selectedSessionID = TlsUtils.readOpaque8(buf);
         if (this.selectedSessionID.length > 32)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         this.tlsClient.notifySessionID(this.selectedSessionID);
@@ -572,7 +571,7 @@ public class TlsClientProtocol
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         securityParameters.cipherSuite = selectedCipherSuite;
@@ -585,7 +584,7 @@ public class TlsClientProtocol
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (!arrayContains(offeredCompressionMethods, selectedCompressionMethod))
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         securityParameters.compressionAlgorithm = selectedCompressionMethod;
@@ -640,7 +639,7 @@ public class TlsClientProtocol
                      * the associated ClientHello, it MUST abort the handshake with an
                      * unsupported_extension fatal alert.
                      */
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
                 }
             }
 
@@ -665,7 +664,7 @@ public class TlsClientProtocol
 
                     if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                     {
-                        this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
                     }
                 }
             }
@@ -707,7 +706,7 @@ public class TlsClientProtocol
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
         if (client_version.isDTLS())
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         getContext().setClientVersion(client_version);
