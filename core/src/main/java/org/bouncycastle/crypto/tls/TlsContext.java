@@ -15,9 +15,8 @@ public interface TlsContext
     ProtocolVersion getServerVersion();
 
     /**
-     * Used to get the resumable session, if any, used by this connection. If the connection has
-     * created a new session, it will only become resumable after the handshake has successfully
-     * completed.
+     * Used to get the resumable session, if any, used by this connection. Only available after the
+     * handshake has successfully completed.
      * 
      * @return A {@link TlsSession} representing the resumable session used by this connection, or
      *         null if no resumable session available.

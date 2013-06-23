@@ -92,8 +92,6 @@ public class TlsClientProtocol
             {
                 this.tlsSession = sessionToResume;
                 this.sessionParameters = sessionParameters;
-
-                this.tlsClientContext.setResumableSession(sessionToResume);
             }
         }
 
