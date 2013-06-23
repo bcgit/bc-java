@@ -419,7 +419,6 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlert e)
         {
-            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription());
@@ -428,7 +427,6 @@ public abstract class TlsProtocol
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
@@ -437,7 +435,6 @@ public abstract class TlsProtocol
         }
         catch (RuntimeException e)
         {
-            e.printStackTrace();
             if (!this.closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
