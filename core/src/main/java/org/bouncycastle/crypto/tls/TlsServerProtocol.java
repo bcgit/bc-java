@@ -23,8 +23,6 @@ public class TlsServerProtocol
     protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
 
-    protected int selectedCipherSuite;
-    protected short selectedCompressionMethod;
     protected Hashtable serverExtensions = null;
 
     protected TlsKeyExchange keyExchange = null;
@@ -117,21 +115,16 @@ public class TlsServerProtocol
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                // TODO This block could really be done before actually sending the hello
-                {
-                    securityParameters.cipherSuite = this.selectedCipherSuite;
-                    securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
-                    securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
+                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
 
-                    /*
-                     * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
-                     * verify_data_length has a verify_data_length equal to 12. This includes all
-                     * existing cipher suites.
-                     */
-                    securityParameters.verifyDataLength = 12;
+                /*
+                 * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
+                 * verify_data_length has a verify_data_length equal to 12. This includes all
+                 * existing cipher suites.
+                 */
+                securityParameters.verifyDataLength = 12;
 
-                    recordStream.notifyHelloComplete();
-                }
+                recordStream.notifyHelloComplete();
 
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
@@ -669,22 +662,24 @@ public class TlsServerProtocol
          */
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
 
-        this.selectedCipherSuite = tlsServer.getSelectedCipherSuite();
-        if (!arrayContains(this.offeredCipherSuites, this.selectedCipherSuite)
-            || this.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+        int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
+        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
+        securityParameters.cipherSuite = selectedCipherSuite;
 
-        this.selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
-        if (!arrayContains(this.offeredCompressionMethods, this.selectedCompressionMethod))
+        short selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
+        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
         }
+        securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
-        TlsUtils.writeUint16(this.selectedCipherSuite, message);
-        TlsUtils.writeUint8(this.selectedCompressionMethod, message);
+        TlsUtils.writeUint16(selectedCipherSuite, message);
+        TlsUtils.writeUint8(selectedCompressionMethod, message);
 
         this.serverExtensions = tlsServer.getServerExtensions();
 

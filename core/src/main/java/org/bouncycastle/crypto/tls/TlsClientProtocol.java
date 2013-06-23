@@ -23,8 +23,6 @@ public class TlsClientProtocol
     protected Hashtable clientExtensions = null;
 
     protected byte[] selectedSessionID = null;
-    protected int selectedCipherSuite;
-    protected short selectedCompressionMethod;
 
     protected TlsKeyExchange keyExchange = null;
     protected TlsAuthentication authentication = null;
@@ -68,18 +66,6 @@ public class TlsClientProtocol
      */
     public void connect(TlsClient tlsClient) throws IOException
     {
-        connect(tlsClient, null);
-    }
-
-    /**
-     * Initiates a TLS handshake in the role of client, resuming the provided session if possible.
-     *
-     * @param tlsClient The {@link TlsClient} to use for the handshake.
-     * @param tlsSession The {@link TlsSession} to try to resume, or null.
-     * @throws IOException If handshake was not successful.
-     */
-    public void connect(TlsClient tlsClient, TlsSession tlsSession) throws IOException
-    {
         if (tlsClient == null)
         {
             throw new IllegalArgumentException("'tlsClient' cannot be null");
@@ -90,7 +76,6 @@ public class TlsClientProtocol
         }
 
         this.tlsClient = tlsClient;
-        this.tlsSession = tlsSession;
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
@@ -99,6 +84,19 @@ public class TlsClientProtocol
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);
+
+        TlsSession sessionToResume = tlsClient.getSessionToResume();
+        if (sessionToResume != null)
+        {
+            SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
+            if (sessionParameters != null)
+            {
+                this.tlsSession = sessionToResume;
+                this.sessionParameters = sessionParameters;
+
+                this.tlsClientContext.setResumableSession(sessionToResume);
+            }
+        }
 
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
@@ -237,9 +235,7 @@ public class TlsClientProtocol
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.cipherSuite = this.selectedCipherSuite;
-                securityParameters.compressionAlgorithm = this.selectedCompressionMethod;
-                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), selectedCipherSuite);
+                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
 
                 /*
                  * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
@@ -255,15 +251,13 @@ public class TlsClientProtocol
 
                 if (this.resumedSession)
                 {
-                    SecurityParameters sessionParameters = this.tlsSession.getSecurityParameters();
-
                     if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
                         || securityParameters.getCompressionAlgorithm() != sessionParameters.getCompressionAlgorithm())
                     {
                         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                     }
 
-                    securityParameters.masterSecret = Arrays.clone(sessionParameters.masterSecret);
+                    securityParameters.masterSecret = Arrays.clone(sessionParameters.getMasterSecret());
                     recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                     sendChangeCipherSpecMessage();
@@ -577,15 +571,16 @@ public class TlsClientProtocol
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones.
          */
-        this.selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!arrayContains(offeredCipherSuites, this.selectedCipherSuite)
-            || this.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || this.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+        int selectedCipherSuite = TlsUtils.readUint16(buf);
+        if (!arrayContains(offeredCipherSuites, selectedCipherSuite)
+            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
-        this.tlsClient.notifySelectedCipherSuite(this.selectedCipherSuite);
+        securityParameters.cipherSuite = selectedCipherSuite;
+        this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
 
         /*
          * Find out which CompressionMethod the server has chosen and check that it was one of the
@@ -597,6 +592,7 @@ public class TlsClientProtocol
             this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
         }
 
+        securityParameters.compressionAlgorithm = selectedCompressionMethod;
         this.tlsClient.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
@@ -739,10 +735,8 @@ public class TlsClientProtocol
         // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
-        if (session_id.length > 0)
+        if (session_id.length > 0 && this.sessionParameters != null)
         {
-            SecurityParameters sessionParameters = this.tlsSession.getSecurityParameters();
-
             if (!arrayContains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
                 || !arrayContains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
             {

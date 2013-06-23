@@ -49,12 +49,12 @@ abstract class AbstractTlsContext
         this.serverVersion = serverVersion;
     }
 
-    public TlsSession getSession()
+    public TlsSession getResumableSession()
     {
         return session;
     }
 
-    void setSession(TlsSession session)
+    void setResumableSession(TlsSession session)
     {
         this.session = session;
     }

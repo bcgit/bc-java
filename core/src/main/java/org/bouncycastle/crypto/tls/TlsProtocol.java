@@ -67,6 +67,7 @@ public abstract class TlsProtocol
     private byte[] expected_verify_data = null;
 
     protected TlsSession tlsSession = null;
+    protected SessionParameters sessionParameters = null;
     protected SecurityParameters securityParameters = null;
 
     protected short connection_state = CS_START;
@@ -80,6 +81,11 @@ public abstract class TlsProtocol
     {
         this.recordStream = new RecordStream(this, input, output);
         this.secureRandom = secureRandom;
+    }
+
+    public TlsSession importSession(byte[] sessionID, SessionParameters sessionParameters)
+    {
+        return new TlsSessionImpl(sessionID, sessionParameters);
     }
 
     protected abstract AbstractTlsContext getContext();
@@ -143,14 +149,11 @@ public abstract class TlsProtocol
                 this.tlsOutputStream = new TlsOutputStream(this);
             }
 
-            if (tlsSession != null)
+            if (this.tlsSession != null && this.sessionParameters == null)
             {
-                if (tlsSession.getSecurityParameters() == null)
-                {
-                    this.tlsSession = new TlsSessionImpl(tlsSession.getSessionID(), securityParameters);
-                }
-
-                getContext().setSession(tlsSession);
+                this.sessionParameters = new SessionParameters(securityParameters);
+                this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
+                getContext().setResumableSession(this.tlsSession);
             }
 
             getPeer().notifyHandshakeComplete();
@@ -592,10 +595,18 @@ public abstract class TlsProtocol
 
     protected void invalidateSession()
     {
+        if (this.sessionParameters != null)
+        {
+            this.sessionParameters.clear();
+            this.sessionParameters = null;
+        }
+
         if (this.tlsSession != null)
         {
-            this.tlsSession.close();
+            this.tlsSession.invalidate();
             this.tlsSession = null;
+
+            getContext().setResumableSession(null);
         }
     }
 
