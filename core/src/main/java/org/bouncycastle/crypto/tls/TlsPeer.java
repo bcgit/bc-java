@@ -27,7 +27,7 @@ public interface TlsPeer
     void notifyAlertReceived(short alertLevel, short alertDescription);
 
     /**
-     * This method will be called once the handshake has been successfully completed.
+     * Notifies the peer that the handshake has been successfully completed.
      */
     void notifyHandshakeComplete() throws IOException;
 }

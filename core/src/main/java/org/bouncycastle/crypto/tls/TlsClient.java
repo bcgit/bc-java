@@ -9,6 +9,14 @@ public interface TlsClient
 {
     void init(TlsClientContext context);
 
+    /**
+     * Return the session this client wants to resume, if any.
+     * 
+     * @return A {@link TlsSession} representing the resumable session to be used for this
+     *         connection, or null to use a new session.
+     */
+    TlsSession getSessionToResume();
+
     ProtocolVersion getClientHelloRecordLayerVersion();
 
     ProtocolVersion getClientVersion();
@@ -24,6 +32,12 @@ public interface TlsClient
     void notifyServerVersion(ProtocolVersion selectedVersion)
         throws IOException;
 
+    /**
+     * Notifies the client of the session_id sent in the ServerHello.
+     * 
+     * @param sessionID
+     * @see {@link TlsContext#getResumableSession()}
+     */
     void notifySessionID(byte[] sessionID);
 
     void notifySelectedCipherSuite(int selectedCipherSuite);

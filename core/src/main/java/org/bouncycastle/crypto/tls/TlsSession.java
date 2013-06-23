@@ -2,9 +2,11 @@ package org.bouncycastle.crypto.tls;
 
 public interface TlsSession
 {
-    void close();
+    SessionParameters exportSessionParameters();
 
     byte[] getSessionID();
 
-    SecurityParameters getSecurityParameters();
+    void invalidate();
+
+    boolean isResumable();
 }

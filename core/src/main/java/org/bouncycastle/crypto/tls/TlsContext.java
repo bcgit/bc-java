@@ -14,7 +14,16 @@ public interface TlsContext
 
     ProtocolVersion getServerVersion();
 
-    TlsSession getSession();
+    /**
+     * Used to get the resumable session, if any, used by this connection. If the connection has
+     * created a new session, it will only become resumable after the handshake has successfully
+     * completed.
+     * 
+     * @return A {@link TlsSession} representing the resumable session used by this connection, or
+     *         null if no resumable session available.
+     * @see {@link TlsPeer#notifyHandshakeComplete()}
+     */
+    TlsSession getResumableSession();
 
     Object getUserObject();
 

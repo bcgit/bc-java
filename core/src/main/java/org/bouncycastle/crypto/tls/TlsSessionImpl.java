@@ -4,43 +4,45 @@ import org.bouncycastle.util.Arrays;
 
 class TlsSessionImpl implements TlsSession
 {
-    byte[] sessionID;
-    SecurityParameters securityParameters;
+    final byte[] sessionID;
+    SessionParameters sessionParameters;
 
-    TlsSessionImpl(byte[] sessionID, SecurityParameters securityParameters)
+    TlsSessionImpl(byte[] sessionID, SessionParameters sessionParameters)
     {
         if (sessionID == null)
         {
             throw new IllegalArgumentException("'sessionID' cannot be null");
         }
+        if (sessionID.length < 1 || sessionID.length > 32)
+        {
+            throw new IllegalArgumentException("'sessionID' must have length between 1 and 32 bytes, inclusive");
+        }
 
         this.sessionID = Arrays.clone(sessionID);
-
-        if (securityParameters != null)
-        {
-            this.securityParameters = new SecurityParameters();
-            this.securityParameters.copySessionParametersFrom(securityParameters);
-        }
+        this.sessionParameters = sessionParameters;
     }
 
-    public void close()
+    public synchronized SessionParameters exportSessionParameters()
     {
-        this.sessionID = null;
-
-        if (this.securityParameters != null)
-        {
-            this.securityParameters.clear();
-            this.securityParameters = null;
-        }
+        return this.sessionParameters == null ? null : this.sessionParameters.copy();
     }
 
-    public byte[] getSessionID()
+    public synchronized byte[] getSessionID()
     {
         return sessionID;
     }
 
-    public SecurityParameters getSecurityParameters()
+    public synchronized void invalidate()
     {
-        return securityParameters;
+        if (this.sessionParameters != null)
+        {
+            this.sessionParameters.clear();
+            this.sessionParameters = null;
+        }
+    }
+
+    public synchronized boolean isResumable()
+    {
+        return this.sessionParameters != null;
     }
 }
