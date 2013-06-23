@@ -134,6 +134,11 @@ public abstract class TlsProtocol
              */
             while (this.connection_state != CS_END)
             {
+                if (this.closed)
+                {
+                    // TODO What kind of exception/alert?
+                }
+
                 safeReadRecord();
             }
 
