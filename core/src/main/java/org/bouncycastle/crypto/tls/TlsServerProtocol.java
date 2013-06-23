@@ -192,9 +192,7 @@ public class TlsServerProtocol
                 break;
             }
             default:
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -209,9 +207,7 @@ public class TlsServerProtocol
                 break;
             }
             default:
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -228,16 +224,14 @@ public class TlsServerProtocol
             {
                 if (this.certificateRequest == null)
                 {
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
                 receiveCertificateMessage(buf);
                 this.connection_state = CS_CLIENT_CERTIFICATE;
                 break;
             }
             default:
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -266,13 +260,13 @@ public class TlsServerProtocol
                          * 
                          * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                          */
-                        this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                        throw new TlsFatalAlert(AlertDescription.unexpected_message);
                     }
                     else if (TlsUtils.isSSL(getContext()))
                     {
                         if (this.peerCertificate == null)
                         {
-                            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                            throw new TlsFatalAlert(AlertDescription.unexpected_message);
                         }
                     }
                     else
@@ -289,9 +283,7 @@ public class TlsServerProtocol
                 break;
             }
             default:
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -308,16 +300,14 @@ public class TlsServerProtocol
                  */
                 if (this.certificateVerifyHash == null)
                 {
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
                 break;
             }
             default:
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            }
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -329,7 +319,7 @@ public class TlsServerProtocol
             {
                 if (this.certificateVerifyHash != null)
                 {
-                    this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
                 // NB: Fall through to next case label
             }
@@ -351,7 +341,7 @@ public class TlsServerProtocol
                 break;
             }
             default:
-                this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
@@ -363,9 +353,7 @@ public class TlsServerProtocol
         case HandshakeType.server_hello_done:
         case HandshakeType.session_ticket:
         default:
-            // We do not support this!
-            this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
-            break;
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
     }
 
@@ -479,7 +467,7 @@ public class TlsServerProtocol
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
         if (client_version.isDTLS())
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         /*
@@ -490,13 +478,13 @@ public class TlsServerProtocol
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.decode_error);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         /*
@@ -508,7 +496,7 @@ public class TlsServerProtocol
         int compression_methods_length = TlsUtils.readUint8(buf);
         if (compression_methods_length < 1)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         this.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
@@ -565,7 +553,7 @@ public class TlsServerProtocol
 
                 if (!Arrays.constantTimeAreEqual(renegExtData, createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                 {
-                    this.failWithError(AlertLevel.fatal, AlertDescription.handshake_failure);
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
             }
         }
@@ -642,7 +630,7 @@ public class TlsServerProtocol
         ProtocolVersion server_version = tlsServer.getServerVersion();
         if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         recordStream.setReadVersion(server_version);
@@ -665,14 +653,14 @@ public class TlsServerProtocol
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         securityParameters.cipherSuite = selectedCipherSuite;
 
         short selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
         if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
-            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
