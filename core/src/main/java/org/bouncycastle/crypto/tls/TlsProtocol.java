@@ -69,6 +69,7 @@ public abstract class TlsProtocol
     protected TlsSession tlsSession = null;
     protected SessionParameters sessionParameters = null;
     protected SecurityParameters securityParameters = null;
+    protected Certificate peerCertificate = null;
 
     protected short connection_state = CS_START;
     protected boolean resumedSession = false;
@@ -107,6 +108,7 @@ public abstract class TlsProtocol
     protected void cleanupHandshake()
     {
         this.securityParameters.clear();
+        this.peerCertificate = null;
 
         if (this.expected_verify_data != null)
         {
@@ -151,7 +153,7 @@ public abstract class TlsProtocol
 
             if (this.tlsSession != null && this.sessionParameters == null)
             {
-                this.sessionParameters = new SessionParameters(securityParameters);
+                this.sessionParameters = new SessionParameters(this.peerCertificate, this.securityParameters);
                 this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
                 getContext().setResumableSession(this.tlsSession);
             }

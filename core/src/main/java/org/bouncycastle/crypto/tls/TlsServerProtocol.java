@@ -30,7 +30,6 @@ public class TlsServerProtocol
     protected CertificateRequest certificateRequest = null;
 
     protected short clientCertificateType = -1;
-    protected Certificate clientCertificate = null;
     protected byte[] certificateVerifyHash = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
@@ -82,7 +81,6 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
-        this.clientCertificate = null;
         this.certificateVerifyHash = null;
     }
 
@@ -272,7 +270,7 @@ public class TlsServerProtocol
                     }
                     else if (TlsUtils.isSSL(getContext()))
                     {
-                        if (clientCertificate == null)
+                        if (this.peerCertificate == null)
                         {
                             this.failWithError(AlertLevel.fatal, AlertDescription.unexpected_message);
                         }
@@ -403,12 +401,12 @@ public class TlsServerProtocol
             throw new IllegalStateException();
         }
 
-        if (this.clientCertificate != null)
+        if (this.peerCertificate != null)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.clientCertificate = clientCertificate;
+        this.peerCertificate = clientCertificate;
 
         if (clientCertificate.isEmpty())
         {
@@ -463,7 +461,7 @@ public class TlsServerProtocol
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(this.clientCertificateType);
             tlsSigner.init(getContext());
 
-            org.bouncycastle.asn1.x509.Certificate x509Cert = this.clientCertificate.getCertificateAt(0);
+            org.bouncycastle.asn1.x509.Certificate x509Cert = this.peerCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 

@@ -10,10 +10,12 @@ public interface TlsClient
     void init(TlsClientContext context);
 
     /**
-     * Return the session this client wants to resume, if any.
+     * Return the session this client wants to resume, if any. Note that the peer's certificate
+     * chain for the session (if any) may need to be periodically revalidated.
      * 
      * @return A {@link TlsSession} representing the resumable session to be used for this
      *         connection, or null to use a new session.
+     * @see SessionParameters#getPeerCertificate()
      */
     TlsSession getSessionToResume();
 
