@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -415,7 +416,11 @@ public abstract class TlsProtocol
     {
         try
         {
-            recordStream.readRecord();
+            if (!recordStream.readRecord())
+            {
+//                this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
+                throw new EOFException();
+            }
         }
         catch (TlsFatalAlert e)
         {
@@ -552,13 +557,14 @@ public abstract class TlsProtocol
     }
 
     /**
-     * Terminate this connection with an alert.
-     * <p/>
-     * Can be used for normal closure too.
-     *
-     * @param alertLevel       The level of the alert, an be AlertLevel.fatal or AL_warning.
-     * @param alertDescription The exact alert message.
-     * @throws IOException If alert was fatal.
+     * Terminate this connection with an alert. Can be used for normal closure too.
+     * 
+     * @param alertLevel
+     *            See {@link AlertLevel} for values.
+     * @param alertDescription
+     *            See {@link AlertDescription} for values.
+     * @throws IOException
+     *             If alert was fatal.
      */
     protected void failWithError(short alertLevel, short alertDescription)
         throws IOException
@@ -579,21 +585,20 @@ public abstract class TlsProtocol
                  * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
                  * without proper close_notify messages with level equal to warning.
                  */
+                // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
                 invalidateSession();
 
                 this.failedWithError = true;
             }
             raiseAlert(alertLevel, alertDescription, null, null);
             recordStream.close();
-            if (alertLevel == AlertLevel.fatal)
+            if (alertLevel != AlertLevel.fatal)
             {
-                throw new IOException(TLS_ERROR_MESSAGE);
+                return;
             }
         }
-        else
-        {
-            throw new IOException(TLS_ERROR_MESSAGE);
-        }
+
+        throw new IOException(TLS_ERROR_MESSAGE);
     }
 
     protected void invalidateSession()
