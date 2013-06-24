@@ -72,7 +72,6 @@ public class ByteQueue
                 + " is too small for a read of " + len + " bytes");
         }
         System.arraycopy(databuf, skipped + skip, buf, offset, len);
-        return;
     }
 
     /**
