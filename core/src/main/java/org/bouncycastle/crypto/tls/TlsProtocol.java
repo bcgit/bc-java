@@ -338,22 +338,26 @@ public abstract class TlsProtocol
     private void processChangeCipherSpec(byte[] buf, int off, int len)
         throws IOException
     {
-        if (len != 1 || buf[off] != 1)
+        for (int i = 0; i < len; ++i)
         {
-            // TODO Is this the right AlertDescription for an incorrect ChangeCipherSpec?
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            short message = TlsUtils.readUint8(buf, off + i);
+
+            if (message != ChangeCipherSpec.change_cipher_spec)
+            {
+                throw new TlsFatalAlert(AlertDescription.decode_error);
+            }
+
+            if (this.receivedChangeCipherSpec)
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+
+            this.receivedChangeCipherSpec = true;
+
+            recordStream.receivedReadCipherSpec();
+    
+            handleChangeCipherSpecMessage();
         }
-
-        if (this.receivedChangeCipherSpec)
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-
-        this.receivedChangeCipherSpec = true;
-
-        recordStream.receivedReadCipherSpec();
-
-        handleChangeCipherSpecMessage();
     }
 
     /**
