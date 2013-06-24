@@ -156,7 +156,13 @@ public abstract class TlsProtocol
             {
                 if (this.sessionParameters == null)
                 {
-                    this.sessionParameters = new SessionParameters(this.peerCertificate, this.securityParameters);
+                    this.sessionParameters = new SessionParameters.Builder()
+                        .setCipherSuite(this.securityParameters.cipherSuite)
+                        .setCompressionAlgorithm(this.securityParameters.compressionAlgorithm)
+                        .setMasterSecret(this.securityParameters.masterSecret)
+                        .setPeerCertificate(this.peerCertificate)
+                        .build();
+
                     this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
                 }
 

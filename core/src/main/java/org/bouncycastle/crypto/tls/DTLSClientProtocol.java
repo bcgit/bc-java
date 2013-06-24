@@ -338,8 +338,15 @@ public class DTLSClientProtocol
 
         if (state.tlsSession != null)
         {
-            state.sessionParameters = new SessionParameters(serverCertificate, securityParameters);
-            state.tlsSession = new TlsSessionImpl(state.tlsSession.getSessionID(), state.sessionParameters);
+            state.sessionParameters = new SessionParameters.Builder()
+                .setCipherSuite(securityParameters.cipherSuite)
+                .setCompressionAlgorithm(securityParameters.compressionAlgorithm)
+                .setMasterSecret(securityParameters.masterSecret)
+                .setPeerCertificate(serverCertificate)
+                .build();
+
+            state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+
             state.clientContext.setResumableSession(state.tlsSession);
         }
 
@@ -741,6 +748,7 @@ public class DTLSClientProtocol
         TlsClientContextImpl clientContext = null;
         TlsSession tlsSession = null;
         SessionParameters sessionParameters = null;
+        SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
         short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;
