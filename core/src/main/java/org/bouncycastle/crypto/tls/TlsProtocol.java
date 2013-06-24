@@ -85,11 +85,6 @@ public abstract class TlsProtocol
         this.secureRandom = secureRandom;
     }
 
-    public TlsSession importSession(byte[] sessionID, SessionParameters sessionParameters)
-    {
-        return new TlsSessionImpl(sessionID, sessionParameters);
-    }
-
     protected abstract AbstractTlsContext getContext();
 
     protected abstract TlsPeer getPeer();
