@@ -7,7 +7,6 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -24,12 +23,10 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected AsymmetricKeyParameter serverPublicKey;
-    protected ECPublicKeyParameters ecAgreeServerPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
-    protected ECPrivateKeyParameters ecAgreeClientPrivateKey;
 
-    protected ECPrivateKeyParameters ecAgreeServerPrivateKey;
-    protected ECPublicKeyParameters ecAgreeClientPublicKey;
+    protected ECPrivateKeyParameters ecAgreePrivateKey;
+    protected ECPublicKeyParameters ecAgreePublicKey;
 
     public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
         short[] clientECPointFormats, short[] serverECPointFormats)
@@ -96,8 +93,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         {
             try
             {
-                this.ecAgreeServerPublicKey = TlsECCUtils
-                    .validateECPublicKey((ECPublicKeyParameters) this.serverPublicKey);
+                this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey((ECPublicKeyParameters) this.serverPublicKey);
             }
             catch (ClassCastException e)
             {
@@ -179,8 +175,8 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         if (agreementCredentials == null)
         {
-            this.ecAgreeClientPrivateKey = TlsECCUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(), serverECPointFormats,
-                ecAgreeServerPublicKey.getParameters(), output);
+            this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(),
+                serverECPointFormats, ecAgreePublicKey.getParameters(), output);
         }
     }
 
@@ -192,7 +188,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        if (ecAgreeClientPublicKey != null)
+        if (ecAgreePublicKey != null)
         {
             // For ecdsa_fixed_ecdh and rsa_fixed_ecdh, the key arrived in the client certificate
             return;
@@ -200,9 +196,9 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(input);
 
-        ECDomainParameters curve_params = this.ecAgreeServerPrivateKey.getParameters();
+        ECDomainParameters curve_params = this.ecAgreePrivateKey.getParameters();
 
-        this.ecAgreeClientPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
+        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
             serverECPointFormats, curve_params, point));
     }
 
@@ -210,17 +206,12 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(ecAgreeServerPublicKey);
+            return agreementCredentials.generateAgreement(ecAgreePublicKey);
         }
 
-        if (ecAgreeServerPrivateKey != null)
+        if (ecAgreePrivateKey != null)
         {
-            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeClientPublicKey, ecAgreeServerPrivateKey);
-        }
-
-        if (ecAgreeClientPrivateKey != null)
-        {
-            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreeServerPublicKey, ecAgreeClientPrivateKey);
+            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreePublicKey, ecAgreePrivateKey);
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
