@@ -141,6 +141,8 @@ public class TlsClientTest
 
         public void notifyHandshakeComplete() throws IOException
         {
+            super.notifyHandshakeComplete();
+
             TlsSession newSession = context.getResumableSession();
             if (newSession != null)
             {
