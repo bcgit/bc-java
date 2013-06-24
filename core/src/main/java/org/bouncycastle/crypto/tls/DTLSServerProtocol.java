@@ -248,32 +248,14 @@ public class DTLSServerProtocol
         if (expectCertificateVerifyMessage(state))
         {
             byte[] certificateVerifyHash = handshake.getCurrentHash();
-            clientMessage = handshake.receiveMessage();
-
-            if (clientMessage.getType() == HandshakeType.certificate_verify)
-            {
-                processCertificateVerify(state, clientMessage.getBody(), certificateVerifyHash);
-            }
-            else
-            {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
+            byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
+            processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] clientFinishedHash = handshake.getCurrentHash();
-        clientMessage = handshake.receiveMessage();
-
-        if (clientMessage.getType() == HandshakeType.finished)
-        {
-            byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-                clientFinishedHash);
-            processFinished(clientMessage.getBody(), expectedClientVerifyData);
-        }
-        else
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
+            handshake.getCurrentHash());
+        processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
         {
