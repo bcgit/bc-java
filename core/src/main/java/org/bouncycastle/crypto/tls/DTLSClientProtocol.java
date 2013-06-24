@@ -117,7 +117,6 @@ public class DTLSClientProtocol
                 int plainTextLimit = 1 << (8 + state.maxFragmentLength);
                 recordLayer.setPlaintextLimit(plainTextLimit);
             }
-            serverMessage = handshake.receiveMessage();
         }
         else
         {
@@ -175,6 +174,8 @@ public class DTLSClientProtocol
         {
             state.tlsSession = new TlsSessionImpl(state.selectedSessionID, null);
         }
+
+        serverMessage = handshake.receiveMessage();
 
         if (serverMessage.getType() == HandshakeType.supplemental_data)
         {
