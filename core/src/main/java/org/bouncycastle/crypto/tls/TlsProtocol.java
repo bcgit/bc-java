@@ -605,8 +605,6 @@ public abstract class TlsProtocol
         {
             this.tlsSession.invalidate();
             this.tlsSession = null;
-
-            getContext().setResumableSession(null);
         }
     }
 
