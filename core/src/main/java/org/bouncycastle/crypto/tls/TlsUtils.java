@@ -400,6 +400,26 @@ public class TlsUtils
         return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
+    public static byte[] readAllOrNothing(int length, InputStream input)
+        throws IOException
+    {
+        if (length < 1)
+        {
+            return EMPTY_BYTES;
+        }
+        byte[] buf = new byte[length];
+        int read = Streams.readFully(input, buf);
+        if (read == 0)
+        {
+            return null;
+        }
+        if (read != length)
+        {
+            throw new EOFException();
+        }
+        return buf;
+    }
+
     public static byte[] readFully(int length, InputStream input)
         throws IOException
     {
@@ -484,6 +504,12 @@ public class TlsUtils
             throw new EOFException();
         }
         return ProtocolVersion.get(i1, i2);
+    }
+
+    public static int readVersionRaw(byte[] buf, int offset)
+        throws IOException
+    {
+        return (buf[offset] << 8) | buf[offset + 1];
     }
 
     public static int readVersionRaw(InputStream input)

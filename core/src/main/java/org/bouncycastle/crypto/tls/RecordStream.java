@@ -139,14 +139,13 @@ class RecordStream
     public boolean readRecord()
         throws IOException
     {
-//        short type = TlsUtils.readUint8(input);
-        int i = input.read();
-        if (i < 0)
+        byte[] recordHeader = TlsUtils.readAllOrNothing(5, input);
+        if (recordHeader == null)
         {
             return false;
         }
 
-        short type = (short)i;
+        short type = TlsUtils.readUint8(recordHeader, 0);
 
         // TODO In earlier RFCs, it was "SHOULD ignore"; should this be version-dependent?
         /*
@@ -157,7 +156,7 @@ class RecordStream
 
         if (!restrictReadVersion)
         {
-            int version = TlsUtils.readVersionRaw(input);
+            int version = TlsUtils.readVersionRaw(recordHeader, 1);
             if ((version & 0xffffff00) != 0x0300)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -165,7 +164,7 @@ class RecordStream
         }
         else
         {
-            ProtocolVersion version = TlsUtils.readVersion(input);
+            ProtocolVersion version = TlsUtils.readVersion(recordHeader, 1);
             if (readVersion == null)
             {
                 readVersion = version;
@@ -176,7 +175,7 @@ class RecordStream
             }
         }
 
-        int length = TlsUtils.readUint16(input);
+        int length = TlsUtils.readUint16(recordHeader, 3);
         byte[] plaintext = decodeAndVerify(type, input, length);
         handler.processRecord(type, plaintext, 0, plaintext.length);
         return true;
