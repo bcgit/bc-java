@@ -62,6 +62,18 @@ class DTLSReliableHandshake
         updateHandshakeMessagesDigest(message);
     }
 
+    byte[] receiveMessageBody(short msg_type)
+        throws IOException
+    {
+        Message message = receiveMessage();
+        if (message.getType() != msg_type)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        return message.getBody();
+    }
+
     Message receiveMessage()
         throws IOException
     {
