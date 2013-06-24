@@ -4,30 +4,69 @@ import org.bouncycastle.util.Arrays;
 
 public final class SessionParameters
 {
-    private final Certificate peerCertificate;
+    public static final class Builder
+    {
+        private int cipherSuite = -1;
+        private short compressionAlgorithm = -1;
+        private byte[] masterSecret = null;
+        private Certificate peerCertificate = null;
+
+        public Builder()
+        {
+        }
+
+        public SessionParameters build()
+        {
+            validate(this.cipherSuite >= 0, "cipherSuite");
+            validate(this.compressionAlgorithm >= 0, "compressionAlgorithm");
+            validate(this.masterSecret != null, "masterSecret");
+            return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate);
+        }
+
+        public Builder setCipherSuite(int cipherSuite)
+        {
+            this.cipherSuite = cipherSuite;
+            return this;
+        }
+
+        public Builder setCompressionAlgorithm(short compressionAlgorithm)
+        {
+            this.compressionAlgorithm = compressionAlgorithm;
+            return this;
+        }
+
+        public Builder setMasterSecret(byte[] masterSecret)
+        {
+            this.masterSecret = masterSecret;
+            return this;
+        }
+
+        public Builder setPeerCertificate(Certificate peerCertificate)
+        {
+            this.peerCertificate = peerCertificate;
+            return this;
+        }
+
+        private void validate(boolean condition, String parameter)
+        {
+            if (!condition)
+            {
+                throw new IllegalStateException("Required session parameter '" + parameter + "' not configured");
+            }
+        }
+    }
+
     private final int cipherSuite;
     private final short compressionAlgorithm;
     private final byte[] masterSecret;
+    private final Certificate peerCertificate;
 
-    public SessionParameters(Certificate peerCertificate, int cipherSuite, short compressionAlgorithm, byte[] masterSecret)
+    private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret, Certificate peerCertificate)
     {
-        this.peerCertificate = peerCertificate;
         this.cipherSuite = cipherSuite;
         this.compressionAlgorithm = compressionAlgorithm;
         this.masterSecret = Arrays.clone(masterSecret);
-    }
-
-    public SessionParameters(Certificate peerCertificate, SecurityParameters securityParameters)
-    {
-        if (securityParameters == null)
-        {
-            throw new IllegalArgumentException("'securityParameters' cannot be null");
-        }
-
         this.peerCertificate = peerCertificate;
-        this.cipherSuite = securityParameters.getCipherSuite();
-        this.compressionAlgorithm = securityParameters.getCompressionAlgorithm();
-        this.masterSecret = Arrays.clone(securityParameters.getMasterSecret());
     }
 
     public void clear()
@@ -40,12 +79,7 @@ public final class SessionParameters
 
     public SessionParameters copy()
     {
-        return new SessionParameters(peerCertificate, cipherSuite, compressionAlgorithm, masterSecret);
-    }
-
-    public Certificate getPeerCertificate()
-    {
-        return peerCertificate;
+        return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate);
     }
 
     public int getCipherSuite()
@@ -61,5 +95,10 @@ public final class SessionParameters
     public byte[] getMasterSecret()
     {
         return masterSecret;
+    }
+
+    public Certificate getPeerCertificate()
+    {
+        return peerCertificate;
     }
 }
