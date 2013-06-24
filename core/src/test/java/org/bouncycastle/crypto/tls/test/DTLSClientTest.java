@@ -28,7 +28,7 @@ public class DTLSClientTest
         InetAddress address = InetAddress.getLocalHost();
         int port = 5556;
 
-        TlsSession session = null; //createSession(address, port);
+        TlsSession session = createSession(address, port);
 
         MockDTLSClient client = new MockDTLSClient(session);
 
