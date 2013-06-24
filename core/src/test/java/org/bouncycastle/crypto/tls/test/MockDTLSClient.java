@@ -11,10 +11,24 @@ import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsCredentials;
+import org.bouncycastle.crypto.tls.TlsSession;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class MockDTLSClient
     extends DefaultTlsClient
 {
+    protected TlsSession session;
+
+    public MockDTLSClient(TlsSession session)
+    {
+        this.session = session;
+    }
+
+    public TlsSession getSessionToResume()
+    {
+        return this.session;
+    }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
     {
@@ -86,5 +100,28 @@ public class MockDTLSClient
                 return null;
             }
         };
+    }
+
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        TlsSession newSession = context.getResumableSession();
+        if (newSession != null)
+        {
+            byte[] newSessionID = newSession.getSessionID();
+            String hex = Hex.toHexString(newSessionID);
+
+            if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
+            {
+                System.out.println("Resumed session: " + hex);
+            }
+            else
+            {
+                System.out.println("Established session: " + hex);
+            }
+
+            this.session = newSession;
+        }
     }
 }
