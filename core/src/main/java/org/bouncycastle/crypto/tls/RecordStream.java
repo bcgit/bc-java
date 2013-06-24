@@ -147,7 +147,6 @@ class RecordStream
 
         short type = TlsUtils.readUint8(recordHeader, 0);
 
-        // TODO In earlier RFCs, it was "SHOULD ignore"; should this be version-dependent?
         /*
          * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
          * unexpected_message alert.
