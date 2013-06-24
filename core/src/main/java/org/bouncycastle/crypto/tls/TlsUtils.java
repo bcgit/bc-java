@@ -570,6 +570,11 @@ public class TlsUtils
         return true;
     }
 
+    public static TlsSession importSession(byte[] sessionID, SessionParameters sessionParameters)
+    {
+        return new TlsSessionImpl(sessionID, sessionParameters);
+    }
+
     public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
     {
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
