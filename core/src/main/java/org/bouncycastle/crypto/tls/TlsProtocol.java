@@ -303,17 +303,9 @@ public abstract class TlsProtocol
 
                 this.failedWithError = true;
                 this.closed = true;
-                /*
-                 * Now try to close the stream, ignore errors.
-                 */
-                try
-                {
-                    recordStream.close();
-                }
-                catch (Exception e)
-                {
 
-                }
+                recordStream.safeClose();
+
                 throw new IOException(TLS_ERROR_MESSAGE);
             }
             else
@@ -591,7 +583,7 @@ public abstract class TlsProtocol
                 this.failedWithError = true;
             }
             raiseAlert(alertLevel, alertDescription, null, null);
-            recordStream.close();
+            recordStream.safeClose();
             if (alertLevel != AlertLevel.fatal)
             {
                 return;

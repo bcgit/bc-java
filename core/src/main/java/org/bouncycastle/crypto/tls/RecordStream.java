@@ -310,29 +310,22 @@ class RecordStream
         return doFinal(d);
     }
 
-    protected void close()
-        throws IOException
+    protected void safeClose()
     {
-        IOException e = null;
         try
         {
             input.close();
         }
-        catch (IOException ex)
+        catch (IOException e)
         {
-            e = ex;
         }
+
         try
         {
             output.close();
         }
-        catch (IOException ex)
+        catch (IOException e)
         {
-            e = ex;
-        }
-        if (e != null)
-        {
-            throw e;
         }
     }
 
