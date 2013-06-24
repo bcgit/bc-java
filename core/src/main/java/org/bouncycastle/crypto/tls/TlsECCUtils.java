@@ -197,6 +197,10 @@ public class TlsECCUtils
     public static boolean isECCCipherSuite(int cipherSuite)
     {
         switch (cipherSuite) {
+
+        /*
+         * RFC 4492
+         */
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
@@ -222,6 +226,10 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA:
+
+        /*
+         * RFC 5289
+         */
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
@@ -238,7 +246,22 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
+
+        /*
+         * RFC 5489
+         */
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+
             return true;
+
         default:
             return false;
         }
