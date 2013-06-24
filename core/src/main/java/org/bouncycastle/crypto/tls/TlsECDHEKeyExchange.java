@@ -94,7 +94,7 @@ public class TlsECDHEKeyExchange
         }
 
         AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
-        this.ecAgreeServerPrivateKey = (ECPrivateKeyParameters)kp.getPrivate();
+        this.ecAgreePrivateKey = (ECPrivateKeyParameters)kp.getPrivate();
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -151,7 +151,7 @@ public class TlsECDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.ecAgreeServerPublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
+        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
             clientECPointFormats, curve_params, point));
     }
 
