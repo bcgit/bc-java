@@ -25,12 +25,12 @@ public class ByteQueue
     /**
      * The initial size for our buffer.
      */
-    private static final int INITBUFSIZE = 1024;
+    private static final int DEFAULT_CAPACITY = 1024;
 
     /**
      * The buffer where we store our data.
      */
-    private byte[] databuf = new byte[ByteQueue.INITBUFSIZE];
+    private byte[] databuf;;
 
     /**
      * How many bytes at the beginning of the buffer are skipped.
@@ -41,6 +41,16 @@ public class ByteQueue
      * How many bytes in the buffer are valid data.
      */
     private int available = 0;
+
+    public ByteQueue()
+    {
+        this(DEFAULT_CAPACITY);
+    }
+
+    public ByteQueue(int capacity)
+    {
+        databuf = new byte[capacity];
+    }
 
     /**
      * Read data from the buffer.
