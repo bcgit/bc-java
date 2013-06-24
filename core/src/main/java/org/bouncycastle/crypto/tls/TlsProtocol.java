@@ -49,7 +49,7 @@ public abstract class TlsProtocol
      * Queues for data from some protocols.
      */
     private ByteQueue applicationDataQueue = new ByteQueue();
-    private ByteQueue alertQueue = new ByteQueue();
+    private ByteQueue alertQueue = new ByteQueue(2);
     private ByteQueue handshakeQueue = new ByteQueue();
 
     /*
