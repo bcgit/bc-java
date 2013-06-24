@@ -258,14 +258,18 @@ class DTLSRecordLayer
                 {
                     // Implicitly receive change_cipher_spec and change to pending cipher state
 
-                    if (plaintext.length != 1 || plaintext[0] != 1)
+                    for (int i = 0; i < plaintext.length; ++i)
                     {
-                        continue;
-                    }
+                        short message = TlsUtils.readUint8(plaintext, i);
+                        if (message != ChangeCipherSpec.change_cipher_spec)
+                        {
+                            continue;
+                        }
 
-                    if (pendingEpoch != null)
-                    {
-                        readEpoch = pendingEpoch;
+                        if (pendingEpoch != null)
+                        {
+                            readEpoch = pendingEpoch;
+                        }
                     }
 
                     continue;
