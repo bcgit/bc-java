@@ -172,19 +172,6 @@ public abstract class AbstractTlsClient
         this.selectedCompressionMethod = selectedCompressionMethod;
     }
 
-    public void notifySecureRenegotiation(boolean secureRenegotiation)
-        throws IOException
-    {
-        if (!secureRenegotiation)
-        {
-            /*
-             * RFC 5746 3.4. In this case, some clients may want to terminate the handshake instead
-             * of continuing; see Section 4.1 for discussion.
-             */
-            // throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-    }
-
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
