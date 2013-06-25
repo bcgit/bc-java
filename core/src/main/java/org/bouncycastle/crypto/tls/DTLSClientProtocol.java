@@ -112,15 +112,16 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
             processServerHello(state, serverMessage.getBody());
-            if (state.maxFragmentLength >= 0)
-            {
-                int plainTextLimit = 1 << (8 + state.maxFragmentLength);
-                recordLayer.setPlaintextLimit(plainTextLimit);
-            }
         }
         else
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        if (state.maxFragmentLength >= 0)
+        {
+            int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+            recordLayer.setPlaintextLimit(plainTextLimit);
         }
 
         securityParameters.cipherSuite = state.selectedCipherSuite;
