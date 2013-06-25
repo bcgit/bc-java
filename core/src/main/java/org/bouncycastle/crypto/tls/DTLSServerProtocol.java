@@ -102,25 +102,29 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        byte[] serverHelloBody = generateServerHello(state);
-
-        if (state.maxFragmentLength >= 0)
         {
-            int plainTextLimit = 1 << (8 + state.maxFragmentLength);
-            recordLayer.setPlaintextLimit(plainTextLimit);
+            byte[] serverHelloBody = generateServerHello(state);
+    
+            if (state.maxFragmentLength >= 0)
+            {
+                int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+                recordLayer.setPlaintextLimit(plainTextLimit);
+            }
+    
+            securityParameters.cipherSuite = state.selectedCipherSuite;
+            securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
+            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext,
+                state.selectedCipherSuite);
+    
+            /*
+             * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length
+             * has a verify_data_length equal to 12. This includes all existing cipher suites.
+             */
+            securityParameters.verifyDataLength = 12;
+    
+            handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        securityParameters.cipherSuite = state.selectedCipherSuite;
-        securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext, state.selectedCipherSuite);
-
-        /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
-         * a verify_data_length equal to 12. This includes all existing cipher suites.
-         */
-        securityParameters.verifyDataLength = 12;
-
-        handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         handshake.notifyHelloComplete();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
