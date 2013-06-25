@@ -760,7 +760,7 @@ public abstract class TlsProtocol
         recordStream.flush();
     }
 
-    protected void processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
+    protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
         throws IOException
     {
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
@@ -770,10 +770,8 @@ public abstract class TlsProtocol
             {
                 throw new TlsFatalAlert(alertDescription);
             }
-
-            int plainTextLimit = 1 << (8 + maxFragmentLength);
-            recordStream.setPlaintextLimit(plainTextLimit);
         }
+        return maxFragmentLength;
     }
 
     protected static boolean arrayContains(short[] a, short n)

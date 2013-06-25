@@ -113,17 +113,6 @@ public class TlsServerProtocol
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
-
-                /*
-                 * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
-                 * verify_data_length has a verify_data_length equal to 12. This includes all
-                 * existing cipher suites.
-                 */
-                securityParameters.verifyDataLength = 12;
-
-                recordStream.notifyHelloComplete();
-
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
                 {
@@ -707,7 +696,8 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
-            processMaxFragmentLengthExtension(clientExtensions, this.serverExtensions, AlertDescription.internal_error);
+            this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientExtensions,
+                this.serverExtensions, AlertDescription.internal_error);
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(this.serverExtensions);
 
@@ -720,7 +710,23 @@ public class TlsServerProtocol
             writeExtensions(message, this.serverExtensions);
         }
 
+        if (this.securityParameters.maxFragmentLength >= 0)
+        {
+            int plainTextLimit = 1 << (8 + this.securityParameters.maxFragmentLength);
+            recordStream.setPlaintextLimit(plainTextLimit);
+        }
+
+        securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
+
+        /*
+         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
+         * a verify_data_length equal to 12. This includes all existing cipher suites.
+         */
+        securityParameters.verifyDataLength = 12;
+
         message.writeToRecordStream();
+
+        recordStream.notifyHelloComplete();
     }
 
     protected void sendServerHelloDoneMessage()
