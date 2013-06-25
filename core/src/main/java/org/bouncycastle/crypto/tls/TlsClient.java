@@ -46,9 +46,6 @@ public interface TlsClient
 
     void notifySelectedCompressionMethod(short selectedCompressionMethod);
 
-    void notifySecureRenegotiation(boolean secureNegotiation)
-        throws IOException;
-
     // Hashtable is (Integer -> byte[])
     void processServerExtensions(Hashtable serverExtensions)
         throws IOException;

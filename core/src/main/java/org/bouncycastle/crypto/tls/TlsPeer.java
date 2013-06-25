@@ -4,6 +4,8 @@ import java.io.IOException;
 
 public interface TlsPeer
 {
+    void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
+
     TlsCompression getCompression() throws IOException;
 
     TlsCipher getCipher() throws IOException;
