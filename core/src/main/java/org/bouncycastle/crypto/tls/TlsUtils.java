@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -533,6 +534,21 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         if (null != asn1.readObject())
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return result;
+    }
+
+    public static ASN1Primitive readDERObject(byte[] encoding) throws IOException
+    {
+        /*
+         * NOTE: The current ASN.1 parsing code can't enforce DER-only parsing, but since DER is
+         * canonical, we can check it by re-encoding the result and comparing to the original.
+         */
+        ASN1Primitive result = readASN1Object(encoding);
+        byte[] check = result.getEncoded(ASN1Encoding.DER);
+        if (!Arrays.areEqual(check, encoding))
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }

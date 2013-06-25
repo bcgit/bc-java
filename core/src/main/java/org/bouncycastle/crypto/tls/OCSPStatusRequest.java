@@ -109,7 +109,7 @@ public class OCSPStatusRequest
                 do
                 {
                     byte[] derEncoding = TlsUtils.readOpaque16(buf);
-                    ResponderID responderID = ResponderID.getInstance(TlsUtils.readASN1Object(derEncoding));
+                    ResponderID responderID = ResponderID.getInstance(TlsUtils.readDERObject(derEncoding));
                     responderIDList.addElement(responderID);
                 }
                 while (buf.available() > 0);
@@ -122,7 +122,7 @@ public class OCSPStatusRequest
             if (length > 0)
             {
                 byte[] derEncoding = TlsUtils.readFully(length, input);
-                requestExtensions = Extensions.getInstance(TlsUtils.readASN1Object(derEncoding));
+                requestExtensions = Extensions.getInstance(TlsUtils.readDERObject(derEncoding));
             }
         }
 
