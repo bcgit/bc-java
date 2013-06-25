@@ -128,7 +128,7 @@ public class Certificate
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque24(buf);
-            ASN1Primitive asn1Cert = TlsUtils.readASN1Object(derEncoding);
+            ASN1Primitive asn1Cert = TlsUtils.readDERObject(derEncoding);
             certificate_list.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1Cert));
         }
 

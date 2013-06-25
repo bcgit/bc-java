@@ -154,7 +154,7 @@ public class CertificateRequest
         while (bis.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque16(bis);
-            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+            ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
             certificateAuthorities.addElement(X500Name.getInstance(asn1));
         }
 
