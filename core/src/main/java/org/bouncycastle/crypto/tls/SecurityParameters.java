@@ -13,7 +13,8 @@ public class SecurityParameters
     byte[] clientRandom = null;
     byte[] serverRandom = null;
 
-    // TODO Keep this internal, since it's not the ideal place for it
+    // TODO Keep these internal, since it's maybe not the ideal place for them
+    short maxFragmentLength = -1;
     boolean truncatedHMac = false;
 
     void copySessionParametersFrom(SecurityParameters other)
