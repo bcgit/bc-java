@@ -187,9 +187,11 @@ public class TlsClientProtocol
             break;
         }
         case HandshakeType.certificate_status:
+        {
             switch (this.connection_state)
             {
             case CS_SERVER_CERTIFICATE:
+            {
                 if (!this.allowCertificateStatus)
                 {
                     /*
@@ -208,53 +210,59 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_CERTIFICATE_STATUS;
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
+        }
         case HandshakeType.finished:
+        {
             switch (this.connection_state)
             {
             case CS_CLIENT_FINISHED:
+            {
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
+        }
         case HandshakeType.server_hello:
+        {
             switch (this.connection_state)
             {
             case CS_CLIENT_HELLO:
+            {
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
+                this.securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(),
+                    this.securityParameters.getCipherSuite());
 
                 /*
                  * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
                  * verify_data_length has a verify_data_length equal to 12. This includes all
                  * existing cipher suites.
                  */
-                securityParameters.verifyDataLength = 12;
+                this.securityParameters.verifyDataLength = 12;
 
-                recordStream.notifyHelloComplete();
-
-                this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
-                    && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
+                this.recordStream.notifyHelloComplete();
 
                 if (this.resumedSession)
                 {
-                    if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
-                        || securityParameters.getCompressionAlgorithm() != sessionParameters.getCompressionAlgorithm())
+                    if (this.securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite()
+                        || this.securityParameters.getCompressionAlgorithm() != this.sessionParameters.getCompressionAlgorithm())
                     {
                         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                     }
 
-                    securityParameters.masterSecret = Arrays.clone(sessionParameters.getMasterSecret());
-                    recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
+                    this.securityParameters.masterSecret = Arrays.clone(this.sessionParameters.getMasterSecret());
+                    this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                     sendChangeCipherSpecMessage();
                 }
@@ -269,23 +277,28 @@ public class TlsClientProtocol
                 }
 
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
+        }
         case HandshakeType.supplemental_data:
         {
             switch (this.connection_state)
             {
             case CS_SERVER_HELLO:
+            {
                 handleSupplementalData(readSupplementalDataMessage(buf));
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             break;
         }
         case HandshakeType.server_hello_done:
+        {
             switch (this.connection_state)
             {
             case CS_SERVER_HELLO:
@@ -295,7 +308,6 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCredentials();
                 this.authentication = null;
@@ -304,15 +316,15 @@ public class TlsClientProtocol
             }
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
-
+            {
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
-
+            }
             case CS_SERVER_KEY_EXCHANGE:
             case CS_CERTIFICATE_REQUEST:
-
+            {
                 assertEmpty(buf);
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
@@ -383,10 +395,12 @@ public class TlsClientProtocol
                 sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
             break;
+        }
         case HandshakeType.server_key_exchange:
         {
             switch (this.connection_state)
@@ -398,7 +412,6 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-
                 // There was no server certificate message; check it's OK
                 this.keyExchange.skipServerCredentials();
                 this.authentication = null;
@@ -407,12 +420,12 @@ public class TlsClientProtocol
             }
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
-
+            {
                 this.keyExchange.processServerKeyExchange(buf);
 
                 assertEmpty(buf);
                 break;
-
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
@@ -426,12 +439,12 @@ public class TlsClientProtocol
             {
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
-
+            {
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
                 // NB: Fall through to next case label
-
+            }
             case CS_SERVER_KEY_EXCHANGE:
             {
                 if (this.authentication == null)
@@ -463,6 +476,7 @@ public class TlsClientProtocol
             switch (this.connection_state)
             {
             case CS_CLIENT_FINISHED:
+            {
                 if (!this.expectSessionTicket)
                 {
                     /*
@@ -474,6 +488,7 @@ public class TlsClientProtocol
                 receiveNewSessionTicketMessage(buf);
                 this.connection_state = CS_SERVER_SESSION_TICKET;
                 break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
@@ -534,7 +549,7 @@ public class TlsClientProtocol
         }
 
         // Check that this matches what the server is sending in the record layer
-        if (!server_version.equals(recordStream.getReadVersion()))
+        if (!server_version.equals(this.recordStream.getReadVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -552,7 +567,7 @@ public class TlsClientProtocol
         /*
          * Read the server random
          */
-        securityParameters.serverRandom = TlsUtils.readFully(32, buf);
+        this.securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
         this.selectedSessionID = TlsUtils.readOpaque8(buf);
         if (this.selectedSessionID.length > 32)
@@ -562,19 +577,22 @@ public class TlsClientProtocol
 
         this.tlsClient.notifySessionID(this.selectedSessionID);
 
+        this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
+            && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
+
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones.
          */
         int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!arrayContains(offeredCipherSuites, selectedCipherSuite)
+        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        securityParameters.cipherSuite = selectedCipherSuite;
+        this.securityParameters.cipherSuite = selectedCipherSuite;
         this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
 
         /*
@@ -582,12 +600,12 @@ public class TlsClientProtocol
          * offered ones.
          */
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!arrayContains(offeredCompressionMethods, selectedCompressionMethod))
+        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        securityParameters.compressionAlgorithm = selectedCompressionMethod;
+        this.securityParameters.compressionAlgorithm = selectedCompressionMethod;
         this.tlsClient.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
@@ -630,7 +648,7 @@ public class TlsClientProtocol
                  * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
                 if (!extType.equals(EXT_RenegotiationInfo)
-                    && null == TlsUtils.getExtensionData(clientExtensions, extType))
+                    && null == TlsUtils.getExtensionData(this.clientExtensions, extType))
                 {
                     /*
                      * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless
@@ -669,7 +687,8 @@ public class TlsClientProtocol
                 }
             }
 
-            processMaxFragmentLengthExtension(clientExtensions, serverExtensions, AlertDescription.illegal_parameter);
+            processMaxFragmentLengthExtension(this.clientExtensions, serverExtensions,
+                AlertDescription.illegal_parameter);
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
@@ -680,11 +699,11 @@ public class TlsClientProtocol
                 TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
         }
 
-        tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
+        this.tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
 
-        if (clientExtensions != null)
+        if (this.clientExtensions != null)
         {
-            tlsClient.processServerExtensions(serverExtensions);
+            this.tlsClient.processServerExtensions(serverExtensions);
         }
     }
 
