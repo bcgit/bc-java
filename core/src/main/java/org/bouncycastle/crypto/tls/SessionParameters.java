@@ -1,5 +1,10 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Hashtable;
+
 import org.bouncycastle.util.Arrays;
 
 public final class SessionParameters
@@ -10,6 +15,7 @@ public final class SessionParameters
         private short compressionAlgorithm = -1;
         private byte[] masterSecret = null;
         private Certificate peerCertificate = null;
+        private byte[] encodedServerExtensions = null;
 
         public Builder()
         {
@@ -20,7 +26,8 @@ public final class SessionParameters
             validate(this.cipherSuite >= 0, "cipherSuite");
             validate(this.compressionAlgorithm >= 0, "compressionAlgorithm");
             validate(this.masterSecret != null, "masterSecret");
-            return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate);
+            return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate,
+                encodedServerExtensions);
         }
 
         public Builder setCipherSuite(int cipherSuite)
@@ -47,6 +54,22 @@ public final class SessionParameters
             return this;
         }
 
+        public Builder setServerExtensions(Hashtable serverExtensions)
+            throws IOException
+        {
+            if (serverExtensions == null)
+            {
+                encodedServerExtensions = null;
+            }
+            else
+            {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                TlsProtocol.writeExtensions(buf, serverExtensions);
+                encodedServerExtensions = buf.toByteArray();
+            }
+            return this;
+        }
+
         private void validate(boolean condition, String parameter)
         {
             if (!condition)
@@ -60,13 +83,16 @@ public final class SessionParameters
     private final short compressionAlgorithm;
     private final byte[] masterSecret;
     private final Certificate peerCertificate;
+    private final byte[] encodedServerExtensions;
 
-    private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret, Certificate peerCertificate)
+    private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret,
+        Certificate peerCertificate, byte[] encodedServerExtensions)
     {
         this.cipherSuite = cipherSuite;
         this.compressionAlgorithm = compressionAlgorithm;
         this.masterSecret = Arrays.clone(masterSecret);
         this.peerCertificate = peerCertificate;
+        this.encodedServerExtensions = encodedServerExtensions;
     }
 
     public void clear()
@@ -79,7 +105,8 @@ public final class SessionParameters
 
     public SessionParameters copy()
     {
-        return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate);
+        return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate,
+            encodedServerExtensions);
     }
 
     public int getCipherSuite()
@@ -100,5 +127,16 @@ public final class SessionParameters
     public Certificate getPeerCertificate()
     {
         return peerCertificate;
+    }
+
+    public Hashtable readServerExtensions() throws IOException
+    {
+        if (encodedServerExtensions == null)
+        {
+            return null;
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(encodedServerExtensions);
+        return TlsProtocol.readExtensions(buf);
     }
 }
