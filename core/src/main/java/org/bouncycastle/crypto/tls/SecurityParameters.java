@@ -1,17 +1,40 @@
 package org.bouncycastle.crypto.tls;
 
+import org.bouncycastle.util.Arrays;
+
 public class SecurityParameters
 {
     int entity = -1;
-    int prfAlgorithm = -1;
+    int cipherSuite = -1;
     short compressionAlgorithm = -1;
+    int prfAlgorithm = -1;
     int verifyDataLength = -1;
     byte[] masterSecret = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
 
-    // TODO Keep this internal, since it's not the ideal place for it
+    // TODO Keep these internal, since it's maybe not the ideal place for them
+    short maxFragmentLength = -1;
     boolean truncatedHMac = false;
+
+    void copySessionParametersFrom(SecurityParameters other)
+    {
+        this.entity = other.entity;
+        this.cipherSuite = other.cipherSuite;
+        this.compressionAlgorithm = other.compressionAlgorithm;
+        this.prfAlgorithm = other.prfAlgorithm;
+        this.verifyDataLength = other.verifyDataLength;
+        this.masterSecret = Arrays.clone(other.masterSecret);
+    }
+
+    void clear()
+    {
+        if (this.masterSecret != null)
+        {
+            Arrays.fill(this.masterSecret, (byte)0);
+            this.masterSecret = null;
+        }
+    }
 
     /**
      * @return {@link ConnectionEnd}
@@ -22,11 +45,11 @@ public class SecurityParameters
     }
 
     /**
-     * @return {@link PRFAlgorithm}
+     * @return {@link CipherSuite}
      */
-    public int getPrfAlgorithm()
+    public int getCipherSuite()
     {
-        return prfAlgorithm;
+        return cipherSuite;
     }
 
     /**
@@ -35,6 +58,14 @@ public class SecurityParameters
     public short getCompressionAlgorithm()
     {
         return compressionAlgorithm;
+    }
+
+    /**
+     * @return {@link PRFAlgorithm}
+     */
+    public int getPrfAlgorithm()
+    {
+        return prfAlgorithm;
     }
 
     public int getVerifyDataLength()

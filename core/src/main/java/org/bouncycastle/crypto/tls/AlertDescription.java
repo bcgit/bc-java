@@ -5,11 +5,12 @@ package org.bouncycastle.crypto.tls;
  */
 public class AlertDescription
 {
-
     /**
      * This message notifies the recipient that the sender will not send any more messages on this
-     * connection. The session becomes unresumable if any connection is terminated without proper
-     * close_notify messages with level equal to warning.
+     * connection. Note that as of TLS 1.1, failure to properly close a connection no longer
+     * requires that a session not be resumed. This is a change from TLS 1.0 ("The session becomes
+     * unresumable if any connection is terminated without proper close_notify messages with level
+     * equal to warning.") to conform with widespread implementation practice.
      */
     public static final short close_notify = 0;
 

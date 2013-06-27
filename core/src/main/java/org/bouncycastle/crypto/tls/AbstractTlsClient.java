@@ -13,6 +13,8 @@ public abstract class AbstractTlsClient
     protected TlsClientContext context;
 
     protected Vector supportedSignatureAlgorithms;
+    protected int[] namedCurves;
+    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
@@ -30,6 +32,11 @@ public abstract class AbstractTlsClient
     public void init(TlsClientContext context)
     {
         this.context = context;
+    }
+
+    public TlsSession getSessionToResume()
+    {
+        return null;
     }
 
     /**
@@ -101,6 +108,33 @@ public abstract class AbstractTlsClient
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
+        if (TlsECCUtils.containsECCCipherSuites(getCipherSuites()))
+        {
+            /*
+             * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
+             * appends these extensions (along with any others), enumerating the curves it supports
+             * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
+             * Curves Extension and the Supported Point Formats Extension.
+             */
+            /*
+             * TODO Could just add all the curves since we support them all, but users may not want
+             * to use unnecessarily large fields. Need configuration options.
+             */
+            this.namedCurves = new int[]{NamedCurve.secp256r1, NamedCurve.sect233r1, NamedCurve.secp224r1,
+                NamedCurve.sect193r1, NamedCurve.secp192r1, NamedCurve.arbitrary_explicit_char2_curves,
+                NamedCurve.arbitrary_explicit_prime_curves};
+            this.clientECPointFormats = new short[]{ECPointFormat.ansiX962_compressed_char2,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed};
+
+            if (clientExtensions == null)
+            {
+                clientExtensions = new Hashtable();
+            }
+
+            TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
+        }
+
         return clientExtensions;
     }
 
@@ -138,19 +172,6 @@ public abstract class AbstractTlsClient
         this.selectedCompressionMethod = selectedCompressionMethod;
     }
 
-    public void notifySecureRenegotiation(boolean secureRenegotiation)
-        throws IOException
-    {
-        if (!secureRenegotiation)
-        {
-            /*
-             * RFC 5746 3.4. In this case, some clients may want to terminate the handshake instead
-             * of continuing; see Section 4.1 for discussion.
-             */
-            // throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-    }
-
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
@@ -164,6 +185,18 @@ public abstract class AbstractTlsClient
              * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
              */
             if (serverExtensions.containsKey(TlsUtils.EXT_signature_algorithms))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            int[] namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
+            if (namedCurves != null)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
+            if (this.serverECPointFormats != null && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -204,11 +237,6 @@ public abstract class AbstractTlsClient
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)
-        throws IOException
-    {
-    }
-
-    public void notifyHandshakeComplete()
         throws IOException
     {
     }

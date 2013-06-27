@@ -45,6 +45,8 @@ class DTLSReliableHandshake
     void sendMessage(short msg_type, byte[] body)
         throws IOException
     {
+        TlsUtils.checkUint24(body.length);
+
         if (!sending)
         {
             checkInboundFlight();
@@ -58,6 +60,18 @@ class DTLSReliableHandshake
 
         writeMessage(message);
         updateHandshakeMessagesDigest(message);
+    }
+
+    byte[] receiveMessageBody(short msg_type)
+        throws IOException
+    {
+        Message message = receiveMessage();
+        if (message.getType() != msg_type)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        return message.getBody();
     }
 
     Message receiveMessage()
@@ -394,7 +408,6 @@ class DTLSReliableHandshake
 
     static class Message
     {
-
         private final int message_seq;
         private final short msg_type;
         private final byte[] body;

@@ -5,12 +5,12 @@ import java.security.SecureRandom;
 abstract class AbstractTlsContext
     implements TlsContext
 {
-
     private SecureRandom secureRandom;
     private SecurityParameters securityParameters;
 
     private ProtocolVersion clientVersion = null;
     private ProtocolVersion serverVersion = null;
+    private TlsSession session = null;
     private Object userObject = null;
 
     AbstractTlsContext(SecureRandom secureRandom, SecurityParameters securityParameters)
@@ -34,7 +34,7 @@ abstract class AbstractTlsContext
         return clientVersion;
     }
 
-    public void setClientVersion(ProtocolVersion clientVersion)
+    void setClientVersion(ProtocolVersion clientVersion)
     {
         this.clientVersion = clientVersion;
     }
@@ -44,9 +44,19 @@ abstract class AbstractTlsContext
         return serverVersion;
     }
 
-    public void setServerVersion(ProtocolVersion serverVersion)
+    void setServerVersion(ProtocolVersion serverVersion)
     {
         this.serverVersion = serverVersion;
+    }
+
+    public TlsSession getResumableSession()
+    {
+        return session;
+    }
+
+    void setResumableSession(TlsSession session)
+    {
+        this.session = session;
     }
 
     public Object getUserObject()
@@ -61,6 +71,10 @@ abstract class AbstractTlsContext
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
     {
+        if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
+        {
+            throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
+        }
 
         SecurityParameters sp = getSecurityParameters();
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();

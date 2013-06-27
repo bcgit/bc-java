@@ -64,7 +64,9 @@ public class TlsECCUtils
         }
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint16(2 * namedCurves.length, buf);
+        int length = 2 * namedCurves.length;
+        TlsUtils.checkUint16(length);
+        TlsUtils.writeUint16(length, buf);
         TlsUtils.writeUint16Array(namedCurves, buf);
         return buf.toByteArray();
     }
@@ -91,7 +93,8 @@ public class TlsECCUtils
         }
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeUint8((short) ecPointFormats.length, buf);
+        TlsUtils.checkUint8(ecPointFormats.length);
+        TlsUtils.writeUint8(ecPointFormats.length, buf);
         TlsUtils.writeUint8Array(ecPointFormats, buf);
         return buf.toByteArray();
     }
@@ -194,6 +197,10 @@ public class TlsECCUtils
     public static boolean isECCCipherSuite(int cipherSuite)
     {
         switch (cipherSuite) {
+
+        /*
+         * RFC 4492
+         */
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
@@ -219,6 +226,10 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA:
+
+        /*
+         * RFC 5289
+         */
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
@@ -235,7 +246,22 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
+
+        /*
+         * RFC 5489
+         */
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+
             return true;
+
         default:
             return false;
         }
@@ -524,7 +550,9 @@ public class TlsECCUtils
             TlsUtils.writeUint8(ECCurveType.explicit_char2, output);
 
             ECCurve.F2m f2m = (ECCurve.F2m) curve;
-            TlsUtils.writeUint16(f2m.getM(), output);
+            int m = f2m.getM();
+            TlsUtils.checkUint16(m);
+            TlsUtils.writeUint16(m, output);
 
             if (f2m.isTrinomial())
             {
@@ -570,6 +598,7 @@ public class TlsECCUtils
         }
 
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
+        TlsUtils.checkUint16(namedCurve);
         TlsUtils.writeUint16(namedCurve, output);
     }
 }

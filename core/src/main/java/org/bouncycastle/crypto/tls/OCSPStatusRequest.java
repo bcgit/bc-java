@@ -71,6 +71,7 @@ public class OCSPStatusRequest
                 byte[] derEncoding = responderID.getEncoded(ASN1Encoding.DER);
                 TlsUtils.writeOpaque16(derEncoding, buf);
             }
+            TlsUtils.checkUint16(buf.size());
             TlsUtils.writeUint16(buf.size(), output);
             buf.writeTo(output);
         }
@@ -82,6 +83,7 @@ public class OCSPStatusRequest
         else
         {
             byte[] derEncoding = requestExtensions.getEncoded(ASN1Encoding.DER);
+            TlsUtils.checkUint16(derEncoding.length);
             TlsUtils.writeUint16(derEncoding.length, output);
             output.write(derEncoding);
         }
@@ -107,7 +109,7 @@ public class OCSPStatusRequest
                 do
                 {
                     byte[] derEncoding = TlsUtils.readOpaque16(buf);
-                    ResponderID responderID = ResponderID.getInstance(TlsUtils.readASN1Object(derEncoding));
+                    ResponderID responderID = ResponderID.getInstance(TlsUtils.readDERObject(derEncoding));
                     responderIDList.addElement(responderID);
                 }
                 while (buf.available() > 0);
@@ -120,7 +122,7 @@ public class OCSPStatusRequest
             if (length > 0)
             {
                 byte[] derEncoding = TlsUtils.readFully(length, input);
-                requestExtensions = Extensions.getInstance(TlsUtils.readASN1Object(derEncoding));
+                requestExtensions = Extensions.getInstance(TlsUtils.readDERObject(derEncoding));
             }
         }
 

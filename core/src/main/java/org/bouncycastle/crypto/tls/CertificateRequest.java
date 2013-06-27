@@ -81,11 +81,12 @@ public class CertificateRequest
     {
         if (certificateTypes == null || certificateTypes.length == 0)
         {
-            TlsUtils.writeUint8((short)0, output);
+            TlsUtils.writeUint8(0, output);
         }
         else
         {
-            TlsUtils.writeUint8((short)certificateTypes.length, output);
+            TlsUtils.checkUint8(certificateTypes.length);
+            TlsUtils.writeUint8(certificateTypes.length, output);
             TlsUtils.writeUint8Array(certificateTypes, output);
         }
 
@@ -102,6 +103,7 @@ public class CertificateRequest
         else
         {
             Vector derEncodings = new Vector(certificateAuthorities.size());
+
             int totalLength = 0;
             for (int i = 0; i < certificateAuthorities.size(); ++i)
             {
@@ -111,6 +113,7 @@ public class CertificateRequest
                 totalLength += derEncoding.length;
             }
 
+            TlsUtils.checkUint16(totalLength);
             TlsUtils.writeUint16(totalLength, output);
 
             for (int i = 0; i < derEncodings.size(); ++i)
@@ -151,7 +154,7 @@ public class CertificateRequest
         while (bis.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque16(bis);
-            ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+            ASN1Primitive asn1 = TlsUtils.readDERObject(derEncoding);
             certificateAuthorities.addElement(X500Name.getInstance(asn1));
         }
 

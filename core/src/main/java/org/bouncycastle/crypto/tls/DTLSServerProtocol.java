@@ -102,27 +102,30 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        byte[] serverHelloBody = generateServerHello(state);
-        if (state.maxFragmentLength >= 0)
         {
-            int plainTextLimit = 1 << (8 + state.maxFragmentLength);
-            recordLayer.setPlaintextLimit(plainTextLimit);
-        }
-        handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
-
-        // TODO This block could really be done before actually sending the hello
-        {
-            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext, state.selectedCipherSuite);
+            byte[] serverHelloBody = generateServerHello(state);
+    
+            if (state.maxFragmentLength >= 0)
+            {
+                int plainTextLimit = 1 << (8 + state.maxFragmentLength);
+                recordLayer.setPlaintextLimit(plainTextLimit);
+            }
+    
+            securityParameters.cipherSuite = state.selectedCipherSuite;
             securityParameters.compressionAlgorithm = state.selectedCompressionMethod;
-
+            securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext,
+                state.selectedCipherSuite);
+    
             /*
              * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length
              * has a verify_data_length equal to 12. This includes all existing cipher suites.
              */
             securityParameters.verifyDataLength = 12;
-
-            handshake.notifyHelloComplete();
+    
+            handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
+
+        handshake.notifyHelloComplete();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -236,6 +239,7 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
 
         /*
@@ -246,32 +250,14 @@ public class DTLSServerProtocol
         if (expectCertificateVerifyMessage(state))
         {
             byte[] certificateVerifyHash = handshake.getCurrentHash();
-            clientMessage = handshake.receiveMessage();
-
-            if (clientMessage.getType() == HandshakeType.certificate_verify)
-            {
-                processCertificateVerify(state, clientMessage.getBody(), certificateVerifyHash);
-            }
-            else
-            {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
+            byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
+            processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] clientFinishedHash = handshake.getCurrentHash();
-        clientMessage = handshake.receiveMessage();
-
-        if (clientMessage.getType() == HandshakeType.finished)
-        {
-            byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-                clientFinishedHash);
-            processFinished(clientMessage.getBody(), expectedClientVerifyData);
-        }
-        else
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
+            handshake.getCurrentHash());
+        processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
         {
@@ -337,7 +323,7 @@ public class DTLSServerProtocol
 
         TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
 
-        buf.write(securityParameters.serverRandom);
+        buf.write(securityParameters.getServerRandom());
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached
@@ -404,10 +390,11 @@ public class DTLSServerProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
 
-            // TODO[RFC 3546] Should this code check that the 'extension_data' is empty?
-            state.allowCertificateStatus = state.serverExtensions.containsKey(TlsExtensionsUtils.EXT_status_request);
+            state.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error);
 
-            state.expectSessionTicket = state.serverExtensions.containsKey(TlsProtocol.EXT_SessionTicket);
+            state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
 
             TlsProtocol.writeExtensions(buf, state.serverExtensions);
         }
@@ -618,8 +605,6 @@ public class DTLSServerProtocol
         state.keyExchange.processClientKeyExchange(buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
     }
 
     protected void processClientSupplementalData(ServerHandshakeState state, byte[] body)

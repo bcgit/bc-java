@@ -25,12 +25,12 @@ public class ByteQueue
     /**
      * The initial size for our buffer.
      */
-    private static final int INITBUFSIZE = 1024;
+    private static final int DEFAULT_CAPACITY = 1024;
 
     /**
      * The buffer where we store our data.
      */
-    private byte[] databuf = new byte[ByteQueue.INITBUFSIZE];
+    private byte[] databuf;;
 
     /**
      * How many bytes at the beginning of the buffer are skipped.
@@ -41,6 +41,16 @@ public class ByteQueue
      * How many bytes in the buffer are valid data.
      */
     private int available = 0;
+
+    public ByteQueue()
+    {
+        this(DEFAULT_CAPACITY);
+    }
+
+    public ByteQueue(int capacity)
+    {
+        databuf = new byte[capacity];
+    }
 
     /**
      * Read data from the buffer.
@@ -62,17 +72,16 @@ public class ByteQueue
                 + " is too small for a read of " + len + " bytes");
         }
         System.arraycopy(databuf, skipped + skip, buf, offset, len);
-        return;
     }
 
     /**
      * Add some data to our buffer.
      *
-     * @param data   A byte-array to read data from.
-     * @param offset How many bytes to skip at the beginning of the array.
-     * @param len    How many bytes to read from the array.
+     * @param buf A byte-array to read data from.
+     * @param off How many bytes to skip at the beginning of the array.
+     * @param len How many bytes to read from the array.
      */
-    public void addData(byte[] data, int offset, int len)
+    public void addData(byte[] buf, int off, int len)
     {
         if ((skipped + available + len) > databuf.length)
         {
@@ -90,7 +99,7 @@ public class ByteQueue
             skipped = 0;
         }
 
-        System.arraycopy(data, offset, databuf, skipped + available, len);
+        System.arraycopy(buf, off, databuf, skipped + available, len);
         available += len;
     }
 
@@ -111,6 +120,27 @@ public class ByteQueue
          */
         available -= i;
         skipped += i;
+    }
+
+    /**
+     * Remove data from the buffer.
+     *
+     * @param buf The buffer where the removed data will be copied to.
+     * @param off How many bytes to skip at the beginning of buf.
+     * @param len How many bytes to read at all.
+     * @param skip How many bytes from our data to skip.
+     */
+    public void removeData(byte[] buf, int off, int len, int skip)
+    {
+        read(buf, off, len, skip);
+        removeData(skip + len);
+    }
+
+    public byte[] removeData(int len, int skip)
+    {
+        byte[] buf = new byte[len];
+        removeData(buf, 0, len, skip);
+        return buf;
     }
 
     /**

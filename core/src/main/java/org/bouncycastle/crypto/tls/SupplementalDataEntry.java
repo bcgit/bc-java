@@ -2,19 +2,18 @@ package org.bouncycastle.crypto.tls;
 
 public class SupplementalDataEntry
 {
+    protected int dataType;
+    protected byte[] data;
 
-    private int supp_data_type;
-    private byte[] data;
-
-    public SupplementalDataEntry(int supp_data_type, byte[] data)
+    public SupplementalDataEntry(int dataType, byte[] data)
     {
-        this.supp_data_type = supp_data_type;
+        this.dataType = dataType;
         this.data = data;
     }
 
     public int getDataType()
     {
-        return supp_data_type;
+        return dataType;
     }
 
     public byte[] getData()

@@ -136,12 +136,17 @@ class RecordStream
         pendingCipher = null;
     }
 
-    public void readRecord()
+    public boolean readRecord()
         throws IOException
     {
-        short type = TlsUtils.readUint8(input);
+        byte[] recordHeader = TlsUtils.readAllOrNothing(5, input);
+        if (recordHeader == null)
+        {
+            return false;
+        }
 
-        // TODO In earlier RFCs, it was "SHOULD ignore"; should this be version-dependent?
+        short type = TlsUtils.readUint8(recordHeader, 0);
+
         /*
          * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
          * unexpected_message alert.
@@ -150,7 +155,7 @@ class RecordStream
 
         if (!restrictReadVersion)
         {
-            int version = TlsUtils.readVersionRaw(input);
+            int version = TlsUtils.readVersionRaw(recordHeader, 1);
             if ((version & 0xffffff00) != 0x0300)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -158,7 +163,7 @@ class RecordStream
         }
         else
         {
-            ProtocolVersion version = TlsUtils.readVersion(input);
+            ProtocolVersion version = TlsUtils.readVersion(recordHeader, 1);
             if (readVersion == null)
             {
                 readVersion = version;
@@ -169,9 +174,10 @@ class RecordStream
             }
         }
 
-        int length = TlsUtils.readUint16(input);
+        int length = TlsUtils.readUint16(recordHeader, 3);
         byte[] plaintext = decodeAndVerify(type, input, length);
         handler.processRecord(type, plaintext, 0, plaintext.length);
+        return true;
     }
 
     protected byte[] decodeAndVerify(short type, InputStream input, int len)
@@ -202,6 +208,15 @@ class RecordStream
          * decompression failure error.
          */
         checkLength(decoded.length, plaintextLimit, AlertDescription.decompression_failure);
+
+        /*
+         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * or ChangeCipherSpec content types.
+         */
+        if (decoded.length < 1 && type != ContentType.application_data)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
 
         return decoded;
     }
@@ -293,29 +308,22 @@ class RecordStream
         return doFinal(d);
     }
 
-    protected void close()
-        throws IOException
+    protected void safeClose()
     {
-        IOException e = null;
         try
         {
             input.close();
         }
-        catch (IOException ex)
+        catch (IOException e)
         {
-            e = ex;
         }
+
         try
         {
             output.close();
         }
-        catch (IOException ex)
+        catch (IOException e)
         {
-            e = ex;
-        }
-        if (e != null)
-        {
-            throw e;
         }
     }
 

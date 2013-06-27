@@ -21,9 +21,10 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 public class TlsPSKKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected DHParameters dhParameters;
-
     protected TlsPSKIdentity pskIdentity;
+    protected DHParameters dhParameters;
+    protected int[] namedCurves;
+    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected byte[] psk_identity_hint = null;
 
@@ -35,7 +36,8 @@ public class TlsPSKKeyExchange
     protected TlsEncryptionCredentials serverCredentials = null;
     protected byte[] premasterSecret;
 
-    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters, TlsPSKIdentity pskIdentity)
+    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
+        DHParameters dhParameters, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -50,8 +52,11 @@ public class TlsPSKKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.dhParameters = dhParameters;
         this.pskIdentity = pskIdentity;
+        this.dhParameters = dhParameters;
+        this.namedCurves = namedCurves;
+        this.clientECPointFormats = clientECPointFormats;
+        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials()
