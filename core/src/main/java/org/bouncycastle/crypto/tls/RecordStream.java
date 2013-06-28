@@ -352,10 +352,11 @@ class RecordStream
     {
         switch (type)
         {
-        case ContentType.change_cipher_spec:
-        case ContentType.alert:
-        case ContentType.handshake:
         case ContentType.application_data:
+        case ContentType.alert:
+        case ContentType.change_cipher_spec:
+        case ContentType.handshake:
+        case ContentType.heartbeat:
             break;
         default:
             throw new TlsFatalAlert(alertDescription);
