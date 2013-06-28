@@ -46,6 +46,10 @@ public class HeartbeatExtension
     public static HeartbeatExtension parse(InputStream input) throws IOException
     {
         short mode = TlsUtils.readUint8(input);
+        if (!HeartbeatMode.isValid(mode))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
 
         return new HeartbeatExtension(mode);
     }

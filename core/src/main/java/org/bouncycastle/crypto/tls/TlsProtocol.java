@@ -197,18 +197,14 @@ public abstract class TlsProtocol
          */
         switch (protocol)
         {
-        case ContentType.change_cipher_spec:
-            processChangeCipherSpec(buf, offset, len);
-            break;
         case ContentType.alert:
+        {
             alertQueue.addData(buf, offset, len);
             processAlert();
             break;
-        case ContentType.handshake:
-            handshakeQueue.addData(buf, offset, len);
-            processHandshake();
-            break;
+        }
         case ContentType.application_data:
+        {
             if (!appDataReady)
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -216,6 +212,22 @@ public abstract class TlsProtocol
             applicationDataQueue.addData(buf, offset, len);
             processApplicationData();
             break;
+        }
+        case ContentType.change_cipher_spec:
+        {
+            processChangeCipherSpec(buf, offset, len);
+            break;
+        }
+        case ContentType.handshake:
+        {
+            handshakeQueue.addData(buf, offset, len);
+            processHandshake();
+            break;
+        }
+        case ContentType.heartbeat:
+        {
+            // TODO[RFC 6520]
+        }
         default:
             /*
              * Uh, we don't know this protocol.
