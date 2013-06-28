@@ -44,6 +44,11 @@ public class ExtensionType
     public static final int use_srtp = 14;
 
     /*
+     * RFC 6520 6.
+     */
+    public static final int heartbeat = 15;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;

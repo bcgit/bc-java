@@ -9,10 +9,17 @@ import org.bouncycastle.util.Integers;
 
 public class TlsExtensionsUtils
 {
+    public static final Integer EXT_heartbeat = Integers.valueOf(ExtensionType.heartbeat);
     public static final Integer EXT_max_fragment_length = Integers.valueOf(ExtensionType.max_fragment_length);
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
+
+    public static void addHeartbeatExtension(Hashtable extensions, HeartbeatExtension heartbeatExtension)
+        throws IOException
+    {
+        extensions.put(EXT_heartbeat, createHeartbeatExtension(heartbeatExtension));
+    }
 
     public static void addMaxFragmentLengthExtension(Hashtable extensions, short maxFragmentLength)
         throws IOException
@@ -35,6 +42,13 @@ public class TlsExtensionsUtils
     public static void addTruncatedHMacExtension(Hashtable extensions)
     {
         extensions.put(EXT_truncated_hmac, createTruncatedHMacExtension());
+    }
+
+    public static HeartbeatExtension getHeartbeatExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_heartbeat);
+        return extensionData == null ? null : readHeartbeatExtension(extensionData);
     }
 
     public static short getMaxFragmentLengthExtension(Hashtable extensions)
@@ -67,6 +81,21 @@ public class TlsExtensionsUtils
     public static byte[] createEmptyExtensionData()
     {
         return TlsUtils.EMPTY_BYTES;
+    }
+
+    public static byte[] createHeartbeatExtension(HeartbeatExtension heartbeatExtension)
+        throws IOException
+    {
+        if (heartbeatExtension == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        heartbeatExtension.encode(buf);
+
+        return buf.toByteArray();
     }
 
     public static byte[] createMaxFragmentLengthExtension(short maxFragmentLength)
@@ -113,6 +142,23 @@ public class TlsExtensionsUtils
     public static byte[] createTruncatedHMacExtension()
     {
         return createEmptyExtensionData();
+    }
+
+    public static HeartbeatExtension readHeartbeatExtension(byte[] extensionData)
+        throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        HeartbeatExtension heartbeatExtension = HeartbeatExtension.parse(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return heartbeatExtension;
     }
 
     public static short readMaxFragmentLengthExtension(byte[] extensionData)
