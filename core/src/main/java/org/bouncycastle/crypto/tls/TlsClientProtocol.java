@@ -18,10 +18,6 @@ public class TlsClientProtocol
     protected TlsClient tlsClient = null;
     protected TlsClientContextImpl tlsClientContext = null;
 
-    protected int[] offeredCipherSuites = null;
-    protected short[] offeredCompressionMethods = null;
-    protected Hashtable clientExtensions = null;
-
     protected byte[] selectedSessionID = null;
 
     protected TlsKeyExchange keyExchange = null;
@@ -105,9 +101,6 @@ public class TlsClientProtocol
     {
         super.cleanupHandshake();
 
-        this.offeredCipherSuites = null;
-        this.offeredCompressionMethods = null;
-        this.clientExtensions = null;
         this.selectedSessionID = null;
         this.keyExchange = null;
         this.authentication = null;
@@ -240,6 +233,22 @@ public class TlsClientProtocol
             {
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
+
+                if (this.securityParameters.maxFragmentLength >= 0)
+                {
+                    int plainTextLimit = 1 << (8 + this.securityParameters.maxFragmentLength);
+                    recordStream.setPlaintextLimit(plainTextLimit);
+                }
+
+                this.securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(),
+                    this.securityParameters.getCipherSuite());
+
+                /*
+                 * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
+                 * verify_data_length has a verify_data_length equal to 12. This includes all
+                 * existing cipher suites.
+                 */
+                this.securityParameters.verifyDataLength = 12;
 
                 this.recordStream.notifyHelloComplete();
 
@@ -598,15 +607,7 @@ public class TlsClientProtocol
          * possibility that the extended server hello message could "break" existing TLS 1.0
          * clients.
          */
-
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
-
-        // Integer -> byte[]
-        Hashtable serverExtensions = readExtensions(buf);
+        this.serverExtensions = readExtensions(buf);
 
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
@@ -615,9 +616,9 @@ public class TlsClientProtocol
          * However, see RFC 5746 exception below. We always include the SCSV, so an Extended Server
          * Hello is always allowed.
          */
-        if (serverExtensions != null)
+        if (this.serverExtensions != null)
         {
-            Enumeration e = serverExtensions.keys();
+            Enumeration e = this.serverExtensions.keys();
             while (e.hasMoreElements())
             {
                 Integer extType = (Integer)e.nextElement();
@@ -641,6 +642,8 @@ public class TlsClientProtocol
                  */
                 if (this.resumedSession)
                 {
+                    // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
+                    // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
@@ -666,7 +669,7 @@ public class TlsClientProtocol
              * When a ServerHello is received, the client MUST check if it includes the
              * "renegotiation_info" extension:
              */
-            byte[] renegExtData = TlsUtils.getExtensionData(serverExtensions, EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(this.serverExtensions, EXT_RenegotiationInfo);
             if (renegExtData != null)
             {
                 /*
@@ -684,58 +687,43 @@ public class TlsClientProtocol
             }
         }
 
-        this.securityParameters.cipherSuite = selectedCipherSuite;
-        this.securityParameters.compressionAlgorithm = selectedCompressionMethod;
+        // TODO[compat-gnutls] GnuTLS test server fails to send renegotiation_info extension when resuming
+        this.tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
 
+        Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (this.resumedSession)
         {
-            if (this.securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite()
-                || this.securityParameters.getCompressionAlgorithm() != this.sessionParameters.getCompressionAlgorithm())
+            if (selectedCipherSuite != this.sessionParameters.getCipherSuite()
+                || selectedCompressionMethod != this.sessionParameters.getCompressionAlgorithm())
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            /*
-             * TODO Fetch extension-negotiated parameters from the session parameters instead (and of course,
-             * add them to session parameters in the first place).
-             */
+            sessionClientExtensions = null;
+            sessionServerExtensions = this.sessionParameters.readServerExtensions();
         }
-        else if (serverExtensions != null)
+
+        this.securityParameters.cipherSuite = selectedCipherSuite;
+        this.securityParameters.compressionAlgorithm = selectedCompressionMethod;
+
+        if (sessionServerExtensions != null)
         {
-            this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(this.clientExtensions,
-                serverExtensions, AlertDescription.illegal_parameter);
+            this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
+                sessionServerExtensions, AlertDescription.illegal_parameter);
 
-            this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
+            this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
 
-            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                 TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
-            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
+            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                 TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
         }
 
-        this.tlsClient.notifySecureRenegotiation(this.secure_renegotiation);
-
-        if (this.clientExtensions != null)
+        if (sessionClientExtensions != null)
         {
-            this.tlsClient.processServerExtensions(serverExtensions);
+            this.tlsClient.processServerExtensions(sessionServerExtensions);
         }
-
-        if (this.securityParameters.maxFragmentLength >= 0)
-        {
-            int plainTextLimit = 1 << (8 + this.securityParameters.maxFragmentLength);
-            recordStream.setPlaintextLimit(plainTextLimit);
-        }
-
-        this.securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(),
-            this.securityParameters.getCipherSuite());
-
-        /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
-         * verify_data_length has a verify_data_length equal to 12. This includes all
-         * existing cipher suites.
-         */
-        this.securityParameters.verifyDataLength = 12;
     }
 
     protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify)

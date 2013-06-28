@@ -72,6 +72,11 @@ public abstract class TlsProtocol
     protected SecurityParameters securityParameters = null;
     protected Certificate peerCertificate = null;
 
+    protected int[] offeredCipherSuites = null;
+    protected short[] offeredCompressionMethods = null;
+    protected Hashtable clientExtensions = null;
+    protected Hashtable serverExtensions = null;
+
     protected short connection_state = CS_START;
     protected boolean resumedSession = false;
     protected boolean receivedChangeCipherSpec = false;
@@ -103,14 +108,19 @@ public abstract class TlsProtocol
 
     protected void cleanupHandshake()
     {
-        this.securityParameters.clear();
-        this.peerCertificate = null;
-
         if (this.expected_verify_data != null)
         {
             Arrays.fill(this.expected_verify_data, (byte)0);
             this.expected_verify_data = null;
         }
+
+        this.securityParameters.clear();
+        this.peerCertificate = null;
+
+        this.offeredCipherSuites = null;
+        this.offeredCompressionMethods = null;
+        this.clientExtensions = null;
+        this.serverExtensions = null;
 
         this.resumedSession = false;
         this.receivedChangeCipherSpec = false;
@@ -161,6 +171,8 @@ public abstract class TlsProtocol
                         .setCompressionAlgorithm(this.securityParameters.compressionAlgorithm)
                         .setMasterSecret(this.securityParameters.masterSecret)
                         .setPeerCertificate(this.peerCertificate)
+                        // TODO Consider filtering extensions that aren't relevant to resumed sessions
+                        .setServerExtensions(this.serverExtensions)
                         .build();
 
                     this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
@@ -764,7 +776,7 @@ public abstract class TlsProtocol
         throws IOException
     {
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-        if (maxFragmentLength >= 0)
+        if (maxFragmentLength >= 0 && !this.resumedSession)
         {
             if (maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
             {

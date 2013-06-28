@@ -19,12 +19,6 @@ public class TlsServerProtocol
     protected TlsServer tlsServer = null;
     protected TlsServerContextImpl tlsServerContext = null;
 
-    protected int[] offeredCipherSuites = null;
-    protected short[] offeredCompressionMethods = null;
-    protected Hashtable clientExtensions = null;
-
-    protected Hashtable serverExtensions = null;
-
     protected TlsKeyExchange keyExchange = null;
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
@@ -74,10 +68,6 @@ public class TlsServerProtocol
     {
         super.cleanupHandshake();
         
-        this.offeredCipherSuites = null;
-        this.offeredCompressionMethods = null;
-        this.clientExtensions = null;
-        this.serverExtensions = null;
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
