@@ -122,7 +122,7 @@ class DeferredHash
         }
     }
 
-    private static class DigestInputBuffer extends ByteArrayOutputStream
+    static class DigestInputBuffer extends ByteArrayOutputStream
     {
         void updateDigest(Digest d)
         {

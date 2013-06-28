@@ -435,7 +435,7 @@ class DTLSReliableHandshake
         }
     }
 
-    private static class RecordLayerBuffer extends ByteArrayOutputStream
+    static class RecordLayerBuffer extends ByteArrayOutputStream
     {
         RecordLayerBuffer(int size)
         {
