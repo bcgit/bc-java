@@ -22,7 +22,7 @@ public class HeartbeatMessage
         }
         if (payload == null || payload.length >= (1 << 16))
         {
-            throw new IllegalArgumentException("'payload' must have length from 1 to (2^16 - 1)");
+            throw new IllegalArgumentException("'payload' must have length < 2^16");
         }
         if (paddingLength < 16)
         {
@@ -45,16 +45,9 @@ public class HeartbeatMessage
     {
         TlsUtils.writeUint8(type, output);
 
-        if (payload == null)
-        {
-            TlsUtils.writeUint16(0, output);
-        }
-        else
-        {
-            TlsUtils.checkUint16(payload.length);
-            TlsUtils.writeUint16(payload.length, output);
-            output.write(payload);
-        }
+        TlsUtils.checkUint16(payload.length);
+        TlsUtils.writeUint16(payload.length, output);
+        output.write(payload);
 
         byte[] padding = new byte[paddingLength];
         context.getSecureRandom().nextBytes(padding);
