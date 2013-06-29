@@ -695,6 +695,10 @@ public class TlsServerProtocol
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(this.serverExtensions);
 
+            /*
+             * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
+             * a session resumption handshake.
+             */
             this.allowCertificateStatus = !this.resumedSession
                 && TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions, TlsExtensionsUtils.EXT_status_request,
                     AlertDescription.internal_error);
