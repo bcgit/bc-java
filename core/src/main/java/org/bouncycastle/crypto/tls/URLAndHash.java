@@ -64,8 +64,11 @@ public class URLAndHash
 
     /**
      * Parse a {@link URLAndHash} from an {@link InputStream}.
-     *
-     * @param input the {@link InputStream} to parse from.
+     * 
+     * @param context
+     *            the {@link TlsContext} of the current connection.
+     * @param input
+     *            the {@link InputStream} to parse from.
      * @return a {@link URLAndHash} object.
      * @throws IOException
      */
