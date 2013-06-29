@@ -478,6 +478,13 @@ public class TlsClientProtocol
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
+
+                /*
+                 * RFC 5077 3.4. If the client receives a session ticket from the server, then it
+                 * discards any Session ID that was sent in the ServerHello.
+                 */
+                invalidateSession();
+
                 receiveNewSessionTicketMessage(buf);
                 this.connection_state = CS_SERVER_SESSION_TICKET;
                 break;
@@ -636,9 +643,9 @@ public class TlsClientProtocol
                 }
 
                 /*
-                 * RFC 3546 2.3. If, on the other hand, the older session is resumed, then the
-                 * server MUST ignore extensions appearing in the client hello, and send a server
-                 * hello containing no extensions[.]
+                 * RFC 3546 2.3. If [...] the older session is resumed, then the server MUST ignore
+                 * extensions appearing in the client hello, and send a server hello containing no
+                 * extensions[.]
                  */
                 if (this.resumedSession)
                 {
@@ -713,11 +720,13 @@ public class TlsClientProtocol
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
 
-            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
-                TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
+            this.allowCertificateStatus = !this.resumedSession
+                && TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
+                    TlsExtensionsUtils.EXT_status_request, AlertDescription.illegal_parameter);
 
-            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
-                TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
+            this.expectSessionTicket = !this.resumedSession
+                && TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsProtocol.EXT_SessionTicket,
+                    AlertDescription.illegal_parameter);
         }
 
         if (sessionClientExtensions != null)
@@ -749,7 +758,10 @@ public class TlsClientProtocol
 
         getContext().setClientVersion(client_version);
 
-        // Session ID
+        /*
+         * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
+         * Session ID in the TLS ClientHello.
+         */
         byte[] session_id = TlsUtils.EMPTY_BYTES;
         if (this.tlsSession != null)
         {
@@ -760,12 +772,8 @@ public class TlsClientProtocol
             }
         }
 
-        /*
-         * Cipher suites
-         */
         this.offeredCipherSuites = this.tlsClient.getCipherSuites();
 
-        // Compression methods
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
 
         if (session_id.length > 0 && this.sessionParameters != null)
@@ -777,7 +785,6 @@ public class TlsClientProtocol
             }
         }
 
-        // Integer -> byte[]
         this.clientExtensions = this.tlsClient.getClientExtensions();
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
@@ -820,7 +827,6 @@ public class TlsClientProtocol
         TlsUtils.writeUint8(offeredCompressionMethods.length, message);
         TlsUtils.writeUint8Array(offeredCompressionMethods, message);
 
-        // Extensions
         if (clientExtensions != null)
         {
             writeExtensions(message, clientExtensions);
