@@ -449,35 +449,39 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        /*
-         * Read the client random
-         */
         byte[] client_random = TlsUtils.readFully(32, buf);
 
+        /*
+         * TODO RFC 5077 3.4. If a ticket is presented by the client, the server MUST NOT attempt to
+         * use the Session ID in the ClientHello for stateful session resumption.
+         */
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
+        /*
+         * TODO RFC 5246 7.4.1.2. If the session_id field is not empty (implying a session
+         * resumption request), this vector MUST include at least the cipher_suite from that
+         * session.
+         */
         int cipher_suites_length = TlsUtils.readUint16(buf);
         if (cipher_suites_length < 2 || (cipher_suites_length & 1) != 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-
-        /*
-         * NOTE: "If the session_id field is not empty (implying a session resumption request) this
-         * vector must include at least the cipher_suite from that session."
-         */
         this.offeredCipherSuites = TlsUtils.readUint16Array(cipher_suites_length / 2, buf);
 
+        /*
+         * TODO RFC 5246 7.4.1.2. If the session_id field is not empty (implying a session
+         * resumption request), it MUST include the compression_method from that session.
+         */
         int compression_methods_length = TlsUtils.readUint8(buf);
         if (compression_methods_length < 1)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
         this.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
 
         /*
@@ -691,11 +695,13 @@ public class TlsServerProtocol
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(this.serverExtensions);
 
-            this.allowCertificateStatus = TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions,
-                TlsExtensionsUtils.EXT_status_request, AlertDescription.internal_error);
+            this.allowCertificateStatus = !this.resumedSession
+                && TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions, TlsExtensionsUtils.EXT_status_request,
+                    AlertDescription.internal_error);
 
-            this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions,
-                TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
+            this.expectSessionTicket = !this.resumedSession
+                && TlsUtils.hasExpectedEmptyExtensionData(this.serverExtensions, TlsProtocol.EXT_SessionTicket,
+                    AlertDescription.internal_error);
 
             writeExtensions(message, this.serverExtensions);
         }
