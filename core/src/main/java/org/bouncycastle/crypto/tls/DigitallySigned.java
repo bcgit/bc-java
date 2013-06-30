@@ -52,6 +52,8 @@ public class DigitallySigned
     /**
      * Parse a {@link DigitallySigned} from an {@link InputStream}.
      * 
+     * @param context
+     *            the {@link TlsContext} of the current connection.
      * @param input
      *            the {@link InputStream} to parse from.
      * @return a {@link DigitallySigned} object.

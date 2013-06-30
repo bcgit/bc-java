@@ -162,6 +162,7 @@ class DTLSRecordLayer
                 case ContentType.application_data:
                 case ContentType.change_cipher_spec:
                 case ContentType.handshake:
+                case ContentType.heartbeat:
                     break;
                 default:
                     // TODO Exception?
@@ -286,6 +287,11 @@ class DTLSRecordLayer
                         // TODO Consider support for HelloRequest
                         continue;
                     }
+                }
+                case ContentType.heartbeat:
+                {
+                    // TODO[RFC 6520]
+                    continue;
                 }
                 }
 
