@@ -88,7 +88,7 @@ public class CCMTest
         {
             ccm.init(false, new AEADParameters(new KeyParameter(K1), 32, N2, A2));
             
-            ccm.processPacket(C2, 0, C2.length);
+            ccm.processPacket(C2, 0, C2.length, new byte[100], 0);
             
             fail("invalid cipher text not picked up");
         }
