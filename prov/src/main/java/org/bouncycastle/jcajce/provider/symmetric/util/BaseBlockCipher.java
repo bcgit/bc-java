@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -15,6 +16,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
@@ -46,6 +48,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.paddings.TBCPadding;
 import org.bouncycastle.crypto.paddings.X923Padding;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -70,7 +73,8 @@ public class BaseBlockCipher
                                         RC5ParameterSpec.class,
                                         IvParameterSpec.class,
                                         PBEParameterSpec.class,
-                                        GOST28147ParameterSpec.class
+                                        GOST28147ParameterSpec.class,
+                                        GCMParameterSpec.class
                                     };
 
     private BlockCipher             baseEngine;
@@ -528,12 +532,29 @@ public class BaseBlockCipher
                 ivParam = (ParametersWithIV)param;
             }
         }
+        else if (params instanceof GCMParameterSpec)
+        {
+            if (!isAEADModeName(modeName))
+            {
+                throw new InvalidAlgorithmParameterException("GCMParameterSpec can only be used with AEAD modes.");
+            }
+
+            GCMParameterSpec p = (GCMParameterSpec) params;
+
+            if (key instanceof RepeatedSecretKeySpec)
+            {
+                param = new AEADParameters(null, p.getTLen(), p.getIV());
+            } else
+            {
+                param = new AEADParameters(new KeyParameter(key.getEncoded()), p.getTLen(), p.getIV());
+            }
+        }
         else
         {
             throw new InvalidAlgorithmParameterException("unknown parameter type.");
         }
 
-        if ((ivLength != 0) && !(param instanceof ParametersWithIV))
+        if ((ivLength != 0) && !(param instanceof ParametersWithIV) && !(param instanceof AEADParameters))
         {
             SecureRandom    ivRandom = random;
 
@@ -632,6 +653,18 @@ public class BaseBlockCipher
         {
             throw new InvalidKeyException(e.getMessage());
         }
+    }
+
+    protected void engineUpdateAAD(byte[] input, int offset, int length)
+    {
+        cipher.updateAAD(input, offset, length);
+    }
+
+    protected void engineUpdateAAD(ByteBuffer bytebuffer)
+    {
+        int offset = bytebuffer.arrayOffset() + bytebuffer.position();
+        int length = bytebuffer.limit() - bytebuffer.position();
+        engineUpdateAAD(bytebuffer.array(), offset, length);
     }
 
     protected byte[] engineUpdate(
@@ -783,6 +816,8 @@ public class BaseBlockCipher
 
         public int getUpdateOutputSize(int len);
 
+        public void updateAAD(byte[] input, int offset, int length);
+
         public int processByte(byte in, byte[] out, int outOff)
             throws DataLengthException;
 
@@ -844,6 +879,11 @@ public class BaseBlockCipher
             return cipher.getUpdateOutputSize(len);
         }
 
+        public void updateAAD(byte[] input, int offset, int length)
+        {
+            throw new UnsupportedOperationException("AAD is not supported in the current mode.");
+        }
+
         public int processByte(byte in, byte[] out, int outOff) throws DataLengthException
         {
             return cipher.processByte(in, out, outOff);
@@ -899,6 +939,11 @@ public class BaseBlockCipher
         public int getUpdateOutputSize(int len)
         {
             return cipher.getUpdateOutputSize(len);
+        }
+
+        public void updateAAD(byte[] input, int offset, int length)
+        {
+            cipher.processAADBytes(input, offset, length);
         }
 
         public int processByte(byte in, byte[] out, int outOff) throws DataLengthException
