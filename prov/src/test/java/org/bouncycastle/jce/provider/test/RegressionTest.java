@@ -71,7 +71,8 @@ public class RegressionTest
         new DSTU4145Test(),
         new CRL5Test(),
         new SipHashTest(),
-        new SHA3Test()
+        new SHA3Test(),
+        new SkeinTest()
     };
 
     public static void main(
