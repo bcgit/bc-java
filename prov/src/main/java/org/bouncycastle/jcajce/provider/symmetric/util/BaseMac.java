@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.SkeinParameters;
 
 public class BaseMac
     extends MacSpi implements PBE
@@ -73,6 +74,10 @@ public class BaseMac
         else if (params instanceof IvParameterSpec)
         {
             param = new ParametersWithIV(new KeyParameter(key.getEncoded()), ((IvParameterSpec)params).getIV());
+        }
+        else if (params instanceof SkeinParameters)
+        {
+            param = new SkeinParameters.Builder((SkeinParameters) params).setKey(key.getEncoded()).build();
         }
         else if (params == null)
         {

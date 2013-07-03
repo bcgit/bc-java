@@ -43,7 +43,7 @@ public abstract class CipherTest
             //
             // state tests
             //
-            byte[]      buf = new byte[16];
+            byte[]      buf = new byte[128];
             
             try
             {   
