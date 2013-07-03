@@ -278,7 +278,7 @@ public class BaseBlockCipher
         }
         else if (modeName.startsWith("CCM"))
         {
-            ivLength = baseEngine.getBlockSize();
+            ivLength = 13; // CCM nonce 7..13 bytes
             cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
         }
         else if (modeName.startsWith("OCB"))
