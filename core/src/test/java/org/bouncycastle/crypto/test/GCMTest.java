@@ -3,7 +3,9 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.gcm.BasicGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
@@ -301,7 +303,38 @@ public class GCMTest
 
         randomTests();
         outputSizeTests();
+        testExceptions();
     }    
+
+    private void testExceptions() throws InvalidCipherTextException
+    {
+        GCMBlockCipher gcm = new GCMBlockCipher(new AESFastEngine());
+
+        try
+        {
+            gcm = new GCMBlockCipher(new DESEngine());
+            
+            fail("incorrect block size not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        try
+        {
+            gcm.init(false, new KeyParameter(new byte[16]));
+
+            fail("illegal argument not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+        
+        AEADTestUtil.testReset(this, new GCMBlockCipher(new AESEngine()), new GCMBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
+        AEADTestUtil.testTampering(this, gcm, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
+    }
 
     private void runTestCase(String[] testVector)
         throws InvalidCipherTextException
