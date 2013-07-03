@@ -123,16 +123,10 @@ public class EAXBlockCipher
         mac.update(nonce, 0, nonce.length);
         mac.doFinal(nonceMac, 0);
 
-        tag[blockSize - 1] = hTAG;
-        mac.update(tag, 0, blockSize);
-
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
-        }
-
         // Same BlockCipher underlies this and the mac, so reuse last key on cipher 
         cipher.init(true, new ParametersWithIV(null, nonceMac));
+        
+        reset();
     }
 
     private void initCipher()
@@ -206,7 +200,7 @@ public class EAXBlockCipher
     {
         if (cipherInitialized)
         {
-            throw new IllegalStateException("AAD data cannot be added after encryption/decription processing has begun.");
+            throw new IllegalStateException("AAD data cannot be added after encryption/decryption processing has begun.");
         }
         mac.update(in, inOff, len);
     }
@@ -246,6 +240,10 @@ public class EAXBlockCipher
 
         if (forEncryption)
         {
+            if (out.length < (outOff + extra))
+            {
+                throw new DataLengthException("Output buffer too short");
+            }
             cipher.processBlock(bufBlock, 0, tmp, 0);
             cipher.processBlock(bufBlock, blockSize, tmp, blockSize);
 
@@ -263,6 +261,10 @@ public class EAXBlockCipher
         }
         else
         {
+            if (extra < macSize)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
             if (extra > macSize)
             {
                 mac.update(bufBlock, 0, extra - macSize);

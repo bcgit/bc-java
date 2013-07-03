@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
@@ -152,6 +153,8 @@ public class EAXTest
         }
 
         randomTests();
+        AEADTestUtil.testReset(this, new EAXBlockCipher(new AESEngine()), new EAXBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
     }
 
     private void checkVectors(
