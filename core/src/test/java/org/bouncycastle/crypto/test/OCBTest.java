@@ -122,8 +122,8 @@ public class OCBTest
             // expected
         }
         
-        AEADTestUtil.testReset(this, new OCBBlockCipher(new AESEngine(), new AESEngine()), new OCBBlockCipher(new AESEngine(), new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
-        AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
+        AEADTestUtil.testReset(this, new OCBBlockCipher(new AESEngine(), new AESEngine()), new OCBBlockCipher(new AESEngine(), new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
+        AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
     }
     
     private void runTestCase(String testName, String[] testVector)
