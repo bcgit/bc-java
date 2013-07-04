@@ -285,7 +285,8 @@ public class BaseBlockCipher
         {
             if (engineProvider != null)
             {
-                ivLength = baseEngine.getBlockSize();
+                // Nonce restricted to max 120 bits over 128 bit block cipher since draft-irtf-cfrg-ocb-03
+                ivLength = 15;
                 cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
             }
             else
