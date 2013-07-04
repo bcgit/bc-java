@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.ISO7816d4Padding;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * CMAC - as specified at www.nuee.nagoya-u.ac.jp/labs/tiwata/omac/omac.html
@@ -121,7 +122,7 @@ public class CMac implements Mac
 
     public void init(CipherParameters params)
     {
-        if (params != null)
+        if (params instanceof KeyParameter)
         {
             cipher.init(true, params);
     
@@ -130,6 +131,10 @@ public class CMac implements Mac
             cipher.processBlock(ZEROES, 0, L, 0);
             Lu = doubleLu(L);
             Lu2 = doubleLu(Lu);
+        } else if (params != null)
+        {
+            // CMAC mode does not permit IV to underlying CBC mode
+            throw new IllegalArgumentException("CMac mode only permits key to be set.");
         }
 
         reset();
