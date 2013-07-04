@@ -3,6 +3,7 @@ package org.bouncycastle.jce.provider.test;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
 
 import javax.crypto.BadPaddingException;
@@ -51,9 +52,9 @@ public class AEADTest extends SimpleTest
                                    byte[] C) throws InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException,
             IllegalBlockSizeException, BadPaddingException,
-            InvalidAlgorithmParameterException
+            InvalidAlgorithmParameterException, NoSuchProviderException
     {
-        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding");
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
         IvParameterSpec iv = new IvParameterSpec(N);
         eax.init(Cipher.ENCRYPT_MODE, key, iv);
@@ -83,9 +84,9 @@ public class AEADTest extends SimpleTest
                                       byte[] C) throws InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException,
             IllegalBlockSizeException, BadPaddingException,
-            InvalidAlgorithmParameterException
+            InvalidAlgorithmParameterException, NoSuchProviderException
     {
-        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding");
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
 
         // GCMParameterSpec mapped to AEADParameters and overrides default MAC
@@ -118,9 +119,9 @@ public class AEADTest extends SimpleTest
                                                    byte[] C)
             throws InvalidKeyException, NoSuchAlgorithmException,
             NoSuchPaddingException, IllegalBlockSizeException,
-            BadPaddingException, InvalidAlgorithmParameterException
+            BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException
     {
-        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding");
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
         GCMParameterSpec spec = new GCMParameterSpec(128, N);
         eax.init(Cipher.ENCRYPT_MODE, key, spec);
