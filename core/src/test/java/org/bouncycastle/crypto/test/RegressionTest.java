@@ -126,6 +126,7 @@ public class RegressionTest
         new ECIESKeyEncapsulationTest(),
         new HashCommitmentTest(),
         new BlockCipherResetTest(),
+        new StreamCipherResetTest(),
         new SM3DigestTest(),
         new KDFCounterGeneratorTest(),
         new KDFDoublePipelineIteratorGeneratorTest(),
