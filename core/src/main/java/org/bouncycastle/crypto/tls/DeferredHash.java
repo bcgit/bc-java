@@ -126,7 +126,7 @@ class DeferredHash
     {
         void updateDigest(Digest d)
         {
-            d.update(buf, 0, count);
+            d.update(this.buf, 0, count);
         }
     }
 }
