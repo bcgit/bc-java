@@ -2,9 +2,11 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -247,6 +249,21 @@ public class CMacTest
         {
             fail("Failed - expected " + new String(Hex.encode(output_k256_m64))
                 + " got " + new String(Hex.encode(out)));
+        }
+        
+        testExceptions();
+    }
+
+    private void testExceptions()
+    {
+        try 
+        {
+            CMac mac = new CMac(new AESEngine());
+            mac.init(new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            fail("CMac does not accept IV");
+        } catch(IllegalArgumentException e)
+        {
+            // Expected
         }
     }
 
