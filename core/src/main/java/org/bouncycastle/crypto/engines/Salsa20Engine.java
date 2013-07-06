@@ -29,7 +29,7 @@ public class Salsa20Engine
      * during encryption and decryption
      */
     private int         index = 0;
-    private int[]       engineState = new int[STATE_SIZE]; // state
+    protected int[]     engineState = new int[STATE_SIZE]; // state
     private int[]       x = new int[STATE_SIZE] ; // internal buffer
     private byte[]      keyStream   = new byte[STATE_SIZE * 4]; // expanded state, 64 bytes
     private boolean     initialised = false;
@@ -59,21 +59,21 @@ public class Salsa20Engine
 
         if (!(params instanceof ParametersWithIV))
         {
-            throw new IllegalArgumentException("Salsa20 Init parameters must include an IV");
+            throw new IllegalArgumentException(getAlgorithmName() + " Init parameters must include an IV");
         }
 
         ParametersWithIV ivParams = (ParametersWithIV) params;
 
         byte[] iv = ivParams.getIV();
-
-        if (iv == null || iv.length != 8)
+        if (iv == null || iv.length != getNonceSize())
         {
-            throw new IllegalArgumentException("Salsa20 requires exactly 8 bytes of IV");
+            throw new IllegalArgumentException(getAlgorithmName() + " requires exactly " + getNonceSize()
+                    + " bytes of IV");
         }
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
-            throw new IllegalArgumentException("Salsa20 Init parameters must include a key");
+            throw new IllegalArgumentException(getAlgorithmName() + " Init parameters must include a key");
         }
 
         KeyParameter key = (KeyParameter) ivParams.getParameters();
@@ -81,7 +81,11 @@ public class Salsa20Engine
         setKey(key.getKey(), iv);
         reset();
         initialised = true;
+    }
 
+    protected int getNonceSize()
+    {
+        return 8;
     }
 
     public String getAlgorithmName()
@@ -121,7 +125,7 @@ public class Salsa20Engine
     {
         if (!initialised)
         {
-            throw new IllegalStateException(getAlgorithmName()+" not initialised");
+            throw new IllegalStateException(getAlgorithmName() + " not initialised");
         }
 
         if ((inOff + len) > in.length)
@@ -165,7 +169,7 @@ public class Salsa20Engine
 
     // Private implementation
 
-    private void setKey(byte[] keyBytes, byte[] ivBytes)
+    protected void setKey(byte[] keyBytes, byte[] ivBytes)
     {
         if ((keyBytes.length != 16) && (keyBytes.length != 32)) {
             throw new IllegalArgumentException(getAlgorithmName() + " requires 128 bit or 256 bit key");
