@@ -31,9 +31,7 @@ public class Salsa20Engine
     private int         index = 0;
     private int[]       engineState = new int[STATE_SIZE]; // state
     private int[]       x = new int[STATE_SIZE] ; // internal buffer
-    private byte[]      keyStream   = new byte[STATE_SIZE * 4], // expanded state, 64 bytes
-                        workingKey  = null,
-                        workingIV   = null;
+    private byte[]      keyStream   = new byte[STATE_SIZE * 4]; // expanded state, 64 bytes
     private boolean     initialised = false;
 
     /*
@@ -80,10 +78,10 @@ public class Salsa20Engine
 
         KeyParameter key = (KeyParameter) ivParams.getParameters();
 
-        workingKey = key.getKey();
-        workingIV = iv;
+        setKey(key.getKey(), iv);
+        reset();
+        initialised = true;
 
-        setKey(workingKey, workingIV);
     }
 
     public String getAlgorithmName()
@@ -160,28 +158,29 @@ public class Salsa20Engine
 
     public void reset()
     {
-        setKey(workingKey, workingIV);
+        index = 0;
+        resetCounter();
+        engineState[8] = engineState[9] = 0;
     }
 
     // Private implementation
 
     private void setKey(byte[] keyBytes, byte[] ivBytes)
     {
-        workingKey = keyBytes;
-        workingIV  = ivBytes;
-
-        index = 0;
-        resetCounter();
+        if ((keyBytes.length != 16) && (keyBytes.length != 32)) {
+            throw new IllegalArgumentException(getAlgorithmName() + " requires 128 bit or 256 bit key");
+        }
+        
         int offset = 0;
         byte[] constants;
 
         // Key
-        engineState[1] = Pack.littleEndianToInt(workingKey, 0);
-        engineState[2] = Pack.littleEndianToInt(workingKey, 4);
-        engineState[3] = Pack.littleEndianToInt(workingKey, 8);
-        engineState[4] = Pack.littleEndianToInt(workingKey, 12);
+        engineState[1] = Pack.littleEndianToInt(keyBytes, 0);
+        engineState[2] = Pack.littleEndianToInt(keyBytes, 4);
+        engineState[3] = Pack.littleEndianToInt(keyBytes, 8);
+        engineState[4] = Pack.littleEndianToInt(keyBytes, 12);
 
-        if (workingKey.length == 32)
+        if (keyBytes.length == 32)
         {
             constants = sigma;
             offset = 16;
@@ -191,21 +190,20 @@ public class Salsa20Engine
             constants = tau;
         }
 
-        engineState[11] = Pack.littleEndianToInt(workingKey, offset);
-        engineState[12] = Pack.littleEndianToInt(workingKey, offset+4);
-        engineState[13] = Pack.littleEndianToInt(workingKey, offset+8);
-        engineState[14] = Pack.littleEndianToInt(workingKey, offset+12);
+        engineState[11] = Pack.littleEndianToInt(keyBytes, offset);
+        engineState[12] = Pack.littleEndianToInt(keyBytes, offset+4);
+        engineState[13] = Pack.littleEndianToInt(keyBytes, offset+8);
+        engineState[14] = Pack.littleEndianToInt(keyBytes, offset+12);
+
         engineState[0 ] = Pack.littleEndianToInt(constants, 0);
         engineState[5 ] = Pack.littleEndianToInt(constants, 4);
         engineState[10] = Pack.littleEndianToInt(constants, 8);
         engineState[15] = Pack.littleEndianToInt(constants, 12);
 
         // IV
-        engineState[6] = Pack.littleEndianToInt(workingIV, 0);
-        engineState[7] = Pack.littleEndianToInt(workingIV, 4);
+        engineState[6] = Pack.littleEndianToInt(ivBytes, 0);
+        engineState[7] = Pack.littleEndianToInt(ivBytes, 4);
         engineState[8] = engineState[9] = 0;
-
-        initialised = true;
     }
 
     private void generateKeyStream(byte[] output)
