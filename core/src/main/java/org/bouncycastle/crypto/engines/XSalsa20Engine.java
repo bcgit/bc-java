@@ -59,7 +59,7 @@ public class XSalsa20Engine extends Salsa20Engine
         engineState[7] = Pack.littleEndianToInt(ivBytes, 20);
 
         // Counter reset
-        engineState[8] = engineState[9] = 0;
+        resetCounter();
     }
 
 }
