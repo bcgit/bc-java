@@ -39,6 +39,29 @@ public class Salsa20Engine
      */
     private int cW0, cW1, cW2;
 
+    protected int rounds;
+
+    /**
+     * Creates a 20 round Salsa20 engine.
+     */
+    public Salsa20Engine()
+    {
+        this(20);
+    }
+
+    /**
+     * Creates a Salsa20 engine with a specific number of rounds.
+     * @param rounds the number of rounds (must be an even number).
+     */
+    public Salsa20Engine(int rounds)
+    {
+        this.rounds = rounds;
+        if (rounds % 2 != 0) {
+            throw new IllegalArgumentException("Number of rounds must be even");
+        }
+    }
+
+
     /**
      * initialise a Salsa20 cipher.
      *
@@ -90,7 +113,7 @@ public class Salsa20Engine
 
     public String getAlgorithmName()
     {
-        return "Salsa20";
+        return (rounds == 20) ? "Salsa20" : "Salsa20/" + rounds;
     }
 
     public byte returnByte(byte in)
@@ -212,7 +235,7 @@ public class Salsa20Engine
 
     private void generateKeyStream(byte[] output)
     {
-        salsaCore(20, engineState, x);
+        salsaCore(rounds, engineState, x);
         Pack.intToLittleEndian(x, output, 0);
     }
 
@@ -225,7 +248,9 @@ public class Salsa20Engine
      */    
     public static void salsaCore(int rounds, int[] input, int[] x)
     {
-        // TODO Exception if rounds odd?
+        if (rounds % 2 != 0) {
+            throw new IllegalArgumentException("Number of rounds must be even");
+        }
 
         System.arraycopy(input, 0, x, 0, input.length);
 
