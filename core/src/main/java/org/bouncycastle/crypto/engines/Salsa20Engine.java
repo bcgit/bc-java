@@ -20,7 +20,7 @@ public class Salsa20Engine
     /** Constants */
     private final static int STATE_SIZE = 16; // 16, 32 bit ints = 64 bytes
 
-    private final static byte[]
+    protected final static byte[]
         sigma = Strings.toByteArray("expand 32-byte k"),
         tau   = Strings.toByteArray("expand 16-byte k");
 
@@ -30,7 +30,7 @@ public class Salsa20Engine
      */
     private int         index = 0;
     protected int[]     engineState = new int[STATE_SIZE]; // state
-    private int[]       x = new int[STATE_SIZE] ; // internal buffer
+    protected int[]       x = new int[STATE_SIZE] ; // internal buffer
     private byte[]      keyStream   = new byte[STATE_SIZE * 4]; // expanded state, 64 bytes
     private boolean     initialised = false;
 
@@ -126,17 +126,21 @@ public class Salsa20Engine
         if (index == 0)
         {
             generateKeyStream(keyStream);
-
-            if (++engineState[8] == 0)
-            {
-                ++engineState[9];
-            }
+            advanceCounter();
         }
 
         byte out = (byte)(keyStream[index]^in);
         index = (index + 1) & 63;
 
         return out;
+    }
+
+    protected void advanceCounter()
+    {
+        if (++engineState[8] == 0)
+        {
+            ++engineState[9];
+        }
     }
 
     public void processBytes(
@@ -171,11 +175,7 @@ public class Salsa20Engine
             if (index == 0)
             {
                 generateKeyStream(keyStream);
-
-                if (++engineState[8] == 0)
-                {
-                    ++engineState[9];
-                }
+                advanceCounter();
             }
 
             out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
@@ -186,11 +186,14 @@ public class Salsa20Engine
     public void reset()
     {
         index = 0;
+        resetLimitCounter();
         resetCounter();
-        engineState[8] = engineState[9] = 0;
     }
 
-    // Private implementation
+    protected void resetCounter()
+    {
+        engineState[8] = engineState[9] = 0;
+    }
 
     protected void setKey(byte[] keyBytes, byte[] ivBytes)
     {
@@ -230,10 +233,10 @@ public class Salsa20Engine
         // IV
         engineState[6] = Pack.littleEndianToInt(ivBytes, 0);
         engineState[7] = Pack.littleEndianToInt(ivBytes, 4);
-        engineState[8] = engineState[9] = 0;
+        resetCounter();
     }
 
-    private void generateKeyStream(byte[] output)
+    protected void generateKeyStream(byte[] output)
     {
         salsaCore(rounds, engineState, x);
         Pack.intToLittleEndian(x, output, 0);
@@ -304,12 +307,12 @@ public class Salsa20Engine
      *
      * @return  rotated x
      */
-    private static int rotl(int x, int y)
+    protected static int rotl(int x, int y)
     {
         return (x << y) | (x >>> -y);
     }
 
-    private void resetCounter()
+    private void resetLimitCounter()
     {
         cW0 = 0;
         cW1 = 0;
