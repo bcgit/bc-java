@@ -28,6 +28,7 @@ import org.bouncycastle.jcajce.provider.symmetric.Blowfish;
 import org.bouncycastle.jcajce.provider.symmetric.CAST5;
 import org.bouncycastle.jcajce.provider.symmetric.CAST6;
 import org.bouncycastle.jcajce.provider.symmetric.Camellia;
+import org.bouncycastle.jcajce.provider.symmetric.ChaCha;
 import org.bouncycastle.jcajce.provider.symmetric.DES;
 import org.bouncycastle.jcajce.provider.symmetric.DESede;
 import org.bouncycastle.jcajce.provider.symmetric.GOST28147;
@@ -51,6 +52,7 @@ import org.bouncycastle.jcajce.provider.symmetric.TEA;
 import org.bouncycastle.jcajce.provider.symmetric.Twofish;
 import org.bouncycastle.jcajce.provider.symmetric.VMPC;
 import org.bouncycastle.jcajce.provider.symmetric.VMPCKSA3;
+import org.bouncycastle.jcajce.provider.symmetric.XSalsa20;
 import org.bouncycastle.jcajce.provider.symmetric.XTEA;
 
 public class PrivateConstructorTest
@@ -80,7 +82,9 @@ public class PrivateConstructorTest
         evilNoConstructionTest(RC5.class);
         evilNoConstructionTest(RC6.class);
         evilNoConstructionTest(Rijndael.class);
+        evilNoConstructionTest(ChaCha.class);
         evilNoConstructionTest(Salsa20.class);
+        evilNoConstructionTest(XSalsa20.class);
         evilNoConstructionTest(SEED.class);
         evilNoConstructionTest(Serpent.class);
         evilNoConstructionTest(Skipjack.class);
