@@ -423,6 +423,20 @@ public final class Arrays
         return copy;
     }
 
+    public static byte[] clone(byte[] data, byte[] existing)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        if ((existing == null) || (existing.length != data.length))
+        {
+            return clone(data);
+        }
+        System.arraycopy(data, 0, existing, 0, existing.length);
+        return existing;
+    }
+
     public static byte[][] clone(byte[][] data)
     {
         if (data == null)
@@ -468,6 +482,33 @@ public final class Arrays
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
+    }
+
+    public static long[] clone(long[] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        long[] copy = new long[data.length];
+        
+        System.arraycopy(data, 0, copy, 0, data.length);
+        
+        return copy;
+    }
+
+    public static long[] clone(long[] data, long[] existing)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        if ((existing == null) || (existing.length != data.length))
+        {
+            return clone(data);
+        }
+        System.arraycopy(data, 0, existing, 0, existing.length);
+        return existing;
     }
 
     public static short[] clone(short[] data)

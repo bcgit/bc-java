@@ -195,8 +195,10 @@ public class CTSTest
         byte[] aes1Block = Hex.decode("4920776f756c64206c696b6520746865");
         byte[] preErrata = Hex.decode("e7664c13ff28c965b0d2a0e7ec353706");   // CTS style one block
         byte[] pstErrata = Hex.decode("97687268d6ecccc0c07b25e25ecfe584");   // CBC style one block
+        byte[] pstErrataNonZeroIV = Hex.decode("571f5108c53fe95ab52df783df933fa3");
 
         testCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, pstErrata);
+        testCTS(8, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), aes1Block), aes1Block, pstErrataNonZeroIV);
         testOldCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
 
         testExceptions();
