@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.engines;
+package org.bouncycastle.crypto.test.speedy;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -6,10 +6,13 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.TweakableBlockCipherParameters;
 
-public class ThreefishReferenceEngine implements BlockCipher
+public class ThreefishReferenceEngine
+    implements BlockCipher
 {
 
-    /** The tweak input is always 128 bits */
+    /**
+     * The tweak input is always 128 bits
+     */
     private static final int TWEAK_SIZE = 16;
 
     private static long C_240 = 0x1BD11BDAA9FC1A22L;
@@ -28,40 +31,44 @@ public class ThreefishReferenceEngine implements BlockCipher
      * Rotation constants Rd,j for Nw = 8.
      */
     private static final int[][] R8 = {
-            { 46, 36, 19, 37 },
-            { 33, 27, 14, 42 },
-            { 17, 49, 36, 39 },
-            { 44, 9, 54, 56 },
-            { 39, 30, 34, 24 },
-            { 13, 50, 10, 17 },
-            { 25, 29, 39, 43 },
-            { 8, 35, 56, 22 } };
+        {46, 36, 19, 37},
+        {33, 27, 14, 42},
+        {17, 49, 36, 39},
+        {44, 9, 54, 56},
+        {39, 30, 34, 24},
+        {13, 50, 10, 17},
+        {25, 29, 39, 43},
+        {8, 35, 56, 22}};
 
     private long[] t;
 
     private long kw[];
 
-    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
+    public void init(boolean forEncryption, CipherParameters params)
+        throws IllegalArgumentException
     {
         if (params instanceof TweakableBlockCipherParameters)
         {
-            init(forEncryption, (TweakableBlockCipherParameters) params);
-        } else if (params instanceof KeyParameter)
+            init(forEncryption, (TweakableBlockCipherParameters)params);
+        }
+        else if (params instanceof KeyParameter)
         {
-            init(forEncryption, new TweakableBlockCipherParameters((KeyParameter) params, new byte[TWEAK_SIZE]));
-        } else
+            init(forEncryption, new TweakableBlockCipherParameters((KeyParameter)params, new byte[TWEAK_SIZE]));
+        }
+        else
         {
             throw new IllegalArgumentException("Invalid parameter passed to Threefish init - "
-                    + params.getClass().getName());
+                + params.getClass().getName());
         }
     }
 
-    public void init(boolean forEncryption, TweakableBlockCipherParameters params) throws IllegalArgumentException
+    public void init(boolean forEncryption, TweakableBlockCipherParameters params)
+        throws IllegalArgumentException
     {
         // TODO: Remove some of the NPEs that can be avoided in the Params
         // classes
         if ((params.getKey() == null) || (params.getKey().getKey() == null)
-                || (params.getKey().getKey().length != blocksize))
+            || (params.getKey().getKey().length != blocksize))
         {
             throw new IllegalArgumentException("Threefish key must be same size as block (%d bytes)" + blocksize);
         }
@@ -118,14 +125,14 @@ public class ThreefishReferenceEngine implements BlockCipher
     {
         int index = off;
 
-        bytes[index++] = (byte) word;
-        bytes[index++] = (byte) (word >> 8);
-        bytes[index++] = (byte) (word >> 16);
-        bytes[index++] = (byte) (word >> 24);
-        bytes[index++] = (byte) (word >> 32);
-        bytes[index++] = (byte) (word >> 40);
-        bytes[index++] = (byte) (word >> 48);
-        bytes[index++] = (byte) (word >> 56);
+        bytes[index++] = (byte)word;
+        bytes[index++] = (byte)(word >> 8);
+        bytes[index++] = (byte)(word >> 16);
+        bytes[index++] = (byte)(word >> 24);
+        bytes[index++] = (byte)(word >> 32);
+        bytes[index++] = (byte)(word >> 40);
+        bytes[index++] = (byte)(word >> 48);
+        bytes[index++] = (byte)(word >> 56);
     }
 
     public String getAlgorithmName()
@@ -138,8 +145,9 @@ public class ThreefishReferenceEngine implements BlockCipher
         return blocksize;
     }
 
-    public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException,
-            IllegalStateException
+    public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
+        throws DataLengthException,
+        IllegalStateException
     {
         // TODO: Check init state
         if (kw == null)
@@ -162,7 +170,8 @@ public class ThreefishReferenceEngine implements BlockCipher
             unpackBlock(in, inOff);
             encryptBlock();
             packBlock(out, outOff);
-        } else
+        }
+        else
         {
             unpackBlock(in, inOff);
             decryptBlock();
@@ -179,7 +188,7 @@ public class ThreefishReferenceEngine implements BlockCipher
             // Add subkey every 4 rounds
             if ((d % 4) == 0)
             {
-                uninjectSubkey(d/4);
+                uninjectSubkey(d / 4);
             }
 
             // Permute
@@ -225,7 +234,7 @@ public class ThreefishReferenceEngine implements BlockCipher
             // Add subkey every 4 rounds
             if ((d % 4) == 0)
             {
-                injectSubkey(d/4);
+                injectSubkey(d / 4);
             }
 
             // Mix
@@ -239,7 +248,7 @@ public class ThreefishReferenceEngine implements BlockCipher
         }
 
         // Final key addition
-        injectSubkey(rounds/4);
+        injectSubkey(rounds / 4);
     }
 
     private void permute()
@@ -287,7 +296,7 @@ public class ThreefishReferenceEngine implements BlockCipher
         // y1 = (x1 <<< R(d mod 8,j)) xor y0
         block[b1] = Long.rotateLeft(block[b1], rotations[d % 8][j]) ^ block[b0];
     }
-    
+
     private void unmix(int j, int d)
     {
         // ed,2j and ed,2j+1
@@ -299,7 +308,7 @@ public class ThreefishReferenceEngine implements BlockCipher
 
         // x0 = y0 - x1
         block[b0] = block[b0] - block[b1];
-        
+
     }
 
     public static void main(String[] args)
@@ -307,8 +316,9 @@ public class ThreefishReferenceEngine implements BlockCipher
         ThreefishReferenceEngine engine = new ThreefishReferenceEngine();
         engine.fu();
     }
-    
-    private void fu() {
+
+    private void fu()
+    {
         block[0] = 0x12;
         block[1] = 0x34;
         block[2] = 0x56;
@@ -317,39 +327,46 @@ public class ThreefishReferenceEngine implements BlockCipher
         block[5] = 0xAB;
         block[6] = 0xCD;
         block[7] = 0xEF;
-        
-        for(int i = 0; i < block.length; i++) {
+
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         mix(0, 4);
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         unmix(0, 4);
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         permute();
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         unpermute();
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         generateKeySchedule(new byte[blocksize], new byte[TWEAK_SIZE]);
         injectSubkey(5);
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
         uninjectSubkey(5);
         System.err.println("=========");
-        for(int i = 0; i < block.length; i++) {
+        for (int i = 0; i < block.length; i++)
+        {
             System.err.println(i + " : " + Long.toHexString(block[i]));
         }
     }

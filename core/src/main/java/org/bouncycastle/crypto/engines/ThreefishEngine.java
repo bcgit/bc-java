@@ -9,41 +9,60 @@ import org.bouncycastle.crypto.params.TweakableBlockCipherParameters;
 /**
  * Implementation of the Threefish tweakable large block cipher in 256, 512 and 1024 bit block
  * sizes.
- * <p>
+ * <p/>
  * This is the 1.3 version of Threefish defined in the Skein hash function submission to the NIST
  * SHA-3 competition in October 2010.
- * <p>
+ * <p/>
  * Threefish was designed by Niels Ferguson - Stefan Lucks - Bruce Schneier - Doug Whiting - Mihir
  * Bellare - Tadayoshi Kohno - Jon Callas - Jesse Walker.
- * <p>
+ * <p/>
  * This implementation inlines all round functions, unrolls 8 rounds, and uses 1.2k of static tables
  * to speed up key schedule injection. <br>
  * 2 x block size state is retained by each cipher instance.
  */
-public class ThreefishEngine implements BlockCipher
+public class ThreefishEngine
+    implements BlockCipher
 {
-    /** 256 bit block size - Threefish-256 */
+    /**
+     * 256 bit block size - Threefish-256
+     */
     public static final int BLOCKSIZE_256 = 256;
-    /** 512 bit block size - Threefish-512 */
+    /**
+     * 512 bit block size - Threefish-512
+     */
     public static final int BLOCKSIZE_512 = 512;
-    /** 1024 bit block size - Threefish-1024 */
+    /**
+     * 1024 bit block size - Threefish-1024
+     */
     public static final int BLOCKSIZE_1024 = 1024;
 
-    /** Size of the tweak in bytes (always 128 bit/16 bytes) */
+    /**
+     * Size of the tweak in bytes (always 128 bit/16 bytes)
+     */
     private static final int TWEAK_SIZE_BYTES = 16;
     private static final int TWEAK_SIZE_WORDS = TWEAK_SIZE_BYTES / 8;
 
-    /** Rounds in Threefish-256 */
+    /**
+     * Rounds in Threefish-256
+     */
     private static final int ROUNDS_256 = 72;
-    /** Rounds in Threefish-512 */
+    /**
+     * Rounds in Threefish-512
+     */
     private static final int ROUNDS_512 = 72;
-    /** Rounds in Threefish-1024 */
+    /**
+     * Rounds in Threefish-1024
+     */
     private static final int ROUNDS_1024 = 80;
 
-    /** Max rounds of any of the variants */
+    /**
+     * Max rounds of any of the variants
+     */
     private static final int MAX_ROUNDS = ROUNDS_1024;
 
-    /** Key schedule parity constant */
+    /**
+     * Key schedule parity constant
+     */
     private static final long C_240 = 0x1BD11BDAA9FC1A22L;
 
     /* Pre-calculated modulo arithmetic tables for key schedule lookups */
@@ -63,13 +82,19 @@ public class ThreefishEngine implements BlockCipher
         }
     }
 
-    /** Block size in bytes */
+    /**
+     * Block size in bytes
+     */
     private final int blocksizeBytes;
 
-    /** Block size in 64 bit words */
+    /**
+     * Block size in 64 bit words
+     */
     private final int blocksizeWords;
 
-    /** Buffer for byte oriented processBytes to call internal word API */
+    /**
+     * Buffer for byte oriented processBytes to call internal word API
+     */
     private final long[] currentBlock;
 
     /**
@@ -77,20 +102,23 @@ public class ThreefishEngine implements BlockCipher
      */
     private final long[] t = new long[5];
 
-    /** Key schedule words */
+    /**
+     * Key schedule words
+     */
     private final long[] kw;
 
-    /** The internal cipher implementation (varies by blocksize) */
+    /**
+     * The internal cipher implementation (varies by blocksize)
+     */
     private final ThreefishCipher cipher;
 
     private boolean forEncryption;
 
     /**
      * Constructs a new Threefish cipher, with a specified block size.
-     * 
-     * @param blocksizeBits
-     *            the block size in bits, one of {@link #BLOCKSIZE_256}, {@link #BLOCKSIZE_512},
-     *            {@link #BLOCKSIZE_1024}.
+     *
+     * @param blocksizeBits the block size in bits, one of {@link #BLOCKSIZE_256}, {@link #BLOCKSIZE_512},
+     *                      {@link #BLOCKSIZE_1024}.
      */
     public ThreefishEngine(final int blocksizeBits)
     {
@@ -104,7 +132,8 @@ public class ThreefishEngine implements BlockCipher
          */
         this.kw = new long[2 * blocksizeWords + 1];
 
-        switch (blocksizeBits) {
+        switch (blocksizeBits)
+        {
         case BLOCKSIZE_256:
             cipher = new Threefish256Cipher(kw, t);
             break;
@@ -116,18 +145,18 @@ public class ThreefishEngine implements BlockCipher
             break;
         default:
             throw new IllegalArgumentException(
-                    "Invalid blocksize - Threefish is defined with block size of 256, 512, or 1024 bits");
+                "Invalid blocksize - Threefish is defined with block size of 256, 512, or 1024 bits");
         }
     }
 
     /**
      * Initialise the engine.
-     * 
-     * @param params
-     *            an instance of {@link TweakableBlockCipherParameters}, or {@link KeyParameter} (to
-     *            use a 0 tweak)
+     *
+     * @param params an instance of {@link TweakableBlockCipherParameters}, or {@link KeyParameter} (to
+     *               use a 0 tweak)
      */
-    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
+    public void init(boolean forEncryption, CipherParameters params)
+        throws IllegalArgumentException
     {
         final byte[] keyBytes;
         final byte[] tweakBytes;
@@ -137,14 +166,16 @@ public class ThreefishEngine implements BlockCipher
             TweakableBlockCipherParameters tParams = (TweakableBlockCipherParameters)params;
             keyBytes = tParams.getKey().getKey();
             tweakBytes = tParams.getTweak();
-        } else if (params instanceof KeyParameter)
+        }
+        else if (params instanceof KeyParameter)
         {
             keyBytes = ((KeyParameter)params).getKey();
             tweakBytes = null;
-        } else
+        }
+        else
         {
             throw new IllegalArgumentException("Invalid parameter passed to Threefish init - "
-                    + params.getClass().getName());
+                + params.getClass().getName());
         }
 
         long[] keyWords = null;
@@ -155,7 +186,7 @@ public class ThreefishEngine implements BlockCipher
             if (keyBytes.length != this.blocksizeBytes)
             {
                 throw new IllegalArgumentException("Threefish key must be same size as block (" + blocksizeBytes
-                        + " bytes)");
+                    + " bytes)");
             }
             keyWords = new long[blocksizeWords];
             for (int i = 0; i < keyWords.length; i++)
@@ -169,20 +200,17 @@ public class ThreefishEngine implements BlockCipher
             {
                 throw new IllegalArgumentException("Threefish tweak must be " + TWEAK_SIZE_BYTES + " bytes");
             }
-            tweakWords = new long[] { bytesToWord(tweakBytes, 0), bytesToWord(tweakBytes, 8) };
+            tweakWords = new long[]{bytesToWord(tweakBytes, 0), bytesToWord(tweakBytes, 8)};
         }
         init(forEncryption, keyWords, tweakWords);
     }
 
     /**
      * Initialise the engine, specifying the key and tweak directly.
-     * 
-     * @param forEncryption
-     *            the cipher mode.
-     * @param key
-     *            the words of the key, or <code>null</code> to use the current key.
-     * @param tweak
-     *            the 2 word (128 bit) tweak, or <code>null</code> to use the current tweak.
+     *
+     * @param forEncryption the cipher mode.
+     * @param key           the words of the key, or <code>null</code> to use the current key.
+     * @param tweak         the 2 word (128 bit) tweak, or <code>null</code> to use the current tweak.
      */
     public void init(boolean forEncryption, final long[] key, final long[] tweak)
     {
@@ -202,7 +230,7 @@ public class ThreefishEngine implements BlockCipher
         if (key.length != this.blocksizeWords)
         {
             throw new IllegalArgumentException("Threefish key must be same size as block (" + blocksizeWords
-                    + " words)");
+                + " words)");
         }
 
         /*
@@ -254,8 +282,9 @@ public class ThreefishEngine implements BlockCipher
     {
     }
 
-    public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException,
-            IllegalStateException
+    public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
+        throws DataLengthException,
+        IllegalStateException
     {
         if ((outOff + blocksizeBytes) > out.length)
         {
@@ -282,18 +311,15 @@ public class ThreefishEngine implements BlockCipher
 
     /**
      * Process a block of data represented as 64 bit words.
-     * 
-     * @param in
-     *            a block sized buffer of words to process.
-     * @param out
-     *            a block sized buffer of words to receive the output of the operation.
+     *
+     * @param in  a block sized buffer of words to process.
+     * @param out a block sized buffer of words to receive the output of the operation.
      * @return the number of 8 byte words processed (which will be the same as the block size).
-     * @throws DataLengthException
-     *             if either the input or output is not block sized.
-     * @throws IllegalStateException
-     *             if this engine is not initialised.
+     * @throws DataLengthException if either the input or output is not block sized.
+     * @throws IllegalStateException if this engine is not initialised.
      */
-    public int processBlock(long[] in, long[] out) throws DataLengthException, IllegalStateException
+    public int processBlock(long[] in, long[] out)
+        throws DataLengthException, IllegalStateException
     {
         if (kw[blocksizeWords] == 0)
         {
@@ -312,7 +338,8 @@ public class ThreefishEngine implements BlockCipher
         if (forEncryption)
         {
             cipher.encryptBlock(in, out);
-        } else
+        }
+        else
         {
             cipher.decryptBlock(in, out);
         }
@@ -391,9 +418,13 @@ public class ThreefishEngine implements BlockCipher
 
     private static abstract class ThreefishCipher
     {
-        /** The extended + repeated tweak words */
+        /**
+         * The extended + repeated tweak words
+         */
         protected final long[] t;
-        /** The extended + repeated key words */
+        /**
+         * The extended + repeated key words
+         */
         protected final long[] kw;
 
         protected ThreefishCipher(final long[] kw, final long[] t)
@@ -408,9 +439,12 @@ public class ThreefishEngine implements BlockCipher
 
     }
 
-    private static final class Threefish256Cipher extends ThreefishCipher
+    private static final class Threefish256Cipher
+        extends ThreefishCipher
     {
-        /** Mix rotation constants defined in Skein 1.3 specification */
+        /**
+         * Mix rotation constants defined in Skein 1.3 specification
+         */
         private static final int ROTATION_0_0 = 14, ROTATION_0_1 = 16;
         private static final int ROTATION_1_0 = 52, ROTATION_1_1 = 57;
         private static final int ROTATION_2_0 = 23, ROTATION_2_1 = 40;
@@ -636,9 +670,12 @@ public class ThreefishEngine implements BlockCipher
 
     }
 
-    private static final class Threefish512Cipher extends ThreefishCipher
+    private static final class Threefish512Cipher
+        extends ThreefishCipher
     {
-        /** Mix rotation constants defined in Skein 1.3 specification */
+        /**
+         * Mix rotation constants defined in Skein 1.3 specification
+         */
         private static final int ROTATION_0_0 = 46, ROTATION_0_1 = 36, ROTATION_0_2 = 19, ROTATION_0_3 = 37;
         private static final int ROTATION_1_0 = 33, ROTATION_1_1 = 27, ROTATION_1_2 = 14, ROTATION_1_3 = 42;
         private static final int ROTATION_2_0 = 17, ROTATION_2_1 = 49, ROTATION_2_2 = 36, ROTATION_2_3 = 39;
@@ -951,9 +988,12 @@ public class ThreefishEngine implements BlockCipher
         }
     }
 
-    private static final class Threefish1024Cipher extends ThreefishCipher
+    private static final class Threefish1024Cipher
+        extends ThreefishCipher
     {
-        /** Mix rotation constants defined in Skein 1.3 specification */
+        /**
+         * Mix rotation constants defined in Skein 1.3 specification
+         */
         private static final int ROTATION_0_0 = 24, ROTATION_0_1 = 13, ROTATION_0_2 = 8, ROTATION_0_3 = 47;
         private static final int ROTATION_0_4 = 8, ROTATION_0_5 = 17, ROTATION_0_6 = 22, ROTATION_0_7 = 37;
         private static final int ROTATION_1_0 = 38, ROTATION_1_1 = 19, ROTATION_1_2 = 10, ROTATION_1_3 = 55;

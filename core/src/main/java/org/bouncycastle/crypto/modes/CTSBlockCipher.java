@@ -241,19 +241,19 @@ public class CTSBlockCipher
         {
             byte[]  lastBlock = new byte[blockSize];
 
-            if (cipher instanceof CBCBlockCipher)
-            {
-                BlockCipher c = ((CBCBlockCipher)cipher).getUnderlyingCipher();
-
-                c.processBlock(buf, 0, block, 0);
-            }
-            else
-            {
-                cipher.processBlock(buf, 0, block, 0);
-            }
-
             if (bufOff > blockSize)
             {
+                if (cipher instanceof CBCBlockCipher)
+                {
+                    BlockCipher c = ((CBCBlockCipher)cipher).getUnderlyingCipher();
+
+                    c.processBlock(buf, 0, block, 0);
+                }
+                else
+                {
+                    cipher.processBlock(buf, 0, block, 0);
+                }
+
                 for (int i = blockSize; i != bufOff; i++)
                 {
                     lastBlock[i - blockSize] = (byte)(block[i - blockSize] ^ buf[i]);
@@ -266,6 +266,8 @@ public class CTSBlockCipher
             }
             else
             {
+                cipher.processBlock(buf, 0, block, 0);
+
                 System.arraycopy(block, 0, out, outOff, blockSize);
             }
         }

@@ -14,7 +14,8 @@ public final class Threefish
     {
     }
 
-    public static class ECB_256 extends BaseBlockCipher
+    public static class ECB_256
+        extends BaseBlockCipher
     {
         public ECB_256()
         {
@@ -22,7 +23,8 @@ public final class Threefish
         }
     }
 
-    public static class ECB_512 extends BaseBlockCipher
+    public static class ECB_512
+        extends BaseBlockCipher
     {
         public ECB_512()
         {
@@ -30,7 +32,8 @@ public final class Threefish
         }
     }
 
-    public static class ECB_1024 extends BaseBlockCipher
+    public static class ECB_1024
+        extends BaseBlockCipher
     {
         public ECB_1024()
         {
@@ -38,7 +41,8 @@ public final class Threefish
         }
     }
 
-    public static class KeyGen_256 extends BaseKeyGenerator
+    public static class KeyGen_256
+        extends BaseKeyGenerator
     {
         public KeyGen_256()
         {
@@ -46,7 +50,8 @@ public final class Threefish
         }
     }
 
-    public static class KeyGen_512 extends BaseKeyGenerator
+    public static class KeyGen_512
+        extends BaseKeyGenerator
     {
         public KeyGen_512()
         {
@@ -54,7 +59,8 @@ public final class Threefish
         }
     }
 
-    public static class KeyGen_1024 extends BaseKeyGenerator
+    public static class KeyGen_1024
+        extends BaseKeyGenerator
     {
         public KeyGen_1024()
         {
@@ -62,7 +68,8 @@ public final class Threefish
         }
     }
 
-    public static class AlgParams_256 extends IvAlgorithmParameters
+    public static class AlgParams_256
+        extends IvAlgorithmParameters
     {
         protected String engineToString()
         {
@@ -70,7 +77,8 @@ public final class Threefish
         }
     }
 
-    public static class AlgParams_512 extends IvAlgorithmParameters
+    public static class AlgParams_512
+        extends IvAlgorithmParameters
     {
         protected String engineToString()
         {
@@ -78,7 +86,8 @@ public final class Threefish
         }
     }
 
-    public static class AlgParams_1024 extends IvAlgorithmParameters
+    public static class AlgParams_1024
+        extends IvAlgorithmParameters
     {
         protected String engineToString()
         {
@@ -86,7 +95,8 @@ public final class Threefish
         }
     }
 
-    public static class Mappings extends AlgorithmProvider
+    public static class Mappings
+        extends AlgorithmProvider
     {
         private static final String PREFIX = Threefish.class.getName();
 

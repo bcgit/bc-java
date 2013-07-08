@@ -1,22 +1,5 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
-
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.DESedeKeySpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.RC2ParameterSpec;
-import javax.crypto.spec.RC5ParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -32,6 +15,24 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.RC2ParameterSpec;
+import javax.crypto.spec.RC5ParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -398,10 +399,10 @@ public class BlockCipherTest
             "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
             "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6",
         "Threefish-1024/CTS/NoPadding",
-        "1b68e5850bc140c36db314ea1fe24e663a53680b692316ab117208ff8a9ca2f7" +
-            "d6ecd94be000669c6e0c15efa9f43f4e004dc6481652d76b70f7ab6dd9f8e93a" +
-            "c5380585aa8e7e78e2db6bec246ecdc5ecb20cc58f4b977800b85b76c9ae384b" +
-            "088e3f302dc703eb6e07067b5e152fb2bb855796ce81dcbc227c2c3033a4e1a6",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87b59b" +
+        "e63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb491f280f" +
+        "4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a419544ef5907" +
+        "f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003",
         "Threefish-256/CBC/WithCTS",
         "1c46830ef0a43a0869bf070a87f0d4e63f2458edfa5654bafd8520358dae8bf9" +
             "2a8c039d41e87bb65a907331dde317450d38aba6cb3885bfbe0aee148503e37b" +
@@ -413,10 +414,10 @@ public class BlockCipherTest
             "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
             "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6",
         "Threefish-1024/CBC/WithCTS",
-        "1b68e5850bc140c36db314ea1fe24e663a53680b692316ab117208ff8a9ca2f7" +
-            "d6ecd94be000669c6e0c15efa9f43f4e004dc6481652d76b70f7ab6dd9f8e93a" +
-            "c5380585aa8e7e78e2db6bec246ecdc5ecb20cc58f4b977800b85b76c9ae384b" +
-            "088e3f302dc703eb6e07067b5e152fb2bb855796ce81dcbc227c2c3033a4e1a6",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87b59b" +
+        "e63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb491f280f" +
+        "4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a419544ef5907" +
+        "f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003",
         "Threefish-256/ECB/TBCPadding",
         "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
             "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
