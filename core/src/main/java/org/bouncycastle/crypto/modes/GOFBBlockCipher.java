@@ -206,6 +206,9 @@ public class GOFBBlockCipher
      */
     public void reset()
     {
+        firstStep = true;
+        N3 = 0;
+        N4 = 0;
         System.arraycopy(IV, 0, ofbV, 0, IV.length);
 
         cipher.reset();
