@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
-import org.bouncycastle.crypto.engines.Salsa20Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
@@ -252,7 +251,7 @@ public class ChaChaTest
         KeyParameter key = new KeyParameter(Hex.decode("80000000000000000000000000000000"));
         ParametersWithIV parameters = new ParametersWithIV(key, Hex.decode("0000000000000000"));
 
-        StreamCipher salsa = new Salsa20Engine();
+        StreamCipher salsa = new ChaChaEngine();
 
         salsa.init(true, parameters);
 
