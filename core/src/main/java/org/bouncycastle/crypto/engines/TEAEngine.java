@@ -105,6 +105,11 @@ public class TEAEngine
     private void setKey(
         byte[]      key)
     {
+        if (key.length != 16) 
+        {
+            throw new IllegalArgumentException("Key size must be 128 bits.");
+        }
+
         _a = bytesToInt(key, 0);
         _b = bytesToInt(key, 4);
         _c = bytesToInt(key, 8);

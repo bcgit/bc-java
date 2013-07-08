@@ -107,6 +107,11 @@ public class XTEAEngine
     private void setKey(
         byte[]      key)
     {
+        if (key.length != 16) 
+        {
+            throw new IllegalArgumentException("Key size must be 128 bits.");
+        }
+
         int i, j;
         for (i = j = 0; i < 4; i++,j+=4)
         {
