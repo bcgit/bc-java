@@ -122,7 +122,8 @@ public class RegressionTest
         new NonMemoableDigestTest(),
         new RSAKeyEncapsulationTest(),
         new ECIESKeyEncapsulationTest(),
-        new HashCommitmentTest()
+        new HashCommitmentTest(),
+        new BlockCipherResetTest()
     };
 
     public static void main(
