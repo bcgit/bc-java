@@ -148,15 +148,25 @@ be operated in.
 <tr><td><b>BufferedBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CBCBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
-<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
-<tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
-<tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
 <tr><td><b>SICBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>Also known as CTR mode</td></tr>
 <tr><td><b>OpenPGPCFBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>GOFBBlockCipher</b></td><td>BlockCipher</td><td>GOST OFB mode</td></tr>
 
 </table>
+
+<p>
+The base interface for AEAD (Authenticated Encryption Associated Data) modes is <b>AEADBlockCipher</b>
+and has the following implemenations.
+<p>
+<table cellpadding=5 cellspacing=0 border=1 width=80%>
+<tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
+<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
+<tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
+<tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
+<tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
+</table>
+</p>
 
 <p>
 <b>BufferedBlockCipher</b> has a further sub-classes
@@ -499,8 +509,10 @@ The policy files can be found at the same place you downloaded the JDK.
 <li>OpenPGPCFB
 <li>CTS (equivalent to CBC/WithCTS)
 <li>GOFB
-<li>CCM
-<li>EAX
+<li>CCM (AEAD)
+<li>EAX (AEAD)
+<li>GCM (AEAD)
+<li>OCB (AEAD)
 </ul>
 
 <p>
@@ -508,6 +520,11 @@ Where <i>(n)</i> is a multiple of 8 that gives the blocksize in bits,
 eg, OFB8. Note that OFB and CFB mode can be used with plain text that
 is not an exact multiple of the block size if NoPadding has been specified.
 <p>
+All <i>AEAD</i> (Authenticated Encryption Associated Data) modes support 
+Additional Authentication Data (AAD) using the <code>Cipher.updateAAD()</code>
+methods added in Java SE 7.
+<p>
+
 
 Padding Schemes:
 <ul>
