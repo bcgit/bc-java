@@ -35,7 +35,8 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Test whether block ciphers implement reset contract on init, encrypt/decrypt and reset.
  */
-public class BlockCipherResetTest extends SimpleTest
+public class BlockCipherResetTest
+    extends SimpleTest
 {
 
     @Override
@@ -45,7 +46,8 @@ public class BlockCipherResetTest extends SimpleTest
     }
 
     @Override
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         // 128 bit block ciphers
         testReset("AESFastEngine", new AESFastEngine(), new AESFastEngine(), new KeyParameter(new byte[16]));
@@ -68,19 +70,19 @@ public class BlockCipherResetTest extends SimpleTest
 
         // primitive block cipher modes (don't reset on processBlock)
         testModeReset("AES/CBC", new CBCBlockCipher(new AESEngine()), new CBCBlockCipher(new AESEngine()),
-                new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
         testModeReset("AES/SIC", new SICBlockCipher(new AESEngine()), new SICBlockCipher(new AESEngine()),
-                new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
         testModeReset("AES/CFB", new CFBBlockCipher(new AESEngine(), 128), new CFBBlockCipher(new AESEngine(), 128),
-                new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
         testModeReset("AES/OFB", new OFBBlockCipher(new AESEngine(), 128), new OFBBlockCipher(new AESEngine(), 128),
-                new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
         testModeReset("AES/GCTR", new GOFBBlockCipher(new DESEngine()), new GOFBBlockCipher(new DESEngine()),
-                new ParametersWithIV(new KeyParameter(new byte[8]), new byte[8]));
+            new ParametersWithIV(new KeyParameter(new byte[8]), new byte[8]));
         testModeReset("AES/OpenPGPCFB", new OpenPGPCFBBlockCipher(new AESEngine()), new OpenPGPCFBBlockCipher(
-                new AESEngine()), new KeyParameter(new byte[16]));
+            new AESEngine()), new KeyParameter(new byte[16]));
         testModeReset("AES/PGPCFB", new PGPCFBBlockCipher(new AESEngine(), false), new PGPCFBBlockCipher(
-                new AESEngine(), false), new KeyParameter(new byte[16]));
+            new AESEngine(), false), new KeyParameter(new byte[16]));
 
         // PGPCFB with IV is broken (it's also not a PRP, so probably shouldn't be a BlockCipher)
         // testModeReset("AES/PGPCFBwithIV", new PGPCFBBlockCipher(new AESEngine(), true), new
@@ -94,13 +96,13 @@ public class BlockCipherResetTest extends SimpleTest
     }
 
     private void testModeReset(String test, BlockCipher cipher1, BlockCipher cipher2, CipherParameters params)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         testReset(test, false, cipher1, cipher2, params);
     }
 
     private void testReset(String test, BlockCipher cipher1, BlockCipher cipher2, CipherParameters params)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         testReset(test, true, cipher1, cipher2, params);
     }
@@ -109,13 +111,14 @@ public class BlockCipherResetTest extends SimpleTest
                            boolean testCryptReset,
                            BlockCipher cipher1,
                            BlockCipher cipher2,
-                           CipherParameters params) throws InvalidCipherTextException
+                           CipherParameters params)
+        throws InvalidCipherTextException
     {
         cipher1.init(true, params);
 
         byte[] plaintext = new byte[cipher1.getBlockSize()];
         byte[] ciphertext = new byte[cipher1.getAlgorithmName().contains("PGPCFBwithIV") ? 2 * cipher1.getBlockSize() + 2
-                : cipher1.getBlockSize()];
+            : cipher1.getBlockSize()];
 
         // Establish baseline answer
         crypt(cipher1, true, plaintext, ciphertext);
@@ -134,7 +137,8 @@ public class BlockCipherResetTest extends SimpleTest
                             CipherParameters params,
                             boolean encrypt,
                             byte[] pretext,
-                            byte[] posttext) throws InvalidCipherTextException
+                            byte[] posttext)
+        throws InvalidCipherTextException
     {
         // Do initial run
         byte[] output = new byte[posttext.length];
@@ -157,7 +161,8 @@ public class BlockCipherResetTest extends SimpleTest
         try
         {
             crypt(cipher, encrypt, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test + " init did not reset data.");
         }
@@ -173,7 +178,8 @@ public class BlockCipherResetTest extends SimpleTest
         try
         {
             crypt(cipher, encrypt, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test + " reset did not reset data.");
         }
@@ -184,7 +190,7 @@ public class BlockCipherResetTest extends SimpleTest
     }
 
     private static void crypt(BlockCipher cipher1, boolean encrypt, byte[] plaintext, byte[] output)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         cipher1.processBlock(plaintext, 0, output, 0);
         if (cipher1.getAlgorithmName().contains("PGPCFBwithIV") && !encrypt)
