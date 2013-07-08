@@ -10,36 +10,41 @@ import org.bouncycastle.crypto.params.SkeinParameters;
 /**
  * Implementation of the Skein parameterised MAC function in 256, 512 and 1024 bit block sizes,
  * based on the {@link ThreefishEngine Threefish} tweakable block cipher.
- * <p>
+ * <p/>
  * This is the 1.3 version of Skein defined in the Skein hash function submission to the NIST SHA-3
  * competition in October 2010.
- * <p>
+ * <p/>
  * Skein was designed by Niels Ferguson - Stefan Lucks - Bruce Schneier - Doug Whiting - Mihir
  * Bellare - Tadayoshi Kohno - Jon Callas - Jesse Walker.
- * <p>
- * 
+ * <p/>
+ *
  * @see SkeinEngine
  * @see SkeinParameters
  */
-public class SkeinMac implements Mac
+public class SkeinMac
+    implements Mac
 {
-    /** 256 bit block size - Skein MAC-256 */
+    /**
+     * 256 bit block size - Skein MAC-256
+     */
     public static final int SKEIN_256 = SkeinEngine.SKEIN_256;
-    /** 512 bit block size - Skein MAC-512 */
+    /**
+     * 512 bit block size - Skein MAC-512
+     */
     public static final int SKEIN_512 = SkeinEngine.SKEIN_512;
-    /** 1024 bit block size - Skein MAC-1024 */
+    /**
+     * 1024 bit block size - Skein MAC-1024
+     */
     public static final int SKEIN_1024 = SkeinEngine.SKEIN_1024;
 
     private SkeinEngine engine;
 
     /**
      * Constructs a Skein MAC with an internal state size and output size.
-     * 
-     * @param stateSizeBits
-     *            the internal state size in bits - one of {@link #SKEIN_256}, {@link #SKEIN_512} or
-     *            {@link #SKEIN_1024}.
-     * @param digestSizeBits
-     *            the output/MAC size to produce in bits, which must be an integral number of bytes.
+     *
+     * @param stateSizeBits  the internal state size in bits - one of {@link #SKEIN_256}, {@link #SKEIN_512} or
+     *                       {@link #SKEIN_1024}.
+     * @param digestSizeBits the output/MAC size to produce in bits, which must be an integral number of bytes.
      */
     public SkeinMac(int stateSizeBits, int digestSizeBits)
     {
@@ -59,21 +64,25 @@ public class SkeinMac implements Mac
     /**
      * Initialises the Skein digest with the provided parameters.<br>
      * See {@link SkeinParameters} for details on the parameterisation of the Skein hash function.
+     *
      * @param params an instance of {@link SkeinParameters} or {@link KeyParameter}.
      */
-    public void init(CipherParameters params) throws IllegalArgumentException
+    public void init(CipherParameters params)
+        throws IllegalArgumentException
     {
         SkeinParameters skeinParameters;
         if (params instanceof SkeinParameters)
         {
-            skeinParameters = (SkeinParameters) params;
-        } else if (params instanceof KeyParameter)
+            skeinParameters = (SkeinParameters)params;
+        }
+        else if (params instanceof KeyParameter)
         {
-            skeinParameters = new SkeinParameters.Builder().setKey(((KeyParameter) params).getKey()).build();
-        } else
+            skeinParameters = new SkeinParameters.Builder().setKey(((KeyParameter)params).getKey()).build();
+        }
+        else
         {
             throw new IllegalArgumentException("Invalid parameter passed to Skein MAC init - "
-                    + params.getClass().getName());
+                + params.getClass().getName());
         }
         if (skeinParameters.getKey() == null)
         {

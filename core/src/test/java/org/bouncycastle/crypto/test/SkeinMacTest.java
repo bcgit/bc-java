@@ -9,7 +9,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
-public class SkeinMacTest extends SimpleTest
+public class SkeinMacTest
+    extends SimpleTest
 {
     private static class Case
     {
@@ -56,7 +57,7 @@ public class SkeinMacTest extends SimpleTest
         public String toString()
         {
             return String.format("new Case(%d, %d, \"%s\", \"%s\", \"%s\"),", blockSize, outputSize,
-                    new String(Hex.encode(message)), new String(Hex.encode(key)), new String(Hex.encode(digest)));
+                new String(Hex.encode(message)), new String(Hex.encode(key)), new String(Hex.encode(digest)));
         }
 
     }
@@ -122,7 +123,8 @@ public class SkeinMacTest extends SimpleTest
         return "SkeinMac";
     }
 
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         for (int i = 0; i < TEST_CASES.length; i++)
         {
@@ -145,13 +147,14 @@ public class SkeinMacTest extends SimpleTest
         if (!MessageDigest.isEqual(output, dc.getDigest()))
         {
             fail(digest.getAlgorithmName() + " message " + (dc.getMessage().length * 8) + " mismatch.\n Message  " + new String(Hex.encode(dc.getMessage()))
-                    + "\n Key      " + new String(Hex.encode(dc.getKey())) + "\n Expected "
-                    + new String(Hex.encode(dc.getDigest())) + "\n Actual   " + new String(Hex.encode(output)));
+                + "\n Key      " + new String(Hex.encode(dc.getKey())) + "\n Expected "
+                + new String(Hex.encode(dc.getDigest())) + "\n Actual   " + new String(Hex.encode(output)));
         }
 
     }
 
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
+        throws IOException
     {
         runTest(new SkeinMacTest());
     }
