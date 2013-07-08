@@ -278,14 +278,15 @@ public class BaseBlockCipher
         }
         else if (modeName.startsWith("CCM"))
         {
-            ivLength = baseEngine.getBlockSize();
+            ivLength = 13; // CCM nonce 7..13 bytes
             cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
         }
         else if (modeName.startsWith("OCB"))
         {
             if (engineProvider != null)
             {
-                ivLength = baseEngine.getBlockSize();
+                // Nonce restricted to max 120 bits over 128 bit block cipher since draft-irtf-cfrg-ocb-03
+                ivLength = 15;
                 cipher = new AEADGenericBlockCipher(new OCBBlockCipher(baseEngine, engineProvider.get()));
             }
             else
