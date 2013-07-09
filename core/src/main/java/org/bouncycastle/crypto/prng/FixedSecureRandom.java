@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+/**
+ * A secure random that returns pre-seeded data to calls of nextBytes() or generateSeed().
+ */
 public class FixedSecureRandom
     extends SecureRandom
 {
@@ -70,7 +73,16 @@ public class FixedSecureRandom
         
         _index += bytes.length;
     }
-    
+
+    public byte[] generateSeed(int numBytes)
+    {
+        byte[] bytes = new byte[numBytes];
+
+        this.nextBytes(bytes);
+
+        return bytes;
+    }
+
     //
     // classpath's implementation of SecureRandom doesn't currently go back to nextBytes
     // when next is called. We can't override next as it's a final method.

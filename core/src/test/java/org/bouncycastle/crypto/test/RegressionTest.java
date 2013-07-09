@@ -38,6 +38,11 @@ public class RegressionTest
         new SkipjackTest(),
         new BlowfishTest(),
         new TwofishTest(),
+        new Threefish256Test(),
+        new Threefish512Test(),
+        new Threefish1024Test(),
+        new SkeinDigestTest(),
+        new SkeinMacTest(),
         new CAST5Test(),
         new CAST6Test(),
         new GOST28147Test(),
@@ -117,7 +122,8 @@ public class RegressionTest
         new NonMemoableDigestTest(),
         new RSAKeyEncapsulationTest(),
         new ECIESKeyEncapsulationTest(),
-        new HashCommitmentTest()
+        new HashCommitmentTest(),
+        new BlockCipherResetTest()
     };
 
     public static void main(

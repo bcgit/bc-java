@@ -57,7 +57,8 @@ public class PolicyQualifierInfo
     * Creates a new <code>PolicyQualifierInfo</code> instance.
     *
     * @param as <code>PolicyQualifierInfo</code> X509 structure
-    * encoded as an ASN1Sequence. 
+    * encoded as an ASN1Sequence.
+    * @deprecated use PolicyQualifierInfo.getInstance()
     */
    public PolicyQualifierInfo(
        ASN1Sequence as)

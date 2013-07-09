@@ -10,7 +10,8 @@ public class RegressionTest
         new DualECDRBGTest(),
         new HashDRBGTest(),
         new HMacDRBGTest(),
-        new SP800RandomTest()
+        new SP800RandomTest(),
+        new FixedSecureRandomTest()
     };
 
     public static void main(

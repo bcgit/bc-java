@@ -1,22 +1,5 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
-
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.DESedeKeySpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.RC2ParameterSpec;
-import javax.crypto.spec.RC5ParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -32,6 +15,24 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.RC2ParameterSpec;
+import javax.crypto.spec.RC5ParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -204,6 +205,12 @@ public class BlockCipherTest
         "6cd6f7c5d2c655556d7a9e98a1696d1875e9f1b2fc991e28a2d55b56861e80bd",
         "Twofish/OFB/NoPadding",
         "821c54b1b54ae113cf74595eefe10c83b61c9682fc81f92c52f39a3a693f88b8",
+        "Threefish-256/OFB/NoPadding",
+        "546ea995dd302f1efcb1f27d14bad468280a3a7994c2af75dfdf1e9fc5ef2373",
+        "Threefish-512/OFB/NoPadding",
+        "152df966484ecc2e9ddfc386559732f7f632e4008920804a1bde4efcf2e6e2f2",
+        "Threefish-1024/OFB/NoPadding",
+        "03953ac751a7377812c6e3e4d14b36c6953f9b390acaa892811c10001c9be454",
         "RC2/OFB/NoPadding",
         "0a07cb78537cb04c0c74e28a7b86b80f80acadf87d6ef32792f1a8cf74b39f74",
         "RC5/OFB/NoPadding",
@@ -220,6 +227,12 @@ public class BlockCipherTest
         "6ca6078755b263f09787d830b6fda7b7748494634bdc73ab68540cf9f6b7eccf",
         "Twofish/OFB8/NoPadding",
         "825dcec234ad52253d6e064b0d769bc04b1142435933f4a510ffc20d70095a88",
+        "Threefish-256/OFB8/NoPadding",
+        "545fbd92313512127218262dd4394569aca96ba122e1432b661ecfc01af3a25c",
+        "Threefish-512/OFB8/NoPadding",
+        "15f6e7d215662c525ea982cab56409cf833157e1af06edd57a13c71487904fea",
+        "Threefish-1024/OFB8/NoPadding",
+        "03d80b67ff7139d9dd8b07280642f94074496e5fc37b1ba1f8593cdf64a1e4ca",
         "RC2/OFB8/NoPadding",
         "0aa26c6f6a820fe7d38da97085995ad62e2e293323a76300fcd4eb572810f7c6",
         "RC5/OFB8/NoPadding",
@@ -236,6 +249,12 @@ public class BlockCipherTest
         "6cd6f7c5d2c6555561167fe9b10665102206869339122f1ed89efa4a985397f6",
         "Twofish/CFB/NoPadding",
         "821c54b1b54ae113cf74595eefe10c8308b7a438277de4f40948ac2d172d53d2",
+        "Threefish-256/CFB/NoPadding",
+        "546ea995dd302f1efcb1f27d14bad468280a3a7994c2af75dfdf1e9fc5ef2373",
+        "Threefish-512/CFB/NoPadding",
+        "152df966484ecc2e9ddfc386559732f7f632e4008920804a1bde4efcf2e6e2f2",
+        "Threefish-1024/CFB/NoPadding",
+        "03953ac751a7377812c6e3e4d14b36c6953f9b390acaa892811c10001c9be454",
         "RC2/CFB/NoPadding",
         "0a07cb78537cb04ca1401450d5cd411c7da7fa5b6baaa17bb2137bd95c9f26a5",
         "RC5/CFB/NoPadding",
@@ -252,6 +271,12 @@ public class BlockCipherTest
         "6ca63aaada9188d2410c07513cc0736b9888770768c25a5befc776beea5bdc4c",
         "Twofish/CFB8/NoPadding",
         "825d12af040721cf5ed4a4798647837ac5eb14d752aace28728aeb37b2010abd",
+        "Threefish-256/CFB8/NoPadding",
+        "545fbf0a4b925f399cf7540f1cc1cc6012e329ab2d4db0aa0dfa29ee2a2019d1",
+        "Threefish-512/CFB8/NoPadding",
+        "15f695964f20b95ed72afad75f905788839c53bed2ae5fdfdfb13e3241fd7f94",
+        "Threefish-1024/CFB8/NoPadding",
+        "03d897c89e740d2254f717b73315151d9a34c829e4162232b3cd5f5158ff367b",
         "RC2/CFB8/NoPadding",
         "0aa227f94be3a32ff927c5d25647ea41d7c2a1e94012fc7f2ad6767b9664bce5",
         "RC5/CFB8/NoPadding",
@@ -265,7 +290,29 @@ public class BlockCipherTest
         "Twofish/ECB/TBCPadding",
         "70336d9c9718a8a2ced1b19deed973a3c58af7ea71a69e7efc4df082dca581c019d7daa58d02b89aab6e8c0d17202439",
         "RC2/ECB/TBCPadding",
-        "eb5b889bbcced12eb6b1a3da6a3d965bba66a5edfdd4c8a6b6b1a3da6a3d965b6b5359ba5e69b179"
+        "eb5b889bbcced12eb6b1a3da6a3d965bba66a5edfdd4c8a6b6b1a3da6a3d965b6b5359ba5e69b179",
+        "DES/CTR/NoPadding",
+        "537572e480c1714fb47081d35eb18eaca9e0a5aee982f105438a0db6cece1f6d",
+        "DESede/CTR/NoPadding",
+        "481e9872acea7fcfa93b7d4e34ec7bab340c10faba2e43b879d40d38e07c422d",
+        "SKIPJACK/CTR/NoPadding",
+        "71143a124e3a0cdeee98a7b843baa05bd1d59faee8ec9b89880e070314a04cc2",
+        "Blowfish/CTR/NoPadding",
+        "6cd6f7c5d2c65555d2b31f8614f54ec654f5e7888d515008d59302c3edfcc6cb",
+        "Twofish/CTR/NoPadding",
+        "821c54b1b54ae113cf74595eefe10c83d09e95d4599190b9bbd5bc71dd703730",
+        "Threefish-256/CTR/NoPadding",
+        "546ea995dd302f1efcb1f27d14bad468280a3a7994c2af75dfdf1e9fc5ef2373",
+        "Threefish-512/CTR/NoPadding",
+        "152df966484ecc2e9ddfc386559732f7f632e4008920804a1bde4efcf2e6e2f2",
+        "Threefish-1024/CTR/NoPadding",
+        "03953ac751a7377812c6e3e4d14b36c6953f9b390acaa892811c10001c9be454",
+        "RC2/CTR/NoPadding",
+        "0a07cb78537cb04c8c5a0a39a15977a7eb19f3c48a42759c234868c391a99c63",
+        "RC5/CTR/NoPadding",
+        "c62b233df296283b97f17364d5f69a1ff91f46659cf9856caefd322a936203a7",
+        "IDEA/CTR/NoPadding",
+        "dd447da3cbdcf81f4694ab7715d79e3f90af5682e8c318b8f7dadbed6b5c9714",
     };
 
     static String[] cipherTests2 =
@@ -280,8 +327,127 @@ public class BlockCipherTest
         "60fa2f8fae5aa2a38e9ac77d0246726b32df660db51a710ceb7511e451"
     };
 
+    static String[] cipherTestsLargeBlock =
+    {
+        "Threefish-256",
+        "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+             "31533aa864e6a40edc3e24b36260d94374893dc2e479793292e29c18a6ee01a9",
+        "Threefish-512",
+        "35d0c46770ebb3bf62fadd48765db209df215d7cd18a8b18d11625e70067e1fa" +
+            "bb98982312ce1fdfccae1a59408e1d5418b400a7bf0d1c4e9ea4afa4395886d7" +
+            "35d0c46770ebb3bf62fadd48765db209df215d7cd18a8b18d11625e70067e1fa" +
+            "bb98982312ce1fdfccae1a59408e1d5418b400a7bf0d1c4e9ea4afa4395886d7" +
+            "ad7ec86b2137af1ddb64794d714c4e1d7b687b19fc9781ef887a0ad7f88e18fc" +
+            "1baa6123ec8bc497e7eb7b5090cfd756fd5333425ed5a240cb96735dea9713d9",
+        "Threefish-1024",
+        "df6d789e301c6a5e22e0cff0b44666630d44ce774a41b628ebaff6adc86d9e66" +
+            "af50a282a4313552bc9b861cb286ab569e2e23b1c97cdb5cb1fde1bacfba9bfb" +
+            "de3b443218e16b6038537b3d803ff5dbd26b13c177a5bfb597ffccca142a5905" +
+            "8c0f74623daa96bff95b716674701034e7947ce0541426fa5177bc1a519b23ba" +
+            "462f1724989612e49ca5e92a0129ec7be576846fe2616664674e16a29ce8679c" +
+            "0adda9034fbd652910c2ae5afacde10281ab18dbeeb83464dc21ff66b0d358ff" +
+            "2328c73aca59e9095a7bca94acc79d10038eab6ef865545bcf73f4caeeba1844" +
+            "6add98350c8276e5abfb8709bb6c01ef3297b862818a4996b744f375b9126e5c",
+        "Threefish-256/CBC/NoPadding",
+        "1c46830ef0a43a0869bf070a87f0d4e63f2458edfa5654bafd8520358dae8bf9" +
+            "2a8c039d41e87bb65a907331dde317450d38aba6cb3885bfbe0aee148503e37b" +
+            "973c5e8a16c4309f7a4229d9943ab403082b5836431b9d1646b619f368e057b3" +
+            "0931ce1b791b641dd3e79f2b536897f3c537e3b4588dc03c3888f9bab3bc7a0e",
+        "Threefish-512/CBC/NoPadding",
+        "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
+            "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6" +
+            "03efe066d8d6d57b15b04729632de0ce5636b8ccd28219ac17ef836734556e15" +
+            "e90356111279412a814b660150323a416138b2b62942f2d0cd08ee0bb45b0dd7",
+        "Threefish-1024/CBC/NoPadding",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87" +
+            "b59be63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb" +
+            "491f280f4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a" +
+            "419544ef5907f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003",
+        "Threefish-256/CBC/PKCS7Padding",
+        "1c46830ef0a43a0869bf070a87f0d4e63f2458edfa5654bafd8520358dae8bf9" +
+            "2a8c039d41e87bb65a907331dde317450d38aba6cb3885bfbe0aee148503e37b" +
+            "973c5e8a16c4309f7a4229d9943ab403082b5836431b9d1646b619f368e057b3" +
+            "0931ce1b791b641dd3e79f2b536897f3c537e3b4588dc03c3888f9bab3bc7a0e" +
+            "f96cb468a5cd39a003f976464a7d072c94cb72a3fe739f101aa7b5452bc3fbba",
+        "Threefish-512/CBC/PKCS7Padding",
+        "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
+            "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6" +
+            "03efe066d8d6d57b15b04729632de0ce5636b8ccd28219ac17ef836734556e15" +
+            "e90356111279412a814b660150323a416138b2b62942f2d0cd08ee0bb45b0dd7" +
+            "03902162280012e59efa15c6beecfbf440a6a0c4474bbbb2f74a0ad31bcd398f" +
+            "b24728c3605a4ced3c92c30a5e231113abafaf6f83a3867978e3cdd74091d09f",
+        "Threefish-1024/CBC/PKCS7Padding",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87" +
+            "b59be63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb" +
+            "491f280f4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a" +
+            "419544ef5907f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003" +
+            "4ddd16ad731ad9a32d0f196a72284f7a8df98918e3e22f1708662edeb1810d2b" +
+            "bafd4200e849f3288b55634b37f99f0f7b2dd192a5944fc211ef9e37b67a829b" +
+            "005a5ec609f736875fdf8946bd79c1daa6c44c9d6733a2223cf8b7e5203b1cfd" +
+            "76995f67e570d9c403b2a2e3f3a89c63c7850ee8d47d4398ac377345a139dda4",
+        "Threefish-256/CTS/NoPadding",
+        "1c46830ef0a43a0869bf070a87f0d4e63f2458edfa5654bafd8520358dae8bf9" +
+            "2a8c039d41e87bb65a907331dde317450d38aba6cb3885bfbe0aee148503e37b" +
+            "0931ce1b791b641dd3e79f2b536897f3c537e3b4588dc03c3888f9bab3bc7a0e" +
+            "973c5e8a16c4309f7a4229d9943ab403082b5836431b9d1646b619f368e057b3",
+        "Threefish-512/CTS/NoPadding",
+        "03efe066d8d6d57b15b04729632de0ce5636b8ccd28219ac17ef836734556e15" +
+            "e90356111279412a814b660150323a416138b2b62942f2d0cd08ee0bb45b0dd7" +
+            "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
+            "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6",
+        "Threefish-1024/CTS/NoPadding",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87b59b" +
+        "e63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb491f280f" +
+        "4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a419544ef5907" +
+        "f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003",
+        "Threefish-256/CBC/WithCTS",
+        "1c46830ef0a43a0869bf070a87f0d4e63f2458edfa5654bafd8520358dae8bf9" +
+            "2a8c039d41e87bb65a907331dde317450d38aba6cb3885bfbe0aee148503e37b" +
+            "0931ce1b791b641dd3e79f2b536897f3c537e3b4588dc03c3888f9bab3bc7a0e" +
+            "973c5e8a16c4309f7a4229d9943ab403082b5836431b9d1646b619f368e057b3",
+        "Threefish-512/CBC/WithCTS",
+        "03efe066d8d6d57b15b04729632de0ce5636b8ccd28219ac17ef836734556e15" +
+            "e90356111279412a814b660150323a416138b2b62942f2d0cd08ee0bb45b0dd7" +
+            "caee9b663eba4663de1cd6f17ffc51dc8b808c95f91e12a818ab31436985830b" +
+            "3aa886a93e53849d34e713f36db52bac3557b137328434f41f825f3948a611c6",
+        "Threefish-1024/CBC/WithCTS",
+        "7540a8fe54a1a1d117ba1f970a12002cf9e24477daef9439dfc43b79a88a9e87b59b" +
+        "e63aa448b4e02e8b9a6464419c35b0b3f97219e6c88ed5429d0f9ffb40bb491f280f" +
+        "4281af177e254828f82e90d196c6bf9afa31926cf5bf0cc3dc81f28a419544ef5907" +
+        "f3b8bf6179da37ff07134d9c6d147521e5c840d5086ec74c1003",
+        "Threefish-256/ECB/TBCPadding",
+        "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
+            "89c4e79b90153a821bdd4efd5eb1e2cda89b6a91540a003eef03868472d8cfce",
+        "Threefish-512/ECB/TBCPadding",
+        "35d0c46770ebb3bf62fadd48765db209df215d7cd18a8b18d11625e70067e1fa" +
+            "bb98982312ce1fdfccae1a59408e1d5418b400a7bf0d1c4e9ea4afa4395886d7" +
+            "35d0c46770ebb3bf62fadd48765db209df215d7cd18a8b18d11625e70067e1fa" +
+            "bb98982312ce1fdfccae1a59408e1d5418b400a7bf0d1c4e9ea4afa4395886d7" +
+            "dd6bfa1006e4df51298e382ca397a2c398cdb4d65009dce77c5f0a31f9807218" +
+            "a72372a8a0df3b1bacd5dbfb116ebbe314e0b0cd64fd2c8ae8a81491c2534a2a",
+        "Threefish-1024/ECB/TBCPadding",
+        "df6d789e301c6a5e22e0cff0b44666630d44ce774a41b628ebaff6adc86d9e66" +
+            "af50a282a4313552bc9b861cb286ab569e2e23b1c97cdb5cb1fde1bacfba9bfb" +
+            "de3b443218e16b6038537b3d803ff5dbd26b13c177a5bfb597ffccca142a5905" +
+            "8c0f74623daa96bff95b716674701034e7947ce0541426fa5177bc1a519b23ba" +
+            "7312262dc3a25984847d1b05cb624f5751946f136ee7bd0a9a4bbac5dd3bd213" +
+            "702390d3a53d1a4132f59383cce4fe61e08cd3c73c570190d1c8b60940031ef7" +
+            "42f6775b00fb0b4273a14b46a3fc0e760e02f75dc6100ca9c038c3f151e03145" +
+            "92686fd8cccbee74d246a8c59ad80205c9f9aaeb100ea5812837ee8699753301",
+    };
+
     static byte[]   input1 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
     static byte[]   input2 = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c");
+    static byte[]   inputLargeBlock = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f" +
+                                                 "000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f" +
+                                                 "000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f" +
+                                                 "000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
 
     static RC2ParameterSpec rc2Spec = new RC2ParameterSpec(128, Hex.decode("0123456789abcdef"));
     static RC5ParameterSpec rc5Spec = new RC5ParameterSpec(16, 16, 32, Hex.decode("0123456789abcdef"));
@@ -928,6 +1094,11 @@ public class BlockCipherTest
         for (int i = 0; i != cipherTests2.length; i += 2)
         {
             test(cipherTests2[i], input2, Hex.decode(cipherTests2[i + 1]));
+        }
+
+        for (int i = 0; i != cipherTestsLargeBlock.length; i += 2)
+        {
+            test(cipherTestsLargeBlock[i], inputLargeBlock, Hex.decode(cipherTestsLargeBlock[i + 1]));
         }
 
         //
