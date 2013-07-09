@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -32,6 +33,17 @@ public class CertificatePolicies
         boolean          explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
+    }
+
+    /**
+     * Retrieve a CertificatePolicies for a passed in Extensions object, if present.
+     *
+     * @param extensions the extensions object to be examined.
+     * @return  the CertificatePolicies, null if the extension is not present.
+     */
+    public static CertificatePolicies fromExtensions(Extensions extensions)
+    {
+        return CertificatePolicies.getInstance(extensions.getExtensionParsedValue(Extension.certificatePolicies));
     }
 
     /**
@@ -69,6 +81,19 @@ public class CertificatePolicies
         System.arraycopy(policyInformation, 0, tmp, 0, policyInformation.length);
 
         return tmp;
+    }
+
+    public PolicyInformation getPolicyInformation(ASN1ObjectIdentifier policyIdentifier)
+    {
+        for (int i = 0; i != policyInformation.length; i++)
+        {
+            if (policyIdentifier.equals(policyInformation[i].getPolicyIdentifier()))
+            {
+                 return policyInformation[i];
+            }
+        }
+
+        return null;
     }
 
     /**
