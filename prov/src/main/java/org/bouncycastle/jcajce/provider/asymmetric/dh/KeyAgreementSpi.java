@@ -50,17 +50,34 @@ public class KeyAgreementSpi
     private byte[] bigIntToBytes(
         BigInteger    r)
     {
+        //
+        // RFC 2631 (2.1.2) specifies that the secret should be padded with leading zeros if necessary
+        // must be the same length as p
+        //
+        int expectedLength = (p.bitLength() + 7) / 8;
+
         byte[]    tmp = r.toByteArray();
-        
-        if (tmp[0] == 0)
+
+        if (tmp.length == expectedLength)
         {
-            byte[]    ntmp = new byte[tmp.length - 1];
-            
-            System.arraycopy(tmp, 1, ntmp, 0, ntmp.length);
-            return ntmp;
+            return tmp;
         }
-        
-        return tmp;
+
+        if (tmp[0] == 0 && tmp.length == expectedLength + 1)
+        {
+            byte[]    rv = new byte[tmp.length - 1];
+            
+            System.arraycopy(tmp, 1, rv, 0, rv.length);
+            return rv;
+        }
+
+        // tmp must be shorter than expectedLength
+        // pad to the left with zeros.
+        byte[]    rv = new byte[expectedLength];
+
+        System.arraycopy(tmp, 0, rv, rv.length - tmp.length, tmp.length);
+
+        return rv;
     }
     
     protected Key engineDoPhase(
