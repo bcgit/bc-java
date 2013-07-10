@@ -30,6 +30,7 @@ Release 1.50
 <li>OAEP parameters were being ignored on CMS key trans recipient processing. This has been fixed.</li>
 <li>OpenPGP NotationData was restricting the name and value lengths to 255 characters and truncating silently. This has been fixed.</li>
 <li>CTS mode is now in alignment with the errata for RFC 2040, as detailed in RFC 3962.</li>
+<li>Occasionally the provider implementation of DH KeyAgreement would drop a leading zero byte off the start of the shared secret (see RFC 2631 2.1.2). This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
