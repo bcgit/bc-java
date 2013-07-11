@@ -159,6 +159,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                 </copy>
                 <packJar jarbase="${artifacts.jars.dir}/@{target}">
                     <manifest-element>
@@ -182,6 +183,7 @@
                             <include name="**/*.cer" />
                             <include name="**/*.der" />
                             <include name="**/*.message" />
+                            <include name="**/*.txt" />
                             <include name="**/*.properties" />
                         </fileset>
                     </fileset-element>
