@@ -1238,49 +1238,47 @@ public class X509Name
 
         buf.append('=');
 
-        int     index = buf.length();
-        int     start = index;
-
+        int start = buf.length();
         buf.append(value);
-
-        int     end = buf.length();
+        int end = buf.length();
 
         if (value.length() >= 2 && value.charAt(0) == '\\' && value.charAt(1) == '#')
         {
-            index += 2;   
-        }
-
-        while (index != end)
-        {
-            if ((buf.charAt(index) == ',')
-               || (buf.charAt(index) == '"')
-               || (buf.charAt(index) == '\\')
-               || (buf.charAt(index) == '+')
-               || (buf.charAt(index) == '=')
-               || (buf.charAt(index) == '<')
-               || (buf.charAt(index) == '>')
-               || (buf.charAt(index) == ';'))
-            {
-                buf.insert(index, "\\");
-                index++;
-                end++;
-            }
-
-            index++;
-        }
-
-        while (buf.charAt(start) == ' ')
-        {
-            buf.insert(start, "\\");
             start += 2;
         }
 
-        int endBuf = buf.length() - 1;
-
-        while (endBuf >= 0 && buf.charAt(endBuf) == ' ')
+        while (start < end && buf.charAt(start) == ' ')
         {
-            buf.insert(endBuf, '\\');
-            endBuf--;
+            buf.insert(start, "\\");
+            start += 2;
+            ++end;
+        }
+
+        while (--end > start && buf.charAt(end) == ' ')
+        {
+            buf.insert(end, '\\');
+        }
+
+        while (start <= end)
+        {
+            switch (buf.charAt(start))
+            {
+            case ',':
+            case '"':
+            case '\\':
+            case '+':
+            case '=':
+            case '<':
+            case '>':
+            case ';':
+                buf.insert(start, "\\");
+                start += 2;
+                ++end;
+                break;
+            default:
+                ++start;
+                break;
+            }
         }
     }
 
