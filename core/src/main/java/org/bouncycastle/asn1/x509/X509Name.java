@@ -1269,7 +1269,7 @@ public class X509Name
             index++;
         }
 
-        while (buf.charAt(start) == ' ')
+        while (start < buf.length() && buf.charAt(start) == ' ')
         {
             buf.insert(start, "\\");
             start += 2;
