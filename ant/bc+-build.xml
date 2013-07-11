@@ -631,6 +631,7 @@
     <target name="test">
         <junit fork="yes" dir="${basedir}" failureProperty="test.failed">
             <classpath>
+                <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">
                     <include name="**/*.jar" />
                     <exclude name="**/bcprov-jdk*.jar" />
