@@ -217,7 +217,7 @@
             <sequential>
                 <copy toDir="@{toDir}">
                      <fileset dir="${basedir}">
-                         <include name="**/*.html" />
+                         <include name="*.html" />
                      </fileset>
                 </copy>
                 <copy toDir="@{toDir}/docs">
@@ -245,6 +245,7 @@
 
         <copy todir="${lcrypto.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <exclude name="build/**" />
                  <include name="org/bouncycastle/*.java" />
                  <include name="org/bouncycastle/math/**/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.java" />
@@ -279,6 +280,7 @@
 
         <copy todir="${provider.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <exclude name="build/**" />
                  <exclude name="PKITS/**" />
                  <exclude name="cmp/**" />
                  <exclude name="rfc4134/**" />
