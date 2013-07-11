@@ -606,6 +606,7 @@
              <fileset dir="${src.dir}" includes="**/*.cer" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
+             <fileset dir="${src.dir}" includes="**/*.txt" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
              <fileset dir="${src.dir}" includes="**/*.properties" />
              <fileset dir="${src.dir}" includes="**/*.message" />
