@@ -8,6 +8,19 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
+ *
+ * <pre>
+ * SignerIdentifier ::= CHOICE {
+ *     issuerAndSerialNumber IssuerAndSerialNumber,
+ *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
+ * }
+ *
+ * SubjectKeyIdentifier ::= OCTET STRING
+ * </pre>
+ */
+
 public class SignerIdentifier
     extends ASN1Object
     implements ASN1Choice
@@ -34,6 +47,15 @@ public class SignerIdentifier
     
     /**
      * return a SignerIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link SignerIdentifier} object
+     * <li> {@link IssuerAndSerialNumber} object
+     * <li> {@link org.bouncycastle.asn1.ASN1OctetString ASN1OctetString} input formats with SignerIdentifier structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Primitive ASN1Primitive} ??
+     * </ul>
      *
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -82,14 +104,6 @@ public class SignerIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * SignerIdentifier ::= CHOICE {
-     *     issuerAndSerialNumber IssuerAndSerialNumber,
-     *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
-     * }
-     *
-     * SubjectKeyIdentifier ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

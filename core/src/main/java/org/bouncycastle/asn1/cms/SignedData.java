@@ -16,7 +16,19 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * a signed data object.
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
+ * <p>
+ * A signed data object.
+ * <pre>
+ * SignedData ::= SEQUENCE {
+ *     version CMSVersion,
+ *     digestAlgorithms DigestAlgorithmIdentifiers,
+ *     encapContentInfo EncapsulatedContentInfo,
+ *     certificates [0] IMPLICIT CertificateSet OPTIONAL,
+ *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+ *     signerInfos SignerInfos
+ *   }
+ * </pre>
  */
 public class SignedData
     extends ASN1Object
@@ -35,19 +47,27 @@ public class SignedData
     private boolean certsBer;
     private boolean        crlsBer;
 
+    /**
+     * return a SignedData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null -> null
+     * <li> {@link SignedData} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with SignedData structure inside
+     * </ul>
+     *
+     * @param obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static SignedData getInstance(
         Object  o)
     {
-        if (o instanceof SignedData)
+        if (o == null || o instanceof SignedData)
         {
             return (SignedData)o;
         }
-        else if (o != null)
-        {
-            return new SignedData(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
+        return new SignedData(ASN1Sequence.getInstance(o));
     }
 
     public SignedData(
@@ -257,16 +277,6 @@ public class SignedData
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * SignedData ::= SEQUENCE {
-     *     version CMSVersion,
-     *     digestAlgorithms DigestAlgorithmIdentifiers,
-     *     encapContentInfo EncapsulatedContentInfo,
-     *     certificates [0] IMPLICIT CertificateSet OPTIONAL,
-     *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
-     *     signerInfos SignerInfos
-     *   }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
