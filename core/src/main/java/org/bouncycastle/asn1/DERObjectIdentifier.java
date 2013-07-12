@@ -12,8 +12,7 @@ import org.bouncycastle.util.Arrays;
 public class DERObjectIdentifier
     extends ASN1Primitive
 {
-    String identifier;
-
+    private String identifier;
     private byte[] body;
 
     /**
@@ -193,6 +192,89 @@ public class DERObjectIdentifier
 
         this.identifier = oid.getId() + "." + branchID;
     }
+
+
+
+    /**
+     * Extend OID on a byte-array stem with one integer value.
+     * The extending value must be positive (0..LONG_MAX)
+     */
+    DERObjectIdentifier(DERObjectIdentifier oid, long branchID1)
+    {
+        if (branchID1 < 0) {
+            throw new IllegalArgumentException("long "+branchID1+" is not a valid OID branch value");
+        }
+        // Get stem
+        byte[] oid_stem  = oid.getBody();
+        // Find out necessary new space
+        int    encodeLen = encodeLength(branchID1);
+        // Allocate new array + copy over the stem
+        this.body = Arrays.copyOf(oid_stem, oid_stem.length + encodeLen);
+        // Encode the new value
+        encodeValue(this.body, oid_stem.length, encodeLen, branchID1);
+    }
+
+    /**
+     * Extend OID on a byte-array stem with two integer values.
+     * <p>
+     * The extending values must be positive (0..LONG_MAX)
+     */
+    DERObjectIdentifier(DERObjectIdentifier oid, long branchID1, long branchID2)
+    {
+        if (branchID1 < 0) {
+            throw new IllegalArgumentException("long "+branchID1+" is not a valid OID branch value");
+        }
+        if (branchID2 < 0) {
+            throw new IllegalArgumentException("long "+branchID2+" is not a valid OID branch value");
+        }
+        // Get stem
+        byte[] oid_stem  = oid.getBody();
+        // Find out necessary new space
+        int    encodeLen1 = encodeLength(branchID1);
+        int    encodeLen2 = encodeLength(branchID2);
+        // Allocate new array + copy over the stem
+        this.body = Arrays.copyOf(oid_stem, oid_stem.length + encodeLen1 + encodeLen2);
+        // Encode first
+        int offset = encodeValue(this.body, oid_stem.length, encodeLen1, branchID1);
+        // Encode second
+        encodeValue(this.body, offset, encodeLen2, branchID2);
+    }
+
+    /**
+     * Calculate encoding length for a value
+     */
+    private int encodeLength(long val) {
+        int n = 1;
+        while (val > 127) {
+            val >>= 7;
+            ++n;
+        }
+        return n;
+    }
+
+    /**
+     * Encode positive long value to pre-existing space at OID byte array.
+     *
+     * @param buf where to encode
+     * @param offset start offset within the buffer
+     * @param len how long was this encode calculated to be?
+     * @param val the value being encoded
+     * @returns offset at the end of the encode
+     */
+    private int encodeValue(final byte[] buf, final int offset, final int len, long val) {
+        int n = len;
+        for ( ; n > 0 ; ) {
+            --n;
+            if (val < 128) {
+                buf[offset+n] = (byte)val;
+            } else {
+                buf[offset+n] = (byte)(0x80 | (val & 0x7F));
+            }
+            val >>= 7;
+        }
+        return offset+len;
+    }
+
 
     public String getId()
     {
