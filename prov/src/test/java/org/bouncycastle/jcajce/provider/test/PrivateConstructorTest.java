@@ -20,6 +20,7 @@ import org.bouncycastle.jcajce.provider.digest.SHA256;
 import org.bouncycastle.jcajce.provider.digest.SHA3;
 import org.bouncycastle.jcajce.provider.digest.SHA384;
 import org.bouncycastle.jcajce.provider.digest.SHA512;
+import org.bouncycastle.jcajce.provider.digest.SM3;
 import org.bouncycastle.jcajce.provider.digest.Tiger;
 import org.bouncycastle.jcajce.provider.digest.Whirlpool;
 import org.bouncycastle.jcajce.provider.symmetric.AES;
@@ -108,6 +109,7 @@ public class PrivateConstructorTest
         evilNoConstructionTest(SHA384.class);
         evilNoConstructionTest(SHA3.class);
         evilNoConstructionTest(SHA512.class);
+        evilNoConstructionTest(SM3.class);
         evilNoConstructionTest(Tiger.class);
         evilNoConstructionTest(Whirlpool.class);
     }
