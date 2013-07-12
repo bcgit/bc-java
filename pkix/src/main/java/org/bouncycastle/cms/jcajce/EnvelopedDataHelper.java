@@ -66,6 +66,7 @@ class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED");
 
         CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_CBC,  "DES/CBC/PKCS5Padding");
+        CIPHER_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_EDE3_CBC,  "DESEDE/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.AES128_CBC,  "AES/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.AES192_CBC,  "AES/CBC/PKCS5Padding");
