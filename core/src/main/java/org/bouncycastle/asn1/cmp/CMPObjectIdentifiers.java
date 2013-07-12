@@ -6,10 +6,10 @@ public interface CMPObjectIdentifiers
 {
     // RFC 4210
 
-    // id-PasswordBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 13}
+    /** id-PasswordBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 13} */
     static final ASN1ObjectIdentifier    passwordBasedMac        = new ASN1ObjectIdentifier("1.2.840.113533.7.66.13");
 
-    // id-DHBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 30}
+    /** id-DHBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 30} */
     static final ASN1ObjectIdentifier    dhBasedMac              = new ASN1ObjectIdentifier("1.2.840.113533.7.66.30");
 
     // Example InfoTypeAndValue contents include, but are not limited
@@ -52,19 +52,36 @@ public interface CMPObjectIdentifiers
     //      dod(6) internet(1) security(5) mechanisms(5) pkix(7)}
     // and
     //   id-it   OBJECT IDENTIFIER ::= {id-pkix 4}
+
+    /** RFC 4120: it-id: PKIX.4 = 1.3.6.1.5.5.7.4 */
+
+    /** RFC 4120: 1.3.6.1.5.5.7.4.1 */
     static final ASN1ObjectIdentifier    it_caProtEncCert        = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.1");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.2 */
     static final ASN1ObjectIdentifier    it_signKeyPairTypes     = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.2");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.3 */
     static final ASN1ObjectIdentifier    it_encKeyPairTypes      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.3");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.4 */
     static final ASN1ObjectIdentifier    it_preferredSymAlg      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.4");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.5 */
     static final ASN1ObjectIdentifier    it_caKeyUpdateInfo      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.5");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.6 */
     static final ASN1ObjectIdentifier    it_currentCRL           = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.6");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.7 */
     static final ASN1ObjectIdentifier    it_unsupportedOIDs      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.7");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.10 */
     static final ASN1ObjectIdentifier    it_keyPairParamReq      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.10");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.11 */
     static final ASN1ObjectIdentifier    it_keyPairParamRep      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.11");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.12 */
     static final ASN1ObjectIdentifier    it_revPassphrase        = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.12");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.13 */
     static final ASN1ObjectIdentifier    it_implicitConfirm      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.13");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.14 */
     static final ASN1ObjectIdentifier    it_confirmWaitTime      = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.14");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.15 */
     static final ASN1ObjectIdentifier    it_origPKIMessage       = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.15");
+    /** RFC 4120: 1.3.6.1.5.5.7.4.16 */
     static final ASN1ObjectIdentifier    it_suppLangTags         = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.16");
 
     // RFC 4211
@@ -81,26 +98,44 @@ public interface CMPObjectIdentifiers
     // arc for Registration Info in CRMF
     // id-regInfo       OBJECT IDENTIFIER ::= { id-pkip id-regInfo(2) }
 
+    /** RFC 4211: it-pkip: PKIX.5 = 1.3.6.1.5.5.7.5 */
+    static final ASN1ObjectIdentifier    id_pkip                 = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5");
+
+    /** RFC 4211: it-regCtrl: 1.3.6.1.5.5.7.5.1 */
+    static final ASN1ObjectIdentifier    id_regCtrl              = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1");
+    /** RFC 4211: it-regInfo: 1.3.6.1.5.5.7.5.2 */
+    static final ASN1ObjectIdentifier    id_regInfo              = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.2");
+
+
+    /** 1.3.6.1.5.5.7.5.1.1 */
     static final ASN1ObjectIdentifier    regCtrl_regToken        = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.1");
+    /** 1.3.6.1.5.5.7.5.1.2 */
     static final ASN1ObjectIdentifier    regCtrl_authenticator   = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.2");
+    /** 1.3.6.1.5.5.7.5.1.3 */
     static final ASN1ObjectIdentifier    regCtrl_pkiPublicationInfo = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.3");
+    /** 1.3.6.1.5.5.7.5.1.4 */
     static final ASN1ObjectIdentifier    regCtrl_pkiArchiveOptions  = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.4");
+    /** 1.3.6.1.5.5.7.5.1.5 */
     static final ASN1ObjectIdentifier    regCtrl_oldCertID       = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.5");
+    /** 1.3.6.1.5.5.7.5.1.6 */
     static final ASN1ObjectIdentifier    regCtrl_protocolEncrKey = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.6");
 
-    // From RFC4210:
-    // id-regCtrl-altCertTemplate OBJECT IDENTIFIER ::= {id-regCtrl 7}
+    /** From RFC4210:
+     * id-regCtrl-altCertTemplate OBJECT IDENTIFIER ::= {id-regCtrl 7}; 1.3.6.1.5.5.7.1.7 */
     static final ASN1ObjectIdentifier    regCtrl_altCertTemplate = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.1.7");
 
+    /** RFC 4211: it-regInfo-utf8Pairs: 1.3.6.1.5.5.7.5.2.1 */
     static final ASN1ObjectIdentifier    regInfo_utf8Pairs       = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.2.1");
+    /** RFC 4211: it-regInfo-certReq: 1.3.6.1.5.5.7.5.2.1 */
     static final ASN1ObjectIdentifier    regInfo_certReq         = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.5.2.2");
 
-    // id-smime OBJECT IDENTIFIER ::= { iso(1) member-body(2)
-    //         us(840) rsadsi(113549) pkcs(1) pkcs9(9) 16 }
-    //
-    // id-ct   OBJECT IDENTIFIER ::= { id-smime  1 }  -- content types
-    //
-    // id-ct-encKeyWithID OBJECT IDENTIFIER ::= {id-ct 21}
+    /**
+     * 1.2.840.113549.1.9.16.1.21
+     * <p>
+     * id-ct   OBJECT IDENTIFIER ::= { id-smime  1 }  -- content types
+     * <p>
+     * id-ct-encKeyWithID OBJECT IDENTIFIER ::= {id-ct 21}
+     */
     static final ASN1ObjectIdentifier    ct_encKeyWithID         = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.1.21");
 
 }
