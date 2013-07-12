@@ -154,7 +154,7 @@ public abstract class DigestTest
 
         if (!areEqual(resBuf, Hex.decode(expected)))
         {
-            fail("Million a's failed");
+            fail("Million a's failed", expected, new String(Hex.encode(resBuf)));
         }
     }
     
@@ -172,7 +172,7 @@ public abstract class DigestTest
 
         if (!areEqual(resBuf, Hex.decode(expected)))
         {
-            fail("64k test failed");
+            fail("64k test failed", expected, new String(Hex.encode(resBuf)));
         }
     }
 }
