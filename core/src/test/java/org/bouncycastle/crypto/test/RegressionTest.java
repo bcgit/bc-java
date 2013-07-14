@@ -123,7 +123,8 @@ public class RegressionTest
         new RSAKeyEncapsulationTest(),
         new ECIESKeyEncapsulationTest(),
         new HashCommitmentTest(),
-        new BlockCipherResetTest()
+        new BlockCipherResetTest(),
+        new SM3DigestTest(),
     };
 
     public static void main(
