@@ -18,7 +18,7 @@ public class SM3DigestTest
         "a",
         "abcdefghijklmnopqrstuvwxyz",
     };
-    
+
     private static String[] digests = {
         // Standard test vectors
         "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0",
@@ -28,7 +28,7 @@ public class SM3DigestTest
         "623476ac18f65a2909e43c7fec61b49c7e764a91a18ccb82f1917a29c86c5e88",
         "b80fe97a4da24afc277564f66a359ef440462ad28dcc6d63adb24d5c20a61595",
     };
-    
+
     final static String sixtyFourKdigest = "97049bdc8f0736bc7300eafa9980aeb9cf00f24f7ec3a8f1f8884954d7655c1d";
     final static String million_a_digest = "c8aaf89429554029e231941a2acc0ad61ff2a5acd8fadd25847a3a732b3b02c3";
 
@@ -41,7 +41,7 @@ public class SM3DigestTest
     public void performTest()
     {
         super.performTest();
-        
+
         sixtyFourKTest(sixtyFourKdigest);
         millionATest(million_a_digest);
     }
@@ -50,8 +50,8 @@ public class SM3DigestTest
     {
         return new SM3Digest((SM3Digest)digest);
     }
-    
-    public static void main( String[] args)
+
+    public static void main(String[] args)
     {
         runTest(new SM3DigestTest());
     }
