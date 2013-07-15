@@ -18,11 +18,11 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * <p>
  * ASN.1:
  * <pre>
- *     id-ct-authEnvelopedData OBJECT IDENTIFIER ::= { iso(1)
+ * id-ct-authEnvelopedData OBJECT IDENTIFIER ::= { iso(1)
  *       member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
  *       smime(16) ct(1) 23 }
  *
- *     AuthEnvelopedData ::= SEQUENCE {
+ * AuthEnvelopedData ::= SEQUENCE {
  *       version CMSVersion,
  *       originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
  *       recipientInfos RecipientInfos,
@@ -147,10 +147,11 @@ public class AuthEnvelopedData
     }
 
     /**
-     * return an AuthEnvelopedData object from the given object.
+     * Return an AuthEnvelopedData object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link AuthEnvelopedData} object
      * <li> {@link ASN1Sequence org.bouncycastle.asn1.ASN1Sequence} input formats with AuthEnvelopedData structure inside
      * </ul>

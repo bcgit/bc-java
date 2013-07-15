@@ -7,8 +7,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 
-/*
- * <a href="http://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> ContentInfo object parser.
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> {@link ContentInfo} object parser.
  *
  * <pre>
  * ContentInfo ::= SEQUENCE {

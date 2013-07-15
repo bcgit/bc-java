@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <p>
  * <pre>
  * RecipientInfo ::= CHOICE {
  *     ktri      KeyTransRecipientInfo,
@@ -63,13 +65,13 @@ public class RecipientInfo
     }
 
     /**
-     * return a RecipientInfo object from the given object.
+     * Return a RecipientInfo object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link RecipientInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with RecipientInfo structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientInfo structure inside
      * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} input formats with RecipientInfo structure inside
      * </ul>
      *

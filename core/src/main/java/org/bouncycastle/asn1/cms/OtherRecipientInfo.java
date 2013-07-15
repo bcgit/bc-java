@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.5">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
  * <pre>
  * OtherRecipientInfo ::= SEQUENCE {
  *    oriType OBJECT IDENTIFIER,
@@ -43,7 +44,7 @@ public class OtherRecipientInfo
     }
 
     /**
-     * return a OtherRecipientInfo object from a tagged object.
+     * Return a OtherRecipientInfo object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -59,13 +60,13 @@ public class OtherRecipientInfo
     }
     
     /**
-     * return a OtherRecipientInfo object from the given object.
+     * Return a OtherRecipientInfo object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link PasswordRecipientInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OtherRecipientInfo structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OtherRecipientInfo structure inside
      * </ul>
      *
      * @param obj the object we want converted.
@@ -74,12 +75,17 @@ public class OtherRecipientInfo
     public static OtherRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof OtherRecipientInfo)
+        if (obj instanceof OtherRecipientInfo)
         {
             return (OtherRecipientInfo)obj;
         }
-        
-        return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
+
+        if (obj != null)
+        {
+            return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
 
     public ASN1ObjectIdentifier getType()

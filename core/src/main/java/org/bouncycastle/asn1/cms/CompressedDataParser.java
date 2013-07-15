@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc3274">RFC 3274</a>: CMS Compressed Data.
+ * Parser of <a href="http://tools.ietf.org/html/rfc3274">RFC 3274</a> {@link CompressedData} object.
  * <p>
  * <pre>
  * CompressedData ::= SEQUENCE {

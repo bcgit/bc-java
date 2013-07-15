@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
  * <pre>
  * OriginatorIdentifierOrKey ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
@@ -64,7 +65,7 @@ public class OriginatorIdentifierOrKey
     }
 
     /**
-     * return an OriginatorIdentifierOrKey object from a tagged object.
+     * Return an OriginatorIdentifierOrKey object from a tagged object.
      *
      * @param o the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -86,10 +87,11 @@ public class OriginatorIdentifierOrKey
     }
     
     /**
-     * return an OriginatorIdentifierOrKey object from the given object.
+     * Return an OriginatorIdentifierOrKey object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link OriginatorIdentifierOrKey} object
      * <li> {@link IssuerAndSerialNumber} object
      * <li> {@link SubjectKeyIdentifier} object

@@ -10,11 +10,13 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 
 /**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-8">RFC 5652</a> EncryptedData object.
+ * <p>
  * <pre>
- *       EncryptedData ::= SEQUENCE {
- *                     version CMSVersion,
- *                     encryptedContentInfo EncryptedContentInfo,
- *                     unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
+ * EncryptedData ::= SEQUENCE {
+ *     version CMSVersion,
+ *     encryptedContentInfo EncryptedContentInfo,
+ *     unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
  * </pre>
  */
 
@@ -31,9 +33,9 @@ public class EncryptedData
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link EncryptedData} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats
      * </ul>
      *
      * @param o the object we want converted.

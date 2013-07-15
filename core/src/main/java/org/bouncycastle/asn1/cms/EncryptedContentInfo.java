@@ -58,13 +58,13 @@ public class EncryptedContentInfo
     }
 
     /**
-     * return an EncryptedContentInfo object from the given object.
+     * Return an EncryptedContentInfo object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link EncryptedContentInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats
      * </ul>
      *
      * @param obj the object we want converted.

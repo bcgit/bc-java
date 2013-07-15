@@ -4,10 +4,12 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DLSet;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652">RFC 5652</a> base type for 5 attribute sets:
+ * <a href="http://tools.ietf.org/html/rfc5652">RFC 5652</a> defines
+ * 5 "SET OF Attribute" entities with 5 different names.
+ * This is common implementation for them all:
  * <pre>
  *   SignedAttributes      ::= SET SIZE (1..MAX) OF Attribute
  *   UnsignedAttributes    ::= SET SIZE (1..MAX) OF Attribute
@@ -32,7 +34,7 @@ public class Attributes
 
     public Attributes(ASN1EncodableVector v)
     {
-        attributes = new DERSet(v); // the input vector is in unpredictable order -> must sort.
+        attributes = new DLSet(v);
     }
 
     /**
@@ -40,9 +42,9 @@ public class Attributes
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link Attributes} object
      * <li> {@link org.bouncycastle.asn1.ASN1Set ASN1Set} input formats with Attributes structure inside
-     * <li> null -> null
      * </ul>
      *
      * @param o the object we want converted.

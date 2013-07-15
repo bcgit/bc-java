@@ -46,7 +46,7 @@ public class CompressedData
     }
 
     /**
-     * return a CompressedData object from a tagged object.
+     * Return a CompressedData object from a tagged object.
      *
      * @param _ato the tagged object holding the object we want.
      * @param _explicit true if the object is meant to be explicitly
@@ -62,13 +62,13 @@ public class CompressedData
     }
     
     /**
-     * return a CompressedData object from the given object.
+     * Return a CompressedData object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link CompressedData} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with CompressedData structure inside
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with CompressedData structure inside
      * </ul>
      *
      * @param obj the object we want converted.
