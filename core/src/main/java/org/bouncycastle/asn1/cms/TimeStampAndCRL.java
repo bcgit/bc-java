@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x509.CertificateList;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>
+ * Binding Documents with Time-Stamps; TimeStampAndCRL object.
  * <pre>
  * TimeStampAndCRL ::= SEQUENCE {
  *     timeStamp   TimeStampToken,          -- according to RFC 3161
@@ -37,25 +38,30 @@ public class TimeStampAndCRL
     }
 
     /**
-     * return a TimeStampAndCRL object from the given object.
+     * Return a TimeStampAndCRL object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link TimeStampAndCRL} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with TimeStampAndCRL structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with TimeStampAndCRL structure inside
      * </ul>
      *
-     * @param _obj the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static TimeStampAndCRL getInstance(Object obj)
     {
-        if (obj == null || obj instanceof TimeStampAndCRL)
+        if (obj instanceof TimeStampAndCRL)
         {
             return (TimeStampAndCRL)obj;
         }
-        return new TimeStampAndCRL(ASN1Sequence.getInstance(obj));
+        else if (obj != null)
+        {
+            return new TimeStampAndCRL(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
 
     public ContentInfo getTimeStampToken()

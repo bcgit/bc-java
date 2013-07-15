@@ -12,6 +12,22 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERIA5String;
 
+
+/**
+ * Parser for <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * {@link TimeStampedData} object.
+ * <p>
+ * <pre>
+ * TimeStampedData ::= SEQUENCE {
+ *   version              INTEGER { v1(1) },
+ *   dataUri              IA5String OPTIONAL,
+ *   metaData             MetaData OPTIONAL,
+ *   content              OCTET STRING OPTIONAL,
+ *   temporalEvidence     Evidence
+ * }
+ * </pre>
+ */
+
 public class TimeStampedDataParser
 {
     private ASN1Integer version;

@@ -11,13 +11,25 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#page-14">RFC 5652</a>
+ * <a href="http://tools.ietf.org/html/rfc5652#page-14">RFC 5652</a>:
+ * Attribute is a pair of OID (as type identifier) + set of values.
+ * <p>
  * <pre>
  * Attribute ::= SEQUENCE {
  *     attrType OBJECT IDENTIFIER,
  *     attrValues SET OF AttributeValue
  * }
+ * 
+ * AttributeValue ::= ANY
  * </pre>
+ * <p>
+ * General rule on values is that same AttributeValue must not be included
+ * multiple times into the set. That is, if the value is a SET OF INTEGERs,
+ * then having same value repeated is wrong: (1, 1), but different values is OK: (1, 2).
+ * Normally the AttributeValue syntaxes are more complicated than that.
+ * <p>
+ * General rule of Attribute usage is that the {@link Attributes} containers
+ * must not have multiple Attribute:s with same attrType (OID) there.
  */
 
 public class Attribute
@@ -31,9 +43,9 @@ public class Attribute
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link Attribute} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with Attribute structure inside
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with Attribute structure inside
      * </ul>
      *
      * @param o the object we want converted.

@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
  * <pre>
  * RecipientEncryptedKey ::= SEQUENCE {
  *     rid KeyAgreeRecipientIdentifier,
@@ -32,7 +33,7 @@ public class RecipientEncryptedKey
     }
     
     /**
-     * return an RecipientEncryptedKey object from a tagged object.
+     * Return an RecipientEncryptedKey object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -48,13 +49,13 @@ public class RecipientEncryptedKey
     }
     
     /**
-     * return a RecipientEncryptedKey object from the given object.
+     * Return a RecipientEncryptedKey object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link RecipientEncryptedKey} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with RecipientEncryptedKey structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientEncryptedKey structure inside
      * </ul>
      *
      * @param obj the object we want converted.

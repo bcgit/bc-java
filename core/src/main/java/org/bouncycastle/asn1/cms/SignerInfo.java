@@ -16,22 +16,60 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
+ * Signature container per Signer, see {@link SignerIdentifier}.
  * <pre>
- *  SignerInfo ::= SEQUENCE {
- *      version Version,
- *      SignerIdentifier sid,
- *      digestAlgorithm DigestAlgorithmIdentifier,
- *      authenticatedAttributes [0] IMPLICIT Attributes OPTIONAL,
- *      digestEncryptionAlgorithm DigestEncryptionAlgorithmIdentifier,
- *      encryptedDigest EncryptedDigest,
- *      unauthenticatedAttributes [1] IMPLICIT Attributes OPTIONAL
- *  }
+ * PKCS#7:
  *
- *  EncryptedDigest ::= OCTET STRING
+ * SignerInfo ::= SEQUENCE {
+ *     version                   Version,
+ *     sid                       SignerIdentifier,
+ *     digestAlgorithm           DigestAlgorithmIdentifier,
+ *     authenticatedAttributes   [0] IMPLICIT Attributes OPTIONAL,
+ *     digestEncryptionAlgorithm DigestEncryptionAlgorithmIdentifier,
+ *     encryptedDigest           EncryptedDigest,
+ *     unauthenticatedAttributes [1] IMPLICIT Attributes OPTIONAL
+ * }
  *
- *  DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+ * EncryptedDigest ::= OCTET STRING
  *
- *  DigestEncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
+ * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+ *
+ * DigestEncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
+ *
+ * -----------------------------------------
+ *
+ * RFC 5256:
+ *
+ * SignerInfo ::= SEQUENCE {
+ *     version            CMSVersion,
+ *     sid                SignerIdentifier,
+ *     digestAlgorithm    DigestAlgorithmIdentifier,
+ *     signedAttrs        [0] IMPLICIT SignedAttributes OPTIONAL,
+ *     signatureAlgorithm SignatureAlgorithmIdentifier,
+ *     signature          SignatureValue,
+ *     unsignedAttrs      [1] IMPLICIT UnsignedAttributes OPTIONAL
+ * }
+ *
+ * -- {@link SignerIdentifier} referenced certificates are at containing
+ * -- {@link SignedData} certificates element.
+ *
+ * SignerIdentifier ::= CHOICE {
+ *     issuerAndSerialNumber {@link IssuerAndSerialNumber},
+ *     subjectKeyIdentifier  [0] SubjectKeyIdentifier }
+ *
+ * -- See {@link Attributes} for generalized SET OF {@link Attribute}
+ *
+ * SignedAttributes   ::= SET SIZE (1..MAX) OF Attribute
+ * UnsignedAttributes ::= SET SIZE (1..MAX) OF Attribute
+ * 
+ * {@link Attribute} ::= SEQUENCE {
+ *     attrType   OBJECT IDENTIFIER,
+ *     attrValues SET OF AttributeValue }
+ *
+ * AttributeValue ::= ANY
+ * 
+ * SignatureValue ::= OCTET STRING
  * </pre>
  */
 
@@ -47,13 +85,13 @@ public class SignerInfo
     private ASN1Set                 unauthenticatedAttributes;
 
     /**
-     * return a SignerInfo object from the given input
+     * Return a SignerInfo object from the given input
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link SignerInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with SignerInfo structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with SignerInfo structure inside
      * </ul>
      *
      * @param o the object we want converted.
@@ -74,6 +112,16 @@ public class SignerInfo
 
         throw new IllegalArgumentException("unknown object in factory: " + o.getClass().getName());
     }
+
+    /**
+     *
+     * @param sid
+     * @param digAlgorithm            CMS knows as 'digestAlgorithm'
+     * @param authenticatedAttributes CMS knows as 'signedAttrs'
+     * @param digEncryptionAlgorithm  CMS knows as 'signatureAlgorithm'
+     * @param encryptedDigest         CMS knows as 'signature'
+     * @param unauthenticatedAttributes CMS knows as 'unsignedAttrs'
+     */
 
     public SignerInfo(
         SignerIdentifier        sid,
@@ -100,6 +148,15 @@ public class SignerInfo
         this.unauthenticatedAttributes = unauthenticatedAttributes;
     }
 
+    /**
+     *
+     * @param sid
+     * @param digAlgorithm            CMS knows as 'digestAlgorithm'
+     * @param authenticatedAttributes CMS knows as 'signedAttrs'
+     * @param digEncryptionAlgorithm  CMS knows as 'signatureAlgorithm'
+     * @param encryptedDigest         CMS knows as 'signature'
+     * @param unauthenticatedAttributes CMS knows as 'unsignedAttrs'
+     */
     public SignerInfo(
         SignerIdentifier        sid,
         AlgorithmIdentifier     digAlgorithm,

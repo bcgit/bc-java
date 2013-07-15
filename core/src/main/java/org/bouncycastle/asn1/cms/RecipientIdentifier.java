@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
  * <pre>
  * RecipientIdentifier ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
@@ -44,11 +45,11 @@ public class RecipientIdentifier
     }
     
     /**
-     * return a RecipientIdentifier object from the given object.
+     * Return a RecipientIdentifier object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link RecipientIdentifier} object
      * <li> {@link IssuerAndSerialNumber} object
      * <li> {@link org.bouncycastle.asn1.ASN1OctetString ASN1OctetString} input formats (OctetString, byte[]) with value of KeyIdentifier in DER form.

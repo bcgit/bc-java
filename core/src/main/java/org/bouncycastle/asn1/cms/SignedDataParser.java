@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.BERTags;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
+ * Parser for <a href="http://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>: {@link SignedData} object.
  * <p>
  * <pre>
  * SignedData ::= SEQUENCE {

@@ -14,11 +14,19 @@ import org.bouncycastle.asn1.DERUTCTime;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-11.3">RFC 5652</a>:
+ * Dual-mode timestamp format producing either UTCTIme or GeneralizedTime.
+ * <p>
  * <pre>
  * Time ::= CHOICE {
  *     utcTime        UTCTime,
  *     generalTime    GeneralizedTime }
  * </pre>
+ * <p>
+ * This has a constructor using java.util.Date for input which generates
+ * a {@link org.bouncycastle.asn1.DERUTCTime DERUTCTime} object if the
+ * supplied datetime is in range 1950-01-01-00:00:00 UTC to 2049-12-31-23:59:60 UTC.
+ * If the datetime value is outside that range, the generated object will be
+ * {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime}.
  */
 public class Time
     extends ASN1Object
@@ -46,7 +54,7 @@ public class Time
     }
 
     /**
-     * creates a time object from a given date - if the date is between 1950
+     * Creates a time object from a given date - if the date is between 1950
      * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime
      * is used.
      */
@@ -72,11 +80,11 @@ public class Time
     }
 
     /**
-     * return a Time object from the given object.
+     * Return a Time object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link Time} object
      * <li> {@link org.bouncycastle.asn1.DERUTCTime DERUTCTime} object
      * <li> {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime} object

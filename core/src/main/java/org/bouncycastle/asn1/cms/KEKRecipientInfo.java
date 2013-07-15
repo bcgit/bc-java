@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.3">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <p>
  * <pre>
  * KEKRecipientInfo ::= SEQUENCE {
  *     version CMSVersion,  -- always set to 4
@@ -50,7 +52,7 @@ public class KEKRecipientInfo
     }
 
     /**
-     * return a KEKRecipientInfo object from a tagged object.
+     * Return a KEKRecipientInfo object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -66,13 +68,13 @@ public class KEKRecipientInfo
     }
     
     /**
-     * return a KEKRecipientInfo object from the given object.
+     * Return a KEKRecipientInfo object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link KEKRecipientInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with KEKRecipientInfo structure inside
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with KEKRecipientInfo structure inside
      * </ul>
      *
      * @param obj the object we want converted.

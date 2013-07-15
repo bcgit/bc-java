@@ -7,13 +7,15 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a> "Syntax for Binding Documents with Time-Stamps":
+ * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Binding Documents with Time-Stamps; Evidence object.
+ * <p>
  * <pre>
- *      Evidence ::= CHOICE {
- *         tstEvidence    [0] TimeStampTokenEvidence,   -- see RFC 3161
- *         ersEvidence    [1] EvidenceRecord,           -- see RFC 4998
- *         otherEvidence  [2] OtherEvidence
- *      }
+ * Evidence ::= CHOICE {
+ *     tstEvidence    [0] TimeStampTokenEvidence,   -- see RFC 3161
+ *     ersEvidence    [1] EvidenceRecord,           -- see RFC 4998
+ *     otherEvidence  [2] OtherEvidence
+ * }
  * </pre>
  */
 

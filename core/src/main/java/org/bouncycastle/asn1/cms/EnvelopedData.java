@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a>
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EnvelopedData object.
  * <pre>
  * EnvelopedData ::= SEQUENCE {
  *     version CMSVersion,
@@ -90,7 +90,7 @@ public class EnvelopedData
     }
     
     /**
-     * return an EnvelopedData object from a tagged object.
+     * Return an EnvelopedData object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -106,13 +106,13 @@ public class EnvelopedData
     }
     
     /**
-     * return an EnvelopedData object from the given object.
+     * Return an EnvelopedData object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link EnvelopedData} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with EnvelopedData structure inside
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with EnvelopedData structure inside
      * </ul>
      *
      * @param obj the object we want converted.

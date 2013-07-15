@@ -11,6 +11,10 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 
+/**
+ * This is helper tool to construct {@link Attributes} sets.
+ */
+
 public class AttributeTable
 {
     private Hashtable attributes = new Hashtable();

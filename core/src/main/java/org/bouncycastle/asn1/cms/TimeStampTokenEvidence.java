@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>
+ * Binding Documents with Time-Stamps; TimeStampTokenEvidence object.
  * <pre>
  * TimeStampTokenEvidence ::=
  *    SEQUENCE SIZE(1..MAX) OF TimeStampAndCRL
@@ -51,13 +52,13 @@ public class TimeStampTokenEvidence
     }
 
     /**
-     * return a TimeStampTokenEvidence object from the given object.
+     * Return a TimeStampTokenEvidence object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link TimeStampTokenEvidence} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with TimeStampTokenEvidence structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with TimeStampTokenEvidence structure inside
      * </ul>
      *
      * @param obj the object we want converted.
@@ -65,11 +66,16 @@ public class TimeStampTokenEvidence
      */
     public static TimeStampTokenEvidence getInstance(Object obj)
     {
-        if (obj == null || obj instanceof TimeStampTokenEvidence)
+        if (obj instanceof TimeStampTokenEvidence)
         {
             return (TimeStampTokenEvidence)obj;
         }
-        return new TimeStampTokenEvidence(ASN1Sequence.getInstance(obj));
+        else if (obj != null)
+        {
+            return new TimeStampTokenEvidence(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
 
     public TimeStampAndCRL[] toTimeStampAndCRLArray()

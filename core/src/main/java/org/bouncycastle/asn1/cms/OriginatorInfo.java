@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>:
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>: OriginatorInfo object.
  * <pre>
  * RFC 3369:
  *
@@ -84,7 +84,7 @@ public class OriginatorInfo
     }
     
     /**
-     * return an OriginatorInfo object from a tagged object.
+     * Return an OriginatorInfo object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -100,13 +100,13 @@ public class OriginatorInfo
     }
     
     /**
-     * return an OriginatorInfo object from the given object.
+     * Return an OriginatorInfo object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link OriginatorInfo} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OriginatorInfo structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OriginatorInfo structure inside
      * </ul>
      *
      * @param obj the object we want converted.
@@ -115,11 +115,16 @@ public class OriginatorInfo
     public static OriginatorInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof OriginatorInfo)
+        if (obj instanceof OriginatorInfo)
         {
             return (OriginatorInfo)obj;
         }
-        return new OriginatorInfo(ASN1Sequence.getInstance(obj));
+        else if (obj != null)
+        {
+            return new OriginatorInfo(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
     
     public ASN1Set getCertificates()

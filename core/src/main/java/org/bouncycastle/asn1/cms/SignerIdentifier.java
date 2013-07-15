@@ -10,7 +10,10 @@ import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-5.3">RFC 5652</a>:
- *
+ * Identify who signed the containing {@link SignerInfo} object.
+ * <p>
+ * The certificates referred to by this are at containing {@link SignedData} structure.
+ * <p>
  * <pre>
  * SignerIdentifier ::= CHOICE {
  *     issuerAndSerialNumber IssuerAndSerialNumber,
@@ -46,11 +49,11 @@ public class SignerIdentifier
     }
     
     /**
-     * return a SignerIdentifier object from the given object.
+     * Return a SignerIdentifier object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link SignerIdentifier} object
      * <li> {@link IssuerAndSerialNumber} object
      * <li> {@link org.bouncycastle.asn1.ASN1OctetString ASN1OctetString} input formats with SignerIdentifier structure inside

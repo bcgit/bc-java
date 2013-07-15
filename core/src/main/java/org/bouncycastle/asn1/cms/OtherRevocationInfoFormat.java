@@ -10,7 +10,8 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-10.2.1">RFC 5652</a>:
+ * <a href="http://tools.ietf.org/html/rfc5652#section-10.2.1">RFC 5652</a>: OtherRevocationInfoFormat object.
+ * <p>
  * <pre>
  * OtherRevocationInfoFormat ::= SEQUENCE {
  *      otherRevInfoFormat OBJECT IDENTIFIER,
@@ -40,7 +41,7 @@ public class OtherRevocationInfoFormat
     }
 
     /**
-     * return a OtherRevocationInfoFormat object from a tagged object.
+     * Return a OtherRevocationInfoFormat object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -56,13 +57,13 @@ public class OtherRevocationInfoFormat
     }
     
     /**
-     * return a OtherRevocationInfoFormat object from the given object.
+     * Return a OtherRevocationInfoFormat object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link OtherRevocationInfoFormat} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OtherRevocationInfoFormat structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OtherRevocationInfoFormat structure inside
      * </ul>
      *
      * @param obj the object we want converted.
@@ -71,12 +72,17 @@ public class OtherRevocationInfoFormat
     public static OtherRevocationInfoFormat getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof OtherRevocationInfoFormat)
+        if (obj instanceof OtherRevocationInfoFormat)
         {
             return (OtherRevocationInfoFormat)obj;
         }
-        
-        return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
+
+        if (obj != null)
+        {
+            return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
+        }
+
+        return null;
     }
 
     public ASN1ObjectIdentifier getInfoFormat()

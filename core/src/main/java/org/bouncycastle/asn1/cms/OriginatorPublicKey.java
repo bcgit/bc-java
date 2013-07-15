@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <p>
  * <pre>
  * OriginatorPublicKey ::= SEQUENCE {
  *     algorithm AlgorithmIdentifier,
@@ -41,7 +43,7 @@ public class OriginatorPublicKey
     }
     
     /**
-     * return an OriginatorPublicKey object from a tagged object.
+     * Return an OriginatorPublicKey object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -57,13 +59,13 @@ public class OriginatorPublicKey
     }
     
     /**
-     * return an OriginatorPublicKey object from the given object.
+     * Return an OriginatorPublicKey object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link OriginatorPublicKey} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with OriginatorPublicKey structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OriginatorPublicKey structure inside
      * </ul>
      *
      * @param obj the object we want converted.

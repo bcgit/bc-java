@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.DERIA5String;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Binding Documents with Time-Stamps; TimeStampedData object.
+ * <p>
  * <pre>
  * TimeStampedData ::= SEQUENCE {
  *   version              INTEGER { v1(1) },
@@ -60,13 +62,13 @@ public class TimeStampedData
     }
 
     /**
-     * return a TimeStampedData object from the given object.
+     * Return a TimeStampedData object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
-     * <li> null -> null
+     * <li> null &rarr; null
      * <li> {@link RecipientKeyIdentifier} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with TimeStampedData structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with TimeStampedData structure inside
      * </ul>
      *
      * @param _obj the object we want converted.

@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.DERUTF8String;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Binding Documents with Time-Stamps; MetaData object.
+ * <p>
  * <pre>
  * MetaData ::= SEQUENCE {
  *   hashProtected        BOOLEAN,
@@ -61,13 +63,13 @@ public class MetaData
     }
 
     /**
-     * return a MetaData object from the given object.
+     * Return a MetaData object from the given object.
      * <p>
      * Accepted inputs:
      * <ul>
+     * <li> null &rarr; null
      * <li> {@link MetaData} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence} input formats with MetaData structure inside
-     * <li> null -> null
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with MetaData structure inside
      * </ul>
      *
      * @param obj the object we want converted.
