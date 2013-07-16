@@ -72,7 +72,7 @@ public class RecipientInfo
      * <li> null &rarr; null
      * <li> {@link RecipientInfo} object
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientInfo structure inside
-     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} input formats with RecipientInfo structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject#getInstance(java.lang.Object) ASN1TaggedObject} input formats with RecipientInfo structure inside
      * </ul>
      *
      * @param obj the object we want converted.

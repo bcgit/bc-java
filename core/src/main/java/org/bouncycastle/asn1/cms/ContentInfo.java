@@ -11,19 +11,19 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 
 /**
- * <a href="http://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> ContentInfo object.
+ * <a href="http://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> ContentInfo, and 
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.2">RFC 5652</a> EncapsulatedContentInfo objects.
  *
  * <pre>
  * ContentInfo ::= SEQUENCE {
  *     contentType ContentType,
- *     content [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL }
- * </pre>
+ *     content [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL
+ * }
  *
- * <a href="http://tools.ietf.org/html/rfc5652#section-5.2">RFC 5652</a> EncapsulatedContentInfo object.
- * <pre>
  * EncapsulatedContentInfo ::= SEQUENCE {
  *     eContentType ContentType,
- *     eContent [0] EXPLICIT OCTET STRING OPTIONAL }
+ *     eContent [0] EXPLICIT OCTET STRING OPTIONAL
+ * }
  * </pre>
  */
 

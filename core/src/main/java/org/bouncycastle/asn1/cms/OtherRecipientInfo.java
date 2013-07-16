@@ -79,12 +79,12 @@ public class OtherRecipientInfo
         {
             return (OtherRecipientInfo)obj;
         }
-
+        
         if (obj != null)
         {
             return new OtherRecipientInfo(ASN1Sequence.getInstance(obj));
         }
-
+        
         return null;
     }
 

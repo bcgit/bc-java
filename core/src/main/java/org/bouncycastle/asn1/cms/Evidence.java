@@ -44,7 +44,7 @@ public class Evidence
      * Accepted inputs:
      * <ul>
      * <li> {@link Evidence} object
-     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} input formats with Evidence data inside
+     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject#getInstance(java.lang.Object) ASN1TaggedObject} input formats with Evidence data inside
      * </ul>
      *
      * @param o the object we want converted.

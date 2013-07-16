@@ -44,7 +44,7 @@ public class Attributes
      * <ul>
      * <li> null &rarr; null
      * <li> {@link Attributes} object
-     * <li> {@link org.bouncycastle.asn1.ASN1Set ASN1Set} input formats with Attributes structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1Set#getInstance(java.lang.Object) ASN1Set} input formats with Attributes structure inside
      * </ul>
      *
      * @param o the object we want converted.

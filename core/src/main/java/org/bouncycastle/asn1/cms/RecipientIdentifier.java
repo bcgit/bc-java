@@ -52,8 +52,8 @@ public class RecipientIdentifier
      * <li> null &rarr; null
      * <li> {@link RecipientIdentifier} object
      * <li> {@link IssuerAndSerialNumber} object
-     * <li> {@link org.bouncycastle.asn1.ASN1OctetString ASN1OctetString} input formats (OctetString, byte[]) with value of KeyIdentifier in DER form.
-     * <li> {@link org.bouncycastle.asn1.ASN1Primitive ASN1Primitive}
+     * <li> {@link org.bouncycastle.asn1.ASN1OctetString#getInstance(java.lang.Object) ASN1OctetString} input formats (OctetString, byte[]) with value of KeyIdentifier in DER form
+     * <li> {@link org.bouncycastle.asn1.ASN1Primitive ASN1Primitive} for RecipientIdentifier constructor
      * </ul>
      *
      * @param o the object we want converted.

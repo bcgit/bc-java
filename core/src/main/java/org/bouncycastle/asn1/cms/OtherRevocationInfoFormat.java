@@ -76,12 +76,12 @@ public class OtherRevocationInfoFormat
         {
             return (OtherRevocationInfoFormat)obj;
         }
-
+        
         if (obj != null)
         {
             return new OtherRevocationInfoFormat(ASN1Sequence.getInstance(obj));
         }
-
+        
         return null;
     }
 

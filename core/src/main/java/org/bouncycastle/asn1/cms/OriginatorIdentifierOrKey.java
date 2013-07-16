@@ -96,7 +96,7 @@ public class OriginatorIdentifierOrKey
      * <li> {@link IssuerAndSerialNumber} object
      * <li> {@link SubjectKeyIdentifier} object
      * <li> {@link OriginatorPublicKey} object
-     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject ASN1TaggedObject} input formats with IssuerAndSerialNumber structure inside
+     * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject#getInstance(java.lang.Object) ASN1TaggedObject} input formats with IssuerAndSerialNumber structure inside
      * </ul>
      *
      * @param o the object we want converted.
