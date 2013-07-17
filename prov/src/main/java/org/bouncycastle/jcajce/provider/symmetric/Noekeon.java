@@ -9,6 +9,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.NoekeonEngine;
+import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -49,6 +50,24 @@ public final class Noekeon
         public GMAC()
         {
             super(new GMac(new GCMBlockCipher(new NoekeonEngine())));
+        }
+    }
+
+    public static class Poly1305
+        extends BaseMac
+    {
+        public Poly1305()
+        {
+            super(new org.bouncycastle.crypto.macs.Poly1305(new NoekeonEngine()));
+        }
+    }
+
+    public static class Poly1305KeyGen
+        extends BaseKeyGenerator
+    {
+        public Poly1305KeyGen()
+        {
+            super("Poly1305-Noekeon", 256, new Poly1305KeyGenerator());
         }
     }
 
@@ -120,6 +139,7 @@ public final class Noekeon
             provider.addAlgorithm("KeyGenerator.NOEKEON", PREFIX + "$KeyGen");
 
             addGMacAlgorithm(provider, "NOEKEON", PREFIX + "$GMAC", PREFIX + "$KeyGen");
+            addPoly1305Algorithm(provider, "NOEKEON", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
     }
 }

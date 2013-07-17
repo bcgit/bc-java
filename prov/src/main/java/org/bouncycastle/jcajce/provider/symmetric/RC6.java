@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.RC6Engine;
+import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
@@ -79,6 +80,24 @@ public final class RC6
         public GMAC()
         {
             super(new GMac(new GCMBlockCipher(new RC6Engine())));
+        }
+    }
+
+    public static class Poly1305
+        extends BaseMac
+    {
+        public Poly1305()
+        {
+            super(new org.bouncycastle.crypto.macs.Poly1305(new RC6Engine()));
+        }
+    }
+
+    public static class Poly1305KeyGen
+        extends BaseKeyGenerator
+    {
+        public Poly1305KeyGen()
+        {
+            super("Poly1305-RC6", 256, new Poly1305KeyGenerator());
         }
     }
 
@@ -155,6 +174,7 @@ public final class RC6
             provider.addAlgorithm("AlgorithmParameters.RC6", PREFIX + "$AlgParams");
 
             addGMacAlgorithm(provider, "RC6", PREFIX + "$GMAC", PREFIX + "$KeyGen");
+            addPoly1305Algorithm(provider, "RC6", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
     }
 }

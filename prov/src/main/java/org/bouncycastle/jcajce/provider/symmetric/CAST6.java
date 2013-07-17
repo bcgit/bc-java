@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.CAST6Engine;
+import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -42,6 +43,24 @@ public final class CAST6
         }
     }
 
+    public static class Poly1305
+        extends BaseMac
+    {
+        public Poly1305()
+        {
+            super(new org.bouncycastle.crypto.macs.Poly1305(new CAST6Engine()));
+        }
+    }
+
+    public static class Poly1305KeyGen
+        extends BaseKeyGenerator
+    {
+        public Poly1305KeyGen()
+        {
+            super("Poly1305-CAST6", 256, new Poly1305KeyGenerator());
+        }
+    }
+
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
@@ -57,6 +76,7 @@ public final class CAST6
             provider.addAlgorithm("KeyGenerator.CAST6", PREFIX + "$KeyGen");
 
             addGMacAlgorithm(provider, "CAST6", PREFIX + "$GMAC", PREFIX + "$KeyGen");
+            addPoly1305Algorithm(provider, "CAST6", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
     }
 }
