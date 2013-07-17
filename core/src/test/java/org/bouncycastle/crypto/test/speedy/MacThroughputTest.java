@@ -315,7 +315,8 @@ public class MacThroughputTest
         System.out.println("=========================");
         long total = testRun(macProvider, macPerMessage, message, iterationCount);
 
-        long averageRuntime = total / iterationCount;
+        int adjustedCount = (int)(iterationCount * (1.0f / macProvider.getRateFactor()));
+        long averageRuntime = total / adjustedCount;
         System.out.printf("%s %-7s%s Total run time:   %,d ms\n", macProvider.getAlgorithmName(), name,
                 macPerMessage ? "*" : " ", total / 1000000);
         System.out.printf("%s %-7s%s Average run time: %,d ns\n", macProvider.getAlgorithmName(), name,
