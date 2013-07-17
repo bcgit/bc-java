@@ -3,12 +3,15 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.OldCTSBlockCipher;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
@@ -94,6 +97,66 @@ public class CTSTest
         }
     }
 
+    private void testExceptions() throws InvalidCipherTextException
+    {
+        BufferedBlockCipher engine = new CTSBlockCipher(new DESEngine());
+        CipherParameters params = new KeyParameter(new byte[engine.getBlockSize()]);
+        engine.init(true, params);
+
+        byte[] out = new byte[engine.getOutputSize(engine.getBlockSize())];
+        
+        engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
+        try 
+        {
+            engine.doFinal(out, 0);
+            fail("Expected CTS encrypt error on < 1 block input");
+        } catch(DataLengthException e)
+        {
+            // Expected
+        }
+
+        engine.init(true, params);
+        engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
+        try 
+        {
+            engine.doFinal(out, 0);
+        } catch(DataLengthException e)
+        {
+            fail("Unexpected CTS encrypt error on == 1 block input");
+        }
+
+        engine.init(false, params);
+        engine.processBytes(new byte[engine.getBlockSize() - 1], 0, engine.getBlockSize() - 1, out, 0);
+        try 
+        {
+            engine.doFinal(out, 0);
+            fail("Expected CTS decrypt error on < 1 block input");
+        } catch(DataLengthException e)
+        {
+            // Expected
+        }
+
+        engine.init(false, params);
+        engine.processBytes(new byte[engine.getBlockSize()], 0, engine.getBlockSize(), out, 0);
+        try 
+        {
+            engine.doFinal(out, 0);
+        } catch(DataLengthException e)
+        {
+            fail("Unexpected CTS decrypt error on == 1 block input");
+        }
+
+        try 
+        {
+            new CTSBlockCipher(new SICBlockCipher(new AESEngine()));
+            fail("Expected CTS construction error - only ECB/CBC supported.");
+        } catch(IllegalArgumentException e)
+        {
+            // Expected
+        }
+
+    }
+
     public String getName()
     {
         return "CTS";
@@ -137,6 +200,8 @@ public class CTSTest
         testCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, pstErrata);
         testCTS(8, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), aes1Block), aes1Block, pstErrataNonZeroIV);
         testOldCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
+
+        testExceptions();
     }
 
     public static void main(
