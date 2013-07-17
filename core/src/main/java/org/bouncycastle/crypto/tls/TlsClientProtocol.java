@@ -651,7 +651,7 @@ public class TlsClientProtocol
                 {
                     // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+//                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
                 /*
