@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test.speedy;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -23,16 +24,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  */
 public class MacThroughputTest
 {
-    private interface MacProvider
-    {
-        public Mac getMac();
-
-        int getRateFactor();
-
-        public String getAlgorithmName();
-
-        public int getMacSize();
-    }
 
     private static final long CLOCK_SPEED = 2400000000L;
 
@@ -63,216 +54,18 @@ public class MacThroughputTest
         return new KeyParameter(kg.generateKey());
     }
 
-    private static final MacProvider POLY_1305 = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Poly1305 mac = new Poly1305(new NullEngine(16));
-            new ParametersWithIV(generatePoly1305Key(), generateNonce(16));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "Poly1305";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 1;
-        }
-    };
-
-    private static final MacProvider POLY_1305_AES = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Poly1305 mac = new Poly1305(new NullEngine(16));
-            new ParametersWithIV(generatePoly1305Key(), generateNonce(16));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "Poly1305-AES";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 1;
-        }
-    };
-
-    private static final MacProvider POLY_1305_REF = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new Poly1305Reference(new NullEngine(16));
-            new ParametersWithIV(generatePoly1305Key(), generateNonce(16));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "Poly1305-Ref";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 10;
-        }
-    };
-
-    private static final MacProvider CMAC_AES = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new CMac(new AESFastEngine());
-            mac.init(new KeyParameter(generateNonce(16)));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "CMAC-AES";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 3;
-        }
-    };
-
-    private static final MacProvider GMAC_AES = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new GMac(new GCMBlockCipher(new AESFastEngine()));
-            mac.init(new ParametersWithIV(new KeyParameter(generateNonce(16)), generateNonce(16)));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "GMAC-AES";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 5;
-        }
-    };
-
-    private static final MacProvider SIPHASH = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new SipHash();
-            mac.init(new KeyParameter(generateNonce(16)));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "SipHash";
-        }
-
-        public int getMacSize()
-        {
-            return 8;
-        }
-
-        public int getRateFactor()
-        {
-            return 1;
-        }
-    };
-
-    private static final MacProvider SKEIN = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new SkeinMac(SkeinMac.SKEIN_512, 128);
-            mac.init(new KeyParameter(generateNonce(64)));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "SkeinMac";
-        }
-
-        public int getMacSize()
-        {
-            return 16;
-        }
-
-        public int getRateFactor()
-        {
-            return 2;
-        }
-    };
-
-    private static final MacProvider HMAC_SHA1 = new MacProvider() {
-
-        public Mac getMac()
-        {
-            final Mac mac = new HMac(new SHA1Digest());
-            mac.init(new KeyParameter(generateNonce(20)));
-            return mac;
-        }
-
-        public String getAlgorithmName()
-        {
-            return "HMAC-SHA1";
-        }
-
-        public int getMacSize()
-        {
-            return 20;
-        }
-
-        public int getRateFactor()
-        {
-            return 3;
-        }
-    };
-
     public static void main(String[] args)
     {
-        // testMac(HMAC_SHA1);
-        // testMac(SKEIN);
-        testMac(SIPHASH);
-        testMac(CMAC_AES);
-        // testMac(GMAC_AES);
-        // testMac(POLY_1305);
-        // testMac(POLY_1305_AES);
-        // testMac(POLY_1305_REF);
+        testMac(new HMac(new SHA1Digest()), new KeyParameter(generateNonce(20)), 3);
+        testMac(new SkeinMac(SkeinMac.SKEIN_512, 128), new KeyParameter(generateNonce(64)), 2);
+        testMac(new SipHash(), new KeyParameter(generateNonce(16)), 1);
+        testMac(new CMac(new AESFastEngine()), new KeyParameter(generateNonce(16)), 3);
+        testMac(new GMac(new GCMBlockCipher(new AESFastEngine())), new ParametersWithIV(new KeyParameter(
+                generateNonce(16)), generateNonce(16)), 5);
+        testMac(new Poly1305(new NullEngine(16)), new ParametersWithIV(generatePoly1305Key(), generateNonce(16)), 1);
+        testMac(new Poly1305(new AESFastEngine()), new ParametersWithIV(generatePoly1305Key(), generateNonce(16)), 1);
+        testMac(new Poly1305Reference(new NullEngine(16)), new ParametersWithIV(generatePoly1305Key(),
+                generateNonce(16)), 1);
     }
 
     private static byte[] generateNonce(int sizeBytes)
@@ -282,14 +75,14 @@ public class MacThroughputTest
         return nonce;
     }
 
-    private static void testMac(MacProvider macProvider)
+    private static void testMac(Mac mac, CipherParameters params, int rateFactor)
     {
         System.out.println("=========================");
 
-        long total = testRun(macProvider, false, MEDIUM_MESSAGE, MEDIUM_MESSAGE_COUNT);
-        System.out.printf("%s Warmup 1 run time: %,d ms\n", macProvider.getAlgorithmName(), total / 1000000);
-        total = testRun(macProvider, false, MEDIUM_MESSAGE, MEDIUM_MESSAGE_COUNT);
-        System.out.printf("%s Warmup 2 run time: %,d ms\n", macProvider.getAlgorithmName(), total / 1000000);
+        long total = testRun(mac, params, false, MEDIUM_MESSAGE, adjust(MEDIUM_MESSAGE_COUNT, rateFactor));
+        System.out.printf("%s Warmup 1 run time: %,d ms\n", mac.getAlgorithmName(), total / 1000000);
+        total = testRun(mac, params, false, MEDIUM_MESSAGE, adjust(MEDIUM_MESSAGE_COUNT, rateFactor));
+        System.out.printf("%s Warmup 2 run time: %,d ms\n", mac.getAlgorithmName(), total / 1000000);
         System.gc();
         try
         {
@@ -298,54 +91,61 @@ public class MacThroughputTest
         {
         }
 
-        test("Short", macProvider, false, SHORT_MESSAGE, SHORT_MESSAGE_COUNT);
-        // test("Short", macProvider, true, SHORT_MESSAGE, SHORT_MESSAGE_COUNT / 100);
-        test("Medium", macProvider, false, MEDIUM_MESSAGE, MEDIUM_MESSAGE_COUNT);
-        // test("Medium", macProvider, true, MEDIUM_MESSAGE, MEDIUM_MESSAGE_COUNT / 10);
-        test("Long", macProvider, false, LONG_MESSAGE, LONG_MESSAGE_COUNT);
-        // test("Long", macProvider, true, LONG_MESSAGE, LONG_MESSAGE_COUNT / 3);
+        test("Short", mac, params, false, SHORT_MESSAGE, adjust(SHORT_MESSAGE_COUNT, rateFactor));
+        // test("Short", mac, params, true, SHORT_MESSAGE, adjust(SHORT_MESSAGE_COUNT, rateFactor));
+        test("Medium", mac, params, false, MEDIUM_MESSAGE, adjust(MEDIUM_MESSAGE_COUNT, rateFactor));
+        // test("Medium", mac, params, true, MEDIUM_MESSAGE, adjust(MEDIUM_MESSAGE_COUNT,
+        // rateFactor));
+        test("Long", mac, params, false, LONG_MESSAGE, adjust(LONG_MESSAGE_COUNT, rateFactor));
+        // test("Long", mac, params, true, LONG_MESSAGE, adjust(LONG_MESSAGE_COUNT, rateFactor));
+    }
+
+    private static int adjust(int iterationCount, int rateFactor)
+    {
+        return (int)(iterationCount * (1.0f / rateFactor));
     }
 
     private static void test(String name,
-                             MacProvider macProvider,
-                             boolean macPerMessage,
+                             Mac mac,
+                             CipherParameters params,
+                             boolean initPerMessage,
                              byte[] message,
-                             int iterationCount)
+                             int adjustedCount)
     {
         System.out.println("=========================");
-        long total = testRun(macProvider, macPerMessage, message, iterationCount);
+        long total = testRun(mac, params, initPerMessage, message, adjustedCount);
 
-        int adjustedCount = (int)(iterationCount * (1.0f / macProvider.getRateFactor()));
         long averageRuntime = total / adjustedCount;
-        System.out.printf("%s %-7s%s Total run time:   %,d ms\n", macProvider.getAlgorithmName(), name,
-                macPerMessage ? "*" : " ", total / 1000000);
-        System.out.printf("%s %-7s%s Average run time: %,d ns\n", macProvider.getAlgorithmName(), name,
-                macPerMessage ? "*" : " ", averageRuntime);
+        System.out.printf("%s %-7s%s Total run time:   %,d ms\n", mac.getAlgorithmName(), name, initPerMessage ? "*"
+                : " ", total / 1000000);
+        System.out.printf("%s %-7s%s Average run time: %,d ns\n", mac.getAlgorithmName(), name, initPerMessage ? "*"
+                : " ", averageRuntime);
         final long mbPerSecond = (long)((double)message.length / averageRuntime * 1000000000 / (1024 * 1024));
-        System.out.printf("%s %-7s%s Average speed:    %,d MB/s\n", macProvider.getAlgorithmName(), name,
-                macPerMessage ? "*" : " ", mbPerSecond);
-        System.out.printf("%s %-7s%s Average speed:    %,f c/b\n", macProvider.getAlgorithmName(), name,
-                macPerMessage ? "*" : " ", CLOCK_SPEED / (double)(mbPerSecond * (1024 * 1024)));
+        System.out.printf("%s %-7s%s Average speed:    %,d MB/s\n", mac.getAlgorithmName(), name, initPerMessage ? "*"
+                : " ", mbPerSecond);
+        System.out.printf("%s %-7s%s Average speed:    %,f c/b\n", mac.getAlgorithmName(), name, initPerMessage ? "*"
+                : " ", CLOCK_SPEED / (double)(mbPerSecond * (1024 * 1024)));
     }
 
-    private static long testRun(MacProvider macProvider, boolean macPerMessage, byte[] message, int iterationCount)
+    private static long testRun(Mac mac,
+                                CipherParameters params,
+                                boolean initPerMessage,
+                                byte[] message,
+                                int adjustedCount)
     {
-        byte[] out = new byte[macProvider.getMacSize()];
+        byte[] out = new byte[mac.getMacSize()];
 
-        Mac mac = null;
-        if (!macPerMessage)
+        if (!initPerMessage)
         {
-            mac = macProvider.getMac();
+            mac.init(params);
         }
         long start = System.nanoTime();
 
-        int adjustedCount = (int)(iterationCount * (1.0f / macProvider.getRateFactor()));
-        // System.err.println(macProvider.getAlgorithmName() + " " + adjustedCount);
         for (int i = 0; i < adjustedCount; i++)
         {
-            if (macPerMessage)
+            if (initPerMessage)
             {
-                mac = macProvider.getMac();
+                mac.init(params);
             }
             mac.update(message, 0, message.length);
             mac.doFinal(out, 0);
