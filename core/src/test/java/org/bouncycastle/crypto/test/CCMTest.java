@@ -118,6 +118,9 @@ public class CCMTest
         {
             // expected
         }
+        
+        AEADTestUtil.testReset(this, new CCMBlockCipher(new AESEngine()), new CCMBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testTampering(this, ccm, new AEADParameters(new KeyParameter(K1), 32, N2));
     }
 
     private void checkVectors(
@@ -196,7 +199,8 @@ public class CCMTest
 
         if (!areEqual(p, dec))
         {
-            fail("decrypted stream fails to match in test " + count + " with " + additionalDataType);
+            fail("decrypted stream fails to match in test " + count + " with " + additionalDataType,
+                    new String(Hex.encode(p)), new String(Hex.encode(dec)));
         }
 
         if (!areEqual(t, ccm.getMac()))

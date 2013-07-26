@@ -99,6 +99,8 @@ public class CCMBlockCipher
         {
             throw new IllegalArgumentException("nonce must have length from 7 to 13 octets");
         }
+        
+        reset();
     }
 
     public String getAlgorithmName()
@@ -219,7 +221,12 @@ public class CCMBlockCipher
 
         if (forEncryption)
         {
-            output = new byte[inLen + macSize];
+            int outputLen = inLen + macSize;
+            output = new byte[outputLen];
+            if (output.length < (outputLen + outOff))
+            {
+                throw new DataLengthException("Output buffer too short.");
+            }
 
             calculateMac(in, inOff, inLen, macBlock);
 
@@ -246,9 +253,18 @@ public class CCMBlockCipher
         }
         else
         {
-            output = new byte[inLen - macSize];
+            if (inLen < macSize)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+            int outputLen = inLen - macSize;
+            output = new byte[outputLen];
+            if (output.length < (outputLen + outOff))
+            {
+                throw new DataLengthException("Output buffer too short.");
+            }
 
-            System.arraycopy(in, inOff + inLen - macSize, macBlock, 0, macSize);
+            System.arraycopy(in, inOff + outputLen, macBlock, 0, macSize);
 
             ctrCipher.processBlock(macBlock, 0, macBlock, 0);
 
