@@ -8,6 +8,16 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-10.2.7">RFC 5652</a>: OtherKeyAttribute object.
+ * <p>
+ * <pre>
+ * OtherKeyAttribute ::= SEQUENCE {
+ *     keyAttrId OBJECT IDENTIFIER,
+ *     keyAttr ANY DEFINED BY keyAttrId OPTIONAL
+ * }
+ * </pre>
+ */
 public class OtherKeyAttribute
     extends ASN1Object
 {
@@ -15,7 +25,14 @@ public class OtherKeyAttribute
     private ASN1Encodable        keyAttr;
 
     /**
-     * return an OtherKeyAttribute object from the given object.
+     * Return an OtherKeyAttribute object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link OtherKeyAttribute} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OtherKeyAttribute structure inside
+     * </ul>
      *
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -63,12 +80,6 @@ public class OtherKeyAttribute
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * OtherKeyAttribute ::= SEQUENCE {
-     *     keyAttrId OBJECT IDENTIFIER,
-     *     keyAttr ANY DEFINED BY keyAttrId OPTIONAL
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

@@ -10,6 +10,20 @@ import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <p>
+ * <pre>
+ * RecipientKeyIdentifier ::= SEQUENCE {
+ *     subjectKeyIdentifier SubjectKeyIdentifier,
+ *     date GeneralizedTime OPTIONAL,
+ *     other OtherKeyAttribute OPTIONAL 
+ * }
+ *
+ * SubjectKeyIdentifier ::= OCTET STRING
+ * </pre>
+ */
 public class RecipientKeyIdentifier
     extends ASN1Object
 {
@@ -73,7 +87,7 @@ public class RecipientKeyIdentifier
     }
 
     /**
-     * return a RecipientKeyIdentifier object from a tagged object.
+     * Return a RecipientKeyIdentifier object from a tagged object.
      *
      * @param _ato the tagged object holding the object we want.
      * @param _explicit true if the object is meant to be explicitly
@@ -87,7 +101,14 @@ public class RecipientKeyIdentifier
     }
     
     /**
-     * return a RecipientKeyIdentifier object from the given object.
+     * Return a RecipientKeyIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link RecipientKeyIdentifier} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientKeyIdentifier structure inside
+     * </ul>
      *
      * @param _obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -125,15 +146,6 @@ public class RecipientKeyIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * RecipientKeyIdentifier ::= SEQUENCE {
-     *     subjectKeyIdentifier SubjectKeyIdentifier,
-     *     date GeneralizedTime OPTIONAL,
-     *     other OtherKeyAttribute OPTIONAL 
-     * }
-     *
-     * SubjectKeyIdentifier ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
