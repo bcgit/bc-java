@@ -9,6 +9,15 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.5">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <pre>
+ * OtherRecipientInfo ::= SEQUENCE {
+ *    oriType OBJECT IDENTIFIER,
+ *    oriValue ANY DEFINED BY oriType }
+ * </pre>
+ */
 public class OtherRecipientInfo
     extends ASN1Object
 {
@@ -35,7 +44,7 @@ public class OtherRecipientInfo
     }
 
     /**
-     * return a OtherRecipientInfo object from a tagged object.
+     * Return a OtherRecipientInfo object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -51,7 +60,14 @@ public class OtherRecipientInfo
     }
     
     /**
-     * return a OtherRecipientInfo object from the given object.
+     * Return a OtherRecipientInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link PasswordRecipientInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with OtherRecipientInfo structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -84,11 +100,6 @@ public class OtherRecipientInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * OtherRecipientInfo ::= SEQUENCE {
-     *    oriType OBJECT IDENTIFIER,
-     *    oriValue ANY DEFINED BY oriType }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

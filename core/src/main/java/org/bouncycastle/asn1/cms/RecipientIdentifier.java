@@ -8,6 +8,18 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <pre>
+ * RecipientIdentifier ::= CHOICE {
+ *     issuerAndSerialNumber IssuerAndSerialNumber,
+ *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
+ * }
+ *
+ * SubjectKeyIdentifier ::= OCTET STRING
+ * </pre>
+ */
 public class RecipientIdentifier
     extends ASN1Object
     implements ASN1Choice
@@ -33,7 +45,16 @@ public class RecipientIdentifier
     }
     
     /**
-     * return a RecipientIdentifier object from the given object.
+     * Return a RecipientIdentifier object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link RecipientIdentifier} object
+     * <li> {@link IssuerAndSerialNumber} object
+     * <li> {@link org.bouncycastle.asn1.ASN1OctetString#getInstance(java.lang.Object) ASN1OctetString} input formats (OctetString, byte[]) with value of KeyIdentifier in DER form
+     * <li> {@link org.bouncycastle.asn1.ASN1Primitive ASN1Primitive} for RecipientIdentifier constructor
+     * </ul>
      *
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -82,14 +103,6 @@ public class RecipientIdentifier
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * RecipientIdentifier ::= CHOICE {
-     *     issuerAndSerialNumber IssuerAndSerialNumber,
-     *     subjectKeyIdentifier [0] SubjectKeyIdentifier 
-     * }
-     *
-     * SubjectKeyIdentifier ::= OCTET STRING
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

@@ -13,12 +13,37 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-10.2.4">RFC 5652</a>: IssuerAndSerialNumber object.
+ * <p>
+ * <pre>
+ * IssuerAndSerialNumber ::= SEQUENCE {
+ *     issuer Name,
+ *     serialNumber CertificateSerialNumber
+ * }
+ *
+ * CertificateSerialNumber ::= INTEGER  -- See RFC 5280
+ * </pre>
+ */
 public class IssuerAndSerialNumber
     extends ASN1Object
 {
     private X500Name    name;
     private ASN1Integer  serialNumber;
 
+    /**
+     * Return an IssuerAndSerialNumber object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link IssuerAndSerialNumber} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with IssuerAndSerialNumber structure inside
+     * </ul>
+     *
+     * @param o the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static IssuerAndSerialNumber getInstance(
         Object  obj)
     {

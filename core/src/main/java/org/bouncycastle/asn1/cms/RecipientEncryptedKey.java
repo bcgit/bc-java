@@ -8,6 +8,16 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.2">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <pre>
+ * RecipientEncryptedKey ::= SEQUENCE {
+ *     rid KeyAgreeRecipientIdentifier,
+ *     encryptedKey EncryptedKey
+ * }
+ * </pre>
+ */
 
 public class RecipientEncryptedKey
     extends ASN1Object
@@ -23,7 +33,7 @@ public class RecipientEncryptedKey
     }
     
     /**
-     * return an RecipientEncryptedKey object from a tagged object.
+     * Return an RecipientEncryptedKey object from a tagged object.
      *
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
@@ -39,7 +49,14 @@ public class RecipientEncryptedKey
     }
     
     /**
-     * return a RecipientEncryptedKey object from the given object.
+     * Return a RecipientEncryptedKey object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link RecipientEncryptedKey} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientEncryptedKey structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -80,12 +97,6 @@ public class RecipientEncryptedKey
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * RecipientEncryptedKey ::= SEQUENCE {
-     *     rid KeyAgreeRecipientIdentifier,
-     *     encryptedKey EncryptedKey
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

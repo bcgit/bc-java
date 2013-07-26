@@ -12,6 +12,22 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-11.3">RFC 5652</a>:
+ * Dual-mode timestamp format producing either UTCTIme or GeneralizedTime.
+ * <p>
+ * <pre>
+ * Time ::= CHOICE {
+ *     utcTime        UTCTime,
+ *     generalTime    GeneralizedTime }
+ * </pre>
+ * <p>
+ * This has a constructor using java.util.Date for input which generates
+ * a {@link org.bouncycastle.asn1.DERUTCTime DERUTCTime} object if the
+ * supplied datetime is in range 1950-01-01-00:00:00 UTC until 2049-12-31-23:59:60 UTC.
+ * If the datetime value is outside that range, the generated object will be
+ * {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime}.
+ */
 public class Time
     extends ASN1Object
     implements ASN1Choice
@@ -38,7 +54,7 @@ public class Time
     }
 
     /**
-     * creates a time object from a given date - if the date is between 1950
+     * Create a time object from a given date - if the year is in between 1950
      * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime
      * is used.
      */
@@ -63,6 +79,20 @@ public class Time
         }
     }
 
+    /**
+     * Return a Time object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link Time} object
+     * <li> {@link org.bouncycastle.asn1.DERUTCTime DERUTCTime} object
+     * <li> {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime} object
+     * </ul>
+     *
+     * @param _obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static Time getInstance(
         Object  obj)
     {
@@ -82,6 +112,9 @@ public class Time
         throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
     }
 
+    /**
+     * Get the date+tine as a String in full form century format.
+     */
     public String getTime()
     {
         if (time instanceof DERUTCTime)
@@ -94,6 +127,9 @@ public class Time
         }
     }
 
+    /**
+     * Get java.util.Date version of date+time.
+     */
     public Date getDate()
     {
         try
@@ -115,11 +151,6 @@ public class Time
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * Time ::= CHOICE {
-     *             utcTime        UTCTime,
-     *             generalTime    GeneralizedTime }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

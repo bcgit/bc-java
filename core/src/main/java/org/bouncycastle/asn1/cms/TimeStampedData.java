@@ -9,6 +9,20 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERIA5String;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Binding Documents with Time-Stamps; TimeStampedData object.
+ * <p>
+ * <pre>
+ * TimeStampedData ::= SEQUENCE {
+ *   version              INTEGER { v1(1) },
+ *   dataUri              IA5String OPTIONAL,
+ *   metaData             MetaData OPTIONAL,
+ *   content              OCTET STRING OPTIONAL,
+ *   temporalEvidence     Evidence
+ * }
+ * </pre>
+ */
 public class TimeStampedData
     extends ASN1Object
 {
@@ -47,18 +61,26 @@ public class TimeStampedData
         this.temporalEvidence = Evidence.getInstance(seq.getObjectAt(index));
     }
 
+    /**
+     * Return a TimeStampedData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link RecipientKeyIdentifier} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with TimeStampedData structure inside
+     * </ul>
+     *
+     * @param _obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static TimeStampedData getInstance(Object obj)
     {
-        if (obj instanceof TimeStampedData)
+        if (obj == null || obj instanceof TimeStampedData)
         {
             return (TimeStampedData)obj;
         }
-        else if (obj != null)
-        {
-            return new TimeStampedData(ASN1Sequence.getInstance(obj));
-        }
-
-        return null;
+        return new TimeStampedData(ASN1Sequence.getInstance(obj));
     }
 
     public DERIA5String getDataUri()
@@ -81,18 +103,6 @@ public class TimeStampedData
         return temporalEvidence;
     }
 
-    /**
-     * <pre>
-     * TimeStampedData ::= SEQUENCE {
-     *   version              INTEGER { v1(1) },
-     *   dataUri              IA5String OPTIONAL,
-     *   metaData             MetaData OPTIONAL,
-     *   content              OCTET STRING OPTIONAL,
-     *   temporalEvidence     Evidence
-     * }
-     * </pre>
-     * @return
-     */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();

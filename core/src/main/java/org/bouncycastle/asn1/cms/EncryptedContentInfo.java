@@ -11,6 +11,17 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EncryptedContentInfo object.
+ *
+ * <pre>
+ * EncryptedContentInfo ::= SEQUENCE {
+ *     contentType ContentType,
+ *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
+ *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
+ * }
+ * </pre>
+ */
 public class EncryptedContentInfo
     extends ASN1Object
 {
@@ -47,7 +58,14 @@ public class EncryptedContentInfo
     }
 
     /**
-     * return an EncryptedContentInfo object from the given object.
+     * Return an EncryptedContentInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link EncryptedContentInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -84,13 +102,6 @@ public class EncryptedContentInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * EncryptedContentInfo ::= SEQUENCE {
-     *     contentType ContentType,
-     *     contentEncryptionAlgorithm ContentEncryptionAlgorithmIdentifier,
-     *     encryptedContent [0] IMPLICIT EncryptedContent OPTIONAL 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

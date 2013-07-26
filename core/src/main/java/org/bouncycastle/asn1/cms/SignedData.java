@@ -16,7 +16,45 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * a signed data object.
+ * <a href="http://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
+ * <p>
+ * A signed data object containing multitude of {@link SignerInfo}s.
+ * <pre>
+ * SignedData ::= SEQUENCE {
+ *     version CMSVersion,
+ *     digestAlgorithms DigestAlgorithmIdentifiers,
+ *     encapContentInfo EncapsulatedContentInfo,
+ *     certificates [0] IMPLICIT CertificateSet OPTIONAL,
+ *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+ *     signerInfos SignerInfos
+ *   }
+ * 
+ * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
+ * 
+ * SignerInfos ::= SET OF SignerInfo
+ * </pre>
+ * <p>
+ * The version calculation uses following ruleset from RFC 3852 section 5.1:
+ * <pre>
+ * IF ((certificates is present) AND
+ *    (any certificates with a type of other are present)) OR
+ *    ((crls is present) AND
+ *    (any crls with a type of other are present))
+ * THEN version MUST be 5
+ * ELSE
+ *    IF (certificates is present) AND
+ *       (any version 2 attribute certificates are present)
+ *    THEN version MUST be 4
+ *    ELSE
+ *       IF ((certificates is present) AND
+ *          (any version 1 attribute certificates are present)) OR
+ *          (any SignerInfo structures are version 3) OR
+ *          (encapContentInfo eContentType is other than id-data)
+ *       THEN version MUST be 3
+ *       ELSE version MUST be 1
+ * </pre>
+ * <p>
+ * @todo Check possible update for this to RFC 5652 level
  */
 public class SignedData
     extends ASN1Object
@@ -35,6 +73,19 @@ public class SignedData
     private boolean certsBer;
     private boolean        crlsBer;
 
+    /**
+     * Return a SignedData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link SignedData} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with SignedData structure inside
+     * </ul>
+     *
+     * @param obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static SignedData getInstance(
         Object  o)
     {
@@ -68,24 +119,6 @@ public class SignedData
     }
 
 
-    // RFC3852, section 5.1:
-    // IF ((certificates is present) AND
-    //    (any certificates with a type of other are present)) OR
-    //    ((crls is present) AND
-    //    (any crls with a type of other are present))
-    // THEN version MUST be 5
-    // ELSE
-    //    IF (certificates is present) AND
-    //       (any version 2 attribute certificates are present)
-    //    THEN version MUST be 4
-    //    ELSE
-    //       IF ((certificates is present) AND
-    //          (any version 1 attribute certificates are present)) OR
-    //          (any SignerInfo structures are version 3) OR
-    //          (encapContentInfo eContentType is other than id-data)
-    //       THEN version MUST be 3
-    //       ELSE version MUST be 1
-    //
     private ASN1Integer calculateVersion(
         ASN1ObjectIdentifier contentOid,
         ASN1Set certs,
@@ -257,16 +290,6 @@ public class SignedData
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * SignedData ::= SEQUENCE {
-     *     version CMSVersion,
-     *     digestAlgorithms DigestAlgorithmIdentifiers,
-     *     encapContentInfo EncapsulatedContentInfo,
-     *     certificates [0] IMPLICIT CertificateSet OPTIONAL,
-     *     crls [1] IMPLICIT CertificateRevocationLists OPTIONAL,
-     *     signerInfos SignerInfos
-     *   }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {
