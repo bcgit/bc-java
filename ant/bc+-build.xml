@@ -327,6 +327,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -341,6 +343,8 @@
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                     <attribute name="Implementation-Version" value="${release.name}.0" />
                     <attribute name="Trusted-Library" value="true" />
+                    <attribute name="Permissions" value="all-permissions" />
+                    <attribute name="Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -423,6 +427,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -437,6 +443,8 @@
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                     <attribute name="Implementation-Version" value="${release.name}.0" />
                     <attribute name="Trusted-Library" value="true" />
+                    <attribute name="Permissions" value="all-permissions" />
+                    <attribute name="Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -482,6 +490,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -525,6 +535,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -570,6 +582,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -624,6 +638,8 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
             </manifestElements>
         </compile-test>
     </target>
