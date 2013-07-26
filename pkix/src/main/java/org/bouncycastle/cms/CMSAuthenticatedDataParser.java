@@ -143,7 +143,7 @@ public class CMSAuthenticatedDataParser
             //
             // read the authenticated content info
             //
-            ContentInfoParser data = authData.getEnapsulatedContentInfo();
+            ContentInfoParser data = authData.getEncapsulatedContentInfo();
             CMSReadable readable = new CMSProcessableInputStream(
                 ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
 
@@ -176,7 +176,7 @@ public class CMSAuthenticatedDataParser
             //
             // read the authenticated content info
             //
-            ContentInfoParser data = authData.getEnapsulatedContentInfo();
+            ContentInfoParser data = authData.getEncapsulatedContentInfo();
             CMSReadable readable = new CMSProcessableInputStream(
                 ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
 

@@ -48,7 +48,10 @@ public class KeyAgreeRecipientInfo
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.recipientEncryptedKeys = recipientEncryptedKeys;
     }
-    
+
+    /**
+     * @deprecated use getInstance()
+     */
     public KeyAgreeRecipientInfo(
         ASN1Sequence seq)
     {
@@ -102,19 +105,17 @@ public class KeyAgreeRecipientInfo
     public static KeyAgreeRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof KeyAgreeRecipientInfo)
+        if (obj instanceof KeyAgreeRecipientInfo)
         {
             return (KeyAgreeRecipientInfo)obj;
         }
         
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new KeyAgreeRecipientInfo((ASN1Sequence)obj);
+            return new KeyAgreeRecipientInfo(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException(
-        "Illegal object in KeyAgreeRecipientInfo: " + obj.getClass().getName());
-
+        return null;
     } 
 
     public ASN1Integer getVersion()

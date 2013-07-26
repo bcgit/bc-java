@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * }
  * </pre>
  */
-
 public class Evidence
     extends ASN1Object
     implements ASN1Choice
@@ -47,7 +46,7 @@ public class Evidence
      * <li> {@link org.bouncycastle.asn1.ASN1TaggedObject#getInstance(java.lang.Object) ASN1TaggedObject} input formats with Evidence data inside
      * </ul>
      *
-     * @param o the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static Evidence getInstance(Object obj)

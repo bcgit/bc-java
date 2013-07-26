@@ -48,7 +48,10 @@ public class KeyTransRecipientInfo
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
     }
-    
+
+    /**
+     * @deprecated use getInstance()
+     */
     public KeyTransRecipientInfo(
         ASN1Sequence seq)
     {
@@ -74,18 +77,17 @@ public class KeyTransRecipientInfo
     public static KeyTransRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof KeyTransRecipientInfo)
+        if (obj instanceof KeyTransRecipientInfo)
         {
             return (KeyTransRecipientInfo)obj;
         }
         
-        if(obj instanceof ASN1Sequence)
+        if(obj != null)
         {
-            return new KeyTransRecipientInfo((ASN1Sequence)obj);
+            return new KeyTransRecipientInfo(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException(
-        "Illegal object in KeyTransRecipientInfo: " + obj.getClass().getName());
+        return null;
     } 
 
     public ASN1Integer getVersion()

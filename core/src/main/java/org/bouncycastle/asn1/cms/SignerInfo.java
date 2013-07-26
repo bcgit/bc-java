@@ -72,7 +72,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * SignatureValue ::= OCTET STRING
  * </pre>
  */
-
 public class SignerInfo
     extends ASN1Object
 {
@@ -101,16 +100,16 @@ public class SignerInfo
         Object  o)
         throws IllegalArgumentException
     {
-        if (o == null || o instanceof SignerInfo)
+        if (o instanceof SignerInfo)
         {
             return (SignerInfo)o;
         }
-        else if (o instanceof ASN1Sequence)
+        else if (o != null)
         {
-            return new SignerInfo((ASN1Sequence)o);
+            return new SignerInfo(ASN1Sequence.getInstance(o));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + o.getClass().getName());
+        return null;
     }
 
     /**
@@ -122,7 +121,6 @@ public class SignerInfo
      * @param encryptedDigest         CMS knows as 'signature'
      * @param unauthenticatedAttributes CMS knows as 'unsignedAttrs'
      */
-
     public SignerInfo(
         SignerIdentifier        sid,
         AlgorithmIdentifier     digAlgorithm,

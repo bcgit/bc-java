@@ -57,6 +57,9 @@ public class RecipientKeyIdentifier
         this(subjectKeyIdentifier, null, null);
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public RecipientKeyIdentifier(
         ASN1Sequence seq)
     {
@@ -89,15 +92,15 @@ public class RecipientKeyIdentifier
     /**
      * Return a RecipientKeyIdentifier object from a tagged object.
      *
-     * @param _ato the tagged object holding the object we want.
-     * @param _explicit true if the object is meant to be explicitly
+     * @param ato the tagged object holding the object we want.
+     * @param isExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the object held by the
      *          tagged object cannot be converted.
      */
-    public static RecipientKeyIdentifier getInstance(ASN1TaggedObject _ato, boolean _explicit)
+    public static RecipientKeyIdentifier getInstance(ASN1TaggedObject ato, boolean isExplicit)
     {
-        return getInstance(ASN1Sequence.getInstance(_ato, _explicit));
+        return getInstance(ASN1Sequence.getInstance(ato, isExplicit));
     }
     
     /**
@@ -110,22 +113,22 @@ public class RecipientKeyIdentifier
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with RecipientKeyIdentifier structure inside
      * </ul>
      *
-     * @param _obj the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static RecipientKeyIdentifier getInstance(Object _obj)
+    public static RecipientKeyIdentifier getInstance(Object obj)
     {
-        if(_obj == null || _obj instanceof RecipientKeyIdentifier)
+        if (obj instanceof RecipientKeyIdentifier)
         {
-            return (RecipientKeyIdentifier)_obj;
+            return (RecipientKeyIdentifier)obj;
         }
         
-        if(_obj instanceof ASN1Sequence)
+        if(obj != null)
         {
-            return new RecipientKeyIdentifier((ASN1Sequence)_obj);
+            return new RecipientKeyIdentifier(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException("Invalid RecipientKeyIdentifier: " + _obj.getClass().getName());
+        return null;
     } 
 
     public ASN1OctetString getSubjectKeyIdentifier()

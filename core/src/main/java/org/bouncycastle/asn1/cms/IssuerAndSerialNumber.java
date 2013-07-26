@@ -41,7 +41,7 @@ public class IssuerAndSerialNumber
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with IssuerAndSerialNumber structure inside
      * </ul>
      *
-     * @param o the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static IssuerAndSerialNumber getInstance(
@@ -61,7 +61,6 @@ public class IssuerAndSerialNumber
 
     /**
      * @deprecated  use getInstance() method.
-     * @param seq
      */
     public IssuerAndSerialNumber(
         ASN1Sequence    seq)
@@ -77,6 +76,9 @@ public class IssuerAndSerialNumber
         this.serialNumber = certificate.getSerialNumber();
     }
 
+    /**
+     * @deprecated use constructor taking Certificate
+     */
     public IssuerAndSerialNumber(
         X509CertificateStructure certificate)
     {

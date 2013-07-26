@@ -32,7 +32,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
  *       unauthAttrs [2] IMPLICIT UnauthAttributes OPTIONAL }
  * </pre>
  */
-
 public class AuthEnvelopedData
     extends ASN1Object
 {
@@ -77,6 +76,7 @@ public class AuthEnvelopedData
      * Constructs AuthEnvelopedData by parsing supplied ASN1Sequence
      * <p>
      * @param seq An ASN1Sequence with AuthEnvelopedData
+     * @deprecated use getInstance().
      */
     public AuthEnvelopedData(
         ASN1Sequence seq)

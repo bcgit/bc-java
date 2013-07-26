@@ -41,6 +41,9 @@ public class Time
         return getInstance(obj.getObject());
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public Time(
         ASN1Primitive   time)
     {
@@ -90,7 +93,7 @@ public class Time
      * <li> {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime} object
      * </ul>
      *
-     * @param _obj the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static Time getInstance(

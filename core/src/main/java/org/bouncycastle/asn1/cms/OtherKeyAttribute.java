@@ -40,19 +40,22 @@ public class OtherKeyAttribute
     public static OtherKeyAttribute getInstance(
         Object o)
     {
-        if (o == null || o instanceof OtherKeyAttribute)
+        if (o instanceof OtherKeyAttribute)
         {
             return (OtherKeyAttribute)o;
         }
         
-        if (o instanceof ASN1Sequence)
+        if (o != null)
         {
-            return new OtherKeyAttribute((ASN1Sequence)o);
+            return new OtherKeyAttribute(ASN1Sequence.getInstance(o));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + o.getClass().getName());
+        return null;
     }
-    
+
+    /**
+     * @deprecated use getInstance()
+     */
     public OtherKeyAttribute(
         ASN1Sequence seq)
     {

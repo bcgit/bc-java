@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * }
  * </pre>
  */
-
 public class OriginatorPublicKey
     extends ASN1Object
 {
@@ -34,7 +33,10 @@ public class OriginatorPublicKey
         this.algorithm = algorithm;
         this.publicKey = new DERBitString(publicKey);
     }
-    
+
+    /**
+     * @deprecated use getInstance()
+     */
     public OriginatorPublicKey(
         ASN1Sequence seq)
     {
@@ -74,17 +76,17 @@ public class OriginatorPublicKey
     public static OriginatorPublicKey getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof OriginatorPublicKey)
+        if (obj instanceof OriginatorPublicKey)
         {
             return (OriginatorPublicKey)obj;
         }
         
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new OriginatorPublicKey((ASN1Sequence)obj);
+            return new OriginatorPublicKey(ASN1Sequence.getInstance(obj));
         }
-        
-        throw new IllegalArgumentException("Invalid OriginatorPublicKey: " + obj.getClass().getName());
+
+        return null;
     } 
 
     public AlgorithmIdentifier getAlgorithm()
