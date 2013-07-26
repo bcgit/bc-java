@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.DERSequence;
  * }
  * </pre>
  */
-
 public class RecipientEncryptedKey
     extends ASN1Object
 {
@@ -64,17 +63,17 @@ public class RecipientEncryptedKey
     public static RecipientEncryptedKey getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof RecipientEncryptedKey)
+        if (obj instanceof RecipientEncryptedKey)
         {
             return (RecipientEncryptedKey)obj;
         }
         
-        if (obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new RecipientEncryptedKey((ASN1Sequence)obj);
+            return new RecipientEncryptedKey(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException("Invalid RecipientEncryptedKey: " + obj.getClass().getName());
+        return null;
     } 
 
     public RecipientEncryptedKey(

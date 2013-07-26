@@ -31,7 +31,6 @@ import org.bouncycastle.asn1.DERSequence;
  * General rule of Attribute usage is that the {@link Attributes} containers
  * must not have multiple Attribute:s with same attrType (OID) there.
  */
-
 public class Attribute
     extends ASN1Object
 {

@@ -83,17 +83,17 @@ public class KEKRecipientInfo
     public static KEKRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof KEKRecipientInfo)
+        if (obj instanceof KEKRecipientInfo)
         {
             return (KEKRecipientInfo)obj;
         }
         
-        if(obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new KEKRecipientInfo((ASN1Sequence)obj);
+            return new KEKRecipientInfo(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException("Invalid KEKRecipientInfo: " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1Integer getVersion()

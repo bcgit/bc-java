@@ -50,7 +50,10 @@ public class PasswordRecipientInfo
         this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
         this.encryptedKey = encryptedKey;
     }
-    
+
+    /**
+     * @deprecated use getInstance() method.
+     */
     public PasswordRecipientInfo(
         ASN1Sequence seq)
     {
@@ -100,17 +103,17 @@ public class PasswordRecipientInfo
     public static PasswordRecipientInfo getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof PasswordRecipientInfo)
+        if (obj instanceof PasswordRecipientInfo)
         {
             return (PasswordRecipientInfo)obj;
         }
         
-        if(obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new PasswordRecipientInfo((ASN1Sequence)obj);
+            return new PasswordRecipientInfo(ASN1Sequence.getInstance(obj));
         }
         
-        throw new IllegalArgumentException("Invalid PasswordRecipientInfo: " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1Integer getVersion()

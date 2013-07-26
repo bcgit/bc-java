@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * SubjectKeyIdentifier ::= OCTET STRING
  * </pre>
  */
-
 public class SignerIdentifier
     extends ASN1Object
     implements ASN1Choice

@@ -19,14 +19,12 @@ import org.bouncycastle.asn1.BERTaggedObject;
  *     unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
  * </pre>
  */
-
 public class EncryptedData
     extends ASN1Object
 {
     private ASN1Integer version;
     private EncryptedContentInfo encryptedContentInfo;
     private ASN1Set unprotectedAttrs;
-
 
     /**
      * Return an EncryptedData object from the given object.

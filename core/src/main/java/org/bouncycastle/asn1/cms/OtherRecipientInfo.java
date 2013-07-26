@@ -34,7 +34,6 @@ public class OtherRecipientInfo
 
     /**
      * @deprecated use getInstance().
-     * @param seq
      */
     public OtherRecipientInfo(
         ASN1Sequence seq)

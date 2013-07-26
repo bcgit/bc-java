@@ -71,7 +71,7 @@ public class TimeStampedData
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with TimeStampedData structure inside
      * </ul>
      *
-     * @param _obj the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static TimeStampedData getInstance(Object obj)

@@ -52,17 +52,17 @@ public class DigestedData
     /**
      * Return a DigestedData object from a tagged object.
      *
-     * @param _ato the tagged object holding the object we want.
-     * @param _explicit true if the object is meant to be explicitly
+     * @param ato the tagged object holding the object we want.
+     * @param isExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the object held by the
      *          tagged object cannot be converted.
      */
     public static DigestedData getInstance(
-        ASN1TaggedObject _ato,
-        boolean _explicit)
+        ASN1TaggedObject ato,
+        boolean isExplicit)
     {
-        return getInstance(ASN1Sequence.getInstance(_ato, _explicit));
+        return getInstance(ASN1Sequence.getInstance(ato, isExplicit));
     }
     
     /**

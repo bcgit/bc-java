@@ -83,7 +83,7 @@ public class SignedData
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with SignedData structure inside
      * </ul>
      *
-     * @param obj the object we want converted.
+     * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static SignedData getInstance(

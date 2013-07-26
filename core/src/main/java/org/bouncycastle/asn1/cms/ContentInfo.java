@@ -26,8 +26,6 @@ import org.bouncycastle.asn1.BERTaggedObject;
  * }
  * </pre>
  */
-
-
 public class ContentInfo
     extends ASN1Object
     implements CMSObjectIdentifiers
@@ -45,7 +43,7 @@ public class ContentInfo
      * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with ContentInfo structure inside
      * </ul>
      *
-     * @param o the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static ContentInfo getInstance(

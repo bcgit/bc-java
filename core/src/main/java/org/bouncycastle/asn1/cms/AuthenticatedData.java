@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * <a href="http://tools.ietf.org/html/rfc5652#section-9.1">RFC 5652</a> section 9.1:
- * The AuthenticatedData carries {@link AuthAttributes authAttrs} and other data
+ * The AuthenticatedData carries AuthAttributes and other data
  * which define what really is being signed.
  * <p>
  * <pre>
@@ -38,7 +38,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * MessageAuthenticationCode ::= OCTET STRING
  * </pre>
  */
-
 public class AuthenticatedData
     extends ASN1Object
 {
@@ -82,6 +81,9 @@ public class AuthenticatedData
         this.unauthAttrs = unauthAttrs;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public AuthenticatedData(
         ASN1Sequence seq)
     {

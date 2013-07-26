@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.DERSequence;
  *      otherRevInfo ANY DEFINED BY otherRevInfoFormat }
  * </pre>
  */
-
 public class OtherRevocationInfoFormat
     extends ASN1Object
 {

@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.DLSet;
  *   SET SIZE(1..MAX) OF Attribute
  * </pre>
  */
-
 public class Attributes
     extends ASN1Object
 {
@@ -47,7 +46,7 @@ public class Attributes
      * <li> {@link org.bouncycastle.asn1.ASN1Set#getInstance(java.lang.Object) ASN1Set} input formats with Attributes structure inside
      * </ul>
      *
-     * @param o the object we want converted.
+     * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static Attributes getInstance(Object obj)
