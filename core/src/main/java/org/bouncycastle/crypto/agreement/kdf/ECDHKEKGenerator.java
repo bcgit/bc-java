@@ -11,9 +11,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.DigestDerivationFunction;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.util.Pack;
@@ -22,9 +22,9 @@ import org.bouncycastle.crypto.util.Pack;
  * X9.63 based key derivation function for ECDH CMS.
  */
 public class ECDHKEKGenerator
-    implements DerivationFunction
+    implements DigestDerivationFunction
 {
-    private DerivationFunction kdf;
+    private DigestDerivationFunction kdf;
 
     private ASN1ObjectIdentifier algorithm;
     private int                 keySize;

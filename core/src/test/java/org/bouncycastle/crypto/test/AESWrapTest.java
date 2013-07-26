@@ -60,6 +60,47 @@ public class AESWrapTest
             return new SimpleTestResult(false, getName() + ": failed unwrap test exception.", e);
         }
 
+        //
+        // offset test
+        //
+        byte[] pText = new byte[5 + in.length];
+        byte[]  cText;
+
+        System.arraycopy(in, 0, pText, 5, in.length);
+
+        wrapper.init(true, new KeyParameter(kek));
+
+        try
+        {
+            cText = wrapper.wrap(pText, 5, in.length);
+            if (!Arrays.areEqual(cText, out))
+            {
+                return new SimpleTestResult(false, getName() + ": failed wrap test " + id  + " expected " + new String(Hex.encode(out)) + " got " + new String(Hex.encode(cText)));
+            }
+        }
+        catch (Exception e)
+        {
+            return new SimpleTestResult(false, getName() + ": failed wrap test exception " + e.toString());
+        }
+
+        wrapper.init(false, new KeyParameter(kek));
+
+        cText = new byte[6 + out.length];
+        System.arraycopy(out, 0, cText, 6, out.length);
+
+        try
+        {
+            pText = wrapper.unwrap(cText, 6, out.length);
+            if (!Arrays.areEqual(pText, in))
+            {
+                return new SimpleTestResult(false, getName() + ": failed unwrap test " + id  + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText)));
+            }
+        }
+        catch (Exception e)
+        {
+            return new SimpleTestResult(false, getName() + ": failed unwrap test exception.", e);
+        }
+
         return new SimpleTestResult(true, getName() + ": Okay");
     }
 

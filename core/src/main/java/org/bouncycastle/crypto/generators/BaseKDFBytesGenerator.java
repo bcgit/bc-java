@@ -1,9 +1,9 @@
 package org.bouncycastle.crypto.generators;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.DigestDerivationFunction;
 import org.bouncycastle.crypto.params.ISO18033KDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.util.Pack;
@@ -13,7 +13,8 @@ import org.bouncycastle.crypto.util.Pack;
  * 18033 <br>
  * This implementation is based on ISO 18033/P1363a.
  */
-public class BaseKDFBytesGenerator implements DerivationFunction
+public class BaseKDFBytesGenerator
+    implements DigestDerivationFunction
 {
     private int    counterStart;
     private Digest digest;
