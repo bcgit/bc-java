@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -90,8 +92,40 @@ public class OCBTest
         runLongerTestCase(128, 64, Hex.decode("B7ECE9D381FE437F"));
         runLongerTestCase(192, 64, Hex.decode("DE0574C87FF06DF9"));
         runLongerTestCase(256, 64, Hex.decode("833E45FF7D332F7E"));
+
+        testExceptions();
     }
 
+    private void testExceptions() throws InvalidCipherTextException
+    {
+        OCBBlockCipher ocb = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+
+        try
+        {
+            ocb = new OCBBlockCipher(new DESEngine(), new DESEngine());
+            
+            fail("incorrect block size not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        try
+        {
+            ocb.init(false, new KeyParameter(new byte[16]));
+
+            fail("illegal argument not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+        
+        AEADTestUtil.testReset(this, new OCBBlockCipher(new AESEngine(), new AESEngine()), new OCBBlockCipher(new AESEngine(), new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
+        AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
+    }
+    
     private void runTestCase(String testName, String[] testVector)
         throws InvalidCipherTextException
     {
