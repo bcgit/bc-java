@@ -31,14 +31,20 @@ Release 1.50
 <li>OpenPGP NotationData was restricting the name and value lengths to 255 characters and truncating silently. This has been fixed.</li>
 <li>CTS mode is now in alignment with the errata for RFC 2040, as detailed in RFC 3962.</li>
 <li>Occasionally the provider implementation of DH KeyAgreement would drop a leading zero byte off the start of the shared secret (see RFC 2631 2.1.2). This has been fixed.</li>
+<li>RFC3394WrapEngine was ignoring the offset parameter inOff and using zero instead. This has been fixed.</li>
 </ul>
-<h3>2.2.3 Additional Features and Functionality</h3>
+<h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>Addtional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages and allow for non-default parameters.</li>
 <li>OCB implementation updated to account for changes in draft-irtf-cfrg-ocb-03.</li>
 <li>RFC 6637 ECDSA support has been added to the OpenPGP API.</li>
 <li>Implementations of Threefish and Skein have been added to the provider and the lightweight API.</li>
 <li>Implementations of the SM3 digest have been added to the provider and the lightweight API.</li>
+<li>The 3 MAC based KDF generators in NIST SP 800-108 have been added to the lightweight API.</li>
+</ul>
+<h3>2.1.4 Notes</h3>
+<ul>
+<li>org.bouncycastle.crypto.DerivationFunction is now a base interface, the getDigest() method appears on DigestDerivationFunction.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
