@@ -129,19 +129,19 @@ public interface PKCSObjectIdentifiers
     //       iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) 7 }
     //
     /** pkcs#7: 1.2.840.113549.1.7 */
-    static final String                 pkcs_7                   = "1.2.840.113549.1.7";
+    static final ASN1ObjectIdentifier    pkcs_7                  = new ASN1ObjectIdentifier("1.2.840.113549.1.7");
     /** PKCS#7: 1.2.840.113549.1.7.1 */
-    static final ASN1ObjectIdentifier    data                    = new ASN1ObjectIdentifier(pkcs_7 + ".1");
+    static final ASN1ObjectIdentifier    data                    = new ASN1ObjectIdentifier("1.2.840.113549.1.7.1");
     /** PKCS#7: 1.2.840.113549.1.7.2 */
-    static final ASN1ObjectIdentifier    signedData              = new ASN1ObjectIdentifier(pkcs_7 + ".2");
+    static final ASN1ObjectIdentifier    signedData              = new ASN1ObjectIdentifier("1.2.840.113549.1.7.2");
     /** PKCS#7: 1.2.840.113549.1.7.3 */
-    static final ASN1ObjectIdentifier    envelopedData           = new ASN1ObjectIdentifier(pkcs_7 + ".3");
+    static final ASN1ObjectIdentifier    envelopedData           = new ASN1ObjectIdentifier("1.2.840.113549.1.7.3");
     /** PKCS#7: 1.2.840.113549.1.7.4 */
-    static final ASN1ObjectIdentifier    signedAndEnvelopedData  = new ASN1ObjectIdentifier(pkcs_7 + ".4");
+    static final ASN1ObjectIdentifier    signedAndEnvelopedData  = new ASN1ObjectIdentifier("1.2.840.113549.1.7.4");
     /** PKCS#7: 1.2.840.113549.1.7.5 */
-    static final ASN1ObjectIdentifier    digestedData            = new ASN1ObjectIdentifier(pkcs_7 + ".5");
+    static final ASN1ObjectIdentifier    digestedData            = new ASN1ObjectIdentifier("1.2.840.113549.1.7.5");
     /** PKCS#7: 1.2.840.113549.1.7.76 */
-    static final ASN1ObjectIdentifier    encryptedData           = new ASN1ObjectIdentifier(pkcs_7 + ".6");
+    static final ASN1ObjectIdentifier    encryptedData           = new ASN1ObjectIdentifier("1.2.840.113549.1.7.6");
 
     //
     // pkcs-9 OBJECT IDENTIFIER ::= {
