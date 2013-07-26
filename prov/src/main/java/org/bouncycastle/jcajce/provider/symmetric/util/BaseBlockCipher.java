@@ -249,19 +249,13 @@ public class BaseBlockCipher
             cipher = new BufferedGenericBlockCipher(
                 new OpenPGPCFBBlockCipher(baseEngine));
         }
-        else if (modeName.startsWith("SIC"))
+        else if (modeName.startsWith("SIC") || modeName.startsWith("CTR"))
         {
             ivLength = baseEngine.getBlockSize();
             if (ivLength < 16)
             {
                 throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
             }
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new SICBlockCipher(baseEngine)));
-        }
-        else if (modeName.startsWith("CTR"))
-        {
-            ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
