@@ -85,7 +85,7 @@ public class RFC3394WrapEngine
         byte[]  buf = new byte[8 + iv.length];
 
         System.arraycopy(iv, 0, block, 0, iv.length);
-        System.arraycopy(in, 0, block, iv.length, inLen);
+        System.arraycopy(in, inOff, block, iv.length, inLen);
 
         engine.init(true, param);
 
@@ -137,8 +137,8 @@ public class RFC3394WrapEngine
         byte[]  a = new byte[iv.length];
         byte[]  buf = new byte[8 + iv.length];
 
-        System.arraycopy(in, 0, a, 0, iv.length);
-        System.arraycopy(in, iv.length, block, 0, inLen - iv.length);
+        System.arraycopy(in, inOff, a, 0, iv.length);
+        System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
 
         engine.init(false, param);
 
