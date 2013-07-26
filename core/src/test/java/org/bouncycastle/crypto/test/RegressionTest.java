@@ -125,6 +125,9 @@ public class RegressionTest
         new HashCommitmentTest(),
         new BlockCipherResetTest(),
         new SM3DigestTest(),
+        new KDFCounterGeneratorTest(),
+        new KDFDoublePipelineIteratorGeneratorTest(),
+        new KDFFeedbackGeneratorTest()
     };
 
     public static void main(
