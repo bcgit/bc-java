@@ -14,7 +14,7 @@ public class AEADTestUtil
 {
 
     public static void testTampering(Test test, AEADBlockCipher cipher, CipherParameters params)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         byte[] plaintext = new byte[1000];
         for (int i = 0; i < plaintext.length; i++)
@@ -41,8 +41,9 @@ public class AEADTestUtil
         {
             cipher.doFinal(output, 0);
             throw new TestFailedException(
-                    new SimpleTestResult(false, test + " : tampering of ciphertext not detected."));
-        } catch (InvalidCipherTextException e)
+                new SimpleTestResult(false, test + " : tampering of ciphertext not detected."));
+        }
+        catch (InvalidCipherTextException e)
         {
             // Expected
         }
@@ -57,7 +58,8 @@ public class AEADTestUtil
         {
             cipher.doFinal(output, 0);
             fail(test, "tampering of ciphertext not detected.");
-        } catch (InvalidCipherTextException e)
+        }
+        catch (InvalidCipherTextException e)
         {
             // Expected
         }
@@ -72,8 +74,9 @@ public class AEADTestUtil
     {
         throw new TestFailedException(SimpleTestResult.failed(test, message, expected, result));
     }
-    
-    public static void testReset(Test test, AEADBlockCipher cipher1, AEADBlockCipher cipher2, CipherParameters params) throws InvalidCipherTextException
+
+    public static void testReset(Test test, AEADBlockCipher cipher1, AEADBlockCipher cipher2, CipherParameters params)
+        throws InvalidCipherTextException
     {
         cipher1.init(true, params);
 
@@ -96,7 +99,8 @@ public class AEADTestUtil
                                    CipherParameters params,
                                    boolean encrypt,
                                    byte[] pretext,
-                                   byte[] posttext) throws InvalidCipherTextException
+                                   byte[] posttext)
+        throws InvalidCipherTextException
     {
         // Do initial run
         byte[] output = new byte[posttext.length];
@@ -116,7 +120,8 @@ public class AEADTestUtil
         try
         {
             crypt(cipher, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test, "Init did not reset data.");
         }
@@ -132,7 +137,8 @@ public class AEADTestUtil
         try
         {
             crypt(cipher, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test, "Init did not reset additional data.");
         }
@@ -148,7 +154,8 @@ public class AEADTestUtil
         try
         {
             crypt(cipher, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test, "Init did not reset data.");
         }
@@ -164,7 +171,8 @@ public class AEADTestUtil
         try
         {
             crypt(cipher, pretext, output);
-        } catch (DataLengthException e)
+        }
+        catch (DataLengthException e)
         {
             fail(test, "Init did not reset data.");
         }
@@ -175,7 +183,7 @@ public class AEADTestUtil
     }
 
     private static void crypt(AEADBlockCipher cipher, byte[] plaintext, byte[] output)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         int len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
         cipher.doFinal(output, len);
