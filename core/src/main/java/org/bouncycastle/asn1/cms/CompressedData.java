@@ -10,12 +10,13 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /** 
- * RFC 3274 - CMS Compressed Data.
+ * <a href="http://tools.ietf.org/html/rfc3274">RFC 3274</a>: CMS Compressed Data.
+ * 
  * <pre>
  * CompressedData ::= SEQUENCE {
- *  version CMSVersion,
- *  compressionAlgorithm CompressionAlgorithmIdentifier,
- *  encapContentInfo EncapsulatedContentInfo
+ *     version CMSVersion,
+ *     compressionAlgorithm CompressionAlgorithmIdentifier,
+ *     encapContentInfo EncapsulatedContentInfo
  * }
  * </pre>
  */
@@ -45,7 +46,7 @@ public class CompressedData
     }
 
     /**
-     * return a CompressedData object from a tagged object.
+     * Return a CompressedData object from a tagged object.
      *
      * @param _ato the tagged object holding the object we want.
      * @param _explicit true if the object is meant to be explicitly
@@ -61,7 +62,14 @@ public class CompressedData
     }
     
     /**
-     * return a CompressedData object from the given object.
+     * Return a CompressedData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link CompressedData} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with CompressedData structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.

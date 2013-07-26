@@ -9,6 +9,19 @@ import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5544">RFC 5544</a>:
+ * Binding Documents with Time-Stamps; MetaData object.
+ * <p>
+ * <pre>
+ * MetaData ::= SEQUENCE {
+ *   hashProtected        BOOLEAN,
+ *   fileName             UTF8String OPTIONAL,
+ *   mediaType            IA5String OPTIONAL,
+ *   otherMetaData        Attributes OPTIONAL
+ * }
+ * </pre>
+ */
 public class MetaData
     extends ASN1Object
 {
@@ -49,6 +62,19 @@ public class MetaData
         }
     }
 
+    /**
+     * Return a MetaData object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link MetaData} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with MetaData structure inside
+     * </ul>
+     *
+     * @param obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     public static MetaData getInstance(Object obj)
     {
         if (obj instanceof MetaData)
@@ -63,17 +89,6 @@ public class MetaData
         return null;
     }
 
-    /**
-     * <pre>
-     * MetaData ::= SEQUENCE {
-     *   hashProtected        BOOLEAN,
-     *   fileName             UTF8String OPTIONAL,
-     *   mediaType            IA5String OPTIONAL,
-     *   otherMetaData        Attributes OPTIONAL
-     * }
-     * </pre>
-     * @return
-     */
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();

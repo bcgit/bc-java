@@ -7,12 +7,13 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * RFC 3274 - CMS Compressed Data.
+ * Parser of <a href="http://tools.ietf.org/html/rfc3274">RFC 3274</a> {@link CompressedData} object.
+ * <p>
  * <pre>
  * CompressedData ::= SEQUENCE {
- *  version CMSVersion,
- *  compressionAlgorithm CompressionAlgorithmIdentifier,
- *  encapContentInfo EncapsulatedContentInfo
+ *     version CMSVersion,
+ *     compressionAlgorithm CompressionAlgorithmIdentifier,
+ *     encapContentInfo EncapsulatedContentInfo
  * }
  * </pre>
  */

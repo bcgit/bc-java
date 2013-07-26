@@ -10,6 +10,18 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * <a href="http://tools.ietf.org/html/rfc5652#section-6.2.1">RFC 5652</a>:
+ * Content encryption key delivery mechanisms.
+ * <pre>
+ * KeyTransRecipientInfo ::= SEQUENCE {
+ *     version CMSVersion,  -- always set to 0 or 2
+ *     rid RecipientIdentifier,
+ *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
+ *     encryptedKey EncryptedKey 
+ * }
+ * </pre>
+ */
 public class KeyTransRecipientInfo
     extends ASN1Object
 {
@@ -47,7 +59,14 @@ public class KeyTransRecipientInfo
     }
 
     /**
-     * return a KeyTransRecipientInfo object from the given object.
+     * Return a KeyTransRecipientInfo object from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link KeyTransRecipientInfo} object
+     * <li> {@link org.bouncycastle.asn1.ASN1Sequence#getInstance(java.lang.Object) ASN1Sequence} input formats with KeyTransRecipientInfo structure inside
+     * </ul>
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -91,14 +110,6 @@ public class KeyTransRecipientInfo
 
     /** 
      * Produce an object suitable for an ASN1OutputStream.
-     * <pre>
-     * KeyTransRecipientInfo ::= SEQUENCE {
-     *     version CMSVersion,  -- always set to 0 or 2
-     *     rid RecipientIdentifier,
-     *     keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
-     *     encryptedKey EncryptedKey 
-     * }
-     * </pre>
      */
     public ASN1Primitive toASN1Primitive()
     {

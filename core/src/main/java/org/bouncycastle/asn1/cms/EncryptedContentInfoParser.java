@@ -9,6 +9,8 @@ import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
+ * Parser for <a href="http://tools.ietf.org/html/rfc5652#section-6.1">RFC 5652</a> EncryptedContentInfo object.
+ * <p>
  * <pre>
  * EncryptedContentInfo ::= SEQUENCE {
  *     contentType ContentType,
