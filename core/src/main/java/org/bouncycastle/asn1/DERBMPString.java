@@ -5,12 +5,11 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * @deprecated
  * DER BMPString object encodes BMP (<i>Basic Multilingual Plane</i>) subset
  * (aka UCS-2) of UNICODE (ISO 10646) characters in codepoints 0 to 65535.
  * <p>
- * At ISO-10646:2011 this encoding has been withdrawn, and therefore also new
- * uses of BMPString should be considered deprecated.
+ * At ISO-10646:2011 the term "BMP" has been withdrawn, and replaced by
+ * term "UCS-2".
  * <hr>
  * <h2>X.690</h2>
  * <h3>8: Basic encoding rules</h3>
