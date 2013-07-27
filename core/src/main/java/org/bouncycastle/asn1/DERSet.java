@@ -5,6 +5,12 @@ import java.util.Enumeration;
 
 /**
  * A DER encoded set object
+ * <p>
+ * For syntax rules, see {@link ASN1Set} document.
+ * <p>
+ * For short: Constructing this form does sort the supplied elements,
+ * and the sorting happens also before serialization (if necesssary).
+ * This is different from the way how e.g. {@link BERSet} does things.
  */
 public class DERSet
     extends ASN1Set
@@ -12,13 +18,15 @@ public class DERSet
     private int bodyLength = -1;
 
     /**
-     * create an empty set
+     * Create an empty set
      */
     public DERSet()
     {
     }
 
     /**
+     * Create a SET object from ASN1Encodable.
+     * 
      * @param obj - a single object that makes up the set.
      */
     public DERSet(
@@ -28,6 +36,9 @@ public class DERSet
     }
 
     /**
+     * Create a SET object from a vector of ASN1Encodable items,
+     * and order the items into ascending binary order.
+     * 
      * @param v - a vector of objects making up the set.
      */
     public DERSet(
@@ -37,7 +48,8 @@ public class DERSet
     }
     
     /**
-     * create a set from an array of objects.
+     * Create a SET from an array of ASN1Encodable objects,
+     * and order the items into ascending binary order.
      */
     public DERSet(
         ASN1Encodable[]   a)

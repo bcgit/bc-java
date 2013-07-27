@@ -3,6 +3,12 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Output Basic Encoding Rule (See X.690 chapter 8) format OCTET-STRINGs.
+ * <p>
+ * See {@link BERGenerator} about basic encoder details.
+ */
+
 public class BEROctetStringGenerator
     extends BERGenerator
 {

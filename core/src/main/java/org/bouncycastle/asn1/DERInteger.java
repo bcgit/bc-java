@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Use ASN1Integer instead of this,
+ * This is ASN.1 INTEGER internal facade.
  */
 public class DERInteger
     extends ASN1Primitive
@@ -14,8 +14,18 @@ public class DERInteger
     byte[]      bytes;
 
     /**
-     * return an integer from the passed in object
+     * Return an integer from the passed in object
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1Integer} object
+     * <li> {@link DERInteger} object
+     * <li> A byte[] with DER form of ASN1Integer.
+     * </ul>
      *
+     * @param obj object to be converted.
+     * @return converted value.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1Integer getInstance(
@@ -46,7 +56,7 @@ public class DERInteger
     }
 
     /**
-     * return an Integer from a tagged object.
+     * Return an Integer from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -97,14 +107,20 @@ public class DERInteger
         this.bytes = bytes;
     }
 
+    /**
+     * Get BigInteger representation of ASN.1 Integer,
+     * if leading byte's highest bit is set, the BigInteger value will be <b>negative</b>.
+     */
     public BigInteger getValue()
     {
         return new BigInteger(bytes);
     }
 
     /**
-     * in some cases positive values get crammed into a space,
-     * that's not quite big enough...
+     * In some cases positive values get crammed into a space,
+     * that's not quite big enough...  That is, the encoder has
+     * failed to realize that ASN1Integer has sign in the leading
+     * byte's highest bit.
      */
     public BigInteger getPositiveValue()
     {
@@ -128,6 +144,7 @@ public class DERInteger
         out.writeEncoded(BERTags.INTEGER, bytes);
     }
     
+    @Override
     public int hashCode()
     {
          int     value = 0;

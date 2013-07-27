@@ -3,18 +3,23 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * Indefinite length SEQUENCE of objects.
+ * <p>
+ * Length field has value 0x80, and the sequence ends with two bytes of: 0x00, 0x00.
+ */
 public class BERSequence
     extends ASN1Sequence
 {
     /**
-     * create an empty sequence
+     * Create an empty sequence
      */
     public BERSequence()
     {
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     public BERSequence(
         ASN1Encodable obj)
@@ -23,7 +28,7 @@ public class BERSequence
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     public BERSequence(
         ASN1EncodableVector v)
@@ -32,7 +37,7 @@ public class BERSequence
     }
 
     /**
-     * create a sequence containing an array of objects.
+     * Create a sequence containing an array of objects.
      */
     public BERSequence(
         ASN1Encodable[]   array)

@@ -4,6 +4,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * Output indefinite length encoding (Basic Encoding Rules) objects to
+ * an OutputStream.
+ * <p>
+ * See X.690 chapter 8.
+ * <p>
+ * Where specification says "PRIMITIVE or CONSTRUCTED form",
+ * the BouncyCastle canonicalizes BER outputs always to use CONSTRUCTED form
+ * even when outputing constructions containing single items.
+ */
 public class BERGenerator
     extends ASN1Generator
 {

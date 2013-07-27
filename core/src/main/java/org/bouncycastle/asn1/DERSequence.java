@@ -3,20 +3,25 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * Definite length SEQUENCE, encoding tells explicit number of bytes
+ * that the content of this sequence occupies.
+ */
+
 public class DERSequence
     extends ASN1Sequence
 {
     private int bodyLength = -1;
 
     /**
-     * create an empty sequence
+     * Create an empty sequence
      */
     public DERSequence()
     {
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     public DERSequence(
         ASN1Encodable obj)
@@ -25,7 +30,7 @@ public class DERSequence
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     public DERSequence(
         ASN1EncodableVector v)
@@ -34,7 +39,7 @@ public class DERSequence
     }
 
     /**
-     * create a sequence containing an array of objects.
+     * Create a sequence containing an array of objects.
      */
     public DERSequence(
         ASN1Encodable[]   array)

@@ -5,6 +5,9 @@ import java.io.InputStream;
 
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * Parse incoming {@link BEROctetString} data stream.
+ */
 public class BEROctetStringParser
     implements ASN1OctetStringParser
 {

@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1;
 
+/**
+ * ASN.1 BER/DER encodings use these tag values.
+ */
 public interface BERTags
 {
     public static final int BOOLEAN             = 0x01;

@@ -3,11 +3,16 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 /**
- * A NULL object.
+ * An ASN.1 DER NULL object.
+ * <p>
+ * Preferably use:  DERNull.INSTANCE
  */
 public class DERNull
     extends ASN1Null
 {
+    /**
+     * Preferred public instance of the DER NULL.
+     */
     public static final DERNull INSTANCE = new DERNull();
 
     private static final byte[]  zeroBytes = new byte[0];

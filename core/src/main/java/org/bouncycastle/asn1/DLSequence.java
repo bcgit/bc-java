@@ -3,20 +3,24 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * The DLSequence encodes SEQUENCE with CONSTRUCTED flag,
+ * and always using definite length form.
+ */
 public class DLSequence
     extends ASN1Sequence
 {
     private int bodyLength = -1;
 
     /**
-     * create an empty sequence
+     * Create an empty sequence
      */
     public DLSequence()
     {
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     public DLSequence(
         ASN1Encodable obj)
@@ -25,7 +29,7 @@ public class DLSequence
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     public DLSequence(
         ASN1EncodableVector v)
@@ -34,7 +38,7 @@ public class DLSequence
     }
 
     /**
-     * create a sequence containing an array of objects.
+     * Create a sequence containing an array of objects.
      */
     public DLSequence(
         ASN1Encodable[] array)

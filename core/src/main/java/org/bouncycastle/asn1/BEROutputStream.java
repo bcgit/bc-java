@@ -3,6 +3,10 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Encode output stream using BER indefinite length rules.
+ */
+
 public class BEROutputStream
     extends DEROutputStream
 {

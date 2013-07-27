@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Use ASN1Enumerated instead of this.
+ * Internal facade of {@link ASN1Enumerated}.
  */
 public class DEREnumerated
     extends ASN1Primitive
@@ -14,7 +14,15 @@ public class DEREnumerated
     byte[]      bytes;
 
     /**
-     * return an integer from the passed in object
+     * Return an integer from the passed in object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1Enumerated} object
+     * <li> {@link DEREnumerated} object
+     * <li> byte[] of DER data containing an ASN1Enumerated
+     * </ul>
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -47,7 +55,7 @@ public class DEREnumerated
     }
 
     /**
-     * return an Enumerated from a tagged object.
+     * Return an Enumerated from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -98,6 +106,9 @@ public class DEREnumerated
         this.bytes = bytes;
     }
 
+    /**
+     * Enumerated integer value.
+     */
     public BigInteger getValue()
     {
         return new BigInteger(bytes);
@@ -133,6 +144,7 @@ public class DEREnumerated
         return Arrays.areEqual(this.bytes, other.bytes);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(bytes);

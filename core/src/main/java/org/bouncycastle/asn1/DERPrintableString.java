@@ -7,6 +7,28 @@ import org.bouncycastle.util.Strings;
 
 /**
  * DER PrintableString object.
+ * <p>
+ * X.680 section 37.4 defines this as ASCII subset of characters:
+ * <p>
+ * Explicit character set escape sequences are not allowed.
+ * <p>
+ * <ul>
+ * <li>Latin capital letters: 'A' .. 'Z'
+ * <li>Latin small letters: 'a' .. 'z'
+ * <li>Digits: '0'..'9'
+ * <li>Space
+ * <li>Apostrophe: '\''
+ * <li>Left parenthesis: '('
+ * <li>Right parenthesis: ')'
+ * <li>Plus sign: '+'
+ * <li>Comma: ','
+ * <li>Hyphen-minus: '-'
+ * <li>Full stop: '.'
+ * <li>Solidus: '/'
+ * <li>Colon: ':'
+ * <li>Equals sign: '='
+ * <li>Question mark: '?'
+ * </ul>
  */
 public class DERPrintableString
     extends ASN1Primitive

@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1;
 
+/**
+ * ASN.1 APPLICATION type data with indefinite form length/sequence/set encodings.
+ */
 public class BERApplicationSpecific
     extends DERApplicationSpecific
 {

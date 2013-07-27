@@ -3,6 +3,23 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+/**
+ * Basic abstract ASN.1 Object.
+ * <p>
+ * This supplies basic Object-like things:
+ * <ul>
+ * <li> hashCode()
+ * <li> equals()
+ * </ul>
+ * <p>
+ * plus ASN1Object things:
+ * <ul>
+ * <li> getEncoded() (two forms)
+ * <li> toASN1Primitive()
+ * </ul>
+ */
+
+
 public abstract class ASN1Object
     implements ASN1Encodable
 {
@@ -56,11 +73,19 @@ public abstract class ASN1Object
         return this.getEncoded();
     }
 
+    /**
+     * Stable hashCode() from ASN.1 object.
+     */
+    @Override
     public int hashCode()
     {
         return this.toASN1Primitive().hashCode();
     }
 
+    /**
+     * ASN.1 object equality comparator - most commonly the comparison is about <i>similarity</i>.
+     */
+    @Override
     public boolean equals(
         Object  o)
     {
@@ -88,10 +113,16 @@ public abstract class ASN1Object
         return this.toASN1Primitive();
     }
 
+    /**
+     * Parser support tool.
+     */
     protected static boolean hasEncodedTagValue(Object obj, int tagValue)
     {
         return (obj instanceof byte[]) && ((byte[])obj)[0] == tagValue;
     }
 
+    /**
+     * Supply serializers with {@link ASN1Primitive} form of data.
+     */
     public abstract ASN1Primitive toASN1Primitive();
 }

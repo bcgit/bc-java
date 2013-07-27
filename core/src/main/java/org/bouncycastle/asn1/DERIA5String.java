@@ -6,7 +6,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * DER IA5String object - this is an ascii string.
+ * DER IA5String object - this is a ISO 646 (ASCII) string encoding code points 0 to 127.
+ * <p>
+ * Explicit character set escape sequences are not allowed.
  */
 public class DERIA5String
     extends ASN1Primitive
@@ -15,7 +17,7 @@ public class DERIA5String
     private byte[]  string;
 
     /**
-     * return a IA5 string from the passed in object
+     * Return an IA5 string from the passed in object
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */

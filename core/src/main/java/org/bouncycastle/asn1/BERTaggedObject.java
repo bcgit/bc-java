@@ -7,6 +7,9 @@ import java.util.Enumeration;
  * BER TaggedObject - in ASN.1 notation this is any object preceded by
  * a [n] where n is some number - these are assumed to follow the construction
  * rules (as with sequences).
+ * <p>
+ * Output format has the wrapping object type of CONSTRUCTED|TAGGED, with
+ * length value of 0x80, and the object set ends with two zero bytes: 0x00,0x00.
  */
 public class BERTaggedObject
     extends ASN1TaggedObject

@@ -5,6 +5,77 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
 
+/**
+ * ASN.1 <code>SET</code> and <code>SET OF</code> constructs.
+ * <p>
+ * Note: This does not know which syntax the set is!
+ * (The difference: ordering of SET elements or not ordering.)
+ * <p>
+ * <hr>
+ * <h2>X.690</h2>
+ * <h3>8: Basic encoding rules</h3>
+ * <h4>8.11 Encoding of a set value </h4>
+ * <b>8.11.1</b> The encoding of a set value shall be constructed
+ * <p>
+ * <b>8.11.2</b> The contents octets shall consist of the complete
+ * encoding of a data value from each of the types listed in the 
+ * ASN.1 definition of the set type, in an order chosen by the sender,
+ * unless the type was referenced with the keyword 
+ * <b>OPTIONAL</b> or the keyword <b>DEFAULT</b>. 
+ * <p>
+ * <b>8.11.3</b> The encoding of a data value may, but need not,
+ * be present for a type which was referenced with the keyword 
+ * <b>OPTIONAL</b> or the keyword <b>DEFAULT</b>.
+ * <blockquote>
+ * NOTE &mdash; The order of data values in a set value is not significant,
+ * and places no constraints on the order during transfer
+ * </blockquote>
+ * <h4>8.12 Encoding of a set-of value</h4>
+ * <b>8.12.1</b> The encoding of a set-of value shall be constructed.
+ * <p>
+ * <b>8.12.2</b> The text of 8.10.2 applies:
+ * <i>The contents octets shall consist of zero,
+ * one or more complete encodings of data values from the type listed in 
+ * the ASN.1 definition.</i>
+ * <p>
+ * <b>8.12.3</b> The order of data values need not be preserved by
+ * the encoding and subsequent decoding.
+ * <h3>9: Canonical encoding rules</h3>
+ * <h4>9.3 Set components</h4>
+ * The encodings of the component values of a set value shall
+ * appear in an order determined by their tags as specified 
+ * in 8.6 of ITU-T Rec. X.680 | ISO/IEC 8824-1.
+ * Additionally, for the purposes of determining the order in which 
+ * components are encoded when one or more component is an untagged
+ * choice type, each untagged choice type is ordered as though it
+ * has a tag equal to that of the smallest tag in that choice type
+ * or any untagged choice types nested within. 
+ * <h3>10: Distinguished encoding rules</h3>
+ * <h4>10.3 Set components</h4>
+ * The encodings of the component values of a set value shall appear
+ * in an order determined by their tags as specified 
+ * in 8.6 of ITU-T Rec. X.680 | ISO/IEC 8824-1. 
+ * <blockquote>
+ * NOTE &mdash; Where a component of the set is an untagged choice type,
+ * the location of that component in the ordering will depend on 
+ * the tag of the choice component being encoded.
+ * </blockquote>
+ * <h3>11: Restrictions on BER employed by both CER and DER</h3>
+ * <h4>11.5 Set and sequence components with default value </h4>
+ * The encoding of a set value or sequence value shall not include
+ * an encoding for any component value which is equal to 
+ * its default value.
+ * <h4>11.6 Set-of components </h4>
+ * <p>
+ * The encodings of the component values of a set-of value
+ * shall appear in ascending order, the encodings being compared 
+ * as octet strings with the shorter components being padded at
+ * their trailing end with 0-octets.
+ * <blockquote>
+ * NOTE &mdash; The padding octets are for comparison purposes only and do not appear in the encodings.
+ * </blockquote>
+ */
+
 abstract public class ASN1Set
     extends ASN1Primitive
 {
@@ -12,9 +83,19 @@ abstract public class ASN1Set
     private boolean isSorted = false;
 
     /**
-     * return an ASN1Set from the given object.
+     * Return an ASN1Set from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1Set} object
+     * <li> {@link ASN1SetParser} object
+     * <li> byte[] of DER data containing an ASN1Set
+     * <li> {@link ASN1Encodable} object containing instance of ASN1Set
+     * </ul>
      *
      * @param obj the object we want converted.
+     * @return converted ASN1Set.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1Set getInstance(
@@ -53,7 +134,7 @@ abstract public class ASN1Set
     }
 
     /**
-     * Return an ASN1 set from a tagged object. There is a special
+     * Return an ASN1Set from a tagged object. There is a special
      * case here, if an object appears to have been explicitly tagged on 
      * reading but we were expecting it to be implicitly tagged in the 
      * normal course of events it indicates that we lost the surrounding
@@ -61,6 +142,28 @@ abstract public class ASN1Set
      * object is a sequence that contains other sequences). If you are
      * dealing with implicitly tagged sets you really <b>should</b>
      * be using this method.
+     * <p>
+     * Accepted input formats:
+     * <ul>
+     * <li> With 'explicit' set the only acceptable format is explicitly tagged ASN1Set.
+     * <li> Otherwise following are acceptable:
+     * <ul>
+     * <li> An 'obj' with 'explicit' tag:
+     * <ul>
+     * <li> A {@link BERTaggedObject} object
+     * <li> Formats acceptable for {@link DLSet} constructor.
+     * </ul>
+     * <li> An 'obj' without 'explicit' tag:
+     * <ul>
+     * <li> An {@link ASN1Set} object
+     * <li> An {@link ASN1Sequence} object, which is then converted to:
+     * <ul>
+     * <li> {@link BERSet} if the 'obj' is instance of {@link BERTaggedObject}, or
+     * <li> {@link DLSet} otherwise.
+     * </ul>
+     * </ul>
+     * </ul>
+     * </ul>
      *
      * @param obj the tagged object.
      * @param explicit true if the object is meant to be explicitly tagged
@@ -134,7 +237,7 @@ abstract public class ASN1Set
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     protected ASN1Set(
         ASN1Encodable obj)
@@ -143,7 +246,7 @@ abstract public class ASN1Set
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     protected ASN1Set(
         ASN1EncodableVector v,
@@ -161,7 +264,7 @@ abstract public class ASN1Set
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     protected ASN1Set(
         ASN1Encodable[]   array,
@@ -196,7 +299,7 @@ abstract public class ASN1Set
     }
 
     /**
-     * return the number of objects in this set.
+     * Return the number of objects in this set.
      *
      * @return the number of objects in this set.
      */
@@ -205,6 +308,9 @@ abstract public class ASN1Set
         return set.size();
     }
 
+    /**
+     * Return set elements in primitive array of ASN1Encodable items.
+     */
     public ASN1Encodable[] toArray()
     {
         ASN1Encodable[] values = new ASN1Encodable[this.size()];
@@ -275,6 +381,12 @@ abstract public class ASN1Set
         return hashCode;
     }
 
+    /**
+     * Change current SET OF object to be encoded as {@link DERSet}.
+     * If the content has not been sorted already, then it will be here.
+     * This is part of DER form serialization.
+     */
+    @Override
     ASN1Primitive toDERObject()
     {
         if (isSorted)
@@ -304,6 +416,11 @@ abstract public class ASN1Set
         }
     }
 
+    /**
+     * Change current SET OF object to be encoded as {@link DLSet}.
+     * Note: This does not do sorting of SET OF elements, unlike DER form.
+     * This is part of DL form serialization.
+     */
     ASN1Primitive toDLObject()
     {
         ASN1Set derSet = new DLSet();
@@ -399,6 +516,9 @@ abstract public class ASN1Set
         return bOut.toByteArray();
     }
 
+    /**
+     * Internal routine to sort the set contained elements should the format want it.
+     */
     protected void sort()
     {
         if (!isSorted)
@@ -445,6 +565,10 @@ abstract public class ASN1Set
         }
     }
 
+    /**
+     * This data type is always CONSTRUCTED.
+     */
+    @Override
     boolean isConstructed()
     {
         return true;
@@ -453,6 +577,10 @@ abstract public class ASN1Set
     abstract void encode(ASN1OutputStream out)
             throws IOException;
 
+    /**
+     * Convert the SET to a String form.
+     */
+    @Override
     public String toString() 
     {
         return set.toString();

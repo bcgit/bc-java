@@ -6,7 +6,9 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Base class for an application specific object
+ * Base class for an application specific object.
+ * <p>
+ * 
  */
 public class DERApplicationSpecific 
     extends ASN1Primitive
