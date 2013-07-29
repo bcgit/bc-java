@@ -6,6 +6,9 @@ import java.io.InputStream;
 
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * Parse data stream of expected ASN.1 data using DER encoding rules.
+ */
 class DefiniteLengthInputStream
         extends LimitedInputStream
 {

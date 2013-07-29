@@ -116,6 +116,7 @@ public class DERNumericString
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -126,16 +127,19 @@ public class DERNumericString
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -143,11 +147,13 @@ public class DERNumericString
         out.writeEncoded(BERTags.NUMERIC_STRING, string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {

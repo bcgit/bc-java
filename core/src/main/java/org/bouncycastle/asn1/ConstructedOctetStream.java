@@ -3,6 +3,10 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Internal tool.
+ */
+
 class ConstructedOctetStream
     extends InputStream
 {

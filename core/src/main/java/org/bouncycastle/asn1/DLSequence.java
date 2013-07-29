@@ -6,6 +6,8 @@ import java.util.Enumeration;
 /**
  * The DLSequence encodes SEQUENCE with CONSTRUCTED flag,
  * and always using definite length form.
+ * <p>
+ * For X.690 syntax rules, see {@link ASN1Sequence}.
  */
 public class DLSequence
     extends ASN1Sequence
@@ -66,6 +68,7 @@ public class DLSequence
         return bodyLength;
     }
 
+    @Override
     int encodedLength()
         throws IOException
     {
@@ -82,6 +85,7 @@ public class DLSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

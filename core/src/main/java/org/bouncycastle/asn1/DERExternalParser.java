@@ -2,6 +2,10 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parse EXTERNAL type data in DER form.
+ */
+
 public class DERExternalParser
     implements ASN1Encodable, InMemoryRepresentable
 {

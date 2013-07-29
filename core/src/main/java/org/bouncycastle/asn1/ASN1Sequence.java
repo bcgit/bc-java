@@ -5,12 +5,14 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 /**
- * ASN.1 <code>SEQUENCE</code> constructs.
+ * ASN.1 <code>SEQUENCE</code> and <code>SEQUENCE OF</code> constructs.
  * <p>
+ * DER form is always definite form length fields, while
+ * BER support uses indefinite form.
+ * <p>
+ * The CER form support does not exist.
  * <hr>
- * <p>
  * <h2>X.690</h2>
- * <p>
  * <h3>8: Basic encoding rules</h3>
  * <h4>8.9 Encoding of a sequence value </h4>
  * 8.9.1 The encoding of a sequence value shall be constructed. 
@@ -37,7 +39,13 @@ import java.util.Vector;
  * <b>8.10.3</b> The order of the encodings of the data values shall be
  * the same as the order of the data values in the sequence-of value to
  * be encoded.
- * <p>
+ *
+ * <h3>9: Canonical encoding rules</h3>
+ * <h4>9.1 Length forms</h4>
+ * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is primitive, it shall include the fewest length octets necessary.
+ * [Contrast with 8.1.3.2 b).]
+ *
  * <h3>11: Restrictions on BER employed by both CER and DER</h3>
  * <h4>11.5 Set and sequence components with default value</h4>
  * The encoding of a set value or sequence value shall not include
@@ -48,6 +56,7 @@ import java.util.Vector;
 public abstract class ASN1Sequence
     extends ASN1Primitive
 {
+    /** Internal storage of sequence of objects */
     protected Vector seq = new Vector();
 
     /**
@@ -199,6 +208,10 @@ public abstract class ASN1Sequence
         }
     }
 
+    /**
+     * Return ASN1Encodable array of data.
+     * This array is never null, but it may be zero size.
+     */
     public ASN1Encodable[] toArray()
     {
         ASN1Encodable[] values = new ASN1Encodable[this.size()];
@@ -211,6 +224,9 @@ public abstract class ASN1Sequence
         return values;
     }
 
+    /**
+     * Return enumerator of sequence objects
+     */
     public Enumeration getObjects()
     {
         return seq.elements();
@@ -280,6 +296,7 @@ public abstract class ASN1Sequence
         return seq.size();
     }
 
+    @Override
     public int hashCode()
     {
         Enumeration             e = this.getObjects();
@@ -296,6 +313,7 @@ public abstract class ASN1Sequence
         return hashCode;
     }
 
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -358,6 +376,7 @@ public abstract class ASN1Sequence
      * Change current SEQUENCE object to be encoded as {@link DLSequence}.
      * This is part of DL form serialization.
      */
+    @Override
     ASN1Primitive toDLObject()
     {
         ASN1Sequence dlSeq = new DLSequence();
@@ -367,14 +386,17 @@ public abstract class ASN1Sequence
         return dlSeq;
     }
 
+    @Override
     boolean isConstructed()
     {
         return true;
     }
 
+    @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
+    @Override
     public String toString() 
     {
         return seq.toString();

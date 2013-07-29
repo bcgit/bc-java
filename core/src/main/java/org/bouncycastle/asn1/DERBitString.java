@@ -21,15 +21,17 @@ import org.bouncycastle.util.io.Streams;
  * The padding count byte will have value 2 in it.
  * <p>
  * In normal usage with byte data inside BIT STRING the padding count is zero and every payload byte is filled.
- * <p>
  * <hr>
- * <h2>X.690 chapter 10: Distinguished encoding rules</h2>
- * <h3>10.2 String encoding forms</h3>
- * For bitstring, octetstring and restricted character string types,
- * the constructed form of encoding shall not be used. (Contrast with 8.21.6.) 
- * <p>
- * <h2>X.690 chapter 8: Basic encoding rules</h2>
- * <h3>8.6 Encoding of a bitstring value</h3>
+ * <h2>X.690</h2>
+ * <h3>3: Definitions </h3>
+ * <b>3.14</b> trailing 0 bit: A 0 in the last position of a bitstring value.
+ * <blockquote>
+ * NOTE &mdash; The 0 in a bitstring value consisting of a single 0 bit
+ * is a trailing 0 bit. Its removal produces an empty bitstring.
+ * </blockquote>
+ *
+ * <h3>8: Basic encoding rules</h3>
+ * <h4>8.6 Encoding of a bitstring value</h4>
  * <b>8.6.1</b> The encoding of a bitstring value shall be either
  * primitive or constructed at the option of the sender.
  * <blockquote>
@@ -96,7 +98,57 @@ import org.bouncycastle.util.io.Streams;
  * <p>
  * NOTE 2 – In particular, the tags in the contents octets are always universal class, number 3.
  * </blockquote>
+ * <b>8.6.4.2</b> Example (omitted)
  *
+ * <h3>9: Canonical encoding rules </h3>
+ * The encoding of a data values employed by the canonical encoding rules
+ * is the basic encoding described in clause 8, 
+ * together with the following restrictions and those also listed in clause 11.
+ * <h4>9.1 Length forms</h4>
+ * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is primitive, it shall include the fewest length octets necessary.
+ * [Contrast with 8.1.3.2 b).]
+ * <h4>9.2 String encoding forms</h4>
+ * Bitstring, octetstring, and restricted character string values
+ * shall be encoded with a primitive encoding if they would 
+ * require no more than 1000 contents octets, and as a constructed
+ * encoding otherwise.
+ * The string fragments contained in the constructed encoding shall
+ * be encoded with a primitive encoding.
+ * The encoding of each fragment, except possibly the last,
+ * shall have 1000 contents octets. (Contrast with 8.21.6.)
+ *
+ * <h3>10: Distinguished encoding rules</h3>
+ * The encoding of a data values employed by
+ * the distinguished encoding rules is
+ * the basic encoding described in clause 8, 
+ * together with the following restrictions
+ * and those also listed in clause 11. 
+ * <h4>10.1 Length forms </h4>
+ * The definite form of length encoding shall be used,
+ * encoded in the minimum number of octets.
+ * [Contrast with 8.1.3.2 b).] 
+ * <h4>10.2 String encoding forms</h4>
+ * For bitstring, octetstring and restricted character string types,
+ * the constructed form of encoding shall not be used. (Contrast with 8.21.6.) 
+ *
+ * <h3>11: Restrictions on BER employed by both CER and DER</h3>
+ * <h4>11.2 Unused bits</h4>
+ * <b>11.2.1</b> Each unused bit in the final octet of
+ * the encoding of a bit string value shall be set to zero.
+ * <p>
+ * <b>11.2.2</b> Where ITU-T Rec. X.680 | ISO/IEC 8824-1, 21.7, applies,
+ * the bitstring shall have all trailing 0 bits removed before it is encoded.
+ * <blockquote>
+ * NOTE 1 &mdash; In the case where a size constraint has been applied,
+ * the abstract value delivered by a decoder to the application will be 
+ * one of those satisfying the size constraint and differing from
+ * the transmitted value only in the number of trailing 0 bits.
+ * <p>
+ * NOTE 2 &mdash; If a bitstring value has no 1 bits,
+ * then an encoder shall encode the value with a length of
+ * 1 and an initial octet set to 0.
+ * </blockquote>
  */
 
 public class DERBitString
@@ -109,7 +161,7 @@ public class DERBitString
     protected int         padBits;
 
     /**
-     * return the correct number of pad bits for a bit string defined in
+     * Return the correct number of pad bits for a bit string defined in
      * a 32 bit constant
      */
     static protected int getPadBits(
@@ -157,7 +209,7 @@ public class DERBitString
     }
 
     /**
-     * return the correct number of bytes for a bit string defined in
+     * Return the correct number of bytes for a bit string defined in
      * a 32 bit constant
      */
     static protected byte[] getBytes(int bitString)
@@ -208,7 +260,7 @@ public class DERBitString
     }
 
     /**
-     * return a Bit String from a tagged object.
+     * Return a Bit String from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly

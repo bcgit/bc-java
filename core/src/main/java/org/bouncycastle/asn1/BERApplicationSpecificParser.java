@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parse ASN.1 ApplicationSpecific data with BER rules.
+ */
 public class BERApplicationSpecificParser
     implements ASN1ApplicationSpecificParser
 {
@@ -37,5 +40,4 @@ public class BERApplicationSpecificParser
             throw new ASN1ParsingException(e.getMessage(), e);
         }
     }
-
 }

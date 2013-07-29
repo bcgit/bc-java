@@ -6,7 +6,7 @@ import java.util.Enumeration;
 /**
  * A DER encoded set object
  * <p>
- * For syntax rules, see {@link ASN1Set} document.
+ * For X.690 syntax rules, see {@link ASN1Set}.
  * <p>
  * For short: Constructing this form does sort the supplied elements,
  * and the sorting happens also before serialization (if necesssary).
@@ -84,6 +84,7 @@ public class DERSet
         return bodyLength;
     }
 
+    @Override
     int encodedLength()
         throws IOException
     {
@@ -100,6 +101,7 @@ public class DERSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

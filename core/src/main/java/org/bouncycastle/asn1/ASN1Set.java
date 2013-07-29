@@ -11,6 +11,11 @@ import java.util.Vector;
  * Note: This does not know which syntax the set is!
  * (The difference: ordering of SET elements or not ordering.)
  * <p>
+ * DER form is always definite form length fields, while
+ * BER support uses indefinite form.
+ * <p>
+ * The CER form support does not exist.
+ * <p>
  * <hr>
  * <h2>X.690</h2>
  * <h3>8: Basic encoding rules</h3>
@@ -40,7 +45,12 @@ import java.util.Vector;
  * <p>
  * <b>8.12.3</b> The order of data values need not be preserved by
  * the encoding and subsequent decoding.
+ *
  * <h3>9: Canonical encoding rules</h3>
+ * <h4>9.1 Length forms</h4>
+ * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is primitive, it shall include the fewest length octets necessary.
+ * [Contrast with 8.1.3.2 b).]
  * <h4>9.3 Set components</h4>
  * The encodings of the component values of a set value shall
  * appear in an order determined by their tags as specified 
@@ -49,8 +59,14 @@ import java.util.Vector;
  * components are encoded when one or more component is an untagged
  * choice type, each untagged choice type is ordered as though it
  * has a tag equal to that of the smallest tag in that choice type
- * or any untagged choice types nested within. 
+ * or any untagged choice types nested within.
+ * <p>(Example omitted)
+ *
  * <h3>10: Distinguished encoding rules</h3>
+ * <h4>10.1 Length forms</h4>
+ * The definite form of length encoding shall be used,
+ * encoded in the minimum number of octets.
+ * [Contrast with 8.1.3.2 b).] 
  * <h4>10.3 Set components</h4>
  * The encodings of the component values of a set value shall appear
  * in an order determined by their tags as specified 
@@ -60,6 +76,7 @@ import java.util.Vector;
  * the location of that component in the ordering will depend on 
  * the tag of the choice component being encoded.
  * </blockquote>
+ *
  * <h3>11: Restrictions on BER employed by both CER and DER</h3>
  * <h4>11.5 Set and sequence components with default value </h4>
  * The encoding of a set value or sequence value shall not include
@@ -72,7 +89,8 @@ import java.util.Vector;
  * as octet strings with the shorter components being padded at
  * their trailing end with 0-octets.
  * <blockquote>
- * NOTE &mdash; The padding octets are for comparison purposes only and do not appear in the encodings.
+ * NOTE &mdash; The padding octets are for comparison purposes only
+ * and do not appear in the encodings.
  * </blockquote>
  */
 
@@ -365,6 +383,7 @@ abstract public class ASN1Set
         };
     }
 
+    @Override
     public int hashCode()
     {
         Enumeration             e = this.getObjects();
@@ -421,6 +440,7 @@ abstract public class ASN1Set
      * Note: This does not do sorting of SET OF elements, unlike DER form.
      * This is part of DL form serialization.
      */
+    @Override
     ASN1Primitive toDLObject()
     {
         ASN1Set derSet = new DLSet();
@@ -430,6 +450,7 @@ abstract public class ASN1Set
         return derSet;
     }
 
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -574,6 +595,7 @@ abstract public class ASN1Set
         return true;
     }
 
+    @Override
     abstract void encode(ASN1OutputStream out)
             throws IOException;
 

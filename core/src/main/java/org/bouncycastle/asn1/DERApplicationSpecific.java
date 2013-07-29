@@ -13,6 +13,8 @@ import org.bouncycastle.util.Arrays;
 public class DERApplicationSpecific 
     extends ASN1Primitive
 {
+    private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
     private final boolean   isConstructed;
     private final int       tag;
     private final byte[]    octets;
@@ -143,6 +145,7 @@ public class DERApplicationSpecific
         return 2;
     }
 
+    @Override
     public boolean isConstructed()
     {
         return isConstructed;
@@ -196,6 +199,7 @@ public class DERApplicationSpecific
         return new ASN1InputStream(tmp).readObject();
     }
 
+    @Override
     int encodedLength()
         throws IOException
     {
@@ -205,6 +209,7 @@ public class DERApplicationSpecific
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
+    @Override
     void encode(ASN1OutputStream out) throws IOException
     {
         int classBits = BERTags.APPLICATION;
@@ -216,6 +221,7 @@ public class DERApplicationSpecific
         out.writeEncoded(classBits, tag, octets);
     }
     
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -231,6 +237,7 @@ public class DERApplicationSpecific
             && Arrays.areEqual(octets, other.octets);
     }
 
+    @Override
     public int hashCode()
     {
         return (isConstructed ? 1 : 0) ^ tag ^ Arrays.hashCode(octets);
@@ -274,5 +281,33 @@ public class DERApplicationSpecific
         tmp[0] = (byte)newTag;
 
         return tmp;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        if (isConstructed())
+        {
+            sb.append("CONSTRUCTED ");
+        }
+        sb.append("APPLICATION ");
+        sb.append(Integer.toString(getApplicationTag()));
+        sb.append("]");
+        // @todo content encoding somehow?
+        if (this.octets != null) {
+            sb.append(" #");
+            for (int i = 0; i < this.octets.length; ++i)
+            {
+                int b = this.octets[i] & 0xFF;
+                sb.append(table[b >>> 4]);
+                sb.append(table[b & 0x0F]);
+            }
+        } else {
+            sb.append(" #null");
+        }
+        sb.append(" ");
+        return sb.toString();
     }
 }

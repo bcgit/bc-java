@@ -6,6 +6,8 @@ import java.util.Enumeration;
 /**
  * Definite length SEQUENCE, encoding tells explicit number of bytes
  * that the content of this sequence occupies.
+ * <p>
+ * For X.690 syntax rules, see {@link ASN1Sequence}.
  */
 
 public class DERSequence
@@ -67,6 +69,7 @@ public class DERSequence
         return bodyLength;
     }
 
+    @Override
     int encodedLength()
         throws IOException
     {
@@ -83,6 +86,7 @@ public class DERSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

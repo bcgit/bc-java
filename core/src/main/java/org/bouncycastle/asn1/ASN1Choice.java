@@ -5,13 +5,11 @@ package org.bouncycastle.asn1;
  * own object any attempt to tag the object implicitly will convert the tag to
  * an explicit one as the encoding rules require.
  * <p>
- * If you use this interface your class should also implement the getInstance
+ * If you use this interface your class should also implement the getInstance()
  * pattern which takes a tag object and the tagging mode used.
  * <p>
  * <hr>
- * <p>
  * <h2>X.690</h2>
- * <p>
  * <h3>8: Basic encoding rules</h3>
  * <h4>8.13 Encoding of a choice value </h4>
  * The encoding of a choice value shall be the same as the encoding of a value of the chosen type. 

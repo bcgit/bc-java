@@ -136,16 +136,19 @@ public class DERBoolean
         return (value[0] != 0);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 3;
     }
 
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -153,6 +156,7 @@ public class DERBoolean
         out.writeEncoded(BERTags.BOOLEAN, value);
     }
     
+    @Override
     protected boolean asn1Equals(
         ASN1Primitive  o)
     {
@@ -167,6 +171,7 @@ public class DERBoolean
     /**
      * @return code value of 0 (false) or -1 (true).
      */
+    @Override
     public int hashCode()
     {
         return value[0];
@@ -176,6 +181,7 @@ public class DERBoolean
     /**
      * @return String literal "TRUE" or "FALSE".
      */
+    @Override
     public String toString()
     {
       return (value[0] != 0) ? "TRUE" : "FALSE";

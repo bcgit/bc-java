@@ -15,55 +15,8 @@ import java.util.Vector;
  * in an indefinite length array.  If the input wasn't the same, then this output
  * is not faithful reproduction.
  * <p>
- *
  *<hr>
- * <h2>X.690 chapter 8: Basic encoding rules</h2>
- * <h3>8.7 Encoding of an octetstring value</h3>
- * <p>
- * <b>8.7.1</b> The encoding of an octetstring value shall be
- * either primitive or constructed at the option of the sender.
- * <blockquote>
- * NOTE &mdash; Where it is necessary to transfer part of an octet string
- * before the entire octetstring is available, the constructed encoding is used.
- * </blockquote>
- * <p>
- * <b>8.7.2</b> The primitive encoding contains zero, one or more
- * contents octets equal in value to the octets in the data value, 
- * in the order they appear in the data value, and with the most
- * significant bit of an octet of the data value aligned with the 
- * most significant bit of an octet of the contents octets.
- * <p>
- * <b>8.7.3</b> The contents octets for the constructed encoding
- * shall consist of zero, one, or more encodings. 
- * <blockquote>
- * NOTE &mdash; Each such encoding includes identifier, length, and
- * contents octets, and may include end-of-contents octets if
- * it is constructed.
- * </blockquote>
- * <p>
- * <b>8.7.3.1</b> To encode an octetstring value in this way,
- * it is segmented. Each segment shall consist of a series of 
- * consecutive octets of the value.
- * There shall be no significance placed on the segment boundaries.
- * <blockquote>
- * NOTE &mdash; A segment may be of size zero, i.e. contain no octets.
- * </blockquote>
- * <p>
- * <b>8.7.3.2</b> Each encoding in the contents octets shall represent
- * a segment of the overall octetstring, the encoding arising 
- * from a recursive application of this subclause.
- * In this recursive application, each segment is treated as if it were
- * a octetstring value. The encodings of the segments shall appear in
- * the contents octets in the order in which their octets appear
- * in the overall value.
- * <blockquote>
- * NOTE 1 &mdash; As a consequence of this recursion, each encoding in
- * the contents octets may itself be primitive or constructed. 
- * However, such encodings will usually be primitive.
- * <p>
- * NOTE 2 &mdash; In particular, the tags in the contents octets are
- * always universal class, number 4.
- * </blockquote>
+ * See {@link ASN1OctetString} for X.690 encoding rules of OCTET-STRING objects.
  */
 
 public class BEROctetString

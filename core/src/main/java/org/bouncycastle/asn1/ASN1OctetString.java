@@ -10,15 +10,15 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * Abstract base of ASN.1 OCTET-STRING data type
  * <p>
- * This supports BER, DER, and CER forms of the data.
+ * This supports BER, and DER forms of the data.
  * <p>
- * DER form is always canonic single OCTET STRING, while
- * BER and CER support constructed forms.
+ * DER form is always primitive single OCTET STRING, while
+ * BER support uses constructed forms.
+ * <p>
+ * The CER form support does not exist.
  * <p>
  * <hr>
- * <p>
  * <h2>X.690</h2>
- * <p>
  * <h3>8: Basic encoding rules</h3>
  * <h4>8.7 Encoding of an octetstring value</h4>
  * <b>8.7.1</b> The encoding of an octetstring value shall be
@@ -63,6 +63,30 @@ import org.bouncycastle.util.encoders.Hex;
  * <p>
  * NOTE 2 &mdash; In particular, the tags in the contents octets are always universal class, number 4.
  * </blockquote>
+ *
+ * <h3>9: Canonical encoding rules</h3>
+ * <h4>9.1 Length forms</h4>
+ * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is primitive, it shall include the fewest length octets necessary.
+ * [Contrast with 8.1.3.2 b).]
+ * <h4>9.2 String encoding forms</h4>
+ * Bitstring, octetstring, and restricted character string
+ * values shall be encoded with a primitive encoding if they would 
+ * require no more than 1000 contents octets, and as a constructed
+ * encoding otherwise. The string fragments contained in 
+ * the constructed encoding shall be encoded with a primitive encoding.
+ * The encoding of each fragment, except possibly 
+ * the last, shall have 1000 contents octets. (Contrast with 8.21.6.)
+ *
+ * <h3>10: Distinguished encoding rules</h3>
+ * <h4>10.1 Length forms</h4>
+ * The definite form of length encoding shall be used,
+ * encoded in the minimum number of octets.
+ * [Contrast with 8.1.3.2 b).] 
+ * <h4>10.2 String encoding forms</h4>
+ * For bitstring, octetstring and restricted character string types,
+ * the constructed form of encoding shall not be used. 
+ * (Contrast with 8.21.6.)
  */
 
 public abstract class ASN1OctetString
@@ -199,6 +223,7 @@ public abstract class ASN1OctetString
         return Arrays.hashCode(this.getOctets());
     }
 
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -217,16 +242,19 @@ public abstract class ASN1OctetString
         return this.toASN1Primitive();
     }
 
+    @Override
     ASN1Primitive toDERObject()
     {
         return new DEROctetString(string);
     }
 
+    @Override
     ASN1Primitive toDLObject()
     {
         return new DEROctetString(string);
     }
 
+    @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 

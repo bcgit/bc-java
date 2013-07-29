@@ -6,23 +6,8 @@ import java.io.IOException;
  * DER facade of ASN.1 OCTET-STRING data type.
  * <p>
  * <hr>
- * <h2>X.690</h2>
- * <h3>10 Distinguished encoding rules</h3>
- * <h4>10.2 String encoding forms</h4>
- * For bitstring, octetstring and restricted character string types,
- * the constructed form of encoding shall not be used. 
- * (Contrast with 8.21.6.)
- * <p>
- * <h3>8: Basic encoding rules (with DER rules applied)</h3>
- * <h4>8.7 Encoding of an octetstring value</h4>
- * <p>
- * <b>8.7.1</b> The encoding of an octetstring value shall be primitive.
- * <p>
- * <b>8.7.2</b> The primitive encoding contains zero, one or more
- * contents octets equal in value to the octets in the data value, 
- * in the order they appear in the data value, and with the most
- * significant bit of an octet of the data value aligned with the 
- * most significant bit of an octet of the contents octets.
+ *<hr>
+ * See {@link ASN1OctetString} for X.690 encoding rules of OCTET-STRING objects.
  */
 
 public class DEROctetString
@@ -44,16 +29,19 @@ public class DEROctetString
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER));
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

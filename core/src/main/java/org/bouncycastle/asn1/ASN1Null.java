@@ -62,11 +62,13 @@ public abstract class ASN1Null
         return null;
     }
 
+    @Override
     public int hashCode()
     {
         return -1;
     }
 
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -78,9 +80,11 @@ public abstract class ASN1Null
         return true;
     }
 
+    @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
+    @Override
     public String toString()
     {
          return "NULL";

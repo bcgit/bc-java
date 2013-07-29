@@ -10,12 +10,15 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * Internal facade of {@link ASN1UTCTime}.
+ * Internal facade of Primitive encoded {@link ASN1UTCTime}.
  * <p>
  * This datatype is valid only from 1950-01-01 00:00:00 UTC until 2049-12-31 23:59:59 UTC.
  * <p>
  * <hr>
  * <h2>X.690</h2>
+ * This is what is called "restricted string",
+ * and it uses ASCII characters to encode digits and other allowed characters..
+ *
  * <h3>11: Restrictions on BER employed by both CER and DER</h3>
  * <h4>11.8 UTCTime </h4>
  * <b>11.8.1</b> The encoding shall terminate with "Z",
@@ -146,8 +149,8 @@ public class DERUTCTime
     }
 
     /**
-     * Return the time as a date based on whatever a 2 digit year will return. For
-     * standardised processing use getAdjustedDate().
+     * Return the time as a java.util.Date based on whatever a 2 digit year will return.
+     * For standardised processing use getAdjustedDate().
      *
      * @return the resulting date
      * @exception ParseException if the date string cannot be parsed.
@@ -161,7 +164,7 @@ public class DERUTCTime
     }
 
     /**
-     * Return the time as an adjusted date
+     * Return the time as an adjusted java.util.Date
      * in the range of 1950 - 2049.
      *
      * @return a date in the range of 1950 to 2049.
@@ -178,13 +181,15 @@ public class DERUTCTime
     }
 
     /**
-     * Return the time - always in the form of 
+     * Return the time - always in the form of:
+     * <blockquote>
      *  YYMMDDhhmmssGMT(+hh:mm|-hh:mm).
+     * </blockquote>
      * <p>
      * Normally in a certificate we would expect "Z" rather than "GMT",
      * however adding the "GMT" means we can just use:
      * <pre>
-     *     dateF = new SimpleDateFormat("yyMMddHHmmssz");
+     *    dateF = new SimpleDateFormat("yyMMddHHmmssz");
      * </pre>
      * To read in the time and get a date which is compatible with our local
      * time zone.
@@ -254,11 +259,13 @@ public class DERUTCTime
         }
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         int length = time.length;
@@ -266,6 +273,7 @@ public class DERUTCTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
+    @Override
     void encode(
         ASN1OutputStream  out)
         throws IOException
@@ -282,6 +290,7 @@ public class DERUTCTime
         }
     }
     
+    @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -293,11 +302,13 @@ public class DERUTCTime
         return Arrays.areEqual(time, ((DERUTCTime)o).time);
     }
     
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);
     }
 
+    @Override
     public String toString() 
     {
       return Strings.fromByteArray(time);

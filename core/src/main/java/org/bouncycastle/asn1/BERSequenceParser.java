@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parse a DER form ASN.1 SEQUENCE or SEQUENCE OF object.
+ */
 public class BERSequenceParser
     implements ASN1SequenceParser
 {

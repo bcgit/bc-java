@@ -3,6 +3,9 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Parse incoming {@link DEROctetString} data stream, expect only DER encoding rules on input.
+ */
 public class DEROctetStringParser
     implements ASN1OctetStringParser
 {

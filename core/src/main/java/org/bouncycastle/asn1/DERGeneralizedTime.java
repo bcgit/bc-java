@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * Generalized time object.
+ * Primitive encoded Generalized Time object.
  * <p>
  * One second resolution date+time on UTC timezone (Z)
  * with 4 digit year (valid from 0001 to 9999).
@@ -20,6 +20,9 @@ import org.bouncycastle.util.Strings;
  * <p>
  * <hr>
  * <h2>X.690</h2>
+ * This is what is called "restricted string",
+ * and it uses ASCII characters to encode digits and supplemental data.
+ *
  * <h3>11: Restrictions on BER employed by both CER and DER</h3>
  * <h4>11.7 GeneralizedTime </h4>
  * <b>11.7.1</b> The encoding shall terminate with a "Z",
@@ -39,7 +42,7 @@ public class DERGeneralizedTime
     private byte[]      time;
 
     /**
-     * return a generalized time from the passed in object
+     * Return a Generalized Time from the passed in object
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -72,7 +75,7 @@ public class DERGeneralizedTime
     }
 
     /**
-     * return a Generalized Time object from a tagged object.
+     * Return a Generalized Time object from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -120,7 +123,7 @@ public class DERGeneralizedTime
     }
 
     /**
-     * base constructor from a java.util.date object
+     * Base constructor from a java.util.Date object.
      */
     public DERGeneralizedTime(
         Date time)
@@ -139,8 +142,8 @@ public class DERGeneralizedTime
     }
 
     /**
-     * Return the time.
-     * @return The time string as it appeared in the encoded object.
+     * Return the time as a String.
+     * @return The time String as it appeared in the encoded object.
      */
     public String getTimeString()
     {
@@ -148,8 +151,10 @@ public class DERGeneralizedTime
     }
     
     /**
-     * return the time - always in the form of 
-     *  YYYYMMDDhhmmssGMT(+hh:mm|-hh:mm).
+     * Return the time - always in the form of:
+     * <blockquote>
+     * YYYYMMDDhhmmssGMT(+hh:mm|-hh:mm).
+     * </blockquote>
      * <p>
      * Normally in a certificate we would expect "Z" rather than "GMT",
      * however adding the "GMT" means we can just use:
@@ -236,6 +241,9 @@ public class DERGeneralizedTime
         return Integer.toString(time);
     }
 
+    /**
+     * Parse the ASN.1 GeneralizedTime to java.util.Date object.
+     */
     public Date getDate()
         throws ParseException
     {
@@ -333,11 +341,13 @@ public class DERGeneralizedTime
         return false;
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         int length = time.length;
@@ -345,6 +355,7 @@ public class DERGeneralizedTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
+    @Override
     void encode(
         ASN1OutputStream  out)
         throws IOException
@@ -352,6 +363,7 @@ public class DERGeneralizedTime
         out.writeEncoded(BERTags.GENERALIZED_TIME, time);
     }
     
+    @Override
     boolean asn1Equals(
         ASN1Primitive  o)
     {
@@ -363,8 +375,15 @@ public class DERGeneralizedTime
         return Arrays.areEqual(time, ((DERGeneralizedTime)o).time);
     }
     
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);
+    }
+
+    @Override
+    public String toString()
+    {
+        return getTimeString();
     }
 }

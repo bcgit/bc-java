@@ -95,4 +95,10 @@ public abstract class ASN1Primitive
      * Equality (similarity) comparison for two ASN1Primitive objects.
      */
     abstract boolean asn1Equals(ASN1Primitive o);
+
+
+    /**
+     * Debug String formatter.
+     */
+    public abstract String toString();
 }
