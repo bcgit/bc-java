@@ -83,7 +83,7 @@ public class BEROctetString
     /**
      * Get concatenated byte array out from input array of byte arrays.
      */
-    @Override
+    // @Override
     public byte[] getOctets()
     {
         return string;
@@ -164,7 +164,7 @@ public class BEROctetString
     /**
      * Encode indefinite-form CONSTRUCTED OCTET-STRING.
      */
-    @Override
+    // @Override
     public void encode(
         ASN1OutputStream out)
         throws IOException

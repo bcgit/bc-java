@@ -341,13 +341,13 @@ public class DERGeneralizedTime
         return false;
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         int length = time.length;
@@ -355,7 +355,7 @@ public class DERGeneralizedTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream  out)
         throws IOException
@@ -363,7 +363,7 @@ public class DERGeneralizedTime
         out.writeEncoded(BERTags.GENERALIZED_TIME, time);
     }
     
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive  o)
     {
@@ -375,13 +375,13 @@ public class DERGeneralizedTime
         return Arrays.areEqual(time, ((DERGeneralizedTime)o).time);
     }
     
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getTimeString();

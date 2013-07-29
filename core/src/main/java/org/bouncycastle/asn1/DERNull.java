@@ -24,19 +24,19 @@ public class DERNull
     {
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 2;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

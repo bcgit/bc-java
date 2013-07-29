@@ -296,7 +296,7 @@ public abstract class ASN1Sequence
         return seq.size();
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         Enumeration             e = this.getObjects();
@@ -313,7 +313,7 @@ public abstract class ASN1Sequence
         return hashCode;
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -362,7 +362,7 @@ public abstract class ASN1Sequence
      * Change current SEQUENCE object to be encoded as {@link DERSequence}.
      * This is part of DER form serialization.
      */
-    @Override
+    // @Override
     ASN1Primitive toDERObject()
     {
         ASN1Sequence derSeq = new DERSequence();
@@ -376,7 +376,7 @@ public abstract class ASN1Sequence
      * Change current SEQUENCE object to be encoded as {@link DLSequence}.
      * This is part of DL form serialization.
      */
-    @Override
+    // @Override
     ASN1Primitive toDLObject()
     {
         ASN1Sequence dlSeq = new DLSequence();
@@ -386,17 +386,17 @@ public abstract class ASN1Sequence
         return dlSeq;
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return true;
     }
 
-    @Override
+    // @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
-    @Override
+    // @Override
     public String toString() 
     {
         return seq.toString();

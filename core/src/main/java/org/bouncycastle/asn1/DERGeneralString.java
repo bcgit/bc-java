@@ -108,7 +108,7 @@ public class DERGeneralString
     /**
      * This calls getString() method.
      */
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
@@ -122,26 +122,26 @@ public class DERGeneralString
         return Arrays.clone(string);
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    @Override
+    // @Override
     void encode(ASN1OutputStream out)
         throws IOException 
     {
         out.writeEncoded(BERTags.GENERAL_STRING, string);
     }
     
-    @Override
+    // @Override
     public int hashCode() 
     {
         return Arrays.hashCode(string);
@@ -149,7 +149,7 @@ public class DERGeneralString
     
     // Working equals() is at super-class
 
-    @Override
+    // @Override
     boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof DERGeneralString)) 

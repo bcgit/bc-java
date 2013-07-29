@@ -68,7 +68,7 @@ public class DLSet
         return bodyLength;
     }
 
-    @Override
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -85,7 +85,7 @@ public class DLSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

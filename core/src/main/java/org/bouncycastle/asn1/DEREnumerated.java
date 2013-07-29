@@ -114,19 +114,19 @@ public class DEREnumerated
         return new BigInteger(bytes);
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -134,7 +134,7 @@ public class DEREnumerated
         out.writeEncoded(BERTags.ENUMERATED, bytes);
     }
     
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive  o)
     {
@@ -148,7 +148,7 @@ public class DEREnumerated
         return Arrays.areEqual(this.bytes, other.bytes);
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(bytes);
@@ -184,7 +184,7 @@ public class DEREnumerated
         return possibleMatch;
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getValue().toString();

@@ -217,13 +217,13 @@ public abstract class ASN1OctetString
     /**
      * Get hashCode() for this OCTET-STRING content.
      */
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(this.getOctets());
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -242,23 +242,23 @@ public abstract class ASN1OctetString
         return this.toASN1Primitive();
     }
 
-    @Override
+    // @Override
     ASN1Primitive toDERObject()
     {
         return new DEROctetString(string);
     }
 
-    @Override
+    // @Override
     ASN1Primitive toDLObject()
     {
         return new DEROctetString(string);
     }
 
-    @Override
+    // @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
-    @Override
+    // @Override
     public String toString()
     {
       return "#"+new String(Hex.encode(string));

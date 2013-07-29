@@ -383,7 +383,7 @@ abstract public class ASN1Set
         };
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         Enumeration             e = this.getObjects();
@@ -405,7 +405,7 @@ abstract public class ASN1Set
      * If the content has not been sorted already, then it will be here.
      * This is part of DER form serialization.
      */
-    @Override
+    // @Override
     ASN1Primitive toDERObject()
     {
         if (isSorted)
@@ -440,7 +440,7 @@ abstract public class ASN1Set
      * Note: This does not do sorting of SET OF elements, unlike DER form.
      * This is part of DL form serialization.
      */
-    @Override
+    // @Override
     ASN1Primitive toDLObject()
     {
         ASN1Set derSet = new DLSet();
@@ -450,7 +450,7 @@ abstract public class ASN1Set
         return derSet;
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -589,20 +589,20 @@ abstract public class ASN1Set
     /**
      * This data type is always CONSTRUCTED.
      */
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return true;
     }
 
-    @Override
+    // @Override
     abstract void encode(ASN1OutputStream out)
             throws IOException;
 
     /**
      * Convert the SET to a String form.
      */
-    @Override
+    // @Override
     public String toString() 
     {
         return set.toString();

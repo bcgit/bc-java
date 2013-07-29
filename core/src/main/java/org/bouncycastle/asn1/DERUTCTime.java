@@ -259,13 +259,13 @@ public class DERUTCTime
         }
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         int length = time.length;
@@ -273,7 +273,7 @@ public class DERUTCTime
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream  out)
         throws IOException
@@ -290,7 +290,7 @@ public class DERUTCTime
         }
     }
     
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -302,13 +302,13 @@ public class DERUTCTime
         return Arrays.areEqual(time, ((DERUTCTime)o).time);
     }
     
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);
     }
 
-    @Override
+    // @Override
     public String toString() 
     {
       return Strings.fromByteArray(time);

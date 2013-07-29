@@ -97,7 +97,7 @@ public class DERT61String
         return Strings.fromByteArray(string);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
@@ -106,19 +106,19 @@ public class DERT61String
     /**
      * DER Primitive form, never a Constructed one.
      */
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -135,7 +135,7 @@ public class DERT61String
         return Arrays.clone(string);
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -147,7 +147,7 @@ public class DERT61String
         return Arrays.areEqual(string, ((DERT61String)o).string);
     }
     
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

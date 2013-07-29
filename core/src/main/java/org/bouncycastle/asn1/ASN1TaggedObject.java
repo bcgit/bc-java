@@ -128,7 +128,7 @@ public abstract class ASN1TaggedObject
         }
     }
     
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -162,7 +162,7 @@ public abstract class ASN1TaggedObject
         return true;
     }
     
-    @Override
+    // @Override
     public int hashCode()
     {
         int code = tagNo;
@@ -254,23 +254,23 @@ public abstract class ASN1TaggedObject
         return this.toASN1Primitive();
     }
 
-    @Override
+    // @Override
     ASN1Primitive toDERObject()
     {
         return new DERTaggedObject(explicit, tagNo, obj);
     }
 
-    @Override
+    // @Override
     ASN1Primitive toDLObject()
     {
         return new DLTaggedObject(explicit, tagNo, obj);
     }
 
-    @Override
+    // @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
-    @Override
+    // @Override
     public String toString()
     {
         return "[" + tagNo + "]" + obj;

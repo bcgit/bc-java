@@ -94,19 +94,19 @@ public class DERUTF8String
         return Strings.fromUTF8ByteArray(string);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof DERUTF8String))
@@ -119,20 +119,20 @@ public class DERUTF8String
         return Arrays.areEqual(string, s.string);
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
         throws IOException
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    @Override
+    // @Override
     void encode(ASN1OutputStream out)
         throws IOException
     {

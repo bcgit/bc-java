@@ -108,7 +108,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
+    // @Override
     public int hashCode()
     {
         int ret = 0;
@@ -131,13 +131,13 @@ public class DERExternal
     /**
      * This datatype is always a CONSTRUCTED one.
      */
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return true;
     }
 
-    @Override
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -147,7 +147,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
-    @Override
+    // @Override
     void encode(ASN1OutputStream out)
         throws IOException
     {
@@ -172,7 +172,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#asn1Equals(org.bouncycastle.asn1.ASN1Primitive)
      */
-    @Override
+    // @Override
     boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof DERExternal))
@@ -313,7 +313,7 @@ public class DERExternal
         this.indirectReference = indirectReference;
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return "EXTERNAL"; // @todo implement this

@@ -110,19 +110,19 @@ public class DERBMPString
         return new String(string);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
-    @Override
+    // @Override
     protected boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -136,19 +136,19 @@ public class DERBMPString
         return Arrays.areEqual(string, s.string);
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length * 2) + (string.length * 2);
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

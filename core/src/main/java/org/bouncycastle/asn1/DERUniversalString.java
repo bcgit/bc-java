@@ -108,7 +108,7 @@ public class DERUniversalString
         return buf.toString();
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
@@ -122,19 +122,19 @@ public class DERUniversalString
         return string;
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -142,7 +142,7 @@ public class DERUniversalString
         out.writeEncoded(BERTags.UNIVERSAL_STRING, this.getOctets());
     }
     
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -154,7 +154,7 @@ public class DERUniversalString
         return Arrays.areEqual(string, ((DERUniversalString)o).string);
     }
     
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

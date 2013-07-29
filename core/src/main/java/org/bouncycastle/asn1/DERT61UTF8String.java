@@ -104,26 +104,26 @@ public class DERT61UTF8String
         return Strings.fromUTF8ByteArray(string);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getString();
     }
 
     /** This is never a constructed thing. */
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -141,7 +141,7 @@ public class DERT61UTF8String
         return Arrays.clone(string);
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -153,7 +153,7 @@ public class DERT61UTF8String
         return Arrays.areEqual(string, ((DERT61UTF8String)o).string);
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

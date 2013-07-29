@@ -35,7 +35,7 @@ public abstract class ASN1Primitive
         }
     }
 
-    @Override // inherits javadoc
+    // @Override // inherits javadoc
     public final boolean equals(Object o)
     {
         if (this == o)
@@ -46,7 +46,7 @@ public abstract class ASN1Primitive
         return (o instanceof ASN1Encodable) && asn1Equals(((ASN1Encodable)o).toASN1Primitive());
     }
 
-    @Override // inherits javadoc
+    // @Override // inherits javadoc
     public ASN1Primitive toASN1Primitive()
     {
         return this;

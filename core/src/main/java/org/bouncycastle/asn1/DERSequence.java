@@ -69,7 +69,7 @@ public class DERSequence
         return bodyLength;
     }
 
-    @Override
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -86,7 +86,7 @@ public class DERSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

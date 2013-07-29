@@ -76,7 +76,7 @@ public abstract class ASN1Object
     /**
      * Stable hashCode() from ASN.1 object.
      */
-    @Override
+    // @Override
     public int hashCode()
     {
         return this.toASN1Primitive().hashCode();
@@ -85,7 +85,7 @@ public abstract class ASN1Object
     /**
      * ASN.1 object equality comparator - most commonly the comparison is about <i>similarity</i>.
      */
-    @Override
+    // @Override
     public boolean equals(
         Object  o)
     {

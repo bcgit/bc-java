@@ -282,13 +282,13 @@ public class DERObjectIdentifier
         return body;
     }
 
-    @Override
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
-    @Override
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -297,7 +297,7 @@ public class DERObjectIdentifier
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    @Override
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -309,13 +309,13 @@ public class DERObjectIdentifier
         out.write(enc);
     }
 
-    @Override
+    // @Override
     public int hashCode()
     {
         return identifier.hashCode();
     }
 
-    @Override
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -327,7 +327,7 @@ public class DERObjectIdentifier
         return identifier.equals(((DERObjectIdentifier)o).identifier);
     }
 
-    @Override
+    // @Override
     public String toString()
     {
         return getId();
