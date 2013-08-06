@@ -120,7 +120,7 @@ public class SendSignedAndEncryptedMail
             attributes.add(new SMIMECapabilitiesAttribute(capabilities));
 
             SMIMESignedGenerator signer = new SMIMESignedGenerator();
-            signer.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").setSignedAttributeGenerator(new AttributeTable(attributes)).build("DSA".equals(privateKey.getAlgorithm()) ? "SHA1withDSA" : "MD5withDSA", privateKey, (X509Certificate)chain[0]));
+            signer.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").setSignedAttributeGenerator(new AttributeTable(attributes)).build("DSA".equals(privateKey.getAlgorithm()) ? "SHA1withDSA" : "MD5withRSA", privateKey, (X509Certificate)chain[0]));
 
 
             /* Add the list of certs to the generator */
