@@ -16,8 +16,6 @@ import org.bouncycastle.asn1.x500.X500NameStyle;
 public class RFC4519Style
     implements X500NameStyle
 {
-    public static final X500NameStyle INSTANCE = new RFC4519Style();
-
     public static final ASN1ObjectIdentifier businessCategory = new ASN1ObjectIdentifier("2.5.4.15");
     public static final ASN1ObjectIdentifier c = new ASN1ObjectIdentifier("2.5.4.6");
     public static final ASN1ObjectIdentifier cn = new ASN1ObjectIdentifier("2.5.4.3");
@@ -165,6 +163,11 @@ public class RFC4519Style
 
         // TODO: need to add correct matching for equality comparisons.
     }
+
+    /**
+     * Singleton instance.
+     */
+    public static final X500NameStyle INSTANCE = new RFC4519Style();
 
     protected final Hashtable defaultLookUp;
     protected final Hashtable defaultSymbols;

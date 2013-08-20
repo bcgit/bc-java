@@ -19,8 +19,6 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 public class BCStyle
     implements X500NameStyle
 {
-    public static final X500NameStyle INSTANCE = new BCStyle();
-
     /**
      * country code - StringType(SIZE(2))
      */
@@ -272,6 +270,11 @@ public class BCStyle
         DefaultLookUp.put("telephonenumber", TELEPHONE_NUMBER);
         DefaultLookUp.put("name", NAME);
     }
+
+    /**
+     * Singleton instance.
+     */
+    public static final X500NameStyle INSTANCE = new BCStyle();
 
     protected final Hashtable defaultLookUp;
     protected final Hashtable defaultSymbols;
