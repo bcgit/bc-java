@@ -174,8 +174,8 @@ public class RFC4519Style
 
     protected RFC4519Style()
     {
-        defaultSymbols = DefaultSymbols;
-        defaultLookUp = DefaultLookUp;
+        defaultSymbols = new Hashtable(DefaultSymbols);
+        defaultLookUp = new Hashtable(DefaultLookUp);
     }
 
     public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
