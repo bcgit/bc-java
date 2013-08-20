@@ -273,9 +273,13 @@ public class BCStyle
         DefaultLookUp.put("name", NAME);
     }
 
+    protected final Hashtable defaultLookUp;
+    protected final Hashtable defaultSymbols;
+
     protected BCStyle()
     {
-
+        defaultSymbols = DefaultSymbols;
+        defaultLookUp = DefaultLookUp;
     }
     
     public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
@@ -322,12 +326,12 @@ public class BCStyle
 
     public String[] oidToAttrNames(ASN1ObjectIdentifier oid)
     {
-        return IETFUtils.findAttrNamesForOID(oid, DefaultLookUp);
+        return IETFUtils.findAttrNamesForOID(oid, defaultLookUp);
     }
 
     public ASN1ObjectIdentifier attrNameToOID(String attrName)
     {
-        return IETFUtils.decodeAttrName(attrName, DefaultLookUp);
+        return IETFUtils.decodeAttrName(attrName, defaultLookUp);
     }
 
     public boolean areEqual(X500Name name1, X500Name name2)
@@ -451,7 +455,7 @@ public class BCStyle
                 buf.append(',');
             }
 
-            IETFUtils.appendRDN(buf, rdns[i], DefaultSymbols);
+            IETFUtils.appendRDN(buf, rdns[i], defaultSymbols);
         }
 
         return buf.toString();
