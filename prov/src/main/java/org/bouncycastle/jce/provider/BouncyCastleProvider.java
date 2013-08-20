@@ -100,7 +100,7 @@ public final class BouncyCastleProvider extends Provider
     };
 
     /*
-     * Configurable digests
+     * Configurable keystores
      */
     private static final String KEYSTORE_PACKAGE = "org.bouncycastle.jcajce.provider.keystore.";
     private static final String[] KEYSTORES =
