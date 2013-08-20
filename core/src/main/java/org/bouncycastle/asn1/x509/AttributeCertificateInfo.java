@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 public class AttributeCertificateInfo
     extends ASN1Object
 {
-    private ASN1Integer              version;
+    private ASN1Integer             version;
     private Holder                  holder;
     private AttCertIssuer           issuer;
     private AlgorithmIdentifier     signature;
