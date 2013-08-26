@@ -158,7 +158,7 @@ public class BCECPrivateKey
         ProviderConfiguration configuration)
     {
         ECDomainParameters      dp = params.getParameters();
-        System.err.println(spec);
+
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
