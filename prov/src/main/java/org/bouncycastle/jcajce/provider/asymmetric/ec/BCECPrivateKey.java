@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -159,7 +158,7 @@ public class BCECPrivateKey
         ProviderConfiguration configuration)
     {
         ECDomainParameters      dp = params.getParameters();
-
+        System.err.println(spec);
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
@@ -179,14 +178,8 @@ public class BCECPrivateKey
         else
         {
             EllipticCurve ellipticCurve = EC5Util.convertCurve(spec.getCurve(), spec.getSeed());
-            
-            this.ecSpec = new ECParameterSpec(
-                                ellipticCurve,
-                                new ECPoint(
-                                        spec.getG().getX().toBigInteger(),
-                                        spec.getG().getY().toBigInteger()),
-                                spec.getN(),
-                                spec.getH().intValue());
+
+            this.ecSpec = EC5Util.convertSpec(ellipticCurve, spec);
         }
 
         publicKey = getPublicKeyDetails(pubKey);
@@ -313,11 +306,12 @@ public class BCECPrivateKey
 
         if (ecSpec instanceof ECNamedCurveSpec)
         {
-            DERObjectIdentifier curveOid = ECUtil.getNamedCurveOid(((ECNamedCurveSpec)ecSpec).getName());
+            ASN1ObjectIdentifier curveOid = ECUtil.getNamedCurveOid(((ECNamedCurveSpec)ecSpec).getName());
             if (curveOid == null)  // guess it's the OID
             {
-                curveOid = new DERObjectIdentifier(((ECNamedCurveSpec)ecSpec).getName());
+                curveOid = new ASN1ObjectIdentifier(((ECNamedCurveSpec)ecSpec).getName());
             }
+
             params = new X962Parameters(curveOid);
         }
         else if (ecSpec == null)
