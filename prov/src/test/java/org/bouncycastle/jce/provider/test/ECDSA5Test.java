@@ -18,6 +18,7 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECGenParameterSpec;
@@ -28,6 +29,7 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERInteger;
@@ -38,6 +40,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.ECKeyUtil;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.BigIntegers;
@@ -687,6 +690,50 @@ public class ECDSA5Test
         }
     }
 
+    private static class ECRandom
+        extends SecureRandom
+    {
+        public void nextBytes(byte[] bytes)
+        {
+            byte[] src = BigInteger.valueOf(1000).toByteArray();
+            System.arraycopy(src, 0, bytes, bytes.length - src.length, src.length);
+        }
+    }
+
+    private void testNamedCurveParameterPreservation()
+        throws Exception
+    {
+        AlgorithmParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("EC", "BC");
+        keygen.initialize(ecSpec, new ECRandom());
+
+        KeyPair keys = keygen.generateKeyPair();
+
+        PrivateKeyInfo priv1 = PrivateKeyInfo.getInstance(keys.getPrivate().getEncoded());
+        SubjectPublicKeyInfo pub1 = SubjectPublicKeyInfo.getInstance(keys.getPublic().getEncoded());
+
+        keygen = KeyPairGenerator.getInstance("EC", "BC");
+        keygen.initialize(new ECGenParameterSpec("secp256r1"), new ECRandom());
+
+        PrivateKeyInfo priv2 = PrivateKeyInfo.getInstance(keys.getPrivate().getEncoded());
+        SubjectPublicKeyInfo pub2 = SubjectPublicKeyInfo.getInstance(keys.getPublic().getEncoded());
+
+        if (!priv1.equals(priv2) || !pub1.equals(pub2))
+        {
+            fail("mismatch between alg param spec and ECGenParameterSpec");
+        }
+
+        if (!(priv2.getPrivateKeyAlgorithm().getParameters() instanceof ASN1ObjectIdentifier))
+        {
+            fail("OID not preserved in private key");
+        }
+
+        if (!(pub1.getAlgorithm().getParameters() instanceof ASN1ObjectIdentifier))
+        {
+            fail("OID not preserved in public key");
+        }
+    }
+
     protected BigInteger[] derDecode(
         byte[]  encoding)
         throws IOException
@@ -718,6 +765,7 @@ public class ECDSA5Test
         testECDSA239bitBinary();
         testGeneration();
         testKeyPairGenerationWithOIDs();
+        testNamedCurveParameterPreservation();
     }
 
     public static void main(
