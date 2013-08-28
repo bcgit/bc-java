@@ -45,7 +45,7 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 
-class EnvelopedDataHelper
+public class EnvelopedDataHelper
 {
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
@@ -295,7 +295,7 @@ class EnvelopedDataHelper
         return helper.createAlgorithmParameterGenerator(algorithm.getId());
     }
 
-    Cipher createContentCipher(final Key sKey, final AlgorithmIdentifier encryptionAlgID)
+    public Cipher createContentCipher(final Key sKey, final AlgorithmIdentifier encryptionAlgID)
         throws CMSException
     {
         return (Cipher)execute(new JCECallback()
