@@ -157,7 +157,7 @@ public class EnvelopedDataHelper
         throw new IllegalArgumentException("unknown generic key type");
     }
 
-    Key getJceKey(ASN1ObjectIdentifier algorithm, GenericKey key)
+    public Key getJceKey(ASN1ObjectIdentifier algorithm, GenericKey key)
     {
         if (key.getRepresentation() instanceof Key)
         {
