@@ -15,6 +15,12 @@ public class LocaleString extends LocalizedMessage
     {
         super(resource, id, encoding);
     }
+
+    public LocaleString(String resource, String id, String encoding, Object[] arguments)
+        throws NullPointerException, UnsupportedEncodingException
+    {
+        super(resource, id, encoding, arguments);
+    }
     
     public String getLocaleString(Locale locale)
     {
