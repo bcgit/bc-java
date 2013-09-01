@@ -57,9 +57,15 @@ public class RSADigestSigner
     public RSADigestSigner(
         Digest digest)
     {
-        this.digest = digest;
+        this(digest, (ASN1ObjectIdentifier)oidMap.get(digest.getAlgorithmName()));
+    }
 
-        algId = new AlgorithmIdentifier((ASN1ObjectIdentifier)oidMap.get(digest.getAlgorithmName()), DERNull.INSTANCE);
+    public RSADigestSigner(
+        Digest digest,
+        ASN1ObjectIdentifier digestOid)
+    {
+        this.digest = digest;
+        this.algId = new AlgorithmIdentifier(digestOid, DERNull.INSTANCE);
     }
 
     /**

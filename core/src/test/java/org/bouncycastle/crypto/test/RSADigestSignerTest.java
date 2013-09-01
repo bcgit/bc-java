@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -38,14 +39,15 @@ public class RSADigestSignerTest
         signer.update(msg, 0, msg.length);
         byte[] sig = signer.generateSignature();
 
-        signer.init(false,rsaPublic);
+        signer = new RSADigestSigner(new SHA1Digest(), X509ObjectIdentifiers.id_SHA1);
+        signer.init(false, rsaPublic);
         signer.update(msg, 0, msg.length);
         if (!signer.verifySignature(sig))
         {
-            fail("RSA IDigest Signer failed.");
+            fail("RSA Digest Signer failed.");
         }
     }
-    
+
     public static void main(String[] args)
     {
         runTest(new RSADigestSignerTest());
