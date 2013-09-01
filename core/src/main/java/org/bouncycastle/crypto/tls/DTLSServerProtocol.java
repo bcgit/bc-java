@@ -471,14 +471,14 @@ public class DTLSServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
-            TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
-            tlsSigner.init(state.serverContext);
-
             org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 
-            tlsSigner.verifyRawSignature(clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
+            TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
+            tlsSigner.init(state.serverContext);
+            tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
+                clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
         }
         catch (Exception e)
         {
