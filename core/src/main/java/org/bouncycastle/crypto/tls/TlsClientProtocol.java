@@ -373,12 +373,13 @@ public class TlsClientProtocol
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
-                    byte[] md5andsha1 = recordStream.getCurrentHash(null);
-                    byte[] signature = signerCreds.generateCertificateSignature(md5andsha1);
                     /*
                      * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
-                    DigitallySigned certificateVerify = new DigitallySigned(null, signature);
+                    SignatureAndHashAlgorithm algorithm = null;
+                    byte[] hash = recordStream.getCurrentHash(null);
+                    byte[] signature = signerCreds.generateCertificateSignature(hash);
+                    DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;

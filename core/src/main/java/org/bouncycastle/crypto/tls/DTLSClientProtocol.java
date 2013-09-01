@@ -302,12 +302,13 @@ public class DTLSClientProtocol
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials)state.clientCredentials;
-            byte[] md5andsha1 = handshake.getCurrentHash();
-            byte[] signature = signerCredentials.generateCertificateSignature(md5andsha1);
             /*
              * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
              */
-            DigitallySigned certificateVerify = new DigitallySigned(null, signature);
+            SignatureAndHashAlgorithm algorithm = null;
+            byte[] hash = handshake.getCurrentHash();
+            byte[] signature = signerCredentials.generateCertificateSignature(hash);
+            DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
