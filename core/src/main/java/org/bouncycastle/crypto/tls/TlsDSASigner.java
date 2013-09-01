@@ -33,14 +33,25 @@ public abstract class TlsDSASigner
         return signer.verifySignature(sigBytes);
     }
 
-    public Signer createSigner(AsymmetricKeyParameter privateKey)
+    public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
     {
-        return makeSigner(new SHA1Digest(), true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        return makeSigner(algorithm, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
     }
 
-    public Signer createVerifyer(AsymmetricKeyParameter publicKey)
+    public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
-        return makeSigner(new SHA1Digest(), false, publicKey);
+        return makeSigner(algorithm, false, publicKey);
+    }
+
+    protected Signer makeSigner(SignatureAndHashAlgorithm algorithm, boolean forSigning, CipherParameters cp)
+    {
+        if (algorithm != null
+            && (algorithm.getHash() != HashAlgorithm.sha1 || algorithm.getSignature() != getSignatureAlgorithm()))
+        {
+            throw new IllegalStateException();
+        }
+
+        return makeSigner(TlsUtils.createHash(HashAlgorithm.sha1), forSigning, cp);
     }
 
     protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp)
@@ -49,6 +60,8 @@ public abstract class TlsDSASigner
         s.init(forSigning, cp);
         return s;
     }
+
+    protected abstract short getSignatureAlgorithm();
 
     protected abstract DSA createDSAImpl();
 }
