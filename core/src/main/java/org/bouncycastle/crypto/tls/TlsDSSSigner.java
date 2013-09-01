@@ -17,4 +17,9 @@ public class TlsDSSSigner
     {
         return new DSASigner();
     }
+
+    protected short getSignatureAlgorithm()
+    {
+        return SignatureAlgorithm.dsa;
+    }
 }

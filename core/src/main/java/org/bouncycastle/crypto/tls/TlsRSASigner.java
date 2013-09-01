@@ -34,20 +34,39 @@ public class TlsRSASigner
         return Arrays.constantTimeAreEqual(signed, md5AndSha1);
     }
 
-    public Signer createSigner(AsymmetricKeyParameter privateKey)
+    public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
     {
-        return makeSigner(new CombinedHash(), true,
-            new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        return makeSigner(algorithm, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
     }
 
-    public Signer createVerifyer(AsymmetricKeyParameter publicKey)
+    public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
-        return makeSigner(new CombinedHash(), false, publicKey);
+        return makeSigner(algorithm, false, publicKey);
     }
 
     public boolean isValidPublicKey(AsymmetricKeyParameter publicKey)
     {
         return publicKey instanceof RSAKeyParameters && !publicKey.isPrivate();
+    }
+
+    protected Signer makeSigner(SignatureAndHashAlgorithm algorithm, boolean forSigning, CipherParameters cp)
+    {
+        Digest d;
+        if (algorithm == null)
+        {
+            d = new CombinedHash();
+        }
+        else
+        {
+            if (algorithm.getSignature() != SignatureAlgorithm.rsa)
+            {
+                throw new IllegalStateException();
+            }
+
+            d = TlsUtils.createHash(algorithm.getHash());
+        }
+
+        return makeSigner(d, false, cp);
     }
 
     protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp)

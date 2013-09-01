@@ -17,4 +17,9 @@ public class TlsECDSASigner
     {
         return new ECDSASigner();
     }
+
+    protected short getSignatureAlgorithm()
+    {
+        return SignatureAlgorithm.ecdsa;
+    }
 }

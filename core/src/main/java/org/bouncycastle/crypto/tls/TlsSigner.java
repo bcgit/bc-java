@@ -16,7 +16,11 @@ public interface TlsSigner
 
     Signer createSigner(AsymmetricKeyParameter privateKey);
 
+    Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey);
+
     Signer createVerifyer(AsymmetricKeyParameter publicKey);
+
+    Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey);
 
     boolean isValidPublicKey(AsymmetricKeyParameter publicKey);
 }
