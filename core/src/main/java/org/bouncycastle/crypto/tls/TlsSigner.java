@@ -11,7 +11,15 @@ public interface TlsSigner
     byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
         throws CryptoException;
 
+    byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm,
+        AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
+        throws CryptoException;
+
     boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
+        throws CryptoException;
+
+    boolean verifyRawSignature(SignatureAndHashAlgorithm algorithm, byte[] sigBytes,
+        AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
         throws CryptoException;
 
     Signer createSigner(AsymmetricKeyParameter privateKey);
