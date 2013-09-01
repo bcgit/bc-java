@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -12,36 +13,37 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.GenericSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
-import org.bouncycastle.util.Arrays;
 
 public class TlsRSASigner
     extends AbstractTlsSigner
 {
-    public byte[] generateRawSignature(AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
+    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm,
+        AsymmetricKeyParameter privateKey, byte[] hash)
         throws CryptoException
     {
-        AsymmetricBlockCipher engine = createRSAImpl();
-        engine.init(true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
-        return engine.processBlock(md5AndSha1, 0, md5AndSha1.length);
+        Signer signer = makeSigner(algorithm, true, true,
+            new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        signer.update(hash, 0, hash.length);
+        return signer.generateSignature();
     }
 
-    public boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
+    public boolean verifyRawSignature(SignatureAndHashAlgorithm algorithm, byte[] sigBytes,
+        AsymmetricKeyParameter publicKey, byte[] hash)
         throws CryptoException
     {
-        AsymmetricBlockCipher engine = createRSAImpl();
-        engine.init(false, publicKey);
-        byte[] signed = engine.processBlock(sigBytes, 0, sigBytes.length);
-        return Arrays.constantTimeAreEqual(signed, md5AndSha1);
+        Signer signer = makeSigner(algorithm, true, false, publicKey);
+        signer.update(hash, 0, hash.length);
+        return signer.verifySignature(sigBytes);
     }
 
     public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
     {
-        return makeSigner(algorithm, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        return makeSigner(algorithm, false, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
     }
 
     public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
-        return makeSigner(algorithm, false, publicKey);
+        return makeSigner(algorithm, false, false, publicKey);
     }
 
     public boolean isValidPublicKey(AsymmetricKeyParameter publicKey)
@@ -49,36 +51,41 @@ public class TlsRSASigner
         return publicKey instanceof RSAKeyParameters && !publicKey.isPrivate();
     }
 
-    protected Signer makeSigner(SignatureAndHashAlgorithm algorithm, boolean forSigning, CipherParameters cp)
+    protected Signer makeSigner(SignatureAndHashAlgorithm algorithm, boolean raw, boolean forSigning,
+        CipherParameters cp)
     {
+        if ((algorithm != null) != TlsUtils.isTLSv12(context))
+        {
+            throw new IllegalStateException();
+        }
+
+        if (algorithm != null && algorithm.getSignature() != SignatureAlgorithm.rsa)
+        {
+            throw new IllegalStateException();
+        }
+
         Digest d;
-        if (algorithm == null)
+        if (raw)
+        {
+            d = new NullDigest();
+        }
+        else if (algorithm == null)
         {
             d = new CombinedHash();
         }
         else
         {
-            if (algorithm.getSignature() != SignatureAlgorithm.rsa)
-            {
-                throw new IllegalStateException();
-            }
-
             d = TlsUtils.createHash(algorithm.getHash());
         }
 
-        return makeSigner(d, false, cp);
-    }
-
-    protected Signer makeSigner(Digest d, boolean forSigning, CipherParameters cp)
-    {
         Signer s;
-        if (TlsUtils.isTLSv12(context))
+        if (algorithm != null)
         {
             /*
              * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
              * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
              */
-            s = new RSADigestSigner(d);
+            s = new RSADigestSigner(d, TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()));
         }
         else
         {
