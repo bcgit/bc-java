@@ -68,6 +68,7 @@ public class RegressionTest
         new MQVTest(),
         new CMacTest(),
         new GMacTest(),
+        new OCBTest(),
         new DSTU4145Test(),
         new CRL5Test(),
         new SipHashTest(),
