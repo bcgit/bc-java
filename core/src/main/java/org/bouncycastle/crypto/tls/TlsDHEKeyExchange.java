@@ -7,8 +7,8 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
     extends TlsDHKeyExchange
@@ -73,13 +73,15 @@ public class TlsDHEKeyExchange
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
 
-        Signer signer = initVerifyer(tlsSigner, securityParameters);
-        InputStream sigIn = new SignerInputStream(input, signer);
+        SignerInputBuffer buf = new SignerInputBuffer();
+        InputStream teeIn = new TeeInputStream(input, buf);
 
-        ServerDHParams params = ServerDHParams.parse(sigIn);
+        ServerDHParams params = ServerDHParams.parse(teeIn);
 
         DigitallySigned signed_params = DigitallySigned.parse(context, input);
 
+        Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
+        buf.updateSigner(signer);
         if (!signer.verifySignature(signed_params.getSignature()))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
@@ -88,9 +90,9 @@ public class TlsDHEKeyExchange
         this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(params.getPublicKey());
     }
 
-    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters)
+    protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)
     {
-        Signer signer = tlsSigner.createVerifyer(this.serverPublicKey);
+        Signer signer = tlsSigner.createVerifyer(algorithm, this.serverPublicKey);
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         return signer;

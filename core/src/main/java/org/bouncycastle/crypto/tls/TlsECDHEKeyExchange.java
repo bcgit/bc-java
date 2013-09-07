@@ -8,10 +8,10 @@ import java.util.Vector;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.io.SignerInputStream;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * ECDHE key exchange (see RFC 4492)
@@ -137,15 +137,17 @@ public class TlsECDHEKeyExchange
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
 
-        Signer signer = initVerifyer(tlsSigner, securityParameters);
-        InputStream sigIn = new SignerInputStream(input, signer);
+        SignerInputBuffer buf = new SignerInputBuffer();
+        InputStream teeIn = new TeeInputStream(input, buf);
 
-        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, sigIn);
+        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, teeIn);
 
-        byte[] point = TlsUtils.readOpaque8(sigIn);
+        byte[] point = TlsUtils.readOpaque8(teeIn);
 
         DigitallySigned signed_params = DigitallySigned.parse(context, input);
 
+        Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
+        buf.updateSigner(signer);
         if (!signer.verifySignature(signed_params.getSignature()))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
@@ -192,9 +194,9 @@ public class TlsECDHEKeyExchange
         }
     }
 
-    protected Signer initVerifyer(TlsSigner tlsSigner, SecurityParameters securityParameters)
+    protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)
     {
-        Signer signer = tlsSigner.createVerifyer(this.serverPublicKey);
+        Signer signer = tlsSigner.createVerifyer(algorithm, this.serverPublicKey);
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         return signer;
