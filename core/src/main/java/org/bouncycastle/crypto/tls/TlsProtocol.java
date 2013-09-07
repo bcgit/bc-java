@@ -746,11 +746,11 @@ public abstract class TlsProtocol
 
         if (isServer)
         {
-            return TlsUtils.calculateVerifyData(context, "server finished",
+            return TlsUtils.calculateVerifyData(context, ExporterLabel.server_finished,
                 recordStream.getCurrentHash(TlsUtils.SSL_SERVER));
         }
 
-        return TlsUtils.calculateVerifyData(context, "client finished",
+        return TlsUtils.calculateVerifyData(context, ExporterLabel.client_finished,
             recordStream.getCurrentHash(TlsUtils.SSL_CLIENT));
     }
 
