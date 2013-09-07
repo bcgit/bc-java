@@ -151,12 +151,12 @@ public class DTLSClientProtocol
             recordLayer.initPendingEpoch(state.client.getCipher());
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
-            byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "server finished",
-                handshake.getCurrentHash());
+            byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+                ExporterLabel.server_finished, handshake.getCurrentHash());
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
             // NOTE: Calculated exclusive of the Finished message itself
-            byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "client finished",
+            byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
                 handshake.getCurrentHash());
             handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
@@ -314,7 +314,7 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "client finished",
+        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
             handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
@@ -332,8 +332,8 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
-        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, "server finished",
-            handshake.getCurrentHash());
+        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
+            ExporterLabel.server_finished, handshake.getCurrentHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
         handshake.finish();
