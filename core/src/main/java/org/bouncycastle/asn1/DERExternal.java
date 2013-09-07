@@ -15,6 +15,18 @@ public class DERExternal
     private int encoding;
     private ASN1Primitive externalContent;
     
+    /**
+     * Construct a DER EXTERNAL object, the input encoding vector must have exactly two elements on it.
+     * <p>
+     * Acceptable input formats are:
+     * <ul>
+     * <li> {@link ASN1ObjectIdentifier} + data {@link DERTaggedObject} (direct reference form)
+     * <li> {@link ASN1Integer} + data {@link DERTaggedObject} (indirect reference form)
+     * <li> Anything but {@link DERTaggedObject} + data {@link DERTaggedObject} (data value form)
+     * </ul>
+     *
+     * @throws IllegalArgumentException if input size is wrong, or 
+     */
     public DERExternal(ASN1EncodableVector vector)
     {
         int offset = 0;
@@ -96,6 +108,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
+    // @Override
     public int hashCode()
     {
         int ret = 0;
@@ -115,11 +128,16 @@ public class DERExternal
         return ret;
     }
 
+    /**
+     * This datatype is always a CONSTRUCTED one.
+     */
+    // @Override
     boolean isConstructed()
     {
         return true;
     }
 
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -129,6 +147,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
+    // @Override
     void encode(ASN1OutputStream out)
         throws IOException
     {
@@ -153,6 +172,7 @@ public class DERExternal
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#asn1Equals(org.bouncycastle.asn1.ASN1Primitive)
      */
+    // @Override
     boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof DERExternal))
@@ -264,6 +284,7 @@ public class DERExternal
      * <li><code>2</code> BIT STRING</li>
      * </ul>
      * @param encoding The encoding
+     * @throws IllegalArgumentException if encoding value is not one of above.
      */
     private void setEncoding(int encoding)
     {
@@ -290,5 +311,11 @@ public class DERExternal
     private void setIndirectReference(ASN1Integer indirectReference)
     {
         this.indirectReference = indirectReference;
+    }
+
+    // @Override
+    public String toString()
+    {
+        return "EXTERNAL"; // @todo implement this
     }
 }

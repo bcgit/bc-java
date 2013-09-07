@@ -6,7 +6,13 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * DER VisibleString object.
+ * DER VisibleString object encoding ISO 646 (ASCII) character code points 32 to 126.
+ * (That is: ASCII without control codes.)
+ * <p>
+ * Explicit character set escape sequences are not allowed.
+ * <p>
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERVisibleString
     extends ASN1Primitive
@@ -15,7 +21,14 @@ public class DERVisibleString
     private byte[]  string;
 
     /**
-     * return a Visible String from the passed in object.
+     * Return a Visible String from the passed in object.
+     * <p>
+     * Acceptable inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> DERVisibleString object
+     * <li> byte[] containing value of DERVisibleString.
+     * </ul>
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -43,7 +56,7 @@ public class DERVisibleString
     }
 
     /**
-     * return a Visible String from a tagged object.
+     * Return a Visible String from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -68,7 +81,7 @@ public class DERVisibleString
     }
 
     /**
-     * basic constructor - byte encoded string.
+     * Basic constructor - byte encoded string.
      */
     DERVisibleString(
         byte[]   string)
@@ -77,7 +90,7 @@ public class DERVisibleString
     }
 
     /**
-     * basic constructor
+     * Basic constructor
      */
     public DERVisibleString(
         String   string)
@@ -90,6 +103,7 @@ public class DERVisibleString
         return Strings.fromByteArray(string);
     }
 
+    // @Override
     public String toString()
     {
         return getString();
@@ -100,16 +114,19 @@ public class DERVisibleString
         return Arrays.clone(string);
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -117,6 +134,7 @@ public class DERVisibleString
         out.writeEncoded(BERTags.VISIBLE_STRING, this.string);
     }
     
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -128,6 +146,7 @@ public class DERVisibleString
         return Arrays.areEqual(string, ((DERVisibleString)o).string);
     }
     
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

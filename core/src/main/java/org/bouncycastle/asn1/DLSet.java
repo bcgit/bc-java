@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 /**
- * A DER encoded set object
+ * The DLSet encodes ASN.1 SET value without element ordering,
+ * and always using definite length form.
+ * <p>
+ * For X.690 syntax rules, see {@link ASN1Set}.
  */
 public class DLSet
     extends ASN1Set
@@ -65,10 +68,11 @@ public class DLSet
         return bodyLength;
     }
 
+    // @Override
     int encodedLength()
         throws IOException
     {
-        int                     length = getBodyLength();
+        int length = getBodyLength();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
@@ -81,6 +85,7 @@ public class DLSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

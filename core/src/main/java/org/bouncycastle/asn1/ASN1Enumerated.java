@@ -2,6 +2,10 @@ package org.bouncycastle.asn1;
 
 import java.math.BigInteger;
 
+/**
+ * Public facade of {@link DEREnumerated}.
+ */
+
 public class ASN1Enumerated
     extends DEREnumerated
 {

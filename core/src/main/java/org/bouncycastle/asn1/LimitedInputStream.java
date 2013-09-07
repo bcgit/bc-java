@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.InputStream;
 
+/**
+ * Internal parser tool.
+ */
 abstract class LimitedInputStream
         extends InputStream
 {

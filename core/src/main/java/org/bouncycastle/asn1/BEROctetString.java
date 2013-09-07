@@ -5,15 +5,29 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
 
+/**
+ * ASN.1 OctetStrings, with indefinite length rules, and <i>constructed form</i> support.
+ * <p>
+ * The Basic Encoding Rules (BER) format allows encoding using so called "<i>constructed form</i>",
+ * which DER and CER formats forbid allowing only "primitive form".
+ * <p>
+ * This class produces <b>always</b> the constructed form with underlying segments
+ * in an indefinite length array.  If the input wasn't the same, then this output
+ * is not faithful reproduction.
+ * <p>
+ *<hr>
+ * See {@link ASN1OctetString} for X.690 encoding rules of OCTET-STRING objects.
+ */
+
 public class BEROctetString
     extends ASN1OctetString
 {
-    private static final int MAX_LENGTH = 1000;
+    private static final int MAX_LENGTH = 1000; // Limit of CER encoding requiring use of constructed form
 
     private ASN1OctetString[] octs;
 
     /**
-     * convert a vector of octet strings into a single byte string
+     * Convert a vector of octet strings into a single byte string
      */
     static private byte[] toBytes(
         ASN1OctetString[]  octs)
@@ -42,6 +56,8 @@ public class BEROctetString
     }
 
     /**
+     * Create an OCTET-STRING object from a byte[]
+     *
      * @param string the octets making up the octet string.
      */
     public BEROctetString(
@@ -50,6 +66,12 @@ public class BEROctetString
         super(string);
     }
 
+    /**
+     * Multiple {@link ASN1OctetString} data blocks are input,
+     * the result is <i>constructed form</i>.
+     *
+     * @param octs
+     */
     public BEROctetString(
         ASN1OctetString[] octs)
     {
@@ -58,13 +80,17 @@ public class BEROctetString
         this.octs = octs;
     }
 
+    /**
+     * Get concatenated byte array out from input array of byte arrays.
+     */
+    // @Override
     public byte[] getOctets()
     {
         return string;
     }
 
     /**
-     * return the DER octets that make up this string.
+     * Return the DER octets that make up this byte[] string.
      */
     public Enumeration getObjects()
     {
@@ -115,6 +141,9 @@ public class BEROctetString
          return vec; 
     }
 
+    /**
+     * This form is always a constructed one.
+     */
     boolean isConstructed()
     {
         return true;
@@ -132,6 +161,10 @@ public class BEROctetString
         return 2 + length + 2;
     }
 
+    /**
+     * Encode indefinite-form CONSTRUCTED OCTET-STRING.
+     */
+    // @Override
     public void encode(
         ASN1OutputStream out)
         throws IOException
@@ -152,6 +185,15 @@ public class BEROctetString
         out.write(0x00);
     }
 
+    /**
+     * Construct BEROctetString from a SEQUENCE of OCTET-STRINGs.
+     * <p>
+     * Every element of the sequence must be an {@link ASN1OctetString}.
+     * In particular if a constructed form of BEROctetString is given as
+     * an array element, it is automatically concatenated into
+     * DER-compatible form first.
+     * 
+     */
     static BEROctetString fromSequence(ASN1Sequence seq)
     {
         ASN1OctetString[]     v = new ASN1OctetString[seq.size()];

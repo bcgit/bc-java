@@ -6,7 +6,11 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * DER IA5String object - this is an ascii string.
+ * DER IA5String object - this is a ISO 646 (ASCII) string encoding code points 0 to 127.
+ * <p>
+ * Explicit character set escape sequences are not allowed.
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERIA5String
     extends ASN1Primitive
@@ -15,7 +19,7 @@ public class DERIA5String
     private byte[]  string;
 
     /**
-     * return a IA5 string from the passed in object
+     * Return an IA5 string from the passed in object
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -114,6 +118,7 @@ public class DERIA5String
         return Strings.fromByteArray(string);
     }
 
+    // @Override
     public String toString()
     {
         return getString();
@@ -124,16 +129,19 @@ public class DERIA5String
         return Arrays.clone(string);
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -141,11 +149,13 @@ public class DERIA5String
         out.writeEncoded(BERTags.IA5_STRING, string);
     }
 
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {

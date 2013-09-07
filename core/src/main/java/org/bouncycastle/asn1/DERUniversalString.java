@@ -6,7 +6,11 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * DER UniversalString object.
+ * DER UniversalString object encodes UNICODE (ISO 10646) characters using 32-bit format.
+ * ("UCS-32" in big-endian order.)
+ * <p>
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERUniversalString
     extends ASN1Primitive
@@ -16,7 +20,7 @@ public class DERUniversalString
     private byte[] string;
     
     /**
-     * return a Universal String from the passed in object.
+     * Return a Universal String from the passed in object.
      *
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -44,7 +48,7 @@ public class DERUniversalString
     }
 
     /**
-     * return a Universal String from a tagged object.
+     * Return a Universal String from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -69,7 +73,8 @@ public class DERUniversalString
     }
 
     /**
-     * basic constructor - byte encoded string.
+     * Basic constructor - byte encoded string.
+     * The input material must be encoded per UCS-32-BE.
      */
     public DERUniversalString(
         byte[]   string)
@@ -103,26 +108,33 @@ public class DERUniversalString
         return buf.toString();
     }
 
+    // @Override
     public String toString()
     {
         return getString();
     }
 
+    /**
+     * Get the UniversalString's UCS-32-BE  encoded content as an array of bytes.
+     */
     public byte[] getOctets()
     {
         return string;
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -130,6 +142,7 @@ public class DERUniversalString
         out.writeEncoded(BERTags.UNIVERSAL_STRING, this.getOctets());
     }
     
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -141,6 +154,7 @@ public class DERUniversalString
         return Arrays.areEqual(string, ((DERUniversalString)o).string);
     }
     
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

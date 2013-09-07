@@ -4,6 +4,9 @@ import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Internal facade of ASN.1 Boolean objects, use {@link ASN1Boolean}.getInstance() methods instead.
+ */
 public class DERBoolean
     extends ASN1Primitive
 {
@@ -12,13 +15,26 @@ public class DERBoolean
 
     private byte[]         value;
 
+    /** ASN1Boolean.FALSE value literal; byte code 0x00 */
     public static final ASN1Boolean FALSE = new ASN1Boolean(false);
+
+    /** ASN1Boolean.TRUE value literal; byte code 0xFF */
     public static final ASN1Boolean TRUE  = new ASN1Boolean(true);
 
 
     /**
-     * return a boolean from the passed in object.
+     * Return an instance of boolean from the passed in object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1Boolean} object
+     * <li> {@link DERBoolean} object
+     * </ul>
+     * <p>
      *
+     * @param obj object to be converted.
+     * @return converted value.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1Boolean getInstance(
@@ -38,7 +54,7 @@ public class DERBoolean
     }
 
     /**
-     * return a ASN1Boolean from the passed in boolean.
+     * Return a ASN1Boolean from the passed in boolean.
      */
     public static ASN1Boolean getInstance(
         boolean  value)
@@ -47,7 +63,7 @@ public class DERBoolean
     }
 
     /**
-     * return a ASN1Boolean from the passed in boolean.
+     * Return a ASN1Boolean from the passed in boolean.
      */
     public static ASN1Boolean getInstance(
         int value)
@@ -56,7 +72,7 @@ public class DERBoolean
     }
 
     /**
-     * return a Boolean from a tagged object.
+     * Return a Boolean from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -112,21 +128,27 @@ public class DERBoolean
         this.value = (value) ? TRUE_VALUE : FALSE_VALUE;
     }
 
+    /**
+     * @return true when encoded value is not zero.
+     */
     public boolean isTrue()
     {
         return (value[0] != 0);
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 3;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -134,6 +156,7 @@ public class DERBoolean
         out.writeEncoded(BERTags.BOOLEAN, value);
     }
     
+    // @Override
     protected boolean asn1Equals(
         ASN1Primitive  o)
     {
@@ -145,17 +168,28 @@ public class DERBoolean
         return (value[0] == ((DERBoolean)o).value[0]);
     }
     
+    /**
+     * @return code value of 0 (false) or -1 (true).
+     */
+    // @Override
     public int hashCode()
     {
         return value[0];
     }
 
 
+    /**
+     * @return String literal "TRUE" or "FALSE".
+     */
+    // @Override
     public String toString()
     {
       return (value[0] != 0) ? "TRUE" : "FALSE";
     }
 
+    /**
+     * Internal tool for parsing byte[] values
+     */
     static ASN1Boolean fromOctetString(byte[] value)
     {
         if (value.length != 1)

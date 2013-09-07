@@ -3,7 +3,12 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 /**
- * A NULL object.
+ * Public facade of ASN.1 NULL object.
+ * <p>
+ * Use following to instantiate this in your structures:
+ * <ul>
+ * <li> DERNull.INSTANCE
+ * </ul>
  */
 public abstract class ASN1Null
     extends ASN1Primitive
@@ -14,6 +19,22 @@ public abstract class ASN1Null
     public ASN1Null()
     {
     }
+
+    /**
+     * Return an instance of ASN.1 NULL from the passed in object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1Null} object
+     * <li> a byte[] containing ASN.1 NULL object
+     * </ul>
+     * <p>
+     *
+     * @param o object to be converted.
+     * @return converted value.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
 
     public static ASN1Null getInstance(Object o)
     {
@@ -41,11 +62,13 @@ public abstract class ASN1Null
         return null;
     }
 
+    // @Override
     public int hashCode()
     {
         return -1;
     }
 
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -57,9 +80,11 @@ public abstract class ASN1Null
         return true;
     }
 
+    // @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
+    // @Override
     public String toString()
     {
          return "NULL";

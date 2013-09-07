@@ -6,6 +6,27 @@ import java.io.IOException;
  * ASN.1 TaggedObject - in ASN.1 notation this is any object preceded by
  * a [n] where n is some number - these are assumed to follow the construction
  * rules (as with sequences).
+ * <p>
+ * <hr>
+ * <h2>X.690</h2>
+ * <h3>8: Basic encoding rules</h3>
+ * <h4>8.14 Encoding of a tagged value </h4>
+ * <b>8.14.1</b> The encoding of a tagged value shall be derived from
+ * the complete encoding of the corresponding data value of the type
+ * appearing in the "TaggedType" notation (called the base encoding)
+ * as specified in 8.14.2 and 8.14.3. 
+ * <p>
+ * <b>8.14.2</b> If implicit tagging (see ITU-T Rec. X.680 | ISO/IEC 8824-1, 30.6)
+ * was not used in the definition of the type, the encoding shall be constructed
+ * and the contents octets shall be the complete base encoding.
+ * <p>
+ * <b>8.14.3</b> If implicit tagging was used in the definition of the type, then:
+ * <ol type="a">
+ * <li>the encoding shall be constructed if the base encoding
+ * is constructed, and shall be primitive otherwise; and
+ * <li>the contents octets shall be the same as the contents
+ * octets of the base encoding.
+ * </ol>
  */
 public abstract class ASN1TaggedObject
     extends ASN1Primitive
@@ -28,6 +49,20 @@ public abstract class ASN1TaggedObject
         throw new IllegalArgumentException("implicitly tagged tagged object");
     }
 
+    /**
+     * Return an ASN1Sequence from the given object.
+     * <p>
+     * Accepted inputs:
+     * <ul>
+     * <li> null &rarr; null
+     * <li> {@link ASN1TaggedObject} object
+     * <li> byte[] of DER data containing an ASN1TaggedObject
+     * </ul>
+     *
+     * @param obj the object to be converted.
+     * @return converted object.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     */
     static public ASN1TaggedObject getInstance(
         Object obj) 
     {
@@ -93,6 +128,7 @@ public abstract class ASN1TaggedObject
         }
     }
     
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -126,6 +162,7 @@ public abstract class ASN1TaggedObject
         return true;
     }
     
+    // @Override
     public int hashCode()
     {
         int code = tagNo;
@@ -149,7 +186,7 @@ public abstract class ASN1TaggedObject
     }
 
     /**
-     * return whether or not the object may be explicitly tagged. 
+     * Return whether or not the object may be explicitly tagged. 
      * <p>
      * Note: if the object has been read from an input stream, the only
      * time you can be sure if isExplicit is returning the true state of
@@ -168,7 +205,7 @@ public abstract class ASN1TaggedObject
     }
 
     /**
-     * return whatever was following the tag.
+     * Return whatever was following the tag.
      * <p>
      * Note: tagged objects are generally context dependent if you're
      * trying to extract a tagged object you should be going via the
@@ -211,24 +248,29 @@ public abstract class ASN1TaggedObject
         throw new RuntimeException("implicit tagging not implemented for tag: " + tag);
     }
 
+
     public ASN1Primitive getLoadedObject()
     {
         return this.toASN1Primitive();
     }
 
+    // @Override
     ASN1Primitive toDERObject()
     {
         return new DERTaggedObject(explicit, tagNo, obj);
     }
 
+    // @Override
     ASN1Primitive toDLObject()
     {
         return new DLTaggedObject(explicit, tagNo, obj);
     }
 
+    // @Override
     abstract void encode(ASN1OutputStream out)
         throws IOException;
 
+    // @Override
     public String toString()
     {
         return "[" + tagNo + "]" + obj;

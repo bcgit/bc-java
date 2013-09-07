@@ -3,17 +3,32 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * Indefinite length <code>SET</code> and <code>SET OF</code> constructs.
+ * <p>
+ * Note: This does not know which syntax the set is!
+ * <p>
+ * Length field has value 0x80, and the set ends with two bytes of: 0x00, 0x00.
+ * <p>
+ * For X.690 syntax rules, see {@link ASN1Set}.
+ * <p>
+ * For short: Constructing this form does not sort the supplied elements,
+ * nor does the sorting happen before serialization. This is different
+ * from the way how e.g. {@link DERSet} does things.
+ */
 public class BERSet
     extends ASN1Set
 {
     /**
-     * create an empty sequence
+     * Create an empty BERSet.
      */
     public BERSet()
     {
     }
 
     /**
+     * Create a single value BERSet object.
+     *
      * @param obj - a single object that makes up the set.
      */
     public BERSet(
@@ -23,6 +38,8 @@ public class BERSet
     }
 
     /**
+     * Create a multi-value BERSet object.
+     *
      * @param v - a vector of objects making up the set.
      */
     public BERSet(
@@ -32,7 +49,7 @@ public class BERSet
     }
 
     /**
-     * create a set from an array of objects.
+     * Create a set from an array of objects.
      */
     public BERSet(
         ASN1Encodable[]   a)
@@ -40,6 +57,7 @@ public class BERSet
         super(a, false);
     }
 
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -54,6 +72,7 @@ public class BERSet
 
     /*
      */
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException

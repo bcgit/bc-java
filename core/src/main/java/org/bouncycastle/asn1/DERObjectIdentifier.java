@@ -7,7 +7,8 @@ import java.math.BigInteger;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Use ASN1ObjectIdentifier instead of this,
+ * Internal facade of ASN.1 OBJECT-IDENTIFIER data type.
+ * Use {@link ASN1ObjectIdentifier} instead of this.
  */
 public class DERObjectIdentifier
     extends ASN1Primitive
@@ -17,7 +18,7 @@ public class DERObjectIdentifier
     private byte[] body;
 
     /**
-     * return an OID from the passed in object
+     * Return an OID from the passed in object
      *
      * @throws IllegalArgumentException if the object cannot be converted.
      */
@@ -63,7 +64,7 @@ public class DERObjectIdentifier
     }
 
     /**
-     * return an Object Identifier from a tagged object.
+     * Return an Object Identifier from a tagged object.
      *
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -194,6 +195,7 @@ public class DERObjectIdentifier
         this.identifier = oid.getId() + "." + branchID;
     }
 
+
     public String getId()
     {
         return identifier;
@@ -280,11 +282,13 @@ public class DERObjectIdentifier
         return body;
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
         throws IOException
     {
@@ -293,6 +297,7 @@ public class DERObjectIdentifier
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -304,11 +309,13 @@ public class DERObjectIdentifier
         out.write(enc);
     }
 
+    // @Override
     public int hashCode()
     {
         return identifier.hashCode();
     }
 
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -320,6 +327,7 @@ public class DERObjectIdentifier
         return identifier.equals(((DERObjectIdentifier)o).identifier);
     }
 
+    // @Override
     public String toString()
     {
         return getId();

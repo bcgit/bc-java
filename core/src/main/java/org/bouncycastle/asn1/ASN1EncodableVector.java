@@ -3,6 +3,10 @@ package org.bouncycastle.asn1;
 import java.util.Enumeration;
 import java.util.Vector;
 
+/**
+ * Tool for constructing SEQUENCEs and SETs of {@link ASN1Encodable} objects.
+ */
+
 public class ASN1EncodableVector
 {
     Vector v = new Vector();

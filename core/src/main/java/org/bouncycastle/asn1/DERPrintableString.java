@@ -7,6 +7,30 @@ import org.bouncycastle.util.Strings;
 
 /**
  * DER PrintableString object.
+ * <hr>
+ * X.680 section 37.4 defines PrintableString character codes as ASCII subset of following characters:
+ * <p>
+ * <ul>
+ * <li>Latin capital letters: 'A' .. 'Z'
+ * <li>Latin small letters: 'a' .. 'z'
+ * <li>Digits: '0'..'9'
+ * <li>Space
+ * <li>Apostrophe: '\''
+ * <li>Left parenthesis: '('
+ * <li>Right parenthesis: ')'
+ * <li>Plus sign: '+'
+ * <li>Comma: ','
+ * <li>Hyphen-minus: '-'
+ * <li>Full stop: '.'
+ * <li>Solidus: '/'
+ * <li>Colon: ':'
+ * <li>Equals sign: '='
+ * <li>Question mark: '?'
+ * </ul>
+ * <p>
+ * Explicit character set escape sequences are not allowed.
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERPrintableString
     extends ASN1Primitive
@@ -15,7 +39,7 @@ public class DERPrintableString
     private byte[]  string;
 
     /**
-     * return a printable string from the passed in object.
+     * Return a printable string from the passed in object.
      * 
      * @exception IllegalArgumentException if the object cannot be converted.
      */
@@ -43,7 +67,7 @@ public class DERPrintableString
     }
 
     /**
-     * return a Printable String from a tagged object.
+     * Return a Printable String from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -68,7 +92,7 @@ public class DERPrintableString
     }
 
     /**
-     * basic constructor - byte encoded string.
+     * Basic constructor - byte encoded string.
      */
     DERPrintableString(
         byte[]   string)
@@ -77,7 +101,7 @@ public class DERPrintableString
     }
 
     /**
-     * basic constructor - this does not validate the string
+     * Basic constructor - this does not validate the string
      */
     public DERPrintableString(
         String   string)
@@ -115,16 +139,19 @@ public class DERPrintableString
         return Arrays.clone(string);
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -132,11 +159,13 @@ public class DERPrintableString
         out.writeEncoded(BERTags.PRINTABLE_STRING, string);
     }
 
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -150,13 +179,14 @@ public class DERPrintableString
         return Arrays.areEqual(string, s.string);
     }
 
+    // @Override
     public String toString()
     {
         return getString();
     }
 
     /**
-     * return true if the passed in String can be represented without
+     * Return true if the passed in String can be represented without
      * loss as a PrintableString, false otherwise.
      *
      * @return true if in printable set, false otherwise.

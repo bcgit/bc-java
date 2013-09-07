@@ -7,6 +7,9 @@ import org.bouncycastle.util.Strings;
 
 /**
  * DER UTF8String object.
+ * <p>
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERUTF8String
     extends ASN1Primitive
@@ -15,7 +18,7 @@ public class DERUTF8String
     private byte[]  string;
 
     /**
-     * return an UTF8 string from the passed in object.
+     * Return a UTF8 string from the passed in object.
      * 
      * @exception IllegalArgumentException
      *                if the object cannot be converted.
@@ -44,7 +47,7 @@ public class DERUTF8String
     }
 
     /**
-     * return an UTF8 String from a tagged object.
+     * Return a UTF8 String from a tagged object.
      * 
      * @param obj
      *            the tagged object holding the object we want
@@ -71,7 +74,7 @@ public class DERUTF8String
     }
 
     /**
-     * basic constructor - byte encoded string.
+     * Basic constructor - byte encoded string.
      */
     DERUTF8String(byte[] string)
     {
@@ -79,7 +82,7 @@ public class DERUTF8String
     }
 
     /**
-     * basic constructor
+     * Basic constructor
      */
     public DERUTF8String(String string)
     {
@@ -91,16 +94,19 @@ public class DERUTF8String
         return Strings.fromUTF8ByteArray(string);
     }
 
+    // @Override
     public String toString()
     {
         return getString();
     }
 
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    // @Override
     boolean asn1Equals(ASN1Primitive o)
     {
         if (!(o instanceof DERUTF8String))
@@ -113,17 +119,20 @@ public class DERUTF8String
         return Arrays.areEqual(string, s.string);
     }
 
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
         throws IOException
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(ASN1OutputStream out)
         throws IOException
     {

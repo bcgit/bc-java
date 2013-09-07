@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1;
 
+/**
+ * Public facade of ASN.1 OBJECT-IDENTIFIER data type.
+ */
 public class ASN1ObjectIdentifier
     extends DERObjectIdentifier
 {
@@ -13,6 +16,12 @@ public class ASN1ObjectIdentifier
         super(bytes);
     }
 
+    /**
+     * Return an OID that creates a branch under the current one.
+     *
+     * @param branchID node numbers for the new branch.
+     * @return the OID for the new created branch.
+     */
     ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branch)
     {
         super(oid, branch);
@@ -30,9 +39,9 @@ public class ASN1ObjectIdentifier
     }
 
     /**
-     * Return  true if this oid is an extension of the passed in branch, stem.
+     * Return true if this oid is an extension of the passed in branch, stem.
      * @param stem the arc or branch that is a possible parent.
-     * @return  true if the branch is on the passed in stem, false otherwise.
+     * @return true if the branch is on the passed in stem, false otherwise.
      */
     public boolean on(ASN1ObjectIdentifier stem)
     {

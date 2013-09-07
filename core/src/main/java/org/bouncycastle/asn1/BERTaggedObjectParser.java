@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parse basic tagged object with BER rules.
+ */
 public class BERTaggedObjectParser
     implements ASN1TaggedObjectParser
 {

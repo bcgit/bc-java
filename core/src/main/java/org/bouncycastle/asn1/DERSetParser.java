@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parse a DER form ASN.1 SET or SET OF object.
+ */
 public class DERSetParser
     implements ASN1SetParser
 {

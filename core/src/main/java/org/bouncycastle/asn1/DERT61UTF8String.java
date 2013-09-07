@@ -6,8 +6,11 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * DER T61String (also the teletex string) - a "modern" encapsulation that uses UTF-8. If at all possible, avoid this one! It's only for emergencies.
+ * DER T61String (also the teletex string) - a "modern" encapsulation that uses UTF-8.
+ * If at all possible, avoid this one! It's only for emergencies.
  * Use UTF8String instead.
+ * <hr>
+ * See {@link ASN1String} for X.690 encoding rules of Strings.
  */
 public class DERT61UTF8String
     extends ASN1Primitive
@@ -16,7 +19,7 @@ public class DERT61UTF8String
     private byte[] string;
 
     /**
-     * return a T61 string from the passed in object. UTF-8 Encoding is assumed in this case.
+     * Return a T61 string from the passed in object. UTF-8 Encoding is assumed in this case.
      *
      * @throws IllegalArgumentException if the object cannot be converted.
      */
@@ -49,7 +52,7 @@ public class DERT61UTF8String
     }
 
     /**
-     * return an T61 String from a tagged object. UTF-8 encoding is assumed in this case.
+     * Return an T61 String from a tagged object. UTF-8 encoding is assumed in this case.
      *
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -74,7 +77,7 @@ public class DERT61UTF8String
     }
 
     /**
-     * basic constructor - string encoded as a sequence of bytes.
+     * Basic constructor - "string" encoded as a sequence of bytes.
      */
     public DERT61UTF8String(
         byte[] string)
@@ -83,7 +86,7 @@ public class DERT61UTF8String
     }
 
     /**
-     * basic constructor - with string UTF8 conversion assumed.
+     * Basic constructor - with String UTF8 conversion assumed.
      */
     public DERT61UTF8String(
         String string)
@@ -92,7 +95,7 @@ public class DERT61UTF8String
     }
 
     /**
-     * Decode the encoded string and return it, UTF8 assumed.
+     * Decode the encoded String and return it, UTF8 assumed.
      *
      * @return the decoded String
      */
@@ -101,21 +104,26 @@ public class DERT61UTF8String
         return Strings.fromUTF8ByteArray(string);
     }
 
+    // @Override
     public String toString()
     {
         return getString();
     }
 
+    /** This is never a constructed thing. */
+    // @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    // @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    // @Override
     void encode(
         ASN1OutputStream out)
         throws IOException
@@ -133,6 +141,7 @@ public class DERT61UTF8String
         return Arrays.clone(string);
     }
 
+    // @Override
     boolean asn1Equals(
         ASN1Primitive o)
     {
@@ -144,6 +153,7 @@ public class DERT61UTF8String
         return Arrays.areEqual(string, ((DERT61UTF8String)o).string);
     }
 
+    // @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

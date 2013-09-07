@@ -9,10 +9,12 @@ import java.io.InputStream;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * a general purpose ASN.1 decoder - note: this class differs from the
+ * A general purpose ASN.1 decoder - note: this class differs from the
  * others in that it returns null after it has read the last object in
  * the stream. If an ASN.1 NULL is encountered a DER/BER Null object is
  * returned.
+ * <p>
+ * @Todo Need to support constructed (BER) BIT STRING.
  */
 public class ASN1InputStream
     extends FilterInputStream
@@ -204,6 +206,14 @@ public class ASN1InputStream
         return new ASN1InputStream(dIn).buildEncodableVector();
     }
 
+    /**
+     * Read an object from the input stream.
+     * <p>
+     * Note: This class does not implement ASN1SequenceParser defining this method,
+     * but returning ASN1Encorable.
+     * <p>
+     * @throws IOException with bad input stream
+     */
     public ASN1Primitive readObject()
         throws IOException
     {
@@ -250,7 +260,7 @@ public class ASN1InputStream
                 return new BERTaggedObjectParser(true, tagNo, sp).getLoadedObject();
             }
 
-            // TODO There are other tags that may be constructed (e.g. BIT_STRING)
+            // @todo There are other tags that may be constructed (e.g. BIT_STRING)
             switch (tagNo)
             {
                 case OCTET_STRING:
