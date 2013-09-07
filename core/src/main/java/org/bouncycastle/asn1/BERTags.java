@@ -11,9 +11,9 @@ public interface BERTags
     public static final int EXTERNAL            = 0x08;
     public static final int ENUMERATED          = 0x0a;
     public static final int SEQUENCE            = 0x10;
-    public static final int SEQUENCE_OF         = 0x10; // for completeness
+    public static final int SEQUENCE_OF         = 0x10; // for completeness - used to model a SEQUENCE of the same type.
     public static final int SET                 = 0x11;
-    public static final int SET_OF              = 0x11; // for completeness
+    public static final int SET_OF              = 0x11; // for completeness - used to model a SET of the same type.
 
 
     public static final int NUMERIC_STRING      = 0x12;

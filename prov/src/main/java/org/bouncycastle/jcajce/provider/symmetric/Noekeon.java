@@ -7,6 +7,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.NoekeonEngine;
 import org.bouncycastle.crypto.macs.GMac;
@@ -16,6 +17,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGen
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -30,7 +32,13 @@ public final class Noekeon
     {
         public ECB()
         {
-            super(new NoekeonEngine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new NoekeonEngine();
+                }
+            });
         }
     }
 

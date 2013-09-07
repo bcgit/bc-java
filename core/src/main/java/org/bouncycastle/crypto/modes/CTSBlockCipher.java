@@ -22,8 +22,9 @@ public class CTSBlockCipher
     public CTSBlockCipher(
         BlockCipher     cipher)
     {
-        if ((cipher instanceof OFBBlockCipher) || (cipher instanceof CFBBlockCipher))
+        if ((cipher instanceof OFBBlockCipher) || (cipher instanceof CFBBlockCipher) || (cipher instanceof SICBlockCipher))
         {
+            // TODO: This is broken - need to introduce marker interface to differentiate block cipher primitive from mode?
             throw new IllegalArgumentException("CTSBlockCipher can only accept ECB, or CBC ciphers");
         }
 
@@ -239,6 +240,11 @@ public class CTSBlockCipher
         }
         else
         {
+            if (bufOff < blockSize)
+            {
+                throw new DataLengthException("need at least one block of input for CTS");
+            }
+
             byte[]  lastBlock = new byte[blockSize];
 
             if (bufOff > blockSize)
