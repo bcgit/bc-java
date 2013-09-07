@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.CAST6Engine;
 import org.bouncycastle.crypto.macs.GMac;
@@ -8,6 +9,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 
 public final class CAST6
 {
@@ -20,7 +22,13 @@ public final class CAST6
     {
         public ECB()
         {
-            super(new CAST6Engine());
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new CAST6Engine();
+                }
+            });
         }
     }
 
