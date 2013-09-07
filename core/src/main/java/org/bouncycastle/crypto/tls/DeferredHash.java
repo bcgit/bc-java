@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.Digest;
 
 /**
@@ -119,14 +117,6 @@ class DeferredHash
         if (hash == null)
         {
             throw new IllegalStateException("No hash algorithm has been set");
-        }
-    }
-
-    static class DigestInputBuffer extends ByteArrayOutputStream
-    {
-        void updateDigest(Digest d)
-        {
-            d.update(this.buf, 0, count);
         }
     }
 }
