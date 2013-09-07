@@ -41,18 +41,16 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        DigestInputBuffer buf = new DigestInputBuffer();
 
         this.dhAgreeServerPrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
             this.dhParameters, buf);
-
-        byte[] digestInput = buf.toByteArray();
 
         Digest d = new CombinedHash();
         SecurityParameters securityParameters = context.getSecurityParameters();
         d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
-        d.update(digestInput, 0, digestInput.length);
+        buf.updateDigest(d);
 
         byte[] hash = new byte[d.getDigestSize()];
         d.doFinal(hash, 0);
