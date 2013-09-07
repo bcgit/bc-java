@@ -3,20 +3,23 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * The DLSequence encodes a SEQUENCE using definite length form.
+ */
 public class DLSequence
     extends ASN1Sequence
 {
     private int bodyLength = -1;
 
     /**
-     * create an empty sequence
+     * Create an empty sequence
      */
     public DLSequence()
     {
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     public DLSequence(
         ASN1Encodable obj)
@@ -25,7 +28,7 @@ public class DLSequence
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     public DLSequence(
         ASN1EncodableVector v)
@@ -34,7 +37,7 @@ public class DLSequence
     }
 
     /**
-     * create a sequence containing an array of objects.
+     * Create a sequence containing an array of objects.
      */
     public DLSequence(
         ASN1Encodable[] array)
@@ -51,7 +54,7 @@ public class DLSequence
 
             for (Enumeration e = this.getObjects(); e.hasMoreElements();)
             {
-                Object    obj = e.nextElement();
+                Object obj = e.nextElement();
 
                 length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
             }
@@ -65,12 +68,12 @@ public class DLSequence
     int encodedLength()
         throws IOException
     {
-        int    length = getBodyLength();
+        int length = getBodyLength();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
-    /*
+    /**
      * A note on the implementation:
      * <p>
      * As DL requires the constructed, definite-length model to
@@ -82,15 +85,15 @@ public class DLSequence
         ASN1OutputStream out)
         throws IOException
     {
-        ASN1OutputStream       dOut = out.getDLSubStream();
-        int                    length = getBodyLength();
+        ASN1OutputStream dOut = out.getDLSubStream();
+        int length = getBodyLength();
 
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
         for (Enumeration e = this.getObjects(); e.hasMoreElements();)
         {
-            Object    obj = e.nextElement();
+            Object obj = e.nextElement();
 
             dOut.writeObject((ASN1Encodable)obj);
         }
