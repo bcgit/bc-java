@@ -287,6 +287,7 @@ class DTLSRecordLayer
                         // TODO Consider support for HelloRequest
                         continue;
                     }
+                    break;
                 }
                 case ContentType.heartbeat:
                 {
