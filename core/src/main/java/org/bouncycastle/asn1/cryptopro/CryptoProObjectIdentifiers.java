@@ -24,6 +24,15 @@ public interface CryptoProObjectIdentifiers
     /** Gost R28147-89-CryotoPro-A-ParamSet OID: 1.2.643.2.2.31.1 */
     static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_A_ParamSet = GOST_id.branch("31.1");
 
+    /** Gost R28147-89-CryotoPro-B-ParamSet OID: 1.2.643.2.2.31.2 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_B_ParamSet = GOST_id.branch("31.2");
+
+    /** Gost R28147-89-CryotoPro-C-ParamSet OID: 1.2.643.2.2.31.3 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_C_ParamSet = GOST_id.branch("31.3");
+
+    /** Gost R28147-89-CryotoPro-D-ParamSet OID: 1.2.643.2.2.31.4 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_D_ParamSet = GOST_id.branch("31.4");
+
     /** Gost R3410-94 OID: 1.2.643.2.2.20 */
     static final ASN1ObjectIdentifier    gostR3410_94       = GOST_id.branch("20");
     /** Gost R3410-2001 OID: 1.2.643.2.2.19 */
