@@ -84,23 +84,23 @@ public class DTLSClientProtocol
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
+        while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
-            // NOTE: After receiving a record from the server, we discover the record layer version
-            ProtocolVersion server_version = recordLayer.getDiscoveredPeerVersion();
+            ProtocolVersion recordLayerVersion = recordLayer.resetDiscoveredPeerVersion();
             ProtocolVersion client_version = state.clientContext.getClientVersion();
 
-            if (!server_version.isEqualOrEarlierVersionOf(client_version))
+            /*
+             * RFC 6347 4.2.1 DTLS 1.2 server implementations SHOULD use DTLS version 1.0 regardless of
+             * the version of TLS that is expected to be negotiated. DTLS 1.2 and 1.0 clients MUST use
+             * the version solely to indicate packet formatting (which is the same in both DTLS 1.2 and
+             * 1.0) and not as part of version negotiation.
+             */
+            if (!recordLayerVersion.isEqualOrEarlierVersionOf(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            state.clientContext.setServerVersion(server_version);
-            state.client.notifyServerVersion(server_version);
-        }
-
-        while (serverMessage.getType() == HandshakeType.hello_verify_request)
-        {
-            byte[] cookie = parseHelloVerifyRequest(state.clientContext, serverMessage.getBody());
+            byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
             handshake.resetHandshakeMessagesDigest();
@@ -111,6 +111,8 @@ public class DTLSClientProtocol
 
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
+            reportServerVersion(state, recordLayer.getDiscoveredPeerVersion());
+
             processServerHello(state, serverMessage.getBody());
         }
         else
@@ -516,6 +518,35 @@ public class DTLSClientProtocol
         // TODO[RFC 3546] Figure out how to provide this to the client/authentication.
     }
 
+    protected byte[] processHelloVerifyRequest(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        byte[] cookie = TlsUtils.readOpaque8(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        // TODO Seems this behaviour is not yet in line with OpenSSL for DTLS 1.2
+//        reportServerVersion(state, server_version);
+        if (!server_version.isEqualOrEarlierVersionOf(state.clientContext.getClientVersion()))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        /*
+         * RFC 6347 This specification increases the cookie size limit to 255 bytes for greater
+         * future flexibility. The limit remains 32 for previous versions of DTLS.
+         */
+        if (!ProtocolVersion.DTLSv12.isEqualOrEarlierVersionOf(server_version) && cookie.length > 32)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return cookie;
+    }
+
     protected void processNewSessionTicket(ClientHandshakeState state, byte[] body)
         throws IOException
     {
@@ -551,12 +582,8 @@ public class DTLSClientProtocol
 
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        // TODO Read RFCs for guidance on the expected record layer version number
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        if (!server_version.equals(state.clientContext.getServerVersion()))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        reportServerVersion(state, server_version);
 
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
 
@@ -704,24 +731,20 @@ public class DTLSClientProtocol
         state.client.processServerSupplementalData(serverSupplementalData);
     }
 
-    protected static byte[] parseHelloVerifyRequest(TlsContext context, byte[] body)
+    protected void reportServerVersion(ClientHandshakeState state, ProtocolVersion server_version)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(body);
-
-        ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        if (!server_version.equals(context.getServerVersion()))
+        TlsClientContextImpl clientContext = state.clientContext;
+        ProtocolVersion currentServerVersion = clientContext.getServerVersion();
+        if (null == currentServerVersion)
+        {
+            clientContext.setServerVersion(server_version);
+            state.client.notifyServerVersion(server_version);
+        }
+        else if (!currentServerVersion.equals(server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
-        byte[] cookie = TlsUtils.readOpaque8(buf);
-
-        // TODO RFC 4347 has the cookie length restricted to 32, but not in RFC 6347
-
-        TlsProtocol.assertEmpty(buf);
-
-        return cookie;
     }
 
     protected static byte[] patchClientHelloWithCookie(byte[] clientHelloBody, byte[] cookie)
