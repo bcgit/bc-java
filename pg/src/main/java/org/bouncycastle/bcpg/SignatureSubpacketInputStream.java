@@ -1,5 +1,9 @@
 package org.bouncycastle.bcpg;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
@@ -12,11 +16,8 @@ import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 import org.bouncycastle.bcpg.sig.TrustSignature;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * reader for signature sub-packets
@@ -78,15 +79,39 @@ public class SignatureSubpacketInputStream
         {
                throw new EOFException("unexpected EOF reading signature sub packet");
         }
-       
+
         byte[]    data = new byte[bodyLen - 1];
-        if (Streams.readFully(in, data) < data.length)
-        {
-            throw new EOFException();
-        }
-       
+
+        //
+        // this may seem a bit strange but it turns out some applications miscode the length
+        // in fixed length fields, so we check the length we do get, only throwing an exception if
+        // we really cannot continue
+        //
+        int bytesRead = Streams.readFully(in, data);
+
         boolean   isCritical = ((tag & 0x80) != 0);
         int       type = tag & 0x7f;
+
+        if (bytesRead != data.length)
+        {
+            switch (type)
+            {
+            case CREATION_TIME:
+                data = checkData(data, 4, bytesRead, "Signature Creation Time");
+                break;
+            case ISSUER_KEY_ID:
+                data = checkData(data, 8, bytesRead, "Issuer");
+                break;
+            case KEY_EXPIRE_TIME:
+                data = checkData(data, 4, bytesRead, "Signature Key Expiration Time");
+                break;
+            case EXPIRE_TIME:
+                data = checkData(data, 4, bytesRead, "Signature Expiration Time");
+                break;
+            default:
+                throw new EOFException("truncated subpacket data.");
+            }
+        }
 
         switch (type)
         {
@@ -119,5 +144,16 @@ public class SignatureSubpacketInputStream
         }
 
         return new SignatureSubpacket(type, isCritical, data);
+    }
+
+    private byte[] checkData(byte[] data, int expected, int bytesRead, String name)
+        throws EOFException
+    {
+        if (bytesRead != expected)
+        {
+            throw new EOFException("truncated " + name + " subpacket data.");
+        }
+
+        return Arrays.copyOfRange(data, 0, expected);
     }
 }

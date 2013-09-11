@@ -617,6 +617,17 @@ public final class Arrays
         return tmp;
     }
 
+    /**
+     * Make a copy of a range of bytes from the passed in data array. The range can
+     * extend beyond the end of the input array, in which case the return array will
+     * be padded with zeroes.
+     *
+     * @param data the array from which the data is to be copied.
+     * @param from the start index at which the copying should take place.
+     * @param to the final index of the range (exclusive).
+     *
+     * @return a new byte array containing the range given.
+     */
     public static byte[] copyOfRange(byte[] data, int from, int to)
     {
         int newLength = getLength(from, to);
