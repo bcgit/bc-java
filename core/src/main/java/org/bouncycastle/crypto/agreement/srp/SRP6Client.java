@@ -108,7 +108,7 @@ public class SRP6Client
 					"some data are missing from the previous operations (A,B,S)");
 		}
 		// compute the client evidence message 'M1'
-		this.M1 = SRP6UtilCustom.calculateM1(digest, A, M1, S);  
+		this.M1 = SRP6UtilCustom.calculateM1(digest, A, B, S);  
 		return M1;
 	}
 
