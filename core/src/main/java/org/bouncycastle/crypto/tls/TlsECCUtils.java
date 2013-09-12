@@ -351,6 +351,7 @@ public class TlsECCUtils
          * default is set up to advertise that we can parse any encoding so this works fine, but
          * extra checks might be needed here if that were changed.
          */
+        // TODO Review handling of infinity and hybrid encodings
         return curve.decodePoint(encoding);
     }
 
