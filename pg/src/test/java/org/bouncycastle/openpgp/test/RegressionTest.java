@@ -26,7 +26,8 @@ public class RegressionTest
         new PGPCompressionTest(),
         new PGPNoPrivateKeyTest(),
         new PGPECDSATest(),
-        new PGPECDHTest()
+        new PGPECDHTest(),
+        new PGPParsingTest()
     };
 
     public static void main(
