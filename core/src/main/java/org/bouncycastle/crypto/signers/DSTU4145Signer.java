@@ -57,7 +57,7 @@ public class DSTU4145Signer
     public BigInteger[] generateSignature(byte[] message)
     {
         ECFieldElement h = hash2FieldElement(key.getParameters().getCurve(), message);
-        if (h.toBigInteger().signum() == 0)
+        if (h.isZero())
         {
             h = key.getParameters().getCurve().fromBigInteger(ONE);
         }
@@ -74,7 +74,7 @@ public class DSTU4145Signer
                     e = generateRandomInteger(key.getParameters().getN(), random);
                     Fe = key.getParameters().getG().multiply(e).getX();
                 }
-                while (Fe.toBigInteger().signum() == 0);
+                while (Fe.isZero());
 
                 y = h.multiply(Fe);
                 r = fieldElement2Integer(key.getParameters().getN(), y);
@@ -100,7 +100,7 @@ public class DSTU4145Signer
         }
 
         ECFieldElement h = hash2FieldElement(key.getParameters().getCurve(), message);
-        if (h.toBigInteger().signum() == 0)
+        if (h.isZero())
         {
             h = key.getParameters().getCurve().fromBigInteger(ONE);
         }

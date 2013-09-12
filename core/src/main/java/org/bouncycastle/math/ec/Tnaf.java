@@ -415,23 +415,17 @@ class Tnaf
      */
     public static byte getMu(ECCurve.F2m curve)
     {
-        BigInteger a = curve.getA().toBigInteger();
-        byte mu;
+        if (!curve.isKoblitz())
+        {
+            throw new IllegalArgumentException("No Koblitz curve (ABC), TNAF multiplication not possible");
+        }
 
-        if (a.equals(ECConstants.ZERO))
+        if (curve.getA().isZero())
         {
-            mu = -1;
+            return -1;
         }
-        else if (a.equals(ECConstants.ONE))
-        {
-            mu = 1;
-        }
-        else
-        {
-            throw new IllegalArgumentException("No Koblitz curve (ABC), " +
-                    "TNAF multiplication not possible");
-        }
-        return mu;
+
+        return 1;
     }
 
     /**

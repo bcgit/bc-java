@@ -19,6 +19,21 @@ public abstract class ECFieldElement
     public abstract ECFieldElement invert();
     public abstract ECFieldElement sqrt();
 
+    public int bitLength()
+    {
+        return toBigInteger().bitLength();
+    }
+
+    public boolean isZero()
+    {
+        return 0 == toBigInteger().signum();
+    }
+
+    public boolean testBitZero()
+    {
+        return toBigInteger().testBit(0);
+    }
+
     public String toString()
     {
         return this.toBigInteger().toString(2);
@@ -925,7 +940,21 @@ public abstract class ECFieldElement
             {
                 this.representation = PPB;
             }
+        }
 
+        public int bitLength()
+        {
+            return x.bitLength();
+        }
+
+        public boolean isZero()
+        {
+            return x.isZero();
+        }
+
+        public boolean testBitZero()
+        {
+            return !x.isZero() && x.testBit(0);
         }
 
         public BigInteger toBigInteger()
