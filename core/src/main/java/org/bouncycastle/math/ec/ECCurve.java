@@ -71,9 +71,9 @@ public abstract class ECCurve
             }
 
             int yTilde = encoded[0] & 1;
-            BigInteger X1 = fromArray(encoded, 1, expectedLength);
+            BigInteger X = fromArray(encoded, 1, expectedLength);
 
-            p = decompressPoint(yTilde, X1);
+            p = decompressPoint(yTilde, X);
             break;
         }
         case 0x04: // uncompressed
@@ -85,10 +85,10 @@ public abstract class ECCurve
                 throw new IllegalArgumentException("Incorrect length for uncompressed/hybrid encoding");
             }
 
-            BigInteger X1 = fromArray(encoded, 1, expectedLength);
-            BigInteger Y1 = fromArray(encoded, 1 + expectedLength, expectedLength);
+            BigInteger X = fromArray(encoded, 1, expectedLength);
+            BigInteger Y = fromArray(encoded, 1 + expectedLength, expectedLength);
 
-            p = createPoint(X1, Y1, false);
+            p = createPoint(X, Y);
             break;
         }
         default:
