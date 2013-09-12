@@ -108,8 +108,8 @@ public class SRP6Util
 	/**
 	 * Computes the final Key according to the standard routine: Key = H(S)
 	 * @param digest The Digest used as the hashing function H
-	 * @param S The secret calculated by both sides
-	 * @return
+	 * @param S the secret calculated by both sides
+	 * @return Key for the current session, derived from the secret S
 	 */
 	public static BigInteger calculateKey(Digest digest, BigInteger S) {
 		byte[] _output = new byte[digest.getDigestSize()];
