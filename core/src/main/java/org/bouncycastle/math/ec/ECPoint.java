@@ -401,10 +401,9 @@ public abstract class ECPoint
                 // bit of y * x^(-1)
                 // if ypTilde = 0, then PC := 02, else PC := 03
                 // Note: PC === PO[0]
-                if (!(this.getX().toBigInteger().equals(ECConstants.ZERO)))
+                if (!this.getX().isZero())
                 {
-                    if (this.getY().multiply(this.getX().invert())
-                            .toBigInteger().testBit(0))
+                    if (this.getY().multiply(this.getX().invert()).testBitZero())
                     {
                         // ypTilde = 1, hence PC = 03
                         PO[0] = 0x03;
@@ -545,7 +544,7 @@ public abstract class ECPoint
                 return this;
             }
 
-            if (this.x.toBigInteger().signum() == 0) 
+            if (this.x.isZero()) 
             {
                 // if x1 == 0, then (x1, y1) == (x1, x1 + y1)
                 // and hence this = -this and thus 2(x1, y1) == infinity
