@@ -211,6 +211,8 @@ public abstract class ECPoint
          * @param x affine x co-ordinate
          * @param y affine y co-ordinate
          * @param withCompression if true encode with point compression
+         * 
+         * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
          */
         public Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
@@ -338,6 +340,8 @@ public abstract class ECPoint
          * @param x x point
          * @param y y point
          * @param withCompression true if encode with point compression.
+         * 
+         * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
          */
         public F2m(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
