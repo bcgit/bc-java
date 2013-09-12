@@ -14,6 +14,15 @@ public abstract class ECCurve
 
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
+    public ECPoint createPoint(BigInteger x, BigInteger y)
+    {
+        return createPoint(x, y, false);
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use {@link #createPoint(BigInteger, BigInteger)}
+     * and refer {@link ECPoint#getEncoded(boolean)}
+     */
     public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
     public abstract ECPoint getInfinity();
