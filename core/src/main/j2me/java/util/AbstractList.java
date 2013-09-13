@@ -57,7 +57,7 @@ public abstract class AbstractList
         {
             int index = li.nextIndex();
             e = li.next();
-            System.out.println(e);
+
             if (o == null)
             {
                 if (e == null)
@@ -217,14 +217,13 @@ public abstract class AbstractList
 
     protected void removeRange(int fromIndex, int toIndex)
     {
-        System.out.println("breakpoint 1");
         if (fromIndex == toIndex)
         {
             return;
         }
-        System.out.println("breakpoint 2");
+
         ListIterator li = listIterator(fromIndex);
-        System.out.println("breakpoint 3");
+
         int i = fromIndex;
         do
         {

@@ -89,6 +89,42 @@ public class PBKDF2Params
         this.keyLength = new ASN1Integer(keyLength);
     }
 
+    /**
+     * Create a PBKDF2Params with the specified salt, iteration count, keyLength, and a defined prf.
+     *
+     * @param salt  input salt.
+     * @param iterationCount input iteration count.
+     * @param keyLength intended key length to be produced.
+     * @param prf the pseudo-random function to use.
+     */
+    public PBKDF2Params(
+        byte[]  salt,
+        int     iterationCount,
+        int     keyLength,
+        AlgorithmIdentifier prf)
+    {
+        this(salt, iterationCount);
+
+        this.keyLength = new ASN1Integer(keyLength);
+        this.prf = prf;
+    }
+
+    /**
+     * Create a PBKDF2Params with the specified salt, iteration count, and a defined prf.
+     *
+     * @param salt  input salt.
+     * @param iterationCount input iteration count.
+     * @param prf the pseudo-random function to use.
+     */
+    public PBKDF2Params(
+        byte[]  salt,
+        int     iterationCount,
+        AlgorithmIdentifier prf)
+    {
+        this(salt, iterationCount);
+        this.prf = prf;
+    }
+
     private PBKDF2Params(
         ASN1Sequence  seq)
     {

@@ -13,7 +13,6 @@ import java.security.spec.EllipticCurve;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -80,7 +79,7 @@ public class BCECGOST3410PublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getX().toBigInteger(), q.getY().toBigInteger(), false);
+                q = s.getCurve().createPoint(q.getX().toBigInteger(), q.getY().toBigInteger());
             }
             this.ecSpec = null;
         }
@@ -198,14 +197,14 @@ public class BCECGOST3410PublicKey
             y[i] = keyEnc[64 - 1 - i];
         }
 
-        gostParams = new GOST3410PublicKeyAlgParameters((ASN1Sequence)info.getAlgorithm().getParameters());
+        gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
 
         ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
 
         ECCurve curve = spec.getCurve();
         EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
 
-        this.q = curve.createPoint(new BigInteger(1, x), new BigInteger(1, y), false);
+        this.q = curve.createPoint(new BigInteger(1, x), new BigInteger(1, y));
 
         ecSpec = new ECNamedCurveSpec(
             ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
@@ -397,5 +396,10 @@ public class BCECGOST3410PublicKey
         out.defaultWriteObject();
 
         out.writeObject(this.getEncoded());
+    }
+
+    public GOST3410PublicKeyAlgParameters getGostParams()
+    {
+        return gostParams;
     }
 }

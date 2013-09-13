@@ -2,17 +2,28 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import java.io.IOException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.KeySpec;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
+import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 
 public class PBEPBKDF2
 {
@@ -104,6 +115,99 @@ public class PBEPBKDF2
         }
     }
 
+    public static class BasePBKDF2
+        extends BaseSecretKeyFactory
+    {
+        private int scheme;
+
+        public BasePBKDF2(String name, int scheme)
+        {
+            super(name, PKCSObjectIdentifiers.id_PBKDF2);
+
+            this.scheme = scheme;
+        }
+
+        protected SecretKey engineGenerateSecret(
+            KeySpec keySpec)
+            throws InvalidKeySpecException
+        {
+            if (keySpec instanceof PBEKeySpec)
+            {
+                PBEKeySpec pbeSpec = (PBEKeySpec)keySpec;
+
+                if (pbeSpec.getSalt() == null)
+                {
+                    throw new InvalidKeySpecException("missing required salt");
+                }
+
+                if (pbeSpec.getIterationCount() <= 0)
+                {
+                    throw new InvalidKeySpecException("positive iteration count required: "
+                        + pbeSpec.getIterationCount());
+                }
+
+                if (pbeSpec.getKeyLength() <= 0)
+                {
+                    throw new InvalidKeySpecException("positive key length required: "
+                        + pbeSpec.getKeyLength());
+                }
+
+                if (pbeSpec.getPassword().length == 0)
+                {
+                    throw new IllegalArgumentException("password empty");
+                }
+
+                if (pbeSpec instanceof PBKDF2KeySpec)
+                {
+                    PBKDF2KeySpec spec = (PBKDF2KeySpec)pbeSpec;
+
+                    int digest = getDigestCode(spec.getPrf().getAlgorithm());
+                    int keySize = pbeSpec.getKeyLength();
+                    int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
+                    CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+
+                    return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
+                }
+                else
+                {
+                    int digest = SHA1;
+                    int keySize = pbeSpec.getKeyLength();
+                    int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
+                    CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+
+                    return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
+                }
+            }
+
+            throw new InvalidKeySpecException("Invalid KeySpec");
+        }
+
+
+        private int getDigestCode(ASN1ObjectIdentifier algorithm)
+            throws InvalidKeySpecException
+        {
+            if (algorithm.equals(CryptoProObjectIdentifiers.gostR3411Hmac))
+            {
+                return GOST3411;
+            }
+            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA1))
+            {
+                return SHA1;
+            }
+
+            throw new InvalidKeySpecException("Invalid KeySpec: unknown PRF algorithm " + algorithm);
+        }
+    }
+
+    public static class PBKDF2withUTF8
+        extends BasePBKDF2
+    {
+        public PBKDF2withUTF8()
+        {
+            super("PBKDF2", PKCS5S2_UTF8);
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -117,6 +221,8 @@ public class PBEPBKDF2
         {
             provider.addAlgorithm("AlgorithmParameters.PBKDF2", PREFIX + "$AlgParams");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2", PREFIX + "$PBKDF2withUTF8");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
         }
     }
 }

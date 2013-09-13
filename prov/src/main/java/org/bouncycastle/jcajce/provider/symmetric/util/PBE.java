@@ -72,7 +72,32 @@ public interface PBE
             }
             else if (type == PKCS5S2 || type == PKCS5S2_UTF8)
             {
-                generator = new PKCS5S2ParametersGenerator();
+                switch (hash)
+                {
+                case MD2:
+                    generator = new PKCS5S2ParametersGenerator(new MD2Digest());
+                    break;
+                case MD5:
+                    generator = new PKCS5S2ParametersGenerator(new MD5Digest());
+                    break;
+                case SHA1:
+                    generator = new PKCS5S2ParametersGenerator(new SHA1Digest());
+                    break;
+                case RIPEMD160:
+                    generator = new PKCS5S2ParametersGenerator(new RIPEMD160Digest());
+                    break;
+                case TIGER:
+                    generator = new PKCS5S2ParametersGenerator(new TigerDigest());
+                    break;
+                case SHA256:
+                    generator = new PKCS5S2ParametersGenerator(new SHA256Digest());
+                    break;
+                case GOST3411:
+                    generator = new PKCS5S2ParametersGenerator(new GOST3411Digest());
+                    break;
+                default:
+                    throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");
+                }
             }
             else if (type == PKCS12)
             {
@@ -261,9 +286,9 @@ public interface PBE
             key = convertPassword(type, keySpec);
             
             generator.init(key, keySpec.getSalt(), keySpec.getIterationCount());
-    
+
             param = generator.generateDerivedMacParameters(keySize);
-    
+
             for (int i = 0; i != key.length; i++)
             {
                 key[i] = 0;

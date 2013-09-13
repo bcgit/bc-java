@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class GOST3411
 {
@@ -46,6 +47,18 @@ public class GOST3411
         }
     }
 
+    /**
+     * PBEWithHmacGOST3411
+     */
+    public static class PBEWithMacKeyFactory
+        extends PBESecretKeyFactory
+    {
+        public PBEWithMacKeyFactory()
+        {
+            super("PBEwithHmacGOST3411", null, false, PKCS12, GOST3411, 256, 0);
+        }
+    }
+
     public static class KeyGenerator
         extends BaseKeyGenerator
     {
@@ -70,6 +83,9 @@ public class GOST3411
             provider.addAlgorithm("Alg.Alias.MessageDigest.GOST", "GOST3411");
             provider.addAlgorithm("Alg.Alias.MessageDigest.GOST-3411", "GOST3411");
             provider.addAlgorithm("Alg.Alias.MessageDigest." + CryptoProObjectIdentifiers.gostR3411, "GOST3411");
+
+            provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACGOST3411", PREFIX + "$PBEWithMacKeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + CryptoProObjectIdentifiers.gostR3411, "PBEWITHHMACGOST3411");
 
             addHMACAlgorithm(provider, "GOST3411", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "GOST3411", CryptoProObjectIdentifiers.gostR3411);

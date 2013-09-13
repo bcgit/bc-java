@@ -58,7 +58,7 @@ public class PKCS5S2ParametersGenerator
         hMac.doFinal(state, 0);
 
         System.arraycopy(state, 0, out, outOff, state.length);
-        
+
         for (int count = 1; count < c; count++)
         {
             hMac.update(state, 0, state.length);

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -33,6 +34,8 @@ public class DefaultSecretKeyProvider
         keySizes.put(NTTObjectIdentifiers.id_camellia128_cbc, Integers.valueOf(128));
         keySizes.put(NTTObjectIdentifiers.id_camellia192_cbc, Integers.valueOf(192));
         keySizes.put(NTTObjectIdentifiers.id_camellia256_cbc, Integers.valueOf(256));
+
+        keySizes.put(CryptoProObjectIdentifiers.gostR28147_gcfb, Integers.valueOf(256));
 
         KEY_SIZES = Collections.unmodifiableMap(keySizes);
     }
