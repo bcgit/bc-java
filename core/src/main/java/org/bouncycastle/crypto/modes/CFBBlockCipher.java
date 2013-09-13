@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
 /**
  * implements a Cipher-FeedBack (CFB) mode on top of a simple cipher.
@@ -243,6 +244,16 @@ public class CFBBlockCipher
         }
 
         return blockSize;
+    }
+
+    /**
+     * Return the current state of the initialisation vector.
+     *
+     * @return current IV
+     */
+    public byte[] getCurrentIV()
+    {
+        return Arrays.clone(cfbV);
     }
 
     /**
