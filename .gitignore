@@ -2,3 +2,7 @@
 /lib
 .classpath
 .project
+test.*
+large.*
+pub.*
+secret.*
