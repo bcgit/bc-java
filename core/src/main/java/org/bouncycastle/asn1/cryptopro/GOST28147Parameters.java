@@ -11,11 +11,14 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * ASN.1 algorithm identifier parameters for GOST-28147
+ */
 public class GOST28147Parameters
     extends ASN1Object
 {
-    ASN1OctetString iv;
-    ASN1ObjectIdentifier paramSet;
+    private ASN1OctetString iv;
+    private ASN1ObjectIdentifier paramSet;
 
     public static GOST28147Parameters getInstance(
         ASN1TaggedObject obj,
@@ -27,19 +30,22 @@ public class GOST28147Parameters
     public static GOST28147Parameters getInstance(
         Object obj)
     {
-        if(obj == null || obj instanceof GOST28147Parameters)
+        if (obj instanceof GOST28147Parameters)
         {
             return (GOST28147Parameters)obj;
         }
 
-        if(obj instanceof ASN1Sequence)
+        if (obj != null)
         {
-            return new GOST28147Parameters((ASN1Sequence)obj);
+            return new GOST28147Parameters(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("Invalid GOST3410Parameter: " + obj.getClass().getName());
+        return null;
     }
 
+    /**
+     * @deprecated use the getInstance() method. This constructor will vanish!
+     */
     public GOST28147Parameters(
         ASN1Sequence  seq)
     {
@@ -68,5 +74,25 @@ public class GOST28147Parameters
         v.add(paramSet);
 
         return new DERSequence(v);
+    }
+
+    /**
+     * Return the OID representing the sBox to use.
+     *
+     * @return the sBox OID.
+     */
+    public ASN1ObjectIdentifier getEncryptionParamSet()
+    {
+        return paramSet;
+    }
+
+    /**
+     * Return the initialisation vector to use.
+     *
+     * @return the IV.
+     */
+    public byte[] getIV()
+    {
+        return iv.getOctets();
     }
 }

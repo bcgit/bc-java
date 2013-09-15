@@ -113,7 +113,36 @@ public abstract class ECPoint
         return getEncoded(withCompression);
     }
 
-    public abstract byte[] getEncoded(boolean compressed);
+    /**
+     * return the field element encoded with point compression. (S 4.3.6)
+     */
+    public byte[] getEncoded(boolean compressed)
+    {
+        if (this.isInfinity())
+        {
+            return new byte[1];
+        }
+
+        int length = converter.getByteLength(getX());
+        byte[] X = converter.integerToBytes(getX().toBigInteger(), length);
+
+        if (compressed)
+        {
+            byte[] PO = new byte[X.length + 1];
+            PO[0] = (byte)(getCompressionYTilde() ? 0x03 : 0x02);
+            System.arraycopy(X, 0, PO, 1, X.length);
+            return PO;
+        }
+
+        byte[] Y = converter.integerToBytes(getY().toBigInteger(), length);
+        byte[] PO = new byte[X.length + Y.length + 1];
+        PO[0] = 0x04;
+        System.arraycopy(X, 0, PO, 1, X.length);
+        System.arraycopy(Y, 0, PO, X.length + 1, Y.length);
+        return PO;
+    }
+
+    protected abstract boolean getCompressionYTilde();
 
     public abstract ECPoint add(ECPoint b);
     public abstract ECPoint subtract(ECPoint b);
@@ -182,6 +211,8 @@ public abstract class ECPoint
          * @param x affine x co-ordinate
          * @param y affine y co-ordinate
          * @param withCompression if true encode with point compression
+         * 
+         * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
          */
         public Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
@@ -194,52 +225,10 @@ public abstract class ECPoint
 
             this.withCompression = withCompression;
         }
-         
-        /**
-         * return the field element encoded with point compression. (S 4.3.6)
-         */
-        public byte[] getEncoded(boolean compressed)
+
+        protected boolean getCompressionYTilde()
         {
-            if (this.isInfinity()) 
-            {
-                return new byte[1];
-            }
-
-            int qLength = converter.getByteLength(x);
-            
-            if (compressed)
-            {
-                byte    PC;
-    
-                if (this.getY().toBigInteger().testBit(0))
-                {
-                    PC = 0x03;
-                }
-                else
-                {
-                    PC = 0x02;
-                }
-    
-                byte[]  X = converter.integerToBytes(this.getX().toBigInteger(), qLength);
-                byte[]  PO = new byte[X.length + 1];
-    
-                PO[0] = PC;
-                System.arraycopy(X, 0, PO, 1, X.length);
-    
-                return PO;
-            }
-            else
-            {
-                byte[]  X = converter.integerToBytes(this.getX().toBigInteger(), qLength);
-                byte[]  Y = converter.integerToBytes(this.getY().toBigInteger(), qLength);
-                byte[]  PO = new byte[X.length + Y.length + 1];
-                
-                PO[0] = 0x04;
-                System.arraycopy(X, 0, PO, 1, X.length);
-                System.arraycopy(Y, 0, PO, X.length + 1, Y.length);
-
-                return PO;
-            }
+            return getY().testBitZero();
         }
 
         // B.3 pg 62
@@ -351,6 +340,8 @@ public abstract class ECPoint
          * @param x x point
          * @param y y point
          * @param withCompression true if encode with point compression.
+         * 
+         * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
          */
         public F2m(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
@@ -376,55 +367,9 @@ public abstract class ECPoint
             this.withCompression = withCompression;
         }
 
-        /* (non-Javadoc)
-         * @see org.bouncycastle.math.ec.ECPoint#getEncoded()
-         */
-        public byte[] getEncoded(boolean compressed)
+        protected boolean getCompressionYTilde()
         {
-            if (this.isInfinity()) 
-            {
-                return new byte[1];
-            }
-
-            int byteCount = converter.getByteLength(this.x);
-            byte[] X = converter.integerToBytes(this.getX().toBigInteger(), byteCount);
-            byte[] PO;
-
-            if (compressed)
-            {
-                // See X9.62 4.3.6 and 4.2.2
-                PO = new byte[byteCount + 1];
-
-                PO[0] = 0x02;
-                // X9.62 4.2.2 and 4.3.6:
-                // if x = 0 then ypTilde := 0, else ypTilde is the rightmost
-                // bit of y * x^(-1)
-                // if ypTilde = 0, then PC := 02, else PC := 03
-                // Note: PC === PO[0]
-                if (!(this.getX().toBigInteger().equals(ECConstants.ZERO)))
-                {
-                    if (this.getY().multiply(this.getX().invert())
-                            .toBigInteger().testBit(0))
-                    {
-                        // ypTilde = 1, hence PC = 03
-                        PO[0] = 0x03;
-                    }
-                }
-
-                System.arraycopy(X, 0, PO, 1, byteCount);
-            }
-            else
-            {
-                byte[] Y = converter.integerToBytes(this.getY().toBigInteger(), byteCount);
-    
-                PO = new byte[byteCount + byteCount + 1];
-    
-                PO[0] = 0x04;
-                System.arraycopy(X, 0, PO, 1, byteCount);
-                System.arraycopy(Y, 0, PO, byteCount + 1, byteCount);    
-            }
-
-            return PO;
+            return !getX().isZero() && getY().multiply(getX().invert()).testBitZero();
         }
 
         /**
@@ -545,7 +490,7 @@ public abstract class ECPoint
                 return this;
             }
 
-            if (this.x.toBigInteger().signum() == 0) 
+            if (this.x.isZero()) 
             {
                 // if x1 == 0, then (x1, y1) == (x1, x1 + y1)
                 // and hence this = -this and thus 2(x1, y1) == infinity

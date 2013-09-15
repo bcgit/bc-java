@@ -11,8 +11,10 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
@@ -23,13 +25,13 @@ import org.bouncycastle.jcajce.JcaJceHelper;
 import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
+import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.operator.DefaultSecretKeyProvider;
-import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.SecretKeySizeProvider;
-import org.bouncycastle.operator.jcajce.JceGenericKey;
 
 public class JcePKCSPBEInputDecryptorProviderBuilder
 {
@@ -125,13 +127,31 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
 
                         SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
 
-                        key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+                        if (func.isDefaultPrf())
+                        {
+                            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+                        }
+                        else
+                        {
+                            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+                        }
 
                         cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());
 
                         encryptionAlg = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
-                        cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(ASN1OctetString.getInstance(alg.getEncryptionScheme().getParameters()).getOctets()));
+                        ASN1Encodable encParams = alg.getEncryptionScheme().getParameters();
+                        if (encParams instanceof ASN1OctetString)
+                        {
+                            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(ASN1OctetString.getInstance(encParams).getOctets()));
+                        }
+                        else
+                        {
+                            // TODO: at the moment it's just GOST, but...
+                            GOST28147Parameters gParams = GOST28147Parameters.getInstance(encParams);
+
+                            cipher.init(Cipher.DECRYPT_MODE, key, new GOST28147ParameterSpec(gParams.getEncryptionParamSet(), gParams.getIV()));
+                        }
                     }
                 }
                 catch (Exception e)
@@ -149,11 +169,6 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                     public InputStream getInputStream(InputStream input)
                     {
                         return new CipherInputStream(input, cipher);
-                    }
-
-                    public GenericKey getKey()
-                    {
-                        return new JceGenericKey(encryptionAlg, key);
                     }
                 };
             }

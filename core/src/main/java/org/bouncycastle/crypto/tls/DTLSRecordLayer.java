@@ -54,6 +54,13 @@ class DTLSRecordLayer
         return discoveredPeerVersion;
     }
 
+    ProtocolVersion resetDiscoveredPeerVersion()
+    {
+        ProtocolVersion result = discoveredPeerVersion; 
+        discoveredPeerVersion = null;
+        return result;
+    }
+
     void initPendingEpoch(TlsCipher pendingCipher)
     {
         if (pendingEpoch != null)
@@ -287,6 +294,7 @@ class DTLSRecordLayer
                         // TODO Consider support for HelloRequest
                         continue;
                     }
+                    break;
                 }
                 case ContentType.heartbeat:
                 {

@@ -255,8 +255,8 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "client finished",
-            handshake.getCurrentHash());
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
+            ExporterLabel.client_finished, handshake.getCurrentHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -267,7 +267,7 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, "server finished",
+        byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
             handshake.getCurrentHash());
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 

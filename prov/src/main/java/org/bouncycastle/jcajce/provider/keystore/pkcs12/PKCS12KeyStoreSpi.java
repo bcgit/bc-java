@@ -6,6 +6,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.LoadStoreParameter;
@@ -24,13 +26,18 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
@@ -54,6 +61,10 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.CertBag;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
@@ -75,12 +86,14 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
-import org.bouncycastle.jcajce.provider.util.SecretKeyUtil;
+import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -92,6 +105,7 @@ public class PKCS12KeyStoreSpi
     private static final int MIN_ITERATIONS = 1024;
 
     private static final Provider bcProvider = new BouncyCastleProvider();
+    private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 
     private IgnoresCaseHashtable keys = new IgnoresCaseHashtable();
     private Hashtable localIds = new Hashtable();
@@ -593,16 +607,8 @@ public class PKCS12KeyStoreSpi
             }
             else if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
             {
-                PBES2Parameters alg = PBES2Parameters.getInstance(algId.getParameters());
-                PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
 
-                SecretKeyFactory keyFact = SecretKeyFactory.getInstance(alg.getKeyDerivationFunc().getAlgorithm().getId(), bcProvider);
-
-                SecretKey k = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), SecretKeyUtil.getKeySize(alg.getEncryptionScheme().getAlgorithm())));
-
-                Cipher cipher = Cipher.getInstance(alg.getEncryptionScheme().getAlgorithm().getId(), bcProvider);
-
-                cipher.init(Cipher.UNWRAP_MODE, k, new IvParameterSpec(ASN1OctetString.getInstance(alg.getEncryptionScheme().getParameters()).getOctets()));
+                Cipher cipher = createCipher(Cipher.UNWRAP_MODE, password, algId);
 
                 // we pass "" as the key algorithm type as it is unknown at this point
                 return (PrivateKey)cipher.unwrap(data, "", Cipher.PRIVATE_KEY);
@@ -656,29 +662,88 @@ public class PKCS12KeyStoreSpi
         byte[] data)
         throws IOException
     {
-        String algorithm = algId.getAlgorithm().getId();
-        PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
-        PBEKeySpec pbeSpec = new PBEKeySpec(password);
+        ASN1ObjectIdentifier algorithm = algId.getAlgorithm();
 
-        try
+        if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
         {
-            SecretKeyFactory keyFact = SecretKeyFactory.getInstance(algorithm, bcProvider);
-            PBEParameterSpec defParams = new PBEParameterSpec(
-                pbeParams.getIV(),
-                pbeParams.getIterations().intValue());
-            BCPBEKey key = (BCPBEKey)keyFact.generateSecret(pbeSpec);
+            PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
+            PBEKeySpec pbeSpec = new PBEKeySpec(password);
 
-            key.setTryWrongPKCS12Zero(wrongPKCS12Zero);
+            try
+            {
+                SecretKeyFactory keyFact = SecretKeyFactory.getInstance(algorithm.getId(), bcProvider);
+                PBEParameterSpec defParams = new PBEParameterSpec(
+                    pbeParams.getIV(),
+                    pbeParams.getIterations().intValue());
+                BCPBEKey key = (BCPBEKey)keyFact.generateSecret(pbeSpec);
 
-            Cipher cipher = Cipher.getInstance(algorithm, bcProvider);
-            int mode = forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-            cipher.init(mode, key, defParams);
-            return cipher.doFinal(data);
+                key.setTryWrongPKCS12Zero(wrongPKCS12Zero);
+
+                Cipher cipher = Cipher.getInstance(algorithm.getId(), bcProvider);
+                int mode = forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+                cipher.init(mode, key, defParams);
+                return cipher.doFinal(data);
+            }
+            catch (Exception e)
+            {
+                throw new IOException("exception decrypting data - " + e.toString());
+            }
         }
-        catch (Exception e)
+        else  if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
         {
-            throw new IOException("exception decrypting data - " + e.toString());
+            try
+            {
+                Cipher cipher = createCipher(Cipher.DECRYPT_MODE, password, algId);
+
+                return cipher.doFinal(data);
+            }
+            catch (Exception e)
+            {
+                throw new IOException("exception decrypting data - " + e.toString());
+            }
         }
+        else
+        {
+            throw new IOException("unknown PBE algorithm: " + algorithm);
+        }
+    }
+
+    private Cipher createCipher(int mode, char[] password, AlgorithmIdentifier algId)
+        throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException
+    {
+        PBES2Parameters alg = PBES2Parameters.getInstance(algId.getParameters());
+        PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
+        AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
+
+        SecretKeyFactory keyFact = SecretKeyFactory.getInstance(alg.getKeyDerivationFunc().getAlgorithm().getId(), bcProvider);
+        SecretKey key;
+
+        if (func.isDefaultPrf())
+        {
+            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+        }
+        else
+        {
+            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+        }
+
+        Cipher cipher = Cipher.getInstance(alg.getEncryptionScheme().getAlgorithm().getId());
+
+        AlgorithmIdentifier encryptionAlg = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
+
+        ASN1Encodable encParams = alg.getEncryptionScheme().getParameters();
+        if (encParams instanceof ASN1OctetString)
+        {
+            cipher.init(mode, key, new IvParameterSpec(ASN1OctetString.getInstance(encParams).getOctets()));
+        }
+        else
+        {
+            // TODO: at the moment it's just GOST, but...
+            GOST28147Parameters gParams = GOST28147Parameters.getInstance(encParams);
+
+            cipher.init(mode, key, new GOST28147ParameterSpec(gParams.getEncryptionParamSet(), gParams.getIV()));
+        }
+        return cipher;
     }
 
     public void engineLoad(
@@ -1669,6 +1734,45 @@ public class PKCS12KeyStoreSpi
         public Enumeration elements()
         {
             return orig.elements();
+        }
+    }
+
+    private static class DefaultSecretKeyProvider
+    {
+        private final Map KEY_SIZES;
+
+        DefaultSecretKeyProvider()
+        {
+            Map keySizes = new HashMap();
+
+            keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
+
+            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
+
+            keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
+            keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
+            keySizes.put(NISTObjectIdentifiers.id_aes256_CBC, Integers.valueOf(256));
+
+            keySizes.put(NTTObjectIdentifiers.id_camellia128_cbc, Integers.valueOf(128));
+            keySizes.put(NTTObjectIdentifiers.id_camellia192_cbc, Integers.valueOf(192));
+            keySizes.put(NTTObjectIdentifiers.id_camellia256_cbc, Integers.valueOf(256));
+
+            keySizes.put(CryptoProObjectIdentifiers.gostR28147_gcfb, Integers.valueOf(256));
+
+            KEY_SIZES = Collections.unmodifiableMap(keySizes);
+        }
+
+        public int getKeySize(AlgorithmIdentifier algorithmIdentifier)
+        {
+            // TODO: not all ciphers/oid relationships are this simple.
+            Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
+
+            if (keySize != null)
+            {
+                return keySize.intValue();
+            }
+
+            return -1;
         }
     }
 }

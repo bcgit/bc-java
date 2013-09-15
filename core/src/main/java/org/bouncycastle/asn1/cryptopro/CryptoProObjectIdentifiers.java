@@ -19,10 +19,19 @@ public interface CryptoProObjectIdentifiers
     static final ASN1ObjectIdentifier    gostR3411Hmac      = GOST_id.branch("10");
 
     /** Gost R28147 OID: 1.2.643.2.2.21 */
-    static final ASN1ObjectIdentifier    gostR28147_cbc     = GOST_id.branch("21");
+    static final ASN1ObjectIdentifier    gostR28147_gcfb = GOST_id.branch("21");
 
     /** Gost R28147-89-CryotoPro-A-ParamSet OID: 1.2.643.2.2.31.1 */
     static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_A_ParamSet = GOST_id.branch("31.1");
+
+    /** Gost R28147-89-CryotoPro-B-ParamSet OID: 1.2.643.2.2.31.2 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_B_ParamSet = GOST_id.branch("31.2");
+
+    /** Gost R28147-89-CryotoPro-C-ParamSet OID: 1.2.643.2.2.31.3 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_C_ParamSet = GOST_id.branch("31.3");
+
+    /** Gost R28147-89-CryotoPro-D-ParamSet OID: 1.2.643.2.2.31.4 */
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_D_ParamSet = GOST_id.branch("31.4");
 
     /** Gost R3410-94 OID: 1.2.643.2.2.20 */
     static final ASN1ObjectIdentifier    gostR3410_94       = GOST_id.branch("20");

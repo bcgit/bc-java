@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
+import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.GOFBBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
@@ -52,9 +53,9 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.RC5Parameters;
+import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.GOST28147ParameterSpec;
-import org.bouncycastle.jce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.Strings;
 
 public class BaseBlockCipher
@@ -271,6 +272,12 @@ public class BaseBlockCipher
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new GOFBBlockCipher(baseEngine)));
         }
+        else if (modeName.startsWith("GCFB"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                        new GCFBBlockCipher(baseEngine)));
+        }
         else if (modeName.startsWith("CTS"))
         {
             ivLength = baseEngine.getBlockSize();
@@ -419,6 +426,18 @@ public class BaseBlockCipher
                     IvParameterSpec iv = (IvParameterSpec)params;
 
                     param = new ParametersWithIV(param, iv.getIV());
+                }
+                else if (params instanceof GOST28147ParameterSpec)
+                {
+                    // need to pick up IV and SBox.
+                    GOST28147ParameterSpec    gost28147Param = (GOST28147ParameterSpec)params;
+
+                    param = new ParametersWithSBox(param, gost28147Param.getSbox());
+
+                    if (gost28147Param.getIV() != null && ivLength != 0)
+                    {
+                        param = new ParametersWithIV(param, gost28147Param.getIV());
+                    }
                 }
             }
             else if (params instanceof PBEParameterSpec)
