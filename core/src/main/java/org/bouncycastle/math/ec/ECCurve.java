@@ -14,6 +14,15 @@ public abstract class ECCurve
 
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
+    public ECPoint createPoint(BigInteger x, BigInteger y)
+    {
+        return createPoint(x, y, false);
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use {@link #createPoint(BigInteger, BigInteger)}
+     * and refer {@link ECPoint#getEncoded(boolean)}
+     */
     public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
     public abstract ECPoint getInfinity();
@@ -62,9 +71,9 @@ public abstract class ECCurve
             }
 
             int yTilde = encoded[0] & 1;
-            BigInteger X1 = fromArray(encoded, 1, expectedLength);
+            BigInteger X = fromArray(encoded, 1, expectedLength);
 
-            p = decompressPoint(yTilde, X1);
+            p = decompressPoint(yTilde, X);
             break;
         }
         case 0x04: // uncompressed
@@ -76,10 +85,10 @@ public abstract class ECCurve
                 throw new IllegalArgumentException("Incorrect length for uncompressed/hybrid encoding");
             }
 
-            BigInteger X1 = fromArray(encoded, 1, expectedLength);
-            BigInteger Y1 = fromArray(encoded, 1 + expectedLength, expectedLength);
+            BigInteger X = fromArray(encoded, 1, expectedLength);
+            BigInteger Y = fromArray(encoded, 1 + expectedLength, expectedLength);
 
-            p = createPoint(X1, Y1, false);
+            p = createPoint(X, Y);
             break;
         }
         default:
@@ -148,9 +157,7 @@ public abstract class ECCurve
             }
 
             BigInteger betaValue = beta.toBigInteger();
-            int bit0 = betaValue.testBit(0) ? 1 : 0;
-
-            if (bit0 != yTilde)
+            if (betaValue.testBit(0) != (yTilde == 1))
             {
                 // Use the other root
                 beta = fromBigInteger(q.subtract(betaValue));
@@ -432,10 +439,7 @@ public abstract class ECCurve
          */
         public boolean isKoblitz()
         {
-            return ((n != null) && (h != null) &&
-                    ((a.toBigInteger().equals(ECConstants.ZERO)) ||
-                    (a.toBigInteger().equals(ECConstants.ONE))) &&
-                    (b.toBigInteger().equals(ECConstants.ONE)));
+            return n != null && h != null && a.bitLength() <= 1 && b.bitLength() == 1;
         }
 
         /**
@@ -480,7 +484,7 @@ public abstract class ECCurve
         {
             ECFieldElement xp = fromBigInteger(X1);
             ECFieldElement yp = null;
-            if (xp.toBigInteger().equals(ECConstants.ZERO))
+            if (X1.signum() == 0)
             {
                 yp = (ECFieldElement.F2m)b;
                 for (int i = 0; i < m - 1; i++)
@@ -491,13 +495,12 @@ public abstract class ECCurve
             else
             {
                 ECFieldElement beta = xp.add(a).add(b.multiply(xp.square().invert()));
-                ECFieldElement z = solveQuadradicEquation(beta);
+                ECFieldElement z = solveQuadraticEquation(beta);
                 if (z == null)
                 {
                     throw new IllegalArgumentException("Invalid point compression");
                 }
-                int zBit = z.toBigInteger().testBit(0) ? 1 : 0;
-                if (zBit != yTilde)
+                if (z.testBitZero() != (yTilde == 1))
                 {
                     z = z.add(fromBigInteger(ECConstants.ONE));
                 }
@@ -512,28 +515,26 @@ public abstract class ECCurve
          * D.1.6) The other solution is <code>z + 1</code>.
          * 
          * @param beta
-         *            The value to solve the qradratic equation for.
+         *            The value to solve the quadratic equation for.
          * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
          *         <code>null</code> if no solution exists.
          */
-        private ECFieldElement solveQuadradicEquation(ECFieldElement beta)
+        private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
         {
-            ECFieldElement zeroElement = new ECFieldElement.F2m(
-                    this.m, this.k1, this.k2, this.k3, ECConstants.ZERO);
-
-            if (beta.toBigInteger().equals(ECConstants.ZERO))
+            if (beta.isZero())
             {
-                return zeroElement;
+                return beta;
             }
 
+            ECFieldElement zeroElement = fromBigInteger(ECConstants.ZERO);
+
             ECFieldElement z = null;
-            ECFieldElement gamma = zeroElement;
+            ECFieldElement gamma = null;
 
             Random rand = new Random();
             do
             {
-                ECFieldElement t = new ECFieldElement.F2m(this.m, this.k1,
-                        this.k2, this.k3, new BigInteger(m, rand));
+                ECFieldElement t = fromBigInteger(new BigInteger(m, rand));
                 z = zeroElement;
                 ECFieldElement w = beta;
                 for (int i = 1; i <= m - 1; i++)
@@ -542,13 +543,13 @@ public abstract class ECCurve
                     z = z.square().add(w2.multiply(t));
                     w = w2.add(beta);
                 }
-                if (!w.toBigInteger().equals(ECConstants.ZERO))
+                if (!w.isZero())
                 {
                     return null;
                 }
                 gamma = z.square().add(z);
             }
-            while (gamma.toBigInteger().equals(ECConstants.ZERO));
+            while (gamma.isZero());
 
             return z;
         }

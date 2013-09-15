@@ -57,6 +57,9 @@ public class GOST3410PublicKeyAlgParameters
         this.encryptionParamSet = encryptionParamSet;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public GOST3410PublicKeyAlgParameters(
         ASN1Sequence  seq)
     {

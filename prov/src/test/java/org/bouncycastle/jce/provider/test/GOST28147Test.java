@@ -11,8 +11,8 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -182,11 +182,11 @@ public class GOST28147Test
     private void oidTest()
     {
         String[] oids = {
-                CryptoProObjectIdentifiers.gostR28147_cbc.getId(),
+                CryptoProObjectIdentifiers.gostR28147_gcfb.getId(),
         };
         
         String[] names = {
-            "GOST28147/CBC/PKCS7Padding"
+            "GOST28147/GCFB/NoPadding"
         };
         
         try

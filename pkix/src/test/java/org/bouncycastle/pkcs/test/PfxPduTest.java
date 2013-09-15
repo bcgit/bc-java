@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
@@ -454,6 +455,74 @@ public class PfxPduTest
       + "hvcNAQkUMSweKgB0AGUAcwB0AEAAYgBvAHUAbgBjAHkAYwBhAHMAdABsAGUA"
       + "LgBvAHIAZzAxMCEwCQYFKw4DAhoFAAQUc8hyg5aq/58lH3whwo66zJkWY28E"
       + "CKHZUIQsQX9hAgIIAA==");
+
+    private byte[] gostPfx = Base64.decode(
+        "MIIHEgIBAzCCBssGCSqGSIb3DQEHAaCCBrwEgga4MIIGtDCCBYEGCSqGSIb3"
+      + "DQEHBqCCBXIwggVuAgEAMIIFZwYJKoZIhvcNAQcBMFUGCSqGSIb3DQEFDTBI"
+      + "MCcGCSqGSIb3DQEFDDAaBAi114+lRrpkXAICCAAwCgYGKoUDAgIKBQAwHQYG"
+      + "KoUDAgIVMBMECLEIQPMsz/ZZBgcqhQMCAh8BgIIFAbu13yJiW/BnSKYKbtv9"
+      + "tDJoTv6l9BVpCCI4tvpzJnMeLBJyVZU4JevcJNii+R1LilVuuB+xc8e7/P4G"
+      + "6TILWmnnispr9KPRAbYRfoCJOa59+TYJMur58wwDuYgMapQAFzsvpzyUWi62"
+      + "o3uQbbLKO9hQCeJW2L+K9cbg8k33MjXMLpnblKpqmZbHTmBJDFR3xGw7IEjD"
+      + "UNqruu7DlHY6jctiVJSii9UNEVetSo9AAzfROxRjROg38VsWxLyO9wEMBv/8"
+      + "H8ur+zOtmQPGqirNXmN+pa08OvZin9kh7CgswW03xIbfsdGGGLRAWtvCnEwJ"
+      + "mS2tEfH1SZcuVLpMomhq3FU/jsc12k+vq/jw4I2cmfDL41ieK72bwNj8xUXu"
+      + "JHeoFSPGX4z+nsJUrFbFG4VBuDs2Y0SCWLyYZvdjvJwYjfqtyi/RoFSZjGHF"
+      + "crstf9YNQ0vW0efCJ7pUBH44OrbnCx5ng2U5jFm1b3HBIKA2RX+Tlhv14MgT"
+      + "KSftPZ67eSmgdsyPuQAdMu6fEdBMpVKMNZNRV565690sqi+1jOmH94TUX8XU"
+      + "2pRQj6eGGLq6lgGnnDabcePUEPXW8zW2KYrDKYJ/1QZmVGldvlqnjZMNhIO+"
+      + "Afsqax/P8RBjMduGqdilGdRzbN8PdhVaN0Ys+WzFxiS9gtaA2yPzcQuedWDN"
+      + "T7sIrfIapgFYmmHRQ7ht4AKj+lmOyNadONYw+ww+8RzHB1d2Kk+iXeZCtvH0"
+      + "XFWJZtuoGKSt/gkI0E2vpDfMbLaczaRC7ityO0iJs25ozP4JhZRBVvOmpxc9"
+      + "YuIetbTnTf1TLJKXDgt1IwPZeugbofSeiNv117lx8VgtvMYFD4W+WQlB8HnO"
+      + "C8NOYjkMPElc6PCMB9gGm0cIu1fKLvY8ycLav93JJjdDuC0kgKLb2+8mC5+2"
+      + "DdMkcfgW6hy4c98xnJs8enCww3A4xkRbMU13zMq70liqmKHV2SSurg5hwUHM"
+      + "ZthT8p988ZBrnqW24lXfMBqTK4YtIBMeMnvKocYBXr96ig3GfahI1Aj2Bw2e"
+      + "bpZTVeayYUd+2xX8JJMdqna6Q61AL8/eUhJUETz5+fgQJtPjcKmdJfVHO6nB"
+      + "vOk1t/rjK17eiXLxHCyvfP+Tw8lSFOhcvr4eIeG8WfsWNRu2eKKosOU7uash"
+      + "QpnvQieqDeijuRxf+tbbJ5D86inwbJqdxra7wNuZXmiaB9gFDzNbNjhtL+6i"
+      + "gUyX/iQHKi9bNK+PH6pdH/gkwnG/juhdgqoNY6GRty/LUOPgXD+r5e/ST16R"
+      + "vnlwrlKp5FzRWBEkem+dhelj3rb+cxKEyvPe3TvIUFcmIlV1VCRQ1fBHtX18"
+      + "eC3a3GprH8c40z3S/kdyk7GlFQ27DRLka+iDN05b+MP5jlgvfqYBKxwLfeNu"
+      + "MpxWoCUvYWiQdMih86/l0H+0o5UB8SqRbpuvr6fY910JCk0hDaO1pgB3HlRz"
+      + "k1vb46pg25heXQm3JmO+ghxjOGliYBWjl8p7AfRS9cjS8ca+X02Mv9Viv7Ce"
+      + "3+Gz0MVwfK98viJ3CFxkaEBlM2LM0IeUQbkHG+YwYaTSfl4GYyrug4F0ZdrA"
+      + "KeY9/kIxa/OJxjcIMs2H+2mSpxmrb7ylmHZ2RB8ITiduRVtO091hn/J7N+eT"
+      + "h6BvLBKIFU+UFUdgjxoDNDk7ao++Mu9T3dQfceFBOYzW9vMQgX30yaPLSdan"
+      + "ZMAP0VtiNjCCASsGCSqGSIb3DQEHAaCCARwEggEYMIIBFDCCARAGCyqGSIb3"
+      + "DQEMCgECoIGyMIGvMFUGCSqGSIb3DQEFDTBIMCcGCSqGSIb3DQEFDDAaBAiQ"
+      + "Owewo16xzQICCAAwCgYGKoUDAgIKBQAwHQYGKoUDAgIVMBMECHSCNJJcQ2VI"
+      + "BgcqhQMCAh8BBFYCyRRpFtZgnsxeK7ZHT+aOyoVmzhtnLrqoBHgV4nJJW2/e"
+      + "UcJjc2Rlbzfd+3L/GWcRGF8Bgn+MjiaAqE64Rzaao9t2hc3myw1WrCfPnoEx"
+      + "VI7OPBM5FzFMMCMGCSqGSIb3DQEJFTEWBBTV7LvI27QWRmHD45X2WKXYs3ct"
+      + "AzAlBgkqhkiG9w0BCRQxGB4WAGMAcABfAGUAeABwAG8AcgB0AGUAZDA+MC4w"
+      + "CgYGKoUDAgIJBQAEIJbGZorQsNM63+xozwEI561cTFVCbyHAEEpkvF3eijT8"
+      + "BAgY5sDtkrVeBQICCAA=");
+
+    private byte[] gostPfxFoo123 = Base64.decode(
+        "MIID6gIBAzCCA6MGCSqGSIb3DQEHAaCCA5QEggOQMIIDjDCCApQGCSqGSIb3"
+      + "DQEHBqCCAoUwggKBAgEAMIICegYJKoZIhvcNAQcBMFUGCSqGSIb3DQEFDTBI"
+      + "MCcGCSqGSIb3DQEFDDAaBAhIVrbUVNoQ2wICCAAwCgYGKoUDAgIKBQAwHQYG"
+      + "KoUDAgIVMBMECBLmAh+XCCYhBgcqhQMCAh8BgIICFP9hQLgDq5SORy2npOdo"
+      + "1bvoGl9Qdga1kV9s2c1/Y1kTGpuiYKfm5Il+PurzYdE5t/Wi2+SxoePm/AKA"
+      + "x1Ep5btK/002wnyRbUKdjgF1r7fMXRrd5Ioy8lYxB1v6qhHmzE5fz7FxY+iV"
+      + "Z70dSRS0JkTasI8MRsFLkJJfDb9twgoch8lYGFfYirHLcVy4xxA3JO9VSHm2"
+      + "8nuSWSnsmGN0ufPX14UpV2RFe3Rt0gZ0Jc8u2h2Mo0sIoVU6HVwdXzoe6LN7"
+      + "1NPZdRuhVtjxEvjDAvNJ8WHXQnBQMai2nVAj87uNr6OHLRs+foEccEY9WpPQ"
+      + "GPt4XbPt4MtmVctT2+Gsvf6Ws2UCx6hD4k8i28a6xS8lhTVam2g/2Z5cxtUV"
+      + "HxYt7j13HjuQVsuSNdgtrUnw3l43LnBxRZhlFz0r2zrvTB04ynenS+lGdVuG"
+      + "0TauIH+rdP1ubujw6lFdG9RNgUxWvS5IdwbFGX73a+ZrWiYJeERX11N/6r3g"
+      + "0EqVFNH9t/ROsdAtCCe2FycQoOSb+VxPU6I+SHjwe7Oa7R8Xxazh/eWTsV59"
+      + "QzPuLriUMbyYdQIf4xdclgcJoxFElopgl4orRfzH3XQsVbtTxN33lwjkE0j/"
+      + "686VtcO+b+dU7+BEB7O5yDcx1tupgre0ha/0KOlYfPvmbogGdDf0r6MOwrS7"
+      + "QFXxKlHfp8vn4mNwoy7pjrzjmjclkbkwgfEGCSqGSIb3DQEHAaCB4wSB4DCB"
+      + "3TCB2gYLKoZIhvcNAQwKAQKggaMwgaAwVQYJKoZIhvcNAQUNMEgwJwYJKoZI"
+      + "hvcNAQUMMBoECLD6Ld7TqurqAgIIADAKBgYqhQMCAgoFADAdBgYqhQMCAhUw"
+      + "EwQIoYXV7LETOEAGByqFAwICHwEERyBQK9LuYnOO0ELrge+a6JFeAVwPL85V"
+      + "ip2Kj/GfD3nzZR4tPzCwAt79RriKQklNqa3uCc9o0C9Zk5Qcj36SqiXxD1tz"
+      + "Ea63MSUwIwYJKoZIhvcNAQkVMRYEFKjg5gKM+i+vFhSwaga8YGaZ5thVMD4w"
+      + "LjAKBgYqhQMCAgkFAAQgIwD0CRCwva2Bjdlv5g970H2bCB1aafBNr/hxJLZE"
+      + "Ey4ECAW3VYXJzJpYAgIIAA==");
 
     /**
      * we generate the CA's certificate
@@ -1038,6 +1107,90 @@ public class PfxPduTest
 
                 PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                 PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+            }
+        }
+    }
+
+    public void testGOST1()
+        throws Exception
+    {
+        char[] password = "1".toCharArray();
+
+        InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                                                                      .setProvider("BC").build(password);
+        PKCS12PfxPdu pfx = new PKCS12PfxPdu(gostPfx);
+
+        assertTrue(pfx.hasMac());
+        assertTrue(pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), password));
+
+        ContentInfo[] infos = pfx.getContentInfos();
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            {
+               PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+              PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                // TODO: finish!
+//                assertEquals(3, bags.length);
+//                assertEquals(PKCSObjectIdentifiers.certBag, bags[0].getType());
+            }
+            else
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                assertEquals(1, bags.length);
+                assertEquals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag, bags[0].getType());
+
+                PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
+                PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+                assertEquals(CryptoProObjectIdentifiers.gostR3410_2001, info.getPrivateKeyAlgorithm().getAlgorithm());
+            }
+        }
+    }
+
+    public void testGOST2()
+        throws Exception
+    {
+        char[] password = "foo123".toCharArray();
+
+        InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                                                                      .setProvider("BC").build(password);
+        PKCS12PfxPdu pfx = new PKCS12PfxPdu(gostPfxFoo123);
+
+        assertTrue(pfx.hasMac());
+        assertTrue(pfx.isMacValid(new JcePKCS12MacCalculatorBuilderProvider().setProvider("BC"), password));
+
+        ContentInfo[] infos = pfx.getContentInfos();
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                // TODO: finish!
+//                assertEquals(3, bags.length);
+//                assertEquals(PKCSObjectIdentifiers.certBag, bags[0].getType());
+            }
+            else
+            {
+                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
+
+                PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                assertEquals(1, bags.length);
+                assertEquals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag, bags[0].getType());
+
+                PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
+                PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+                assertEquals(CryptoProObjectIdentifiers.gostR3410_2001, info.getPrivateKeyAlgorithm().getAlgorithm());
             }
         }
     }
