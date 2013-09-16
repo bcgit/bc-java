@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
