@@ -11,6 +11,8 @@ import org.bouncycastle.util.Arrays;
 public class TlsStreamCipher
     implements TlsCipher
 {
+    private static boolean encryptThenMAC = false;
+
     protected TlsContext context;
 
     protected StreamCipher encryptCipher;
@@ -20,11 +22,9 @@ public class TlsStreamCipher
     protected TlsMac readMac;
 
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-                           StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-                           int cipherKeySize)
-        throws IOException
+        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+        int cipherKeySize) throws IOException
     {
-
         boolean isServer = context.isServer();
 
         this.context = context;
@@ -89,14 +89,22 @@ public class TlsStreamCipher
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
-        byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+        byte[] outBuf = new byte[len + writeMac.getSize()];
 
-        byte[] outbuf = new byte[len + mac.length];
+        encryptCipher.processBytes(plaintext, offset, len, outBuf, 0);
 
-        encryptCipher.processBytes(plaintext, offset, len, outbuf, 0);
-        encryptCipher.processBytes(mac, 0, mac.length, outbuf, len);
+        if (encryptThenMAC)
+        {
+            byte[] mac = writeMac.calculateMac(seqNo, type, outBuf, 0, len);
+            System.arraycopy(mac, 0, outBuf, len, mac.length);
+        }
+        else
+        {
+            byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+            encryptCipher.processBytes(mac, 0, mac.length, outBuf, len);
+        }
 
-        return outbuf;
+        return outBuf;
     }
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len)
@@ -108,19 +116,34 @@ public class TlsStreamCipher
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        byte[] deciphered = new byte[len];
-        decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
+        int plaintextLength = len - macSize;
 
-        int macInputLen = len - macSize;
+        if (encryptThenMAC)
+        {
+            int ciphertextEnd = offset + len;
+            checkMAC(seqNo, type, ciphertext, ciphertextEnd - macSize, ciphertextEnd, ciphertext, offset, plaintextLength);
+            byte[] deciphered = new byte[plaintextLength];
+            decryptCipher.processBytes(ciphertext, offset, plaintextLength, deciphered, 0);
+            return deciphered;
+        }
+        else
+        {
+            byte[] deciphered = new byte[len];
+            decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
+            checkMAC(seqNo, type, deciphered, plaintextLength, len, deciphered, 0, plaintextLength);
+            return Arrays.copyOfRange(deciphered, 0, plaintextLength);
+        }
+    }
 
-        byte[] receivedMac = Arrays.copyOfRange(deciphered, macInputLen, len);
-        byte[] computedMac = readMac.calculateMac(seqNo, type, deciphered, 0, macInputLen);
+    private void checkMAC(long seqNo, short type, byte[] recBuf, int recStart, int recEnd, byte[] calcBuf, int calcOff, int calcLen)
+        throws IOException
+    {
+        byte[] receivedMac = Arrays.copyOfRange(recBuf, recStart, recEnd);
+        byte[] computedMac = readMac.calculateMac(seqNo, type, calcBuf, calcOff, calcLen);
 
         if (!Arrays.constantTimeAreEqual(receivedMac, computedMac))
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
-
-        return Arrays.copyOfRange(deciphered, 0, macInputLen);
     }
 }
