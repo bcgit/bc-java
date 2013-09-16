@@ -433,6 +433,8 @@ public class TlsECCUtils
             {
             case ECCurveType.explicit_prime:
             {
+                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_prime_curves);
+
                 BigInteger prime_p = readECParameter(input);
                 BigInteger a = readECFieldElement(prime_p.bitLength(), input);
                 BigInteger b = readECFieldElement(prime_p.bitLength(), input);
@@ -444,6 +446,8 @@ public class TlsECCUtils
             }
             case ECCurveType.explicit_char2:
             {
+                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_char2_curves);
+
                 int m = TlsUtils.readUint16(input);
                 short basis = TlsUtils.readUint8(input);
                 ECCurve curve;
@@ -487,15 +491,7 @@ public class TlsECCUtils
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
-                if (!TlsProtocol.arrayContains(namedCurves, namedCurve))
-                {
-                    /*
-                     * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
-                     * unless they can complete the handshake while respecting the choice of curves
-                     * and compression techniques specified by the client.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
+                checkNamedCurve(namedCurves, namedCurve);
 
                 return TlsECCUtils.getParametersForNamedCurve(namedCurve);
             }
@@ -505,6 +501,19 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
+    {
+        if (namedCurves != null && !TlsProtocol.arrayContains(namedCurves, namedCurve))
+        {
+            /*
+             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
+             * unless they can complete the handshake while respecting the choice of curves
+             * and compression techniques specified by the client.
+             */
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
