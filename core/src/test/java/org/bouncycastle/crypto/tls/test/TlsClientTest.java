@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
+import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClient;
@@ -38,20 +39,20 @@ public class TlsClientTest
         InetAddress address = InetAddress.getLocalHost();
         int port = 5556;
 
-//        long time1 = System.currentTimeMillis();
+        long time1 = System.currentTimeMillis();
 
         MyTlsClient client = new MyTlsClient(null);
         TlsClientProtocol protocol = openTlsConnection(address, port, client);
         protocol.close();
 
-//        long time2 = System.currentTimeMillis();
-//        System.out.println("Elapsed 1: " + (time2 - time1) + "ms");
+        long time2 = System.currentTimeMillis();
+        System.out.println("Elapsed 1: " + (time2 - time1) + "ms");
 
         client = new MyTlsClient(client.getSessionToResume());
         protocol = openTlsConnection(address, port, client);
 
-//        long time3 = System.currentTimeMillis();
-//        System.out.println("Elapsed 2: " + (time3 - time2) + "ms");
+        long time3 = System.currentTimeMillis();
+        System.out.println("Elapsed 2: " + (time3 - time2) + "ms");
 
         OutputStream output = protocol.getOutputStream();
         output.write("GET / HTTP/1.1\r\n\r\n".getBytes("UTF-8"));
@@ -63,7 +64,7 @@ public class TlsClientTest
         String line;
         while ((line = reader.readLine()) != null)
         {
-            System.out.println(line);
+            System.out.println(">>> " + line);
         }
 
         protocol.close();
@@ -92,6 +93,11 @@ public class TlsClientTest
             return this.session;
         }
 
+//        public ProtocolVersion getClientVersion()
+//        {
+//            return ProtocolVersion.TLSv12;
+//        }
+
         public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
@@ -116,8 +122,33 @@ public class TlsClientTest
 
         public int[] getCipherSuites()
         {
-            return new int[]{CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-                CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,};
+            return new int[]
+            {
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+                CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+                CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+            };
+        }
+
+//        @Override
+//        public Hashtable getClientExtensions() throws IOException
+//        {
+//            Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+//            TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+//            TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+//            // For testing draft-gutmann-tls-encrypt-then-mac
+////            clientExtensions.put(Integers.valueOf(0x10), TlsExtensionsUtils.createEmptyExtensionData());
+//            return clientExtensions;
+//        }
+
+        public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
+        {
+            super.notifyServerVersion(serverVersion);
+
+            System.out.println("Negotiated " + serverVersion);
         }
 
         public TlsAuthentication getAuthentication()
