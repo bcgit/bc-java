@@ -117,11 +117,10 @@ public abstract class AbstractTlsClient
              * TODO Could just add all the curves since we support them all, but users may not want
              * to use unnecessarily large fields. Need configuration options.
              */
-            this.namedCurves = new int[]{NamedCurve.secp256r1, NamedCurve.sect233r1, NamedCurve.secp224r1,
-                NamedCurve.sect193r1, NamedCurve.secp192r1, NamedCurve.arbitrary_explicit_char2_curves,
-                NamedCurve.arbitrary_explicit_prime_curves};
-            this.clientECPointFormats = new short[]{ECPointFormat.ansiX962_compressed_char2,
-                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed};
+            this.namedCurves = new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1,
+                NamedCurve.arbitrary_explicit_prime_curves, NamedCurve.arbitrary_explicit_char2_curves };
+            this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
