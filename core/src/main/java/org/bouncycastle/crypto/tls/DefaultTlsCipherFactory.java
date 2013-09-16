@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 public class DefaultTlsCipherFactory
     extends AbstractTlsCipherFactory
 {
-
     public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
@@ -89,8 +88,7 @@ public class DefaultTlsCipherFactory
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize,
-                                                  int macAlgorithm)
+    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(context, createCamelliaBlockCipher(),
@@ -105,8 +103,7 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm));
     }
 
-    protected TlsStreamCipher createRC4Cipher(TlsContext context, int cipherKeySize,
-                                              int macAlgorithm)
+    protected TlsStreamCipher createRC4Cipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
