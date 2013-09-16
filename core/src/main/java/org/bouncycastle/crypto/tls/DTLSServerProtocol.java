@@ -369,15 +369,12 @@ public class DTLSServerProtocol
                  * because the client is signaling its willingness to receive the extension via the
                  * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
-                if (state.serverExtensions == null)
-                {
-                    state.serverExtensions = new Hashtable();
-                }
 
                 /*
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
+                state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.serverExtensions);
                 state.serverExtensions.put(TlsProtocol.EXT_RenegotiationInfo,
                     TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
