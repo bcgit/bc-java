@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
 public class CramerShoupKeyGenerationParameters extends KeyGenerationParameters {
+	
 	private CramerShoupParameters params;
 
 	public CramerShoupKeyGenerationParameters(SecureRandom random, CramerShoupParameters params) {

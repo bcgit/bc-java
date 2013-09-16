@@ -31,12 +31,13 @@ public class CramerShoupKeyPairGenerator implements AsymmetricCipherKeyPairGener
 
 		CramerShoupPrivateKeyParameters sk = generatePrivateKey(param.getRandom(), csParams);
 		CramerShoupPublicKeyParameters pk = calculatePublicKey(csParams, sk);
+		sk.setPk(pk);
 
 		return new AsymmetricCipherKeyPair(pk, sk);
 	}
 
-	private BigInteger generateRandomElement(BigInteger q, SecureRandom random) {
-		return BigIntegers.createRandomInRange(ONE, q.subtract(ONE), random);
+	private BigInteger generateRandomElement(BigInteger p, SecureRandom random) {
+		return BigIntegers.createRandomInRange(ONE, p.subtract(ONE), random);
 	}
 	
 	private CramerShoupPrivateKeyParameters generatePrivateKey(SecureRandom random, CramerShoupParameters csParams){
