@@ -843,14 +843,14 @@ public abstract class ECFieldElement
         private int k3;
 
         /**
-         * The <code>IntArray</code> holding the bits.
-         */
-        private IntArray x;
-
-        /**
          * The number of <code>int</code>s required to hold <code>m</code> bits.
          */
         private int t;
+
+        /**
+         * The <code>IntArray</code> holding the bits.
+         */
+        private IntArray x;
 
         /**
          * Constructor for PPB.
@@ -874,10 +874,6 @@ public abstract class ECFieldElement
             int k3,
             BigInteger x)
         {
-            // t = m / 32 rounded up to the next integer
-            t = (m + 31) >> 5;
-            this.x = new IntArray(x, t);
-
             if ((k2 == 0) && (k3 == 0))
             {
                 this.representation = TPB;
@@ -906,6 +902,9 @@ public abstract class ECFieldElement
             this.k1 = k1;
             this.k2 = k2;
             this.k3 = k3;
+            // t = m / 32 rounded up to the next integer
+            this.t = (m + 31) >> 5;
+            this.x = new IntArray(x, t);
         }
 
         /**
