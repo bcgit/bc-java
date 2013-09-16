@@ -22,4 +22,21 @@ public class ECPair
     {
         return y;
     }
+
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof ECPair)
+        {
+            ECPair other = (ECPair)obj;
+
+            return other.getX().equals(getX()) && other.getY().equals(getY());
+        }
+
+        return false;
+    }
+
+    public int hashCode()
+    {
+        return x.hashCode() + 37 * y.hashCode();
+    }
 }
