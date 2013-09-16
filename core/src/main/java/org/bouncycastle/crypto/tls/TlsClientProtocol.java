@@ -506,6 +506,15 @@ public class TlsClientProtocol
              */
             if (this.connection_state == CS_END)
             {
+                /*
+                 * RFC 5746 4.5 SSLv3 clients that refuse renegotiation SHOULD use a fatal
+                 * handshake_failure alert.
+                 */
+                if (getContext().getServerVersion().isSSL())
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+
                 String message = "Renegotiation not supported";
                 raiseWarning(AlertDescription.no_renegotiation, message);
             }
@@ -807,7 +816,7 @@ public class TlsClientProtocol
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
             boolean noSCSV = !TlsProtocol.arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
