@@ -48,6 +48,7 @@ public class TlsECDHEKeyExchange
         int namedCurve = -1;
         if (namedCurves == null)
         {
+            // TODO Let the peer choose the default named curve
             namedCurve = NamedCurve.secp256r1;
         }
         else
