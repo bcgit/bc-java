@@ -65,6 +65,8 @@ public class ECNamedCurveTable
             ecP = TeleTrusTNamedCurves.getByOID(oid);
         }
 
+        // NOTE: All the NIST curves are currently from SEC, so no point in redundant OID lookup
+
         return ecP;
     }
 

@@ -146,7 +146,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         BigInteger g = new BigInteger(1, gBytes);
 
         // TODO Validate group parameters (see RFC 5054)
-        // handler.failWithError(AlertLevel.fatal, AlertDescription.insufficient_security);
+//        throw new TlsFatalAlert(AlertDescription.insufficient_security);
 
         this.s = sBytes;
 
