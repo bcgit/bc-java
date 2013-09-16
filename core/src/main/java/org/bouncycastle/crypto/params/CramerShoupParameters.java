@@ -13,11 +13,12 @@ public class CramerShoupParameters implements CipherParameters {
 	
 	private Digest H; // hash function
 
-	public CramerShoupParameters(BigInteger p, BigInteger q, BigInteger g1, BigInteger g2) {
+	public CramerShoupParameters(BigInteger p, BigInteger q, BigInteger g1, BigInteger g2, Digest H) {
 		this.p = p;
 		this.q = q;
 		this.g1 = g1;
 		this.g2 = g2;
+		this.H = H;
 	}
 
 	public boolean equals(Object obj) {
@@ -51,6 +52,7 @@ public class CramerShoupParameters implements CipherParameters {
 	}
 	
 	public Digest getH() {
+		H.reset();
 		return H;
 	}
 	

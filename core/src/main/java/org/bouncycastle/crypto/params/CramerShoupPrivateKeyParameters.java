@@ -5,6 +5,7 @@ import java.math.BigInteger;
 public class CramerShoupPrivateKeyParameters extends CramerShoupKeyParameters {
 	
 	private BigInteger x1, x2, y1, y2, z; // Z_q
+	private CramerShoupPublicKeyParameters pk; // public key
 
 	public CramerShoupPrivateKeyParameters(CramerShoupParameters params, BigInteger x1, BigInteger x2, BigInteger y1, BigInteger y2, BigInteger z) {
 		super(true, params);
@@ -34,6 +35,14 @@ public class CramerShoupPrivateKeyParameters extends CramerShoupKeyParameters {
 	
 	public BigInteger getZ() {
 		return z;
+	}
+	
+	public void setPk(CramerShoupPublicKeyParameters pk) {
+		this.pk = pk;
+	}
+	
+	public CramerShoupPublicKeyParameters getPk() {
+		return pk;
 	}
 
 	public int hashCode() {
