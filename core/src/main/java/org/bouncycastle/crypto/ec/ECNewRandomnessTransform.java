@@ -12,10 +12,12 @@ import org.bouncycastle.math.ec.ECPoint;
  * this transforms the original randomness used for an ElGamal encryption.
  */
 public class ECNewRandomnessTransform
-    implements ECPairTransform
+    implements ECPairFactorTransform
 {
     private ECPublicKeyParameters key;
     private SecureRandom          random;
+
+    private BigInteger            lastK;
 
     /**
      * initialise the underlying EC ElGamal engine.
@@ -71,6 +73,18 @@ public class ECNewRandomnessTransform
         ECPoint  gamma = g.multiply(k);
         ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
 
+        lastK = k;
+
         return new ECPair(cipherText.getX().add(gamma), phi);
+    }
+
+    /**
+     * Return the last random value generated for a transform
+     *
+     * @return a BigInteger representing the last random value.
+     */
+    public BigInteger getTransformValue()
+    {
+        return lastK;
     }
 }
