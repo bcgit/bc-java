@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -63,12 +62,7 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        int length = 2 * namedCurves.length;
-        TlsUtils.checkUint16(length);
-        TlsUtils.writeUint16(length, buf);
-        TlsUtils.writeUint16Array(namedCurves, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeUint16ArrayWithUint16Length(namedCurves);
     }
 
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
@@ -92,11 +86,7 @@ public class TlsECCUtils
             ecPointFormats = tmp;
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.checkUint8(ecPointFormats.length);
-        TlsUtils.writeUint8(ecPointFormats.length, buf);
-        TlsUtils.writeUint8Array(ecPointFormats, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
     }
 
     public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData) throws IOException
