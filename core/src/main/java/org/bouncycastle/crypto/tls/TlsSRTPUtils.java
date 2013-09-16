@@ -38,11 +38,7 @@ public class TlsSRTPUtils
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         // SRTPProtectionProfiles
-        int[] protectionProfiles = useSRTPData.getProtectionProfiles();
-        int length = 2 * protectionProfiles.length;
-        TlsUtils.checkUint16(length);
-        TlsUtils.writeUint16(length, buf);
-        TlsUtils.writeUint16Array(protectionProfiles, buf);
+        TlsUtils.writeUint16ArrayWithUint16Length(useSRTPData.getProtectionProfiles(), buf);
 
         // srtp_mki
         TlsUtils.writeOpaque8(useSRTPData.getMki(), buf);
