@@ -100,10 +100,7 @@ public abstract class AbstractTlsClient
             this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1,
                 SignatureAlgorithm.dsa));
 
-            if (clientExtensions == null)
-            {
-                clientExtensions = new Hashtable();
-            }
+            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
@@ -126,10 +123,7 @@ public abstract class AbstractTlsClient
             this.clientECPointFormats = new short[]{ECPointFormat.ansiX962_compressed_char2,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed};
 
-            if (clientExtensions == null)
-            {
-                clientExtensions = new Hashtable();
-            }
+            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
             TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
