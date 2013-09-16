@@ -807,30 +807,21 @@ public class TlsClientProtocol
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
+            byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            int count = offeredCipherSuites.length;
-            if (noRenegExt)
+            boolean noSCSV = !TlsProtocol.arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
+            if (noRenegExt && noSCSV)
             {
-                // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-                ++count;
+                // TODO Consider whether to default to a client extension instead
+                offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
-            int length = 2 * count;
-            TlsUtils.checkUint16(length);
-            TlsUtils.writeUint16(length, message);
-            TlsUtils.writeUint16Array(offeredCipherSuites, message);
-
-            if (noRenegExt)
-            {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, message);
-            }
+            TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
         }
 
-        TlsUtils.checkUint8(offeredCompressionMethods.length);
-        TlsUtils.writeUint8(offeredCompressionMethods.length, message);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, message);
+        TlsUtils.writeUint8ArrayWithUint8Length(offeredCompressionMethods, message);
 
         if (clientExtensions != null)
         {

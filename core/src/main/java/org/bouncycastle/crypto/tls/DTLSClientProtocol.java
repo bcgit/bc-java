@@ -416,22 +416,15 @@ public class DTLSClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            int count = state.offeredCipherSuites.length;
-            if (noRenegExt)
+            boolean noSCSV = !TlsProtocol.arrayContains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
+            if (noRenegExt && noSCSV)
             {
-                // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-                ++count;
+                // TODO Consider whether to default to a client extension instead
+                state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
-            int length = 2 * count;
-            TlsUtils.checkUint16(length);
-            TlsUtils.writeUint16(length, buf);
-            TlsUtils.writeUint16Array(state.offeredCipherSuites, buf);
-
-            if (noRenegExt)
-            {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, buf);
-            }
+            TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
         }
 
         // TODO Add support for compression
@@ -439,9 +432,7 @@ public class DTLSClientProtocol
         // state.offeredCompressionMethods = client.getCompressionMethods();
         state.offeredCompressionMethods = new short[]{ CompressionMethod._null };
 
-        TlsUtils.checkUint8(state.offeredCompressionMethods.length);
-        TlsUtils.writeUint8(state.offeredCompressionMethods.length, buf);
-        TlsUtils.writeUint8Array(state.offeredCompressionMethods, buf);
+        TlsUtils.writeUint8ArrayWithUint8Length(state.offeredCompressionMethods, buf);
 
         // Extensions
         if (state.clientExtensions != null)
