@@ -10,13 +10,13 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A basic hash-committer as described in "Making Mix Nets Robust for Electronic Voting by Randomized Partial Checking",
+ * A basic hash-committer based on the one described in "Making Mix Nets Robust for Electronic Voting by Randomized Partial Checking",
  * by Jakobsson, Juels, and Rivest (11th Usenix Security Symposium, 2002).
  * <p>
- * Use this class if you can enforce fixed length for messages. If you need something more general, use the GeneralHashCommitter.
+ * The algorithm used by this class differs from the one given in that it includes the length of the message in the hash calculation.
  * </p>
  */
-public class HashCommitter
+public class GeneralHashCommitter
     implements Committer
 {
     private final Digest digest;
@@ -30,7 +30,7 @@ public class HashCommitter
      * @param digest digest to use for creating commitments.
      * @param random source of randomness for generating secrets.
      */
-    public HashCommitter(ExtendedDigest digest, SecureRandom random)
+    public GeneralHashCommitter(ExtendedDigest digest, SecureRandom random)
     {
         this.digest = digest;
         this.byteLength = digest.getByteLength();
@@ -82,6 +82,10 @@ public class HashCommitter
 
         digest.update(w, 0, w.length);
         digest.update(message, 0, message.length);
+
+        digest.update((byte)((message.length >>> 8)));
+        digest.update((byte)(message.length));
+
         digest.doFinal(commitment, 0);
 
         return commitment;
