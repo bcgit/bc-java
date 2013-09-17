@@ -105,7 +105,7 @@ public class SRP6Server
 					"some data are missing from the previous operations (A,B,S)");
 		}
 		// Compute the own client evidence message 'M1'
-		BigInteger computedM1 = SRP6UtilCustom.calculateM1(digest, A, B, S);
+		BigInteger computedM1 = SRP6UtilCustom.calculateM1(digest, N, A, B, S);
 		if (computedM1.equals(clientM1)){
 			this.M1 = clientM1;
 			return true;
@@ -126,7 +126,7 @@ public class SRP6Server
 					"some data are missing from the previous operations (A,M1,S)");
 		}
 		// Compute the server evidence message 'M2'
-		this.M2 = SRP6UtilCustom.calculateM2(digest, A, M1, S);  
+		this.M2 = SRP6UtilCustom.calculateM2(digest, N, A, M1, S);  
 		return M2;
 	}
 	
@@ -142,7 +142,7 @@ public class SRP6Server
 			throw new CryptoException("Impossible to compute Key: " +
 					"some data are missing from the previous operations (S,M1,M2)");
 		}
-		this.Key = SRP6UtilCustom.calculateKey(digest,S);
+		this.Key = SRP6UtilCustom.calculateKey(digest, N, S);
 		return Key;
 	}
 }
