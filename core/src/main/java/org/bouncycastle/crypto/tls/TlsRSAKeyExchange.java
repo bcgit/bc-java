@@ -130,7 +130,7 @@ public class TlsRSAKeyExchange
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        this.premasterSecret = safeDecryptPreMasterSecret(encryptedPreMasterSecret);
+        this.premasterSecret = TlsRSAUtils.safeDecryptPreMasterSecret(context, serverCredentials, encryptedPreMasterSecret);
     }
 
     public byte[] generatePremasterSecret()
@@ -174,69 +174,6 @@ public class TlsRSAKeyExchange
     // this.rsaServerPublicKey = validateRSAPublicKey(new RSAKeyParameters(false, modulus,
     // exponent));
     // }
-
-    /*
-     * RFC 5246 7.4.7.1.
-     */
-    protected byte[] safeDecryptPreMasterSecret(byte[] encryptedPreMasterSecret)
-    {
-        ProtocolVersion clientVersion = context.getClientVersion();
-
-        // TODO Provide as configuration option?
-        boolean versionNumberCheckDisabled = false;
-
-        /*
-         * See notes regarding Bleichenbacher/Klima attack. The code here implements the first
-         * construction proposed there, which is RECOMMENDED.
-         */
-        byte[] R = new byte[48];
-        context.getSecureRandom().nextBytes(R);
-
-        byte[] M = TlsUtils.EMPTY_BYTES;
-        try
-        {
-            M = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
-        }
-        catch (Exception e)
-        {
-            /*
-             * In any case, a TLS server MUST NOT generate an alert if processing an
-             * RSA-encrypted premaster secret message fails, or the version number is not as
-             * expected. Instead, it MUST continue the handshake with a randomly generated
-             * premaster secret.
-             */
-        }
-
-        if (M.length != 48)
-        {
-            TlsUtils.writeVersion(clientVersion, R, 0);
-            return R;
-        }
-
-        /*
-         * If ClientHello.client_version is TLS 1.1 or higher, server implementations MUST
-         * check the version number [..].
-         */
-        if (versionNumberCheckDisabled && clientVersion.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv10))
-        {
-            /*
-             * If the version number is TLS 1.0 or earlier, server implementations SHOULD
-             * check the version number, but MAY have a configuration option to disable the
-             * check.
-             */
-        }
-        else
-        {
-            /*
-             * Note that explicitly constructing the pre_master_secret with the
-             * ClientHello.client_version produces an invalid master_secret if the client
-             * has sent the wrong version in the original pre_master_secret.
-             */
-            TlsUtils.writeVersion(clientVersion, M, 0);
-        }
-
-        return M;
-    }
 
     protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key)
         throws IOException
