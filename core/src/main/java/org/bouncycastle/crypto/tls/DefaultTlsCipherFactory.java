@@ -60,13 +60,13 @@ public class DefaultTlsCipherFactory
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
             return createCamelliaCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.ESTREAM_SALSA20:
-            return createSalsa20Cipher(context, 12, 16, macAlgorithm);
+            return createSalsa20Cipher(context, 12, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(context, macAlgorithm);
         case EncryptionAlgorithm.RC4_128:
             return createRC4Cipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.SALSA20:
-            return createSalsa20Cipher(context, 20, 16, macAlgorithm);
+            return createSalsa20Cipher(context, 20, 32, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(context, macAlgorithm);
         default:
