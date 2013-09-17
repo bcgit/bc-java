@@ -347,7 +347,7 @@ public class TlsServerProtocol
              * SSL 3.0 If the server has sent a certificate request Message, the client must send
              * either the certificate message or a no_certificate alert.
              */
-            if (getContext().getServerVersion().isSSL() && certificateRequest != null)
+            if (TlsUtils.isSSL(getContext()) && certificateRequest != null)
             {
                 notifyClientCertificate(Certificate.EMPTY_CHAIN);
             }

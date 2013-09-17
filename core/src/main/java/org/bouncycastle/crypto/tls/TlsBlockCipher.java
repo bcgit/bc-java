@@ -324,7 +324,7 @@ public class TlsBlockCipher
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        if ((context.getServerVersion().isSSL() && totalPad > blockSize) || (macSize + totalPad > len))
+        if ((TlsUtils.isSSL(context) && totalPad > blockSize) || (macSize + totalPad > len))
         {
             totalPad = 0;
         }

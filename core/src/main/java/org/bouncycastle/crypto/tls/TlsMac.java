@@ -137,7 +137,7 @@ public class TlsMac
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = context.getServerVersion().isSSL() ? 11 : 13;
+        int headerLength = TlsUtils.isSSL(context) ? 11 : 13;
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + length);
