@@ -80,7 +80,7 @@ public class TlsECDHEKeyExchange
             }
             else if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
             {
-                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect233r1);
+                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
             }
         }
 
