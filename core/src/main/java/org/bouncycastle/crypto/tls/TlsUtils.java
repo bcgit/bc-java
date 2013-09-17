@@ -918,7 +918,7 @@ public class TlsUtils
         byte[] seed = concat(securityParameters.getServerRandom(),
             securityParameters.getClientRandom());
 
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return calculateKeyBlock_SSL(master_secret, seed, size);
         }
@@ -962,7 +962,7 @@ public class TlsUtils
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
 
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
@@ -1001,7 +1001,7 @@ public class TlsUtils
 
     static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
     {
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return handshakeHash;
         }

@@ -297,7 +297,7 @@ class RecordStream
     {
         TlsHandshakeHash d = hash.fork();
 
-        if (context.getServerVersion().isSSL())
+        if (TlsUtils.isSSL(context))
         {
             if (sender != null)
             {
