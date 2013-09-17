@@ -98,6 +98,7 @@ public class RegressionTest
         new RFC3211WrapTest(),
         new SEEDTest(),
         new Salsa20Test(),
+        new XSalsa20Test(),
         new CMacTest(),
         new EAXTest(),
         new GCMTest(),
