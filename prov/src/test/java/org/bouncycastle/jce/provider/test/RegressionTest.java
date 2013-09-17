@@ -71,6 +71,7 @@ public class RegressionTest
         new OCBTest(),
         new DSTU4145Test(),
         new CRL5Test(),
+        new Poly1305Test(),
         new SipHashTest(),
         new SHA3Test(),
         new SkeinTest()

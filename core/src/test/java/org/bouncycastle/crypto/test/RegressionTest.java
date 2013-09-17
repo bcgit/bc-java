@@ -118,6 +118,7 @@ public class RegressionTest
         new NullTest(),
         new DSTU4145Test(),
         new SipHashTest(),
+        new Poly1305Test(),
         new OCBTest(),
         new NonMemoableDigestTest(),
         new RSAKeyEncapsulationTest(),
