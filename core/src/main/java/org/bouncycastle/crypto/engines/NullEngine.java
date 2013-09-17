@@ -68,22 +68,22 @@ public class NullEngine implements BlockCipher
         {
             throw new IllegalStateException("Null engine not initialised");
         }
-        if ((inOff + DEFAULT_BLOCK_SIZE) > in.length)
+        if ((inOff + blockSize) > in.length)
         {
             throw new DataLengthException("input buffer too short");
         }
 
-        if ((outOff + DEFAULT_BLOCK_SIZE) > out.length)
+        if ((outOff + blockSize) > out.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
 
-        for (int i = 0; i < DEFAULT_BLOCK_SIZE; ++i)
+        for (int i = 0; i < blockSize; ++i)
         {
             out[outOff + i] = in[inOff + i];
         }
 
-        return DEFAULT_BLOCK_SIZE;
+        return blockSize;
     }
 
     /* (non-Javadoc)
