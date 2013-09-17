@@ -48,4 +48,10 @@ public class EncryptionAlgorithm
     public static final int AES_128_CCM_8 = 16;
     public static final int AES_256_CCM = 17;
     public static final int AES_256_CCM_8 = 18;
+
+    /*
+     * TBD[draft-josefsson-salsa20-tls-02] 
+     */
+    static final int ESTREAM_SALSA20 = 100;
+    static final int SALSA20 = 101;
 }
