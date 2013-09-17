@@ -90,6 +90,49 @@ public class Salsa20Test
         + "C945A6CC69A6A17367BC03431A86B3ED"
         + "04B0245B56379BF997E25800AD837D7D";
 
+    // Salsa20/12
+    String salsa12_set1v0_0 = "FC207DBFC76C5E1774961E7A5AAD0906"
+            + "9B2225AC1CE0FE7A0CE77003E7E5BDF8"
+            + "B31AF821000813E6C56B8C1771D6EE70"
+            + "39B2FBD0A68E8AD70A3944B677937897";
+
+    String salsa12_set1v0_192 = "4B62A4881FA1AF9560586510D5527ED4"
+        + "8A51ECAFA4DECEEBBDDC10E9918D44AB"
+        + "26B10C0A31ED242F146C72940C6E9C37"
+        + "53F641DA84E9F68B4F9E76B6C48CA5AC";
+
+    String salsa12_set1v0_256 = "F52383D9DEFB20810325F7AEC9EADE34"
+        + "D9D883FEE37E05F74BF40875B2D0BE79"
+        + "ED8886E5BFF556CEA8D1D9E86B1F68A9"
+        + "64598C34F177F8163E271B8D2FEB5996";
+
+    String salsa12_set1v0_448 = "A52ED8C37014B10EC0AA8E05B5CEEE12"
+        + "3A1017557FB3B15C53E6C5EA8300BF74"
+        + "264A73B5315DC821AD2CAB0F3BB2F152"
+        + "BDAEA3AEE97BA04B8E72A7B40DCC6BA4";
+
+    // Salsa20/8
+    String salsa8_set1v0_0 = "A9C9F888AB552A2D1BBFF9F36BEBEB33"
+            + "7A8B4B107C75B63BAE26CB9A235BBA9D"
+            + "784F38BEFC3ADF4CD3E266687EA7B9F0"
+            + "9BA650AE81EAC6063AE31FF12218DDC5";
+    
+    String salsa8_set1v0_192 = "BB5B6BB2CC8B8A0222DCCC1753ED4AEB"
+            + "23377ACCBD5D4C0B69A8A03BB115EF71"
+            + "871BC10559080ACA7C68F0DEF32A80DD"
+            + "BAF497259BB76A3853A7183B51CC4B9F";
+    
+    String salsa8_set1v0_256 = "4436CDC0BE39559F5E5A6B79FBDB2CAE"
+            + "4782910F27FFC2391E05CFC78D601AD8"
+            + "CD7D87B074169361D997D1BED9729C0D"
+            + "EB23418E0646B7997C06AA84E7640CE3";
+    
+    String salsa8_set1v0_448 = "BEE85903BEA506B05FC04795836FAAAC"
+            + "7F93F785D473EB762576D96B4A65FFE4"
+            + "63B34AAE696777FC6351B67C3753B89B"
+            + "A6B197BD655D1D9CA86E067F4D770220";
+    
+
     public String getName()
     {
         return "Salsa20";
@@ -97,10 +140,14 @@ public class Salsa20Test
 
     public void performTest()
     {
-        salsa20Test1(new ParametersWithIV(new KeyParameter(Hex.decode("80000000000000000000000000000000")), Hex.decode("0000000000000000")),
+        salsa20Test1(20, new ParametersWithIV(new KeyParameter(Hex.decode("80000000000000000000000000000000")), Hex.decode("0000000000000000")),
                   set1v0_0, set1v0_192,  set1v0_256,  set1v0_448);
-        salsa20Test1(new ParametersWithIV(new KeyParameter(Hex.decode("00400000000000000000000000000000")), Hex.decode("0000000000000000")),
+        salsa20Test1(20, new ParametersWithIV(new KeyParameter(Hex.decode("00400000000000000000000000000000")), Hex.decode("0000000000000000")),
                   set1v9_0, set1v9_192,  set1v9_256,  set1v9_448);
+        salsa20Test1(12, new ParametersWithIV(new KeyParameter(Hex.decode("80000000000000000000000000000000")), Hex.decode("0000000000000000")),
+                salsa12_set1v0_0, salsa12_set1v0_192,  salsa12_set1v0_256,  salsa12_set1v0_448);
+        salsa20Test1(8, new ParametersWithIV(new KeyParameter(Hex.decode("80000000000000000000000000000000")), Hex.decode("0000000000000000")),
+                salsa8_set1v0_0, salsa8_set1v0_192,  salsa8_set1v0_256,  salsa8_set1v0_448);
         salsa20Test2(new ParametersWithIV(new KeyParameter(Hex.decode("0053A6F94C9FF24598EB3E91E4378ADD3083D6297CCF2275C81B6EC11467BA0D")), Hex.decode("0D74DB42A91077DE")),
                   set6v0_0, set6v0_65472, set6v0_65536);
         salsa20Test2(new ParametersWithIV(new KeyParameter(Hex.decode("0558ABFE51A4F74A9DF04396E93C8FE23588DB2E81D4277ACD2073C6196CBF12")), Hex.decode("167DE44BB21980E7")),
@@ -108,9 +155,9 @@ public class Salsa20Test
         reinitBug();
     }
 
-    private void salsa20Test1(CipherParameters params, String v0, String v192, String v256, String v448)
+    private void salsa20Test1(int rounds, CipherParameters params, String v0, String v192, String v256, String v448)
     {
-        StreamCipher salsa = new Salsa20Engine();
+        StreamCipher salsa = new Salsa20Engine(rounds);
         byte[]       buf = new byte[64];
 
         salsa.init(true, params);
@@ -123,19 +170,19 @@ public class Salsa20Test
             case 0:
                 if (!areEqual(buf, Hex.decode(v0)))
                 {
-                    mismatch("v0", v0, buf);
+                    mismatch("v0/" + rounds, v0, buf);
                 }
                 break;
             case 3:
                 if (!areEqual(buf, Hex.decode(v192)))
                 {
-                    mismatch("v192", v192, buf);
+                    mismatch("v192/" + rounds, v192, buf);
                 }
                 break;
             case 4:
                 if (!areEqual(buf, Hex.decode(v256)))
                 {
-                    mismatch("v256", v256, buf);
+                    mismatch("v256/" + rounds, v256, buf);
                 }
                 break;
             default:
