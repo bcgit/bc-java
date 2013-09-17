@@ -13,16 +13,19 @@ import org.bouncycastle.util.Strings;
 /**
  * Implementation of Daniel J. Bernstein's Salsa20 stream cipher, Snuffle 2005
  */
-
 public class Salsa20Engine
     implements StreamCipher
 {
+    public final static int DEFAULT_ROUNDS = 20;
+
     /** Constants */
     private final static int STATE_SIZE = 16; // 16, 32 bit ints = 64 bytes
 
     private final static byte[]
         sigma = Strings.toByteArray("expand 32-byte k"),
         tau   = Strings.toByteArray("expand 16-byte k");
+
+    private int rounds;
 
     /*
      * variables to hold the state of the engine
@@ -40,6 +43,21 @@ public class Salsa20Engine
      * internal counter
      */
     private int cW0, cW1, cW2;
+
+    public Salsa20Engine()
+    {
+        this(DEFAULT_ROUNDS);
+    }
+
+    public Salsa20Engine(int rounds)
+    {
+        if (rounds <= 0 || (rounds & 1) != 0)
+        {
+            throw new IllegalArgumentException("'rounds' must be a positive, even number");
+        }
+
+        this.rounds = rounds;
+    }
 
     /**
      * initialise a Salsa20 cipher.
@@ -88,7 +106,12 @@ public class Salsa20Engine
 
     public String getAlgorithmName()
     {
-        return "Salsa20";
+        String name = "Salsa20";
+        if (rounds != DEFAULT_ROUNDS)
+        {
+            name += "/" + rounds;
+        }
+        return name;
     }
 
     public byte returnByte(byte in)
@@ -210,7 +233,7 @@ public class Salsa20Engine
 
     private void generateKeyStream(byte[] output)
     {
-        salsaCore(20, engineState, x);
+        salsaCore(rounds, engineState, x);
         Pack.intToLittleEndian(x, output, 0);
     }
 
