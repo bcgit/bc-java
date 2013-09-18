@@ -839,11 +839,14 @@ public abstract class TlsProtocol
 
     protected static byte[] createRandomBlock(SecureRandom random)
     {
+        random.setSeed(System.currentTimeMillis());
+
         byte[] result = new byte[32];
         random.nextBytes(result);
         /*
-         * The consensus seems to be that using the time here is neither useful, nor secure. Perhaps
-         * there could be an option to (re-)enable it.
+         * The consensus seems to be that using the time here is neither all that useful, nor
+         * secure. Perhaps there could be an option to (re-)enable it. Instead, we seed the random
+         * source with the current time to retain it's main benefit.
          */
 //        TlsUtils.writeGMTUnixTime(result, 0);
         return result;
