@@ -79,7 +79,38 @@ public class CCMTest
         // long data test
         //
         checkVectors(4, ccm, K4, 112, N4, A4, A4, T5, C5);
-        
+
+        // decryption with output specified, non-zero offset.
+        ccm.init(false, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
+
+        byte[] inBuf = new byte[C2.length + 10];
+        byte[] outBuf = new byte[ccm.getOutputSize(C2.length) + 10];
+
+        System.arraycopy(C2, 0, inBuf, 10, C2.length);
+
+        int len = ccm.processPacket(inBuf, 10, C2.length, outBuf, 10);
+        byte[] out = ccm.processPacket(C2, 0, C2.length);
+
+        if (len != out.length || !isEqual(out, outBuf, 10))
+        {
+            fail("decryption output incorrect");
+        }
+
+        // encryption with output specified, non-zero offset.
+        ccm.init(true, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
+
+        int inLen = len;
+        inBuf = outBuf;
+        outBuf = new byte[ccm.getOutputSize(inLen) + 10];
+
+        len = ccm.processPacket(inBuf, 10, inLen, outBuf, 10);
+        out = ccm.processPacket(inBuf, 10, inLen);
+
+        if (len != out.length || !isEqual(out, outBuf, 10))
+        {
+            fail("encryption output incorrect");
+        }
+
         //
         // exception tests
         //
@@ -121,6 +152,19 @@ public class CCMTest
         
         AEADTestUtil.testReset(this, new CCMBlockCipher(new AESEngine()), new CCMBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testTampering(this, ccm, new AEADParameters(new KeyParameter(K1), 32, N2));
+    }
+
+    private boolean isEqual(byte[] exp, byte[] other, int off)
+    {
+        for (int i = 0; i != exp.length; i++)
+        {
+            if (exp[i] != other[off + i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void checkVectors(
