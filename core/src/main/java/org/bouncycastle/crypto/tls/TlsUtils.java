@@ -362,6 +362,13 @@ public class TlsUtils
         writeUint16Array(uints, buf, offset + 2);
     }
 
+    public static byte[] encodeOpaque8(byte[] buf)
+        throws IOException
+    {
+        checkUint8(buf.length);
+        return Arrays.prepend(buf, (byte)buf.length);
+    }
+
     public static byte[] encodeUint8ArrayWithUint8Length(short[] uints) throws IOException
     {
         byte[] result = new byte[1 + uints.length];

@@ -852,9 +852,7 @@ public abstract class TlsProtocol
     protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeOpaque8(renegotiated_connection, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeOpaque8(renegotiated_connection);
     }
 
     protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
