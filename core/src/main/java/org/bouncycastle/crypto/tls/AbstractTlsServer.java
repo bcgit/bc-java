@@ -46,11 +46,7 @@ public abstract class AbstractTlsServer
 
     protected Hashtable checkServerExtensions()
     {
-        if (this.serverExtensions == null)
-        {
-            this.serverExtensions = new Hashtable();
-        }
-        return serverExtensions;
+        return this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.serverExtensions);
     }
 
     protected abstract int[] getCipherSuites();

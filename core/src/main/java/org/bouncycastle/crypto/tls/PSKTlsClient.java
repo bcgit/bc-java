@@ -42,10 +42,14 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_UMAC96:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
             return createPSKKeyExchange(KeyExchangeAlgorithm.DHE_PSK);
@@ -55,10 +59,14 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_UMAC96:
             return createPSKKeyExchange(KeyExchangeAlgorithm.ECDHE_PSK);
 
         case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
@@ -72,10 +80,14 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_PSK_WITH_AES_256_CCM:
         case CipherSuite.TLS_PSK_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_WITH_SALSA20_UMAC96:
             return createPSKKeyExchange(KeyExchangeAlgorithm.PSK);
 
         case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
@@ -85,10 +97,14 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_RSA_PSK_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_RSA_PSK_WITH_SALSA20_UMAC96:
             return createPSKKeyExchange(KeyExchangeAlgorithm.RSA_PSK);
 
         default:
@@ -161,6 +177,18 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_RSA_PSK_WITH_AES_256_GCM_SHA384:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.AES_256_GCM, MACAlgorithm._null);
 
+        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.ESTREAM_SALSA20, MACAlgorithm.hmac_sha1);
+
+        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_PSK_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_RSA_PSK_WITH_ESTREAM_SALSA20_UMAC96:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.ESTREAM_SALSA20, MACAlgorithm.umac96);
+
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_PSK_WITH_NULL_SHA:
@@ -184,6 +212,18 @@ public abstract class PSKTlsClient
         case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.RC4_128, MACAlgorithm.hmac_sha1);
+
+        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_RSA_PSK_WITH_SALSA20_SHA1:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.SALSA20, MACAlgorithm.hmac_sha1);
+
+        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_UMAC96:
+        case CipherSuite.TLS_PSK_WITH_SALSA20_UMAC96:
+        case CipherSuite.TLS_RSA_PSK_WITH_SALSA20_UMAC96:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.SALSA20, MACAlgorithm.umac96);
 
         default:
             /*

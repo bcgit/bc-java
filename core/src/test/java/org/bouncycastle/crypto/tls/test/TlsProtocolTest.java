@@ -23,11 +23,9 @@ import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 public class TlsProtocolTest
     extends TestCase
 {
-
     public void testClientServer()
         throws Exception
     {
-
         SecureRandom secureRandom = new SecureRandom();
 
         PipedInputStream clientRead = new PipedInputStream();
@@ -87,7 +85,6 @@ public class TlsProtocolTest
     static class MyTlsClient
         extends DefaultTlsClient
     {
-
         public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
@@ -154,7 +151,6 @@ public class TlsProtocolTest
     static class MyTlsServer
         extends DefaultTlsServer
     {
-
         public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;

@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -63,12 +62,7 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        int length = 2 * namedCurves.length;
-        TlsUtils.checkUint16(length);
-        TlsUtils.writeUint16(length, buf);
-        TlsUtils.writeUint16Array(namedCurves, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeUint16ArrayWithUint16Length(namedCurves);
     }
 
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
@@ -92,11 +86,7 @@ public class TlsECCUtils
             ecPointFormats = tmp;
         }
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.checkUint8(ecPointFormats.length);
-        TlsUtils.writeUint8(ecPointFormats.length, buf);
-        TlsUtils.writeUint8Array(ecPointFormats, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
     }
 
     public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData) throws IOException
@@ -196,8 +186,8 @@ public class TlsECCUtils
 
     public static boolean isECCCipherSuite(int cipherSuite)
     {
-        switch (cipherSuite) {
-
+        switch (cipherSuite)
+        {
         /*
          * RFC 4492
          */
@@ -259,6 +249,22 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
         case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
         case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+
+        /*
+         * draft-josefsson-salsa20-tls-02 
+         */
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_UMAC96:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_UMAC96:
 
             return true;
 
@@ -443,6 +449,8 @@ public class TlsECCUtils
             {
             case ECCurveType.explicit_prime:
             {
+                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_prime_curves);
+
                 BigInteger prime_p = readECParameter(input);
                 BigInteger a = readECFieldElement(prime_p.bitLength(), input);
                 BigInteger b = readECFieldElement(prime_p.bitLength(), input);
@@ -454,6 +462,8 @@ public class TlsECCUtils
             }
             case ECCurveType.explicit_char2:
             {
+                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_char2_curves);
+
                 int m = TlsUtils.readUint16(input);
                 short basis = TlsUtils.readUint8(input);
                 ECCurve curve;
@@ -497,15 +507,7 @@ public class TlsECCUtils
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
-                if (!TlsProtocol.arrayContains(namedCurves, namedCurve))
-                {
-                    /*
-                     * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
-                     * unless they can complete the handshake while respecting the choice of curves
-                     * and compression techniques specified by the client.
-                     */
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
+                checkNamedCurve(namedCurves, namedCurve);
 
                 return TlsECCUtils.getParametersForNamedCurve(namedCurve);
             }
@@ -515,6 +517,19 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
+    {
+        if (namedCurves != null && !TlsProtocol.arrayContains(namedCurves, namedCurve))
+        {
+            /*
+             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
+             * unless they can complete the handshake while respecting the choice of curves
+             * and compression techniques specified by the client.
+             */
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }

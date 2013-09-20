@@ -12,14 +12,25 @@ import org.bouncycastle.crypto.OutputLengthException;
 public class NullEngine implements BlockCipher
 {
     private boolean initialised;
-    protected static final int BLOCK_SIZE = 1;
-    
+    protected static final int DEFAULT_BLOCK_SIZE = 1;
+    private final int blockSize;
+
     /**
-     * Standard constructor.
+     * Constructs a null engine with a block size of 1 byte.
      */
     public NullEngine()
     {
-        super();
+        this(DEFAULT_BLOCK_SIZE);
+    }
+
+    /**
+     * Constructs a null engine with a specific block size.
+     * 
+     * @param blockSize the block size in bytes.
+     */
+    public NullEngine(int blockSize)
+    {
+        this.blockSize = blockSize;
     }
 
     /* (non-Javadoc)
@@ -44,7 +55,7 @@ public class NullEngine implements BlockCipher
      */
     public int getBlockSize()
     {
-        return BLOCK_SIZE;
+        return blockSize;
     }
 
     /* (non-Javadoc)
@@ -57,22 +68,22 @@ public class NullEngine implements BlockCipher
         {
             throw new IllegalStateException("Null engine not initialised");
         }
-            if ((inOff + BLOCK_SIZE) > in.length)
-            {
-                throw new DataLengthException("input buffer too short");
-            }
+        if ((inOff + blockSize) > in.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
 
-            if ((outOff + BLOCK_SIZE) > out.length)
-            {
-                throw new OutputLengthException("output buffer too short");
-            }
-            
-            for (int i = 0; i < BLOCK_SIZE; ++i)
-            {
-                out[outOff + i] = in[inOff + i];
-            }
-            
-            return BLOCK_SIZE;
+        if ((outOff + blockSize) > out.length)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
+        for (int i = 0; i < blockSize; ++i)
+        {
+            out[outOff + i] = in[inOff + i];
+        }
+
+        return blockSize;
     }
 
     /* (non-Javadoc)

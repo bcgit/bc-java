@@ -506,6 +506,15 @@ public class TlsClientProtocol
              */
             if (this.connection_state == CS_END)
             {
+                /*
+                 * RFC 5746 4.5 SSLv3 clients that refuse renegotiation SHOULD use a fatal
+                 * handshake_failure alert.
+                 */
+                if (TlsUtils.isSSL(getContext()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+
                 String message = "Renegotiation not supported";
                 raiseWarning(AlertDescription.no_renegotiation, message);
             }
@@ -810,27 +819,18 @@ public class TlsClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            int count = offeredCipherSuites.length;
-            if (noRenegExt)
+            boolean noSCSV = !TlsProtocol.arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+
+            if (noRenegExt && noSCSV)
             {
-                // Note: 1 extra slot for TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-                ++count;
+                // TODO Consider whether to default to a client extension instead
+                offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
-            int length = 2 * count;
-            TlsUtils.checkUint16(length);
-            TlsUtils.writeUint16(length, message);
-            TlsUtils.writeUint16Array(offeredCipherSuites, message);
-
-            if (noRenegExt)
-            {
-                TlsUtils.writeUint16(CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV, message);
-            }
+            TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
         }
 
-        TlsUtils.checkUint8(offeredCompressionMethods.length);
-        TlsUtils.writeUint8(offeredCompressionMethods.length, message);
-        TlsUtils.writeUint8Array(offeredCompressionMethods, message);
+        TlsUtils.writeUint8ArrayWithUint8Length(offeredCompressionMethods, message);
 
         if (clientExtensions != null)
         {

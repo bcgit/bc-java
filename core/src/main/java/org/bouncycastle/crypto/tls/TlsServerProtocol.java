@@ -347,7 +347,7 @@ public class TlsServerProtocol
              * SSL 3.0 If the server has sent a certificate request Message, the client must send
              * either the certificate message or a no_certificate alert.
              */
-            if (getContext().getServerVersion().isSSL() && certificateRequest != null)
+            if (TlsUtils.isSSL(getContext()) && certificateRequest != null)
             {
                 notifyClientCertificate(Certificate.EMPTY_CHAIN);
             }
@@ -669,15 +669,12 @@ public class TlsServerProtocol
                  * because the client is signaling its willingness to receive the extension via the
                  * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
-                if (this.serverExtensions == null)
-                {
-                    this.serverExtensions = new Hashtable();
-                }
 
                 /*
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
+                this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.serverExtensions);
                 this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }

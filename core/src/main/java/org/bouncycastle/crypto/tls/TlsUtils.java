@@ -299,6 +299,32 @@ public class TlsUtils
         }
     }
 
+    public static void writeUint8Array(short[] uints, byte[] buf, int offset)
+        throws IOException
+    {
+        for (int i = 0; i < uints.length; ++i)
+        {
+            writeUint8(uints[i], buf, offset);
+            ++offset;
+        }
+    }
+
+    public static void writeUint8ArrayWithUint8Length(short[] uints, OutputStream output)
+        throws IOException
+    {
+        checkUint8(uints.length);
+        writeUint8(uints.length, output);
+        writeUint8Array(uints, output);
+    }
+
+    public static void writeUint8ArrayWithUint8Length(short[] uints, byte[] buf, int offset)
+        throws IOException
+    {
+        checkUint8(uints.length);
+        writeUint8(uints.length, buf, offset);
+        writeUint8Array(uints, buf, offset + 1);
+    }
+
     public static void writeUint16Array(int[] uints, OutputStream output)
         throws IOException
     {
@@ -306,6 +332,56 @@ public class TlsUtils
         {
             writeUint16(uints[i], output);
         }
+    }
+
+    public static void writeUint16Array(int[] uints, byte[] buf, int offset)
+        throws IOException
+    {
+        for (int i = 0; i < uints.length; ++i)
+        {
+            writeUint16(uints[i], buf, offset);
+            offset += 2;
+        }
+    }
+
+    public static void writeUint16ArrayWithUint16Length(int[] uints, OutputStream output)
+        throws IOException
+    {
+        int length = 2 * uints.length;
+        checkUint16(length);
+        writeUint16(length, output);
+        writeUint16Array(uints, output);
+    }
+
+    public static void writeUint16ArrayWithUint16Length(int[] uints, byte[] buf, int offset)
+        throws IOException
+    {
+        int length = 2 * uints.length;
+        checkUint16(length);
+        writeUint16(length, buf, offset);
+        writeUint16Array(uints, buf, offset + 2);
+    }
+
+    public static byte[] encodeOpaque8(byte[] buf)
+        throws IOException
+    {
+        checkUint8(buf.length);
+        return Arrays.prepend(buf, (byte)buf.length);
+    }
+
+    public static byte[] encodeUint8ArrayWithUint8Length(short[] uints) throws IOException
+    {
+        byte[] result = new byte[1 + uints.length];
+        writeUint8ArrayWithUint8Length(uints, result, 0);
+        return result;
+    }
+
+    public static byte[] encodeUint16ArrayWithUint16Length(int[] uints) throws IOException
+    {
+        int length = 2 * uints.length;
+        byte[] result = new byte[2 + length];
+        writeUint16ArrayWithUint16Length(uints, result, 0);
+        return result;
     }
 
     public static short readUint8(InputStream input)
@@ -849,7 +925,7 @@ public class TlsUtils
         byte[] seed = concat(securityParameters.getServerRandom(),
             securityParameters.getClientRandom());
 
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return calculateKeyBlock_SSL(master_secret, seed, size);
         }
@@ -893,7 +969,7 @@ public class TlsUtils
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
 
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
@@ -932,7 +1008,7 @@ public class TlsUtils
 
     static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
     {
-        if (context.getServerVersion().isSSL())
+        if (isSSL(context))
         {
             return handshakeHash;
         }

@@ -15,6 +15,11 @@ public class TlsExtensionsUtils
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
 
+    public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
+    {
+        return extensions == null ? new Hashtable() : extensions;
+    }
+
     public static void addHeartbeatExtension(Hashtable extensions, HeartbeatExtension heartbeatExtension)
         throws IOException
     {
