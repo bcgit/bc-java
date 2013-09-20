@@ -41,20 +41,17 @@ public abstract class ECFieldElement
 
     public static class Fp extends ECFieldElement
     {
-        BigInteger x;
+        BigInteger q, x;
 
-        BigInteger q;
-        
         public Fp(BigInteger q, BigInteger x)
         {
-            this.x = x;
-            
-            if (x.compareTo(q) >= 0)
+            if (x.signum() < 0 || x.compareTo(q) >= 0)
             {
-                throw new IllegalArgumentException("x value too large in field element");
+                throw new IllegalArgumentException("x value out of range in field element");
             }
 
             this.q = q;
+            this.x = x;
         }
 
         public BigInteger toBigInteger()
@@ -84,12 +81,24 @@ public abstract class ECFieldElement
         
         public ECFieldElement add(ECFieldElement b)
         {
-            return new Fp(q, x.add(b.toBigInteger()).mod(q));
+            BigInteger x2 = b.toBigInteger();
+            BigInteger x3 = x.add(x2);
+            if (x3.compareTo(q) >= 0)
+            {
+                x3 = x3.subtract(q);
+            }
+            return new Fp(q, x3);
         }
 
         public ECFieldElement subtract(ECFieldElement b)
         {
-            return new Fp(q, x.subtract(b.toBigInteger()).mod(q));
+            BigInteger x2 = b.toBigInteger();
+            BigInteger x3 = x.subtract(x2);
+            if (x3.signum() < 0)
+            {
+                x3 = x3.add(q);
+            }
+            return new Fp(q, x3);
         }
 
         public ECFieldElement multiply(ECFieldElement b)
@@ -104,7 +113,8 @@ public abstract class ECFieldElement
 
         public ECFieldElement negate()
         {
-            return new Fp(q, x.negate().mod(q));
+            BigInteger x2 = x.signum() == 0 ? x : q.subtract(x);
+            return new Fp(q, x2);
         }
 
         public ECFieldElement square()
