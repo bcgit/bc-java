@@ -23,14 +23,16 @@ class FpNafMultiplier implements ECMultiplier
 
         for (int i = h.bitLength() - 2; i > 0; --i)
         {             
-            R = R.twice();
-
             boolean hBit = h.testBit(i);
             boolean eBit = e.testBit(i);
 
             if (hBit != eBit)
             {
-                R = R.add(hBit ? p : neg);
+                R = R.twicePlus(hBit ? p : neg);
+            }
+            else
+            {
+                R = R.twice();
             }
         }
 

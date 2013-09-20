@@ -65,24 +65,26 @@ public class ECAlgorithms
 
         for (int i = m - 1; i >= 0; --i)
         {
-            R = R.twice();
-
             if (k.testBit(i))
             {
                 if (l.testBit(i))
                 {
-                    R = R.add(Z);
+                    R = R.twicePlus(Z);
                 }
                 else
                 {
-                    R = R.add(P);
+                    R = R.twicePlus(P);
                 }
             }
             else
             {
                 if (l.testBit(i))
                 {
-                    R = R.add(Q);
+                    R = R.twicePlus(Q);
+                }
+                else
+                {
+                    R = R.twice();
                 }
             }
         }
