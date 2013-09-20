@@ -85,9 +85,7 @@ public class CertificateRequest
         }
         else
         {
-            TlsUtils.checkUint8(certificateTypes.length);
-            TlsUtils.writeUint8(certificateTypes.length, output);
-            TlsUtils.writeUint8Array(certificateTypes, output);
+            TlsUtils.writeUint8ArrayWithUint8Length(certificateTypes, output);
         }
 
         if (supportedSignatureAlgorithms != null)

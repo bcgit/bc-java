@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -15,6 +16,8 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.engines.Salsa20Engine;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -23,7 +26,6 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 public class DefaultTlsCipherFactory
     extends AbstractTlsCipherFactory
 {
-
     public TlsCipher createCipher(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
@@ -57,10 +59,14 @@ public class DefaultTlsCipherFactory
             return createCamelliaCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
             return createCamelliaCipher(context, 32, macAlgorithm);
+        case EncryptionAlgorithm.ESTREAM_SALSA20:
+            return createSalsa20Cipher(context, 12, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(context, macAlgorithm);
         case EncryptionAlgorithm.RC4_128:
             return createRC4Cipher(context, 16, macAlgorithm);
+        case EncryptionAlgorithm.SALSA20:
+            return createSalsa20Cipher(context, 20, 32, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(context, macAlgorithm);
         default:
@@ -89,28 +95,12 @@ public class DefaultTlsCipherFactory
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize,
-                                                  int macAlgorithm)
+    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(context, createCamelliaBlockCipher(),
             createCamelliaBlockCipher(), createHMACDigest(macAlgorithm),
             createHMACDigest(macAlgorithm), cipherKeySize);
-    }
-
-    protected TlsNullCipher createNullCipher(TlsContext context, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsNullCipher(context, createHMACDigest(macAlgorithm),
-            createHMACDigest(macAlgorithm));
-    }
-
-    protected TlsStreamCipher createRC4Cipher(TlsContext context, int cipherKeySize,
-                                              int macAlgorithm)
-        throws IOException
-    {
-        return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
     protected TlsBlockCipher createDESedeCipher(TlsContext context, int macAlgorithm)
@@ -120,16 +110,36 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 24);
     }
 
+    protected TlsNullCipher createNullCipher(TlsContext context, int macAlgorithm)
+        throws IOException
+    {
+        return new TlsNullCipher(context, createHMACDigest(macAlgorithm),
+            createHMACDigest(macAlgorithm));
+    }
+
+    protected TlsStreamCipher createRC4Cipher(TlsContext context, int cipherKeySize, int macAlgorithm)
+        throws IOException
+    {
+        return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+    }
+
+    protected TlsStreamCipher createSalsa20Cipher(TlsContext context, int rounds, int cipherKeySize, int macAlgorithm)
+        throws IOException
+    {
+        /*
+         * TODO To be able to support UMAC96, we need to give the TlsStreamCipher a Mac instead of
+         * assuming HMAC and passing a digest.
+         */
+        return new TlsStreamCipher(context, createSalsa20StreamCipher(rounds), createSalsa20StreamCipher(rounds),
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+    }
+
     protected TlsBlockCipher createSEEDCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(context, createSEEDBlockCipher(), createSEEDBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
-    }
-
-    protected StreamCipher createRC4StreamCipher()
-    {
-        return new RC4Engine();
     }
 
     protected BlockCipher createAESBlockCipher()
@@ -158,13 +168,22 @@ public class DefaultTlsCipherFactory
         return new CBCBlockCipher(new DESedeEngine());
     }
 
+    protected StreamCipher createRC4StreamCipher()
+    {
+        return new RC4Engine();
+    }
+
+    protected StreamCipher createSalsa20StreamCipher(int rounds)
+    {
+        return new Salsa20Engine(rounds);
+    }
+
     protected BlockCipher createSEEDBlockCipher()
     {
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    protected Digest createHMACDigest(int macAlgorithm)
-        throws IOException
+    protected Digest createHMACDigest(int macAlgorithm) throws IOException
     {
         switch (macAlgorithm)
         {
@@ -182,6 +201,18 @@ public class DefaultTlsCipherFactory
             return new SHA512Digest();
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    protected Mac createMac(int macAlgorithm) throws IOException
+    {
+        switch (macAlgorithm)
+        {
+        // TODO Need an implementation of UMAC
+//        case MACAlgorithm.umac96:
+//            return
+        default:
+            return new HMac(createHMACDigest(macAlgorithm));
         }
     }
 }

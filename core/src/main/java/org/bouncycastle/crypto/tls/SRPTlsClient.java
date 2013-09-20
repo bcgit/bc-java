@@ -1,16 +1,17 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 
 public abstract class SRPTlsClient
     extends AbstractTlsClient
 {
-    public static final Integer EXT_SRP = Integers.valueOf(ExtensionType.srp);
+    /**
+     * @deprecated use TlsSRPUtils.EXT_SRP instead
+     */
+    public static final Integer EXT_SRP = TlsSRPUtils.EXT_SRP;
 
     protected byte[] identity;
     protected byte[] password;
@@ -40,31 +41,17 @@ public abstract class SRPTlsClient
     public Hashtable getClientExtensions()
         throws IOException
     {
-
-        Hashtable clientExtensions = super.getClientExtensions();
-        if (clientExtensions == null)
-        {
-            clientExtensions = new Hashtable();
-        }
-
-        ByteArrayOutputStream srpData = new ByteArrayOutputStream();
-        TlsUtils.writeOpaque8(this.identity, srpData);
-        clientExtensions.put(EXT_SRP, srpData.toByteArray());
-
+        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsSRPUtils.addSRPExtension(clientExtensions, this.identity);
         return clientExtensions;
     }
 
     public void processServerExtensions(Hashtable serverExtensions)
         throws IOException
     {
-        // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
-        if (serverExtensions != null)
+        if (!TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsSRPUtils.EXT_SRP, AlertDescription.illegal_parameter))
         {
-            byte[] extension_data = (byte[])serverExtensions.get(EXT_SRP);
-            if (extension_data != null && extension_data.length > 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
         }
     }
 

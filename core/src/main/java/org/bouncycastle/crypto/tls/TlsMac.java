@@ -105,6 +105,15 @@ public class TlsMac
      */
     public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
     {
+        /*
+         * TODO[draft-josefsson-salsa20-tls-02] 3. Moreover, in order to accommodate MAC algorithms
+         * like UMAC that require a nonce as part of their operation, the document extends the MAC
+         * algorithm as specified in the TLS protocol. The extended MAC includes a nonce as a second
+         * parameter. MAC algorithms that do not require a nonce, such as HMAC, are assumed to
+         * ignore the nonce input value. The MAC in a GenericStreamCipher is then calculated as
+         * follows.
+         */
+
         ProtocolVersion serverVersion = context.getServerVersion();
         boolean isSSL = serverVersion.isSSL();
 
@@ -137,7 +146,7 @@ public class TlsMac
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = context.getServerVersion().isSSL() ? 11 : 13;
+        int headerLength = TlsUtils.isSSL(context) ? 11 : 13;
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + length);

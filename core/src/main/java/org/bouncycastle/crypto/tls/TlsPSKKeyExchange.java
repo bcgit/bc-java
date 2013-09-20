@@ -104,6 +104,11 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
+            if (this.dhParameters == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
             this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
                 this.dhParameters, buf);
         }

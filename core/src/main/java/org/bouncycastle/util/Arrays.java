@@ -712,6 +712,34 @@ public final class Arrays
         return newLength;
     }
 
+    public static byte[] append(byte[] a, byte b)
+    {
+        if (a == null)
+        {
+            return new byte[]{ b };
+        }
+
+        int length = a.length;
+        byte[] result = new byte[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
+    public static int[] append(int[] a, int b)
+    {
+        if (a == null)
+        {
+            return new int[]{ b };
+        }
+
+        int length = a.length;
+        int[] result = new int[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
     public static byte[] concatenate(byte[] a, byte[] b)
     {
         if (a != null && b != null)
@@ -784,5 +812,19 @@ public final class Arrays
         {
             return concatenate(b, c, d);
         }
+    }
+
+    public static byte[] prepend(byte[] a, byte b)
+    {
+        if (a == null)
+        {
+            return new byte[]{ b };
+        }
+
+        int length = a.length;
+        byte[] result = new byte[length + 1];
+        System.arraycopy(a, 0, result, 1, length);
+        result[0] = b;
+        return result;
     }
 }

@@ -453,7 +453,7 @@ public abstract class TlsProtocol
         {
             if (!this.closed)
             {
-                this.failWithError(AlertLevel.fatal, e.getAlertDescription());
+                this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to read record", e);
             }
             throw e;
         }
@@ -461,7 +461,7 @@ public abstract class TlsProtocol
         {
             if (!this.closed)
             {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
             }
             throw e;
         }
@@ -469,7 +469,7 @@ public abstract class TlsProtocol
         {
             if (!this.closed)
             {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
             }
             throw e;
         }
@@ -486,7 +486,7 @@ public abstract class TlsProtocol
         {
             if (!this.closed)
             {
-                this.failWithError(AlertLevel.fatal, e.getAlertDescription());
+                this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to write record", e);
             }
             throw e;
         }
@@ -494,7 +494,7 @@ public abstract class TlsProtocol
         {
             if (!closed)
             {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to write record", e);
             }
             throw e;
         }
@@ -502,7 +502,7 @@ public abstract class TlsProtocol
         {
             if (!closed)
             {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error);
+                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to write record", e);
             }
             throw e;
         }
@@ -593,7 +593,7 @@ public abstract class TlsProtocol
      * @throws IOException
      *             If alert was fatal.
      */
-    protected void failWithError(short alertLevel, short alertDescription)
+    protected void failWithError(short alertLevel, short alertDescription, String message, Exception cause)
         throws IOException
     {
         /*
@@ -617,7 +617,7 @@ public abstract class TlsProtocol
 
                 this.failedWithError = true;
             }
-            raiseAlert(alertLevel, alertDescription, null, null);
+            raiseAlert(alertLevel, alertDescription, message, cause);
             recordStream.safeClose();
             if (alertLevel != AlertLevel.fatal)
             {
@@ -774,7 +774,7 @@ public abstract class TlsProtocol
             {
                 raiseWarning(AlertDescription.user_canceled, "User canceled handshake");
             }
-            this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
+            this.failWithError(AlertLevel.warning, AlertDescription.close_notify, "Connection closed", null);
         }
     }
 
@@ -839,18 +839,23 @@ public abstract class TlsProtocol
 
     protected static byte[] createRandomBlock(SecureRandom random)
     {
+        random.setSeed(System.currentTimeMillis());
+
         byte[] result = new byte[32];
         random.nextBytes(result);
-        TlsUtils.writeGMTUnixTime(result, 0);
+        /*
+         * The consensus seems to be that using the time here is neither all that useful, nor
+         * secure. Perhaps there could be an option to (re-)enable it. Instead, we seed the random
+         * source with the current time to retain it's main benefit.
+         */
+//        TlsUtils.writeGMTUnixTime(result, 0);
         return result;
     }
 
     protected static byte[] createRenegotiationInfo(byte[] renegotiated_connection)
         throws IOException
     {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        TlsUtils.writeOpaque8(renegotiated_connection, buf);
-        return buf.toByteArray();
+        return TlsUtils.encodeOpaque8(renegotiated_connection);
     }
 
     protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)

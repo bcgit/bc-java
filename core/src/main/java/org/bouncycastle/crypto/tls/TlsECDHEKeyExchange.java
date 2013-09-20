@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.tls;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
@@ -49,6 +48,7 @@ public class TlsECDHEKeyExchange
         int namedCurve = -1;
         if (namedCurves == null)
         {
+            // TODO Let the peer choose the default named curve
             namedCurve = NamedCurve.secp256r1;
         }
         else
@@ -80,7 +80,7 @@ public class TlsECDHEKeyExchange
             }
             else if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
             {
-                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect233r1);
+                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
             }
         }
 
