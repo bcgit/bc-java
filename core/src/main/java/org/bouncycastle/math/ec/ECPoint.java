@@ -149,6 +149,11 @@ public abstract class ECPoint
     public abstract ECPoint negate();
     public abstract ECPoint twice();
 
+    public ECPoint twicePlus(ECPoint b)
+    {
+        return twice().add(b);
+    }
+
     /**
      * Sets the default <code>ECMultiplier</code>, unless already set. 
      */
@@ -238,27 +243,26 @@ public abstract class ECPoint
             {
                 return b;
             }
-
             if (b.isInfinity())
             {
                 return this;
             }
 
-            // Check if b = this or b = -this
-            if (this.x.equals(b.x))
+            ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
+
+            if (dx.isZero())
             {
-                if (this.y.equals(b.y))
+                if (dy.isZero())
                 {
-                    // this = b, i.e. this must be doubled
+                    // this == b, i.e. this must be doubled
                     return this.twice();
                 }
 
-                // this = -b, i.e. the result is the point at infinity
+                // this == -b, i.e. the result is the point at infinity
                 return this.curve.getInfinity();
             }
 
-            ECFieldElement gamma = b.y.subtract(this.y).divide(b.x.subtract(this.x));
-
+            ECFieldElement gamma = dy.divide(dx);
             ECFieldElement x3 = gamma.square().subtract(this.x).subtract(b.x);
             ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
 
@@ -273,22 +277,64 @@ public abstract class ECPoint
                 // Twice identity element (point at infinity) is identity
                 return this;
             }
-
-            if (this.y.toBigInteger().signum() == 0) 
+            if (this.y.isZero()) 
             {
                 // if y1 == 0, then (x1, y1) == (x1, -y1)
                 // and hence this = -this and thus 2(x1, y1) == infinity
                 return this.curve.getInfinity();
             }
 
-            ECFieldElement TWO = this.curve.fromBigInteger(BigInteger.valueOf(2));
-            ECFieldElement THREE = this.curve.fromBigInteger(BigInteger.valueOf(3));
-            ECFieldElement gamma = this.x.square().multiply(THREE).add(curve.a).divide(y.multiply(TWO));
-
-            ECFieldElement x3 = gamma.square().subtract(this.x.multiply(TWO));
+            ECFieldElement X = this.x.square();
+            ECFieldElement gamma = X.add(X).add(X).add(curve.a).divide(this.y.add(this.y));
+            ECFieldElement x3 = gamma.square().subtract(this.x.add(this.x));
             ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
-                
+
             return new ECPoint.Fp(curve, x3, y3, this.withCompression);
+        }
+
+        public ECPoint twicePlus(ECPoint b)
+        {
+            if (this.isInfinity())
+            {
+                return b;
+            }
+            if (b.isInfinity())
+            {
+                return twice();
+            }
+
+            /*
+             * Optimized calculation of 2P + Q, as described in "Trading Inversions for
+             * Multiplications in Elliptic Curve Cryptography", by Ciet, Joye, Lauter, Montgomery.
+             */
+            ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
+
+            if (dx.isZero())
+            {
+                if (dy.isZero())
+                {
+                    // TODO Optimize calculation of 3P
+                    // this == b i.e. the result is 3P
+                    return twice().add(this);
+                }
+
+                // this == -b, i.e. the result is P
+                return this;
+            }
+
+            ECFieldElement X = dx.square(), Y = dy.square();
+            ECFieldElement d = X.multiply(this.x.add(this.x).add(b.x)).subtract(Y);
+            if (d.isZero())
+            {
+                return getCurve().getInfinity();
+            }
+            ECFieldElement D = d.multiply(dx);
+            ECFieldElement I = D.invert();
+            ECFieldElement lambda1 = d.multiply(I).multiply(dy);
+            ECFieldElement lambda2 = this.y.add(this.y).multiply(X).multiply(dx).multiply(I).subtract(lambda1);
+            ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(b.x);
+            ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
+            return new ECPoint.Fp(curve, x4, y4, this.withCompression);
         }
 
         // D.3.2 pg 102 (see Note:)
@@ -305,6 +351,11 @@ public abstract class ECPoint
 
         public ECPoint negate()
         {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
             return new ECPoint.Fp(curve, this.x, this.y.negate(), this.withCompression);
         }
 
@@ -514,6 +565,11 @@ public abstract class ECPoint
 
         public ECPoint negate()
         {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
             return new ECPoint.F2m(curve, this.getX(), this.getY().add(this.getX()), withCompression);
         }
 
