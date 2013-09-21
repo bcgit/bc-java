@@ -17,13 +17,20 @@ class ReferenceMultiplier implements ECMultiplier
     {
         ECPoint q = p.getCurve().getInfinity();
         int t = k.bitLength();
-        for (int i = 0; i < t; i++)
+        if (t > 0)
         {
-            if (k.testBit(i))
+            if (k.testBit(0))
             {
-                q = q.add(p);
+                q = p;
             }
-            p = p.twice();
+            for (int i = 1; i < t; i++)
+            {
+                p = p.twice();
+                if (k.testBit(i))
+                {
+                    q = q.add(p);
+                }
+            }
         }
         return q;
     }

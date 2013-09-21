@@ -213,19 +213,21 @@ class WNafMultiplier implements ECMultiplier
         ECPoint q = p.getCurve().getInfinity();
         for (int i = l - 1; i >= 0; i--)
         {
-            q = q.twice();
-
-            if (wnaf[i] != 0)
+            int wi = wnaf[i];
+            if (wi == 0)
             {
-                if (wnaf[i] > 0)
+                q = q.twice();
+            }
+            else
+            {
+                int index = (Math.abs(wi) - 1) / 2;
+                ECPoint r = preComp[index];
+                if (wi < 0)
                 {
-                    q = q.add(preComp[(wnaf[i] - 1)/2]);
+                    r = r.negate();
                 }
-                else
-                {
-                    // wnaf[i] < 0
-                    q = q.subtract(preComp[(-wnaf[i] - 1)/2]);
-                }
+
+                q = q.twicePlus(r);
             }
         }
 
