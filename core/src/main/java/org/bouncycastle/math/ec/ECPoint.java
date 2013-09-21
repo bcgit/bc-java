@@ -154,6 +154,11 @@ public abstract class ECPoint
         return twice().add(b);
     }
 
+    public ECPoint threeTimes()
+    {
+        return twicePlus(this);
+    }
+
     /**
      * Sets the default <code>ECMultiplier</code>, unless already set. 
      */
@@ -285,8 +290,8 @@ public abstract class ECPoint
             }
 
             ECFieldElement X = this.x.square();
-            ECFieldElement gamma = X.add(X).add(X).add(curve.a).divide(this.y.add(this.y));
-            ECFieldElement x3 = gamma.square().subtract(this.x.add(this.x));
+            ECFieldElement gamma = three(X).add(curve.a).divide(two(this.y));
+            ECFieldElement x3 = gamma.square().subtract(two(this.x));
             ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
 
             return new ECPoint.Fp(curve, x3, y3, this.withCompression);
@@ -313,9 +318,8 @@ public abstract class ECPoint
             {
                 if (dy.isZero())
                 {
-                    // TODO Optimize calculation of 3P
                     // this == b i.e. the result is 3P
-                    return twice().add(this);
+                    return threeTimes();
                 }
 
                 // this == -b, i.e. the result is P
@@ -323,7 +327,7 @@ public abstract class ECPoint
             }
 
             ECFieldElement X = dx.square(), Y = dy.square();
-            ECFieldElement d = X.multiply(this.x.add(this.x).add(b.x)).subtract(Y);
+            ECFieldElement d = X.multiply(two(this.x).add(b.x)).subtract(Y);
             if (d.isZero())
             {
                 return getCurve().getInfinity();
@@ -331,10 +335,48 @@ public abstract class ECPoint
             ECFieldElement D = d.multiply(dx);
             ECFieldElement I = D.invert();
             ECFieldElement lambda1 = d.multiply(I).multiply(dy);
-            ECFieldElement lambda2 = this.y.add(this.y).multiply(X).multiply(dx).multiply(I).subtract(lambda1);
+            ECFieldElement lambda2 = two(this.y).multiply(X).multiply(dx).multiply(I).subtract(lambda1);
             ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(b.x);
             ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
             return new ECPoint.Fp(curve, x4, y4, this.withCompression);
+        }
+
+        public ECPoint threeTimes()
+        {
+            if (this.isInfinity() || this.y.isZero())
+            {
+                return this;
+            }
+
+            ECFieldElement _2y = two(this.y); 
+            ECFieldElement X = _2y.square();
+            ECFieldElement Z = three(this.x.square()).add(getCurve().getA());
+            ECFieldElement Y = Z.square();
+
+            ECFieldElement d = three(this.x).multiply(X).subtract(Y);
+            if (d.isZero())
+            {
+                return getCurve().getInfinity();
+            }
+
+            ECFieldElement D = d.multiply(_2y); 
+            ECFieldElement I = D.invert();
+            ECFieldElement lambda1 = d.multiply(I).multiply(Z);
+            ECFieldElement lambda2 = X.square().multiply(I).subtract(lambda1);
+
+            ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(this.x);
+            ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
+            return new ECPoint.Fp(curve, x4, y4, this.withCompression);
+        }
+
+        protected ECFieldElement two(ECFieldElement x)
+        {
+            return x.add(x);
+        }
+
+        protected ECFieldElement three(ECFieldElement x)
+        {
+            return x.add(x).add(x);
         }
 
         // D.3.2 pg 102 (see Note:)
@@ -420,7 +462,7 @@ public abstract class ECPoint
 
         protected boolean getCompressionYTilde()
         {
-            return !getX().isZero() && getY().multiply(getX().invert()).testBitZero();
+            return !getX().isZero() && getY().divide(getX()).testBitZero();
         }
 
         /**

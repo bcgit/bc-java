@@ -214,6 +214,24 @@ public class ECPointTest extends TestCase
         implTestTwice(f2m.p);
     }
 
+    private void implTestThreeTimes(ECPoint[] p)
+    {
+        ECPoint P = p[0];
+        ECPoint _3P = P.add(P).add(P);
+        assertEquals("ThreeTimes incorrect", _3P, P.threeTimes());
+        assertEquals("TwicePlus incorrect", _3P, P.twicePlus(P));
+    }
+
+    /**
+     * Calls <code>implTestThreeTimes()</code> for <code>Fp</code> and
+     * <code>F2m</code>.
+     */
+    public void testThreeTimes()
+    {
+        implTestThreeTimes(fp.p);
+        implTestThreeTimes(f2m.p);
+    }
+
     /**
      * Goes through all points on an elliptic curve and checks, if adding a
      * point <code>k</code>-times is the same as multiplying the point by
