@@ -44,29 +44,28 @@ public class CramerShoupParametersGenerator {
 		//
 		BigInteger[] safePrimes = ParametersHelper.generateSafePrimes(size, certainty, random);
 
-		BigInteger p = safePrimes[0];
+//		BigInteger p = safePrimes[0];
 		BigInteger q = safePrimes[1];
-		BigInteger g1 = ParametersHelper.selectGenerator(p, q, random);
-		BigInteger g2 = ParametersHelper.selectGenerator(p, q, random);
+		BigInteger g1 = ParametersHelper.selectGenerator(q, random);
+		BigInteger g2 = ParametersHelper.selectGenerator(q, random);
 		while(g1.equals(g2)){
-			g2 = ParametersHelper.selectGenerator(p, q, random);
+			g2 = ParametersHelper.selectGenerator(q, random);
 		}
 
-		return new CramerShoupParameters(p, q, g1, g2, new SHA256Digest());
+		return new CramerShoupParameters(q, g1, g2, new SHA256Digest());
 	}
 	
 	public CramerShoupParameters generateParameters(DHParameters dhParams){
 		BigInteger p = dhParams.getP();
-		BigInteger q = dhParams.getQ();
 		BigInteger g1 = dhParams.getG();
 		
 		// now we just need a second generator
-		BigInteger g2 = ParametersHelper.selectGenerator(p, q, random);
+		BigInteger g2 = ParametersHelper.selectGenerator(p, random);
 		while(g1.equals(g2)){
-			g2 = ParametersHelper.selectGenerator(p, q, random);
+			g2 = ParametersHelper.selectGenerator(p, random);
 		}
 		
-		return new CramerShoupParameters(p, q, g1, g2, new SHA256Digest());
+		return new CramerShoupParameters(p, g1, g2, new SHA256Digest());
 	}
 	
 	private static class ParametersHelper {
@@ -93,13 +92,7 @@ public class CramerShoupParametersGenerator {
 			return new BigInteger[] { p, q };
 		}
 
-		/*
-		 * Select a high order element of the multiplicative group Zp*
-		 * 
-		 * p and q must be s.t. p = 2*q + 1, where p and q are prime (see
-		 * generateSafePrimes)
-		 */
-		static BigInteger selectGenerator(BigInteger p, BigInteger q, SecureRandom random) {
+		static BigInteger selectGenerator(BigInteger p, SecureRandom random) {
 			BigInteger pMinusTwo = p.subtract(TWO);
 			BigInteger g;
 
