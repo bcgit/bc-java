@@ -16,7 +16,7 @@ class FpNafMultiplier implements ECMultiplier
         // TODO Probably should try to add this
         // BigInteger e = k.mod(n); // n == order of p
         BigInteger e = k;
-        BigInteger h = e.multiply(BigInteger.valueOf(3));
+        BigInteger h = e.shiftLeft(1).add(e);
 
         ECPoint neg = p.negate();
         ECPoint R = p;
