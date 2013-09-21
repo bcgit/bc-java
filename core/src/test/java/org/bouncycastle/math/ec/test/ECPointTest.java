@@ -57,10 +57,8 @@ public class ECPointTest extends TestCase
         {
             for (int i = 0; i < pointSource.length / 2; i++)
             {
-                ECFieldElement.Fp x = new ECFieldElement.Fp(q, new BigInteger(
-                        Integer.toString(pointSource[2 * i])));
-                ECFieldElement.Fp y = new ECFieldElement.Fp(q, new BigInteger(
-                        Integer.toString(pointSource[2 * i + 1])));
+                ECFieldElement x = curve.fromBigInteger(new BigInteger(Integer.toString(pointSource[2 * i])));
+                ECFieldElement y = curve.fromBigInteger(new BigInteger(Integer.toString(pointSource[2 * i + 1])));
                 p[i] = new ECPoint.Fp(curve, x, y);
             }
         }
@@ -127,8 +125,7 @@ public class ECPointTest extends TestCase
     {
         try
         {
-            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, new ECFieldElement.Fp(
-                    fp.q, new BigInteger("12")), null);
+            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, fp.curve.fromBigInteger(new BigInteger("12")), null);
             fail();
         }
         catch (IllegalArgumentException expected)
@@ -137,8 +134,7 @@ public class ECPointTest extends TestCase
 
         try
         {
-            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, null,
-                    new ECFieldElement.Fp(fp.q, new BigInteger("12")));
+            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, null, fp.curve.fromBigInteger(new BigInteger("12")));
             fail();
         }
         catch (IllegalArgumentException expected)
