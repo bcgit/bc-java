@@ -18,7 +18,24 @@ public class CramerShoupCoreEngine {
 	
 	private CramerShoupKeyParameters key;
 	private boolean forEncryption;
+	private String label = null;
 
+	/**
+	 * initialise the CramerShoup engine.
+	 * 
+	 * @param enc
+	 *            	whether this engine should encrypt or decrypt
+	 * @param param
+	 *            	the necessary CramerShoup key parameters.
+	 * @param label
+	 * 				the label for labelled CS as {@link String}
+	 */
+	public void init(boolean enc, CipherParameters param, String label) {
+		init(enc, param);
+		
+		this.label = label;
+	}
+	
 	/**
 	 * initialise the CramerShoup engine.
 	 * 
@@ -137,17 +154,20 @@ public class CramerShoupCoreEngine {
 	public CramerShoupCiphertext encryptBlock(BigInteger input) {
 
 		CramerShoupCiphertext result = null;
+		
 
 		if (!key.isPrivate() && !this.forEncryption && key instanceof CramerShoupPublicKeyParameters) {
 			CramerShoupPublicKeyParameters pk = (CramerShoupPublicKeyParameters)key;
 			BigInteger p = pk.getParameters().getP();
-			BigInteger q = pk.getParameters().getQ();
 			BigInteger g1 = pk.getParameters().getG1();
 			BigInteger g2 = pk.getParameters().getG2();
 			
 			BigInteger h = pk.getH();
+
+			if (!isValidMessage(input, p))
+				return result;
 			
-			BigInteger r = generateRandomElement(q, new SecureRandom());
+			BigInteger r = generateRandomElement(p, new SecureRandom());
 			
 			BigInteger u1, u2, v, e, a;
 			
@@ -162,6 +182,10 @@ public class CramerShoupCoreEngine {
 			digest.update(u2Bytes, 0, u2Bytes.length);
 			byte[] eBytes = e.toByteArray();
 			digest.update(eBytes, 0, eBytes.length);
+			if (this.label != null){
+				byte[] lBytes = this.label.getBytes();
+				digest.update(lBytes, 0, lBytes.length);
+			}
 			byte[] out = new byte[digest.getDigestSize()];
 			digest.doFinal(out , 0);
 			a = new BigInteger(1, out);
@@ -189,6 +213,10 @@ public class CramerShoupCoreEngine {
 			digest.update(u2Bytes, 0, u2Bytes.length);
 			byte[] eBytes = input.getE().toByteArray();
 			digest.update(eBytes, 0, eBytes.length);
+			if (this.label != null){
+				byte[] lBytes = this.label.getBytes();
+				digest.update(lBytes, 0, lBytes.length);
+			}
 			byte[] out = new byte[digest.getDigestSize()];
 			digest.doFinal(out , 0);
 
@@ -206,95 +234,20 @@ public class CramerShoupCoreEngine {
 		return result;
 	}
 
-	private BigInteger generateRandomElement(BigInteger q, SecureRandom random) {
-		return BigIntegers.createRandomInRange(ONE, q.subtract(ONE), random);
+	private BigInteger generateRandomElement(BigInteger p, SecureRandom random) {
+		return BigIntegers.createRandomInRange(ONE, p.subtract(ONE), random);
 	}
 	
 	/**
-	 * 
-	 * Class, holding Cramer Shoup ciphertexts (u1, u2, e, v)
-	 *
+	 * just checking whether the message m is actually less than the group order p
 	 */
-	public class CramerShoupCiphertext {
-		
-		BigInteger u1, u2, e, v;
-		
-		public CramerShoupCiphertext() {
-			
-		}
-		
-		public CramerShoupCiphertext(BigInteger u1, BigInteger u2, BigInteger e, BigInteger v){
-			this.u1 = u1;
-			this.u2 = u2;
-			this.e = e;
-			this.v = v;
-		}
-
-		public BigInteger getU1() {
-			return u1;
-		}
-
-		public void setU1(BigInteger u1) {
-			this.u1 = u1;
-		}
-
-		public BigInteger getU2() {
-			return u2;
-		}
-
-		public void setU2(BigInteger u2) {
-			this.u2 = u2;
-		}
-
-		public BigInteger getE() {
-			return e;
-		}
-
-		public void setE(BigInteger e) {
-			this.e = e;
-		}
-
-		public BigInteger getV() {
-			return v;
-		}
-
-		public void setV(BigInteger v) {
-			this.v = v;
-		}
-		
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-			
-			result.append("u1: "+u1.toString());
-			result.append("\nu2: "+u2.toString());
-			result.append("\ne: "+e.toString());
-			result.append("\nv: "+v.toString());
-			
-			return result.toString();
-		}
-		
-		// TODO: make this useful
-		public byte[] toByteArray(){
-			
-			byte[] u1Bytes = u1.toByteArray();
-			byte[] u2Bytes = u2.toByteArray();
-			byte[] eBytes = e.toByteArray();
-			byte[] vBytes = v.toByteArray();
-			
-			byte[] result = new byte[u1Bytes.length+u2Bytes.length+eBytes.length+vBytes.length];
-			System.arraycopy(u1Bytes, 0, result, 0, u1Bytes.length);
-			int off = u1Bytes.length;
-			System.arraycopy(u2Bytes, 0, result, off , u2Bytes.length);
-			off += u2Bytes.length;
-			System.arraycopy(eBytes, 0, result, off, eBytes.length);
-			off += eBytes.length;
-			System.arraycopy(vBytes, 0, result, off, vBytes.length);
-			
-			return result;
-		}
+	private boolean isValidMessage(BigInteger m, BigInteger p){
+		return m.compareTo(p) < 0;
 	}
 
+	/**
+	 *	CS exception for wrong cipher-texts 
+	 */
 	public class CramerShoupCiphertextException extends Exception {
 		
 		private static final long serialVersionUID = -6360977166495345076L;

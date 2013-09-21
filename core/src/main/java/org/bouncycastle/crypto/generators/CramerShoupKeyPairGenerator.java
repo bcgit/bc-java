@@ -41,7 +41,7 @@ public class CramerShoupKeyPairGenerator implements AsymmetricCipherKeyPairGener
 	}
 	
 	private CramerShoupPrivateKeyParameters generatePrivateKey(SecureRandom random, CramerShoupParameters csParams){
-		BigInteger q = csParams.getQ();
+		BigInteger q = csParams.getP();
 		CramerShoupPrivateKeyParameters key = new CramerShoupPrivateKeyParameters(csParams,
 				generateRandomElement(q, random), generateRandomElement(q, random),
 				generateRandomElement(q, random), generateRandomElement(q, random),
