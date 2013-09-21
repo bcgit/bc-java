@@ -189,7 +189,7 @@ public abstract class ECPoint
 
         if (k.signum() == 0)
         {
-            return this.curve.getInfinity();
+            return getCurve().getInfinity();
         }
 
         assertECMultiplier();
@@ -252,6 +252,10 @@ public abstract class ECPoint
             {
                 return this;
             }
+            if (this == b)
+            {
+                return twice();
+            }
 
             ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
 
@@ -260,11 +264,11 @@ public abstract class ECPoint
                 if (dy.isZero())
                 {
                     // this == b, i.e. this must be doubled
-                    return this.twice();
+                    return twice();
                 }
 
                 // this == -b, i.e. the result is the point at infinity
-                return this.curve.getInfinity();
+                return getCurve().getInfinity();
             }
 
             ECFieldElement gamma = dy.divide(dx);
@@ -286,11 +290,11 @@ public abstract class ECPoint
             {
                 // if y1 == 0, then (x1, y1) == (x1, -y1)
                 // and hence this = -this and thus 2(x1, y1) == infinity
-                return this.curve.getInfinity();
+                return getCurve().getInfinity();
             }
 
             ECFieldElement X = this.x.square();
-            ECFieldElement gamma = three(X).add(curve.a).divide(two(this.y));
+            ECFieldElement gamma = three(X).add(getCurve().getA()).divide(two(this.y));
             ECFieldElement x3 = gamma.square().subtract(two(this.x));
             ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
 
@@ -306,6 +310,10 @@ public abstract class ECPoint
             if (b.isInfinity())
             {
                 return twice();
+            }
+            if (this == b)
+            {
+                return threeTimes();
             }
 
             /*
