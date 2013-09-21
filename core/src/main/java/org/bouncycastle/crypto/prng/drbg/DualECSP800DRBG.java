@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -91,8 +90,8 @@ public class DualECSP800DRBG
             _seedlen = 256;
             _outlen = 240 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-256").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p256_Px), new ECFieldElement.Fp(_curve.getQ(), p256_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p256_Qx), new ECFieldElement.Fp(_curve.getQ(), p256_Qy));
+            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p256_Px), _curve.fromBigInteger(p256_Py));
+            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p256_Qx), _curve.fromBigInteger(p256_Qy));
         }
         else if (securityStrength <= 192)
         {
@@ -103,8 +102,8 @@ public class DualECSP800DRBG
             _seedlen = 384;
             _outlen = 368 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Px), new ECFieldElement.Fp(_curve.getQ(), p384_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Qx), new ECFieldElement.Fp(_curve.getQ(), p384_Qy));
+            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p384_Px), _curve.fromBigInteger(p384_Py));
+            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p384_Qx), _curve.fromBigInteger(p384_Qy));
         }
         else if (securityStrength <= 256)
         {
@@ -115,8 +114,8 @@ public class DualECSP800DRBG
             _seedlen = 521;
             _outlen = 504 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p521_Px), new ECFieldElement.Fp(_curve.getQ(), p521_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p521_Qx), new ECFieldElement.Fp(_curve.getQ(), p521_Qy));
+            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p521_Px), _curve.fromBigInteger(p521_Py));
+            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p521_Qx), _curve.fromBigInteger(p521_Qy));
         }
         else
         {
