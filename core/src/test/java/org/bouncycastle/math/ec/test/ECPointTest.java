@@ -362,11 +362,12 @@ public class ECPointTest extends TestCase
     {
         assertEquals("Twice and Add inconsistent", p.twice(), p.add(p));
         assertEquals("Twice p - p is not p", p, p.twice().subtract(p));
+        assertEquals("TwicePlus(p, -p) is not p", p, p.twicePlus(p.negate()));
         assertEquals("p - p is not infinity", infinity, p.subtract(p));
         assertEquals("p plus infinity is not p", p, p.add(infinity));
         assertEquals("infinity plus p is not p", p, infinity.add(p));
-        assertEquals("infinity plus infinity is not infinity ", infinity,
-                infinity.add(infinity));
+        assertEquals("infinity plus infinity is not infinity ", infinity, infinity.add(infinity));
+        assertEquals("Twice infinity is not infinity ", infinity, infinity.twice());
     }
 
     /**
