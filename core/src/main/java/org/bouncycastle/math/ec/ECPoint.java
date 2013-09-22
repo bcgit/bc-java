@@ -166,7 +166,7 @@ public abstract class ECPoint
     {
         if (this.multiplier == null)
         {
-            this.multiplier = new FpNafMultiplier();
+            this.multiplier = new DoubleAddMultiplier();
         }
     }
 
@@ -407,17 +407,6 @@ public abstract class ECPoint
             }
 
             return new ECPoint.Fp(curve, this.x, this.y.negate(), this.withCompression);
-        }
-
-        /**
-         * Sets the default <code>ECMultiplier</code>, unless already set. 
-         */
-        synchronized void assertECMultiplier()
-        {
-            if (this.multiplier == null)
-            {
-                this.multiplier = new WNafMultiplier();
-            }
         }
     }
 
