@@ -41,9 +41,31 @@ public abstract class ECFieldElement
 
     public static class Fp extends ECFieldElement
     {
-        BigInteger q, x;
+        BigInteger q, r, x;
 
+        static BigInteger calculateResidue(BigInteger p)
+        {
+            int bitLength = p.bitLength();
+            if (bitLength > 128)
+            {
+                BigInteger firstWord = p.shiftRight(bitLength - 64);
+                if (firstWord.longValue() == -1L)
+                {
+                    return ONE.shiftLeft(bitLength).subtract(p);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * @deprecated Use ECCurve.fromBigInteger to construct field elements
+         */
         public Fp(BigInteger q, BigInteger x)
+        {
+            this(q, calculateResidue(q), x);
+        }
+
+        Fp(BigInteger q, BigInteger r, BigInteger x)
         {
             if (x.signum() < 0 || x.compareTo(q) >= 0)
             {
@@ -51,6 +73,7 @@ public abstract class ECFieldElement
             }
 
             this.q = q;
+            this.r = r;
             this.x = x;
         }
 
@@ -81,13 +104,7 @@ public abstract class ECFieldElement
         
         public ECFieldElement add(ECFieldElement b)
         {
-            BigInteger x2 = b.toBigInteger();
-            BigInteger x3 = x.add(x2);
-            if (x3.compareTo(q) >= 0)
-            {
-                x3 = x3.subtract(q);
-            }
-            return new Fp(q, x3);
+            return new Fp(q, r, modAdd(x, b.toBigInteger()));
         }
 
         public ECFieldElement subtract(ECFieldElement b)
@@ -98,33 +115,46 @@ public abstract class ECFieldElement
             {
                 x3 = x3.add(q);
             }
-            return new Fp(q, x3);
+            return new Fp(q, r, x3);
         }
 
         public ECFieldElement multiply(ECFieldElement b)
         {
-            return new Fp(q, x.multiply(b.toBigInteger()).mod(q));
+            return new Fp(q, r, modMult(x, b.toBigInteger()));
         }
 
         public ECFieldElement divide(ECFieldElement b)
         {
-            return new Fp(q, x.multiply(b.toBigInteger().modInverse(q)).mod(q));
+            return new Fp(q, modMult(x, b.toBigInteger().modInverse(q)));
         }
 
         public ECFieldElement negate()
         {
-            BigInteger x2 = x.signum() == 0 ? x : q.subtract(x);
-            return new Fp(q, x2);
+            BigInteger x2;
+            if (x.signum() == 0)
+            {
+                x2 = x;
+            }
+            else if (ONE.equals(r))
+            {
+                x2 = q.xor(x);
+            }
+            else
+            {
+                x2 = q.subtract(x);
+            }
+            return new Fp(q, r, x2);
         }
 
         public ECFieldElement square()
         {
-            return new Fp(q, x.multiply(x).mod(q));
+            return new Fp(q, r, modMult(x, x));
         }
 
         public ECFieldElement invert()
         {
-            return new Fp(q, x.modInverse(q));
+            // TODO Modular inversion can be faster for a (Generalized) Mersenne Prime.
+            return new Fp(q, r, x.modInverse(q));
         }
 
         // D.1.4 91
@@ -145,7 +175,7 @@ public abstract class ECFieldElement
             if (q.testBit(1))
             {
                 // z = g^(u+1) + p, p = 4u + 3
-                ECFieldElement z = new Fp(q, x.modPow(q.shiftRight(2).add(ECConstants.ONE), q));
+                ECFieldElement z = new Fp(q, r, x.modPow(q.shiftRight(2).add(ECConstants.ONE), q));
 
                 return z.square().equals(this) ? z : null;
             }
@@ -163,7 +193,7 @@ public abstract class ECFieldElement
             BigInteger k = u.shiftLeft(1).add(ECConstants.ONE);
 
             BigInteger Q = this.x;
-            BigInteger fourQ = Q.shiftLeft(2).mod(q);
+            BigInteger fourQ = modDouble(modDouble(Q));
 
             BigInteger U, V;
             Random rand = new Random();
@@ -177,11 +207,11 @@ public abstract class ECFieldElement
                 while (P.compareTo(q) >= 0
                     || !(P.multiply(P).subtract(fourQ).modPow(legendreExponent, q).equals(qMinusOne)));
 
-                BigInteger[] result = lucasSequence(q, P, Q, k);
+                BigInteger[] result = lucasSequence(P, Q, k);
                 U = result[0];
                 V = result[1];
 
-                if (V.multiply(V).mod(q).equals(fourQ))
+                if (modMult(V, V).equals(fourQ))
                 {
                     // Integer division by 2, mod q
                     if (V.testBit(0))
@@ -193,7 +223,7 @@ public abstract class ECFieldElement
 
                     //assert V.multiply(V).mod(q).equals(x);
 
-                    return new ECFieldElement.Fp(q, V);
+                    return new ECFieldElement.Fp(q, r, V);
                 }
             }
             while (U.equals(ECConstants.ONE) || U.equals(qMinusOne));
@@ -255,8 +285,7 @@ public abstract class ECFieldElement
 //            return r.multiply(r).multiply(x.modPow(q.subtract(ECConstants.TWO), q)).subtract(ECConstants.TWO).mod(p);
 //        }
 
-        private static BigInteger[] lucasSequence(
-            BigInteger  p,
+        private BigInteger[] lucasSequence(
             BigInteger  P,
             BigInteger  Q,
             BigInteger  k)
@@ -272,40 +301,97 @@ public abstract class ECFieldElement
 
             for (int j = n - 1; j >= s + 1; --j)
             {
-                Ql = Ql.multiply(Qh).mod(p);
+                Ql = modMult(Ql, Qh);
 
                 if (k.testBit(j))
                 {
-                    Qh = Ql.multiply(Q).mod(p);
-                    Uh = Uh.multiply(Vh).mod(p);
-                    Vl = Vh.multiply(Vl).subtract(P.multiply(Ql)).mod(p);
-                    Vh = Vh.multiply(Vh).subtract(Qh.shiftLeft(1)).mod(p);
+                    Qh = modMult(Ql, Q);
+                    Uh = modMult(Uh, Vh);
+                    Vl = modReduce(Vh.multiply(Vl).subtract(P.multiply(Ql)));
+                    Vh = modReduce(Vh.multiply(Vh).subtract(Qh.shiftLeft(1)));
                 }
                 else
                 {
                     Qh = Ql;
-                    Uh = Uh.multiply(Vl).subtract(Ql).mod(p);
-                    Vh = Vh.multiply(Vl).subtract(P.multiply(Ql)).mod(p);
-                    Vl = Vl.multiply(Vl).subtract(Ql.shiftLeft(1)).mod(p);
+                    Uh = modReduce(Uh.multiply(Vl).subtract(Ql));
+                    Vh = modReduce(Vh.multiply(Vl).subtract(P.multiply(Ql)));
+                    Vl = modReduce(Vl.multiply(Vl).subtract(Ql.shiftLeft(1)));
                 }
             }
 
-            Ql = Ql.multiply(Qh).mod(p);
-            Qh = Ql.multiply(Q).mod(p);
-            Uh = Uh.multiply(Vl).subtract(Ql).mod(p);
-            Vl = Vh.multiply(Vl).subtract(P.multiply(Ql)).mod(p);
-            Ql = Ql.multiply(Qh).mod(p);
+            Ql = modMult(Ql, Qh);
+            Qh = modMult(Ql, Q);
+            Uh = modReduce(Uh.multiply(Vl).subtract(Ql));
+            Vl = modReduce(Vh.multiply(Vl).subtract(P.multiply(Ql)));
+            Ql = modMult(Ql, Qh);
 
             for (int j = 1; j <= s; ++j)
             {
-                Uh = Uh.multiply(Vl).mod(p);
-                Vl = Vl.multiply(Vl).subtract(Ql.shiftLeft(1)).mod(p);
-                Ql = Ql.multiply(Ql).mod(p);
+                Uh = modMult(Uh, Vl);
+                Vl = modReduce(Vl.multiply(Vl).subtract(Ql.shiftLeft(1)));
+                Ql = modMult(Ql, Ql);
             }
 
             return new BigInteger[]{ Uh, Vl };
         }
-        
+
+        protected BigInteger modAdd(BigInteger x1, BigInteger x2)
+        {
+            BigInteger x3 = x1.add(x2);
+            if (x3.compareTo(q) >= 0)
+            {
+                x3 = x3.subtract(q);
+            }
+            return x3;
+        }
+
+        protected BigInteger modDouble(BigInteger x)
+        {
+            BigInteger _2x = x.shiftLeft(1);
+            if (_2x.compareTo(q) >= 0)
+            {
+                _2x = _2x.subtract(q);
+            }
+            return _2x;
+        }
+
+        protected BigInteger modMult(BigInteger x1, BigInteger x2)
+        {
+            return modReduce(x1.multiply(x2));
+        }
+
+        protected BigInteger modReduce(BigInteger x)
+        {
+            if (r == null)
+            {
+                x = x.mod(q);
+            }
+            else
+            {
+                int qLen = q.bitLength();
+                while (x.bitLength() > qLen)
+                {
+                    BigInteger u = x.shiftRight(qLen);
+                    BigInteger v;
+                    if (r.equals(ONE))
+                    {
+                        v = x.and(q);
+                    }
+                    else
+                    {
+                        v = x.subtract(u.shiftLeft(qLen));
+                        u = u.multiply(r);
+                    }
+                    x = u.add(v); 
+                }
+                if (x.compareTo(q) >= 0)
+                {
+                    x = x.subtract(q);
+                }
+            }
+            return x;
+        }
+
         public boolean equals(Object other)
         {
             if (other == this)
@@ -876,6 +962,7 @@ public abstract class ECFieldElement
          * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
          * represents the reduction polynomial <code>f(z)</code>.
          * @param x The BigInteger representing the value of the field element.
+         * @deprecated Use ECCurve.fromBigInteger to construct field elements
          */
         public F2m(
             int m, 
@@ -925,6 +1012,7 @@ public abstract class ECFieldElement
          * x<sup>k</sup> + 1</code> represents the reduction
          * polynomial <code>f(z)</code>.
          * @param x The BigInteger representing the value of the field element.
+         * @deprecated Use ECCurve.fromBigInteger to construct field elements
          */
         public F2m(int m, int k, BigInteger x)
         {

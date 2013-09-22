@@ -110,12 +110,13 @@ public abstract class ECCurve
      */
     public static class Fp extends ECCurve
     {
-        BigInteger q;
+        BigInteger q, r;
         ECPoint.Fp infinity;
 
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
             this.q = q;
+            this.r = ECFieldElement.Fp.calculateResidue(q);
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
             this.infinity = new ECPoint.Fp(this, null, null);
@@ -133,7 +134,7 @@ public abstract class ECCurve
 
         public ECFieldElement fromBigInteger(BigInteger x)
         {
-            return new ECFieldElement.Fp(this.q, x);
+            return new ECFieldElement.Fp(this.q, this.r, x);
         }
 
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
