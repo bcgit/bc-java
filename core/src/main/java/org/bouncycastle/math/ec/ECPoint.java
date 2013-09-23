@@ -375,13 +375,12 @@ public abstract class ECPoint
                 
                 ECFieldElement X3 = R.square().add(G).subtract(two(V));
                 ECFieldElement Y3 = V.subtract(X3).multiply(R).subtract(S1.multiply(G));
-                ECFieldElement Z3 = Z1.multiply(Z2).multiply(H);
 
-                // Alternative when a fast squaring is available
-//                ECFieldElement _2Z1Z2 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared);
-//                X3 = two(X3);
-//                Y3 = two(Y3);
-//                ECFieldElement Z3 = _2Z1Z2.multiply(H);
+//                ECFieldElement Z3 = Z1.multiply(Z2).multiply(H);
+                ECFieldElement _2Z1Z2 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared);
+                X3 = four(X3);
+                Y3 = eight(Y3);
+                ECFieldElement Z3 = _2Z1Z2.multiply(H);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
@@ -429,22 +428,29 @@ public abstract class ECPoint
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
 
-                ECFieldElement X1Squared = X1.square();
                 ECFieldElement Y1Squared = Y1.square();
                 ECFieldElement Z1Squared = Z1.square();
 
-                // TODO curve.getA() (a4) is commonly -3 and this could be done a little quicker
-                ECFieldElement M = three(X1Squared).add(Z1Squared.square().multiply(curve.getA()));
+                ECFieldElement a4 = curve.getA();
+                ECFieldElement M;
+                if (a4.add(curve.fromBigInteger(BigInteger.valueOf(3))).isZero())
+                {
+                    M = three(X1.add(Z1Squared).multiply(X1.subtract(Z1Squared)));
+                }
+                else
+                {
+                    ECFieldElement X1Squared = X1.square();
+                    M = three(X1Squared).add(Z1Squared.square().multiply(a4));
+                }
+
                 ECFieldElement T = Y1Squared.square();
                 ECFieldElement S = four(Y1Squared.multiply(X1));
 
                 ECFieldElement X3 = M.square().subtract(two(S));
                 ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
-                ECFieldElement Z3 = two(Y1.multiply(Z1));
 
-                // Alternative when a fast squaring is available
-//                ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
-//                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
+//                ECFieldElement Z3 = two(Y1.multiply(Z1));
+                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
@@ -572,6 +578,10 @@ public abstract class ECPoint
         protected ECFieldElement doubleProductFromSquares(ECFieldElement a, ECFieldElement b,
             ECFieldElement aSquared, ECFieldElement bSquared)
         {
+            /*
+             * NOTE: If squaring in the field is faster than multiplication, then this is a quicker
+             * way to calculate 2.A.B, if A^2 and B^2 are already known.
+             */
             return a.add(b).square().subtract(aSquared).subtract(bSquared);
         }
 
