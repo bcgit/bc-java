@@ -9,13 +9,38 @@ import org.bouncycastle.asn1.x9.X9IntegerConverter;
  */
 public abstract class ECPoint
 {
-    ECCurve        curve;
-    ECFieldElement x;
-    ECFieldElement y;
+    protected static ECFieldElement[] EMPTY_ZS = new ECFieldElement[0];
+
+    protected static ECFieldElement[] getInitialZCoords(ECCurve curve)
+    {
+        int coord = curve.getCoordinateSystem();
+        if (coord == ECCurve.COORD_AFFINE)
+        {
+            return EMPTY_ZS;
+        }
+
+        ECFieldElement one = curve.fromBigInteger(ECConstants.ONE);
+
+        switch (coord)
+        {
+        case ECCurve.COORD_HOMOGENEOUS:
+        case ECCurve.COORD_JACOBIAN:
+            return new ECFieldElement[]{ one };
+        case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
+            return new ECFieldElement[]{ one, one, one };
+        case ECCurve.COORD_JACOBIAN_MODIFIED:
+            return new ECFieldElement[]{ one, curve.getA() }; 
+        default:
+            throw new IllegalArgumentException("unknown coordinate system");
+        }
+    }
+
+    protected ECCurve curve;
+    protected ECFieldElement x;
+    protected ECFieldElement y;
+    protected ECFieldElement[] zs = null;
 
     protected boolean withCompression;
-
-    protected ECMultiplier multiplier = null;
 
     protected PreCompInfo preCompInfo = null;
 
@@ -23,11 +48,17 @@ public abstract class ECPoint
 
     protected ECPoint(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {
+        this(curve, x, y, getInitialZCoords(curve));
+    }
+
+    protected ECPoint(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
+    {
         this.curve = curve;
         this.x = x;
         this.y = y;
+        this.zs = zs;
     }
-    
+
     public ECCurve getCurve()
     {
         return curve;
@@ -41,6 +72,23 @@ public abstract class ECPoint
     public ECFieldElement getY()
     {
         return y;
+    }
+
+    public ECFieldElement getZ(int index)
+    {
+        return (index < 0 || index >= zs.length) ? null : zs[index];
+    }
+
+    public ECFieldElement[] getZs()
+    {
+        int zsLen = zs.length;
+        if (zsLen == 0)
+        {
+            return zs;
+        }
+        ECFieldElement[] copy = new ECFieldElement[zsLen];
+        System.arraycopy(zs, 0, copy, 0, zsLen);
+        return copy;
     }
 
     public boolean isInfinity()
@@ -85,16 +133,6 @@ public abstract class ECPoint
         
         return x.hashCode() ^ y.hashCode();
     }
-
-//    /**
-//     * Mainly for testing. Explicitly set the <code>ECMultiplier</code>.
-//     * @param multiplier The <code>ECMultiplier</code> to be used to multiply
-//     * this <code>ECPoint</code>.
-//     */
-//    public void setECMultiplier(ECMultiplier multiplier)
-//    {
-//        this.multiplier = multiplier;
-//    }
 
     /**
      * Sets the <code>PreCompInfo</code>. Used by <code>ECMultiplier</code>s
@@ -160,17 +198,6 @@ public abstract class ECPoint
     }
 
     /**
-     * Sets the default <code>ECMultiplier</code>, unless already set. 
-     */
-    synchronized void assertECMultiplier()
-    {
-        if (this.multiplier == null)
-        {
-            this.multiplier = new DoubleAddMultiplier();
-        }
-    }
-
-    /**
      * Multiplies this <code>ECPoint</code> by the given number.
      * @param k The multiplicator.
      * @return <code>k * this</code>.
@@ -192,8 +219,7 @@ public abstract class ECPoint
             return getCurve().getInfinity();
         }
 
-        assertECMultiplier();
-        return this.multiplier.multiply(this, k, preCompInfo);
+        return getCurve().getMultiplier().multiply(this, k, preCompInfo);
     }
 
     /**
@@ -208,6 +234,8 @@ public abstract class ECPoint
          * @param curve the curve to use
          * @param x affine x co-ordinate
          * @param y affine y co-ordinate
+         * 
+         * @deprecated Use ECCurve.createPoint to construct points
          */
         public Fp(ECCurve curve, ECFieldElement x, ECFieldElement y)
         {
@@ -419,6 +447,8 @@ public abstract class ECPoint
          * @param curve base curve
          * @param x x point
          * @param y y point
+         * 
+         * @deprecated Use ECCurve.createPoint to construct points
          */
         public F2m(ECCurve curve, ECFieldElement x, ECFieldElement y)
         {
@@ -472,7 +502,7 @@ public abstract class ECPoint
         private static void checkPoints(ECPoint a, ECPoint b)
         {
             // Check, if points are on the same curve
-            if (!(a.curve.equals(b.curve)))
+            if (a.curve != b.curve)
             {
                 throw new IllegalArgumentException("Only points on the same "
                         + "curve can be added or subtracted");
@@ -610,24 +640,6 @@ public abstract class ECPoint
             }
 
             return new ECPoint.F2m(curve, this.getX(), this.getY().add(this.getX()), withCompression);
-        }
-
-        /**
-         * Sets the appropriate <code>ECMultiplier</code>, unless already set. 
-         */
-        synchronized void assertECMultiplier()
-        {
-            if (this.multiplier == null)
-            {
-                if (((ECCurve.F2m)this.curve).isKoblitz())
-                {
-                    this.multiplier = new WTauNafMultiplier();
-                }
-                else
-                {
-                    this.multiplier = new WNafMultiplier();
-                }
-            }
         }
     }
 }
