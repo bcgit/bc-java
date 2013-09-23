@@ -103,20 +103,20 @@ public class ECTest
                 new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
                 new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
         
-        ECPoint p = curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012"));
-        
-        if (!p.getX().toBigInteger().equals(new BigInteger("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012", 16)))
+        ECPoint p = curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")).normalize();
+
+        if (!p.getAffineXCoord().toBigInteger().equals(new BigInteger("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012", 16)))
         {
             fail("x uncompressed incorrectly");
         }
-        
-        if (!p.getY().toBigInteger().equals(new BigInteger("7192b95ffc8da78631011ed6b24cdd573f977a11e794811", 16)))
+
+        if (!p.getAffineYCoord().toBigInteger().equals(new BigInteger("7192b95ffc8da78631011ed6b24cdd573f977a11e794811", 16)))
         {
             fail("y uncompressed incorrectly");
         }
-        
+
         byte[] encoding = p.getEncoded();
-        
+
         if (!areEqual(encoding, Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")))
         {
             fail("point compressed incorrectly");

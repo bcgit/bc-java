@@ -396,10 +396,10 @@ public class ECPointTest extends TestCase
     private void implTestEncoding(ECPoint p)
     {
         // Not Point Compression
-        ECPoint unCompP = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), false);
+        ECPoint unCompP = p.getCurve().createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), false);
 
         // Point compression
-        ECPoint compP = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
+        ECPoint compP = p.getCurve().createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), true);
 
         byte[] unCompBarr = unCompP.getEncoded();
         ECPoint decUnComp = p.getCurve().decodePoint(unCompBarr);
@@ -428,7 +428,7 @@ public class ECPointTest extends TestCase
             // The generator is multiplied by random b to get random q
             BigInteger b = new BigInteger(n.bitLength(), secRand);
             ECPoint g = x9ECParameters.getG();
-            ECPoint q = g.multiply(b);
+            ECPoint q = g.multiply(b).normalize();
 
             // Get point at infinity on the curve
             ECPoint infinity = x9ECParameters.getCurve().getInfinity();

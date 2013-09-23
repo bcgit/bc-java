@@ -88,12 +88,15 @@ public abstract class DSTU4145PointEncoder
 
           return Arrays.copyOfRange(bytes, 1, bytes.length);*/
 
-        int byteCount = converter.getByteLength(Q.getX());
-        byte[] bytes = converter.integerToBytes(Q.getX().toBigInteger(), byteCount);
+        Q = Q.normalize();
+        ECFieldElement x = Q.getAffineXCoord();
 
-        if (!Q.getX().isZero())
+        int byteCount = converter.getByteLength(x);
+        byte[] bytes = converter.integerToBytes(x.toBigInteger(), byteCount);
+
+        if (!x.isZero())
         {
-            ECFieldElement y = Q.getY().multiply(Q.getX().invert());
+            ECFieldElement y = Q.getAffineYCoord().multiply(x.invert());
             if (trace(y).equals(ECConstants.ONE))
             {
                 bytes[bytes.length - 1] |= 0x01;

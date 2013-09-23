@@ -78,10 +78,10 @@ public class ECDSASigner
                 }
                 while (k.equals(ZERO) || k.compareTo(n) >= 0);
 
-                ECPoint p = key.getParameters().getG().multiply(k);
+                ECPoint p = key.getParameters().getG().multiply(k).normalize();
 
                 // 5.3.3
-                BigInteger x = p.getX().toBigInteger();
+                BigInteger x = p.getAffineXCoord().toBigInteger();
 
                 r = x.mod(n);
             }
@@ -135,7 +135,7 @@ public class ECDSASigner
         ECPoint G = key.getParameters().getG();
         ECPoint Q = ((ECPublicKeyParameters)key).getQ();
 
-        ECPoint point = ECAlgorithms.sumOfTwoMultiplies(G, u1, Q, u2);
+        ECPoint point = ECAlgorithms.sumOfTwoMultiplies(G, u1, Q, u2).normalize();
 
         // components must be bogus.
         if (point.isInfinity())
@@ -143,7 +143,7 @@ public class ECDSASigner
             return false;
         }
 
-        BigInteger v = point.getX().toBigInteger().mod(n);
+        BigInteger v = point.getAffineXCoord().toBigInteger().mod(n);
 
         return v.equals(r);
     }
