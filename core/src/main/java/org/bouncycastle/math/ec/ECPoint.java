@@ -64,23 +64,51 @@ public abstract class ECPoint
     {
         return curve;
     }
-    
+
+    /**
+     * @deprecated Use getAffineXCoord or getXCoord instead
+     */
     public ECFieldElement getX()
     {
         return x;
     }
 
+    /**
+     * @deprecated Use getAffineYCoord or getYCoord instead
+     */
     public ECFieldElement getY()
     {
         return y;
     }
 
-    public ECFieldElement getZ(int index)
+    public ECFieldElement getAffineXCoord()
+    {
+        assertNormalized();
+        return x;
+    }
+
+    public ECFieldElement getAffineYCoord()
+    {
+        assertNormalized();
+        return x;
+    }
+
+    public ECFieldElement getXCoord()
+    {
+        return x;
+    }
+
+    public ECFieldElement getYCoord()
+    {
+        return x;
+    }
+
+    public ECFieldElement getZCoord(int index)
     {
         return (index < 0 || index >= zs.length) ? null : zs[index];
     }
 
-    public ECFieldElement[] getZs()
+    public ECFieldElement[] getZCoords()
     {
         int zsLen = zs.length;
         if (zsLen == 0)
@@ -90,6 +118,19 @@ public abstract class ECPoint
         ECFieldElement[] copy = new ECFieldElement[zsLen];
         System.arraycopy(zs, 0, copy, 0, zsLen);
         return copy;
+    }
+
+    protected void assertNormalized()
+    {
+        if (!isNormalized())
+        {
+            throw new IllegalStateException("point not in normal form");
+        }
+    }
+
+    public boolean isNormalized()
+    {
+        return curve.getCoordinateSystem() == ECCurve.COORD_AFFINE || isInfinity() || zs[0].bitLength() == 1;
     }
 
     public ECPoint normalize()
@@ -133,7 +174,7 @@ public abstract class ECPoint
 
     protected ECPoint createScaledPoint(ECFieldElement sx, ECFieldElement sy)
     {
-        return curve.createPoint(getX().multiply(sx).toBigInteger(), getY().multiply(sy).toBigInteger());
+        return curve.createPoint(getXCoord().multiply(sx).toBigInteger(), getYCoord().multiply(sy).toBigInteger());
     }
 
     public boolean isInfinity()
@@ -207,7 +248,7 @@ public abstract class ECPoint
         }
 
         ECPoint normed = normalize();
-        ECFieldElement x = normed.getX();
+        ECFieldElement x = normed.getAffineXCoord();
 
         int length = converter.getByteLength(x);
         byte[] X = converter.integerToBytes(x.toBigInteger(), length);
@@ -220,7 +261,7 @@ public abstract class ECPoint
             return PO;
         }
 
-        ECFieldElement y = normed.getY();
+        ECFieldElement y = normed.getAffineYCoord();
         byte[] Y = converter.integerToBytes(y.toBigInteger(), length);
         byte[] PO = new byte[X.length + Y.length + 1];
         PO[0] = 0x04;
@@ -319,7 +360,7 @@ public abstract class ECPoint
 
         protected boolean getCompressionYTilde()
         {
-            return getY().testBitZero();
+            return getAffineYCoord().testBitZero();
         }
 
         // B.3 pg 62
@@ -685,7 +726,8 @@ public abstract class ECPoint
 
         protected boolean getCompressionYTilde()
         {
-            return !getX().isZero() && getY().divide(getX()).testBitZero();
+            ECFieldElement x = getAffineXCoord(), y = getAffineYCoord();
+            return !x.isZero() && y.divide(x).testBitZero();
         }
 
         /**
@@ -738,8 +780,8 @@ public abstract class ECPoint
                 return this;
             }
 
-            ECFieldElement.F2m x2 = (ECFieldElement.F2m)other.getX();
-            ECFieldElement.F2m y2 = (ECFieldElement.F2m)other.getY();
+            ECFieldElement.F2m x2 = (ECFieldElement.F2m)other.getXCoord();
+            ECFieldElement.F2m y2 = (ECFieldElement.F2m)other.getYCoord();
 
             // Check if other = this or other = -this
             if (this.x.equals(x2))
@@ -835,7 +877,7 @@ public abstract class ECPoint
                 return this;
             }
 
-            return new ECPoint.F2m(curve, this.getX(), this.getY().add(this.getX()), withCompression);
+            return new ECPoint.F2m(curve, this.getXCoord(), this.getYCoord().add(this.getXCoord()), withCompression);
         }
     }
 }
