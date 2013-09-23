@@ -210,17 +210,17 @@ public abstract class ECCurve
             return c;
         }
 
-//        public boolean supportsCoordinateSystem(int coord)
-//        {
-//            switch (coord)
-//            {
-//            case COORD_AFFINE:
-//            case COORD_JACOBIAN:
-//                return true;
-//            default:
-//                return false;
-//            }
-//        }
+        public boolean supportsCoordinateSystem(int coord)
+        {
+            switch (coord)
+            {
+            case COORD_AFFINE:
+            case COORD_JACOBIAN:
+                return true;
+            default:
+                return false;
+            }
+        }
 
         public BigInteger getQ()
         {
