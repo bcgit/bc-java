@@ -67,9 +67,9 @@ public abstract class ECFieldElement
 
         Fp(BigInteger q, BigInteger r, BigInteger x)
         {
-            if (x.signum() < 0 || x.compareTo(q) >= 0)
+            if (x == null || x.signum() < 0 || x.compareTo(q) >= 0)
             {
-                throw new IllegalArgumentException("x value out of range in field element");
+                throw new IllegalArgumentException("x value invalid in Fp field element");
             }
 
             this.q = q;
@@ -971,6 +971,11 @@ public abstract class ECFieldElement
             int k3,
             BigInteger x)
         {
+            if (x == null || x.signum() < 0)
+            {
+                throw new IllegalArgumentException("x value invalid in F2m field element");
+            }
+
             if ((k2 == 0) && (k3 == 0))
             {
                 this.representation = TPB;
@@ -988,11 +993,6 @@ public abstract class ECFieldElement
                             "k2 must be larger than 0");
                 }
                 this.representation = PPB;
-            }
-
-            if (x.signum() < 0)
-            {
-                throw new IllegalArgumentException("x value cannot be negative");
             }
 
             this.m = m;
