@@ -475,7 +475,7 @@ public abstract class ECPoint
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
 
-            if (coord == ECCurve.COORD_JACOBIAN)
+            if (coord != ECCurve.COORD_AFFINE)
             {
                 return twice().add(b);
             }
@@ -518,6 +518,14 @@ public abstract class ECPoint
             if (this.isInfinity() || this.y.isZero())
             {
                 return this;
+            }
+
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            if (coord != ECCurve.COORD_AFFINE)
+            {
+                return twice().add(this);
             }
 
             ECFieldElement _2y = two(this.y); 
@@ -584,6 +592,11 @@ public abstract class ECPoint
             if (this.isInfinity())
             {
                 return this;
+            }
+
+            if (getCurve().getCoordinateSystem() != ECCurve.COORD_AFFINE)
+            {
+                return new ECPoint.Fp(curve, this.x, this.y.negate(), this.zs);
             }
 
             return new ECPoint.Fp(curve, this.x, this.y.negate(), this.withCompression);
