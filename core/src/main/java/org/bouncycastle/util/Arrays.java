@@ -393,7 +393,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(BigInteger[] data)
+    public static int hashCode(Object[] data)
     {
         if (data == null)
         {
