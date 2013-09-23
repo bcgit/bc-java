@@ -346,13 +346,27 @@ public abstract class ECPoint
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
                 ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0];
 
-                ECFieldElement Z1Squared = Z1.square(), Z2Squared = Z2.square();
-                ECFieldElement U1 = Z2Squared.multiply(X1); 
+                boolean Z2IsOne = Z2.bitLength() == 1;
+
+                ECFieldElement Z2Squared, U1, S1;
+                if (Z2IsOne)
+                {
+                    Z2Squared = Z2;
+                    U1 = X1;
+                    S1 = Y1;
+                }
+                else
+                {
+                    Z2Squared = Z2.square();
+                    U1 = Z2Squared.multiply(X1); 
+                    ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
+                    S1 = Z2Cubed.multiply(Y1);
+                }
+
+                ECFieldElement Z1Squared = Z1.square();
                 ECFieldElement U2 = Z1Squared.multiply(X2);
                 ECFieldElement H = U1.subtract(U2);
                 ECFieldElement Z1Cubed = Z1Squared.multiply(Z1);
-                ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
-                ECFieldElement S1 = Z2Cubed.multiply(Y1);
                 ECFieldElement S2 = Z1Cubed.multiply(Y2);
                 ECFieldElement R = S1.subtract(S2);
 
@@ -376,11 +390,18 @@ public abstract class ECPoint
                 ECFieldElement X3 = R.square().add(G).subtract(two(V));
                 ECFieldElement Y3 = V.subtract(X3).multiply(R).subtract(S1.multiply(G));
 
-//                ECFieldElement Z3 = Z1.multiply(Z2).multiply(H);
-                ECFieldElement _2Z1Z2 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared);
-                X3 = four(X3);
-                Y3 = eight(Y3);
-                ECFieldElement Z3 = _2Z1Z2.multiply(H);
+                ECFieldElement Z3;
+                if (Z2IsOne)
+                {
+                    Z3 = Z1.multiply(H);
+                }
+                else
+                {
+//                    Z3 = Z1.multiply(Z2).multiply(H);
+                    X3 = four(X3);
+                    Y3 = eight(Y3);
+                    Z3 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared).multiply(H);
+                }
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
