@@ -493,20 +493,21 @@ public abstract class ECPoint
                 ECFieldElement Y1Squared = Y1.square();
                 ECFieldElement Z1Squared = Z1.square();
 
+                ECFieldElement T = Y1Squared.square();
+
                 ECFieldElement a4 = curve.getA();
-                ECFieldElement M;
+                ECFieldElement M, S;
                 if (a4.add(curve.fromBigInteger(BigInteger.valueOf(3))).isZero())
                 {
                     M = three(X1.add(Z1Squared).multiply(X1.subtract(Z1Squared)));
+                    S = four(Y1Squared.multiply(X1));
                 }
                 else
                 {
                     ECFieldElement X1Squared = X1.square();
                     M = three(X1Squared).add(Z1Squared.square().multiply(a4));
+                    S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
                 }
-
-                ECFieldElement T = Y1Squared.square();
-                ECFieldElement S = four(Y1Squared.multiply(X1));
 
                 ECFieldElement X3 = M.square().subtract(two(S));
                 ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
