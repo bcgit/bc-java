@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the WNAF (Window Non-Adjacent Form) multiplication
  * algorithm.
  */
-class WNafMultiplier implements ECMultiplier
+public class WNafMultiplier implements ECMultiplier
 {
     /**
      * Computes the Window NAF (non-adjacent Form) of an integer.
