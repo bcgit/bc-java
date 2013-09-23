@@ -153,17 +153,11 @@ public class ECDSASigner
         int log2n = n.bitLength();
         int messageBitLength = message.length * 8;
 
-        if (log2n >= messageBitLength)
+        BigInteger e = new BigInteger(1, message); 
+        if (log2n < messageBitLength)
         {
-            return new BigInteger(1, message);
+            e = e.shiftRight(messageBitLength - log2n);
         }
-        else
-        {
-            BigInteger trunc = new BigInteger(1, message);
-
-            trunc = trunc.shiftRight(messageBitLength - log2n);
-
-            return trunc;
-        }
+        return e;
     }
 }
