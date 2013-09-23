@@ -120,4 +120,20 @@ public final class BigIntegers
         // fall back to a faster (restricted) method
         return new BigInteger(max.subtract(min).bitLength() - 1, random).add(min);
     }
+
+    public static BigInteger fromUnsignedByteArray(byte[] buf)
+    {
+        return new BigInteger(1, buf);
+    }
+
+    public static BigInteger fromUnsignedByteArray(byte[] buf, int off, int length)
+    {
+        byte[] mag = buf;
+        if (off != 0 || length != buf.length)
+        {
+            mag = new byte[length];
+            System.arraycopy(buf, off, mag, 0, length);
+        }
+        return new BigInteger(1, mag);
+    }
 }
