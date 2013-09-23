@@ -7,7 +7,9 @@ import junit.framework.TestCase;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.WNafMultiplier;
 
 /**
  * Compares the performance of the the window NAF point multiplication against
@@ -21,9 +23,21 @@ public class ECPointPerformanceTest extends TestCase
     private void randMult(final String curveName) throws Exception
     {
         final X9ECParameters spec = SECNamedCurves.getByName(curveName);
+        ECCurve c = spec.getCurve();
+        ECPoint g = (ECPoint) spec.getG();
 
         final BigInteger n = spec.getN();
-        final ECPoint g = (ECPoint) spec.getG();
+
+        if (c instanceof ECCurve.Fp && c.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
+        {
+            c = c.configure()
+            .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
+            .setMultiplier(new WNafMultiplier())
+            .create();
+
+            g = c.createPoint(g.getX().toBigInteger(), g.getY().toBigInteger());
+        }
+
         final SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
         final BigInteger k = new BigInteger(n.bitLength() - 1, random);
 

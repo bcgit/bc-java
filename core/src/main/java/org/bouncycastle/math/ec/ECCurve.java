@@ -75,7 +75,7 @@ public abstract class ECCurve
         return new DoubleAddMultiplier();
     }
 
-    protected boolean supportsCoordinateSystem(int coord)
+    public boolean supportsCoordinateSystem(int coord)
     {
         return coord == COORD_AFFINE;
     }
@@ -205,9 +205,22 @@ public abstract class ECCurve
         public ECCurve createCurve(Config builder)
         {
             Fp c = new Fp(q, r, a, b);
+            c.coord = builder.coord;
             c.multiplier = builder.multiplier;
             return c;
         }
+
+//        public boolean supportsCoordinateSystem(int coord)
+//        {
+//            switch (coord)
+//            {
+//            case COORD_AFFINE:
+//            case COORD_JACOBIAN:
+//                return true;
+//            default:
+//                return false;
+//            }
+//        }
 
         public BigInteger getQ()
         {
@@ -517,6 +530,7 @@ public abstract class ECCurve
         public ECCurve createCurve(Config builder)
         {
             F2m c = new F2m(m, k1, k2, k3, a, b, n, h);
+            c.coord = builder.coord;
             c.multiplier = builder.multiplier;
             return c;
         }
