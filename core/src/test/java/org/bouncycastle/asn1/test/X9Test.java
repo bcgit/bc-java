@@ -66,15 +66,22 @@ public class X9Test
         //
         X962Parameters          params = new X962Parameters(X9ObjectIdentifiers.prime192v1);
 
-        ASN1OctetString         p = ASN1OctetString.getInstance(new X9ECPoint(new ECPoint.Fp(ecP.getCurve(), new ECFieldElement.Fp(BigInteger.valueOf(2), BigInteger.valueOf(1)), new ECFieldElement.Fp(BigInteger.valueOf(4), BigInteger.valueOf(3)), true)));
+        // TODO These field elements aren't really valid for the curve, and the encoded element is only 1 byte long as a result
+        // TODO The point should be created using ECCurve.createPoint as below, but the test data has the incorrect values
+//        ECPoint point = ecP.getCurve().createPoint(BigInteger.valueOf(1), BigInteger.valueOf(3), true);
+        ECPoint point = new ECPoint.Fp(ecP.getCurve(), new ECFieldElement.Fp(BigInteger.valueOf(2), BigInteger.valueOf(1)),
+            new ECFieldElement.Fp(BigInteger.valueOf(4), BigInteger.valueOf(3)), true);
+
+        ASN1OctetString         p = ASN1OctetString.getInstance(new X9ECPoint(point));
 
         SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
+        byte[] infoEncoded = info.getEncoded();
 
-        if (!areEqual(info.getEncoded(), namedPub))
+        if (!areEqual(infoEncoded, namedPub))
         {
             fail("failed public named generation");
         }
-        
+
         ASN1InputStream         aIn = new ASN1InputStream(new ByteArrayInputStream(namedPub));
         ASN1Primitive o = aIn.readObject();
         
@@ -115,8 +122,6 @@ public class X9Test
         // named curve
         //
         X962Parameters          params = new X962Parameters(X9ObjectIdentifiers.prime192v1);
-
-        ASN1OctetString         p = ASN1OctetString.getInstance(new X9ECPoint(new ECPoint.Fp(ecP.getCurve(), new ECFieldElement.Fp(BigInteger.valueOf(2), BigInteger.valueOf(1)), new ECFieldElement.Fp(BigInteger.valueOf(4), BigInteger.valueOf(3)), true)));
 
         PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(BigInteger.valueOf(10)));
 
