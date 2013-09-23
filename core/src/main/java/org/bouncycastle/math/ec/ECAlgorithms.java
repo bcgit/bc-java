@@ -59,8 +59,11 @@ public class ECAlgorithms
     private static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
+        P = P.normalize();
+        Q = Q.normalize();
+        ECPoint Z = P.add(Q).normalize();
+
         int m = Math.max(k.bitLength(), l.bitLength());
-        ECPoint Z = P.add(Q);
         ECPoint R = P.getCurve().getInfinity();
 
         for (int i = m - 1; i >= 0; --i)
