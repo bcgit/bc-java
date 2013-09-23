@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * base class for points on elliptic curves.
@@ -121,7 +122,7 @@ public abstract class ECPoint
             return o.isInfinity();
         }
 
-        return x.equals(o.x) && y.equals(o.y);
+        return x.equals(o.x) && y.equals(o.y) && Arrays.areEqual(zs, o.zs);
     }
 
     public int hashCode()
@@ -131,7 +132,7 @@ public abstract class ECPoint
             return 0;
         }
         
-        return x.hashCode() ^ y.hashCode();
+        return x.hashCode() ^ y.hashCode() ^ Arrays.hashCode(zs);
     }
 
     /**
@@ -227,7 +228,6 @@ public abstract class ECPoint
      */
     public static class Fp extends ECPoint
     {
-        
         /**
          * Create a point which encodes with point compression.
          * 
@@ -262,6 +262,11 @@ public abstract class ECPoint
             }
 
             this.withCompression = withCompression;
+        }
+
+        protected Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
+        {
+            super(curve, x, y, zs);
         }
 
         protected boolean getCompressionYTilde()
