@@ -11,7 +11,6 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -42,9 +41,9 @@ public class ECPointTest extends TestCase
 
         private final BigInteger b = new BigInteger("20");
 
-        private final ECCurve.Fp curve = new ECCurve.Fp(q, a, b);
+        private final ECCurve curve = new ECCurve.Fp(q, a, b);
 
-        private final ECPoint.Fp infinity = (ECPoint.Fp) curve.getInfinity();
+        private final ECPoint infinity = curve.getInfinity();
 
         private final int[] pointSource = { 5, 22, 16, 27, 13, 6, 14, 6 };
 
@@ -165,12 +164,12 @@ public class ECPointTest extends TestCase
      */
     private void implTestAdd(ECPoint[] p, ECPoint infinity)
     {
-        assertEquals("p0 plus p1 does not equal p2", p[2], p[0].add(p[1]));
-        assertEquals("p1 plus p0 does not equal p2", p[2], p[1].add(p[0]));
+        assertEqualsNormalized("p0 plus p1 does not equal p2", p[2], p[0].add(p[1]));
+        assertEqualsNormalized("p1 plus p0 does not equal p2", p[2], p[1].add(p[0]));
         for (int i = 0; i < p.length; i++)
         {
-            assertEquals("Adding infinity failed", p[i], p[i].add(infinity));
-            assertEquals("Adding to infinity failed", p[i], infinity.add(p[i]));
+            assertEqualsNormalized("Adding infinity failed", p[i], p[i].add(infinity));
+            assertEqualsNormalized("Adding to infinity failed", p[i], infinity.add(p[i]));
         }
     }
 
@@ -192,8 +191,8 @@ public class ECPointTest extends TestCase
      */
     private void implTestTwice(ECPoint[] p)
     {
-        assertEquals("Twice incorrect", p[3], p[0].twice());
-        assertEquals("Add same point incorrect", p[3], p[0].add(p[0]));
+        assertEqualsNormalized("Twice incorrect", p[3], p[0].twice());
+        assertEqualsNormalized("Add same point incorrect", p[3], p[0].add(p[0]));
     }
 
     /**
@@ -210,8 +209,8 @@ public class ECPointTest extends TestCase
     {
         ECPoint P = p[0];
         ECPoint _3P = P.add(P).add(P);
-        assertEquals("ThreeTimes incorrect", _3P, P.threeTimes());
-        assertEquals("TwicePlus incorrect", _3P, P.twicePlus(P));
+        assertEqualsNormalized("ThreeTimes incorrect", _3P, P.threeTimes());
+        assertEqualsNormalized("TwicePlus incorrect", _3P, P.twicePlus(P));
     }
 
     /**
@@ -239,14 +238,15 @@ public class ECPointTest extends TestCase
     {
         ECPoint adder = infinity;
         ECPoint multiplier = infinity;
-        int i = 1;
+
+        BigInteger i = BigInteger.valueOf(1);
         do
         {
             adder = adder.add(p);
-            multiplier = p.multiply(new BigInteger(Integer.toString(i)));
-            assertEquals("Results of add() and multiply() are inconsistent "
+            multiplier = p.multiply(i);
+            assertEqualsNormalized("Results of add() and multiply() are inconsistent "
                     + i, adder, multiplier);
-            i++;
+            i = i.add(BigInteger.ONE);
         }
         while (!(adder.equals(infinity)));
     }
@@ -328,14 +328,14 @@ public class ECPointTest extends TestCase
      */
     private void implTestMultiplyAll(ECPoint p, int numBits)
     {
-        BigInteger bound = BigInteger.valueOf(2).pow(numBits);
+        BigInteger bound = BigInteger.ONE.shiftLeft(numBits);
         BigInteger k = BigInteger.ZERO;
 
         do
         {
             ECPoint ref = multiply(p, k);
             ECPoint q = p.multiply(k);
-            assertEquals("ECPoint.multiply is incorrect", ref, q);
+            assertEqualsNormalized("ECPoint.multiply is incorrect", ref, q);
             k = k.add(BigInteger.ONE);
         }
         while (k.compareTo(bound) < 0);
@@ -352,14 +352,14 @@ public class ECPointTest extends TestCase
      */
     private void implTestAddSubtract(ECPoint p, ECPoint infinity)
     {
-        assertEquals("Twice and Add inconsistent", p.twice(), p.add(p));
-        assertEquals("Twice p - p is not p", p, p.twice().subtract(p));
-        assertEquals("TwicePlus(p, -p) is not p", p, p.twicePlus(p.negate()));
-        assertEquals("p - p is not infinity", infinity, p.subtract(p));
-        assertEquals("p plus infinity is not p", p, p.add(infinity));
-        assertEquals("infinity plus p is not p", p, infinity.add(p));
-        assertEquals("infinity plus infinity is not infinity ", infinity, infinity.add(infinity));
-        assertEquals("Twice infinity is not infinity ", infinity, infinity.twice());
+        assertEqualsNormalized("Twice and Add inconsistent", p.twice(), p.add(p));
+        assertEqualsNormalized("Twice p - p is not p", p, p.twice().subtract(p));
+        assertEqualsNormalized("TwicePlus(p, -p) is not p", p, p.twicePlus(p.negate()));
+        assertEqualsNormalized("p - p is not infinity", infinity, p.subtract(p));
+        assertEqualsNormalized("p plus infinity is not p", p, p.add(infinity));
+        assertEqualsNormalized("infinity plus p is not p", p, infinity.add(p));
+        assertEqualsNormalized("infinity plus infinity is not infinity ", infinity, infinity.add(infinity));
+        assertEqualsNormalized("Twice infinity is not infinity ", infinity, infinity.twice());
     }
 
     /**
@@ -396,21 +396,10 @@ public class ECPointTest extends TestCase
     private void implTestEncoding(ECPoint p)
     {
         // Not Point Compression
-        ECPoint unCompP;
+        ECPoint unCompP = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), false);
 
         // Point compression
-        ECPoint compP;
-
-        if (p instanceof ECPoint.Fp)
-        {
-            unCompP = new ECPoint.Fp(p.getCurve(), p.getX(), p.getY(), false);
-            compP = new ECPoint.Fp(p.getCurve(), p.getX(), p.getY(), true);
-        }
-        else
-        {
-            unCompP = new ECPoint.F2m(p.getCurve(), p.getX(), p.getY(), false);
-            compP = new ECPoint.F2m(p.getCurve(), p.getX(), p.getY(), true);
-        }
+        ECPoint compP = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
 
         byte[] unCompBarr = unCompP.getEncoded();
         ECPoint decUnComp = p.getCurve().decodePoint(unCompBarr);
@@ -449,6 +438,11 @@ public class ECPointTest extends TestCase
             implTestMultiply(infinity, n.bitLength());
             implTestEncoding(q);
         }
+    }
+
+    private void assertEqualsNormalized(String message, ECPoint a, ECPoint b)
+    {
+        assertEquals(message, a.normalize(), b.normalize());
     }
 
     public static Test suite()
