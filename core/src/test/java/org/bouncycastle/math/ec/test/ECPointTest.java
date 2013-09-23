@@ -311,7 +311,7 @@ public class ECPointTest extends TestCase
         BigInteger k = new BigInteger(numBits, secRand);
         ECPoint ref = multiply(p, k);
         ECPoint q = p.multiply(k);
-        assertEquals("ECPoint.multiply is incorrect", ref, q);
+        assertEqualsNormalized("ECPoint.multiply is incorrect", ref, q);
     }
 
     /**
@@ -403,11 +403,11 @@ public class ECPointTest extends TestCase
 
         byte[] unCompBarr = unCompP.getEncoded();
         ECPoint decUnComp = p.getCurve().decodePoint(unCompBarr);
-        assertEquals("Error decoding uncompressed point", p, decUnComp);
+        assertEqualsNormalized("Error decoding uncompressed point", p, decUnComp);
 
         byte[] compBarr = compP.getEncoded();
         ECPoint decComp = p.getCurve().decodePoint(compBarr);
-        assertEquals("Error decoding compressed point", p, decComp);
+        assertEqualsNormalized("Error decoding compressed point", p, decComp);
     }
 
     /**
