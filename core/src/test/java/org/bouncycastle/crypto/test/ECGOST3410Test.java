@@ -47,9 +47,9 @@ public class ECGOST3410Test
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("2")), // x
-                curve.fromBigInteger(new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280"))), // y
+            curve.createPoint(
+                new BigInteger("2"), // x
+                new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280")), // y
             new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619")); // q
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
@@ -84,9 +84,9 @@ public class ECGOST3410Test
 
         // Verify the signature
         ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("57520216126176808443631405023338071176630104906313632182896741342206604859403")), // x
-                curve.fromBigInteger(new BigInteger("17614944419213781543809391949654080031942662045363639260709847859438286763994"))), // y
+            curve.createPoint(
+                new BigInteger("57520216126176808443631405023338071176630104906313632182896741342206604859403"), // x
+                new BigInteger("17614944419213781543809391949654080031942662045363639260709847859438286763994")), // y
             params);
 
         ecgost3410.init(false, pubKey);
@@ -114,9 +114,9 @@ public class ECGOST3410Test
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("2")), // x
-                curve.fromBigInteger(new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280"))), // y
+            curve.createPoint(
+                new BigInteger("2"), // x
+                new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280")), // y
             new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619")); // q
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();
@@ -169,9 +169,9 @@ public class ECGOST3410Test
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("1")), // x
-                curve.fromBigInteger(new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612"))), // y
+            curve.createPoint(
+                new BigInteger("1"), // x
+                new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612")), // y
             new BigInteger("115792089237316195423570985008687907853073762908499243225378155805079068850323")); // q
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();
@@ -217,9 +217,9 @@ public class ECGOST3410Test
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("1")), // x
-                curve.fromBigInteger(new BigInteger("28792665814854611296992347458380284135028636778229113005756334730996303888124"))), // y
+            curve.createPoint(
+                new BigInteger("1"), // x
+                new BigInteger("28792665814854611296992347458380284135028636778229113005756334730996303888124")), // y
             new BigInteger("57896044618658097711785492504343953927102133160255826820068844496087732066703")); // q
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();
@@ -265,9 +265,9 @@ public class ECGOST3410Test
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("0")), // x
-                curve.fromBigInteger(new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247"))), // y
+            curve.createPoint(
+                new BigInteger("0"), // x
+                new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247")), // y
             new BigInteger("70390085352083305199547718019018437840920882647164081035322601458352298396601")); // q
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();

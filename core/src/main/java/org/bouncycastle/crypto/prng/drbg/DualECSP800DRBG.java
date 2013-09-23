@@ -90,8 +90,8 @@ public class DualECSP800DRBG
             _seedlen = 256;
             _outlen = 240 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-256").getCurve();
-            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p256_Px), _curve.fromBigInteger(p256_Py));
-            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p256_Qx), _curve.fromBigInteger(p256_Qy));
+            _P = _curve.createPoint(p256_Px, p256_Py);
+            _Q = _curve.createPoint(p256_Qx, p256_Qy);
         }
         else if (securityStrength <= 192)
         {
@@ -102,8 +102,8 @@ public class DualECSP800DRBG
             _seedlen = 384;
             _outlen = 368 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
-            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p384_Px), _curve.fromBigInteger(p384_Py));
-            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p384_Qx), _curve.fromBigInteger(p384_Qy));
+            _P = _curve.createPoint(p384_Px, p384_Py);
+            _Q = _curve.createPoint(p384_Qx, p384_Qy);
         }
         else if (securityStrength <= 256)
         {
@@ -114,8 +114,8 @@ public class DualECSP800DRBG
             _seedlen = 521;
             _outlen = 504 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
-            _P = new ECPoint.Fp(_curve, _curve.fromBigInteger(p521_Px), _curve.fromBigInteger(p521_Py));
-            _Q = new ECPoint.Fp(_curve, _curve.fromBigInteger(p521_Qx), _curve.fromBigInteger(p521_Qy));
+            _P = _curve.createPoint(p521_Px, p521_Py);
+            _Q = _curve.createPoint(p521_Qx, p521_Qy);
         }
         else
         {
