@@ -90,7 +90,7 @@ public abstract class ECPoint
     public ECFieldElement getAffineYCoord()
     {
         assertNormalized();
-        return x;
+        return y;
     }
 
     public ECFieldElement getXCoord()
@@ -100,7 +100,7 @@ public abstract class ECPoint
 
     public ECFieldElement getYCoord()
     {
-        return x;
+        return y;
     }
 
     public ECFieldElement getZCoord(int index)
