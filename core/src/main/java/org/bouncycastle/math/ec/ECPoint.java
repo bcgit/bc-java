@@ -92,9 +92,53 @@ public abstract class ECPoint
         return copy;
     }
 
+    public ECPoint normalize()
+    {
+        if (isInfinity())
+        {
+            return this;
+        }
+
+        ECCurve curve = getCurve();
+        int coord = curve.getCoordinateSystem();
+        if (coord == ECCurve.COORD_AFFINE || zs.length == 0)
+        {
+            return this;
+        }
+
+        ECFieldElement Z1 = zs[0];
+        if (Z1.bitLength() == 1)
+        {
+            return this;
+        }
+
+        ECFieldElement zInv = Z1.invert();
+
+        switch (curve.getCoordinateSystem())
+        {
+        case ECCurve.COORD_HOMOGENEOUS:
+            return createScaledPoint(zInv, zInv);
+        case ECCurve.COORD_JACOBIAN:
+        case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
+        case ECCurve.COORD_JACOBIAN_MODIFIED:
+        {
+            ECFieldElement zInvSquared = zInv.square();
+            ECFieldElement zInvCubed = zInvSquared.multiply(zInv);
+            return createScaledPoint(zInvSquared, zInvCubed);
+        }
+        default:
+            throw new IllegalArgumentException("unknown coordinate system");
+        }
+    }
+
+    protected ECPoint createScaledPoint(ECFieldElement sx, ECFieldElement sy)
+    {
+        return curve.createPoint(getX().multiply(sx).toBigInteger(), getY().multiply(sy).toBigInteger());
+    }
+
     public boolean isInfinity()
     {
-        return x == null && y == null;
+        return (x == null && y == null) || (zs.length > 0 && zs[0].isZero());
     }
 
     public boolean isCompressed()
@@ -162,18 +206,22 @@ public abstract class ECPoint
             return new byte[1];
         }
 
-        int length = converter.getByteLength(getX());
-        byte[] X = converter.integerToBytes(getX().toBigInteger(), length);
+        ECPoint normed = normalize();
+        ECFieldElement x = normed.getX();
+
+        int length = converter.getByteLength(x);
+        byte[] X = converter.integerToBytes(x.toBigInteger(), length);
 
         if (compressed)
         {
             byte[] PO = new byte[X.length + 1];
-            PO[0] = (byte)(getCompressionYTilde() ? 0x03 : 0x02);
+            PO[0] = (byte)(normed.getCompressionYTilde() ? 0x03 : 0x02);
             System.arraycopy(X, 0, PO, 1, X.length);
             return PO;
         }
 
-        byte[] Y = converter.integerToBytes(getY().toBigInteger(), length);
+        ECFieldElement y = normed.getY();
+        byte[] Y = converter.integerToBytes(y.toBigInteger(), length);
         byte[] PO = new byte[X.length + Y.length + 1];
         PO[0] = 0x04;
         System.arraycopy(X, 0, PO, 1, X.length);
@@ -290,6 +338,54 @@ public abstract class ECPoint
                 return twice();
             }
 
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            if (coord == ECCurve.COORD_JACOBIAN)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
+                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0];
+
+                ECFieldElement Z1Squared = Z1.square(), Z2Squared = Z2.square();
+                ECFieldElement U1 = Z2Squared.multiply(X1); 
+                ECFieldElement U2 = Z1Squared.multiply(X2);
+                ECFieldElement H = U1.subtract(U2);
+                ECFieldElement Z1Cubed = Z1Squared.multiply(Z1);
+                ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
+                ECFieldElement S1 = Z2Cubed.multiply(Y1);
+                ECFieldElement S2 = Z1Cubed.multiply(Y2);
+                ECFieldElement R = S1.subtract(S2);
+
+                // Check if b == this or b == -this
+                if (H.isZero())
+                {
+                    if (R.isZero())
+                    {
+                        // this == b, i.e. this must be doubled
+                        return this.twice();
+                    }
+
+                    // this == -b, i.e. the result is the point at infinity
+                    return curve.getInfinity();
+                }
+
+                ECFieldElement HSquared = H.square();
+                ECFieldElement G = HSquared.multiply(H);
+                ECFieldElement V = HSquared.multiply(U1);
+                
+                ECFieldElement X3 = R.square().add(G).subtract(two(V));
+                ECFieldElement Y3 = V.subtract(X3).multiply(R).subtract(S1.multiply(G));
+                ECFieldElement Z3 = Z1.multiply(Z2).multiply(H);
+
+                // Alternative when a fast squaring is available
+//                ECFieldElement _2Z1Z2 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared);
+//                X3 = two(X3);
+//                Y3 = two(Y3);
+//                ECFieldElement Z3 = _2Z1Z2.multiply(H);
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+            }
+
             ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
 
             if (dx.isZero())
@@ -301,7 +397,7 @@ public abstract class ECPoint
                 }
 
                 // this == -b, i.e. the result is the point at infinity
-                return getCurve().getInfinity();
+                return curve.getInfinity();
             }
 
             ECFieldElement gamma = dy.divide(dx);
@@ -324,6 +420,33 @@ public abstract class ECPoint
                 // if y1 == 0, then (x1, y1) == (x1, -y1)
                 // and hence this = -this and thus 2(x1, y1) == infinity
                 return getCurve().getInfinity();
+            }
+
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            if (coord == ECCurve.COORD_JACOBIAN)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
+
+                ECFieldElement X1Squared = X1.square();
+                ECFieldElement Y1Squared = Y1.square();
+                ECFieldElement Z1Squared = Z1.square();
+
+                // TODO curve.getA() (a4) is commonly -3 and this could be done a little quicker
+                ECFieldElement M = three(X1Squared).add(Z1Squared.square().multiply(curve.getA()));
+                ECFieldElement T = Y1Squared.square();
+                ECFieldElement S = four(Y1Squared.multiply(X1));
+
+                ECFieldElement X3 = M.square().subtract(two(S));
+                ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
+                ECFieldElement Z3 = two(Y1.multiply(Z1));
+
+                // Alternative when a fast squaring is available
+//                ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+//                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
 
             ECFieldElement X = this.x.square();
@@ -349,6 +472,14 @@ public abstract class ECPoint
                 return threeTimes();
             }
 
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            if (coord == ECCurve.COORD_JACOBIAN)
+            {
+                return twice().add(b);
+            }
+
             /*
              * Optimized calculation of 2P + Q, as described in "Trading Inversions for
              * Multiplications in Elliptic Curve Cryptography", by Ciet, Joye, Lauter, Montgomery.
@@ -371,7 +502,7 @@ public abstract class ECPoint
             ECFieldElement d = X.multiply(two(this.x).add(b.x)).subtract(Y);
             if (d.isZero())
             {
-                return getCurve().getInfinity();
+                return curve.getInfinity();
             }
             ECFieldElement D = d.multiply(dx);
             ECFieldElement I = D.invert();
@@ -417,7 +548,23 @@ public abstract class ECPoint
 
         protected ECFieldElement three(ECFieldElement x)
         {
-            return x.add(x).add(x);
+            return two(x).add(x);
+        }
+
+        protected ECFieldElement four(ECFieldElement x)
+        {
+            return two(two(x));
+        }
+
+        protected ECFieldElement eight(ECFieldElement x)
+        {
+            return four(two(x));
+        }
+
+        protected ECFieldElement doubleProductFromSquares(ECFieldElement a, ECFieldElement b,
+            ECFieldElement aSquared, ECFieldElement bSquared)
+        {
+            return a.add(b).square().subtract(aSquared).subtract(bSquared);
         }
 
         // D.3.2 pg 102 (see Note:)
