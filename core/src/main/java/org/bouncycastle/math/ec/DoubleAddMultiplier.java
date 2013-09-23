@@ -2,7 +2,7 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-class DoubleAddMultiplier implements ECMultiplier
+public class DoubleAddMultiplier implements ECMultiplier
 {
     /**
      * Joye's double-add algorithm.

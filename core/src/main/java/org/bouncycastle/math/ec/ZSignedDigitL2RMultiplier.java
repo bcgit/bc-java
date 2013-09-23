@@ -2,7 +2,7 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-class ZSignedDigitL2RMultiplier implements ECMultiplier
+public class ZSignedDigitL2RMultiplier implements ECMultiplier
 {
     /**
      * 'Zeroless' Signed Digit Left-to-Right.

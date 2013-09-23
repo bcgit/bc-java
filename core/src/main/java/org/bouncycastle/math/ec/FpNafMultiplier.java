@@ -5,7 +5,7 @@ import java.math.BigInteger;
 /**
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm.
  */
-class FpNafMultiplier implements ECMultiplier
+public class FpNafMultiplier implements ECMultiplier
 {
     /**
      * D.3.2 pg 101

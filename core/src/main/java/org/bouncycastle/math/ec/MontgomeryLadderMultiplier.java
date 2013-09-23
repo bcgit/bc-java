@@ -2,7 +2,7 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-class MontgomeryLadderMultiplier implements ECMultiplier
+public class MontgomeryLadderMultiplier implements ECMultiplier
 {
     /**
      * Montgomery ladder.
