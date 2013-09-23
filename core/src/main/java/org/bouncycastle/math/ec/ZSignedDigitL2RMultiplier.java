@@ -9,6 +9,7 @@ public class ZSignedDigitL2RMultiplier implements ECMultiplier
      */
     public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
     {
+        p = p.normalize();
         ECPoint R0 = p, negP = p.negate();
 
         int n = k.bitLength();

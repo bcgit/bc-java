@@ -174,7 +174,7 @@ public class WNafMultiplier implements ECMultiplier
         {
             // Precomputation must be performed from scratch, create an empty
             // precomputation array of desired length
-            preComp = new ECPoint[]{ p };
+            preComp = new ECPoint[]{ p.normalize() };
         }
         else
         {
@@ -201,7 +201,7 @@ public class WNafMultiplier implements ECMultiplier
                 // Compute the new ECPoints for the precomputation array.
                 // The values 1, 3, 5, ..., 2^(width-1)-1 times p are
                 // computed
-                preComp[i] = twiceP.add(preComp[i - 1]);
+                preComp[i] = twiceP.add(preComp[i - 1]).normalize();
             }            
         }
 

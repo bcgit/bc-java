@@ -18,6 +18,8 @@ public class FpNafMultiplier implements ECMultiplier
         BigInteger e = k;
         BigInteger h = e.shiftLeft(1).add(e);
 
+        p = p.normalize();
+
         ECPoint neg = p.negate();
         ECPoint R = p;
 
