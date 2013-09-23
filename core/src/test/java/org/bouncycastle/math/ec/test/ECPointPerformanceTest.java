@@ -28,7 +28,8 @@ public class ECPointPerformanceTest extends TestCase
 
         final BigInteger n = spec.getN();
 
-        if (c instanceof ECCurve.Fp && c.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
+        if (c instanceof ECCurve.Fp && c.getCoordinateSystem() != ECCurve.COORD_JACOBIAN
+            && c.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
         {
             c = c.configure()
                 .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
