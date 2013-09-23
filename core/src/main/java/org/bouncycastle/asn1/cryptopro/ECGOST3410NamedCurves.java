@@ -30,9 +30,9 @@ public class ECGOST3410NamedCurves
 
         ECDomainParameters ecParams = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("1")), // x
-                curve.fromBigInteger(new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612"))), // y
+            curve.createPoint(
+                new BigInteger("1"), // x
+                new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612")), // y
             mod_q);
 
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A, ecParams);  
@@ -47,9 +47,9 @@ public class ECGOST3410NamedCurves
 
         ecParams = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("1")), // x
-                curve.fromBigInteger(new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612"))), // y
+            curve.createPoint(
+                new BigInteger("1"), // x
+                new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612")), // y
             mod_q);
 
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA, ecParams); 
@@ -64,9 +64,9 @@ public class ECGOST3410NamedCurves
 
         ecParams = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("1")), // x
-                curve.fromBigInteger(new BigInteger("28792665814854611296992347458380284135028636778229113005756334730996303888124"))), // y
+            curve.createPoint(
+                new BigInteger("1"), // x
+                new BigInteger("28792665814854611296992347458380284135028636778229113005756334730996303888124")), // y
             mod_q); // q
 
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B, ecParams);  
@@ -81,9 +81,9 @@ public class ECGOST3410NamedCurves
 
         ecParams = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("0")),
-                curve.fromBigInteger(new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247"))),
+            curve.createPoint(
+                new BigInteger("0"),
+                new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247")),
             mod_q);
 
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB, ecParams);  
@@ -97,9 +97,9 @@ public class ECGOST3410NamedCurves
 
         ecParams = new ECDomainParameters(
             curve,
-            new ECPoint.Fp(curve,
-                curve.fromBigInteger(new BigInteger("0")), // x
-                curve.fromBigInteger(new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247"))), // y
+            curve.createPoint(
+                new BigInteger("0"), // x
+                new BigInteger("29818893917731240733471273240314769927240550812383695689146495261604565990247")), // y
             mod_q); // q
 
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C, ecParams); 

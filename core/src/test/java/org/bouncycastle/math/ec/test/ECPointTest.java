@@ -48,7 +48,7 @@ public class ECPointTest extends TestCase
 
         private final int[] pointSource = { 5, 22, 16, 27, 13, 6, 14, 6 };
 
-        private ECPoint.Fp[] p = new ECPoint.Fp[pointSource.length / 2];
+        private ECPoint[] p = new ECPoint[pointSource.length / 2];
 
         /**
          * Creates the points on the curve with literature values.
@@ -57,9 +57,9 @@ public class ECPointTest extends TestCase
         {
             for (int i = 0; i < pointSource.length / 2; i++)
             {
-                ECFieldElement x = curve.fromBigInteger(new BigInteger(Integer.toString(pointSource[2 * i])));
-                ECFieldElement y = curve.fromBigInteger(new BigInteger(Integer.toString(pointSource[2 * i + 1])));
-                p[i] = new ECPoint.Fp(curve, x, y);
+                p[i] = curve.createPoint(
+                    new BigInteger(Integer.toString(pointSource[2 * i])),
+                    new BigInteger(Integer.toString(pointSource[2 * i + 1])));
             }
         }
     }
@@ -75,22 +75,19 @@ public class ECPointTest extends TestCase
         private final int k1 = 1;
 
         // a = z^3
-        private final ECFieldElement.F2m aTpb = new ECFieldElement.F2m(m, k1,
-                new BigInteger("1000", 2));
+        private final BigInteger aTpb = new BigInteger("1000", 2);
 
         // b = z^3 + 1
-        private final ECFieldElement.F2m bTpb = new ECFieldElement.F2m(m, k1,
-                new BigInteger("1001", 2));
+        private final BigInteger bTpb = new BigInteger("1001", 2);
 
-        private final ECCurve.F2m curve = new ECCurve.F2m(m, k1, aTpb
-                .toBigInteger(), bTpb.toBigInteger());
+        private final ECCurve.F2m curve = new ECCurve.F2m(m, k1, aTpb, bTpb);
 
         private final ECPoint.F2m infinity = (ECPoint.F2m) curve.getInfinity();
 
         private final String[] pointSource = { "0010", "1111", "1100", "1100",
                 "0001", "0001", "1011", "0010" };
 
-        private ECPoint.F2m[] p = new ECPoint.F2m[pointSource.length / 2];
+        private ECPoint[] p = new ECPoint[pointSource.length / 2];
 
         /**
          * Creates the points on the curve with literature values.
@@ -99,11 +96,9 @@ public class ECPointTest extends TestCase
         {
             for (int i = 0; i < pointSource.length / 2; i++)
             {
-                ECFieldElement.F2m x = new ECFieldElement.F2m(m, k1,
-                        new BigInteger(pointSource[2 * i], 2));
-                ECFieldElement.F2m y = new ECFieldElement.F2m(m, k1,
-                        new BigInteger(pointSource[2 * i + 1], 2));
-                p[i] = new ECPoint.F2m(curve, x, y);
+                p[i] = curve.createPoint(
+                    new BigInteger(pointSource[2 * i], 2),
+                    new BigInteger(pointSource[2 * i + 1], 2));
             }
         }
     }
@@ -125,7 +120,7 @@ public class ECPointTest extends TestCase
     {
         try
         {
-            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, fp.curve.fromBigInteger(new BigInteger("12")), null);
+            ECPoint bad = fp.curve.createPoint(new BigInteger("12"), null);
             fail();
         }
         catch (IllegalArgumentException expected)
@@ -134,7 +129,7 @@ public class ECPointTest extends TestCase
 
         try
         {
-            ECPoint.Fp bad = new ECPoint.Fp(fp.curve, null, fp.curve.fromBigInteger(new BigInteger("12")));
+            ECPoint bad = fp.curve.createPoint(null, new BigInteger("12"));
             fail();
         }
         catch (IllegalArgumentException expected)
@@ -143,8 +138,7 @@ public class ECPointTest extends TestCase
 
         try
         {
-            ECPoint.F2m bad = new ECPoint.F2m(f2m.curve, new ECFieldElement.F2m(
-                    f2m.m, f2m.k1, new BigInteger("1011")), null);
+            ECPoint bad = f2m.curve.createPoint(new BigInteger("1011"), null);
             fail();
         }
         catch (IllegalArgumentException expected)
@@ -153,9 +147,7 @@ public class ECPointTest extends TestCase
 
         try
         {
-            ECPoint.F2m bad = new ECPoint.F2m(f2m.curve, null,
-                    new ECFieldElement.F2m(f2m.m, f2m.k1,
-                            new BigInteger("1011")));
+            ECPoint bad = f2m.curve.createPoint(null, new BigInteger("1011"));
             fail();
         }
         catch (IllegalArgumentException expected)
