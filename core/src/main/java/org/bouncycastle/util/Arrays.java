@@ -11,7 +11,7 @@ public final class Arrays
     {
         // static class, hide constructor
     }
-    
+
     public static boolean areEqual(
         boolean[]  a,
         boolean[]  b)
@@ -199,33 +199,35 @@ public final class Arrays
         return true;
     }
 
-    public static boolean areEqual(
-        BigInteger[]  a,
-        BigInteger[]  b)
+    public static boolean areEqual(Object[] a, Object[] b)
     {
         if (a == b)
         {
             return true;
         }
-
         if (a == null || b == null)
         {
             return false;
         }
-
         if (a.length != b.length)
         {
             return false;
         }
-
         for (int i = 0; i != a.length; i++)
         {
-            if (!a[i].equals(b[i]))
+            Object objA = a[i], objB = b[i];
+            if (objA == null)
+            {
+                if (objB != null)
+                {
+                    return false;
+                }
+            }
+            else if (!objA.equals(objB))
             {
                 return false;
             }
         }
-
         return true;
     }
 
