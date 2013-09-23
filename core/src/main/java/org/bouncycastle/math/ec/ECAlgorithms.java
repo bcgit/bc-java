@@ -8,7 +8,7 @@ public class ECAlgorithms
         ECPoint Q, BigInteger b)
     {
         ECCurve c = P.getCurve();
-        if (!c.equals(Q.getCurve()))
+        if (c != Q.getCurve())
         {
             throw new IllegalArgumentException("P and Q must be on same curve");
         }
@@ -48,7 +48,7 @@ public class ECAlgorithms
     public static ECPoint shamirsTrick(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
-        if (!P.getCurve().equals(Q.getCurve()))
+        if (P.getCurve() != Q.getCurve())
         {
             throw new IllegalArgumentException("P and Q must be on same curve");
         }
