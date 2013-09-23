@@ -128,11 +128,11 @@ public class ECIESKeyEncapsulation
             rPrime = r;
         }
 
-        ECPoint hTilde = ((ECPublicKeyParameters)key).getQ().multiply(rPrime);
+        ECPoint hTilde = ((ECPublicKeyParameters)key).getQ().multiply(rPrime).normalize();
 
         // Encode the shared secret value
         int PEHlen = (key.getParameters().getCurve().getFieldSize() + 7) / 8;
-        byte[] PEH = BigIntegers.asUnsignedByteArray(PEHlen, hTilde.getX().toBigInteger());
+        byte[] PEH = BigIntegers.asUnsignedByteArray(PEHlen, hTilde.getAffineXCoord().toBigInteger());
 
         // Initialise the KDF
         byte[] kdfInput;
@@ -215,11 +215,11 @@ public class ECIESKeyEncapsulation
             xHat = ((ECPrivateKeyParameters)key).getD();
         }
 
-        ECPoint hTilde = gHat.multiply(xHat);
+        ECPoint hTilde = gHat.multiply(xHat).normalize();
 
         // Encode the shared secret value
         int PEHlen = (key.getParameters().getCurve().getFieldSize() + 7) / 8;
-        byte[] PEH = BigIntegers.asUnsignedByteArray(PEHlen, hTilde.getX().toBigInteger());
+        byte[] PEH = BigIntegers.asUnsignedByteArray(PEHlen, hTilde.getAffineXCoord().toBigInteger());
 
         // Initialise the KDF
         byte[] kdfInput;

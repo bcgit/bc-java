@@ -72,7 +72,7 @@ public class DSTU4145Signer
                 do
                 {
                     e = generateRandomInteger(key.getParameters().getN(), random);
-                    Fe = key.getParameters().getG().multiply(e).getX();
+                    Fe = key.getParameters().getG().multiply(e).normalize().getAffineXCoord();
                 }
                 while (Fe.isZero());
 
@@ -105,7 +105,7 @@ public class DSTU4145Signer
             h = key.getParameters().getCurve().fromBigInteger(ONE);
         }
 
-        ECPoint R = ECAlgorithms.sumOfTwoMultiplies(key.getParameters().getG(), s, ((ECPublicKeyParameters)key).getQ(), r);
+        ECPoint R = ECAlgorithms.sumOfTwoMultiplies(key.getParameters().getG(), s, ((ECPublicKeyParameters)key).getQ(), r).normalize();
 
         // components must be bogus.
         if (R.isInfinity())
@@ -113,7 +113,7 @@ public class DSTU4145Signer
             return false;
         }
 
-        ECFieldElement y = h.multiply(R.getX());
+        ECFieldElement y = h.multiply(R.getAffineXCoord());
         return fieldElement2Integer(key.getParameters().getN(), y).compareTo(r) == 0;
     }
 

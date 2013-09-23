@@ -101,8 +101,8 @@ public class ECNRSigner
 
             //    BigInteger Vx = tempPair.getPublic().getW().getAffineX();
             ECPublicKeyParameters V = (ECPublicKeyParameters)tempPair.getPublic();        // get temp's public key
-            BigInteger Vx = V.getQ().getX().toBigInteger();        // get the point's x coordinate
-            
+            BigInteger Vx = V.getQ().normalize().getAffineXCoord().toBigInteger();        // get the point's x coordinate
+
             r = Vx.add(e).mod(n);
         }
         while (r.equals(ECConstants.ZERO));
@@ -172,7 +172,7 @@ public class ECNRSigner
         ECPoint G = pubKey.getParameters().getG();
         ECPoint W = pubKey.getQ();
         // calculate P using Bouncy math
-        ECPoint P = ECAlgorithms.sumOfTwoMultiplies(G, s, W, r);
+        ECPoint P = ECAlgorithms.sumOfTwoMultiplies(G, s, W, r).normalize();
 
         // components must be bogus.
         if (P.isInfinity())
@@ -180,7 +180,7 @@ public class ECNRSigner
             return false;
         }
 
-        BigInteger x = P.getX().toBigInteger();
+        BigInteger x = P.getAffineXCoord().toBigInteger();
         BigInteger t = r.subtract(x).mod(n);
 
         return t.equals(e);

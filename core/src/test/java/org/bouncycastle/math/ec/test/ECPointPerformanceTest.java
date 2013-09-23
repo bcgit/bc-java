@@ -36,7 +36,8 @@ public class ECPointPerformanceTest extends TestCase
                 .setMultiplier(new WNafMultiplier())
                 .create();
 
-            g = c.createPoint(g.getX().toBigInteger(), g.getY().toBigInteger());
+            g = g.normalize();
+            g = c.createPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger());
         }
 
         final SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");

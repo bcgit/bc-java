@@ -171,11 +171,11 @@ public class DualECSP800DRBG
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            _s = _P.multiply(t).getX().toBigInteger().toByteArray();
+            _s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             //System.err.println("S: " + new String(Hex.encode(_s)));
 
-            byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
+            byte[] r = _Q.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             if (r.length > _outlen)
             {
@@ -196,9 +196,9 @@ public class DualECSP800DRBG
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            _s = _P.multiply(t).getX().toBigInteger().toByteArray();
+            _s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
-            byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
+            byte[] r = _Q.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             int required = output.length - (m * _outlen);
 
@@ -213,7 +213,7 @@ public class DualECSP800DRBG
         }
 
         // Need to preserve length of S as unsigned int.
-        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
+        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger());
 
         return numberOfBits;
     }
