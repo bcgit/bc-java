@@ -31,9 +31,9 @@ public class ECPointPerformanceTest extends TestCase
         if (c instanceof ECCurve.Fp && c.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
         {
             c = c.configure()
-            .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
-            .setMultiplier(new WNafMultiplier())
-            .create();
+                .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
+                .setMultiplier(new WNafMultiplier())
+                .create();
 
             g = c.createPoint(g.getX().toBigInteger(), g.getY().toBigInteger());
         }
