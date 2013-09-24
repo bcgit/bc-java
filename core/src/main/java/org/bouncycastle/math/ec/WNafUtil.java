@@ -6,6 +6,24 @@ public abstract class WNafUtil
 {
     private static int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
 
+    public static byte[] generateNaf(BigInteger k)
+    {
+        BigInteger _3k = k.shiftLeft(1).add(k);
+
+        int digits = _3k.bitLength() - 1;
+        byte[] wnaf = new byte[digits];
+
+        for (int i = 1; i <= digits; ++i)
+        {
+            boolean _3kBit = _3k.testBit(i);
+            boolean kBit = k.testBit(i);
+
+            wnaf[i - 1] = (byte)(_3kBit == kBit ? 0 : kBit ? -1 : 1);
+        }
+
+        return wnaf;
+    }
+
     /**
      * Computes the Window NAF (non-adjacent Form) of an integer.
      * @param width The width <code>w</code> of the Window NAF. The width is
@@ -20,6 +38,11 @@ public abstract class WNafUtil
      */
     public static byte[] generateWindowNaf(int width, BigInteger k)
     {
+        if (width == 2)
+        {
+            return generateNaf(k);
+        }
+
         if (width < 2 || width > 8)
         {
             throw new IllegalArgumentException("'width' must be in the range [2, 8]");
