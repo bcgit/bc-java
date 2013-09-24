@@ -18,8 +18,13 @@ public abstract class WNafUtil
      * </code>, where the <code>k<sub>i</sub></code> denote the elements of the
      * returned <code>byte[]</code>.
      */
-    public static byte[] generateWindowNaf(byte width, BigInteger k)
+    public static byte[] generateWindowNaf(int width, BigInteger k)
     {
+        if (width < 2 || width > 8)
+        {
+            throw new IllegalArgumentException("'width' must be in the range [2, 8]");
+        }
+
         // The window NAF is at most 1 element longer than the binary
         // representation of the integer k. byte can be used instead of short or
         // int unless the window width is larger than 8. For larger width use
@@ -28,9 +33,10 @@ public abstract class WNafUtil
         // 1000 Bits are currently not used in practice.
         byte[] wnaf = new byte[k.bitLength() + 1];
 
-        // 2^width as short and BigInteger
-        short pow2wB = (short)(1 << width);
-        BigInteger pow2wBI = BigInteger.valueOf(pow2wB);
+        // 2^width and a mask and sign bit set accordingly
+        int pow2 = 1 << width;
+        int mask = pow2 - 1;
+        int sign = pow2 >>> 1;
 
         int i = 0;
 
@@ -44,20 +50,16 @@ public abstract class WNafUtil
             if (k.testBit(0))
             {
                 // k mod 2^width
-                BigInteger remainder = k.mod(pow2wBI);
+                int digit = k.intValue() & mask;
+                if ((digit & sign) != 0)
+                {
+                    digit -= pow2;
+                }
 
-                // if remainder > 2^(width - 1) - 1
-                if (remainder.testBit(width - 1))
-                {
-                    wnaf[i] = (byte)(remainder.intValue() - pow2wB);
-                }
-                else
-                {
-                    wnaf[i] = (byte)remainder.intValue();
-                }
                 // wnaf[i] is now in [-2^(width-1), 2^(width-1)-1]
+                wnaf[i] = (byte)digit;
 
-                k = k.subtract(BigInteger.valueOf(wnaf[i]));
+                k = k.subtract(BigInteger.valueOf(digit));
                 length = i;
             }
             else
@@ -73,9 +75,12 @@ public abstract class WNafUtil
         length++;
 
         // Reduce the WNAF array to its actual length
-        byte[] wnafShort = new byte[length];
-        System.arraycopy(wnaf, 0, wnafShort, 0, length);
-        return wnafShort;
+        if (wnaf.length > length)
+        {
+            wnaf = trim(wnaf, length);
+        }
+        
+        return wnaf;
     }
 
     public static WNafPreCompInfo getWNafPreCompInfo(PreCompInfo preCompInfo)
@@ -156,6 +161,13 @@ public abstract class WNafUtil
         p.setPreCompInfo(wnafPreCompInfo);
 
         return wnafPreCompInfo;
+    }
+
+    private static byte[] trim(byte[] bs, int length)
+    {
+        byte[] result = new byte[length];
+        System.arraycopy(bs, 0, result, 0, result.length);
+        return result;
     }
 
     private static ECPoint[] resizeTable(ECPoint[] ps, int length)
