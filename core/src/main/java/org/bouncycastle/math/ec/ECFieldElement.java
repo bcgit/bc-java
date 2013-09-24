@@ -6,7 +6,6 @@ import java.util.Random;
 public abstract class ECFieldElement
     implements ECConstants
 {
-
     public abstract BigInteger     toBigInteger();
     public abstract String         getFieldName();
     public abstract int            getFieldSize();
@@ -42,6 +41,38 @@ public abstract class ECFieldElement
     public static class Fp extends ECFieldElement
     {
         BigInteger q, r, x;
+
+//        static int[] calculateNaf(BigInteger p)
+//        {
+//            int[] naf = WNafUtil.generateCompactNaf(p);
+//
+//            int bit = 0;
+//            for (int i = 0; i < naf.length; ++i)
+//            {
+//                int ni = naf[i];
+//                int digit = ni >> 16, zeroes = ni & 0xFFFF;
+//
+//                bit += zeroes;
+//                naf[i] = digit < 0 ? ~bit : bit;
+//                ++bit;
+//            }
+//
+//            int last = naf.length - 1;
+//            if (last > 0 && last <= 16)
+//            {
+//                int top = naf[last], top2 = naf[last - 1];
+//                if (top2 < 0)
+//                {
+//                    top2 = ~top2;
+//                }
+//                if (top - top2 >= 64)
+//                {
+//                    return naf;
+//                }
+//            }
+//
+//            return null;
+//        }
 
         static BigInteger calculateResidue(BigInteger p)
         {
@@ -362,32 +393,57 @@ public abstract class ECFieldElement
 
         protected BigInteger modReduce(BigInteger x)
         {
-            if (r == null)
-            {
-                x = x.mod(q);
-            }
-            else
+//            if (naf != null)
+//            {
+//                int last = naf.length - 1;
+//                int bits = naf[last];
+//                while (x.bitLength() > (bits + 1))
+//                {
+//                    BigInteger u = x.shiftRight(bits);
+//                    BigInteger v = x.subtract(u.shiftLeft(bits));
+//
+//                    x = v;
+//
+//                    for (int i = 0; i < last; ++i)
+//                    {
+//                        int ni = naf[i];
+//                        if (ni < 0)
+//                        {
+//                            x = x.add(u.shiftLeft(~ni));
+//                        }
+//                        else
+//                        {
+//                            x = x.subtract(u.shiftLeft(ni));
+//                        }
+//                    }
+//                }
+//                while (x.compareTo(q) >= 0)
+//                {
+//                    x = x.subtract(q);
+//                }
+//            }
+//            else
+            if (r != null)
             {
                 int qLen = q.bitLength();
-                while (x.bitLength() > qLen)
+                while (x.bitLength() > (qLen + 1))
                 {
                     BigInteger u = x.shiftRight(qLen);
-                    BigInteger v;
-                    if (r.equals(ONE))
+                    BigInteger v = x.subtract(u.shiftLeft(qLen));
+                    if (!r.equals(ONE))
                     {
-                        v = x.and(q);
-                    }
-                    else
-                    {
-                        v = x.subtract(u.shiftLeft(qLen));
                         u = u.multiply(r);
                     }
                     x = u.add(v); 
                 }
-                if (x.compareTo(q) >= 0)
+                while (x.compareTo(q) >= 0)
                 {
                     x = x.subtract(q);
                 }
+            }
+            else
+            {
+                x = x.mod(q);
             }
             return x;
         }
