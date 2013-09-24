@@ -8,6 +8,8 @@ import java.math.BigInteger;
  */
 public class WNafMultiplier implements ECMultiplier
 {
+    private static int[] WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
+
     /**
      * Computes the Window NAF (non-adjacent Form) of an integer.
      * @param width The width <code>w</code> of the Window NAF. The width is
@@ -104,64 +106,13 @@ public class WNafMultiplier implements ECMultiplier
         // floor(log2(k))
         int m = k.bitLength();
 
+        // Limit the window size to 8
+        int w = Math.min(8, getWindowSize(m));
+
         // width of the Window NAF
-        byte width;
-
+        byte width = (byte)w;
         // Required length of precomputation array
-        int reqPreCompLen;
-
-        // Determine optimal width and corresponding length of precomputation
-        // array based on literature values
-        if (m < 13)
-        {
-            width = 2;
-            reqPreCompLen = 1;
-        }
-        else
-        {
-            if (m < 41)
-            {
-                width = 3;
-                reqPreCompLen = 2;
-            }
-            else
-            {
-                if (m < 121)
-                {
-                    width = 4;
-                    reqPreCompLen = 4;
-                }
-                else
-                {
-                    if (m < 337)
-                    {
-                        width = 5;
-                        reqPreCompLen = 8;
-                    }
-                    else
-                    {
-                        if (m < 897)
-                        {
-                            width = 6;
-                            reqPreCompLen = 16;
-                        }
-                        else
-                        {
-                            if (m < 2305)
-                            {
-                                width = 7;
-                                reqPreCompLen = 32;
-                            }
-                            else
-                            {
-                                width = 8;
-                                reqPreCompLen = 127;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        int reqPreCompLen = 1 << (w - 2);
 
         // The length of the precomputation array
         int preCompLen = 1;
@@ -172,8 +123,7 @@ public class WNafMultiplier implements ECMultiplier
         // Check if the precomputed ECPoints already exist
         if (preComp == null)
         {
-            // Precomputation must be performed from scratch, create an empty
-            // precomputation array of desired length
+            // Precomputation must be performed from scratch, create an empty array of desired length
             preComp = new ECPoint[]{ p.normalize() };
         }
         else
@@ -239,4 +189,22 @@ public class WNafMultiplier implements ECMultiplier
         return q;
     }
 
+    /**
+     * Determine window width to use for a scalar multiplication of the given size.
+     * 
+     * @param bits the bit-length of the scalar to multiply by
+     * @return the window size to use
+     */
+    protected int getWindowSize(int bits)
+    {
+        int w = 0;
+        for (; w < WINDOW_SIZE_CUTOFFS.length; ++w)
+        {
+            if (bits < WINDOW_SIZE_CUTOFFS[w])
+            {
+                break;
+            }
+        }
+        return w + 2;
+    }
 }
