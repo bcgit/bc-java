@@ -441,82 +441,114 @@ public abstract class ECPoint
                 ECFieldElement X3 = R.square().add(G).subtract(two(V));
                 ECFieldElement Y3 = V.subtract(X3).multiply(R).subtract(S1.multiply(G));
 
-                ECFieldElement Z3;
-                if (Z2IsOne)
+                ECFieldElement Z3 = H;
+                if (!Z1IsOne)
                 {
-                    Z3 = Z1.multiply(H);
+                    Z3 = Z3.multiply(Z1);
                 }
-                else
+                if (!Z2IsOne)
                 {
-//                    Z3 = Z1.multiply(Z2).multiply(H);
-                    X3 = four(X3);
-                    Y3 = eight(Y3);
-                    Z3 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared).multiply(H);
+                    Z3 = Z3.multiply(Z2);
                 }
+
+                // Alternative calculation of Z3 using fast square
+//                X3 = four(X3);
+//                Y3 = eight(Y3);
+//                Z3 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared).multiply(H);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
 
-//            if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
-//            {
-//                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
-//                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0], W2 = b.zs[1];
-//
-//                boolean Z1IsOne = Z1.bitLength() == 1;
-//                ECFieldElement Z1Squared, U2, S2;
-//                if (Z1IsOne)
-//                {
-//                    Z1Squared = Z1;
-//                    U2 = X2;
-//                    S2 = Y2;
-//                }
-//                else
-//                {
-//                    Z1Squared = Z1.square();
-//                    U2 = Z1Squared.multiply(X2);
-//                    ECFieldElement Z1Cubed = Z1Squared.multiply(Z1);
-//                    S2 = Z1Cubed.multiply(Y2);
-//                }
-//
-//                boolean Z2IsOne = Z2.bitLength() == 1;
-//                ECFieldElement Z2Squared, U1, S1;
-//                if (Z2IsOne)
-//                {
-//                    Z2Squared = Z2;
-//                    U1 = X1;
-//                    S1 = Y1;
-//                }
-//                else
-//                {
-//                    Z2Squared = Z2.square();
-//                    U1 = Z2Squared.multiply(X1); 
-//                    ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
-//                    S1 = Z2Cubed.multiply(Y1);
-//                }
-//
-//                ECFieldElement H = U1.subtract(U2);
-//                ECFieldElement R = S1.subtract(S2);
-//
-//                // Check if b == this or b == -this
-//                if (H.isZero())
-//                {
-//                    if (R.isZero())
-//                    {
-//                        // this == b, i.e. this must be doubled
-//                        return this.twice();
-//                    }
-//
-//                    // this == -b, i.e. the result is the point at infinity
-//                    return curve.getInfinity();
-//                }
-//
-//                ECFieldElement HSquared = H.square();
-//                ECFieldElement negHCubed = HSquared.multiply(H).negate();  
-//
-//                ECFieldElement X3 = negHCubed.subtract(two(U1.multiply(HSquared))).add(R.square());
-//
-//                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
-//            }
+            if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
+                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0], W2 = b.zs[1];
+
+                boolean Z1IsOne = Z1.bitLength() == 1;
+                ECFieldElement Z1Squared, U2, S2;
+                if (Z1IsOne)
+                {
+                    Z1Squared = Z1;
+                    U2 = X2;
+                    S2 = Y2;
+                }
+                else
+                {
+                    Z1Squared = Z1.square();
+                    U2 = Z1Squared.multiply(X2);
+                    ECFieldElement Z1Cubed = Z1Squared.multiply(Z1);
+                    S2 = Z1Cubed.multiply(Y2);
+                }
+
+                boolean Z2IsOne = Z2.bitLength() == 1;
+                ECFieldElement Z2Squared, U1, S1;
+                if (Z2IsOne)
+                {
+                    Z2Squared = Z2;
+                    U1 = X1;
+                    S1 = Y1;
+                }
+                else
+                {
+                    Z2Squared = Z2.square();
+                    U1 = Z2Squared.multiply(X1); 
+                    ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
+                    S1 = Z2Cubed.multiply(Y1);
+                }
+
+                ECFieldElement H = U1.subtract(U2);
+                ECFieldElement R = S1.subtract(S2);
+
+                // Check if b == this or b == -this
+                if (H.isZero())
+                {
+                    if (R.isZero())
+                    {
+                        // this == b, i.e. this must be doubled
+                        return this.twice();
+                    }
+
+                    // this == -b, i.e. the result is the point at infinity
+                    return curve.getInfinity();
+                }
+
+                ECFieldElement HSquared = H.square();
+                ECFieldElement G = HSquared.multiply(H);
+                ECFieldElement V = HSquared.multiply(U1);
+
+                ECFieldElement X3 = R.square().add(G).subtract(two(V));
+                ECFieldElement Y3 = V.subtract(X3).multiply(R).subtract(S1.multiply(G));
+
+                ECFieldElement Z3 = H;
+                if (!Z1IsOne)
+                {
+                    Z3 = Z3.multiply(Z1);
+                }
+                if (!Z2IsOne)
+                {
+                    Z3 = Z3.multiply(Z2);
+                }
+
+                // Alternative calculation of Z3 using fast square
+//                X3 = four(X3);
+//                Y3 = eight(Y3);
+//                Z3 = doubleProductFromSquares(Z1, Z2, Z1Squared, Z2Squared).multiply(H);
+
+                ECFieldElement Z3Squared = Z3 == H ? HSquared : Z3.square();
+                ECFieldElement W3 = Z3Squared.square();
+                ECFieldElement a4 = curve.getA();
+                ECFieldElement a4Neg = a4.negate();
+                if (a4Neg.bitLength() < a4.bitLength())
+                {
+                    W3 = W3.multiply(a4Neg).negate();
+                }
+                else
+                {
+                    W3 = W3.multiply(a4);
+                }
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
+            }
 
             ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
 
@@ -561,9 +593,10 @@ public abstract class ECPoint
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
 
-                ECFieldElement Y1Squared = Y1.square();
-                ECFieldElement Z1Squared = Z1.square();
+                boolean Z1IsOne = Z1.bitLength() == 1;
+                ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
 
+                ECFieldElement Y1Squared = Y1.square();
                 ECFieldElement T = Y1Squared.square();
 
                 ECFieldElement a4 = curve.getA();
@@ -578,15 +611,22 @@ public abstract class ECPoint
                 else
                 {
                     ECFieldElement X1Squared = X1.square();
-                    ECFieldElement _3X1Squared = three(X1Squared);
-                    ECFieldElement Z1Pow4 = Z1Squared.square();
-                    if (a4Neg.bitLength() < a4.bitLength())
+                    M = three(X1Squared);
+                    if (Z1IsOne)
                     {
-                        M = _3X1Squared.subtract(Z1Pow4.multiply(a4Neg));
+                        M = M.add(a4);
                     }
                     else
                     {
-                        M = _3X1Squared.add(Z1Pow4.multiply(a4));
+                        ECFieldElement Z1Pow4 = Z1Squared.square();
+                        if (a4Neg.bitLength() < a4.bitLength())
+                        {
+                            M = M.subtract(Z1Pow4.multiply(a4Neg));
+                        }
+                        else
+                        {
+                            M = M.add(Z1Pow4.multiply(a4));
+                        }
                     }
                     S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
                 }
@@ -594,8 +634,14 @@ public abstract class ECPoint
                 ECFieldElement X3 = M.square().subtract(two(S));
                 ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
 
-//                ECFieldElement Z3 = two(Y1.multiply(Z1));
-                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
+                ECFieldElement Z3 = two(Y1);
+                if (!Z1IsOne)
+                {
+                    Z3 = Z3.multiply(Z1);
+                }
+
+                // Alternative calculation of Z3 using fast square
+//                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
@@ -613,7 +659,7 @@ public abstract class ECPoint
                 ECFieldElement _8T = eight(T);
                 ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
                 ECFieldElement W3 = two(_8T.multiply(W1));
-                ECFieldElement Z3 = two(Y1.multiply(Z1));
+                ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
             }
