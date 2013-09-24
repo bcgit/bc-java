@@ -496,8 +496,10 @@ public abstract class ECPoint
                 ECFieldElement T = Y1Squared.square();
 
                 ECFieldElement a4 = curve.getA();
+                ECFieldElement a4Neg = a4.negate();
+
                 ECFieldElement M, S;
-                if (a4.add(curve.fromBigInteger(BigInteger.valueOf(3))).isZero())
+                if (a4Neg.toBigInteger().equals(BigInteger.valueOf(3)))
                 {
                     M = three(X1.add(Z1Squared).multiply(X1.subtract(Z1Squared)));
                     S = four(Y1Squared.multiply(X1));
@@ -505,7 +507,16 @@ public abstract class ECPoint
                 else
                 {
                     ECFieldElement X1Squared = X1.square();
-                    M = three(X1Squared).add(Z1Squared.square().multiply(a4));
+                    ECFieldElement _3X1Squared = three(X1Squared);
+                    ECFieldElement Z1Pow4 = Z1Squared.square();
+                    if (a4Neg.bitLength() < a4.bitLength())
+                    {
+                        M = _3X1Squared.subtract(Z1Pow4.multiply(a4Neg));
+                    }
+                    else
+                    {
+                        M = _3X1Squared.add(Z1Pow4.multiply(a4));
+                    }
                     S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
                 }
 
