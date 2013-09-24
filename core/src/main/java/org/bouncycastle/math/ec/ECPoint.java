@@ -381,6 +381,48 @@ public abstract class ECPoint
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
 
+            if (coord == ECCurve.COORD_HOMOGENEOUS)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
+                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0];
+
+                boolean Z1IsOne = false;//Z1.bitLength() == 1;
+                boolean Z2IsOne = false;//Z2.bitLength() == 1;
+
+                ECFieldElement u1 = Z1IsOne ? Y2 : Y2.multiply(Z1);
+                ECFieldElement u2 = Z2IsOne ? Y1 : Y1.multiply(Z2);
+                ECFieldElement u = u1.subtract(u2);
+                ECFieldElement v1 = Z1IsOne ? X2 : X2.multiply(Z1);
+                ECFieldElement v2 = Z2IsOne ? X1 : X1.multiply(Z2);
+                ECFieldElement v = v1.subtract(v2);
+
+                // Check if b == this or b == -this
+                if (v.isZero())
+                {
+                    if (u.isZero())
+                    {
+                        // this == b, i.e. this must be doubled
+                        return this.twice();
+                    }
+
+                    // this == -b, i.e. the result is the point at infinity
+                    return curve.getInfinity();
+                }
+
+                // TODO Optimize for when w == 1
+                ECFieldElement w = Z1IsOne ? Z2 : Z2IsOne ? Z1 : Z1.multiply(Z2);
+                ECFieldElement vSquared = v.square();
+                ECFieldElement vCubed = vSquared.multiply(v);
+                ECFieldElement vSquaredV2 = vSquared.multiply(v2);
+                ECFieldElement A = u.square().multiply(w).subtract(vCubed).subtract(two(vSquaredV2));
+
+                ECFieldElement X3 = v.multiply(A);
+                ECFieldElement Y3 = vSquaredV2.subtract(A).multiply(u).subtract(vCubed.multiply(u2));
+                ECFieldElement Z3 = vCubed.multiply(w);
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+            }
+
             if (coord == ECCurve.COORD_JACOBIAN)
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
@@ -461,8 +503,8 @@ public abstract class ECPoint
 
             if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
             {
-                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
-                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0], W2 = b.zs[1];
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];//, W1 = this.zs[1];
+                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0];//, W2 = b.zs[1];
 
                 boolean Z1IsOne = Z1.bitLength() == 1;
                 ECFieldElement Z1Squared, U2, S2;
@@ -588,6 +630,35 @@ public abstract class ECPoint
 
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
+
+            if (coord == ECCurve.COORD_HOMOGENEOUS)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
+
+                boolean Z1IsOne = Z1.bitLength() == 1;
+                ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
+
+                // TODO Optimize for small negative a4 and -3
+                ECFieldElement w = curve.getA();
+                if (!Z1IsOne)
+                {
+                    w = w.multiply(Z1Squared);
+                }
+                w = w.add(three(X1.square()));
+                
+                ECFieldElement s = Z1IsOne ? Y1 : Y1.multiply(Z1);
+                ECFieldElement t = Z1IsOne ? Y1.square() : s.multiply(Y1);
+                ECFieldElement B = X1.multiply(t);
+                ECFieldElement _4B = four(B);
+                ECFieldElement h = w.square().subtract(two(_4B));
+
+                ECFieldElement X3 = two(h.multiply(s));
+                ECFieldElement Y3 = w.multiply(_4B.subtract(h)).subtract(two(two(t).square()));
+                ECFieldElement _4sSquared = Z1IsOne ? four(t) : two(s).square();
+                ECFieldElement Z3 = two(_4sSquared).multiply(s);
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+            }
 
             if (coord == ECCurve.COORD_JACOBIAN)
             {

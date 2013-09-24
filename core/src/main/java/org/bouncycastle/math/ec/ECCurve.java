@@ -232,6 +232,7 @@ public abstract class ECCurve
             switch (coord)
             {
             case COORD_AFFINE:
+            case COORD_HOMOGENEOUS:
             case COORD_JACOBIAN:
             case COORD_JACOBIAN_MODIFIED:
                 return true;
