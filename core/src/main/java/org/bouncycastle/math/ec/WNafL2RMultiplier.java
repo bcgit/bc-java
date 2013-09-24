@@ -17,18 +17,6 @@ public class WNafL2RMultiplier implements ECMultiplier
      */
     public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
     {
-        WNafPreCompInfo wnafPreCompInfo;
-
-        if ((preCompInfo != null) && (preCompInfo instanceof WNafPreCompInfo))
-        {
-            wnafPreCompInfo = (WNafPreCompInfo)preCompInfo;
-        }
-        else
-        {
-            // Ignore empty PreCompInfo or PreCompInfo of incorrect type
-            wnafPreCompInfo = new WNafPreCompInfo();
-        }
-
         // floor(log2(k))
         int m = k.bitLength();
 
@@ -37,49 +25,9 @@ public class WNafL2RMultiplier implements ECMultiplier
 
         // width of the Window NAF
         byte width = (byte)w;
-        // Required length of precomputation array
-        int reqPreCompLen = 1 << (w - 2);
 
-        // The length of the precomputation array
-        int preCompLen = 1;
-
+        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, w);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
-        ECPoint twiceP = wnafPreCompInfo.getTwiceP();
-
-        // Check if the precomputed ECPoints already exist
-        if (preComp == null)
-        {
-            // Precomputation must be performed from scratch, create an empty array of desired length
-            preComp = new ECPoint[]{ p.normalize() };
-        }
-        else
-        {
-            // Take the already precomputed ECPoints to start with
-            preCompLen = preComp.length;
-        }
-
-        if (twiceP == null)
-        {
-            // Compute twice(p)
-            twiceP = p.twice().normalize();
-        }
-
-        if (preCompLen < reqPreCompLen)
-        {
-            // Precomputation array must be made bigger, copy existing preComp
-            // array into the larger new preComp array
-            ECPoint[] oldPreComp = preComp;
-            preComp = new ECPoint[reqPreCompLen];
-            System.arraycopy(oldPreComp, 0, preComp, 0, preCompLen);
-
-            for (int i = preCompLen; i < reqPreCompLen; i++)
-            {
-                // Compute the new ECPoints for the precomputation array.
-                // The values 1, 3, 5, ..., 2^(width-1)-1 times p are
-                // computed
-                preComp[i] = twiceP.add(preComp[i - 1]).normalize();
-            }            
-        }
 
         // Compute the Window NAF of the desired width
         byte[] wnaf = WNafUtil.generateWindowNaf(width, k);
@@ -107,11 +55,6 @@ public class WNafL2RMultiplier implements ECMultiplier
             }
         }
 
-        // Set PreCompInfo in ECPoint, such that it is available for next
-        // multiplication.
-        wnafPreCompInfo.setPreComp(preComp);
-        wnafPreCompInfo.setTwiceP(twiceP);
-        p.setPreCompInfo(wnafPreCompInfo);
         return q;
     }
 
