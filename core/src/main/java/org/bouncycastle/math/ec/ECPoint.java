@@ -70,7 +70,7 @@ public abstract class ECPoint
      */
     public ECFieldElement getX()
     {
-        return x;
+        return getXCoord();
     }
 
     /**
@@ -78,19 +78,19 @@ public abstract class ECPoint
      */
     public ECFieldElement getY()
     {
-        return y;
+        return getYCoord();
     }
 
     public ECFieldElement getAffineXCoord()
     {
         assertNormalized();
-        return x;
+        return getXCoord();
     }
 
     public ECFieldElement getAffineYCoord()
     {
         assertNormalized();
-        return y;
+        return getYCoord();
     }
 
     public ECFieldElement getXCoord()
@@ -447,6 +447,16 @@ public abstract class ECPoint
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
 
+            if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
+            {
+//                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
+//                ECFieldElement X2 = b.x, Y2 = b.y, Z2 = b.zs[0], W2 = b.zs[1];
+//
+//                boolean Z2IsOne = Z2.bitLength() == 1;
+//
+//                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
+            }
+
             ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
 
             if (dx.isZero())
@@ -527,6 +537,24 @@ public abstract class ECPoint
                 ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+            }
+
+            if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
+            {
+                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
+
+                ECFieldElement X1Squared = X1.square();
+                ECFieldElement M = three(X1Squared).add(W1);
+                ECFieldElement Y1Squared = Y1.square();
+                ECFieldElement T = Y1Squared.square();
+                ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+                ECFieldElement X3 = M.square().subtract(two(S));
+                ECFieldElement _8T = eight(T);
+                ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
+                ECFieldElement W3 = two(_8T.multiply(W1));
+                ECFieldElement Z3 = two(Y1.multiply(Z1));
+
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
             }
 
             ECFieldElement X = this.x.square();
