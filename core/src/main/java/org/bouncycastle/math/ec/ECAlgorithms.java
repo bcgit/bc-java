@@ -7,16 +7,13 @@ public class ECAlgorithms
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
         ECPoint Q, BigInteger b)
     {
-        ECCurve c = P.getCurve();
-        if (c != Q.getCurve())
-        {
-            throw new IllegalArgumentException("P and Q must be on same curve");
-        }
+        ECCurve cp = P.getCurve();
+        Q = importPoint(cp, Q);
 
         // Point multiplication for Koblitz curves (using WTNAF) beats Shamir's trick
-        if (c instanceof ECCurve.F2m)
+        if (cp instanceof ECCurve.F2m)
         {
-            ECCurve.F2m f2mCurve = (ECCurve.F2m)c;
+            ECCurve.F2m f2mCurve = (ECCurve.F2m)cp;
             if (f2mCurve.isKoblitz())
             {
                 return P.multiply(a).add(Q.multiply(b));
@@ -48,12 +45,20 @@ public class ECAlgorithms
     public static ECPoint shamirsTrick(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
-        if (P.getCurve() != Q.getCurve())
+        ECCurve cp = P.getCurve();
+        Q = importPoint(cp, Q);
+
+        return implShamirsTrick(P, k, Q, l);
+    }
+
+    private static ECPoint importPoint(ECCurve c, ECPoint Q)
+    {
+        ECCurve cq = Q.getCurve();
+        if (!c.equals(cq))
         {
             throw new IllegalArgumentException("P and Q must be on same curve");
         }
-
-        return implShamirsTrick(P, k, Q, l);
+        return c.importPoint(Q);
     }
 
     private static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
