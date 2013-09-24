@@ -353,7 +353,7 @@ public abstract class ECPoint
             this.withCompression = withCompression;
         }
 
-        protected Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
+        Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
         {
             super(curve, x, y, zs);
         }

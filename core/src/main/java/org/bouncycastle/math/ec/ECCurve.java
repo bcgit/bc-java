@@ -86,6 +86,13 @@ public abstract class ECCurve
      */
     public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
+    public ECPoint importPoint(ECPoint p)
+    {
+        // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
+        p = p.normalize();
+        return createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), p.withCompression);
+    }
+
     public abstract ECPoint getInfinity();
 
     public ECFieldElement getA()
@@ -240,6 +247,27 @@ public abstract class ECCurve
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
         {
             return new ECPoint.Fp(this, fromBigInteger(x), fromBigInteger(y), withCompression);
+        }
+
+        public ECPoint importPoint(ECPoint p)
+        {
+            if (getCoordinateSystem() == COORD_JACOBIAN)
+            {
+                switch (p.getCurve().getCoordinateSystem())
+                {
+                case COORD_JACOBIAN:
+                case COORD_JACOBIAN_CHUDNOVSKY:
+                case COORD_JACOBIAN_MODIFIED:
+                    return new ECPoint.Fp(this,
+                        fromBigInteger(p.x.toBigInteger()),
+                        fromBigInteger(p.y.toBigInteger()),
+                        new ECFieldElement[]{ fromBigInteger(p.zs[0].toBigInteger()) });
+                default:
+                    break;
+                }
+            }
+
+            return super.importPoint(p);
         }
 
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
