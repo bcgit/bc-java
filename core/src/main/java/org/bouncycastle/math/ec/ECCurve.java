@@ -88,8 +88,14 @@ public abstract class ECCurve
 
     public ECPoint importPoint(ECPoint p)
     {
+        if (this == p.getCurve())
+        {
+            return p;
+        }
+
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
+
         return createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), p.withCompression);
     }
 
@@ -251,7 +257,7 @@ public abstract class ECCurve
 
         public ECPoint importPoint(ECPoint p)
         {
-            if (getCoordinateSystem() == COORD_JACOBIAN)
+            if (this != p.getCurve() && getCoordinateSystem() == COORD_JACOBIAN)
             {
                 switch (p.getCurve().getCoordinateSystem())
                 {
