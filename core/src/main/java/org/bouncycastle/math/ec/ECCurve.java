@@ -100,7 +100,7 @@ public abstract class ECCurve
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
 
-        return createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), p.withCompression);
+        return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
     public abstract ECPoint getInfinity();
@@ -233,6 +233,7 @@ public abstract class ECCurve
             {
             case COORD_AFFINE:
             case COORD_JACOBIAN:
+//            case COORD_JACOBIAN_MODIFIED:
                 return true;
             default:
                 return false;
@@ -575,7 +576,7 @@ public abstract class ECCurve
 
         protected ECMultiplier createDefaultMultiplier()
         {
-            return isKoblitz() ? new WTauNafMultiplier() : new WNafMultiplier();
+            return isKoblitz() ? new WTauNafMultiplier() : new WNafL2RMultiplier();
         }
 
         public int getFieldSize()
