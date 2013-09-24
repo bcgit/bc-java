@@ -106,8 +106,8 @@ public class WNafL2RMultiplier implements ECMultiplier
         // floor(log2(k))
         int m = k.bitLength();
 
-        // Limit the window size to 8
-        int w = Math.min(8, getWindowSize(m));
+        // Clamp the window size in the range [2, 8]
+        int w = Math.max(2, Math.min(8, getWindowSize(m)));
 
         // width of the Window NAF
         byte width = (byte)w;
@@ -135,7 +135,7 @@ public class WNafL2RMultiplier implements ECMultiplier
         if (twiceP == null)
         {
             // Compute twice(p)
-            twiceP = p.twice();
+            twiceP = p.twice().normalize();
         }
 
         if (preCompLen < reqPreCompLen)
