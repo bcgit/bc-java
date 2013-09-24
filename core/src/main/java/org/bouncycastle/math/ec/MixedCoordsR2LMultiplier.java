@@ -56,7 +56,7 @@ public class MixedCoordsR2LMultiplier implements ECMultiplier
 
         Ra = Ra.add(curveAdd.importPoint(Td));
 
-        return Ra;
+        return p.getCurve().importPoint(Ra);
     }
 
     protected ECCurve configureCurve(ECCurve c, int coord)
