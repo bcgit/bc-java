@@ -20,13 +20,10 @@ public class WNafL2RMultiplier implements ECMultiplier
         // floor(log2(k))
         int m = k.bitLength();
 
-        // Clamp the window size in the range [2, 8]
-        int w = Math.max(2, Math.min(8, getWindowSize(m)));
+        // Clamp the window width in the range [2, 8]
+        int width = Math.max(2, Math.min(8, getWindowSize(m)));
 
-        // width of the Window NAF
-        byte width = (byte)w;
-
-        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, w);
+        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, width);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
 
         // Compute the Window NAF of the desired width
