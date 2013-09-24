@@ -78,6 +78,16 @@ public abstract class WNafUtil
         return wnafShort;
     }
 
+    public static WNafPreCompInfo getWNafPreCompInfo(PreCompInfo preCompInfo)
+    {
+        if ((preCompInfo != null) && (preCompInfo instanceof WNafPreCompInfo))
+        {
+            return (WNafPreCompInfo)preCompInfo;
+        }
+
+        return new WNafPreCompInfo();
+    }
+
     /**
      * Determine window width to use for a scalar multiplication of the given size.
      * 
@@ -107,5 +117,51 @@ public abstract class WNafUtil
             }
         }
         return w + 2;
+    }
+
+    public static WNafPreCompInfo precompute(ECPoint p, PreCompInfo preCompInfo, int width)
+    {
+        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(preCompInfo);
+
+        ECPoint[] preComp = wnafPreCompInfo.getPreComp();
+        if (preComp == null)
+        {
+            preComp = new ECPoint[]{ p.normalize() };
+        }
+
+        int preCompLen = preComp.length;
+        int reqPreCompLen = 1 << Math.max(0, width - 2);
+
+        if (preCompLen < reqPreCompLen)
+        {
+            ECPoint twiceP = wnafPreCompInfo.getTwiceP();
+            if (twiceP == null)
+            {
+                twiceP = p.twice().normalize();
+                wnafPreCompInfo.setTwiceP(twiceP);
+            }
+
+            preComp = resizeTable(preComp, reqPreCompLen);
+            for (int i = preCompLen; i < reqPreCompLen; i++)
+            {
+                /*
+                 * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
+                 * 2^(width-1)-1 times p are computed
+                 */
+                preComp[i] = twiceP.add(preComp[i - 1]).normalize();
+            }            
+        }
+
+        wnafPreCompInfo.setPreComp(preComp);
+        p.setPreCompInfo(wnafPreCompInfo);
+
+        return wnafPreCompInfo;
+    }
+
+    private static ECPoint[] resizeTable(ECPoint[] ps, int length)
+    {
+        ECPoint[] result = new ECPoint[length];
+        System.arraycopy(ps, 0, result, 0, ps.length);
+        return result;
     }
 }
