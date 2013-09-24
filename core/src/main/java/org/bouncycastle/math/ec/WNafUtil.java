@@ -6,22 +6,55 @@ public abstract class WNafUtil
 {
     private static int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
 
+    public static int[] generateCompactNaf(BigInteger k)
+    {
+        BigInteger _3k = k.shiftLeft(1).add(k);
+
+        int digits = _3k.bitLength() - 1;
+        int[] naf = new int[(digits + 1) >> 1];
+
+        int length = 0, zeroes = 0;
+        for (int i = 1; i <= digits; ++i)
+        {
+            boolean _3kBit = _3k.testBit(i);
+            boolean kBit = k.testBit(i);
+
+            if (_3kBit == kBit)
+            {
+                ++zeroes;
+            }
+            else
+            {
+                int digit  = kBit ? -1 : 1;
+                naf[length++] = (digit << 16) | zeroes;
+                zeroes = 0;
+            }
+        }
+
+        if (naf.length > length)
+        {
+            naf = trim(naf, length);
+        }
+
+        return naf;
+    }
+
     public static byte[] generateNaf(BigInteger k)
     {
         BigInteger _3k = k.shiftLeft(1).add(k);
 
         int digits = _3k.bitLength() - 1;
-        byte[] wnaf = new byte[digits];
+        byte[] naf = new byte[digits];
 
         for (int i = 1; i <= digits; ++i)
         {
             boolean _3kBit = _3k.testBit(i);
             boolean kBit = k.testBit(i);
 
-            wnaf[i - 1] = (byte)(_3kBit == kBit ? 0 : kBit ? -1 : 1);
+            naf[i - 1] = (byte)(_3kBit == kBit ? 0 : kBit ? -1 : 1);
         }
 
-        return wnaf;
+        return naf;
     }
 
     /**
@@ -189,6 +222,13 @@ public abstract class WNafUtil
     private static byte[] trim(byte[] bs, int length)
     {
         byte[] result = new byte[length];
+        System.arraycopy(bs, 0, result, 0, result.length);
+        return result;
+    }
+
+    private static int[] trim(int[] bs, int length)
+    {
+        int[] result = new int[length];
         System.arraycopy(bs, 0, result, 0, result.length);
         return result;
     }
