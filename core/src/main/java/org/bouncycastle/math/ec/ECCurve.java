@@ -233,7 +233,7 @@ public abstract class ECCurve
             {
             case COORD_AFFINE:
             case COORD_JACOBIAN:
-//            case COORD_JACOBIAN_MODIFIED:
+            case COORD_JACOBIAN_MODIFIED:
                 return true;
             default:
                 return false;
