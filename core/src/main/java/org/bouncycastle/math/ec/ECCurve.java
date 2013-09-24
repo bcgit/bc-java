@@ -92,6 +92,10 @@ public abstract class ECCurve
         {
             return p;
         }
+        if (p.isInfinity())
+        {
+            return getInfinity();
+        }
 
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
@@ -257,7 +261,7 @@ public abstract class ECCurve
 
         public ECPoint importPoint(ECPoint p)
         {
-            if (this != p.getCurve() && getCoordinateSystem() == COORD_JACOBIAN)
+            if (this != p.getCurve() && getCoordinateSystem() == COORD_JACOBIAN && !p.isInfinity())
             {
                 switch (p.getCurve().getCoordinateSystem())
                 {
