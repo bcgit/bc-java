@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the WNAF (Window Non-Adjacent Form) multiplication
  * algorithm.
  */
-public class WNafMultiplier implements ECMultiplier
+public class WNafL2RMultiplier implements ECMultiplier
 {
     private static int[] WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
 
