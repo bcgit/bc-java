@@ -13,28 +13,34 @@ public class FpNafMultiplier implements ECMultiplier
      */
     public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
     {
-        // TODO Probably should try to add this
-        // BigInteger e = k.mod(n); // n == order of p
-        BigInteger e = k;
-        BigInteger h = e.shiftLeft(1).add(e);
+        if (k.signum() < 0)
+        {
+            throw new IllegalArgumentException("'k' cannot be negative");
+        }
+        if (k.signum() == 0)
+        {
+            return p.getCurve().getInfinity();
+        }
+
+        byte[] wnaf = WNafUtil.generateNaf(k);
 
         p = p.normalize();
 
-        ECPoint neg = p.negate();
-        ECPoint R = p;
+        ECPoint negP = p.negate();
+        ECPoint R = p.getCurve().getInfinity();
 
-        for (int i = h.bitLength() - 2; i > 0; --i)
-        {             
-            boolean hBit = h.testBit(i);
-            boolean eBit = e.testBit(i);
-
-            if (hBit != eBit)
+        int i = wnaf.length;
+        while (--i >= 0)
+        {
+            int wi = wnaf[i];
+            if (wi == 0)
             {
-                R = R.twicePlus(hBit ? p : neg);
+                R = R.twice();
             }
             else
             {
-                R = R.twice();
+                ECPoint r = wi > 0 ? p : negP;
+                R = R.twicePlus(r);
             }
         }
 
