@@ -8,8 +8,6 @@ import java.math.BigInteger;
  */
 public class WNafL2RMultiplier implements ECMultiplier
 {
-    private static int[] WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
-
     /**
      * Computes the Window NAF (non-adjacent Form) of an integer.
      * @param width The width <code>w</code> of the Window NAF. The width is
@@ -197,14 +195,6 @@ public class WNafL2RMultiplier implements ECMultiplier
      */
     protected int getWindowSize(int bits)
     {
-        int w = 0;
-        for (; w < WINDOW_SIZE_CUTOFFS.length; ++w)
-        {
-            if (bits < WINDOW_SIZE_CUTOFFS[w])
-            {
-                break;
-            }
-        }
-        return w + 2;
+        return WNafUtil.getWindowSize(bits);
     }
 }
