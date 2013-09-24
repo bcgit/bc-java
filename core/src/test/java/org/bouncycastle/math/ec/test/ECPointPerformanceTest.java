@@ -5,11 +5,10 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.WNafMultiplier;
 
 /**
  * Compares the performance of the the window NAF point multiplication against
@@ -22,23 +21,11 @@ public class ECPointPerformanceTest extends TestCase
 
     private void randMult(final String curveName) throws Exception
     {
-        final X9ECParameters spec = SECNamedCurves.getByName(curveName);
+        final X9ECParameters spec = ECNamedCurveTable.getByName(curveName);
         ECCurve c = spec.getCurve();
         ECPoint g = (ECPoint) spec.getG();
 
         final BigInteger n = spec.getN();
-
-        if (c instanceof ECCurve.Fp && c.getCoordinateSystem() != ECCurve.COORD_JACOBIAN
-            && c.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
-        {
-            c = c.configure()
-                .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
-                .setMultiplier(new WNafMultiplier())
-                .create();
-
-            g = g.normalize();
-            g = c.createPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger());
-        }
 
         final SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
         final BigInteger k = new BigInteger(n.bitLength() - 1, random);
@@ -87,6 +74,21 @@ public class ECPointPerformanceTest extends TestCase
         randMult("secp256r1");
         randMult("secp384r1");
         randMult("secp521r1");
+        
+        randMult("brainpoolp160r1");
+        randMult("brainpoolp160t1");
+        randMult("brainpoolp192r1");
+        randMult("brainpoolp192t1");
+        randMult("brainpoolp224r1");
+        randMult("brainpoolp224t1");
+        randMult("brainpoolp256r1");
+        randMult("brainpoolp256t1");
+        randMult("brainpoolp320r1");
+        randMult("brainpoolp320t1");
+        randMult("brainpoolp384r1");
+        randMult("brainpoolp384t1");
+        randMult("brainpoolp512r1");
+        randMult("brainpoolp512t1");
     }
 
     // public static void main(String argv[]) throws Exception
