@@ -2,10 +2,18 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+/**
+ * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (right-to-left) using
+ * mixed coordinates.
+ */
 public class MixedNafR2LMultiplier implements ECMultiplier
 {
     protected int additionCoord, doublingCoord;
 
+    /**
+     * By default, addition will be done in Jacobian coordinates, and doubling will be done in
+     * Modified Jacobian coordinates (independent of the original coordinate system of each point).
+     */
     public MixedNafR2LMultiplier()
     {
         this(ECCurve.COORD_JACOBIAN, ECCurve.COORD_JACOBIAN_MODIFIED);

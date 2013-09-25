@@ -3,7 +3,7 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 
 /**
- * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm.
+ * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (left-to-right).
  */
 public class NafL2RMultiplier implements ECMultiplier
 {
