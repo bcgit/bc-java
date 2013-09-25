@@ -272,8 +272,26 @@ public abstract class ECPoint
     protected abstract boolean getCompressionYTilde();
 
     public abstract ECPoint add(ECPoint b);
-    public abstract ECPoint subtract(ECPoint b);
+
     public abstract ECPoint negate();
+
+    public abstract ECPoint subtract(ECPoint b);
+
+    public ECPoint timesPow2(int e)
+    {
+        if (e < 0)
+        {
+            throw new IllegalArgumentException("'e' cannot be negative");
+        }
+
+        ECPoint p = this;
+        while (--e >= 0)
+        {
+            p = p.twice();
+        }
+        return p;
+    }
+
     public abstract ECPoint twice();
 
     public ECPoint twicePlus(ECPoint b)
