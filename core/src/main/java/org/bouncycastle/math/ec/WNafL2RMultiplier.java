@@ -29,8 +29,9 @@ public class WNafL2RMultiplier implements ECMultiplier
         // Clamp the window width in the range [2, 8]
         int width = Math.max(2, Math.min(8, getWindowSize(k.bitLength())));
 
-        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, width);
+        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, width, true);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
+        ECPoint[] preCompNeg = wnafPreCompInfo.getPreCompNeg();
 
         int[] wnaf = WNafUtil.generateCompactWindowNaf(width, k);
 
@@ -42,12 +43,8 @@ public class WNafL2RMultiplier implements ECMultiplier
             int wi = wnaf[i];
             int digit = wi >> 16, zeroes = wi & 0xFFFF;
 
-            int index = (Math.abs(digit) - 1) / 2;
-            ECPoint r = preComp[index];
-            if (wi < 0)
-            {
-                r = r.negate();
-            }
+            int index = (Math.abs(digit) - 1) >>> 1;
+            ECPoint r = wi < 0 ? preCompNeg[index] : preComp[index];
 
             R = R.twicePlus(r);
             R = R.timesPow2(zeroes);

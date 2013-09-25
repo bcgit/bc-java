@@ -226,7 +226,7 @@ public abstract class WNafUtil
         return w + 2;
     }
 
-    public static WNafPreCompInfo precompute(ECPoint p, PreCompInfo preCompInfo, int width)
+    public static WNafPreCompInfo precompute(ECPoint p, PreCompInfo preCompInfo, int width, boolean includeNegated)
     {
         WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(preCompInfo);
 
@@ -260,6 +260,35 @@ public abstract class WNafUtil
         }
 
         wnafPreCompInfo.setPreComp(preComp);
+
+        if (includeNegated)
+        {
+            ECPoint[] preCompNeg = wnafPreCompInfo.getPreCompNeg();
+            
+            int pos;
+            if (preCompNeg == null)
+            {
+                pos = 0;
+                preCompNeg = new ECPoint[reqPreCompLen]; 
+            }
+            else
+            {
+                pos = preCompNeg.length;
+                if (pos < reqPreCompLen)
+                {
+                    preCompNeg = resizeTable(preCompNeg, reqPreCompLen);
+                }
+            }
+
+            while (pos < reqPreCompLen)
+            {
+                preCompNeg[pos] = preComp[pos].negate();
+                ++pos;
+            }
+
+            wnafPreCompInfo.setPreCompNeg(preCompNeg);
+        }
+
         p.setPreCompInfo(wnafPreCompInfo);
 
         return wnafPreCompInfo;
