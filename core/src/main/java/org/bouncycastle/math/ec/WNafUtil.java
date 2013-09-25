@@ -139,12 +139,6 @@ public abstract class WNafUtil
             throw new IllegalArgumentException("'width' must be in the range [2, 8]");
         }
 
-        // The window NAF is at most 1 element longer than the binary
-        // representation of the integer k. byte can be used instead of short or
-        // int unless the window width is larger than 8. For larger width use
-        // short or int. However, a width of more than 8 is not efficient for
-        // m = log2(q) smaller than 2305 Bits. Note: Values for m larger than
-        // 1000 Bits are currently not used in practice.
         byte[] wnaf = new byte[k.bitLength() + 1];
 
         // 2^width and a mask and sign bit set accordingly
@@ -152,41 +146,35 @@ public abstract class WNafUtil
         int mask = pow2 - 1;
         int sign = pow2 >>> 1;
 
-        int i = 0;
+        boolean carry = false;
+        int length = 0, pos = 0;
 
-        // The actual length of the WNAF
-        int length = 0;
-
-        // while k >= 1
-        while (k.signum() > 0)
+        while (pos <= k.bitLength())
         {
-            // if k is odd
-            if (k.testBit(0))
+            if (k.testBit(pos) == carry)
             {
-                // k mod 2^width
-                int digit = k.intValue() & mask;
-                if ((digit & sign) != 0)
-                {
-                    digit -= pow2;
-                }
-
-                // wnaf[i] is now in [-2^(width-1), 2^(width-1)-1]
-                wnaf[i] = (byte)digit;
-
-                k = k.subtract(BigInteger.valueOf(digit));
-                length = i;
-            }
-            else
-            {
-                wnaf[i] = 0;
+                ++pos;
+                continue;
             }
 
-            // k = k/2
-            k = k.shiftRight(1);
-            i++;
+            k = k.shiftRight(pos);
+
+            int digit = k.intValue() & mask;
+            if (carry)
+            {
+                ++digit;
+            }
+
+            carry = (digit & sign) != 0;
+            if (carry)
+            {
+                digit -= pow2;
+            }
+
+            length += (length > 0) ? pos - 1 : pos;
+            wnaf[length++] = (byte)digit;
+            pos = width;
         }
-
-        length++;
 
         // Reduce the WNAF array to its actual length
         if (wnaf.length > length)
