@@ -66,35 +66,31 @@ public class ECAlgorithms
     {
         P = P.normalize();
         Q = Q.normalize();
-        ECPoint Z = P.add(Q).normalize();
 
-        int m = Math.max(k.bitLength(), l.bitLength());
-        ECPoint R = P.getCurve().getInfinity();
+        ECPoint infinity = P.getCurve().getInfinity();
 
-        for (int i = m - 1; i >= 0; --i)
+        // TODO conjugate co-Z addition (ZADDC) can return both of these
+        ECPoint PaddQ = P.add(Q).normalize();
+        ECPoint PsubQ = P.subtract(Q).normalize();
+
+        ECPoint[] points = new ECPoint[] {
+            PaddQ.negate(), P.negate(), PsubQ.negate(),
+            Q.negate(), infinity, Q,
+            PsubQ, P, PaddQ };
+
+        byte[] kNaf = WNafUtil.generateNaf(k);
+        byte[] lNaf = WNafUtil.generateNaf(l);
+
+        ECPoint R = infinity;
+
+        int i = Math.max(kNaf.length, lNaf.length);
+        while (--i >= 0)
         {
-            if (k.testBit(i))
-            {
-                if (l.testBit(i))
-                {
-                    R = R.twicePlus(Z);
-                }
-                else
-                {
-                    R = R.twicePlus(P);
-                }
-            }
-            else
-            {
-                if (l.testBit(i))
-                {
-                    R = R.twicePlus(Q);
-                }
-                else
-                {
-                    R = R.twice();
-                }
-            }
+            int kni = i < kNaf.length ? kNaf[i] + 1 : 1;
+            int lni = i < lNaf.length ? lNaf[i] + 1 : 1;
+
+            int index = kni * 3 + lni;
+            R = R.twicePlus(points[index]);
         }
 
         return R;
