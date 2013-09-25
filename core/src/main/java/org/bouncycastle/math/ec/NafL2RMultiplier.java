@@ -36,11 +36,7 @@ public class NafL2RMultiplier implements ECMultiplier
             int digit = ni >> 16, zeroes = ni & 0xFFFF;
 
             R = R.twicePlus(digit > 0 ? p : negP);
-
-            while (--zeroes >= 0)
-            {
-                R = R.twice();
-            }
+            R = R.timesPow2(zeroes);
         }
 
         return R;

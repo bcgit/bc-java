@@ -12,17 +12,12 @@ public class ZSignedDigitR2LMultiplier implements ECMultiplier
         ECPoint R0 = p.getCurve().getInfinity(), R1 = p;
 
         int n = k.bitLength();
-        int s = k.getLowestSetBit();
+        int i = k.getLowestSetBit();
 
-        int i = 0;
-        for (; i < s; ++i)
-        {
-            R1 = R1.twice();
-        }
+        R1 = R1.timesPow2(i);
         while (++i < n)
         {
-            ECPoint r = k.testBit(i) ? R1 : R1.negate();
-            R0 = R0.add(r);
+            R0 = R0.add(k.testBit(i) ? R1 : R1.negate());
             R1 = R1.twice();
         }
         R0 = R0.add(R1);

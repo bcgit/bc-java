@@ -51,10 +51,7 @@ public class MixedNafR2LMultiplier implements ECMultiplier
             int digit = ni >> 16;
             zeroes += ni & 0xFFFF;
 
-            while (--zeroes >= 0)
-            {
-                Td = Td.twice();
-            }
+            Td = Td.timesPow2(zeroes);
 
             ECPoint Tj = curveAdd.importPoint(Td);
             if (digit < 0)

@@ -12,19 +12,13 @@ public class ZSignedDigitL2RMultiplier implements ECMultiplier
         p = p.normalize();
         ECPoint R0 = p, negP = p.negate();
 
-        int n = k.bitLength();
         int s = k.getLowestSetBit();
-
-        int i = n;
+        int i = k.bitLength();
         while (--i > s)
         {
-            ECPoint r = k.testBit(i) ? p : negP;
-            R0 = R0.twicePlus(r);
+            R0 = R0.twicePlus(k.testBit(i) ? p : negP);
         }
-        while (--i >= 0)
-        {
-            R0 = R0.twice();
-        }
+        R0 = R0.timesPow2(s);
         return R0;
     }
 }
