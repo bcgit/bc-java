@@ -39,6 +39,64 @@ public abstract class WNafUtil
         return naf;
     }
 
+    public static int[] generateCompactWindowNaf(int width, BigInteger k)
+    {
+        if (width == 2)
+        {
+            return generateCompactNaf(k);
+        }
+
+        if (width < 2 || width > 8)
+        {
+            throw new IllegalArgumentException("'width' must be in the range [2, 8]");
+        }
+
+        int[] wnaf = new int[(k.bitLength() + width - 1) / width];
+
+        // 2^width and a mask and sign bit set accordingly
+        int pow2 = 1 << width;
+        int mask = pow2 - 1;
+        int sign = pow2 >>> 1;
+
+        boolean carry = false;
+        int length = 0, pos = 0;
+
+        while (pos <= k.bitLength())
+        {
+            if (k.testBit(pos) == carry)
+            {
+                ++pos;
+                continue;
+            }
+
+            k = k.shiftRight(pos);
+
+            int digit = k.intValue() & mask;
+            if (carry)
+            {
+                ++digit;
+            }
+
+            carry = (digit & sign) != 0;
+            if (carry)
+            {
+                digit -= pow2;
+            }
+
+            int zeroes = length > 0 ? pos - 1 : pos;
+            wnaf[length++] = (digit << 16) | zeroes;
+            pos = width;
+        }
+
+        // Reduce the WNAF array to its actual length
+        if (wnaf.length > length)
+        {
+            wnaf = trim(wnaf, length);
+        }
+
+        return wnaf;
+    }
+
     public static byte[] generateNaf(BigInteger k)
     {
         BigInteger _3k = k.shiftLeft(1).add(k);
