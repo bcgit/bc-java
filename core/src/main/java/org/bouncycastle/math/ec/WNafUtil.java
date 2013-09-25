@@ -51,7 +51,7 @@ public abstract class WNafUtil
             throw new IllegalArgumentException("'width' must be in the range [2, 8]");
         }
 
-        int[] wnaf = new int[(k.bitLength() + width - 1) / width];
+        int[] wnaf = new int[k.bitLength() / width + 1];
 
         // 2^width and a mask and sign bit set accordingly
         int pow2 = 1 << width;
