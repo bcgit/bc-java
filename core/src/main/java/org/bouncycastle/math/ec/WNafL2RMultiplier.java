@@ -17,42 +17,43 @@ public class WNafL2RMultiplier implements ECMultiplier
      */
     public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
     {
-        // floor(log2(k))
-        int m = k.bitLength();
+        if (k.signum() < 0)
+        {
+            throw new IllegalArgumentException("'k' cannot be negative");
+        }
+        if (k.signum() == 0)
+        {
+            return p.getCurve().getInfinity();
+        }
 
         // Clamp the window width in the range [2, 8]
-        int width = Math.max(2, Math.min(8, getWindowSize(m)));
+        int width = Math.max(2, Math.min(8, getWindowSize(k.bitLength())));
 
         WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, width);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
 
-        // Compute the Window NAF of the desired width
-        byte[] wnaf = WNafUtil.generateWindowNaf(width, k);
-        int l = wnaf.length;
+        int[] wnaf = WNafUtil.generateCompactWindowNaf(width, k);
 
-        // Apply the Window NAF to p using the precomputed ECPoint values.
-        ECPoint q = p.getCurve().getInfinity();
-        for (int i = l - 1; i >= 0; i--)
+        ECPoint R = p.getCurve().getInfinity();
+
+        int i = wnaf.length;
+        while (--i >= 0)
         {
             int wi = wnaf[i];
-            if (wi == 0)
-            {
-                q = q.twice();
-            }
-            else
-            {
-                int index = (Math.abs(wi) - 1) / 2;
-                ECPoint r = preComp[index];
-                if (wi < 0)
-                {
-                    r = r.negate();
-                }
+            int digit = wi >> 16, zeroes = wi & 0xFFFF;
 
-                q = q.twicePlus(r);
+            int index = (Math.abs(digit) - 1) / 2;
+            ECPoint r = preComp[index];
+            if (wi < 0)
+            {
+                r = r.negate();
             }
+
+            R = R.twicePlus(r);
+            R = R.timesPow2(zeroes);
         }
 
-        return q;
+        return R;
     }
 
     /**
