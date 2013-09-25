@@ -34,22 +34,29 @@ public class MixedCoordsR2LMultiplier implements ECMultiplier
         ECPoint Ra = curveAdd.getInfinity();
         ECPoint Td = curveDouble.importPoint(p);
 
-        byte[] wnaf = WNafUtil.generateNaf(k);
+        int[] naf = WNafUtil.generateCompactNaf(k);
+        int zeroes = 0;
 
-        for (int i = 0; i < wnaf.length; ++i)
+        for (int i = 0; i < naf.length; ++i)
         {
-            int wi = wnaf[i];
-            if (wi != 0)
-            {
-                ECPoint Tj = curveAdd.importPoint(Td);
-                if (wi < 0)
-                {
-                    Tj = Tj.negate();
-                }
+            int ni = naf[i];
+            int digit = ni >> 16;
+            zeroes += ni & 0xFFFF;
 
-                Ra = Ra.add(Tj);
+            while (--zeroes >= 0)
+            {
+                Td = Td.twice();
             }
-            Td = Td.twice();
+
+            ECPoint Tj = curveAdd.importPoint(Td);
+            if (digit < 0)
+            {
+                Tj = Tj.negate();
+            }
+
+            Ra = Ra.add(Tj);
+
+            zeroes = 1;
         }
 
         return p.getCurve().importPoint(Ra);

@@ -22,25 +22,24 @@ public class FpNafMultiplier implements ECMultiplier
             return p.getCurve().getInfinity();
         }
 
-        byte[] wnaf = WNafUtil.generateNaf(k);
+        int[] naf = WNafUtil.generateCompactNaf(k);
 
         p = p.normalize();
 
         ECPoint negP = p.negate();
         ECPoint R = p.getCurve().getInfinity();
 
-        int i = wnaf.length;
+        int i = naf.length;
         while (--i >= 0)
         {
-            int wi = wnaf[i];
-            if (wi == 0)
+            int ni = naf[i];
+            int digit = ni >> 16, zeroes = ni & 0xFFFF;
+
+            R = R.twicePlus(digit > 0 ? p : negP);
+
+            while (--zeroes >= 0)
             {
                 R = R.twice();
-            }
-            else
-            {
-                ECPoint r = wi > 0 ? p : negP;
-                R = R.twicePlus(r);
             }
         }
 
