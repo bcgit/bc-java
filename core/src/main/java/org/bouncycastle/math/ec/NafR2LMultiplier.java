@@ -31,13 +31,8 @@ public class NafR2LMultiplier implements ECMultiplier
             int digit = ni >> 16;
             zeroes += ni & 0xFFFF;
 
-            while (--zeroes >= 0)
-            {
-                R1 = R1.twice();
-            }
-
-            ECPoint r = digit < 0 ? R1.negate() : R1;
-            R0 = R0.add(r);
+            R1 = R1.timesPow2(zeroes);
+            R0 = R0.add(digit < 0 ? R1.negate() : R1);
 
             zeroes = 1;
         }
