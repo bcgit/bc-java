@@ -249,6 +249,11 @@ public abstract class WNafUtil
             }
 
             preComp = resizeTable(preComp, reqPreCompLen);
+
+            /*
+             * TODO Okeya/Sakurai paper has precomputation trick and  "Montgomery's Trick" to speed this up.
+             * Also, co-Z arithmetic could avoid the subsequent normalization too.
+             */
             for (int i = preCompLen; i < reqPreCompLen; i++)
             {
                 /*
