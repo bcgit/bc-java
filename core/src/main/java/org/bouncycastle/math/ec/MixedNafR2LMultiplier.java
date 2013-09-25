@@ -2,16 +2,16 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-public class MixedCoordsR2LMultiplier implements ECMultiplier
+public class MixedNafR2LMultiplier implements ECMultiplier
 {
     protected int additionCoord, doublingCoord;
 
-    public MixedCoordsR2LMultiplier()
+    public MixedNafR2LMultiplier()
     {
         this(ECCurve.COORD_JACOBIAN, ECCurve.COORD_JACOBIAN_MODIFIED);
     }
 
-    public MixedCoordsR2LMultiplier(int additionCoord, int doublingCoord)
+    public MixedNafR2LMultiplier(int additionCoord, int doublingCoord)
     {
         this.additionCoord = additionCoord;
         this.doublingCoord = doublingCoord;
