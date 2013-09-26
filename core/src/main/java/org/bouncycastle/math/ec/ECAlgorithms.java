@@ -61,7 +61,7 @@ public class ECAlgorithms
         return c.importPoint(Q);
     }
 
-    static void implMontgomeryTrick(ECFieldElement[] a, int offset, int length)
+    static void implMontgomeryTrick(ECFieldElement[] zs, int off, int len)
     {
         /*
          * Uses the "Montgomery Trick" to invert many field elements, with only a single actual
@@ -70,26 +70,26 @@ public class ECAlgorithms
          * by Katsuyuki Okeya, Kouichi Sakurai.
          */
 
-        ECFieldElement[] c = new ECFieldElement[length];
-        c[0] = a[offset];
+        ECFieldElement[] c = new ECFieldElement[len];
+        c[0] = zs[off];
 
         int i = 0;
-        while (++i < length)
+        while (++i < len)
         {
-            c[i] = c[i - 1].multiply(a[offset + i]);
+            c[i] = c[i - 1].multiply(zs[off + i]);
         }
 
         ECFieldElement u = c[--i].invert();
 
         while (i > 0)
         {
-            int j = offset + i--;
-            ECFieldElement tmp = a[j];
-            a[j] = c[i].multiply(u);
+            int j = off + i--;
+            ECFieldElement tmp = zs[j];
+            zs[j] = c[i].multiply(u);
             u = u.multiply(tmp);
         }
 
-        a[offset] = u;
+        zs[off] = u;
     }
 
     static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
