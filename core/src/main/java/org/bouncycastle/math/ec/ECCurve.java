@@ -72,7 +72,7 @@ public abstract class ECCurve
 
     protected ECMultiplier createDefaultMultiplier()
     {
-        return new DoubleAddMultiplier();
+        return new WNafL2RMultiplier();
     }
 
     public boolean supportsCoordinateSystem(int coord)
@@ -659,7 +659,12 @@ public abstract class ECCurve
 
         protected ECMultiplier createDefaultMultiplier()
         {
-            return isKoblitz() ? new WTauNafMultiplier() : new WNafL2RMultiplier();
+            if (isKoblitz())
+            {
+                return new WTauNafMultiplier();
+            }
+
+            return super.createDefaultMultiplier();
         }
 
         public int getFieldSize()
