@@ -13,7 +13,7 @@ import org.bouncycastle.crypto.params.CramerShoupPublicKeyParameters;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * a Cramer Shoup key pair generator.
+ * a Cramer Shoup key pair generator
  * 
  */
 public class CramerShoupKeyPairGenerator implements AsymmetricCipherKeyPairGenerator {

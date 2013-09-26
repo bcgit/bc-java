@@ -110,7 +110,7 @@ public class CramerShoupTest extends SimpleTest {
 		CramerShoupParametersGenerator pGen = new CramerShoupParametersGenerator();
 		
 		pGen.init(2048, 1, new SecureRandom());
-		CramerShoupParameters params = pGen.generateParameters(DHStandardGroups.rfc3526_2048); // rfc5114_2048_224 rfc3526_2048 
+		CramerShoupParameters params = pGen.generateParameters(DHStandardGroups.rfc3526_2048);
 		CramerShoupKeyGenerationParameters param = new CramerShoupKeyGenerationParameters(new SecureRandom(), params);
 
 		kpGen.init(param);

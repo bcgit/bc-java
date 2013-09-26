@@ -12,6 +12,12 @@ import org.bouncycastle.crypto.params.CramerShoupPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * 
+ * Essentially the Cramer-Shoup encryption / decryption algorithms according to
+ * "A practical public key cryptosystem provably secure against adaptive chosen ciphertext attack." (Crypto 1998)
+ *
+ */
 public class CramerShoupCoreEngine {
 
 	private static final BigInteger ONE = BigInteger.ONE;
