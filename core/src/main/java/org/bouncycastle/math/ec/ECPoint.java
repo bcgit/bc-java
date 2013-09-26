@@ -546,7 +546,9 @@ public abstract class ECPoint
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
             }
             default:
+            {
                 throw new UnsupportedOperationException("unsupported coordinate system");
+            }
             }
         }
 
@@ -568,7 +570,19 @@ public abstract class ECPoint
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
 
-            if (coord == ECCurve.COORD_HOMOGENEOUS)
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+            {
+                ECFieldElement X = this.x.square();
+                ECFieldElement gamma = three(X).add(getCurve().getA()).divide(two(this.y));
+                ECFieldElement x3 = gamma.square().subtract(two(this.x));
+                ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
+    
+                return new ECPoint.Fp(curve, x3, y3, this.withCompression);
+            }
+
+            case ECCurve.COORD_HOMOGENEOUS:
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
 
@@ -597,7 +611,7 @@ public abstract class ECPoint
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
 
-            if (coord == ECCurve.COORD_JACOBIAN)
+            case ECCurve.COORD_JACOBIAN:
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0];
 
@@ -654,7 +668,7 @@ public abstract class ECPoint
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
             }
 
-            if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
+            case ECCurve.COORD_JACOBIAN_MODIFIED:
             {
                 ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
 
@@ -672,12 +686,11 @@ public abstract class ECPoint
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
             }
 
-            ECFieldElement X = this.x.square();
-            ECFieldElement gamma = three(X).add(getCurve().getA()).divide(two(this.y));
-            ECFieldElement x3 = gamma.square().subtract(two(this.x));
-            ECFieldElement y3 = gamma.multiply(this.x.subtract(x3)).subtract(this.y);
-
-            return new ECPoint.Fp(curve, x3, y3, this.withCompression);
+            default:
+            {
+                throw new UnsupportedOperationException("unsupported coordinate system");
+            }
+            }
         }
 
         public ECPoint twicePlus(ECPoint b)
