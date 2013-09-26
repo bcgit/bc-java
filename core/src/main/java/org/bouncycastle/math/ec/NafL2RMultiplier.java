@@ -7,10 +7,6 @@ import java.math.BigInteger;
  */
 public class NafL2RMultiplier extends AbstractECMultiplier
 {
-    /**
-     * D.3.2 pg 101
-     * @see org.bouncycastle.math.ec.ECMultiplier#multiply(org.bouncycastle.math.ec.ECPoint, java.math.BigInteger)
-     */
     protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
         int[] naf = WNafUtil.generateCompactNaf(k);
