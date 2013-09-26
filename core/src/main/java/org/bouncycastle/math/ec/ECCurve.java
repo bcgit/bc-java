@@ -103,6 +103,22 @@ public abstract class ECCurve
         return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
+    public void normalizeAll(ECPoint[] points)
+    {
+        checkPoints(points);
+
+        if (getCoordinateSystem() == COORD_AFFINE)
+        {
+            return;
+        }
+
+        // TODO Optimize using "Montgomery's Trick" to require only one actual field inversion
+        for (int i = 0; i < points.length; ++i)
+        {
+            points[i] = points[i].normalize();
+        }
+    }
+
     public abstract ECPoint getInfinity();
 
     public ECFieldElement getA()
@@ -191,6 +207,23 @@ public abstract class ECCurve
         }
 
         return p;
+    }
+
+    protected void checkPoints(ECPoint[] points)
+    {
+        if (points == null)
+        {
+            throw new IllegalArgumentException("'points' cannot be null");
+        }
+
+        for (int i = 0; i < points.length; ++i)
+        {
+            ECPoint point = points[i];
+            if (null == point || (this != point.getCurve()))
+            {
+                throw new IllegalArgumentException("elements of 'points' must be non-null points on this curve instance");
+            }
+        }
     }
 
     /**
