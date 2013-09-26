@@ -129,8 +129,7 @@ public abstract class ECCurve
     {
         checkPoints(points);
 
-        int coord = getCoordinateSystem();
-        if (coord == ECCurve.COORD_AFFINE)
+        if (getCoordinateSystem() == ECCurve.COORD_AFFINE)
         {
             return;
         }
