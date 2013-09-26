@@ -51,7 +51,7 @@ public class ECAlgorithms
         return implShamirsTrick(P, k, Q, l);
     }
 
-    private static ECPoint importPoint(ECCurve c, ECPoint Q)
+    static ECPoint importPoint(ECCurve c, ECPoint Q)
     {
         ECCurve cq = Q.getCurve();
         if (!c.equals(cq))
@@ -61,7 +61,38 @@ public class ECAlgorithms
         return c.importPoint(Q);
     }
 
-    private static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
+    static void implMontgomeryTrick(ECFieldElement[] a, int offset, int length)
+    {
+        /*
+         * Uses the "Montgomery Trick" to invert many field elements, with only a single actual
+         * field inversion. See e.g. the paper:
+         * "Fast Multi-scalar Multiplication Methods on Elliptic Curves with Precomputation Strategy Using Montgomery Trick"
+         * by Katsuyuki Okeya, Kouichi Sakurai.
+         */
+
+        ECFieldElement[] c = new ECFieldElement[length];
+        c[0] = a[offset];
+
+        int i = 0;
+        while (++i < length)
+        {
+            c[i] = c[i - 1].multiply(a[offset + i]);
+        }
+
+        ECFieldElement u = c[--i].invert();
+
+        while (i > 0)
+        {
+            int j = offset + i--;
+            ECFieldElement tmp = a[j];
+            a[j] = c[i].multiply(u);
+            u = u.multiply(tmp);
+        }
+
+        a[offset] = u;
+    }
+
+    static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
         P = P.normalize();
