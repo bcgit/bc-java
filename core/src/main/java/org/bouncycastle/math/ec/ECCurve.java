@@ -129,15 +129,39 @@ public abstract class ECCurve
     {
         checkPoints(points);
 
-        if (getCoordinateSystem() == COORD_AFFINE)
+        int coord = getCoordinateSystem();
+        if (coord == ECCurve.COORD_AFFINE)
         {
             return;
         }
 
-        // TODO Optimize using "Montgomery's Trick" to require only one actual field inversion
+        /*
+         * Figure out which of the points actually need to be normalized
+         */
+        ECFieldElement[] zs = new ECFieldElement[points.length];
+        int[] indices = new int[points.length];
+        int count = 0;
         for (int i = 0; i < points.length; ++i)
         {
-            points[i] = points[i].normalize();
+            ECPoint p = points[i];
+            if (!p.isNormalized())
+            {
+                zs[count] = p.getZCoord(0);
+                indices[count++] = i;
+            }
+        }
+
+        if (count == 0)
+        {
+            return;
+        }
+
+        ECAlgorithms.implMontgomeryTrick(zs, 0, count);
+
+        for (int j = 0; j < count; ++j)
+        {
+            int index = indices[j];
+            points[index] = points[index].normalize(zs[j]);
         }
     }
 
