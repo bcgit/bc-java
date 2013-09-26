@@ -234,7 +234,7 @@ public abstract class WNafUtil
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         if (preComp == null)
         {
-            preComp = new ECPoint[]{ p.normalize() };
+            preComp = new ECPoint[]{ p };
         }
 
         int preCompLen = preComp.length;
@@ -245,7 +245,7 @@ public abstract class WNafUtil
             ECPoint twiceP = wnafPreCompInfo.getTwiceP();
             if (twiceP == null)
             {
-                twiceP = preComp[0].twice().normalize();
+                twiceP = preComp[0].twice();
                 wnafPreCompInfo.setTwiceP(twiceP);
             }
 
@@ -261,8 +261,13 @@ public abstract class WNafUtil
                  * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
                  * 2^(width-1)-1 times p are computed
                  */
-                preComp[i] = twiceP.add(preComp[i - 1]).normalize();
-            }            
+                preComp[i] = twiceP.add(preComp[i - 1]);
+            }
+
+            /*
+             * Having oft-used operands in affine form makes operations faster.
+             */
+            c.normalizeAll(preComp);
         }
 
         wnafPreCompInfo.setPreComp(preComp);
