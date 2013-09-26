@@ -139,22 +139,23 @@ public abstract class ECPoint
             return this;
         }
 
-        ECCurve curve = getCurve();
-        int coord = curve.getCoordinateSystem();
-        if (coord == ECCurve.COORD_AFFINE || zs.length == 0)
+        if (getCurve().getCoordinateSystem() == ECCurve.COORD_AFFINE)
         {
             return this;
         }
 
-        ECFieldElement Z1 = zs[0];
+        ECFieldElement Z1 = getZCoord(0);
         if (Z1.bitLength() == 1)
         {
             return this;
         }
 
-        ECFieldElement zInv = Z1.invert();
+        return normalize(Z1.invert());
+    }
 
-        switch (curve.getCoordinateSystem())
+    ECPoint normalize(ECFieldElement zInv)
+    {
+        switch (getCurve().getCoordinateSystem())
         {
         case ECCurve.COORD_HOMOGENEOUS:
             return createScaledPoint(zInv, zInv);
@@ -162,9 +163,8 @@ public abstract class ECPoint
         case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
         case ECCurve.COORD_JACOBIAN_MODIFIED:
         {
-            ECFieldElement zInvSquared = zInv.square();
-            ECFieldElement zInvCubed = zInvSquared.multiply(zInv);
-            return createScaledPoint(zInvSquared, zInvCubed);
+            ECFieldElement zInv2 = zInv.square(), zInv3 = zInv2.multiply(zInv);
+            return createScaledPoint(zInv2, zInv3);
         }
         default:
             throw new IllegalArgumentException("unknown coordinate system");
