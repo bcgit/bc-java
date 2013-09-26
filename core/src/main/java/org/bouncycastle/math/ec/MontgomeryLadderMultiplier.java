@@ -2,12 +2,12 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-public class MontgomeryLadderMultiplier implements ECMultiplier
+public class MontgomeryLadderMultiplier extends AbstractECMultiplier
 {
     /**
      * Montgomery ladder.
      */
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
         ECPoint[] R = new ECPoint[]{ p.getCurve().getInfinity(), p };
 

@@ -86,6 +86,28 @@ public abstract class ECCurve
      */
     public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
+    public PreCompInfo getPreCompInfo(ECPoint p)
+    {
+        checkPoint(p);
+        return p.preCompInfo;
+    }
+
+    /**
+     * Sets the <code>PreCompInfo</code> for a point on this curve. Used by
+     * <code>ECMultiplier</code>s to save the precomputation for this <code>ECPoint</code> for use
+     * by subsequent multiplication.
+     * 
+     * @param point
+     *            The <code>ECPoint</code> to store precomputations for.
+     * @param preCompInfo
+     *            The values precomputed by the <code>ECMultiplier</code>.
+     */
+    public void setPreCompInfo(ECPoint point, PreCompInfo preCompInfo)
+    {
+        checkPoint(point);
+        point.preCompInfo = preCompInfo;
+    }
+
     public ECPoint importPoint(ECPoint p)
     {
         if (this == p.getCurve())
@@ -209,6 +231,14 @@ public abstract class ECCurve
         return p;
     }
 
+    protected void checkPoint(ECPoint point)
+    {
+        if (null == point || (this != point.getCurve()))
+        {
+            throw new IllegalArgumentException("'point' must be non-null and on this curve");
+        }
+    }
+
     protected void checkPoints(ECPoint[] points)
     {
         if (points == null)
@@ -218,11 +248,7 @@ public abstract class ECCurve
 
         for (int i = 0; i < points.length; ++i)
         {
-            ECPoint point = points[i];
-            if (null == point || (this != point.getCurve()))
-            {
-                throw new IllegalArgumentException("elements of 'points' must be non-null points on this curve instance");
-            }
+            checkPoint(points[i]);
         }
     }
 

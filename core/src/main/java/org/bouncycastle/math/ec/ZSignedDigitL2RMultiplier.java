@@ -2,23 +2,28 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-public class ZSignedDigitL2RMultiplier implements ECMultiplier
+public class ZSignedDigitL2RMultiplier extends AbstractECMultiplier
 {
     /**
      * 'Zeroless' Signed Digit Left-to-Right.
      */
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        p = p.normalize();
-        ECPoint R0 = p, negP = p.negate();
+        ECPoint addP = p.normalize(), subP = addP.negate();
 
+        ECPoint R0 = addP;
+
+        int n = k.bitLength();
         int s = k.getLowestSetBit();
-        int i = k.bitLength();
+
+        int i = n;
         while (--i > s)
         {
-            R0 = R0.twicePlus(k.testBit(i) ? p : negP);
+            R0 = R0.twicePlus(k.testBit(i) ? addP : subP);
         }
+
         R0 = R0.timesPow2(s);
+
         return R0;
     }
 }

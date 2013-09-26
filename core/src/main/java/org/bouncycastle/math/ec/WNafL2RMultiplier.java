@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the WNAF (Window Non-Adjacent Form) multiplication
  * algorithm.
  */
-public class WNafL2RMultiplier implements ECMultiplier
+public class WNafL2RMultiplier extends AbstractECMultiplier
 {
     /**
      * Multiplies <code>this</code> by an integer <code>k</code> using the
@@ -15,27 +15,18 @@ public class WNafL2RMultiplier implements ECMultiplier
      * @return A new <code>ECPoint</code> which equals <code>this</code>
      * multiplied by <code>k</code>.
      */
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        if (k.signum() < 0)
-        {
-            throw new IllegalArgumentException("'k' cannot be negative");
-        }
-        if (k.signum() == 0)
-        {
-            return p.getCurve().getInfinity();
-        }
+        ECPoint R = p.getCurve().getInfinity();
 
         // Clamp the window width in the range [2, 8]
         int width = Math.max(2, Math.min(8, getWindowSize(k.bitLength())));
 
-        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, preCompInfo, width, true);
+        WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, width, true);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         ECPoint[] preCompNeg = wnafPreCompInfo.getPreCompNeg();
 
         int[] wnaf = WNafUtil.generateCompactWindowNaf(width, k);
-
-        ECPoint R = p.getCurve().getInfinity();
 
         int i = wnaf.length;
         while (--i >= 0)

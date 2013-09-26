@@ -5,28 +5,18 @@ import java.math.BigInteger;
 /**
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (left-to-right).
  */
-public class NafL2RMultiplier implements ECMultiplier
+public class NafL2RMultiplier extends AbstractECMultiplier
 {
     /**
      * D.3.2 pg 101
      * @see org.bouncycastle.math.ec.ECMultiplier#multiply(org.bouncycastle.math.ec.ECPoint, java.math.BigInteger)
      */
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        if (k.signum() < 0)
-        {
-            throw new IllegalArgumentException("'k' cannot be negative");
-        }
-        if (k.signum() == 0)
-        {
-            return p.getCurve().getInfinity();
-        }
-
         int[] naf = WNafUtil.generateCompactNaf(k);
 
-        p = p.normalize();
+        ECPoint addP = p.normalize(), subP = addP.negate();
 
-        ECPoint negP = p.negate();
         ECPoint R = p.getCurve().getInfinity();
 
         int i = naf.length;
@@ -35,7 +25,7 @@ public class NafL2RMultiplier implements ECMultiplier
             int ni = naf[i];
             int digit = ni >> 16, zeroes = ni & 0xFFFF;
 
-            R = R.twicePlus(digit > 0 ? p : negP);
+            R = R.twicePlus(digit < 0 ? subP : addP);
             R = R.timesPow2(zeroes);
         }
 
