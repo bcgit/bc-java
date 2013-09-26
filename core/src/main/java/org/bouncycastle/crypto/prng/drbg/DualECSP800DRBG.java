@@ -167,11 +167,13 @@ public class DualECSP800DRBG
         // make sure we start with a clean output array.
         Arrays.fill(output, (byte)0);
 
+        BigInteger s = null;
+
         for (int i = 0; i < m; i++)
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            BigInteger s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
+            s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
             _s = s.toByteArray();
 
             //System.err.println("S: " + new String(Hex.encode(_s)));
@@ -197,7 +199,7 @@ public class DualECSP800DRBG
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            BigInteger s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
+            s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
             _s = s.toByteArray();
 
             byte[] r = _Q.multiply(s).normalize().getAffineXCoord().toBigInteger().toByteArray();
@@ -214,8 +216,13 @@ public class DualECSP800DRBG
             }
         }
 
+        if (s == null)
+        {
+            s = new BigInteger(1, _s);
+        }
+
         // Need to preserve length of S as unsigned int.
-        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger());
+        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(s).normalize().getAffineXCoord().toBigInteger());
 
         return numberOfBits;
     }
