@@ -19,8 +19,8 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
     {
         ECPoint R = p.getCurve().getInfinity();
 
-        // Clamp the window width in the range [2, 8]
-        int width = Math.max(2, Math.min(8, getWindowSize(k.bitLength())));
+        // Clamp the window width in the range [2, 16]
+        int width = Math.max(2, Math.min(16, getWindowSize(k.bitLength())));
 
         WNafPreCompInfo wnafPreCompInfo = WNafUtil.precompute(p, width, true);
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
