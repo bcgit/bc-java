@@ -8,6 +8,11 @@ public abstract class WNafUtil
 
     public static int[] generateCompactNaf(BigInteger k)
     {
+        if ((k.bitLength() >>> 16) != 0)
+        {
+            throw new IllegalArgumentException("'k' must have bitlength < 2^16");
+        }
+
         BigInteger _3k = k.shiftLeft(1).add(k);
 
         int digits = _3k.bitLength() - 1;
@@ -46,9 +51,13 @@ public abstract class WNafUtil
             return generateCompactNaf(k);
         }
 
-        if (width < 2 || width > 8)
+        if (width < 2 || width > 16)
         {
-            throw new IllegalArgumentException("'width' must be in the range [2, 8]");
+            throw new IllegalArgumentException("'width' must be in the range [2, 16]");
+        }
+        if ((k.bitLength() >>> 16) != 0)
+        {
+            throw new IllegalArgumentException("'k' must have bitlength < 2^16");
         }
 
         int[] wnaf = new int[k.bitLength() / width + 1];
@@ -305,24 +314,24 @@ public abstract class WNafUtil
         return wnafPreCompInfo;
     }
 
-    private static byte[] trim(byte[] bs, int length)
+    private static byte[] trim(byte[] a, int length)
     {
         byte[] result = new byte[length];
-        System.arraycopy(bs, 0, result, 0, result.length);
+        System.arraycopy(a, 0, result, 0, result.length);
         return result;
     }
 
-    private static int[] trim(int[] bs, int length)
+    private static int[] trim(int[] a, int length)
     {
         int[] result = new int[length];
-        System.arraycopy(bs, 0, result, 0, result.length);
+        System.arraycopy(a, 0, result, 0, result.length);
         return result;
     }
 
-    private static ECPoint[] resizeTable(ECPoint[] ps, int length)
+    private static ECPoint[] resizeTable(ECPoint[] a, int length)
     {
         ECPoint[] result = new ECPoint[length];
-        System.arraycopy(ps, 0, result, 0, ps.length);
+        System.arraycopy(a, 0, result, 0, a.length);
         return result;
     }
 }
