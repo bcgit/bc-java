@@ -226,9 +226,10 @@ public abstract class WNafUtil
         return w + 2;
     }
 
-    public static WNafPreCompInfo precompute(ECPoint p, PreCompInfo preCompInfo, int width, boolean includeNegated)
+    public static WNafPreCompInfo precompute(ECPoint p, int width, boolean includeNegated)
     {
-        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(preCompInfo);
+        ECCurve c = p.getCurve();
+        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p));
 
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         if (preComp == null)
@@ -244,7 +245,7 @@ public abstract class WNafUtil
             ECPoint twiceP = wnafPreCompInfo.getTwiceP();
             if (twiceP == null)
             {
-                twiceP = p.twice().normalize();
+                twiceP = preComp[0].twice().normalize();
                 wnafPreCompInfo.setTwiceP(twiceP);
             }
 
@@ -294,7 +295,7 @@ public abstract class WNafUtil
             wnafPreCompInfo.setPreCompNeg(preCompNeg);
         }
 
-        p.setPreCompInfo(wnafPreCompInfo);
+        c.setPreCompInfo(p, wnafPreCompInfo);
 
         return wnafPreCompInfo;
     }

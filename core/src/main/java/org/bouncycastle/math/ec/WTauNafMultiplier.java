@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the WTNAF (Window
  * <code>&tau;</code>-adic Non-Adjacent Form) algorithm.
  */
-public class WTauNafMultiplier implements ECMultiplier
+public class WTauNafMultiplier extends AbstractECMultiplier
 {
     /**
      * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}
@@ -16,7 +16,7 @@ public class WTauNafMultiplier implements ECMultiplier
      * @param k The integer by which to multiply <code>k</code>.
      * @return <code>p</code> multiplied by <code>k</code>.
      */
-    public ECPoint multiply(ECPoint point, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint point, BigInteger k)
     {
         if (!(point instanceof ECPoint.F2m))
         {
@@ -25,8 +25,7 @@ public class WTauNafMultiplier implements ECMultiplier
         }
 
         ECPoint.F2m p = (ECPoint.F2m)point;
-
-        ECCurve.F2m curve = (ECCurve.F2m) p.getCurve();
+        ECCurve.F2m curve = (ECCurve.F2m)p.getCurve();
         int m = curve.getM();
         byte a = curve.getA().toBigInteger().byteValue();
         byte mu = curve.getMu();
@@ -34,7 +33,7 @@ public class WTauNafMultiplier implements ECMultiplier
 
         ZTauElement rho = Tnaf.partModReduction(k, m, a, s, mu, (byte)10);
 
-        return multiplyWTnaf(p, rho, preCompInfo, a, mu);
+        return multiplyWTnaf(p, rho, curve.getPreCompInfo(p), a, mu);
     }
 
     /**
@@ -88,7 +87,7 @@ public class WTauNafMultiplier implements ECMultiplier
         if ((preCompInfo == null) || !(preCompInfo instanceof WTauNafPreCompInfo))
         {
             pu = Tnaf.getPreComp(p, a);
-            p.setPreCompInfo(new WTauNafPreCompInfo(pu));
+            curve.setPreCompInfo(p, new WTauNafPreCompInfo(pu));
         }
         else
         {

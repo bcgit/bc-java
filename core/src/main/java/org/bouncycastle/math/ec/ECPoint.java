@@ -219,18 +219,6 @@ public abstract class ECPoint
         return x.hashCode() ^ y.hashCode() ^ Arrays.hashCode(zs);
     }
 
-    /**
-     * Sets the <code>PreCompInfo</code>. Used by <code>ECMultiplier</code>s
-     * to save the precomputation for this <code>ECPoint</code> to store the
-     * precomputation result for use by subsequent multiplication.
-     * @param preCompInfo The values precomputed by the
-     * <code>ECMultiplier</code>.
-     */
-    void setPreCompInfo(PreCompInfo preCompInfo)
-    {
-        this.preCompInfo = preCompInfo;
-    }
-
     public byte[] getEncoded()
     {
         return getEncoded(withCompression);
@@ -311,22 +299,7 @@ public abstract class ECPoint
      */
     public ECPoint multiply(BigInteger k)
     {
-        if (k.signum() < 0)
-        {
-            throw new IllegalArgumentException("The multiplicator cannot be negative");
-        }
-
-        if (this.isInfinity())
-        {
-            return this;
-        }
-
-        if (k.signum() == 0)
-        {
-            return getCurve().getInfinity();
-        }
-
-        return getCurve().getMultiplier().multiply(this, k, preCompInfo);
+        return getCurve().getMultiplier().multiply(this, k);
     }
 
     /**
