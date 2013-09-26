@@ -2,7 +2,7 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-class ReferenceMultiplier implements ECMultiplier
+public class ReferenceMultiplier implements ECMultiplier
 {
     /**
      * Simple shift-and-add multiplication. Serves as reference implementation

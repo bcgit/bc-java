@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
@@ -156,7 +157,7 @@ public class TlsECCUtils
         }
 
         // Lazily created the first time a particular curve is accessed
-        X9ECParameters ecP = SECNamedCurves.getByName(curveName);
+        X9ECParameters ecP = ECNamedCurveTable.getByName(curveName);
 
         if (ecP == null)
         {

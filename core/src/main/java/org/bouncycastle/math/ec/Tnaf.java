@@ -397,8 +397,9 @@ class Tnaf
             return p;
         }
 
-        ECFieldElement x = p.getX();
-        ECFieldElement y = p.getY();
+        ECPoint pn = p.normalize();
+        ECFieldElement x = pn.getAffineXCoord();
+        ECFieldElement y = pn.getAffineYCoord();
 
         return new ECPoint.F2m(p.getCurve(), x.square(), y.square(), p.isCompressed());
     }

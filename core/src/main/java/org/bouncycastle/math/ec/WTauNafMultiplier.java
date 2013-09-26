@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the WTNAF (Window
  * <code>&tau;</code>-adic Non-Adjacent Form) algorithm.
  */
-class WTauNafMultiplier implements ECMultiplier
+public class WTauNafMultiplier implements ECMultiplier
 {
     /**
      * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}

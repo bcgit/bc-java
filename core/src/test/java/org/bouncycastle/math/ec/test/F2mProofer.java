@@ -33,8 +33,8 @@ public class F2mProofer
 
     private String pointToString(ECPoint.F2m p)
     {
-        ECFieldElement.F2m x = (ECFieldElement.F2m) p.getX();
-        ECFieldElement.F2m y = (ECFieldElement.F2m) p.getY();
+        ECFieldElement.F2m x = (ECFieldElement.F2m) p.getAffineXCoord();
+        ECFieldElement.F2m y = (ECFieldElement.F2m) p.getAffineYCoord();
 
         int m = x.getM();
         int len = m / 2 + 5;
@@ -53,7 +53,7 @@ public class F2mProofer
         throws NoSuchAlgorithmException, IOException
     {
         ECPoint.F2m g = (ECPoint.F2m) x9ECParameters.getG();
-        int m = ((ECFieldElement.F2m) (g.getX())).getM();
+        int m = ((ECFieldElement.F2m) (g.getAffineXCoord())).getM();
 
         SecureRandom secRand = SecureRandom.getInstance("SHA1PRNG");
         Properties inputProps = new Properties();
@@ -72,7 +72,7 @@ public class F2mProofer
         String classPrefix) throws IOException
     {
         ECPoint.F2m g = (ECPoint.F2m) x9ECParameters.getG();
-        int m = ((ECFieldElement.F2m) (g.getX())).getM();
+        int m = ((ECFieldElement.F2m) (g.getAffineXCoord())).getM();
 
         String inputFileName = PATH + INPUT_FILE_NAME_PREFIX + m
             + ".properties";
@@ -85,7 +85,7 @@ public class F2mProofer
         {
             BigInteger rand = new BigInteger(inputProps.getProperty(Integer
                 .toString(i)), 16);
-            ECPoint.F2m result = (ECPoint.F2m) g.multiply(rand);
+            ECPoint.F2m result = (ECPoint.F2m) g.multiply(rand).normalize();
             String resultStr = pointToString(result);
             outputProps.setProperty(Integer.toString(i), resultStr);
         }
@@ -111,7 +111,7 @@ public class F2mProofer
         String classPrefix1, String classPrefix2) throws IOException
     {
         ECPoint.F2m g = (ECPoint.F2m) x9ECParameters.getG();
-        int m = ((ECFieldElement.F2m) (g.getX())).getM();
+        int m = ((ECFieldElement.F2m) (g.getAffineXCoord())).getM();
 
         Properties res1 = loadResults(classPrefix1, m);
         Properties res2 = loadResults(classPrefix2, m);

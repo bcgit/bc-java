@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Interface for classes encapsulating a point multiplication algorithm
  * for <code>ECPoint</code>s.
  */
-interface ECMultiplier
+public interface ECMultiplier
 {
     /**
      * Multiplies the <code>ECPoint p</code> by <code>k</code>, i.e.
