@@ -49,10 +49,10 @@ public class ECDHCBasicAgreement
     {
         ECPublicKeyParameters   pub = (ECPublicKeyParameters)pubKey;
         ECDomainParameters      params = pub.getParameters();
-        ECPoint P = pub.getQ().multiply(params.getH().multiply(key.getD()));
+        ECPoint P = pub.getQ().multiply(params.getH().multiply(key.getD())).normalize();
 
         // if (p.isInfinity()) throw new RuntimeException("Invalid public key");
 
-        return P.getX().toBigInteger();
+        return P.getAffineXCoord().toBigInteger();
     }
 }

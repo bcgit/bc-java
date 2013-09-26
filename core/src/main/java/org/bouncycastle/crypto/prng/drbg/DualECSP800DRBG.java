@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -91,8 +90,8 @@ public class DualECSP800DRBG
             _seedlen = 256;
             _outlen = 240 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-256").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p256_Px), new ECFieldElement.Fp(_curve.getQ(), p256_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p256_Qx), new ECFieldElement.Fp(_curve.getQ(), p256_Qy));
+            _P = _curve.createPoint(p256_Px, p256_Py);
+            _Q = _curve.createPoint(p256_Qx, p256_Qy);
         }
         else if (securityStrength <= 192)
         {
@@ -103,8 +102,8 @@ public class DualECSP800DRBG
             _seedlen = 384;
             _outlen = 368 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Px), new ECFieldElement.Fp(_curve.getQ(), p384_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p384_Qx), new ECFieldElement.Fp(_curve.getQ(), p384_Qy));
+            _P = _curve.createPoint(p384_Px, p384_Py);
+            _Q = _curve.createPoint(p384_Qx, p384_Qy);
         }
         else if (securityStrength <= 256)
         {
@@ -115,8 +114,8 @@ public class DualECSP800DRBG
             _seedlen = 521;
             _outlen = 504 / 8;
             _curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
-            _P = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p521_Px), new ECFieldElement.Fp(_curve.getQ(), p521_Py));
-            _Q = new ECPoint.Fp(_curve, new ECFieldElement.Fp(_curve.getQ(), p521_Qx), new ECFieldElement.Fp(_curve.getQ(), p521_Qy));
+            _P = _curve.createPoint(p521_Px, p521_Py);
+            _Q = _curve.createPoint(p521_Qx, p521_Qy);
         }
         else
         {
@@ -172,11 +171,11 @@ public class DualECSP800DRBG
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            _s = _P.multiply(t).getX().toBigInteger().toByteArray();
+            _s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             //System.err.println("S: " + new String(Hex.encode(_s)));
 
-            byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
+            byte[] r = _Q.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             if (r.length > _outlen)
             {
@@ -197,9 +196,9 @@ public class DualECSP800DRBG
         {
             BigInteger t = new BigInteger(1, xor(_s, additionalInput));
 
-            _s = _P.multiply(t).getX().toBigInteger().toByteArray();
+            _s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
-            byte[] r = _Q.multiply(new BigInteger(1, _s)).getX().toBigInteger().toByteArray();
+            byte[] r = _Q.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger().toByteArray();
 
             int required = output.length - (m * _outlen);
 
@@ -214,7 +213,7 @@ public class DualECSP800DRBG
         }
 
         // Need to preserve length of S as unsigned int.
-        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).getX().toBigInteger());
+        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(new BigInteger(1, _s)).normalize().getAffineXCoord().toBigInteger());
 
         return numberOfBits;
     }

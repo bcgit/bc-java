@@ -37,9 +37,9 @@ public class ECMQVBasicAgreement
 
         ECPoint agreement = calculateMqvAgreement(staticPrivateKey.getParameters(), staticPrivateKey,
             privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
-            pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey());
+            pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey()).normalize();
 
-        return agreement.getX().toBigInteger();
+        return agreement.getAffineXCoord().toBigInteger();
     }
 
     // The ECMQV Primitive as described in SEC-1, 3.4
@@ -56,22 +56,26 @@ public class ECMQVBasicAgreement
         BigInteger powE = ECConstants.ONE.shiftLeft(e);
 
         // The Q2U public key is optional
-        ECPoint q;
+        ECPoint qU;
         if (Q2U == null)
         {
-            q = parameters.getG().multiply(d2U.getD());
+            qU = parameters.getG().multiply(d2U.getD());
         }
         else
         {
-            q = Q2U.getQ();
+            qU = Q2U.getQ();
         }
 
-        BigInteger x = q.getX().toBigInteger();
+        qU = qU.normalize();
+
+        BigInteger x = qU.getAffineXCoord().toBigInteger();
         BigInteger xBar = x.mod(powE);
         BigInteger Q2UBar = xBar.setBit(e);
         BigInteger s = d1U.getD().multiply(Q2UBar).mod(n).add(d2U.getD()).mod(n);
 
-        BigInteger xPrime = Q2V.getQ().getX().toBigInteger();
+        ECPoint qV = Q2V.getQ().normalize();
+
+        BigInteger xPrime = qV.getAffineXCoord().toBigInteger();
         BigInteger xPrimeBar = xPrime.mod(powE);
         BigInteger Q2VBar = xPrimeBar.setBit(e);
 
@@ -79,7 +83,7 @@ public class ECMQVBasicAgreement
 
 //        ECPoint p = Q1V.getQ().multiply(Q2VBar).add(Q2V.getQ()).multiply(hs);
         ECPoint p = ECAlgorithms.sumOfTwoMultiplies(
-            Q1V.getQ(), Q2VBar.multiply(hs).mod(n), Q2V.getQ(), hs);
+            Q1V.getQ(), Q2VBar.multiply(hs).mod(n), Q2V.getQ(), hs).normalize();
 
         if (p.isInfinity())
         {

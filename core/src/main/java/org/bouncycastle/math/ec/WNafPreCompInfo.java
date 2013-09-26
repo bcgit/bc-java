@@ -13,6 +13,7 @@ class WNafPreCompInfo implements PreCompInfo
      * WNafMultiplier.multiply()}</code>.
      */
     private ECPoint[] preComp = null;
+    private ECPoint[] preCompNeg = null;
 
     /**
      * Holds an <code>ECPoint</code> representing twice(this). Used for the
@@ -27,9 +28,19 @@ class WNafPreCompInfo implements PreCompInfo
         return preComp;
     }
 
+    protected ECPoint[] getPreCompNeg()
+    {
+        return preCompNeg;
+    }
+
     protected void setPreComp(ECPoint[] preComp)
     {
         this.preComp = preComp;
+    }
+
+    protected void setPreCompNeg(ECPoint[] preCompNeg)
+    {
+        this.preCompNeg = preCompNeg;
     }
 
     protected ECPoint getTwiceP()
