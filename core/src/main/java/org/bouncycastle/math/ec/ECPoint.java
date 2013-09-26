@@ -186,8 +186,29 @@ public abstract class ECPoint
         return withCompression;
     }
 
-    public boolean equals(
-        Object  other)
+    public boolean equals(ECPoint other)
+    {
+        ECCurve c = getCurve();
+        if (!c.equals(other.getCurve()))
+        {
+            return false;
+        }
+
+        boolean i1 = isInfinity(), i2 = other.isInfinity();
+        if (i1 || i2)
+        {
+            return i1 && i2;
+        }
+
+        ECPoint[] ns = new ECPoint[]{ this, c.importPoint(other) };
+        c.normalizeAll(ns);
+
+        ECPoint p1 = ns[0], p2 = ns[1];
+
+        return p1.getXCoord().equals(p2.getXCoord()) && p1.getYCoord().equals(p2.getYCoord());
+    }
+
+    public boolean equals(Object other)
     {
         if (other == this)
         {
@@ -199,14 +220,7 @@ public abstract class ECPoint
             return false;
         }
 
-        ECPoint o = (ECPoint)other;
-
-        if (this.isInfinity())
-        {
-            return o.isInfinity();
-        }
-
-        return x.equals(o.x) && y.equals(o.y) && Arrays.areEqual(zs, o.zs);
+        return equals((ECPoint)other);
     }
 
     public int hashCode()
