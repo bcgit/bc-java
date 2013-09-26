@@ -158,71 +158,50 @@ public class DualECSP800DRBG
             additionalInput = null;
         }
 
+        BigInteger s = new BigInteger(1, _s);
+
         if (additionalInput != null)
         {
             // Note: we ignore the use of pad8 on the additional input as we mandate byte arrays for it.
-            additionalInput = Utils.hash_df(_digest, additionalInput, _seedlen);
+            byte[] w = Utils.hash_df(_digest, additionalInput, _seedlen);
+            s = s.xor(new BigInteger(1, w));
         }
 
         // make sure we start with a clean output array.
         Arrays.fill(output, (byte)0);
 
-        BigInteger s = null;
-
+        int offset = 0;
         for (int i = 0; i < m; i++)
         {
-            BigInteger t = new BigInteger(1, xor(_s, additionalInput));
+            s = getScalarMultipleXCoord(_P, s);
+//            System.err.println("S: " + s.toString(16));
 
-            s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
-            _s = s.toByteArray();
+            BigInteger r = getScalarMultipleXCoord(_Q, s);
+//            System.err.println("R: " + r.toString(16));
 
-            //System.err.println("S: " + new String(Hex.encode(_s)));
+            generateOutput(r, output, offset, _outlen);
 
-            byte[] r = _Q.multiply(s).normalize().getAffineXCoord().toBigInteger().toByteArray();
+            offset += _outlen;
 
-            if (r.length > _outlen)
-            {
-                System.arraycopy(r, r.length - _outlen, output, i * _outlen, _outlen);
-            }
-            else
-            {
-                System.arraycopy(r, 0, output, i * _outlen + (_outlen - r.length), r.length);
-            }
-
-            //System.err.println("R: " + new String(Hex.encode(r)));
-            additionalInput = null;
-
+            // TODO Check where/when this should be incremented (per-multiply? per-block? per-call?)
             _reseedCounter++;
         }
 
-        if (m * _outlen < output.length)
+        if (offset < output.length)
         {
-            BigInteger t = new BigInteger(1, xor(_s, additionalInput));
+            s = getScalarMultipleXCoord(_P, s);
 
-            s = _P.multiply(t).normalize().getAffineXCoord().toBigInteger();
-            _s = s.toByteArray();
+            BigInteger r = getScalarMultipleXCoord(_Q, s);
 
-            byte[] r = _Q.multiply(s).normalize().getAffineXCoord().toBigInteger().toByteArray();
+            generateOutput(r, output, offset, output.length - offset);
 
-            int required = output.length - (m * _outlen);
-
-            if (r.length > _outlen)
-            {
-                System.arraycopy(r, r.length - _outlen, output, m * _outlen, required);
-            }
-            else
-            {
-                System.arraycopy(r, 0, output, m * _outlen + (_outlen - r.length), required);
-            }
+//            offset = output.length;
         }
 
-        if (s == null)
-        {
-            s = new BigInteger(1, _s);
-        }
+        s = getScalarMultipleXCoord(_P, s);
 
         // Need to preserve length of S as unsigned int.
-        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(s).normalize().getAffineXCoord().toBigInteger());
+        _s = BigIntegers.asUnsignedByteArray(_sLength, s);
 
         return numberOfBits;
     }
@@ -247,23 +226,6 @@ public class DualECSP800DRBG
         _reseedCounter = 0;
     }
 
-    private byte[] xor(byte[] a, byte[] b)
-    {
-        if (b == null)
-        {
-            return a;
-        }
-
-        byte[] rv = new byte[a.length];
-
-        for (int i = 0; i != rv.length; i++)
-        {
-            rv[i] = (byte)(a[i] ^ b[i]);
-        }
-
-        return rv;
-    }
-
     // Note: works in place
     private byte[] pad8(byte[] s, int seedlen)
     {
@@ -283,5 +245,25 @@ public class DualECSP800DRBG
         }
 
         return s;
+    }
+
+    private void generateOutput(BigInteger r, byte[] output, int offset, int length)
+    {
+        byte[] bytes = r.toByteArray();
+
+        if (bytes.length > length)
+        {
+            System.arraycopy(bytes, bytes.length - length, output, offset, length);
+        }
+        else
+        {
+            // NOTE: Then output array is filled with zeroes initially, so we can skip them here
+            System.arraycopy(bytes, 0, output, offset + (length - bytes.length), length);
+        }
+    }
+
+    private BigInteger getScalarMultipleXCoord(ECPoint p, BigInteger s)
+    {
+        return p.multiply(s).normalize().getAffineXCoord().toBigInteger();
     }
 }
