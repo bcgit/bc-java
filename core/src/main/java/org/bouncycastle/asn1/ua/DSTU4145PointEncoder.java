@@ -3,7 +3,6 @@ package org.bouncycastle.asn1.ua;
 import java.math.BigInteger;
 import java.util.Random;
 
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
@@ -14,12 +13,8 @@ import org.bouncycastle.util.Arrays;
  * DSTU4145 encodes points somewhat differently than X9.62
  * It compresses the point to the size of the field element
  */
-
 public abstract class DSTU4145PointEncoder
 {
-
-    private static X9IntegerConverter converter = new X9IntegerConverter();
-
     private static BigInteger trace(ECFieldElement fe)
     {
         ECFieldElement t = fe;
@@ -89,14 +84,14 @@ public abstract class DSTU4145PointEncoder
           return Arrays.copyOfRange(bytes, 1, bytes.length);*/
 
         Q = Q.normalize();
+
         ECFieldElement x = Q.getAffineXCoord();
 
-        int byteCount = converter.getByteLength(x);
-        byte[] bytes = converter.integerToBytes(x.toBigInteger(), byteCount);
+        byte[] bytes = x.getEncoded();
 
         if (!x.isZero())
         {
-            ECFieldElement y = Q.getAffineYCoord().multiply(x.invert());
+            ECFieldElement y = Q.getAffineYCoord().divide(x);
             if (trace(y).equals(ECConstants.ONE))
             {
                 bytes[bytes.length - 1] |= 0x01;

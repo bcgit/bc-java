@@ -8,7 +8,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Hashtable;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -19,6 +18,7 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -309,8 +309,7 @@ public class TlsECCUtils
 
     public static byte[] serializeECFieldElement(int fieldSize, BigInteger x) throws IOException
     {
-        int requiredLength = (fieldSize + 7) / 8;
-        return BigIntegers.asUnsignedByteArray(requiredLength, x);
+        return BigIntegers.asUnsignedByteArray((fieldSize + 7) / 8, x);
     }
 
     public static byte[] serializeECPoint(short[] ecPointFormats, ECPoint point) throws IOException
@@ -541,6 +540,11 @@ public class TlsECCUtils
         writeECParameter(K, output);
     }
 
+    public static void writeECFieldElement(ECFieldElement x, OutputStream output) throws IOException
+    {
+        TlsUtils.writeOpaque8(x.getEncoded(), output);
+    }
+
     public static void writeECFieldElement(int fieldSize, BigInteger x, OutputStream output) throws IOException
     {
         TlsUtils.writeOpaque8(serializeECFieldElement(fieldSize, x), output);
@@ -590,8 +594,8 @@ public class TlsECCUtils
             throw new IllegalArgumentException("'ecParameters' not a known curve type");
         }
 
-        writeECFieldElement(curve.getFieldSize(), curve.getA().toBigInteger(), output);
-        writeECFieldElement(curve.getFieldSize(), curve.getB().toBigInteger(), output);
+        writeECFieldElement(curve.getA(), output);
+        writeECFieldElement(curve.getB(), output);
         TlsUtils.writeOpaque8(serializeECPoint(ecPointFormats, ecParameters.getG()), output);
         writeECParameter(ecParameters.getN(), output);
         writeECParameter(ecParameters.getH(), output);
