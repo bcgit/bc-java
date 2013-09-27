@@ -17,12 +17,13 @@ public class SECNamedCurves
 {
     private static ECCurve configureCurve(ECCurve curve)
     {
-//        if (curve instanceof ECCurve.Fp && curve.getCoordinateSystem() != ECCurve.COORD_JACOBIAN
-//            && curve.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
+//        int coord = ECCurve.COORD_JACOBIAN_MODIFIED;
+//
+//        if (curve.getCoordinateSystem() != coord && curve.supportsCoordinateSystem(coord))
 //        {
 //            return curve.configure()
-//                .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
-//                .setMultiplier(new WNafMultiplier())
+//                .setCoordinateSystem(coord)
+////                .setMultiplier(new WNafL2RMultiplier())
 //                .create();
 //        }
 
