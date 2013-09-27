@@ -43,8 +43,6 @@ public abstract class ECPoint
 
     protected PreCompInfo preCompInfo = null;
 
-    private static X9IntegerConverter converter = new X9IntegerConverter();
-
     protected ECPoint(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {
         this(curve, x, y, getInitialZCoords(curve));
@@ -256,10 +254,8 @@ public abstract class ECPoint
         }
 
         ECPoint normed = normalize();
-        ECFieldElement x = normed.getAffineXCoord();
 
-        int length = converter.getByteLength(x);
-        byte[] X = converter.integerToBytes(x.toBigInteger(), length);
+        byte[] X = normed.getXCoord().getEncoded();
 
         if (compressed)
         {
@@ -269,8 +265,8 @@ public abstract class ECPoint
             return PO;
         }
 
-        ECFieldElement y = normed.getAffineYCoord();
-        byte[] Y = converter.integerToBytes(y.toBigInteger(), length);
+        byte[] Y = normed.getYCoord().getEncoded();
+
         byte[] PO = new byte[X.length + Y.length + 1];
         PO[0] = 0x04;
         System.arraycopy(X, 0, PO, 1, X.length);
