@@ -95,19 +95,20 @@ public class ECAlgorithms
     static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
-        P = P.normalize();
-        Q = Q.normalize();
-
-        ECPoint infinity = P.getCurve().getInfinity();
+        ECCurve curve = P.getCurve();
+        ECPoint infinity = curve.getInfinity();
 
         // TODO conjugate co-Z addition (ZADDC) can return both of these
-        ECPoint PaddQ = P.add(Q).normalize();
-        ECPoint PsubQ = P.subtract(Q).normalize();
+        ECPoint PaddQ = P.add(Q);
+        ECPoint PsubQ = P.subtract(Q);
 
-        ECPoint[] points = new ECPoint[] {
-            PaddQ.negate(), P.negate(), PsubQ.negate(),
-            Q.negate(), infinity, Q,
-            PsubQ, P, PaddQ };
+        ECPoint[] points = new ECPoint[]{ Q, PsubQ, P, PaddQ };
+        curve.normalizeAll(points);
+
+        ECPoint[] table = new ECPoint[] {
+            points[3].negate(), points[2].negate(), points[1].negate(),
+            points[0].negate(), infinity, points[0],
+            points[1], points[2], points[3] };
 
         byte[] kNaf = WNafUtil.generateNaf(k);
         byte[] lNaf = WNafUtil.generateNaf(l);
@@ -121,7 +122,7 @@ public class ECAlgorithms
             int lni = i < lNaf.length ? lNaf[i] + 1 : 1;
 
             int index = kni * 3 + lni;
-            R = R.twicePlus(points[index]);
+            R = R.twicePlus(table[index]);
         }
 
         return R;
