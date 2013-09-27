@@ -60,19 +60,19 @@ public abstract class ECPoint
     }
 
     /**
-     * @deprecated Use getAffineXCoord or getXCoord instead
+     * @deprecated Use getAffineXCoord instead
      */
     public ECFieldElement getX()
     {
-        return getXCoord();
+        return getAffineXCoord();
     }
 
     /**
-     * @deprecated Use getAffineYCoord or getYCoord instead
+     * @deprecated Use getAffineYCoord instead
      */
     public ECFieldElement getY()
     {
-        return getYCoord();
+        return getAffineYCoord();
     }
 
     public ECFieldElement getAffineXCoord()
