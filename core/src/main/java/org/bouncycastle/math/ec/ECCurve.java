@@ -286,7 +286,7 @@ public abstract class ECCurve
      */
     public static class Fp extends ECCurve
     {
-        private static final int FP_DEFAULT_COORDS = COORD_AFFINE;
+        private static final int FP_DEFAULT_COORDS = COORD_JACOBIAN_MODIFIED;
 
         BigInteger q, r;
         ECPoint.Fp infinity;
