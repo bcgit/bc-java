@@ -17,6 +17,7 @@ import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMESignedParser;
 import org.bouncycastle.mail.smime.util.SharedFileInputStream;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Store;
 
 /**
@@ -98,7 +99,7 @@ public class ReadLargeSignedMail
         //
         if (msg.isMimeType("multipart/signed"))
         {
-            SMIMESignedParser             s = new SMIMESignedParser(
+            SMIMESignedParser             s = new SMIMESignedParser(new JcaDigestCalculatorProviderBuilder().build(),
                                             (MimeMultipart)msg.getContent());
 
             System.out.println("Status:");
@@ -110,7 +111,7 @@ public class ReadLargeSignedMail
             //
             // in this case the content is wrapped in the signature block.
             //
-            SMIMESignedParser       s = new SMIMESignedParser(msg);
+            SMIMESignedParser       s = new SMIMESignedParser(new JcaDigestCalculatorProviderBuilder().build(), msg);
 
             System.out.println("Status:");
 

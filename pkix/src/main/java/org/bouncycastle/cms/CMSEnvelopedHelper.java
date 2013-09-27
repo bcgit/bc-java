@@ -3,14 +3,10 @@ package org.bouncycastle.cms;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.crypto.KeyGenerator;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
@@ -55,36 +51,7 @@ class CMSEnvelopedHelper
         MAC_ALG_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AESMac");
     }
 
-    KeyGenerator createSymmetricKeyGenerator(
-        String encryptionOID,
-        Provider provider)
-        throws NoSuchAlgorithmException
-    {
-        try
-        {
-            return createKeyGenerator(encryptionOID, provider);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            try
-            {
-                String algName = (String)BASE_CIPHER_NAMES.get(encryptionOID);
-                if (algName != null)
-                {
-                    return createKeyGenerator(algName, provider);
-                }
-            }
-            catch (NoSuchAlgorithmException ex)
-            {
-                // ignore
-            }
-            if (provider != null)
-            {
-                return createSymmetricKeyGenerator(encryptionOID, null);
-            }
-            throw e;
-        }
-    }
+
 
     int getKeySize(String oid)
     {
@@ -98,20 +65,7 @@ class CMSEnvelopedHelper
         return keySize.intValue();
     }
 
-    private KeyGenerator createKeyGenerator(
-        String algName,
-        Provider provider)
-        throws NoSuchAlgorithmException
-    {
-        if (provider != null)
-        {
-            return KeyGenerator.getInstance(algName, provider);
-        }
-        else
-        {
-            return KeyGenerator.getInstance(algName);
-        }
-    }
+
 
     static RecipientInformationStore buildRecipientInformationStore(
         ASN1Set recipientInfos, AlgorithmIdentifier messageAlgorithm, CMSSecureReadable secureReadable)

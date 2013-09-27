@@ -1,6 +1,5 @@
 package org.bouncycastle.cms;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,17 +17,6 @@ public class CMSAuthenticatedGenerator
      */
     public CMSAuthenticatedGenerator()
     {
-    }
-
-    /**
-     * constructor allowing specific source of randomness
-     *
-     * @param rand instance of SecureRandom to use
-     */
-    public CMSAuthenticatedGenerator(
-        SecureRandom rand)
-    {
-        super(rand);
     }
 
     public void setAuthenticatedAttributeGenerator(CMSAttributeTableGenerator authGen)
