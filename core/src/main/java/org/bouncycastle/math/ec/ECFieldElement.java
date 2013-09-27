@@ -35,7 +35,7 @@ public abstract class ECFieldElement
 
     public String toString()
     {
-        return this.toBigInteger().toString(2);
+        return this.toBigInteger().toString(16);
     }
 
     public static class Fp extends ECFieldElement
@@ -836,7 +836,7 @@ public abstract class ECFieldElement
 //                g1z = g1z.xor(g2z.shiftLeft(j));
 ////                if (g1z.bitLength() > this.m) {
 ////                    throw new ArithmeticException(
-////                            "deg(g1z) >= m, g1z = " + g1z.toString(2));
+////                            "deg(g1z) >= m, g1z = " + g1z.toString(16));
 ////                }
 //            }
 //            return new ECFieldElement.F2m(
