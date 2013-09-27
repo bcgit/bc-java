@@ -130,7 +130,7 @@ public class SendSignedAndEncryptedMail
             signer.addCertificates(certs);
 
             /* Sign the message */
-            MimeMultipart mm = signer.generate(body, "BC");
+            MimeMultipart mm = signer.generate(body);
             MimeMessage signedMessage = new MimeMessage(session);
 
             /* Set all original MIME headers in the signed message */

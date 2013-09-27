@@ -127,7 +127,7 @@ public class ImplicitlyCaTest
 
         if (!vKey.equals(vKey2) || vKey.hashCode() != vKey2.hashCode())
         {
-            fail("private equals/hashCode failed");
+            fail("public equals/hashCode failed");
         }
 
         if (!sKey.equals(sKey2) || sKey.hashCode() != sKey2.hashCode())

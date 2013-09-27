@@ -3,20 +3,13 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.crypto.KeyGenerator;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
@@ -27,7 +20,6 @@ import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceCMSMacCalculatorBuilder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.MacCalculator;
@@ -185,82 +177,5 @@ public class CMSAuthenticatedDataGenerator
                 return digestCalculator;
             }
         });
-    }
-
-    /**
-     * constructor allowing specific source of randomness
-     * @param rand instance of SecureRandom to use
-     * @deprecated no longer required, use simple constructor.
-     */
-    public CMSAuthenticatedDataGenerator(
-        SecureRandom rand)
-    {
-        super(rand);
-    }
-
-    /**
-     * generate an authenticated object that contains an CMS Authenticated Data
-     * object using the given provider and the passed in key generator.
-     * @deprecated
-     */
-    private CMSAuthenticatedData generate(
-        final CMSProcessable  content,
-        String          macOID,
-        KeyGenerator    keyGen,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException
-    {
-        Provider                encProvider = keyGen.getProvider();
-
-        convertOldRecipients(rand, provider);
-
-        return generate(new CMSTypedData()
-        {
-            public ASN1ObjectIdentifier getContentType()
-            {
-                return CMSObjectIdentifiers.data;
-            }
-
-            public void write(OutputStream out)
-                throws IOException, CMSException
-            {
-                content.write(out);
-            }
-
-            public Object getContent()
-            {
-                return content;
-            }
-        }, new JceCMSMacCalculatorBuilder(new ASN1ObjectIdentifier(macOID)).setProvider(encProvider).setSecureRandom(rand).build());
-    }
-
-    /**
-     * generate an authenticated object that contains an CMS Authenticated Data
-     * object using the given provider.
-     * @deprecated use addRecipientInfoGenerator method.
-     */
-    public CMSAuthenticatedData generate(
-        CMSProcessable  content,
-        String          macOID,
-        String          provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
-    {
-        return generate(content, macOID, CMSUtils.getProvider(provider));
-    }
-
-    /**
-     * generate an authenticated object that contains an CMS Authenticated Data
-     * object using the given provider
-     * @deprecated use addRecipientInfoGenerator method..
-     */
-    public CMSAuthenticatedData generate(
-        CMSProcessable  content,
-        String          encryptionOID,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException
-    {
-        KeyGenerator keyGen = CMSEnvelopedHelper.INSTANCE.createSymmetricKeyGenerator(encryptionOID, provider);
-
-        return generate(content, encryptionOID, keyGen, provider);
     }
 }

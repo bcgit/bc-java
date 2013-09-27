@@ -1,10 +1,6 @@
 package org.bouncycastle.cms;
 
 import java.io.IOException;
-import java.security.AlgorithmParameters;
-import java.security.Key;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,10 +8,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceAlgorithmIdentifierConverter;
-import org.bouncycastle.cms.jcajce.JcePasswordAuthenticatedRecipient;
-import org.bouncycastle.cms.jcajce.JcePasswordEnvelopedRecipient;
-import org.bouncycastle.cms.jcajce.JcePasswordRecipient;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -108,88 +100,6 @@ public class PasswordRecipientInformation
     public AlgorithmIdentifier getKeyDerivationAlgorithm()
     {
         return info.getKeyDerivationAlgorithm();
-    }
-
-    /**
-     * return an AlgorithmParameters object representing the parameters to the
-     * key derivation algorithm to the recipient.
-     *
-     * @return AlgorithmParameters object, null if there aren't any.
-     * @deprecated use getKeyDerivationAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getKeyDerivationAlgParameters(String provider)
-        throws NoSuchProviderException
-    {
-        return getKeyDerivationAlgParameters(CMSUtils.getProvider(provider));
-    }
-    
-   /**
-     * return an AlgorithmParameters object representing the parameters to the
-     * key derivation algorithm to the recipient.
-     *
-     * @return AlgorithmParameters object, null if there aren't any.
-    *  @deprecated use getKeyDerivationAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getKeyDerivationAlgParameters(Provider provider)
-    {
-        try
-        {
-            return new JceAlgorithmIdentifierConverter().setProvider(provider).getAlgorithmParameters(info.getKeyDerivationAlgorithm());
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("exception getting encryption parameters " + e);
-        }
-    }
-
-    /**
-     * decrypt the content and return an input stream.
-     * @deprecated use getContentStream(Recipient)
-     */
-    public CMSTypedStream getContentStream(
-        Key key,
-        String   prov)
-        throws CMSException, NoSuchProviderException
-    {
-        return getContentStream(key, CMSUtils.getProvider(prov));
-    }
-
-    /**
-     * decrypt the content and return an input stream.
-     * @deprecated use getContentStream(Recipient)
-     */
-    public CMSTypedStream getContentStream(
-        Key key,
-        Provider prov)
-        throws CMSException
-    {
-        try
-        {
-            CMSPBEKey pbeKey = (CMSPBEKey)key;
-            JcePasswordRecipient recipient;
-
-            if (secureReadable instanceof CMSEnvelopedHelper.CMSEnvelopedSecureReadable)
-            {
-                recipient = new JcePasswordEnvelopedRecipient(pbeKey.getPassword());
-            }
-            else
-            {
-                recipient = new JcePasswordAuthenticatedRecipient(pbeKey.getPassword());
-            }
-
-            recipient.setPasswordConversionScheme((pbeKey instanceof PKCS5Scheme2UTF8PBEKey) ? PasswordRecipient.PKCS5_SCHEME2_UTF8 : PasswordRecipient.PKCS5_SCHEME2);
-
-            if (prov != null)
-            {
-                recipient.setProvider(prov);
-            }
-
-            return getContentStream(recipient);
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("encoding error: " + e.getMessage(), e);
-        }
     }
 
     protected RecipientOperator getRecipientOperator(Recipient recipient)

@@ -2,14 +2,8 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
-
-import javax.crypto.KeyGenerator;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -23,7 +17,6 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
 
@@ -61,17 +54,6 @@ public class CMSEnvelopedDataStreamGenerator
     }
 
     /**
-     * constructor allowing specific source of randomness
-     * @param rand instance of SecureRandom to use
-     * @deprecated no longer required - specify randomness via RecipientInfoGenerator or ContentEncryptor.
-     */
-    public CMSEnvelopedDataStreamGenerator(
-        SecureRandom rand)
-    {
-        super(rand);
-    }
-
-    /**
      * Set the underlying string size for encapsulated data
      * 
      * @param bufferSize length of octet strings to buffer the data.
@@ -101,39 +83,6 @@ public class CMSEnvelopedDataStreamGenerator
         {
             return new ASN1Integer(0);
         }
-    }
-    
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider and the passed in key generator.
-     * @throws IOException
-     * @deprecated
-     */
-    private OutputStream open(
-        OutputStream out,
-        String       encryptionOID,
-        int          keySize,
-        Provider     encProvider,
-        Provider     provider)
-        throws NoSuchAlgorithmException, CMSException, IOException
-    {
-        convertOldRecipients(rand, provider);
-
-        JceCMSContentEncryptorBuilder builder;
-
-        if (keySize != -1)
-        {
-            builder =  new JceCMSContentEncryptorBuilder(new ASN1ObjectIdentifier(encryptionOID), keySize);
-        }
-        else
-        {
-            builder = new JceCMSContentEncryptorBuilder(new ASN1ObjectIdentifier(encryptionOID));
-        }
-
-        builder.setProvider(encProvider);
-        builder.setSecureRandom(rand);
-
-        return doOpen(CMSObjectIdentifiers.data, out, builder.build());
     }
 
     private OutputStream doOpen(
@@ -263,71 +212,6 @@ public class CMSEnvelopedDataStreamGenerator
         {
             throw new CMSException("exception decoding algorithm parameters.", e);
         }
-    }
-
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider.
-     * @throws IOException
-     * @deprecated
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        String          provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
-    {
-        return open(out, encryptionOID, CMSUtils.getProvider(provider));
-    }
-
-    /**
-     * @deprecated
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException, IOException
-    {
-        KeyGenerator keyGen = CMSEnvelopedHelper.INSTANCE.createSymmetricKeyGenerator(encryptionOID, provider);
-
-        keyGen.init(rand);
-
-        return open(out, encryptionOID, -1, keyGen.getProvider(), provider);
-    }
-
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider.
-     * @deprecated
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        int             keySize,
-        String          provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
-    {
-        return open(out, encryptionOID, keySize, CMSUtils.getProvider(provider));
-    }
-
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider.
-     * @deprecated
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        int             keySize,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException, IOException
-    {
-        KeyGenerator keyGen = CMSEnvelopedHelper.INSTANCE.createSymmetricKeyGenerator(encryptionOID, provider);
-
-        keyGen.init(keySize, rand);
-
-        return open(out, encryptionOID, -1, keyGen.getProvider(), provider);
     }
 
     /**

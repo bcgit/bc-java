@@ -4,14 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertStore;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Date;
 
@@ -32,7 +24,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.IssuerSerial;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessable;
@@ -40,13 +31,14 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationVerifier;
-import org.bouncycastle.jce.PrincipalUtil;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 
+/**
+ * Carrier class for a TimeStampToken.
+ */
 public class TimeStampToken
 {
     CMSSignedData tsToken;
@@ -158,17 +150,6 @@ public class TimeStampToken
         return tsaSignerInfo.getUnsignedAttributes();
     }
 
-    /**
-     * @deprecated use getCertificates() or getCRLs()
-     */
-    public CertStore getCertificatesAndCRLs(
-        String type,
-        String provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
-    {
-        return tsToken.getCertificatesAndCRLs(type, provider);
-    }
-
     public Store getCertificates()
     {
         return tsToken.getCertificates();
@@ -182,90 +163,6 @@ public class TimeStampToken
     public Store getAttributeCertificates()
     {
         return tsToken.getAttributeCertificates();
-    }
-
-    /**
-     * Validate the time stamp token.
-     * <p>
-     * To be valid the token must be signed by the passed in certificate and
-     * the certificate must be the one referred to by the SigningCertificate 
-     * attribute included in the hashed attributes of the token. The
-     * certificate must also have the ExtendedKeyUsageExtension with only
-     * KeyPurposeId.id_kp_timeStamping and have been valid at the time the
-     * timestamp was created.
-     * </p>
-     * <p>
-     * A successful call to validate means all the above are true.
-     * </p>
-     * @deprecated
-     */
-    public void validate(
-        X509Certificate cert,
-        String provider)
-        throws TSPException, TSPValidationException,
-        CertificateExpiredException, CertificateNotYetValidException, NoSuchProviderException
-    {
-        try
-        {
-            if (!Arrays.constantTimeAreEqual(certID.getCertHash(), MessageDigest.getInstance(certID.getHashAlgorithmName()).digest(cert.getEncoded())))
-            {
-                throw new TSPValidationException("certificate hash does not match certID hash.");
-            }
-            
-            if (certID.getIssuerSerial() != null)
-            {
-                if (!certID.getIssuerSerial().getSerial().getValue().equals(cert.getSerialNumber()))
-                {
-                    throw new TSPValidationException("certificate serial number does not match certID for signature.");
-                }
-                
-                GeneralName[]   names = certID.getIssuerSerial().getIssuer().getNames();
-                X509Principal   principal = PrincipalUtil.getIssuerX509Principal(cert);
-                boolean         found = false;
-                
-                for (int i = 0; i != names.length; i++)
-                {
-                    if (names[i].getTagNo() == 4 && new X509Principal(X509Name.getInstance(names[i].getName())).equals(principal))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                
-                if (!found)
-                {
-                    throw new TSPValidationException("certificate name does not match certID for signature. ");
-                }
-            }
-            
-            TSPUtil.validateCertificate(cert);
-            
-            cert.checkValidity(tstInfo.getGenTime());
-
-            if (!tsaSignerInfo.verify(cert, provider))
-            {
-                throw new TSPValidationException("signature not created by certificate.");
-            }
-        }
-        catch (CMSException e)
-        {
-            if (e.getUnderlyingException() != null)
-            {
-                throw new TSPException(e.getMessage(), e.getUnderlyingException());
-            }
-            else
-            {
-                throw new TSPException("CMS exception: " + e, e);
-            }
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new TSPException("cannot find algorithm: " + e, e);
-        }
-        catch (CertificateEncodingException e)
-        {
-            throw new TSPException("problem processing certificate: " + e, e);
-        }
     }
 
     /**

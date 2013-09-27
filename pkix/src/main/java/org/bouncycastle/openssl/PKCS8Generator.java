@@ -3,20 +3,12 @@ package org.bouncycastle.openssl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8EncryptorBuilder;
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.io.pem.PemGenerationException;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -40,56 +32,6 @@ public class PKCS8Generator
 
     private PrivateKeyInfo key;
     private OutputEncryptor outputEncryptor;
-    private JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder;
-
-    /**
-     * Constructor for an unencrypted private key PEM object.
-     *
-     * @param key private key to be encoded.
-     * @deprecated use JcaPKCS8Generator
-     */
-    public PKCS8Generator(PrivateKey key)
-    {
-        this.key = PrivateKeyInfo.getInstance(key.getEncoded());
-    }
-
-    /**
-     * Constructor for an encrypted private key PEM object.
-     *
-     * @param key       private key to be encoded
-     * @param algorithm encryption algorithm to use
-     * @param provider  name of provider to use
-     * @throws NoSuchProviderException  if provider cannot be found
-     * @throws NoSuchAlgorithmException if algorithm/mode cannot be found
-     *  @deprecated  use JcaPKCS8Generator
-     */
-    public PKCS8Generator(PrivateKey key, ASN1ObjectIdentifier algorithm, String provider)
-        throws NoSuchProviderException, NoSuchAlgorithmException
-    {
-        Provider prov = Security.getProvider(provider);
-
-        if (prov == null)
-        {
-            throw new NoSuchProviderException("cannot find provider: " + provider);
-        }
-
-        init(key, algorithm, prov);
-    }
-
-    /**
-     * Constructor for an encrypted private key PEM object.
-     *
-     * @param key       private key to be encoded
-     * @param algorithm encryption algorithm to use
-     * @param provider  provider to use
-     * @throws NoSuchAlgorithmException if algorithm/mode cannot be found
-     * @deprecated  use JcaPKCS8Generator
-     */
-    public PKCS8Generator(PrivateKey key, ASN1ObjectIdentifier algorithm, Provider provider)
-        throws NoSuchAlgorithmException
-    {
-        init(key, algorithm, provider);
-    }
 
     /**
      * Base constructor.
@@ -100,60 +42,9 @@ public class PKCS8Generator
         this.outputEncryptor = outputEncryptor;
     }
 
-    private void init(PrivateKey key, ASN1ObjectIdentifier algorithm, Provider provider)
-        throws NoSuchAlgorithmException
-    {
-        this.key = PrivateKeyInfo.getInstance(key.getEncoded());
-        this.encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(algorithm);
-
-        encryptorBuilder.setProvider(provider);
-    }
-
-    /**
-     * @deprecated ignored in the updated case.
-     */
-    public PKCS8Generator setSecureRandom(SecureRandom random)
-    {
-        encryptorBuilder.setRandom(random);
-
-        return this;
-    }
-
-    /**
-     * @deprecated ignored in the updated case.
-     */
-    public PKCS8Generator setPassword(char[] password)
-    {
-        encryptorBuilder.setPasssword(password);
-
-        return this;
-    }
-
-    /**
-     * @deprecated ignored in the updated case.
-     */
-    public PKCS8Generator setIterationCount(int iterationCount)
-    {
-        encryptorBuilder.setIterationCount(iterationCount);
-
-        return this;
-    }
-
     public PemObject generate()
         throws PemGenerationException
     {
-        try
-        {
-            if (encryptorBuilder != null)
-            {
-                outputEncryptor = encryptorBuilder.build();
-            }
-        }
-        catch (OperatorCreationException e)
-        {
-            throw new PemGenerationException("unable to create operator: " + e.getMessage(), e);
-        }
-
         if (outputEncryptor != null)
         {
             return generate(key, outputEncryptor);

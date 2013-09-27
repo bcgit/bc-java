@@ -2,9 +2,6 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -14,7 +11,6 @@ import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceAlgorithmIdentifierConverter;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
@@ -197,39 +193,6 @@ public class CMSAuthenticatedData
         {
             throw new RuntimeException("exception getting encryption parameters " + e);
         }
-    }
-
-    /**
-     * Return an AlgorithmParameters object giving the MAC parameters
-     * used to digest the message content.
-     *
-     * @param provider the provider to generate the parameters for.
-     * @return the parameters object, null if there is not one.
-     * @throws org.bouncycastle.cms.CMSException if the algorithm cannot be found, or the parameters can't be parsed.
-     * @throws java.security.NoSuchProviderException if the provider cannot be found.
-     * @deprecated use getMacAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getMacAlgorithmParameters(
-        String  provider)
-    throws CMSException, NoSuchProviderException
-    {
-        return new JceAlgorithmIdentifierConverter().setProvider(provider).getAlgorithmParameters(macAlg);
-    }
-
-    /**
-     * Return an AlgorithmParameters object giving the MAC parameters
-     * used to digest the message content.
-     *
-     * @param provider the provider to generate the parameters for.
-     * @return the parameters object, null if there is not one.
-     * @throws org.bouncycastle.cms.CMSException if the algorithm cannot be found, or the parameters can't be parsed.
-     * @deprecated use getMacAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getMacAlgorithmParameters(
-        Provider provider)
-    throws CMSException
-    {
-        return new JceAlgorithmIdentifierConverter().setProvider(provider).getAlgorithmParameters(macAlg);
     }
 
     /**

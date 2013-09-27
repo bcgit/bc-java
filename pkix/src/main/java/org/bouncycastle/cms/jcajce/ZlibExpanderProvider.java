@@ -15,6 +15,9 @@ public class ZlibExpanderProvider
 {
     private final long limit;
 
+    /**
+     * Base constructor. Create an expander which will not limit the size of any objects expanded in the stream.
+     */
     public ZlibExpanderProvider()
     {
         this.limit = -1;

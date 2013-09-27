@@ -291,7 +291,7 @@ public class CMSTimeStampedDataGeneratorTest
 
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
-            new JcaSimpleSignerInfoGeneratorBuilder().build(algorithmName, privateKey, cert), new ASN1ObjectIdentifier("1.2"));
+            new JcaSimpleSignerInfoGeneratorBuilder().build(algorithmName, privateKey, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
 
         tsTokenGen.addCertificates(certs);
 
