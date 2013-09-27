@@ -137,8 +137,8 @@ public class BCECPrivateKey
             this.ecSpec = new ECParameterSpec(
                             ellipticCurve,
                             new ECPoint(
-                                    dp.getG().getX().toBigInteger(),
-                                    dp.getG().getY().toBigInteger()),
+                                    dp.getG().getAffineXCoord().toBigInteger(),
+                                    dp.getG().getAffineYCoord().toBigInteger()),
                             dp.getN(),
                             dp.getH().intValue());
         }
@@ -170,8 +170,8 @@ public class BCECPrivateKey
             this.ecSpec = new ECParameterSpec(
                             ellipticCurve,
                             new ECPoint(
-                                    dp.getG().getX().toBigInteger(),
-                                    dp.getG().getY().toBigInteger()),
+                                    dp.getG().getAffineXCoord().toBigInteger(),
+                                    dp.getG().getAffineYCoord().toBigInteger()),
                             dp.getN(),
                             dp.getH().intValue());
         }
@@ -226,8 +226,8 @@ public class BCECPrivateKey
                         ECGOST3410NamedCurves.getName(oid),
                         ellipticCurve,
                         new ECPoint(
-                                gParam.getG().getX().toBigInteger(),
-                                gParam.getG().getY().toBigInteger()),
+                                gParam.getG().getAffineXCoord().toBigInteger(),
+                                gParam.getG().getAffineYCoord().toBigInteger()),
                         gParam.getN(),
                         gParam.getH());
             }
@@ -239,8 +239,8 @@ public class BCECPrivateKey
                         ECUtil.getCurveName(oid),
                         ellipticCurve,
                         new ECPoint(
-                                ecP.getG().getX().toBigInteger(),
-                                ecP.getG().getY().toBigInteger()),
+                                ecP.getG().getAffineXCoord().toBigInteger(),
+                                ecP.getG().getAffineYCoord().toBigInteger()),
                         ecP.getN(),
                         ecP.getH());
             }
@@ -257,8 +257,8 @@ public class BCECPrivateKey
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
                 new ECPoint(
-                        ecP.getG().getX().toBigInteger(),
-                        ecP.getG().getY().toBigInteger()),
+                        ecP.getG().getAffineXCoord().toBigInteger(),
+                        ecP.getG().getAffineYCoord().toBigInteger()),
                 ecP.getN(),
                 ecP.getH().intValue());
         }

@@ -103,7 +103,7 @@ public class X9ECParameters
         byte[]      seed)
     {
         this.curve = curve;
-        this.g = g;
+        this.g = g.normalize();
         this.n = n;
         this.h = h;
         this.seed = seed;

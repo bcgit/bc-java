@@ -74,8 +74,8 @@ public class EC5Util
                 ((ECNamedCurveParameterSpec)spec).getName(),
                 ellipticCurve,
                 new ECPoint(
-                    spec.getG().getX().toBigInteger(),
-                    spec.getG().getY().toBigInteger()),
+                    spec.getG().getAffineXCoord().toBigInteger(),
+                    spec.getG().getAffineYCoord().toBigInteger()),
                 spec.getN(),
                 spec.getH());
         }
@@ -84,8 +84,8 @@ public class EC5Util
             return new ECParameterSpec(
                 ellipticCurve,
                 new ECPoint(
-                    spec.getG().getX().toBigInteger(),
-                    spec.getG().getY().toBigInteger()),
+                    spec.getG().getAffineXCoord().toBigInteger(),
+                    spec.getG().getAffineYCoord().toBigInteger()),
                 spec.getN(),
                 spec.getH().intValue());
         }

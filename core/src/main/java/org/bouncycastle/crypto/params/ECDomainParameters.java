@@ -41,7 +41,7 @@ public class ECDomainParameters
         byte[]      seed)
     {
         this.curve = curve;
-        this.G = G;
+        this.G = G.normalize();
         this.n = n;
         this.h = h;
         this.seed = seed;
