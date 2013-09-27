@@ -254,7 +254,7 @@ public abstract class WNafUtil
             ECPoint twiceP = wnafPreCompInfo.getTwiceP();
             if (twiceP == null)
             {
-                twiceP = preComp[0].twice();
+                twiceP = preComp[0].twice().normalize();
                 wnafPreCompInfo.setTwiceP(twiceP);
             }
 
