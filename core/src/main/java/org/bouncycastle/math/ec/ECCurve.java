@@ -280,6 +280,8 @@ public abstract class ECCurve
      */
     public static class Fp extends ECCurve
     {
+        private static final int DEFAULT_COORDS = COORD_AFFINE;
+
         BigInteger q, r;
         ECPoint.Fp infinity;
 
@@ -290,6 +292,7 @@ public abstract class ECCurve
             this.infinity = new ECPoint.Fp(this, null, null);
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
+            this.coord = DEFAULT_COORDS;
         }
 
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
@@ -299,6 +302,7 @@ public abstract class ECCurve
             this.infinity = new ECPoint.Fp(this, null, null);
             this.a = a;
             this.b = b;
+            this.coord = DEFAULT_COORDS;
         }
 
         public ECCurve createCurve(Config builder)
@@ -355,7 +359,8 @@ public abstract class ECCurve
                     return new ECPoint.Fp(this,
                         fromBigInteger(p.x.toBigInteger()),
                         fromBigInteger(p.y.toBigInteger()),
-                        new ECFieldElement[]{ fromBigInteger(p.zs[0].toBigInteger()) });
+                        new ECFieldElement[]{ fromBigInteger(p.zs[0].toBigInteger()) },
+                        p.withCompression);
                 default:
                     break;
                 }

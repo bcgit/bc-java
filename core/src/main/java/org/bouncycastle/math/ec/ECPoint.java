@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
-import org.bouncycastle.util.Arrays;
 
 /**
  * base class for points on elliptic curves.
@@ -365,9 +364,11 @@ public abstract class ECPoint
             this.withCompression = withCompression;
         }
 
-        Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
+        Fp(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
         {
             super(curve, x, y, zs);
+
+            this.withCompression = withCompression;
         }
 
         protected boolean getCompressionYTilde()
@@ -429,7 +430,7 @@ public abstract class ECPoint
                 ECFieldElement X3 = gamma.square().subtract(X1).subtract(X2);
                 ECFieldElement Y3 = gamma.multiply(X1.subtract(X3)).subtract(Y1);
 
-                return new ECPoint.Fp(curve, X3, Y3, withCompression);
+                return new ECPoint.Fp(curve, X3, Y3, this.withCompression);
             }
 
             case ECCurve.COORD_HOMOGENEOUS:
@@ -471,7 +472,7 @@ public abstract class ECPoint
                 ECFieldElement Y3 = vSquaredV2.subtract(A).multiply(u).subtract(vCubed.multiply(u2));
                 ECFieldElement Z3 = vCubed.multiply(w);
 
-                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
 
             case ECCurve.COORD_JACOBIAN:
@@ -588,16 +589,20 @@ public abstract class ECPoint
                     }
                 }
 
+                ECFieldElement[] zs;
                 if (coord == ECCurve.COORD_JACOBIAN_MODIFIED)
                 {
                     // TODO If the result will only be used in a subsequent addition, we don't need W3
-
                     ECFieldElement W3 = calculateJacobianModifiedW(Z3, Z3Squared);
 
-                    return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
+                    zs = new ECFieldElement[]{ Z3, W3 };
+                }
+                else
+                {
+                    zs = new ECFieldElement[]{ Z3 };
                 }
 
-                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+                return new ECPoint.Fp(curve, X3, Y3, zs, this.withCompression);
             }
             default:
             {
@@ -666,7 +671,7 @@ public abstract class ECPoint
                 ECFieldElement _4sSquared = Z1IsOne ? four(t) : two(s).square();
                 ECFieldElement Z3 = two(_4sSquared).multiply(s);
 
-                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
 
             case ECCurve.COORD_JACOBIAN:
@@ -723,7 +728,7 @@ public abstract class ECPoint
                 // Alternative calculation of Z3 using fast square
 //                ECFieldElement Z3 = doubleProductFromSquares(Y1, Z1, Y1Squared, Z1Squared);
 
-                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 });
+                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
 
             case ECCurve.COORD_JACOBIAN_MODIFIED:
@@ -908,7 +913,7 @@ public abstract class ECPoint
 
             if (getCurve().getCoordinateSystem() != ECCurve.COORD_AFFINE)
             {
-                return new ECPoint.Fp(curve, this.x, this.y.negate(), this.zs);
+                return new ECPoint.Fp(curve, this.x, this.y.negate(), this.zs, this.withCompression);
             }
 
             return new ECPoint.Fp(curve, this.x, this.y.negate(), this.withCompression);
@@ -961,7 +966,7 @@ public abstract class ECPoint
             ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
             ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
 
-            return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
+            return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
         }
     }
 
