@@ -18,8 +18,14 @@ public abstract class ECCurve
 
     public class Config
     {
-        protected int coord = COORD_AFFINE;
+        protected int coord;
         protected ECMultiplier multiplier;
+
+        Config(int coord, ECMultiplier multiplier)
+        {
+            this.coord = coord;
+            this.multiplier = multiplier;
+        }
 
         public Config setCoordinateSystem(int coord)
         {
@@ -60,7 +66,7 @@ public abstract class ECCurve
 
     public Config configure()
     {
-        return new Config();
+        return new Config(this.coord, this.multiplier);
     }
 
     public ECPoint createPoint(BigInteger x, BigInteger y)
