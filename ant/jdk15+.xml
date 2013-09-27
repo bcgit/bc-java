@@ -29,7 +29,7 @@
 
             <fileset dir="prov/src/main/java" includes="**/*.java" />
             <fileset dir="prov/src/main/java" includes="**/*.html" />
-            <fileset dir="prov/src/main/java" includes="**/*.properties" />
+            <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="prov/src/test/java" includes="**/*.java" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
@@ -42,10 +42,11 @@
             <fileset dir="pg/src/main/java" includes="**/*.html" />
             <fileset dir="pg/src/main/java" includes="**/*.properties" />
             <fileset dir="pg/src/test/java" includes="**/*.java" />
+            <fileset dir="pg/src/test/resources" includes="**/*.*" />
 
             <fileset dir="mail/src/main/java" includes="**/*.java" />
             <fileset dir="mail/src/main/java" includes="**/*.html" />
-            <fileset dir="mail/src/main/java" includes="**/*.properties" />
+            <fileset dir="mail/src/main/resources" includes="**/*.properties" />
             <fileset dir="mail/src/test/java" includes="**/*.java" />
 
             <fileset dir="core/src/test/data" includes="**/*.message" />
