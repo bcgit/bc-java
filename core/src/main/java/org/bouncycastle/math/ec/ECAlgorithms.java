@@ -51,14 +51,14 @@ public class ECAlgorithms
         return implShamirsTrick(P, k, Q, l);
     }
 
-    static ECPoint importPoint(ECCurve c, ECPoint Q)
+    public static ECPoint importPoint(ECCurve c, ECPoint p)
     {
-        ECCurve cq = Q.getCurve();
-        if (!c.equals(cq))
+        ECCurve cp = p.getCurve();
+        if (!c.equals(cp))
         {
-            throw new IllegalArgumentException("P and Q must be on same curve");
+            throw new IllegalArgumentException("Point must be on the same curve");
         }
-        return c.importPoint(Q);
+        return c.importPoint(p);
     }
 
     static void implMontgomeryTrick(ECFieldElement[] zs, int off, int len)
