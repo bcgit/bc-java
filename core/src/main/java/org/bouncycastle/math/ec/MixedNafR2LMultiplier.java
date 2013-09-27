@@ -32,12 +32,12 @@ public class MixedNafR2LMultiplier extends AbstractECMultiplier
         ECCurve curveAdd = configureCurve(curveOrig, additionCoord);
         ECCurve curveDouble = configureCurve(curveOrig, doublingCoord);
 
+        int[] naf = WNafUtil.generateCompactNaf(k);
+
         ECPoint Ra = curveAdd.getInfinity();
         ECPoint Td = curveDouble.importPoint(p);
 
-        int[] naf = WNafUtil.generateCompactNaf(k);
         int zeroes = 0;
-
         for (int i = 0; i < naf.length; ++i)
         {
             int ni = naf[i];
