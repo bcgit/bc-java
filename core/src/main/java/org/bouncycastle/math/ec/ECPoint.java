@@ -670,20 +670,7 @@ public abstract class ECPoint
 
             case ECCurve.COORD_JACOBIAN_MODIFIED:
             {
-                ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
-
-                ECFieldElement X1Squared = X1.square();
-                ECFieldElement M = three(X1Squared).add(W1);
-                ECFieldElement Y1Squared = Y1.square();
-                ECFieldElement T = Y1Squared.square();
-                ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
-                ECFieldElement X3 = M.square().subtract(two(S));
-                ECFieldElement _8T = eight(T);
-                ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
-                ECFieldElement W3 = two(_8T.multiply(W1));
-                ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
-
-                return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
+                return twiceJacobianModified(true);
             }
 
             default:
@@ -711,42 +698,51 @@ public abstract class ECPoint
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
 
-            if (coord != ECCurve.COORD_AFFINE)
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+            {
+                /*
+                 * Optimized calculation of 2P + Q, as described in "Trading Inversions for
+                 * Multiplications in Elliptic Curve Cryptography", by Ciet, Joye, Lauter, Montgomery.
+                 */
+                ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
+
+                if (dx.isZero())
+                {
+                    if (dy.isZero())
+                    {
+                        // this == b i.e. the result is 3P
+                        return threeTimes();
+                    }
+
+                    // this == -b, i.e. the result is P
+                    return this;
+                }
+
+                ECFieldElement X = dx.square(), Y = dy.square();
+                ECFieldElement d = X.multiply(two(this.x).add(b.x)).subtract(Y);
+                if (d.isZero())
+                {
+                    return curve.getInfinity();
+                }
+                ECFieldElement D = d.multiply(dx);
+                ECFieldElement I = D.invert();
+                ECFieldElement lambda1 = d.multiply(I).multiply(dy);
+                ECFieldElement lambda2 = two(this.y).multiply(X).multiply(dx).multiply(I).subtract(lambda1);
+                ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(b.x);
+                ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
+                return new ECPoint.Fp(curve, x4, y4, this.withCompression);
+            }
+            case ECCurve.COORD_JACOBIAN_MODIFIED:
+            {
+                return twiceJacobianModified(false).add(b);
+            }
+            default:
             {
                 return twice().add(b);
             }
-
-            /*
-             * Optimized calculation of 2P + Q, as described in "Trading Inversions for
-             * Multiplications in Elliptic Curve Cryptography", by Ciet, Joye, Lauter, Montgomery.
-             */
-            ECFieldElement dx = b.x.subtract(this.x), dy = b.y.subtract(this.y);
-
-            if (dx.isZero())
-            {
-                if (dy.isZero())
-                {
-                    // this == b i.e. the result is 3P
-                    return threeTimes();
-                }
-
-                // this == -b, i.e. the result is P
-                return this;
             }
-
-            ECFieldElement X = dx.square(), Y = dy.square();
-            ECFieldElement d = X.multiply(two(this.x).add(b.x)).subtract(Y);
-            if (d.isZero())
-            {
-                return curve.getInfinity();
-            }
-            ECFieldElement D = d.multiply(dx);
-            ECFieldElement I = D.invert();
-            ECFieldElement lambda1 = d.multiply(I).multiply(dy);
-            ECFieldElement lambda2 = two(this.y).multiply(X).multiply(dx).multiply(I).subtract(lambda1);
-            ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(b.x);
-            ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
-            return new ECPoint.Fp(curve, x4, y4, this.withCompression);
         }
 
         public ECPoint threeTimes()
@@ -759,30 +755,40 @@ public abstract class ECPoint
             ECCurve curve = getCurve();
             int coord = curve.getCoordinateSystem();
 
-            if (coord != ECCurve.COORD_AFFINE)
+            switch (coord)
             {
+            case ECCurve.COORD_AFFINE:
+            {
+                ECFieldElement _2y = two(this.y); 
+                ECFieldElement X = _2y.square();
+                ECFieldElement Z = three(this.x.square()).add(getCurve().getA());
+                ECFieldElement Y = Z.square();
+
+                ECFieldElement d = three(this.x).multiply(X).subtract(Y);
+                if (d.isZero())
+                {
+                    return getCurve().getInfinity();
+                }
+
+                ECFieldElement D = d.multiply(_2y); 
+                ECFieldElement I = D.invert();
+                ECFieldElement lambda1 = d.multiply(I).multiply(Z);
+                ECFieldElement lambda2 = X.square().multiply(I).subtract(lambda1);
+
+                ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(this.x);
+                ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
+                return new ECPoint.Fp(curve, x4, y4, this.withCompression);
+            }
+            case ECCurve.COORD_JACOBIAN_MODIFIED:
+            {
+                return twiceJacobianModified(false).add(this);
+            }
+            default:
+            {
+                // NOTE: Be careful about recursions between twicePlus and threeTimes
                 return twice().add(this);
             }
-
-            ECFieldElement _2y = two(this.y); 
-            ECFieldElement X = _2y.square();
-            ECFieldElement Z = three(this.x.square()).add(getCurve().getA());
-            ECFieldElement Y = Z.square();
-
-            ECFieldElement d = three(this.x).multiply(X).subtract(Y);
-            if (d.isZero())
-            {
-                return getCurve().getInfinity();
             }
-
-            ECFieldElement D = d.multiply(_2y); 
-            ECFieldElement I = D.invert();
-            ECFieldElement lambda1 = d.multiply(I).multiply(Z);
-            ECFieldElement lambda2 = X.square().multiply(I).subtract(lambda1);
-
-            ECFieldElement x4 = (lambda2.subtract(lambda1)).multiply(lambda1.add(lambda2)).add(this.x);
-            ECFieldElement y4 = (this.x.subtract(x4)).multiply(lambda2).subtract(this.y); 
-            return new ECPoint.Fp(curve, x4, y4, this.withCompression);
         }
 
         protected ECFieldElement two(ECFieldElement x)
@@ -840,6 +846,24 @@ public abstract class ECPoint
             }
 
             return new ECPoint.Fp(curve, this.x, this.y.negate(), this.withCompression);
+        }
+
+        protected ECPoint.Fp twiceJacobianModified(boolean calculateW)
+        {
+            ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = this.zs[1];
+
+            ECFieldElement X1Squared = X1.square();
+            ECFieldElement M = three(X1Squared).add(W1);
+            ECFieldElement Y1Squared = Y1.square();
+            ECFieldElement T = Y1Squared.square();
+            ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+            ECFieldElement X3 = M.square().subtract(two(S));
+            ECFieldElement _8T = eight(T);
+            ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
+            ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
+            ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
+
+            return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 });
         }
     }
 
