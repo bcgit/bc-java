@@ -22,7 +22,7 @@ public class ECPublicKeySpec
     {
         super(spec);
 
-        this.q = q;
+        this.q = q.normalize();
     }
 
     /**

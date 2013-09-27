@@ -36,7 +36,7 @@ public abstract class ECPublicBCPGKey
         ASN1ObjectIdentifier oid,
         ECPoint point)
     {
-        this.point = point;
+        this.point = point.normalize();
         this.oid = oid;
     }
 

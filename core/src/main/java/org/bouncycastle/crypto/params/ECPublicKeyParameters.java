@@ -12,7 +12,7 @@ public class ECPublicKeyParameters
         ECDomainParameters  params)
     {
         super(false, params);
-        this.Q = Q;
+        this.Q = Q.normalize();
     }
 
     public ECPoint getQ()

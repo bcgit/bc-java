@@ -90,7 +90,7 @@ public class BCECPublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = configuration.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getX().toBigInteger(), q.getY().toBigInteger(), false);
+                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger(), false);
             }               
             this.ecSpec = null;
         }
@@ -188,8 +188,8 @@ public class BCECPublicKey
         return new ECParameterSpec(
                 ellipticCurve,
                 new ECPoint(
-                        dp.getG().getX().toBigInteger(),
-                        dp.getG().getY().toBigInteger()),
+                        dp.getG().getAffineXCoord().toBigInteger(),
+                        dp.getG().getAffineYCoord().toBigInteger()),
                         dp.getN(),
                         dp.getH().intValue());
     }
@@ -212,8 +212,8 @@ public class BCECPublicKey
                     ECUtil.getCurveName(oid),
                     ellipticCurve,
                     new ECPoint(
-                            ecP.getG().getX().toBigInteger(),
-                            ecP.getG().getY().toBigInteger()),
+                            ecP.getG().getAffineXCoord().toBigInteger(),
+                            ecP.getG().getAffineYCoord().toBigInteger()),
                     ecP.getN(),
                     ecP.getH());
         }
@@ -232,8 +232,8 @@ public class BCECPublicKey
             this.ecSpec = new ECParameterSpec(
                     ellipticCurve,
                     new ECPoint(
-                            ecP.getG().getX().toBigInteger(),
-                            ecP.getG().getY().toBigInteger()),
+                            ecP.getG().getAffineXCoord().toBigInteger(),
+                            ecP.getG().getAffineYCoord().toBigInteger()),
                     ecP.getN(),
                     ecP.getH().intValue());
         }
@@ -311,7 +311,7 @@ public class BCECPublicKey
 
         ECCurve curve = this.engineGetQ().getCurve();
         ASN1OctetString p = (ASN1OctetString)
-            new X9ECPoint(curve.createPoint(this.getQ().getX().toBigInteger(), this.getQ().getY().toBigInteger(), withCompression)).toASN1Primitive();
+            new X9ECPoint(curve.createPoint(this.getQ().getAffineXCoord().toBigInteger(), this.getQ().getAffineYCoord().toBigInteger(), withCompression)).toASN1Primitive();
 
         info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
 
@@ -351,7 +351,7 @@ public class BCECPublicKey
 
     public ECPoint getW()
     {
-        return new ECPoint(q.getX().toBigInteger(), q.getY().toBigInteger());
+        return new ECPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()
@@ -360,11 +360,11 @@ public class BCECPublicKey
         {
             if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
             {
-                return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getX(), q.getY());
+                return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getAffineXCoord(), q.getAffineYCoord());
             }
             else
             {
-                return new org.bouncycastle.math.ec.ECPoint.F2m(null, q.getX(), q.getY());
+                return new org.bouncycastle.math.ec.ECPoint.F2m(null, q.getAffineXCoord(), q.getAffineYCoord());
             }
         }
 
@@ -392,8 +392,8 @@ public class BCECPublicKey
         String          nl = System.getProperty("line.separator");
 
         buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(this.q.getX().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(this.q.getY().toBigInteger().toString(16)).append(nl);
+        buf.append("            X: ").append(this.q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(this.q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
 
         return buf.toString();
 
