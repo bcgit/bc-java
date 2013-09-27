@@ -3,6 +3,8 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 import java.util.Random;
 
+import org.bouncycastle.util.BigIntegers;
+
 public abstract class ECFieldElement
     implements ECConstants
 {
@@ -36,6 +38,11 @@ public abstract class ECFieldElement
     public String toString()
     {
         return this.toBigInteger().toString(16);
+    }
+
+    public byte[] getEncoded()
+    {
+        return BigIntegers.asUnsignedByteArray((getFieldSize() + 7) / 8, toBigInteger());
     }
 
     public static class Fp extends ECFieldElement
