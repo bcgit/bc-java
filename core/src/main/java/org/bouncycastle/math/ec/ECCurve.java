@@ -286,7 +286,7 @@ public abstract class ECCurve
      */
     public static class Fp extends ECCurve
     {
-        private static final int DEFAULT_COORDS = COORD_AFFINE;
+        private static final int FP_DEFAULT_COORDS = COORD_AFFINE;
 
         BigInteger q, r;
         ECPoint.Fp infinity;
@@ -296,9 +296,10 @@ public abstract class ECCurve
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
+
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
-            this.coord = DEFAULT_COORDS;
+            this.coord = FP_DEFAULT_COORDS;
         }
 
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
@@ -306,9 +307,10 @@ public abstract class ECCurve
             this.q = q;
             this.r = r;
             this.infinity = new ECPoint.Fp(this, null, null);
+
             this.a = a;
             this.b = b;
-            this.coord = DEFAULT_COORDS;
+            this.coord = FP_DEFAULT_COORDS;
         }
 
         public ECCurve createCurve(Config builder)
@@ -436,6 +438,8 @@ public abstract class ECCurve
      */
     public static class F2m extends ECCurve
     {
+        private static final int F2M_DEFAULT_COORDS = COORD_AFFINE;
+
         /**
          * The exponent <code>m</code> of <code>F<sub>2<sup>m</sup></sub></code>.
          */
@@ -642,9 +646,10 @@ public abstract class ECCurve
                 }
             }
 
+            this.infinity = new ECPoint.F2m(this, null, null);
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.coord = F2M_DEFAULT_COORDS;
         }
 
         protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger n, BigInteger h)
@@ -655,9 +660,11 @@ public abstract class ECCurve
             this.k3 = k3;
             this.n = n;
             this.h = h;
+
+            this.infinity = new ECPoint.F2m(this, null, null);
             this.a = a;
             this.b = b;
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.coord = F2M_DEFAULT_COORDS;
         }
 
         public ECCurve createCurve(Config builder)
