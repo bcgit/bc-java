@@ -34,7 +34,7 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
             int wi = wnaf[i];
             int digit = wi >> 16, zeroes = wi & 0xFFFF;
 
-            int index = (Math.abs(digit) - 1) >>> 1;
+            int index = Math.abs(digit) >>> 1;
             ECPoint r = digit < 0 ? preCompNeg[index] : preComp[index];
 
             R = R.twicePlus(r);
