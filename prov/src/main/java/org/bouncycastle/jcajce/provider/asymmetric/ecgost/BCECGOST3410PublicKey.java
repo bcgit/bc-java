@@ -79,7 +79,7 @@ public class BCECGOST3410PublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getY().toBigInteger());
+                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
             }
             this.ecSpec = null;
         }
