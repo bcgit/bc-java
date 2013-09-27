@@ -17,8 +17,6 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
      */
     protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        ECPoint R = p.getCurve().getInfinity();
-
         // Clamp the window width in the range [2, 16]
         int width = Math.max(2, Math.min(16, getWindowSize(k.bitLength())));
 
@@ -27,6 +25,8 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
         ECPoint[] preCompNeg = wnafPreCompInfo.getPreCompNeg();
 
         int[] wnaf = WNafUtil.generateCompactWindowNaf(width, k);
+
+        ECPoint R = p.getCurve().getInfinity();
 
         int i = wnaf.length;
         while (--i >= 0)
