@@ -47,11 +47,17 @@ public class ECDHCBasicAgreement
     public BigInteger calculateAgreement(
         CipherParameters pubKey)
     {
-        ECPublicKeyParameters   pub = (ECPublicKeyParameters)pubKey;
-        ECDomainParameters      params = pub.getParameters();
-        ECPoint P = pub.getQ().multiply(params.getH().multiply(key.getD())).normalize();
+        ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
+        ECDomainParameters params = pub.getParameters();
 
-        // if (p.isInfinity()) throw new RuntimeException("Invalid public key");
+        BigInteger hd = params.getH().multiply(key.getD()).mod(params.getN());
+
+        ECPoint P = pub.getQ().multiply(hd).normalize();
+
+        if (P.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid agreement value for ECDHC");
+        }
 
         return P.getAffineXCoord().toBigInteger();
     }
