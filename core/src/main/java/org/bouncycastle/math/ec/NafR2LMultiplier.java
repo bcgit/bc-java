@@ -11,7 +11,7 @@ public class NafR2LMultiplier extends AbstractECMultiplier
     {
         int[] naf = WNafUtil.generateCompactNaf(k);
 
-        ECPoint R0 = p.getCurve().getInfinity(), R1 = p.normalize();
+        ECPoint R0 = p.getCurve().getInfinity(), R1 = p;
 
         int zeroes = 0;
         for (int i = 0; i < naf.length; ++i)
