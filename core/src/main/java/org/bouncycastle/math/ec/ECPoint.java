@@ -11,12 +11,10 @@ public abstract class ECPoint
 
     protected static ECFieldElement[] getInitialZCoords(ECCurve curve)
     {
-        if (curve == null)
-        {
-            return EMPTY_ZS;
-        }
+        // Cope with null curve, most commonly used by implicitlyCa
+        int coord = null == curve ? ECCurve.COORD_AFFINE : curve.getCoordinateSystem();
 
-        switch (curve.getCoordinateSystem())
+        switch (coord)
         {
         case ECCurve.COORD_AFFINE:
         case ECCurve.COORD_LAMBDA_AFFINE:
@@ -27,7 +25,7 @@ public abstract class ECPoint
 
         ECFieldElement one = curve.fromBigInteger(ECConstants.ONE);
 
-        switch (curve.getCoordinateSystem())
+        switch (coord)
         {
         case ECCurve.COORD_HOMOGENEOUS:
         case ECCurve.COORD_JACOBIAN:
@@ -67,6 +65,12 @@ public abstract class ECPoint
     public ECCurve getCurve()
     {
         return curve;
+    }
+
+    protected int getCurveCoordinateSystem()
+    {
+        // Cope with null curve, most commonly used by implicitlyCa
+        return null == curve ? ECCurve.COORD_AFFINE : curve.getCoordinateSystem();
     }
 
     /**
@@ -144,7 +148,12 @@ public abstract class ECPoint
 
     public boolean isNormalized()
     {
-        return curve.getCoordinateSystem() == ECCurve.COORD_AFFINE || isInfinity() || zs[0].bitLength() == 1;
+        int coord = getCurveCoordinateSystem();
+
+        return coord == ECCurve.COORD_AFFINE
+            || coord == ECCurve.COORD_LAMBDA_AFFINE
+            || isInfinity()
+            || zs[0].bitLength() == 1;
     }
 
     public ECPoint normalize()
@@ -154,7 +163,7 @@ public abstract class ECPoint
             return this;
         }
 
-        switch (getCurve().getCoordinateSystem())
+        switch (getCurveCoordinateSystem())
         {
         case ECCurve.COORD_AFFINE:
         case ECCurve.COORD_LAMBDA_AFFINE:
@@ -176,7 +185,7 @@ public abstract class ECPoint
 
     ECPoint normalize(ECFieldElement zInv)
     {
-        switch (getCurve().getCoordinateSystem())
+        switch (getCurveCoordinateSystem())
         {
         case ECCurve.COORD_HOMOGENEOUS:
         case ECCurve.COORD_LAMBDA_PROJECTIVE:
@@ -199,7 +208,7 @@ public abstract class ECPoint
 
     protected ECPoint createScaledPoint(ECFieldElement sx, ECFieldElement sy)
     {
-        return curve.createRawPoint(getRawXCoord().multiply(sx), getRawYCoord().multiply(sy), withCompression);
+        return getCurve().createRawPoint(getRawXCoord().multiply(sx), getRawYCoord().multiply(sy), withCompression);
     }
 
     public boolean isInfinity()
@@ -261,16 +270,8 @@ public abstract class ECPoint
         }
 
         // TODO Consider just requiring already normalized, to avoid silent performance degradation
-        // watch for degenerate point due to implicitlyCa
-        ECPoint p;
-        if (getCurve() != null)
-        {
-            p = normalize();
-        }
-        else
-        {
-            p = this;
-        }
+
+        ECPoint p = normalize();
 
         return p.getXCoord().hashCode() ^ p.getRawYCoord().hashCode();
     }
@@ -411,7 +412,7 @@ public abstract class ECPoint
 
         public ECFieldElement getZCoord(int index)
         {
-            if (index == 1 && ECCurve.COORD_JACOBIAN_MODIFIED == getCurve().getCoordinateSystem())
+            if (index == 1 && ECCurve.COORD_JACOBIAN_MODIFIED == getCurveCoordinateSystem())
             {
                 return getJacobianModifiedW();
             }
@@ -944,7 +945,10 @@ public abstract class ECPoint
                 return this;
             }
 
-            if (getCurve().getCoordinateSystem() != ECCurve.COORD_AFFINE)
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            if (ECCurve.COORD_AFFINE != coord)
             {
                 return new ECPoint.Fp(curve, this.x, this.y.negate(), this.zs, this.withCompression);
             }
@@ -960,7 +964,7 @@ public abstract class ECPoint
             }
 
             ECFieldElement W = ZSquared.square();
-            ECFieldElement a4 = curve.getA();
+            ECFieldElement a4 = getCurve().getA();
             ECFieldElement a4Neg = a4.negate();
             if (a4Neg.bitLength() < a4.bitLength())
             {
@@ -999,7 +1003,7 @@ public abstract class ECPoint
             ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
             ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
 
-            return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
+            return new ECPoint.Fp(getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
         }
     }
 
@@ -1061,7 +1065,7 @@ public abstract class ECPoint
 
         public ECFieldElement getYCoord()
         {
-            switch (getCurve().getCoordinateSystem())
+            switch (getCurveCoordinateSystem())
             {
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
