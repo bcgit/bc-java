@@ -694,8 +694,10 @@ public abstract class ECCurve
 
         protected ECMultiplier createDefaultMultiplier()
         {
-            // TODO Check what's needed for Tau-support in non-affine coordinates
-            if (isKoblitz())
+            // TODO Check what's needed for Tau-support in lambda coordinates
+            if (isKoblitz()
+                && COORD_LAMBDA_AFFINE != getCoordinateSystem()
+                && COORD_LAMBDA_PROJECTIVE != getCoordinateSystem())
             {
                 return new WTauNafMultiplier();
             }
