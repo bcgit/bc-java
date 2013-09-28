@@ -1095,7 +1095,7 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
                 // Y is actually Lambda (X + Y/X) here; convert to affine value on the fly
-                return isInfinity() ? y : y.subtract(x).multiply(x);
+                return (isInfinity() || x.isZero()) ? y : y.subtract(x).multiply(x);
             default:
                 return y;
             }
@@ -1210,8 +1210,6 @@ public abstract class ECPoint
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
                 ECFieldElement L2 = b.y, Z2 = b.zs[0];
 
-                // TODO Optimize
-
                 boolean Z1IsOne = Z1.bitLength() == 1;
                 ECFieldElement U2 = X2, S2 = L2;
                 if (!Z1IsOne)
@@ -1228,18 +1226,18 @@ public abstract class ECPoint
                     S1 = S1.multiply(Z2);
                 }
 
-                if (U1.equals(U2))
+                ECFieldElement A = S1.add(S2);
+                ECFieldElement B = U1.add(U2).square();
+
+                if (B.isZero())
                 {
-                    if (S1.equals(S2))
+                    if (A.isZero())
                     {
                         return (ECPoint.F2m)twice();
                     }
 
                     return (ECPoint.F2m)curve.getInfinity();
                 }
-
-                ECFieldElement A = S1.add(S2);
-                ECFieldElement B = U1.add(U2).square();
 
                 ECFieldElement AU1 = A.multiply(U1);
                 ECFieldElement AU2 = A.multiply(U2);
@@ -1307,17 +1305,17 @@ public abstract class ECPoint
                 return this;
             }
 
-            if (this.x.isZero()) 
-            {
-                // if x1 == 0, then (x1, y1) == (x1, x1 + y1)
-                // and hence this = -this and thus 2(x1, y1) == infinity
-                return this.curve.getInfinity();
-            }
-
             ECCurve curve = getCurve();
-            int coord = curve.getCoordinateSystem();
 
             ECFieldElement X1 = this.x;
+
+            if (X1.isZero()) 
+            {
+                // A point with X == 0 is it's own additive inverse
+                return curve.getInfinity();
+            }
+
+            int coord = curve.getCoordinateSystem();
 
             switch (coord)
             {
@@ -1336,15 +1334,17 @@ public abstract class ECPoint
             {
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
 
-                // TODO Optimize
-
-                ECFieldElement L1Z1 = L1.multiply(Z1);
-                ECFieldElement Z1Squared = Z1.square();
-                ECFieldElement T = L1.square().add(L1Z1).add(curve.getA().multiply(Z1Squared));
+                boolean Z1IsOne = Z1.bitLength() == 1;
+                ECFieldElement L1Z1 = Z1IsOne ? L1 : L1.multiply(Z1);
+                ECFieldElement Z1Sq = Z1IsOne ? Z1 : Z1.square();
+                ECFieldElement a = curve.getA();
+                ECFieldElement aZ1Sq = Z1IsOne ? a : a.multiply(Z1Sq);
+                ECFieldElement T = L1.square().add(L1Z1).add(aZ1Sq);
 
                 ECFieldElement X3 = T.square();
-                ECFieldElement Z3 = T.multiply(Z1Squared);
-                ECFieldElement L3 = X1.multiply(Z1).square().add(X3).add(T.multiply(L1Z1)).add(Z3);
+                ECFieldElement Z3 = Z1IsOne ? T : T.multiply(Z1Sq);
+                ECFieldElement X1Z1 = Z1IsOne ? X1 : X1.multiply(Z1);
+                ECFieldElement L3 = X1Z1.square().add(X3).add(T.multiply(L1Z1)).add(Z3);
 
                 return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
             }
@@ -1357,12 +1357,18 @@ public abstract class ECPoint
 
         protected void checkCurveEquation()
         {
-            if (getCurveCoordinateSystem() != ECCurve.COORD_LAMBDA_PROJECTIVE)
+            if (getCurveCoordinateSystem() != ECCurve.COORD_LAMBDA_PROJECTIVE || isInfinity())
             {
                 return;
             }
 
             ECFieldElement X = this.x, L = this.y, Z = this.zs[0];
+
+            if (Z.isZero())
+            {
+                throw new IllegalStateException();
+            }
+
             ECFieldElement XSq = X.square();
             ECFieldElement ZSq = Z.square();
 
