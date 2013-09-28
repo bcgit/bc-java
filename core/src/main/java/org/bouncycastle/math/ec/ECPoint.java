@@ -1227,7 +1227,7 @@ public abstract class ECPoint
                 }
 
                 ECFieldElement A = S1.add(S2);
-                ECFieldElement B = U1.add(U2).square();
+                ECFieldElement B = U1.add(U2);
 
                 if (B.isZero())
                 {
@@ -1238,6 +1238,8 @@ public abstract class ECPoint
 
                     return (ECPoint.F2m)curve.getInfinity();
                 }
+
+                B = B.square();
 
                 ECFieldElement AU1 = A.multiply(U1);
                 ECFieldElement AU2 = A.multiply(U2);
