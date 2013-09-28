@@ -15,6 +15,8 @@ public abstract class ECCurve
     public static final int COORD_JACOBIAN = 2;
     public static final int COORD_JACOBIAN_CHUDNOVSKY = 3;
     public static final int COORD_JACOBIAN_MODIFIED = 4;
+    public static final int COORD_LAMBDA_AFFINE = 5;
+    public static final int COORD_LAMBDA_PROJECTIVE = 6;
 
     public class Config
     {
@@ -46,11 +48,14 @@ public abstract class ECCurve
                 throw new UnsupportedOperationException("unsupported coordinate system");
             }
 
-            ECCurve c = createCurve(Config.this);
+            ECCurve c = cloneCurve();
             if (c == ECCurve.this)
             {
                 throw new IllegalStateException("implementation returned current curve");
             }
+
+            c.coord = coord;
+            c.multiplier = multiplier;
 
             return c;
         }
@@ -74,7 +79,18 @@ public abstract class ECCurve
         return createPoint(x, y, false);
     }
 
-    protected abstract ECCurve createCurve(Config builder);
+    /**
+     * @deprecated per-point compression property will be removed, use {@link #createPoint(BigInteger, BigInteger)}
+     * and refer {@link ECPoint#getEncoded(boolean)}
+     */
+    public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
+    {
+        return createRawPoint(fromBigInteger(x), fromBigInteger(y), withCompression);
+    }
+
+    protected abstract ECCurve cloneCurve();
+
+    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression);
 
     protected ECMultiplier createDefaultMultiplier()
     {
@@ -85,12 +101,6 @@ public abstract class ECCurve
     {
         return coord == COORD_AFFINE;
     }
-
-    /**
-     * @deprecated per-point compression property will be removed, use {@link #createPoint(BigInteger, BigInteger)}
-     * and refer {@link ECPoint#getEncoded(boolean)}
-     */
-    public abstract ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression);
 
     public PreCompInfo getPreCompInfo(ECPoint p)
     {
@@ -313,12 +323,9 @@ public abstract class ECCurve
             this.coord = FP_DEFAULT_COORDS;
         }
 
-        public ECCurve createCurve(Config builder)
+        protected ECCurve cloneCurve()
         {
-            Fp c = new Fp(q, r, a, b);
-            c.coord = builder.coord;
-            c.multiplier = builder.multiplier;
-            return c;
+            return new Fp(q, r, a, b);
         }
 
         public boolean supportsCoordinateSystem(int coord)
@@ -350,9 +357,9 @@ public abstract class ECCurve
             return new ECFieldElement.Fp(this.q, this.r, x);
         }
 
-        public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
-            return new ECPoint.Fp(this, fromBigInteger(x), fromBigInteger(y), withCompression);
+            return new ECPoint.Fp(this, x, y, withCompression);
         }
 
         public ECPoint importPoint(ECPoint p)
@@ -667,12 +674,9 @@ public abstract class ECCurve
             this.coord = F2M_DEFAULT_COORDS;
         }
 
-        public ECCurve createCurve(Config builder)
+        protected ECCurve cloneCurve()
         {
-            F2m c = new F2m(m, k1, k2, k3, a, b, n, h);
-            c.coord = builder.coord;
-            c.multiplier = builder.multiplier;
-            return c;
+            return new F2m(m, k1, k2, k3, a, b, n, h);
         }
 
         protected ECMultiplier createDefaultMultiplier()
@@ -697,7 +701,33 @@ public abstract class ECCurve
 
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
         {
-            return new ECPoint.F2m(this, fromBigInteger(x), fromBigInteger(y), withCompression);
+            ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
+
+            switch (getCoordinateSystem())
+            {
+            case COORD_LAMBDA_AFFINE:
+            case COORD_LAMBDA_PROJECTIVE:
+            {
+                if (X.isZero())
+                {
+                    return getInfinity();
+                }
+
+                Y = Y.divide(X).add(X);
+                break;
+            }
+            default:
+            {
+                break;
+            }
+            }
+
+            return createRawPoint(X, Y, withCompression);
+        }
+
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+        {
+            return new ECPoint.F2m(this, x, y, withCompression);
         }
 
         public ECPoint getInfinity()
