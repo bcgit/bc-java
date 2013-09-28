@@ -276,6 +276,27 @@ public abstract class ECPoint
         return p.getXCoord().hashCode() ^ p.getRawYCoord().hashCode();
     }
 
+    public String toString()
+    {
+        if (isInfinity())
+        {
+            return "INF";
+        }
+
+        StringBuffer sb = new StringBuffer();
+        sb.append('(');
+        sb.append(getRawXCoord());
+        sb.append(',');
+        sb.append(getRawYCoord());
+        for (int i = 0; i < zs.length; ++i)
+        {
+            sb.append(',');
+            sb.append(zs[i]);
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
     public byte[] getEncoded()
     {
         return getEncoded(withCompression);
@@ -1054,6 +1075,8 @@ public abstract class ECPoint
             }
 
             this.withCompression = withCompression;
+
+//            checkCurveEquation();
         }
 
         F2m(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
@@ -1061,6 +1084,8 @@ public abstract class ECPoint
             super(curve, x, y, zs);
 
             this.withCompression = withCompression;
+
+//            checkCurveEquation();
         }
 
         public ECFieldElement getYCoord()
@@ -1330,6 +1355,26 @@ public abstract class ECPoint
             }
         }
 
+        protected void checkCurveEquation()
+        {
+            if (getCurveCoordinateSystem() != ECCurve.COORD_LAMBDA_PROJECTIVE)
+            {
+                return;
+            }
+
+            ECFieldElement X = this.x, L = this.y, Z = this.zs[0];
+            ECFieldElement XSq = X.square();
+            ECFieldElement ZSq = Z.square();
+
+            ECFieldElement lhs = L.square().add(L.multiply(Z)).add(getCurve().getA().multiply(ZSq)).multiply(XSq);
+            ECFieldElement rhs = ZSq.square().multiply(getCurve().getB()).add(XSq.square());
+            
+            if (!lhs.equals(rhs))
+            {
+                throw new IllegalStateException("F2m Lambda-Projective invariant broken");
+            }
+        }
+
         public ECPoint negate()
         {
             if (this.isInfinity())
@@ -1341,12 +1386,24 @@ public abstract class ECPoint
 
             switch (getCurveCoordinateSystem())
             {
-            case ECCurve.COORD_LAMBDA_AFFINE:
-            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-                // Y is actually Lambda (X + Y/X) here
-                return new ECPoint.F2m(curve, X, Y.addOne(), withCompression);
-            default:
+            case ECCurve.COORD_AFFINE:
+            {
                 return new ECPoint.F2m(curve, X, Y.add(X), withCompression);
+            }
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            {
+                return new ECPoint.F2m(curve, X, Y.addOne(), withCompression);
+            }
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement L = Y, Z = this.zs[0];
+                return new ECPoint.F2m(curve, X, L.add(Z), new ECFieldElement[]{ Z }, withCompression);
+            }
+            default:
+            {
+                throw new UnsupportedOperationException("unsupported coordinate system");
+            }
             }
         }
     }
