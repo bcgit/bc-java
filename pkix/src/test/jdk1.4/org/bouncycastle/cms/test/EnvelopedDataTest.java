@@ -16,11 +16,8 @@ import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.KeyTransRecipientInformation;
-import org.bouncycastle.cms.PKCS5Scheme2PBEKey;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
-import org.bouncycastle.cms.PKCS5Scheme2UTF8PBEKey;
-import org.bouncycastle.cms.PasswordRecipientInformation;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 

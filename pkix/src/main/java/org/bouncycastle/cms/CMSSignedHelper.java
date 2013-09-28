@@ -113,23 +113,7 @@ class CMSSignedHelper
         digestAliases.put("SHA384", new String[] { "SHA-384" });
         digestAliases.put("SHA512", new String[] { "SHA-512" });
     }
-    
-    /**
-     * Return the digest algorithm using one of the standard JCA string
-     * representations rather than the algorithm identifier (if possible).
-     */
-    String getDigestAlgName(
-        String digestAlgOID)
-    {
-        String algName = (String)digestAlgs.get(digestAlgOID);
 
-        if (algName != null)
-        {
-            return algName;
-        }
-
-        return digestAlgOID;
-    }
 
     /**
      * Return the digest encryption algorithm using one of the standard

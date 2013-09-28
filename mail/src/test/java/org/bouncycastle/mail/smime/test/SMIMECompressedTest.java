@@ -3,8 +3,6 @@ package org.bouncycastle.mail.smime.test;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.KeyPair;
-import java.security.cert.CertStore;
-import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,9 +22,15 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
 import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
+import org.bouncycastle.cms.jcajce.ZlibCompressor;
+import org.bouncycastle.cms.jcajce.ZlibExpanderProvider;
 import org.bouncycastle.cms.test.CMSTestUtil;
 import org.bouncycastle.mail.smime.SMIMECompressed;
 import org.bouncycastle.mail.smime.SMIMECompressedGenerator;
@@ -35,6 +39,7 @@ import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Store;
 
 public class SMIMECompressedTest
     extends TestCase
@@ -103,7 +108,7 @@ public class SMIMECompressedTest
     {
         SMIMECompressedGenerator    cgen = new SMIMECompressedGenerator();
 
-        MimeBodyPart cbp = cgen.generate(msg, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart cbp = cgen.generate(msg, new ZlibCompressor());
         
         assertEquals(COMPRESSED_CONTENT_TYPE, cbp.getHeader("Content-Type")[0]);
         assertEquals("attachment; filename=\"smime.p7z\"", cbp.getHeader("Content-Disposition")[0]);
@@ -115,13 +120,13 @@ public class SMIMECompressedTest
     {
         SMIMECompressedGenerator    cgen = new SMIMECompressedGenerator();
         ByteArrayOutputStream       bOut = new ByteArrayOutputStream();
-        MimeBodyPart cbp = cgen.generate(msg, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart cbp = cgen.generate(msg, new ZlibCompressor());
         
         SMIMECompressed sc = new SMIMECompressed(cbp);
         
         msg.writeTo(bOut);
 
-        assertTrue(Arrays.areEqual(bOut.toByteArray(), sc.getContent()));
+        assertTrue(Arrays.areEqual(bOut.toByteArray(), sc.getContent(new ZlibExpanderProvider())));
     }
     
     public void testParser()
@@ -130,12 +135,12 @@ public class SMIMECompressedTest
         SMIMECompressedGenerator    cgen = new SMIMECompressedGenerator();
         ByteArrayOutputStream       bOut1 = new ByteArrayOutputStream();
         ByteArrayOutputStream       bOut2 = new ByteArrayOutputStream();
-        MimeBodyPart                cbp = cgen.generate(msg, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart                cbp = cgen.generate(msg, new ZlibCompressor());
         SMIMECompressedParser       sc = new SMIMECompressedParser(cbp);
         
         msg.writeTo(bOut1);
     
-        InputStream in = sc.getContent().getContentStream();
+        InputStream in = sc.getContent(new ZlibExpanderProvider()).getContentStream();
         int ch;
         
         while ((ch = in.read()) >= 0)
@@ -157,8 +162,7 @@ public class SMIMECompressedTest
         certList.add(origCert);
         certList.add(signCert);
 
-        CertStore      certs = CertStore.getInstance("Collection",
-                                       new CollectionCertStoreParameters(certList), "BC");
+        Store certs = new JcaCertStore(certList);
 
         ASN1EncodableVector         signedAttrs = new ASN1EncodableVector();
         SMIMECapabilityVector       caps = new SMIMECapabilityVector();
@@ -171,11 +175,11 @@ public class SMIMECompressedTest
 
         SMIMESignedGenerator gen = new SMIMESignedGenerator();
 
-        gen.addSigner(origKP.getPrivate(), origCert, SMIMESignedGenerator.DIGEST_SHA1, new AttributeTable(signedAttrs), null);
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").setSignedAttributeGenerator(new AttributeTable(signedAttrs)).build("SHA1withRSA", origKP.getPrivate(), origCert));
 
-        gen.addCertificatesAndCRLs(certs);
+        gen.addCertificates(certs);
 
-        MimeMultipart smp = gen.generate(msg, "BC");
+        MimeMultipart smp = gen.generate(msg);
 
         MimeMessage bp2 = new MimeMessage((Session)null);                          
 
@@ -185,11 +189,11 @@ public class SMIMECompressedTest
 
         SMIMECompressedGenerator    cgen = new SMIMECompressedGenerator();
 
-        MimeBodyPart cbp = cgen.generate(bp2, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart cbp = cgen.generate(bp2, new ZlibCompressor());
 
         SMIMECompressed cm = new SMIMECompressed(cbp);
 
-        MimeMultipart mm = (MimeMultipart)SMIMEUtil.toMimeBodyPart(cm.getContent()).getContent();
+        MimeMultipart mm = (MimeMultipart)SMIMEUtil.toMimeBodyPart(cm.getContent(new ZlibExpanderProvider())).getContent();
         
         SMIMESigned s = new SMIMESigned(mm);
 
@@ -204,7 +208,7 @@ public class SMIMECompressedTest
         
         assertEquals(true, Arrays.areEqual(_msgBytes, _resBytes));
 
-        certs = s.getCertificatesAndCRLs("Collection", "BC");
+        certs = s.getCertificates();
 
         SignerInformationStore  signers = s.getSignerInfos();
         Collection              c = signers.getSigners();
@@ -213,12 +217,12 @@ public class SMIMECompressedTest
         while (it.hasNext())
         {
             SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certs.getCertificates(selectorConverter.getCertSelector(signer.getSID()));
+            Collection          certCollection = certs.getMatches(signer.getSID());
 
             Iterator            certIt = certCollection.iterator();
-            X509Certificate     cert = (X509Certificate)certIt.next();
+            X509CertificateHolder     cert = (X509CertificateHolder)certIt.next();
 
-            assertEquals(true, signer.verify(cert, "BC"));
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
         }
     }
 }

@@ -51,8 +51,10 @@ import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
 import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.i18n.filter.TrustedInput;
@@ -179,7 +181,7 @@ public class SignedMailValidator
             }
 
             // save certstore and signerInformationStore
-            certs = s.getCertificatesAndCRLs("Collection", "BC");
+            certs = new JcaCertStoreBuilder().addCertificates(s.getCertificates()).addCRLs(s.getCRLs()).setProvider("BC").build();
             signers = s.getSignerInfos();
 
             // save "from" addresses from message
@@ -272,7 +274,7 @@ public class SignedMailValidator
                 boolean validSignature = false;
                 try
                 {
-                    validSignature = signer.verify(cert.getPublicKey(), "BC");
+                    validSignature = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert.getPublicKey()));
                     if (!validSignature)
                     {
                         ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,

@@ -2,14 +2,6 @@ package org.bouncycastle.mail.smime;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.cert.CertStore;
-import java.security.cert.CertStoreException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -30,7 +22,6 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -45,7 +36,6 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.x509.X509Store;
 
 /**
  * general class for generating a pkcs7-signature message.
@@ -214,97 +204,6 @@ public class SMIMESignedGenerator
     }
 
     /**
-     * add a signer - no attributes other than the default ones will be
-     * provided here.
-     *
-     * @param key key to use to generate the signature
-     * @param cert the public key certificate associated with the signer's key.
-     * @param digestOID object ID of the digest algorithm to use.
-     * @exception IllegalArgumentException any of the arguments are inappropriate
-     * @deprecated use addSignerInfoGenerator()
-     */
-    public void addSigner(
-        PrivateKey      key,
-        X509Certificate cert,
-        String          digestOID)
-        throws IllegalArgumentException
-    {
-        _signers.add(new Signer(key, cert, new ASN1ObjectIdentifier(digestOID), null, null));
-    }
-
-    /**
-     * add a signer - no attributes other than the default ones will be
-     * provided here.
-     *
-     * @param key key to use to generate the signature
-     * @param cert the public key certificate associated with the signer's key.
-     * @param encryptionOID object ID of the digest ecnryption algorithm to use.
-     * @param digestOID object ID of the digest algorithm to use.
-     * @exception IllegalArgumentException any of the arguments are inappropriate
-     * @deprecated use addSignerInfoGenerator()
-     */
-    public void addSigner(
-        PrivateKey      key,
-        X509Certificate cert,
-        String          encryptionOID,
-        String          digestOID)
-        throws IllegalArgumentException
-    {
-        _signers.add(new Signer(key, cert, new ASN1ObjectIdentifier(encryptionOID), new ASN1ObjectIdentifier(digestOID), null, null));
-    }
-
-    /**
-     * Add a signer with extra signed/unsigned attributes or overrides
-     * for the standard attributes. For example this method can be used to
-     * explictly set default attributes such as the signing time.
-     *
-     * @param key key to use to generate the signature
-     * @param cert the public key certificate associated with the signer's key.
-     * @param digestOID object ID of the digest algorithm to use.
-     * @param signedAttr signed attributes to be included in the signature.
-     * @param unsignedAttr unsigned attribitues to be included.
-     * @exception IllegalArgumentException any of the arguments are inappropriate
-     * @deprecated use addSignerInfoGenerator()
-     */
-    public void addSigner(
-        PrivateKey      key,
-        X509Certificate cert,
-        String          digestOID,
-        AttributeTable  signedAttr,
-        AttributeTable  unsignedAttr)
-        throws IllegalArgumentException
-    {
-        _signers.add(new Signer(key, cert, new ASN1ObjectIdentifier(digestOID), signedAttr, unsignedAttr));
-    }
-
-    /**
-     * Add a signer with extra signed/unsigned attributes or overrides
-     * for the standard attributes and a digest encryption algorithm. For
-     * example this method can be used to explictly set default attributes
-     * such as the signing time.
-     *
-     * @param key key to use to generate the signature
-     * @param cert the public key certificate associated with the signer's key.
-     * @param encryptionOID the digest encryption algorithm OID.
-     * @param digestOID object ID of the digest algorithm to use.
-     * @param signedAttr signed attributes to be included in the signature.
-     * @param unsignedAttr unsigned attribitues to be included.
-     * @exception IllegalArgumentException any of the arguments are inappropriate
-     * @deprecated use addSignerInfoGenerator()
-     */
-    public void addSigner(
-        PrivateKey      key,
-        X509Certificate cert,
-        String          encryptionOID,
-        String          digestOID,
-        AttributeTable  signedAttr,
-        AttributeTable  unsignedAttr)
-        throws IllegalArgumentException
-    {
-        _signers.add(new Signer(key, cert, new ASN1ObjectIdentifier(encryptionOID), new ASN1ObjectIdentifier(digestOID), signedAttr, unsignedAttr));
-    }
-
-    /**
      * Add a store of precalculated signers to the generator.
      *
      * @param signerStore store of signers
@@ -320,26 +219,13 @@ public class SMIMESignedGenerator
         }
     }
 
+    /**
+     *
+     * @param sigInfoGen
+     */
     public void addSignerInfoGenerator(SignerInfoGenerator sigInfoGen)
     {
         signerInfoGens.add(sigInfoGen);
-    }
-
-    /**
-     * add the certificates and CRLs contained in the given CertStore
-     * to the pool that will be included in the encoded signature block.
-     * <p>
-     * Note: this assumes the CertStore will support null in the get
-     * methods.
-     * </p>
-     * @param certStore CertStore containing the certificates and CRLs to be added.
-     * @deprecated use addCertificates(Store) and addCRLs(Store)
-     */
-    public void addCertificatesAndCRLs(
-        CertStore               certStore)
-        throws CertStoreException, SMIMEException
-    {
-        _certStores.add(certStore);
     }
 
     public void addCertificates(
@@ -360,21 +246,6 @@ public class SMIMESignedGenerator
         attrCertStores.add(certStore);
     }
 
-    /**
-     * Add the attribute certificates contained in the passed in store to the
-     * generator.
-     *
-     * @param store a store of Version 2 attribute certificates
-     * @throws CMSException if an error occurse processing the store.
-     * @deprecated use addAttributeCertificates(Store)
-     */
-    public void addAttributeCertificates(
-        X509Store store)
-        throws CMSException
-    {
-        _attributeCerts.add(store);
-    }
-
     private void addHashHeader(
         StringBuffer header,
         List         signers)
@@ -392,11 +263,7 @@ public class SMIMESignedGenerator
             Object              signer = it.next();
             ASN1ObjectIdentifier digestOID;
 
-            if (signer instanceof Signer)
-            {
-                digestOID = ((Signer)signer).getDigestOID();
-            }
-            else if (signer instanceof SignerInformation)
+            if (signer instanceof SignerInformation)
             {
                 digestOID = ((SignerInformation)signer).getDigestAlgorithmID().getAlgorithm();
             }
@@ -452,51 +319,6 @@ public class SMIMESignedGenerator
             }
         }
     }
-    
-    /*
-     * at this point we expect our body part to be well defined.
-     */
-    private MimeMultipart make(
-        MimeBodyPart    content,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, SMIMEException
-    {
-        try
-        {
-            MimeBodyPart sig = new MimeBodyPart();
-
-            sig.setContent(new ContentSigner(content, false, sigProvider), DETACHED_SIGNATURE_TYPE);
-            sig.addHeader("Content-Type", DETACHED_SIGNATURE_TYPE);
-            sig.addHeader("Content-Disposition", "attachment; filename=\"smime.p7s\"");
-            sig.addHeader("Content-Description", "S/MIME Cryptographic Signature");
-            sig.addHeader("Content-Transfer-Encoding", encoding);
-
-            //
-            // build the multipart header
-            //
-            StringBuffer        header = new StringBuffer(
-                    "signed; protocol=\"application/pkcs7-signature\"");
-
-            List allSigners = new ArrayList(_signers);
-
-            allSigners.addAll(_oldSigners);
-
-            allSigners.addAll(signerInfoGens);
-
-            addHashHeader(header, allSigners);
-
-            MimeMultipart   mm = new MimeMultipart(header.toString());
-
-            mm.addBodyPart(content);
-            mm.addBodyPart(sig);
-
-            return mm;
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("exception putting multi-part together.", e);
-        }
-    }
 
     private MimeMultipart make(
         MimeBodyPart    content)
@@ -543,32 +365,6 @@ public class SMIMESignedGenerator
      * at this point we expect our body part to be well defined - generate with data in the signature
      */
     private MimeBodyPart makeEncapsulated(
-        MimeBodyPart    content,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, SMIMEException
-    {
-        try
-        {
-            MimeBodyPart sig = new MimeBodyPart();
-            
-            sig.setContent(new ContentSigner(content, true, sigProvider), ENCAPSULATED_SIGNED_CONTENT_TYPE);
-            sig.addHeader("Content-Type", ENCAPSULATED_SIGNED_CONTENT_TYPE);
-            sig.addHeader("Content-Disposition", "attachment; filename=\"smime.p7m\"");
-            sig.addHeader("Content-Description", "S/MIME Cryptographic Signed Data");
-            sig.addHeader("Content-Transfer-Encoding", encoding);
-            
-            return sig;
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("exception putting body part together.", e);
-        }
-    }
-
-    /*
-     * at this point we expect our body part to be well defined - generate with data in the signature
-     */
-    private MimeBodyPart makeEncapsulated(
         MimeBodyPart    content)
         throws SMIMEException
     {
@@ -601,70 +397,16 @@ public class SMIMESignedGenerator
         return new HashMap(_digests);
     }
 
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider.
-     * @param content the MimeBodyPart to be signed.
-     * @param sigProvider the provider to be used for the signature.
-     * @return a Multipart containing the content and signature.
-     * @throws NoSuchAlgorithmException if the required algorithms for the signature cannot be found.
-     * @throws NoSuchProviderException if no provider can be found.
-     * @throws SMIMEException if an exception occurs in processing the signature.
-     * @deprecated use generate(MimeBodyPart)
-     */
     public MimeMultipart generate(
-        MimeBodyPart    content,
-        String          sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, SMIMEException
+        MimeBodyPart    content)
+        throws SMIMEException
     {
-        return make(makeContentBodyPart(content), SMIMEUtil.getProvider(sigProvider));
+        return make(makeContentBodyPart(content));
     }
 
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider.
-     * @param content the MimeBodyPart to be signed.
-     * @param sigProvider the provider to be used for the signature.
-     * @return a Multipart containing the content and signature.
-     * @throws NoSuchAlgorithmException if the required algorithms for the signature cannot be found.
-     * @throws SMIMEException if an exception occurs in processing the signature.
-     */
     public MimeMultipart generate(
-        MimeBodyPart    content,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, SMIMEException
-    {
-        return make(makeContentBodyPart(content), sigProvider);
-    }
-
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider from the given MimeMessage
-     *
-     * @throws NoSuchAlgorithmException if the required algorithms for the signature cannot be found.
-     * @throws NoSuchProviderException if no provider can be found.
-     * @throws SMIMEException if an exception occurs in processing the signature.
-     */
-    public MimeMultipart generate(
-        MimeMessage     message,
-        String          sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, SMIMEException
-    {
-        return generate(message, SMIMEUtil.getProvider(sigProvider));
-    }
-
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider from the given MimeMessage
-     *
-     * @throws NoSuchAlgorithmException if the required algorithms for the signature cannot be found.
-     * @throws NoSuchProviderException if no provider can be found.
-     * @throws SMIMEException if an exception occurs in processing the signature.
-     */
-    public MimeMultipart generate(
-        MimeMessage     message,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, SMIMEException
+        MimeMessage    message)
+        throws SMIMEException
     {
         try
         {
@@ -675,14 +417,7 @@ public class SMIMESignedGenerator
             throw new SMIMEException("unable to save message", e);
         }
 
-        return make(makeContentBodyPart(message), sigProvider);
-    }
-
-    public MimeMultipart generate(
-        MimeBodyPart    content)
-        throws SMIMEException
-    {
-        return make(makeContentBodyPart(content));
+        return make(makeContentBodyPart(message));
     }
 
     /**
@@ -699,68 +434,9 @@ public class SMIMESignedGenerator
         return makeEncapsulated(makeContentBodyPart(content));
     }
 
-    /**
-     * generate a signed message with encapsulated content
-     * <p>
-     * Note: doing this is strongly <b>not</b> recommended as it means a
-     * recipient of the message will have to be able to read the signature to read the 
-     * message.
-     * @deprecated use generateEncapsulated(content)
-     */
     public MimeBodyPart generateEncapsulated(
-        MimeBodyPart    content,
-        String          sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, SMIMEException
-    {
-        return makeEncapsulated(makeContentBodyPart(content), SMIMEUtil.getProvider(sigProvider));
-    }
-
-    /**
-     * generate a signed message with encapsulated content
-     * <p>
-     * Note: doing this is strongly <b>not</b> recommended as it means a
-     * recipient of the message will have to be able to read the signature to read the
-     * message.
-     * @deprecated use generateEncapsulated(content)
-     */
-    public MimeBodyPart generateEncapsulated(
-        MimeBodyPart    content,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, SMIMEException
-    {
-        return makeEncapsulated(makeContentBodyPart(content), sigProvider);
-    }
-
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider from the given MimeMessage.
-     * <p>
-     * Note: doing this is strongly <b>not</b> recommended as it means a
-     * recipient of the message will have to be able to read the signature to read the
-     * message.
-     * @deprecated use generateEncapsulated(content)
-     */
-    public MimeBodyPart generateEncapsulated(
-        MimeMessage     message,
-        String          sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, SMIMEException
-    {
-        return generateEncapsulated(message, SMIMEUtil.getProvider(sigProvider));
-    }
-
-    /**
-     * generate a signed object that contains an SMIME Signed Multipart
-     * object using the given provider from the given MimeMessage.
-     * <p>
-     * Note: doing this is strongly <b>not</b> recommended as it means a
-     * recipient of the message will have to be able to read the signature to read the 
-     * message.
-     * @deprecated use generateEncapsulated(content)
-     */
-    public MimeBodyPart generateEncapsulated(
-        MimeMessage     message,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException, SMIMEException
+        MimeMessage    message)
+        throws SMIMEException
     {
         try
         {
@@ -771,50 +447,7 @@ public class SMIMESignedGenerator
             throw new SMIMEException("unable to save message", e);
         }
 
-        return makeEncapsulated(makeContentBodyPart(message), sigProvider);
-    }
-
-    /**
-     * Creates a certificate management message which is like a signed message with no content
-     * or signers but that still carries certificates and CRLs.
-     *
-     * @return a MimeBodyPart containing the certs and CRLs.
-     * @deprecated use generateCertificateManagement()
-     */
-    public MimeBodyPart generateCertificateManagement(
-       String provider)
-       throws SMIMEException, NoSuchProviderException
-    {
-        return generateCertificateManagement(SMIMEUtil.getProvider(provider));
-    }
-
-    /**
-     * Creates a certificate management message which is like a signed message with no content
-     * or signers but that still carries certificates and CRLs.
-     * 
-     * @return a MimeBodyPart containing the certs and CRLs.
-     * @deprecated use generateCertificateManagement()
-     */
-    public MimeBodyPart generateCertificateManagement(
-       Provider provider)
-       throws SMIMEException
-    {
-        try
-        {
-            MimeBodyPart sig = new MimeBodyPart();
-            
-            sig.setContent(new ContentSigner(null, true, provider), CERTIFICATE_MANAGEMENT_CONTENT);
-            sig.addHeader("Content-Type", CERTIFICATE_MANAGEMENT_CONTENT);
-            sig.addHeader("Content-Disposition", "attachment; filename=\"smime.p7c\"");
-            sig.addHeader("Content-Description", "S/MIME Certificate Management Message");
-            sig.addHeader("Content-Transfer-Encoding", encoding);
-
-            return sig;
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("exception putting body part together.", e);
-        }
+        return makeEncapsulated(makeContentBodyPart(message));
     }
 
    /**
@@ -844,90 +477,12 @@ public class SMIMESignedGenerator
         }
     }
 
-    private class Signer
-    {
-        final PrivateKey      key;
-        final X509Certificate cert;
-        final ASN1ObjectIdentifier encryptionOID;
-        final ASN1ObjectIdentifier digestOID;
-        final AttributeTable  signedAttr;
-        final AttributeTable  unsignedAttr;
-        
-        Signer(
-            PrivateKey      key,
-            X509Certificate cert,
-            ASN1ObjectIdentifier digestOID,
-            AttributeTable  signedAttr,
-            AttributeTable  unsignedAttr)
-        {
-            this(key, cert, null, digestOID, signedAttr, unsignedAttr);
-        }
-
-        Signer(
-            PrivateKey      key,
-            X509Certificate cert,
-            ASN1ObjectIdentifier encryptionOID,
-            ASN1ObjectIdentifier digestOID,
-            AttributeTable  signedAttr,
-            AttributeTable  unsignedAttr)
-        {
-            this.key = key;
-            this.cert = cert;
-            this.encryptionOID = encryptionOID;
-            this.digestOID = digestOID;
-            this.signedAttr = signedAttr;
-            this.unsignedAttr = unsignedAttr;
-        }
-
-        public X509Certificate getCert()
-        {
-            return cert;
-        }
-
-        public ASN1ObjectIdentifier getEncryptionOID()
-        {
-            return encryptionOID;
-        }
-
-        public ASN1ObjectIdentifier getDigestOID()
-        {
-            return digestOID;
-        }
-
-        public PrivateKey getKey()
-        {
-            return key;
-        }
-
-        public AttributeTable getSignedAttr()
-        {
-            return signedAttr;
-        }
-
-        public AttributeTable getUnsignedAttr()
-        {
-            return unsignedAttr;
-        }
-    }
-
     private class ContentSigner
         implements SMIMEStreamingProcessor
     {
         private final MimeBodyPart content;
         private final boolean encapsulate;
-        private final Provider provider;
         private final boolean  noProvider;
-
-        ContentSigner(
-            MimeBodyPart content,
-            boolean      encapsulate,
-            Provider     provider)
-        {
-            this.content = content;
-            this.encapsulate = encapsulate;
-            this.provider = provider;
-            this.noProvider = false;
-        }
 
         ContentSigner(
             MimeBodyPart content,
@@ -935,19 +490,13 @@ public class SMIMESignedGenerator
         {
             this.content = content;
             this.encapsulate = encapsulate;
-            this.provider = null;
             this.noProvider = true;
         }
 
         protected CMSSignedDataStreamGenerator getGenerator()
-            throws CMSException, CertStoreException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException
+            throws CMSException
         {
             CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
-            
-            for (Iterator it = _certStores.iterator(); it.hasNext();)
-            {
-                gen.addCertificatesAndCRLs((CertStore)it.next());
-            }
 
             for (Iterator it = certStores.iterator(); it.hasNext();)
             {
@@ -962,25 +511,6 @@ public class SMIMESignedGenerator
             for (Iterator it = attrCertStores.iterator(); it.hasNext();)
             {
                 gen.addAttributeCertificates((Store)it.next());
-            }
-
-            for (Iterator it = _attributeCerts.iterator(); it.hasNext();)
-            {
-                gen.addAttributeCertificates((X509Store)it.next());
-            }
-
-            for (Iterator it = _signers.iterator(); it.hasNext();)
-            {
-                Signer signer = (Signer)it.next();
-
-                if (signer.getEncryptionOID() != null)
-                {
-                    gen.addSigner(signer.getKey(), signer.getCert(), signer.getEncryptionOID().getId(), signer.getDigestOID().getId(), signer.getSignedAttr(), signer.getUnsignedAttr(), provider);
-                }
-                else
-                {
-                    gen.addSigner(signer.getKey(), signer.getCert(), signer.getDigestOID().getId(), signer.getSignedAttr(), signer.getUnsignedAttr(), provider);
-                }
             }
 
             for (Iterator it = signerInfoGens.iterator(); it.hasNext();)
@@ -1067,23 +597,7 @@ public class SMIMESignedGenerator
             {
                 throw new IOException(e.toString());
             }
-            catch (NoSuchAlgorithmException e)
-            {
-                throw new IOException(e.toString());
-            }
-            catch (NoSuchProviderException e)
-            {
-                throw new IOException(e.toString());
-            }
             catch (CMSException e)
-            {
-                throw new IOException(e.toString());
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new IOException(e.toString());
-            }
-            catch (CertStoreException e)
             {
                 throw new IOException(e.toString());
             }

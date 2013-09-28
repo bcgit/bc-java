@@ -90,7 +90,7 @@ public class BCECPublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = configuration.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger(), false);
+                q = s.getCurve().createPoint(q.getXCoord().toBigInteger(), q.getYCoord().toBigInteger(), false);
             }               
             this.ecSpec = null;
         }
@@ -310,8 +310,19 @@ public class BCECPublicKey
         }
 
         ECCurve curve = this.engineGetQ().getCurve();
-        ASN1OctetString p = (ASN1OctetString)
-            new X9ECPoint(curve.createPoint(this.getQ().getAffineXCoord().toBigInteger(), this.getQ().getAffineYCoord().toBigInteger(), withCompression)).toASN1Primitive();
+        ASN1OctetString p;
+
+        // stored curve is null if ImplicitlyCa
+        if (ecSpec == null)
+        {
+            p = (ASN1OctetString)
+                new X9ECPoint(curve.createPoint(this.getQ().getXCoord().toBigInteger(), this.getQ().getYCoord().toBigInteger(), withCompression)).toASN1Primitive();
+        }
+        else
+        {
+            p = (ASN1OctetString)
+                            new X9ECPoint(curve.createPoint(this.getQ().getAffineXCoord().toBigInteger(), this.getQ().getAffineYCoord().toBigInteger(), withCompression)).toASN1Primitive();
+        }
 
         info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
 

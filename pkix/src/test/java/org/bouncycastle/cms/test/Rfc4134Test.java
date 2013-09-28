@@ -10,7 +10,6 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
-import java.security.cert.CertStore;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAParams;
@@ -33,6 +32,8 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
@@ -45,8 +46,14 @@ import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
+import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
@@ -60,6 +67,19 @@ public class Rfc4134Test
     private static byte[] sha1 = Hex.decode("406aec085279ba6e16022d9e0629c0229687dd48");
 
     private static final JcaX509CertSelectorConverter selectorConverter = new JcaX509CertSelectorConverter();
+    private static final DigestCalculatorProvider digCalcProv;
+
+    static
+    {
+        try
+        {
+            digCalcProv =  new JcaDigestCalculatorProviderBuilder().build();
+        }
+        catch (OperatorCreationException e)
+        {
+            throw new IllegalStateException("can't create default provider!!!");
+        }
+    }
 
     public Rfc4134Test(String name)
     {
@@ -87,7 +107,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
     }
@@ -100,7 +120,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
     }
@@ -113,7 +133,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData, sha1);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv,
                 new CMSTypedStream(new ByteArrayInputStream(exContent)),
                 data);
 
@@ -131,7 +151,7 @@ public class Rfc4134Test
 
         verifySignerInfo4_4(getFirstSignerInfo(signedData.getSignerInfos()), counterSigCert);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
 
@@ -146,7 +166,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
     }
@@ -159,7 +179,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
     }
@@ -172,7 +192,7 @@ public class Rfc4134Test
 
         verifySignatures(signedData);
 
-        CMSSignedDataParser parser = new CMSSignedDataParser(data);
+        CMSSignedDataParser parser = new CMSSignedDataParser(digCalcProv, data);
 
         verifySignatures(parser);
     }
@@ -260,7 +280,7 @@ public class Rfc4134Test
     {
         assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
-        byte[] recData = recipient.getContent(privKey, BC);
+        byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
 
         assertEquals(true, Arrays.equals(exContent, recData));
     }
@@ -286,7 +306,7 @@ public class Rfc4134Test
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
         X509Certificate    cert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(certificate));
 
-        assertTrue(csi.verify(cert, BC));
+        assertTrue(csi.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(cert)));
     }
 
     private void verifyContentHint(SignerInformation signInfo)
@@ -308,7 +328,7 @@ public class Rfc4134Test
     private void verifySignatures(CMSSignedData s, byte[] contentDigest)
         throws Exception
     {
-        CertStore               certStore = s.getCertificatesAndCRLs("Collection", BC);
+        Store               certStore = s.getCertificates();
         SignerInformationStore  signers = s.getSignerInfos();
 
         Collection              c = signers.getSigners();
@@ -317,10 +337,10 @@ public class Rfc4134Test
         while (it.hasNext())
         {
             SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certStore.getCertificates(selectorConverter.getCertSelector(signer.getSID()));
+            Collection          certCollection = certStore.getMatches(signer.getSID());
 
             Iterator        certIt = certCollection.iterator();
-            X509Certificate cert = (X509Certificate)certIt.next();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
             verifySigner(signer, cert);
 
@@ -329,12 +349,6 @@ public class Rfc4134Test
                 assertTrue(MessageDigest.isEqual(contentDigest, signer.getContentDigest()));
             }
         }
-
-        Collection certColl = certStore.getCertificates(null);
-        Collection crlColl = certStore.getCRLs(null);
-
-        assertEquals(certColl.size(), s.getCertificates().getMatches(null).size());
-        assertEquals(crlColl.size(), s.getCRLs().getMatches(null).size());
     }
 
     private void verifySignatures(CMSSignedData s)
@@ -352,7 +366,7 @@ public class Rfc4134Test
             sc.drain();
         }
         
-        CertStore               certs = sp.getCertificatesAndCRLs("Collection", BC);
+        Store certs = sp.getCertificates();
         SignerInformationStore  signers = sp.getSignerInfos();
 
         Collection              c = signers.getSigners();
@@ -361,34 +375,35 @@ public class Rfc4134Test
         while (it.hasNext())
         {
             SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certs.getCertificates(selectorConverter.getCertSelector(signer.getSID()));
+            Collection          certCollection = certs.getMatches(signer.getSID());
 
             Iterator        certIt = certCollection.iterator();
-            X509Certificate cert = (X509Certificate)certIt.next();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
             verifySigner(signer, cert);
         }
     }
 
-    private void verifySigner(SignerInformation signer, X509Certificate cert)
+    private void verifySigner(SignerInformation signer, X509CertificateHolder certHolder)
         throws Exception
     {
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
         if (cert.getPublicKey() instanceof DSAPublicKey)
         {
             DSAPublicKey key = (DSAPublicKey)cert.getPublicKey();
 
             if (key.getParams() == null)
             {
-                assertEquals(true, signer.verify(getInheritedKey(key), BC));
+                assertEquals(true, signer.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(getInheritedKey(key))));
             }
             else
             {
-                assertEquals(true, signer.verify(cert, BC));
+                assertEquals(true, signer.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(cert)));
             }
         }
         else
         {
-            assertEquals(true, signer.verify(cert, BC));
+            assertEquals(true, signer.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(cert)));
         }
     }
 
