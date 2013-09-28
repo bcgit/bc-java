@@ -679,8 +679,21 @@ public abstract class ECCurve
             return new F2m(m, k1, k2, k3, a, b, n, h);
         }
 
+        public boolean supportsCoordinateSystem(int coord)
+        {
+            switch (coord)
+            {
+            case COORD_AFFINE:
+//            case COORD_LAMBDA_PROJECTIVE:
+                return true;
+            default:
+                return false;
+            }
+        }
+
         protected ECMultiplier createDefaultMultiplier()
         {
+            // TODO Check what's needed for Tau-support in non-affine coordinates
             if (isKoblitz())
             {
                 return new WTauNafMultiplier();
@@ -708,12 +721,11 @@ public abstract class ECCurve
             case COORD_LAMBDA_AFFINE:
             case COORD_LAMBDA_PROJECTIVE:
             {
-                if (X.isZero())
+                if (!X.isZero())
                 {
-                    return getInfinity();
+                    // Y becomes Lambda (X + Y/X) here
+                    Y = Y.divide(X).add(X);
                 }
-
-                Y = Y.divide(X).add(X);
                 break;
             }
             default:
@@ -786,7 +798,7 @@ public abstract class ECCurve
         {
             ECFieldElement xp = fromBigInteger(X1);
             ECFieldElement yp = null;
-            if (X1.signum() == 0)
+            if (xp.isZero())
             {
                 yp = (ECFieldElement.F2m)b;
                 for (int i = 0; i < m - 1; i++)
@@ -804,9 +816,24 @@ public abstract class ECCurve
                 }
                 if (z.testBitZero() != (yTilde == 1))
                 {
-                    z = z.add(fromBigInteger(ECConstants.ONE));
+                    z = z.addOne();
                 }
+
                 yp = xp.multiply(z);
+
+                switch (getCoordinateSystem())
+                {
+                case COORD_LAMBDA_AFFINE:
+                case COORD_LAMBDA_PROJECTIVE:
+                {
+                    yp = yp.divide(xp).add(xp);
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+                }
             }
 
             return new ECPoint.F2m(this, xp, yp, true);
