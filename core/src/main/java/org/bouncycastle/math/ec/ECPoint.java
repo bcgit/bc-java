@@ -11,9 +11,18 @@ public abstract class ECPoint
 
     protected static ECFieldElement[] getInitialZCoords(ECCurve curve)
     {
-        if (curve == null || curve.getCoordinateSystem() == ECCurve.COORD_AFFINE)
+        if (curve == null)
         {
             return EMPTY_ZS;
+        }
+
+        switch (curve.getCoordinateSystem())
+        {
+        case ECCurve.COORD_AFFINE:
+        case ECCurve.COORD_LAMBDA_AFFINE:
+            return EMPTY_ZS;
+        default:
+            break;
         }
 
         ECFieldElement one = curve.fromBigInteger(ECConstants.ONE);
@@ -22,11 +31,12 @@ public abstract class ECPoint
         {
         case ECCurve.COORD_HOMOGENEOUS:
         case ECCurve.COORD_JACOBIAN:
+        case ECCurve.COORD_LAMBDA_PROJECTIVE:
             return new ECFieldElement[]{ one };
         case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
             return new ECFieldElement[]{ one, one, one };
         case ECCurve.COORD_JACOBIAN_MODIFIED:
-            return new ECFieldElement[]{ one, curve.getA() }; 
+            return new ECFieldElement[]{ one, curve.getA() };
         default:
             throw new IllegalArgumentException("unknown coordinate system");
         }
@@ -114,6 +124,16 @@ public abstract class ECPoint
         return copy;
     }
 
+    protected ECFieldElement getRawXCoord()
+    {
+        return x;
+    }
+
+    protected ECFieldElement getRawYCoord()
+    {
+        return y;
+    }
+
     protected void checkNormalized()
     {
         if (!isNormalized())
@@ -134,18 +154,24 @@ public abstract class ECPoint
             return this;
         }
 
-        if (getCurve().getCoordinateSystem() == ECCurve.COORD_AFFINE)
+        switch (getCurve().getCoordinateSystem())
+        {
+        case ECCurve.COORD_AFFINE:
+        case ECCurve.COORD_LAMBDA_AFFINE:
         {
             return this;
         }
-
-        ECFieldElement Z1 = getZCoord(0);
-        if (Z1.bitLength() == 1)
+        default:
         {
-            return this;
-        }
+            ECFieldElement Z1 = getZCoord(0);
+            if (Z1.bitLength() == 1)
+            {
+                return this;
+            }
 
-        return normalize(Z1.invert());
+            return normalize(Z1.invert());
+        }
+        }
     }
 
     ECPoint normalize(ECFieldElement zInv)
@@ -153,7 +179,10 @@ public abstract class ECPoint
         switch (getCurve().getCoordinateSystem())
         {
         case ECCurve.COORD_HOMOGENEOUS:
+        case ECCurve.COORD_LAMBDA_PROJECTIVE:
+        {
             return createScaledPoint(zInv, zInv);
+        }
         case ECCurve.COORD_JACOBIAN:
         case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
         case ECCurve.COORD_JACOBIAN_MODIFIED:
@@ -162,13 +191,15 @@ public abstract class ECPoint
             return createScaledPoint(zInv2, zInv3);
         }
         default:
-            throw new IllegalArgumentException("unknown coordinate system");
+        {
+            throw new IllegalStateException("not a projective coordinate system");
+        }
         }
     }
 
     protected ECPoint createScaledPoint(ECFieldElement sx, ECFieldElement sy)
     {
-        return curve.createPoint(getXCoord().multiply(sx).toBigInteger(), getYCoord().multiply(sy).toBigInteger());
+        return curve.createRawPoint(getRawXCoord().multiply(sx), getRawYCoord().multiply(sy), withCompression);
     }
 
     public boolean isInfinity()
@@ -204,7 +235,7 @@ public abstract class ECPoint
 
         ECPoint p1 = ns[0], p2 = ns[1];
 
-        return p1.getXCoord().equals(p2.getXCoord()) && p1.getYCoord().equals(p2.getYCoord());
+        return p1.getRawXCoord().equals(p2.getRawXCoord()) && p1.getRawYCoord().equals(p2.getRawYCoord());
     }
 
     public boolean equals(Object other)
@@ -233,7 +264,7 @@ public abstract class ECPoint
 
         ECPoint p = normalize();
 
-        return p.getXCoord().hashCode() ^ p.getYCoord().hashCode();
+        return p.getXCoord().hashCode() ^ p.getRawYCoord().hashCode();
     }
 
     public byte[] getEncoded()
@@ -997,20 +1028,39 @@ public abstract class ECPoint
             {
                 throw new IllegalArgumentException("Exactly one of the field elements is null");
             }
-            
+
             if (x != null)
             {
                 // Check if x and y are elements of the same field
                 ECFieldElement.F2m.checkFieldElements(this.x, this.y);
-    
+
                 // Check if x and a are elements of the same field
                 if (curve != null)
                 {
                     ECFieldElement.F2m.checkFieldElements(this.x, this.curve.getA());
                 }
             }
-            
+
             this.withCompression = withCompression;
+        }
+
+        F2m(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+        {
+            super(curve, x, y, zs);
+
+            this.withCompression = withCompression;
+        }
+
+        public ECFieldElement getYCoord()
+        {
+            switch (getCurve().getCoordinateSystem())
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+                return isInfinity() ? null : y.subtract(x).multiply(x);
+            default:
+                return y;
+            }
         }
 
         protected boolean getCompressionYTilde()
@@ -1069,8 +1119,8 @@ public abstract class ECPoint
                 return this;
             }
 
-            ECFieldElement.F2m x2 = (ECFieldElement.F2m)other.getXCoord();
-            ECFieldElement.F2m y2 = (ECFieldElement.F2m)other.getYCoord();
+            ECFieldElement.F2m x2 = (ECFieldElement.F2m)other.getRawXCoord();
+            ECFieldElement.F2m y2 = (ECFieldElement.F2m)other.getRawYCoord();
 
             // Check if other = this or other = -this
             if (this.x.equals(x2))
@@ -1144,19 +1194,48 @@ public abstract class ECPoint
                 return this.curve.getInfinity();
             }
 
-            ECFieldElement.F2m lambda
-                = (ECFieldElement.F2m)this.x.add(this.y.divide(this.x));
+            ECCurve curve = getCurve();
+            int coord = curve.getCoordinateSystem();
+            
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+            {
+                ECFieldElement.F2m lambda
+                    = (ECFieldElement.F2m)this.x.add(this.y.divide(this.x));
+    
+                ECFieldElement.F2m x3
+                    = (ECFieldElement.F2m)lambda.square().add(lambda).
+                        add(this.curve.getA());
+    
+                ECFieldElement ONE = curve.fromBigInteger(ECConstants.ONE);
+                ECFieldElement.F2m y3
+                    = (ECFieldElement.F2m)this.x.square().add(
+                        x3.multiply(lambda.add(ONE)));
+    
+                return new ECPoint.F2m(curve, x3, y3, withCompression);
+            }
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                ECFieldElement X1 = this.x, L1 = this.y, Z1 = this.zs[0];
 
-            ECFieldElement.F2m x3
-                = (ECFieldElement.F2m)lambda.square().add(lambda).
-                    add(this.curve.getA());
+                // TODO Optimize
 
-            ECFieldElement ONE = this.curve.fromBigInteger(ECConstants.ONE);
-            ECFieldElement.F2m y3
-                = (ECFieldElement.F2m)this.x.square().add(
-                    x3.multiply(lambda.add(ONE)));
+                ECFieldElement L1Z1 = L1.multiply(Z1);
+                ECFieldElement Z1Squared = Z1.square();
+                ECFieldElement T = L1.square().add(L1Z1).add(curve.getA().multiply(Z1Squared));
 
-            return new ECPoint.F2m(this.curve, x3, y3, withCompression);
+                ECFieldElement X3 = T.square();
+                ECFieldElement Z3 = T.multiply(Z1Squared);
+                ECFieldElement L3 = X1.multiply(Z1).square().add(X3).add(T.multiply(L1Z1)).add(Z3);
+
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
+            }
+            default:
+            {
+                throw new UnsupportedOperationException("unsupported coordinate system");
+            }
+            }
         }
 
         public ECPoint negate()
@@ -1166,7 +1245,9 @@ public abstract class ECPoint
                 return this;
             }
 
-            return new ECPoint.F2m(curve, this.getXCoord(), this.getYCoord().add(this.getXCoord()), withCompression);
+            ECFieldElement X = this.x, Y = this.y;
+
+            return new ECPoint.F2m(curve, X, Y.add(X), withCompression);
         }
     }
 }
