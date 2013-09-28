@@ -164,12 +164,12 @@ public class ECPointTest extends TestCase
      */
     private void implTestAdd(ECPoint[] p, ECPoint infinity)
     {
-        assertEqualsNormalized("p0 plus p1 does not equal p2", p[2], p[0].add(p[1]));
-        assertEqualsNormalized("p1 plus p0 does not equal p2", p[2], p[1].add(p[0]));
+        assertPointsEqual("p0 plus p1 does not equal p2", p[2], p[0].add(p[1]));
+        assertPointsEqual("p1 plus p0 does not equal p2", p[2], p[1].add(p[0]));
         for (int i = 0; i < p.length; i++)
         {
-            assertEqualsNormalized("Adding infinity failed", p[i], p[i].add(infinity));
-            assertEqualsNormalized("Adding to infinity failed", p[i], infinity.add(p[i]));
+            assertPointsEqual("Adding infinity failed", p[i], p[i].add(infinity));
+            assertPointsEqual("Adding to infinity failed", p[i], infinity.add(p[i]));
         }
     }
 
@@ -191,8 +191,8 @@ public class ECPointTest extends TestCase
      */
     private void implTestTwice(ECPoint[] p)
     {
-        assertEqualsNormalized("Twice incorrect", p[3], p[0].twice());
-        assertEqualsNormalized("Add same point incorrect", p[3], p[0].add(p[0]));
+        assertPointsEqual("Twice incorrect", p[3], p[0].twice());
+        assertPointsEqual("Add same point incorrect", p[3], p[0].add(p[0]));
     }
 
     /**
@@ -209,8 +209,8 @@ public class ECPointTest extends TestCase
     {
         ECPoint P = p[0];
         ECPoint _3P = P.add(P).add(P);
-        assertEqualsNormalized("ThreeTimes incorrect", _3P, P.threeTimes());
-        assertEqualsNormalized("TwicePlus incorrect", _3P, P.twicePlus(P));
+        assertPointsEqual("ThreeTimes incorrect", _3P, P.threeTimes());
+        assertPointsEqual("TwicePlus incorrect", _3P, P.twicePlus(P));
     }
 
     /**
@@ -244,7 +244,7 @@ public class ECPointTest extends TestCase
         {
             adder = adder.add(p);
             multiplier = p.multiply(i);
-            assertEqualsNormalized("Results of add() and multiply() are inconsistent "
+            assertPointsEqual("Results of add() and multiply() are inconsistent "
                     + i, adder, multiplier);
             i = i.add(BigInteger.ONE);
         }
@@ -285,11 +285,14 @@ public class ECPointTest extends TestCase
         int t = k.bitLength();
         for (int i = 0; i < t; i++)
         {
+            if (i != 0)
+            {
+                p = p.twice();
+            }
             if (k.testBit(i))
             {
                 q = q.add(p);
             }
-            p = p.twice();
         }
         return q;
     }
@@ -311,7 +314,7 @@ public class ECPointTest extends TestCase
         BigInteger k = new BigInteger(numBits, secRand);
         ECPoint ref = multiply(p, k);
         ECPoint q = p.multiply(k);
-        assertEqualsNormalized("ECPoint.multiply is incorrect", ref, q);
+        assertPointsEqual("ECPoint.multiply is incorrect", ref, q);
     }
 
     /**
@@ -335,7 +338,7 @@ public class ECPointTest extends TestCase
         {
             ECPoint ref = multiply(p, k);
             ECPoint q = p.multiply(k);
-            assertEqualsNormalized("ECPoint.multiply is incorrect", ref, q);
+            assertPointsEqual("ECPoint.multiply is incorrect", ref, q);
             k = k.add(BigInteger.ONE);
         }
         while (k.compareTo(bound) < 0);
@@ -352,14 +355,14 @@ public class ECPointTest extends TestCase
      */
     private void implTestAddSubtract(ECPoint p, ECPoint infinity)
     {
-        assertEqualsNormalized("Twice and Add inconsistent", p.twice(), p.add(p));
-        assertEqualsNormalized("Twice p - p is not p", p, p.twice().subtract(p));
-        assertEqualsNormalized("TwicePlus(p, -p) is not p", p, p.twicePlus(p.negate()));
-        assertEqualsNormalized("p - p is not infinity", infinity, p.subtract(p));
-        assertEqualsNormalized("p plus infinity is not p", p, p.add(infinity));
-        assertEqualsNormalized("infinity plus p is not p", p, infinity.add(p));
-        assertEqualsNormalized("infinity plus infinity is not infinity ", infinity, infinity.add(infinity));
-        assertEqualsNormalized("Twice infinity is not infinity ", infinity, infinity.twice());
+        assertPointsEqual("Twice and Add inconsistent", p.twice(), p.add(p));
+        assertPointsEqual("Twice p - p is not p", p, p.twice().subtract(p));
+        assertPointsEqual("TwicePlus(p, -p) is not p", p, p.twicePlus(p.negate()));
+        assertPointsEqual("p - p is not infinity", infinity, p.subtract(p));
+        assertPointsEqual("p plus infinity is not p", p, p.add(infinity));
+        assertPointsEqual("infinity plus p is not p", p, infinity.add(p));
+        assertPointsEqual("infinity plus infinity is not infinity ", infinity, infinity.add(infinity));
+        assertPointsEqual("Twice infinity is not infinity ", infinity, infinity.twice());
     }
 
     /**
@@ -403,11 +406,11 @@ public class ECPointTest extends TestCase
 
         byte[] unCompBarr = unCompP.getEncoded();
         ECPoint decUnComp = p.getCurve().decodePoint(unCompBarr);
-        assertEqualsNormalized("Error decoding uncompressed point", p, decUnComp);
+        assertPointsEqual("Error decoding uncompressed point", p, decUnComp);
 
         byte[] compBarr = compP.getEncoded();
         ECPoint decComp = p.getCurve().decodePoint(compBarr);
-        assertEqualsNormalized("Error decoding compressed point", p, decComp);
+        assertPointsEqual("Error decoding compressed point", p, decComp);
     }
 
     /**
@@ -440,9 +443,9 @@ public class ECPointTest extends TestCase
         }
     }
 
-    private void assertEqualsNormalized(String message, ECPoint a, ECPoint b)
+    private void assertPointsEqual(String message, ECPoint a, ECPoint b)
     {
-        assertEquals(message, a.normalize(), b.normalize());
+        assertEquals(message, a, b);
     }
 
     public static Test suite()
