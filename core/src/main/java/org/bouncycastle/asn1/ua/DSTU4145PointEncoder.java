@@ -145,7 +145,7 @@ public abstract class DSTU4145PointEncoder
             }
             if (!trace(z).equals(k))
             {
-                z = z.add(curve.fromBigInteger(ECConstants.ONE));
+                z = z.addOne();
             }
             yp = xp.multiply(z);
         }
