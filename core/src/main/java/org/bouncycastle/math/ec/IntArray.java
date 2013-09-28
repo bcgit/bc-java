@@ -287,6 +287,17 @@ class IntArray
         return new IntArray(newInts);
     }
 
+    public void addOneShifted(int shift)
+    {
+        int newMinUsedLen = 1 + shift;
+        if (newMinUsedLen > m_ints.length)
+        {
+            m_ints = resizedInts(newMinUsedLen);
+        }
+
+        m_ints[shift] ^= 1;
+    }
+
     public void addShifted(IntArray other, int shift)
     {
         int usedLenOther = other.getUsedLength();

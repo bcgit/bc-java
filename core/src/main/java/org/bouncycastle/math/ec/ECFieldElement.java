@@ -12,6 +12,7 @@ public abstract class ECFieldElement
     public abstract String         getFieldName();
     public abstract int            getFieldSize();
     public abstract ECFieldElement add(ECFieldElement b);
+    public abstract ECFieldElement addOne();
     public abstract ECFieldElement subtract(ECFieldElement b);
     public abstract ECFieldElement multiply(ECFieldElement b);
     public abstract ECFieldElement divide(ECFieldElement b);
@@ -139,10 +140,20 @@ public abstract class ECFieldElement
         {
             return q;
         }
-        
+
         public ECFieldElement add(ECFieldElement b)
         {
             return new Fp(q, r, modAdd(x, b.toBigInteger()));
+        }
+
+        public ECFieldElement addOne()
+        {
+            BigInteger x2 = x.add(ECConstants.ONE);
+            if (x2.compareTo(q) == 0)
+            {
+                x2 = ECConstants.ZERO;
+            }
+            return new Fp(q, r, x2);
         }
 
         public ECFieldElement subtract(ECFieldElement b)
@@ -1180,6 +1191,13 @@ public abstract class ECFieldElement
             IntArray iarrClone = (IntArray)this.x.clone();
             F2m bF2m = (F2m)b;
             iarrClone.addShifted(bF2m.x, 0);
+            return new F2m(m, k1, k2, k3, iarrClone);
+        }
+
+        public ECFieldElement addOne()
+        {
+            IntArray iarrClone = (IntArray)this.x.clone();
+            iarrClone.addOneShifted(0);
             return new F2m(m, k1, k2, k3, iarrClone);
         }
 
