@@ -28,17 +28,27 @@ public class ECPointPerformanceTest extends TestCase
         final BigInteger n = spec.getN();
 
         final SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-        final BigInteger k = new BigInteger(n.bitLength() - 1, random);
+        BigInteger k = new BigInteger(n.bitLength() - 1, random);
 
-        ECPoint qMultiply = null;
-        for (int i = 0; i < PRE_ROUNDS; i++)
+        ECPoint p = g;
+        for (int i = 1; i <= PRE_ROUNDS; i++)
         {
-            qMultiply = g.multiply(k);
+            p = g.multiply(k);
+            if (i % 10 == 0)
+            {
+                g = p;
+            }
+            k = k.flipBit(i % n.bitLength());
         }
         long startTime = System.currentTimeMillis();
-        for (int i = 0; i < NUM_ROUNDS; i++)
+        for (int i = 1; i <= NUM_ROUNDS; i++)
         {
-            qMultiply = g.multiply(k);
+            p = g.multiply(k);
+            if (i % 10 == 0)
+            {
+                g = p;
+            }
+            k = k.flipBit(i % n.bitLength());
         }
         long endTime = System.currentTimeMillis();
 
