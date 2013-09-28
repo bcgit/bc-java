@@ -8,7 +8,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.params.SkeinParameters;
+import org.bouncycastle.jcajce.spec.SkeinParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -262,7 +262,7 @@ public class SkeinTest
 
         // test six, init using SkeinParameters
         mac.init(new SecretKeySpec(shortMacKey, "Skein-Mac-512-160"),
-                new SkeinParameters.Builder().setKeyIdentifier(keyIdentifier).build());
+                new SkeinParameterSpec.Builder().setKeyIdentifier(keyIdentifier).build());
         byte[] result = mac.doFinal(shortMacMessage);
 
         if (!MessageDigest.isEqual(result, keyIdentifierVector))

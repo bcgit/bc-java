@@ -299,7 +299,7 @@ public class ParseTest
         
         try
         {
-            req.validate(TSPAlgorithms.ALLOWED, null, null, "BC");
+            req.validate(TSPAlgorithms.ALLOWED, null, null);
         }
         catch (Exception e)
         {
@@ -327,7 +327,7 @@ public class ParseTest
 
         resp.validate(req);
 
-        resp.getTimeStampToken().validate(cert, "BC");
+        resp.getTimeStampToken().validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert));
     }
     
     private void unacceptableResponseParse(

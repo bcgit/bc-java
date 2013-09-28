@@ -10,6 +10,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
+import org.bouncycastle.cms.jcajce.ZlibCompressor;
 import org.bouncycastle.mail.smime.SMIMECompressedGenerator;
 
 /**
@@ -33,7 +34,7 @@ public class CreateCompressedMail
 
         msg.setText("Hello world!");
 
-        MimeBodyPart mp = gen.generate(msg, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart mp = gen.generate(msg, new ZlibCompressor());
 
         //
         // Get a Session object and create the mail message

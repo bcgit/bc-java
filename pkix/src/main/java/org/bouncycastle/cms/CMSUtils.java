@@ -3,15 +3,6 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.Security;
-import java.security.cert.CRLException;
-import java.security.cert.CertStore;
-import java.security.cert.CertStoreException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
 import org.bouncycastle.asn1.BERSet;
@@ -29,13 +19,9 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
-import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.asn1.x509.CertificateList;
-import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -62,36 +48,6 @@ class CMSUtils
         // enforce some limit checking
         return readContentInfo(new ASN1InputStream(input));
     } 
-
-    static List getCertificatesFromStore(CertStore certStore)
-        throws CertStoreException, CMSException
-    {
-        List certs = new ArrayList();
-
-        try
-        {
-            for (Iterator it = certStore.getCertificates(null).iterator(); it.hasNext();)
-            {
-                X509Certificate c = (X509Certificate)it.next();
-
-                certs.add(Certificate.getInstance(ASN1Primitive.fromByteArray(c.getEncoded())));
-            }
-
-            return certs;
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("error processing certs", e);
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("error processing certs", e);
-        }
-        catch (CertificateEncodingException e)
-        {
-            throw new CMSException("error encoding certs", e);
-        }
-    }
 
     static List getCertificatesFromStore(Store certStore)
         throws CMSException
@@ -137,35 +93,6 @@ class CMSUtils
         }
     }
 
-    static List getCRLsFromStore(CertStore certStore)
-        throws CertStoreException, CMSException
-    {
-        List crls = new ArrayList();
-
-        try
-        {
-            for (Iterator it = certStore.getCRLs(null).iterator(); it.hasNext();)
-            {
-                X509CRL c = (X509CRL)it.next();
-
-                crls.add(CertificateList.getInstance(ASN1Primitive.fromByteArray(c.getEncoded())));
-            }
-
-            return crls;
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new CMSException("error processing crls", e);
-        }
-        catch (IOException e)
-        {
-            throw new CMSException("error processing crls", e);
-        }
-        catch (CRLException e)
-        {
-            throw new CMSException("error encoding crls", e);
-        }
-    }
 
     static List getCRLsFromStore(Store crlStore)
         throws CMSException
@@ -250,27 +177,6 @@ class CMSUtils
         return octGen.getOctetOutputStream();
     }
 
-    static TBSCertificate getTBSCertificateStructure(
-        X509Certificate cert)
-    {
-        try
-        {
-            return TBSCertificate.getInstance(
-                ASN1Primitive.fromByteArray(cert.getTBSCertificate()));
-        }
-        catch (Exception e)
-        {
-            throw new IllegalArgumentException(
-                "can't extract TBS structure from this cert");
-        }
-    }
-
-    static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)
-    {
-        TBSCertificate tbsCert = getTBSCertificateStructure(cert);
-        return new IssuerAndSerialNumber(tbsCert.getIssuer(), tbsCert.getSerialNumber().getValue());
-    }
-
     private static ContentInfo readContentInfo(
         ASN1InputStream in)
         throws CMSException
@@ -306,24 +212,6 @@ class CMSUtils
         throws IOException
     {
         return Streams.readAllLimited(in, limit);
-    }
-
-    public static Provider getProvider(String providerName)
-        throws NoSuchProviderException
-    {
-        if (providerName != null)
-        {
-            Provider prov = Security.getProvider(providerName);
-
-            if (prov != null)
-            {
-                return prov;
-            }
-
-            throw new NoSuchProviderException("provider " + providerName + " not found.");
-        }
-
-        return null; 
     }
 
     static InputStream attachDigestsToInputStream(Collection digests, InputStream s)

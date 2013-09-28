@@ -2,10 +2,6 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,7 +20,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceCMSMacCalculatorBuilder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.util.io.TeeOutputStream;
@@ -311,82 +306,5 @@ public class CMSAuthenticatedDataStreamGenerator
             envGen.close();
             cGen.close();
         }
-    }
-
-
-    /**
-     * constructor allowing specific source of randomness
-     * @param rand instance of SecureRandom to use
-     * @deprecated no longer of any use, use basic constructor.
-     */
-    public CMSAuthenticatedDataStreamGenerator(
-        SecureRandom rand)
-    {
-        super(rand);
-    }
-
-    /**
-     * generate an authenticated object that contains an CMS Authenticated Data
-     * object using the given provider.
-     * @throws java.io.IOException
-     * @deprecated use open(out, MacCalculator)
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        String          provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
-    {
-        convertOldRecipients(rand, CMSUtils.getProvider(provider));
-
-        return open(out, new JceCMSMacCalculatorBuilder(new ASN1ObjectIdentifier(encryptionOID)).setSecureRandom(rand).setProvider(provider).build());
-    }
-
-    /**
-     * @deprecated use open(out, MacCalculator)
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException, IOException
-    {
-        convertOldRecipients(rand, provider);
-
-        return open(out, new JceCMSMacCalculatorBuilder(new ASN1ObjectIdentifier(encryptionOID)).setSecureRandom(rand).setProvider(provider).build());
-    }
-
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider.
-     * @deprecated use open(out, MacCalculator)
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        int             keySize,
-        String          provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
-    {
-        convertOldRecipients(rand, CMSUtils.getProvider(provider));
-
-        return open(out, new JceCMSMacCalculatorBuilder(new ASN1ObjectIdentifier(encryptionOID), keySize).setSecureRandom(rand).setProvider(provider).build());
-    }
-
-    /**
-     * generate an enveloped object that contains an CMS Enveloped Data
-     * object using the given provider.
-     * @deprecated use open(out, MacCalculator)
-     */
-    public OutputStream open(
-        OutputStream    out,
-        String          encryptionOID,
-        int             keySize,
-        Provider        provider)
-        throws NoSuchAlgorithmException, CMSException, IOException
-    {
-        convertOldRecipients(rand, provider);
-
-        return open(out, new JceCMSMacCalculatorBuilder(new ASN1ObjectIdentifier(encryptionOID), keySize).setSecureRandom(rand).setProvider(provider).build());
     }
 }

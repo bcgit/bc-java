@@ -3,9 +3,6 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -20,7 +17,6 @@ import org.bouncycastle.asn1.cms.EncryptedContentInfoParser;
 import org.bouncycastle.asn1.cms.EnvelopedDataParser;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.jcajce.JceAlgorithmIdentifierConverter;
 
 /**
  * Parsing class for an CMS Enveloped Data object from an input stream.
@@ -145,39 +141,6 @@ public class CMSEnvelopedDataParser
     public AlgorithmIdentifier getContentEncryptionAlgorithm()
     {
         return encAlg;
-    }
-
-    /**
-     * Return an AlgorithmParameters object giving the encryption parameters
-     * used to encrypt the message content.
-     *
-     * @param provider the provider to generate the parameters for.
-     * @return the parameters object, null if there is not one.
-     * @throws CMSException if the algorithm cannot be found, or the parameters can't be parsed.
-     * @throws NoSuchProviderException if the provider cannot be found.
-     * @deprecated use getContentEncryptionAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getEncryptionAlgorithmParameters(
-        String  provider)
-    throws CMSException, NoSuchProviderException
-    {
-        return new JceAlgorithmIdentifierConverter().setProvider(provider).getAlgorithmParameters(encAlg);
-    }
-
-    /**
-     * Return an AlgorithmParameters object giving the encryption parameters
-     * used to encrypt the message content.
-     *
-     * @param provider the provider to generate the parameters for.
-     * @return the parameters object, null if there is not one.
-     * @throws CMSException if the algorithm cannot be found, or the parameters can't be parsed.
-     * @deprecated use getContentEncryptionAlgorithm and JceAlgorithmIdentifierConverter().
-     */
-    public AlgorithmParameters getEncryptionAlgorithmParameters(
-        Provider provider)
-    throws CMSException
-    {
-        return new JceAlgorithmIdentifierConverter().setProvider(provider).getAlgorithmParameters(encAlg);
     }
 
     /**

@@ -16,6 +16,9 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
+import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
 
 /**
@@ -55,7 +58,7 @@ public class CreateLargeEncryptedMail
         //
         SMIMEEnvelopedGenerator  gen = new SMIMEEnvelopedGenerator();
           
-        gen.addKeyTransRecipient((X509Certificate)chain[0]);
+        gen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator((X509Certificate)chain[0]).setProvider("BC"));
 
         //
         // create a subject key id - this has to be done the same way as
@@ -79,7 +82,7 @@ public class CreateLargeEncryptedMail
         msg.setHeader("Content-Type", "application/octet-stream");
         msg.setHeader("Content-Transfer-Encoding", "binary");
 
-        MimeBodyPart mp = gen.generate(msg, SMIMEEnvelopedGenerator.RC2_CBC, "BC");
+        MimeBodyPart mp = gen.generate(msg, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC).setProvider("BC").build());
         
         //
         // Get a Session object and create the mail message

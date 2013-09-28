@@ -133,60 +133,6 @@ public class SMIMESignedParser
         
         CommandMap.setDefaultCommandMap(mc);
     }
-    
-    /**
-     * base constructor using a defaultContentTransferEncoding of 7bit. A temporary backing file
-     * will be created for the signed data.
-     *
-     * @param message signed message with signature.
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        MimeMultipart message) 
-        throws MessagingException, CMSException
-    {
-        this(message, getTmpFile());
-    }
-
-    /**
-     * base constructor using a defaultContentTransferEncoding of 7bit and a specified backing file.
-     *
-     * @param message signed message with signature.
-     * @param backingFile the temporary file to use to back the signed data.
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        MimeMultipart message,
-        File          backingFile)
-        throws MessagingException, CMSException
-    {
-        this(message, "7bit", backingFile);
-    }
-
-    /**
-     * base constructor with settable contentTransferEncoding. A temporary backing file will be created
-     * to contain the signed data.
-     *
-     * @param message the signed message with signature.
-     * @param defaultContentTransferEncoding new default to use.
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        MimeMultipart message,
-        String        defaultContentTransferEncoding) 
-        throws MessagingException, CMSException
-    {
-        this(message, defaultContentTransferEncoding, getTmpFile());
-    }
 
     /**
      * base constructor using a defaultContentTransferEncoding of 7bit. A temporary backing file
@@ -203,7 +149,7 @@ public class SMIMESignedParser
         MimeMultipart message)
         throws MessagingException, CMSException
     {
-        this(message, getTmpFile());
+        this(digCalcProvider, message, getTmpFile());
     }
 
     /**
@@ -222,7 +168,7 @@ public class SMIMESignedParser
         File          backingFile)
         throws MessagingException, CMSException
     {
-        this(message, "7bit", backingFile);
+        this(digCalcProvider, message, "7bit", backingFile);
     }
 
     /**
@@ -243,31 +189,6 @@ public class SMIMESignedParser
         throws MessagingException, CMSException
     {
         this(digCalcProvider, message, defaultContentTransferEncoding, getTmpFile());
-    }
-
-    /**
-     * base constructor with settable contentTransferEncoding and a specified backing file.
-     *
-     * @param message the signed message with signature.
-     * @param defaultContentTransferEncoding new default to use.
-     * @param backingFile the temporary file to use to back the signed data.
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        MimeMultipart message,
-        String        defaultContentTransferEncoding,
-        File          backingFile)
-        throws MessagingException, CMSException
-    {
-        super(getSignedInputStream(message.getBodyPart(0), defaultContentTransferEncoding, backingFile), getInputStream(message.getBodyPart(1)));
-
-        this.message = message;
-        this.content = (MimeBodyPart)message.getBodyPart(0);
-
-        drainContent();
     }
 
     /**
@@ -303,36 +224,6 @@ public class SMIMESignedParser
      * writeTo - once writeTo has been called the file containing the body part will be deleted. If writeTo is not
      * called the file will be left in the temp directory.
      * </p>
-     * @param message the message containing the encapsulated signed data.
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception SMIMEException if the body part encapsulated in the message cannot be extracted.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        Part message) 
-        throws MessagingException, CMSException, SMIMEException
-    {
-        super(getInputStream(message));
-
-        this.message = message;
-
-        CMSTypedStream  cont = this.getSignedContent();
-
-        if (cont != null)
-        {
-            this.content = SMIMEUtil.toWriteOnceBodyPart(cont);
-        }
-    }
-
-    /**
-     * base constructor for a signed message with encapsulated content.
-     * <p>
-     * Note: in this case the encapsulated MimeBody part will only be suitable for a single
-     * writeTo - once writeTo has been called the file containing the body part will be deleted. If writeTo is not
-     * called the file will be left in the temp directory.
-     * </p>
      * @param digCalcProvider provider for digest calculators.
      * @param message the message containing the encapsulated signed data.
      * @exception MessagingException on an error extracting the signature or
@@ -354,37 +245,6 @@ public class SMIMESignedParser
         if (cont != null)
         {
             this.content = SMIMEUtil.toWriteOnceBodyPart(cont);
-        }
-    }
-
-    /**
-     * Constructor for a signed message with encapsulated content. The encapsulated
-     * content, if it exists, is written to the file represented by the File object 
-     * passed in.
-     *
-     * @param message the Part containing the signed content.
-     * @param file the file the encapsulated part is to be written to after it has been decoded.
-     * 
-     * @exception MessagingException on an error extracting the signature or
-     * otherwise processing the message.
-     * @exception SMIMEException if the body part encapsulated in the message cannot be extracted.
-     * @exception CMSException if some other problem occurs.
-     * @deprecated use method that takes a DigestCalculatorProvider
-     */
-    public SMIMESignedParser(
-        Part message,
-        File file) 
-        throws MessagingException, CMSException, SMIMEException
-    {
-        super(getInputStream(message));
-
-        this.message = message;
-
-        CMSTypedStream  cont = this.getSignedContent();
-
-        if (cont != null)
-        {
-            this.content = SMIMEUtil.toMimeBodyPart(cont, file);
         }
     }
 

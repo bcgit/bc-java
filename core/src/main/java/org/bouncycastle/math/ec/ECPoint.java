@@ -261,8 +261,16 @@ public abstract class ECPoint
         }
 
         // TODO Consider just requiring already normalized, to avoid silent performance degradation
-
-        ECPoint p = normalize();
+        // watch for degenerate point due to implicitlyCa
+        ECPoint p;
+        if (getCurve() != null)
+        {
+            p = normalize();
+        }
+        else
+        {
+            p = this;
+        }
 
         return p.getXCoord().hashCode() ^ p.getRawYCoord().hashCode();
     }

@@ -1210,7 +1210,7 @@ public class NewSMIMESignedTest
         gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).setSignedAttributeGenerator(new AttributeTable(signedAttrs)).build("SHA1withRSA", _signKP.getPrivate(), _signCert));
         gen.addCertificates(certs);
 
-        MimeMultipart mm = gen.generate(m, BC);
+        MimeMultipart mm = gen.generate(m);
 
         SMIMESigned s = new SMIMESigned(mm);
 

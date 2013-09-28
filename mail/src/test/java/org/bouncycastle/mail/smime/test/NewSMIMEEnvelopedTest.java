@@ -40,7 +40,9 @@ import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedParser;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.util.encoders.Base64;
 
 public class NewSMIMEEnvelopedTest 
@@ -132,7 +134,7 @@ public class NewSMIMEEnvelopedTest
     private PrivateKey loadKey(String name)
         throws Exception
     {
-        return ((KeyPair)(new PEMReader(new InputStreamReader(getClass().getResourceAsStream(name)))).readObject()).getPrivate();
+        return new JcaPEMKeyConverter().setProvider("BC").getKeyPair((PEMKeyPair)(new PEMParser(new InputStreamReader(getClass().getResourceAsStream(name)))).readObject()).getPrivate();
     }
 
     public void testHeaders()

@@ -724,7 +724,7 @@ public class NewTSPTest
 
         TimeStampToken  tsToken = tsResp.getTimeStampToken();
 
-        tsToken.validate(cert, "BC");
+        tsToken.validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert));
         
         //
         // check validation
@@ -771,7 +771,7 @@ public class NewTSPTest
     {
         JcaSignerInfoGeneratorBuilder infoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
 
-        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(infoGeneratorBuilder.build(new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(privateKey), cert), new ASN1ObjectIdentifier("1.2.3"));
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(infoGeneratorBuilder.build(new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(privateKey), cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2.3"));
 
         tsTokenGen.addCertificates(certs);
         
@@ -788,7 +788,7 @@ public class NewTSPTest
 
         TimeStampToken  tsToken = tsResp.getTimeStampToken();
 
-        tsToken.validate(cert, "BC");
+        tsToken.validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert));
         
         //
         // check validation
