@@ -685,7 +685,7 @@ public abstract class ECCurve
             switch (coord)
             {
             case COORD_AFFINE:
-//            case COORD_LAMBDA_PROJECTIVE:
+            case COORD_LAMBDA_PROJECTIVE:
                 return true;
             default:
                 return false;
