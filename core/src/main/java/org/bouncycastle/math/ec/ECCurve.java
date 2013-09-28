@@ -17,6 +17,7 @@ public abstract class ECCurve
     public static final int COORD_JACOBIAN_MODIFIED = 4;
     public static final int COORD_LAMBDA_AFFINE = 5;
     public static final int COORD_LAMBDA_PROJECTIVE = 6;
+    public static final int COORD_SKEWED = 7;
 
     public class Config
     {
