@@ -1388,22 +1388,28 @@ public abstract class ECPoint
                 return this;
             }
 
-            ECFieldElement X = this.x, Y = this.y;
+            ECFieldElement X = this.x;
+            if (X.isZero())
+            {
+                return this;
+            }
 
             switch (getCurveCoordinateSystem())
             {
             case ECCurve.COORD_AFFINE:
             {
+                ECFieldElement Y = this.y;
                 return new ECPoint.F2m(curve, X, Y.add(X), withCompression);
             }
             case ECCurve.COORD_LAMBDA_AFFINE:
             {
-                return new ECPoint.F2m(curve, X, Y.addOne(), withCompression);
+                ECFieldElement L = this.y;
+                return new ECPoint.F2m(curve, X, L.addOne(), withCompression);
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
-                // Y is actually Lambda (X + Y/X) here
-                ECFieldElement L = Y, Z = this.zs[0];
+                // L is actually Lambda (X + Y/X) here
+                ECFieldElement L = this.y, Z = this.zs[0];
                 return new ECPoint.F2m(curve, X, L.add(Z), new ECFieldElement[]{ Z }, withCompression);
             }
             default:
