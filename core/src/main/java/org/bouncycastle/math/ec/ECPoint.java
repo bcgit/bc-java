@@ -1117,14 +1117,36 @@ public abstract class ECPoint
 
         public ECFieldElement getYCoord()
         {
-            switch (getCurveCoordinateSystem())
+            int coord = getCurveCoordinateSystem();
+
+            switch (coord)
             {
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // TODO The X == 0 stuff needs further thought
+                if (isInfinity() || x.isZero())
+                {
+                    return y;
+                }
+
                 // Y is actually Lambda (X + Y/X) here; convert to affine value on the fly
-                return (isInfinity() || x.isZero()) ? y : y.subtract(x).multiply(x);
+                ECFieldElement X = x, L = y;
+                ECFieldElement Y = L.subtract(X).multiply(X);
+                if (ECCurve.COORD_LAMBDA_PROJECTIVE == coord)
+                {
+                    ECFieldElement Z = zs[0];
+                    if (Z.bitLength() != 1)
+                    {
+                        Y = Y.divide(Z);
+                    }
+                }
+                return Y;
+            }
             default:
+            {
                 return y;
+            }
             }
         }
 
