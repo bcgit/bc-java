@@ -223,28 +223,51 @@ public abstract class ECPoint
 
     public boolean equals(ECPoint other)
     {
-        ECCurve c = getCurve();
-        if (!c.equals(other.getCurve()))
+        if (null == other)
         {
             return false;
         }
 
+        ECCurve c1 = getCurve(), c2 = other.getCurve();
+        boolean n1 = (null == c1), n2 = (null == c2);
         boolean i1 = isInfinity(), i2 = other.isInfinity();
+
         if (i1 || i2)
         {
-            return i1 && i2;
+            return (i1 && i2) && (n1 || n2 || c1.equals(c2));
         }
 
-        // TODO Consider just requiring already normalized, to avoid silent performance degradation
+        ECPoint p1 = this, p2 = other;
+        if (n1 && n2)
+        {
+            // Points with null curve are in affine form, so already normalized
+        }
+        else if (n1)
+        {
+            p2 = p2.normalize();
+        }
+        else if (n2)
+        {
+            p1 = p1.normalize();
+        }
+        else if (!c1.equals(c2))
+        {
+            return false;
+        }
+        else
+        {
+            // TODO Consider just requiring already normalized, to avoid silent performance degradation
 
-        ECPoint[] ns = new ECPoint[]{ this, c.importPoint(other) };
+            ECPoint[] points = new ECPoint[]{ this, c1.importPoint(p2) };
 
-        // TODO This is a little strong, really only requires coZNormalizeAll to get Zs equal
-        c.normalizeAll(ns);
+            // TODO This is a little strong, really only requires coZNormalizeAll to get Zs equal
+            c1.normalizeAll(points);
 
-        ECPoint p1 = ns[0], p2 = ns[1];
+            p1 = points[0];
+            p2 = points[1];
+        }
 
-        return p1.getRawXCoord().equals(p2.getRawXCoord()) && p1.getRawYCoord().equals(p2.getRawYCoord());
+        return p1.getXCoord().equals(p2.getXCoord()) && p1.getYCoord().equals(p2.getYCoord());
     }
 
     public boolean equals(Object other)
@@ -264,16 +287,20 @@ public abstract class ECPoint
 
     public int hashCode()
     {
-        if (isInfinity())
+        ECCurve c = getCurve();
+        int hc = (null == c) ? 0 : ~c.hashCode();
+
+        if (!isInfinity())
         {
-            return 0;
+            // TODO Consider just requiring already normalized, to avoid silent performance degradation
+
+            ECPoint p = normalize();
+
+            hc ^= p.getXCoord().hashCode() * 17;
+            hc ^= p.getYCoord().hashCode() * 257;
         }
 
-        // TODO Consider just requiring already normalized, to avoid silent performance degradation
-
-        ECPoint p = normalize();
-
-        return p.getXCoord().hashCode() ^ p.getRawYCoord().hashCode();
+        return hc;
     }
 
     public String toString()
