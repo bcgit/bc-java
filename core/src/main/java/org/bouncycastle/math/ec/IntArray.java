@@ -9,6 +9,26 @@ class IntArray
     // For toString(); must have length 32
     private static final String ZEROES = "00000000000000000000000000000000";
 
+    private final static byte[] bitLengths =
+    {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+    };
+
     // TODO make m fixed for the IntArray, and hence compute T once and for all
 
     private int[] m_ints;
@@ -132,54 +152,38 @@ class IntArray
         return 0;
     }
 
-    public int bitLength()
+    public int degree()
     {
-        // JDK 1.5: see Integer.numberOfLeadingZeros()
-        int intLen = getUsedLength();
-        if (intLen == 0)
+        int i = m_ints.length, w;
+        do
         {
-            return 0;
-        }
-
-        int last = intLen - 1;
-        int highest = m_ints[last];
-        int bits = (last << 5) + 1;
-
-        // A couple of binary search steps
-        if ((highest & 0xffff0000) != 0)
-        {
-            if ((highest & 0xff000000) != 0)
+            if (i == 0)
             {
-                bits += 24;
-                highest >>>= 24;
+                return 0;
             }
-            else
-            {
-                bits += 16;
-                highest >>>= 16;
-            }
+            w = m_ints[--i];
         }
-        else if (highest > 0x000000ff)
+        while (w == 0);
+
+        int t = w >>> 16, k;
+        if (t == 0)
         {
-            bits += 8;
-            highest >>>= 8;
+            t = w >>> 8;
+            k = (t == 0) ? bitLengths[w] : 8 + bitLengths[t];
+        }
+        else
+        {
+            int u = t >>> 8;
+            k = (u == 0) ? 16 + bitLengths[t] : 24 + bitLengths[u];
         }
 
-        while (highest != 1)
-        {
-            ++bits;
-            highest >>>= 1;
-        }
-
-        return bits;
+        return (i << 5) + k + 1;
     }
 
     private int[] resizedInts(int newLen)
     {
         int[] newInts = new int[newLen];
-        int oldLen = m_ints.length;
-        int copyLen = oldLen < newLen ? oldLen : newLen;
-        System.arraycopy(m_ints, 0, newInts, 0, copyLen);
+        System.arraycopy(m_ints, 0, newInts, 0, Math.min(m_ints.length, newLen));
         return newInts;
     }
 
