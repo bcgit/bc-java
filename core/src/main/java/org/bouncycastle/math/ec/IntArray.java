@@ -373,6 +373,15 @@ class IntArray
         }
     }
 
+    private void addShiftedByWordsQuick(IntArray other, int words)
+    {
+        int otherLen = other.m_ints.length;
+        for (int i = 0; i < otherLen; ++i)
+        {
+            m_ints[words + i] ^= other.m_ints[i];
+        }
+    }
+
     public int getLength()
     {
         return m_ints.length;
@@ -522,7 +531,7 @@ class IntArray
                 if ((m_ints[j] & testBit) != 0)
                 {
                     // The kth bit of m_ints[j] is set
-                    c.addShiftedByWords(b, j);
+                    c.addShiftedByWordsQuick(b, j);
                 }
             }
             if ((testBit <<= 1) == 0)
