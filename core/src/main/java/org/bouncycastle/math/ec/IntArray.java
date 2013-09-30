@@ -281,7 +281,7 @@ class IntArray
         if (n > 31)
         {
             throw new IllegalArgumentException("shiftLeft() for max 31 bits "
-                + ", " + n + "bit shift is not possible");
+                + ", " + n + " bit shift is not possible");
         }
 
         int[] newInts = new int[usedLen + 1];
@@ -309,19 +309,59 @@ class IntArray
         m_ints[shift] ^= 1;
     }
 
-    public void addShifted(IntArray other, int shift)
+    public void addShiftedByBits(IntArray other, int bits)
     {
-        int usedLenOther = other.getUsedLength();
-        int newMinUsedLen = usedLenOther + shift;
-        if (newMinUsedLen > m_ints.length)
+        int words = bits >> 5;
+        int shift = bits & 0x1F;
+
+//        IntArray vzShift = other.shiftLeft(shift);
+//        addShiftedByWords(vzShift, words);
+
+        if (shift == 0)
         {
-            m_ints = resizedInts(newMinUsedLen);
-            //System.out.println("Resize required");
+            addShiftedByWords(other, words);
+            return;
         }
 
-        for (int i = 0; i < usedLenOther; i++)
+        int otherUsedLen = other.getUsedLength();
+        if (otherUsedLen == 0)
         {
-            m_ints[i + shift] ^= other.m_ints[i];
+            return;
+        }
+
+        int minLen = otherUsedLen + words + 1;
+        if (minLen > m_ints.length)
+        {
+            m_ints = resizedInts(minLen);
+        }
+
+        int shiftInv = 32 - shift, prev = 0;
+        for (int i = 0; i < otherUsedLen; ++i)
+        {
+            int next = other.m_ints[i];
+            m_ints[i + words] ^= (next << shift) | (prev >>> shiftInv);
+            prev = next;
+        }
+        m_ints[otherUsedLen + words] ^= prev >>> shiftInv;
+    }
+
+    public void addShiftedByWords(IntArray other, int words)
+    {
+        int otherUsedLen = other.getUsedLength();
+        if (otherUsedLen == 0)
+        {
+            return;
+        }
+
+        int minLen = otherUsedLen + words;
+        if (minLen > m_ints.length)
+        {
+            m_ints = resizedInts(minLen);
+        }
+
+        for (int i = 0; i < otherUsedLen; i++)
+        {
+            m_ints[words + i] ^= other.m_ints[i];
         }
     }
 
@@ -436,7 +476,7 @@ class IntArray
                 if ((m_ints[j] & testBit) != 0)
                 {
                     // The kth bit of m_ints[j] is set
-                    c.addShifted(b, j);
+                    c.addShiftedByWords(b, j);
                 }
             }
             if ((testBit <<= 1) == 0)
