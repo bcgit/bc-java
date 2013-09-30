@@ -1178,7 +1178,7 @@ public abstract class ECFieldElement
             // checkFieldElements(this, b);
             IntArray iarrClone = (IntArray)this.x.clone();
             F2m bF2m = (F2m)b;
-            iarrClone.addShifted(bF2m.x, 0);
+            iarrClone.addShiftedByWords(bF2m.x, 0);
             return new F2m(m, ks, iarrClone);
         }
 
@@ -1283,18 +1283,11 @@ public abstract class ECFieldElement
                 // = max(deg(u(z)), deg(u(z)) - deg(v(z)) + deg(v(z))
                 // = deg(u(z))
                 // uz = uz.xor(vz.shiftLeft(j));
-                // jInt = n / 32
-                int jInt = j >> 5;
-                // jInt = n % 32
-                int jBit = j & 0x1F;
-                IntArray vzShift = vz.shiftLeft(jBit);
-                uz.addShifted(vzShift, jInt);
+                uz.addShiftedByBits(vz, j);
 
                 // g1(z) := g1(z) + z^j * g2(z)
 //                g1z = g1z.xor(g2z.shiftLeft(j));
-                IntArray g2zShift = g2z.shiftLeft(jBit);
-                g1z.addShifted(g2zShift, jInt);
-                
+                g1z.addShiftedByBits(g2z, j);
             }
             return new ECFieldElement.F2m(this.m, this.ks, g2z);
         }
