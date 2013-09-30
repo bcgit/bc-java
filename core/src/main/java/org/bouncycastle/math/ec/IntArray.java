@@ -267,13 +267,13 @@ class IntArray
 
     public IntArray shiftLeft(int n)
     {
-        int usedLen = getUsedLength();
-        if (usedLen == 0)
+        if (n == 0)
         {
             return this;
         }
 
-        if (n == 0)
+        int usedLen = getUsedLength();
+        if (usedLen == 0)
         {
             return this;
         }
@@ -286,13 +286,14 @@ class IntArray
 
         int[] newInts = new int[usedLen + 1];
 
-        int nm32 = 32 - n;
-        newInts[0] = m_ints[0] << n;
-        for (int i = 1; i < usedLen; i++)
+        int nm32 = 32 - n, prev = 0;
+        for (int i = 0; i < usedLen; i++)
         {
-            newInts[i] = (m_ints[i] << n) | (m_ints[i - 1] >>> nm32);
+            int next = m_ints[i];
+            newInts[i] = (next << n) | (prev >>> nm32);
+            prev = next;
         }
-        newInts[usedLen] = m_ints[usedLen - 1] >>> nm32;
+        newInts[usedLen] = prev >>> nm32;
 
         return new IntArray(newInts);
     }
