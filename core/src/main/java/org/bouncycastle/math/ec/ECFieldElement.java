@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 import java.util.Random;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public abstract class ECFieldElement
@@ -986,31 +987,33 @@ public abstract class ECFieldElement
          */
         private int m;
 
-        /**
-         * TPB: The integer <code>k</code> where <code>x<sup>m</sup> +
-         * x<sup>k</sup> + 1</code> represents the reduction polynomial
-         * <code>f(z)</code>.<br>
-         * PPB: The integer <code>k1</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.<br>
-         */
-        private int k1;
+//        /**
+//         * TPB: The integer <code>k</code> where <code>x<sup>m</sup> +
+//         * x<sup>k</sup> + 1</code> represents the reduction polynomial
+//         * <code>f(z)</code>.<br>
+//         * PPB: The integer <code>k1</code> where <code>x<sup>m</sup> +
+//         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
+//         * represents the reduction polynomial <code>f(z)</code>.<br>
+//         */
+//        private int k1;
+//
+//        /**
+//         * TPB: Always set to <code>0</code><br>
+//         * PPB: The integer <code>k2</code> where <code>x<sup>m</sup> +
+//         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
+//         * represents the reduction polynomial <code>f(z)</code>.<br>
+//         */
+//        private int k2;
+//
+//        /**
+//         * TPB: Always set to <code>0</code><br>
+//         * PPB: The integer <code>k3</code> where <code>x<sup>m</sup> +
+//         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
+//         * represents the reduction polynomial <code>f(z)</code>.<br>
+//         */
+//        private int k3;
 
-        /**
-         * TPB: Always set to <code>0</code><br>
-         * PPB: The integer <code>k2</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.<br>
-         */
-        private int k2;
-
-        /**
-         * TPB: Always set to <code>0</code><br>
-         * PPB: The integer <code>k3</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.<br>
-         */
-        private int k3;
+        private int[] ks;
 
         /**
          * The number of <code>int</code>s required to hold <code>m</code> bits.
@@ -1053,6 +1056,7 @@ public abstract class ECFieldElement
             if ((k2 == 0) && (k3 == 0))
             {
                 this.representation = TPB;
+                this.ks = new int[]{ k1 }; 
             }
             else
             {
@@ -1067,12 +1071,10 @@ public abstract class ECFieldElement
                             "k2 must be larger than 0");
                 }
                 this.representation = PPB;
+                this.ks = new int[]{ k1, k2, k3 }; 
             }
 
             this.m = m;
-            this.k1 = k1;
-            this.k2 = k2;
-            this.k3 = k3;
             // t = m / 32 rounded up to the next integer
             this.t = (m + 31) >> 5;
             this.x = new IntArray(x, t);
@@ -1094,23 +1096,13 @@ public abstract class ECFieldElement
             this(m, k, 0, 0, x);
         }
 
-        private F2m(int m, int k1, int k2, int k3, IntArray x)
+        private F2m(int m, int[] ks, IntArray x)
         {
-            t = (m + 31) >> 5;
+            this.t = (m + 31) >> 5;
             this.x = x;
             this.m = m;
-            this.k1 = k1;
-            this.k2 = k2;
-            this.k3 = k3;
-
-            if ((k2 == 0) && (k3 == 0))
-            {
-                this.representation = TPB;
-            }
-            else
-            {
-                this.representation = PPB;
-            }
+            this.representation = (ks.length == 1) ? TPB : PPB;
+            this.ks = ks;
         }
 
         public int bitLength()
@@ -1167,19 +1159,15 @@ public abstract class ECFieldElement
             ECFieldElement.F2m aF2m = (ECFieldElement.F2m)a;
             ECFieldElement.F2m bF2m = (ECFieldElement.F2m)b;
 
-            if ((aF2m.m != bF2m.m) || (aF2m.k1 != bF2m.k1)
-                    || (aF2m.k2 != bF2m.k2) || (aF2m.k3 != bF2m.k3))
-            {
-                throw new IllegalArgumentException("Field elements are not "
-                        + "elements of the same field F2m");
-            }
-
             if (aF2m.representation != bF2m.representation)
             {
                 // Should never occur
-                throw new IllegalArgumentException(
-                        "One of the field "
-                                + "elements are not elements has incorrect representation");
+                throw new IllegalArgumentException("One of the F2m field elements has incorrect representation");
+            }
+
+            if ((aF2m.m != bF2m.m) || !Arrays.areEqual(aF2m.ks, bF2m.ks))
+            {
+                throw new IllegalArgumentException("Field elements are not elements of the same field F2m");
             }
         }
 
@@ -1191,14 +1179,14 @@ public abstract class ECFieldElement
             IntArray iarrClone = (IntArray)this.x.clone();
             F2m bF2m = (F2m)b;
             iarrClone.addShifted(bF2m.x, 0);
-            return new F2m(m, k1, k2, k3, iarrClone);
+            return new F2m(m, ks, iarrClone);
         }
 
         public ECFieldElement addOne()
         {
             IntArray iarrClone = (IntArray)this.x.clone();
             iarrClone.addOneShifted(0);
-            return new F2m(m, k1, k2, k3, iarrClone);
+            return new F2m(m, ks, iarrClone);
         }
 
         public ECFieldElement subtract(final ECFieldElement b)
@@ -1218,8 +1206,8 @@ public abstract class ECFieldElement
             // checkFieldElements(this, b);
             F2m bF2m = (F2m)b;
             IntArray mult = x.multiply(bF2m.x, m);
-            mult.reduce(m, new int[]{k1, k2, k3});
-            return new F2m(m, k1, k2, k3, mult);
+            mult.reduce(m, ks);
+            return new F2m(m, ks, mult);
         }
 
         public ECFieldElement divide(final ECFieldElement b)
@@ -1238,10 +1226,9 @@ public abstract class ECFieldElement
         public ECFieldElement square()
         {
             IntArray squared = x.square(m);
-            squared.reduce(m, new int[]{k1, k2, k3});
-            return new F2m(m, k1, k2, k3, squared);
+            squared.reduce(m, ks);
+            return new F2m(m, ks, squared);
         }
-
 
         public ECFieldElement invert()
         {
@@ -1256,11 +1243,11 @@ public abstract class ECFieldElement
             IntArray vz = new IntArray(t);
             vz.setBit(m);
             vz.setBit(0);
-            vz.setBit(this.k1);
+            vz.setBit(this.ks[0]);
             if (this.representation == PPB) 
             {
-                vz.setBit(this.k2);
-                vz.setBit(this.k3);
+                vz.setBit(this.ks[1]);
+                vz.setBit(this.ks[2]);
             }
 
             // g1(z) := 1, g2(z) := 0
@@ -1309,8 +1296,7 @@ public abstract class ECFieldElement
                 g1z.addShifted(g2zShift, jInt);
                 
             }
-            return new ECFieldElement.F2m(
-                    this.m, this.k1, this.k2, this.k3, g2z);
+            return new ECFieldElement.F2m(this.m, this.ks, g2z);
         }
 
         public ECFieldElement sqrt()
@@ -1350,7 +1336,7 @@ public abstract class ECFieldElement
          */
         public int getK1()
         {
-            return this.k1;
+            return this.ks[0];
         }
 
         /**
@@ -1361,7 +1347,7 @@ public abstract class ECFieldElement
          */
         public int getK2()
         {
-            return this.k2;
+            return this.ks.length >= 2 ? this.ks[1] : 0;
         }
 
         /**
@@ -1372,7 +1358,7 @@ public abstract class ECFieldElement
          */
         public int getK3()
         {
-            return this.k3;
+            return this.ks.length >= 3 ? this.ks[2] : 0;
         }
 
         public boolean equals(Object anObject)
@@ -1389,15 +1375,15 @@ public abstract class ECFieldElement
 
             ECFieldElement.F2m b = (ECFieldElement.F2m)anObject;
             
-            return ((this.m == b.m) && (this.k1 == b.k1) && (this.k2 == b.k2)
-                && (this.k3 == b.k3)
+            return ((this.m == b.m)
                 && (this.representation == b.representation)
+                && Arrays.areEqual(this.ks, b.ks)
                 && (this.x.equals(b.x)));
         }
 
         public int hashCode()
         {
-            return x.hashCode() ^ m ^ k1 ^ k2 ^ k3;
+            return x.hashCode() ^ m ^ Arrays.hashCode(ks);
         }
     }
 }
