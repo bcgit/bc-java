@@ -243,18 +243,25 @@ class IntArray
             }
         }
 
-        boolean carry = false;
-        for (int i = 0; i < usedLen; i++)
+        int prev = 0;
+        for (int i = 0; i < usedLen; ++i)
         {
-            // nextCarry is true if highest bit is set
-            boolean nextCarry = m_ints[i] < 0;
-            m_ints[i] <<= 1;
-            if (carry)
-            {
-                // set lowest bit
-                m_ints[i] |= 1;
-            }
-            carry = nextCarry;
+            int next = m_ints[i];
+            m_ints[i] = (next << 1) | (prev >>> 31);
+            prev = next;
+        }
+    }
+
+    private void shiftLeftQuick()
+    {
+        int len = m_ints.length;
+
+        int prev = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            int next = m_ints[i];
+            m_ints[i] = (next << 1) | (prev >>> 31);
+            prev = next;
         }
     }
 
@@ -407,18 +414,21 @@ class IntArray
 
     public IntArray multiply(IntArray other, int m)
     {
-        // Lenght of c is 2m bits rounded up to the next int (32 bit)
-        int t = (m + 31) >> 5;
-        if (m_ints.length < t)
+        int usedLen = getUsedLength();
+        if (usedLen == 0)
         {
-            m_ints = resizedInts(t);
+            return new IntArray(1);
         }
 
-        IntArray b = new IntArray(other.resizedInts(other.getLength() + 1));
-        IntArray c = new IntArray((m + m + 31) >> 5);
-        // IntArray c = new IntArray(t + t);
+        int t = Math.min(usedLen, (m + 31) >> 5);
+
+        IntArray b = new IntArray(other.resizedInts(other.getUsedLength() + 1));
+
+        // Length of c is 2m bits rounded up to the next int (32 bit)
+        IntArray c = new IntArray(t + b.getLength());
+
         int testBit = 1;
-        for (int k = 0; k < 32; k++)
+        for (;;)
         {
             for (int j = 0; j < t; j++)
             {
@@ -428,8 +438,11 @@ class IntArray
                     c.addShifted(b, j);
                 }
             }
-            testBit <<= 1;
-            b.shiftLeft();
+            if ((testBit <<= 1) == 0)
+            {
+                break;
+            }
+            b.shiftLeftQuick();
         }
         return c;
     }
@@ -510,13 +523,16 @@ class IntArray
         for (int i = pos; i >= m; i -= 32)
         {
             int word = getWord(i);
-//            flipWord(i);
-            int bit = i - m;
-            flipWord(bit, word);
-            int j = ks.length;
-            while (--j >= 0)
+            if (word != 0)
             {
-                flipWord(ks[j] + bit, word);
+//                flipWord(i);
+                int bit = i - m;
+                flipWord(bit, word);
+                int j = ks.length;
+                while (--j >= 0)
+                {
+                    flipWord(ks[j] + bit, word);
+                }
             }
         }
     }
