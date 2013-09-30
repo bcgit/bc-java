@@ -1107,7 +1107,7 @@ public abstract class ECFieldElement
 
         public int bitLength()
         {
-            return x.bitLength();
+            return x.degree();
         }
 
         public boolean isZero()
@@ -1261,7 +1261,7 @@ public abstract class ECFieldElement
 //            while (uz.bitLength() > 1)
             {
                 // j := deg(u(z)) - deg(v(z))
-                int j = uz.bitLength() - vz.bitLength();
+                int j = uz.degree() - vz.degree();
 
                 // If j < 0 then: u(z) <-> v(z), g1(z) <-> g2(z), j := -j
                 if (j < 0) 
