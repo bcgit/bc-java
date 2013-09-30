@@ -6,6 +6,9 @@ import java.math.BigInteger;
 
 class IntArray
 {
+    // For toString(); must have length 32
+    private static final String ZEROES = "00000000000000000000000000000000";
+
     // TODO make m fixed for the IntArray, and hence compute T once and for all
 
     private int[] m_ints;
@@ -287,89 +290,6 @@ class IntArray
         return new IntArray(newInts);
     }
 
-    public void addRightShiftedNBits(IntArray x, int n)
-    {
-        int[] ms = x.m_ints;
-
-        int numInts = n >>> 5;
-        if (numInts >= ms.length)
-        {
-            return;
-        }
-
-        int resultLen = ms.length - numInts;
-        if (resultLen > m_ints.length)
-        {
-            m_ints = resizedInts(resultLen);
-        }
-
-        int numBits = n & 31;
-        if (numBits == 0)
-        {
-            for (int i = 0; i < resultLen; ++i)
-            {
-                m_ints[i] ^= ms[numInts + i];
-            }
-        }
-        else
-        {
-            int mask = (1 << numBits) - 1;
-            int last = resultLen - 1;
-
-            int lowBits = ms[numInts] >>> numBits;
-            for (int i = 0; i < last; ++i)
-            {
-                int m = ms[numInts + 1 + i];
-                int highBits = m & mask;
-                m_ints[i] ^= (highBits | lowBits);
-                lowBits = m >>> numBits;
-            }
-            m_ints[last] ^= lowBits; 
-        }
-    }
-
-    public IntArray shiftRight(int n, boolean debug)
-    {
-        int numInts = n >>> 5;
-        if (numInts >= m_ints.length)
-        {
-            return new IntArray(new int[] { 0 });
-        }
-
-        int resultLen = m_ints.length - numInts;
-        int[] result = new int[resultLen];
-
-        int numBits = n & 31;
-        if (numBits == 0)
-        {
-            System.arraycopy(m_ints, numInts, result, 0, resultLen);
-        }
-        else
-        {
-            int mask = (1 << numBits) - 1;
-
-            int highBits = 0;
-            int pos = resultLen;
-            while (--pos >= 0)
-            {
-                int m = m_ints[pos + numInts];
-                int lowBits = m >>> numBits;
-                result[pos] = highBits | lowBits;
-                if (debug)
-                {
-                    System.out.print(Integer.toBinaryString(result[pos]) + " ");
-                }
-                    
-                highBits = m & mask;
-            }
-            if (debug)
-            {
-                System.out.println();
-            }
-        }
-        return new IntArray(result);
-    }
-
     public void addOneShifted(int shift)
     {
         int newMinUsedLen = 1 + shift;
@@ -400,6 +320,49 @@ class IntArray
     public int getLength()
     {
         return m_ints.length;
+    }
+
+    public void flipWord(int bit, int word)
+    {
+        int len = m_ints.length;
+        int n = bit >> 5;
+        if (n < len)
+        {
+            int shift = bit & 31;
+            if (shift == 0)
+            {
+                m_ints[n] ^= word;
+            }
+            else
+            {
+                m_ints[n] ^= word << shift;
+                if (++n < len)
+                {
+                    m_ints[n] ^= word >>> (32 - shift);
+                }
+            }
+        }
+    }
+
+    public int getWord(int bit)
+    {
+        int len = m_ints.length;
+        int n = bit >> 5;
+        if (n >= len)
+        {
+            return 0;
+        }
+        int shift = bit & 31;
+        if (shift == 0)
+        {
+            return m_ints[n];
+        }
+        int result = m_ints[n] >>> shift;
+        if (++n < len)
+        {
+            result |= m_ints[n] << (32 - shift);
+        }
+        return result;
     }
 
     public boolean testBit(int n)
@@ -497,22 +460,19 @@ class IntArray
     // return c;
     // }
 
-    // TODO note, redPol.length must be 3 for TPB and 5 for PPB
-    public void reduce(int m, int[] redPol)
+    public void reduce(int m, int[] ks)
     {
-        for (int i = m + m - 2; i >= m; i--)
+        int _2m = m << 1;
+        int pos = _2m - 2;
+
+        int kMax = ks[ks.length - 1];
+        if (kMax < m - 31)
         {
-            if (testBit(i))
-            {
-                int bit = i - m;
-                flipBit(bit);
-//                flipBit(i);
-                int l = redPol.length;
-                while (--l >= 0)
-                {
-                    flipBit(redPol[l] + bit);
-                }
-            }
+            reduceWordWise(pos, m, ks);
+        }
+        else
+        {
+            reduceBitWise(pos, m, ks);
         }
 
         int newLen = (m + 31) >>> 5;
@@ -523,6 +483,41 @@ class IntArray
         if (partial != 0)
         {
             m_ints[newLen - 1] &= (1 << partial) - 1;
+        }
+    }
+
+    private void reduceBitWise(int from, int m, int[] ks)
+    {
+        for (int i = from; i >= m; --i)
+        {
+            if (testBit(i))
+            {
+//                clearBit(i);
+                int bit = i - m;
+                flipBit(bit);
+                int j = ks.length;
+                while (--j >= 0)
+                {
+                    flipBit(ks[j] + bit);
+                }
+            }
+        }
+    }
+
+    private void reduceWordWise(int from, int m, int[] ks)
+    {
+        int pos = m + ((from - m) & ~31);
+        for (int i = pos; i >= m; i -= 32)
+        {
+            int word = getWord(i);
+//            flipWord(i);
+            int bit = i - m;
+            flipWord(bit, word);
+            int j = ks.length;
+            while (--j >= 0)
+            {
+                flipWord(ks[j] + bit, word);
+            }
         }
     }
 
@@ -607,24 +602,25 @@ class IntArray
 
     public String toString()
     {
-        int usedLen = getUsedLength();
-        if (usedLen == 0)
+        int i = getUsedLength();
+        if (i == 0)
         {
             return "0";
         }
 
-        StringBuffer sb = new StringBuffer(Integer
-            .toBinaryString(m_ints[usedLen - 1]));
-        for (int iarrJ = usedLen - 2; iarrJ >= 0; iarrJ--)
+        StringBuffer sb = new StringBuffer(Integer.toBinaryString(m_ints[--i]));
+        while (--i >= 0)
         {
-            String hexString = Integer.toBinaryString(m_ints[iarrJ]);
+            String s = Integer.toBinaryString(m_ints[i]);
 
-            // Add leading zeroes, except for highest significant int
-            for (int i = hexString.length(); i < 8; i++)
+            // Add leading zeroes, except for highest significant word
+            int len = s.length();
+            if (len < 32)
             {
-                hexString = "0" + hexString;
+                sb.append(ZEROES.substring(len));
             }
-            sb.append(hexString);
+
+            sb.append(s);
         }
         return sb.toString();
     }
