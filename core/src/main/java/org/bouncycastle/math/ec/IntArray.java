@@ -287,6 +287,89 @@ class IntArray
         return new IntArray(newInts);
     }
 
+    public void addRightShiftedNBits(IntArray x, int n)
+    {
+        int[] ms = x.m_ints;
+
+        int numInts = n >>> 5;
+        if (numInts >= ms.length)
+        {
+            return;
+        }
+
+        int resultLen = ms.length - numInts;
+        if (resultLen > m_ints.length)
+        {
+            m_ints = resizedInts(resultLen);
+        }
+
+        int numBits = n & 31;
+        if (numBits == 0)
+        {
+            for (int i = 0; i < resultLen; ++i)
+            {
+                m_ints[i] ^= ms[numInts + i];
+            }
+        }
+        else
+        {
+            int mask = (1 << numBits) - 1;
+            int last = resultLen - 1;
+
+            int lowBits = ms[numInts] >>> numBits;
+            for (int i = 0; i < last; ++i)
+            {
+                int m = ms[numInts + 1 + i];
+                int highBits = m & mask;
+                m_ints[i] ^= (highBits | lowBits);
+                lowBits = m >>> numBits;
+            }
+            m_ints[last] ^= lowBits; 
+        }
+    }
+
+    public IntArray shiftRight(int n, boolean debug)
+    {
+        int numInts = n >>> 5;
+        if (numInts >= m_ints.length)
+        {
+            return new IntArray(new int[] { 0 });
+        }
+
+        int resultLen = m_ints.length - numInts;
+        int[] result = new int[resultLen];
+
+        int numBits = n & 31;
+        if (numBits == 0)
+        {
+            System.arraycopy(m_ints, numInts, result, 0, resultLen);
+        }
+        else
+        {
+            int mask = (1 << numBits) - 1;
+
+            int highBits = 0;
+            int pos = resultLen;
+            while (--pos >= 0)
+            {
+                int m = m_ints[pos + numInts];
+                int lowBits = m >>> numBits;
+                result[pos] = highBits | lowBits;
+                if (debug)
+                {
+                    System.out.print(Integer.toBinaryString(result[pos]) + " ");
+                }
+                    
+                highBits = m & mask;
+            }
+            if (debug)
+            {
+                System.out.println();
+            }
+        }
+        return new IntArray(result);
+    }
+
     public void addOneShifted(int shift)
     {
         int newMinUsedLen = 1 + shift;
@@ -347,6 +430,16 @@ class IntArray
         int theBit = n & 0x1F;
         int setter = 1 << theBit;
         m_ints[theInt] |= setter;
+    }
+
+    public void clearBit(int n)
+    {
+        // theInt = n / 32
+        int theInt = n >> 5;
+        // theBit = n % 32
+        int theBit = n & 0x1F;
+        int setter = 1 << theBit;
+        m_ints[theInt] &= ~setter;
     }
 
     public IntArray multiply(IntArray other, int m)
@@ -413,7 +506,7 @@ class IntArray
             {
                 int bit = i - m;
                 flipBit(bit);
-                flipBit(i);
+//                flipBit(i);
                 int l = redPol.length;
                 while (--l >= 0)
                 {
@@ -421,7 +514,16 @@ class IntArray
                 }
             }
         }
-        m_ints = resizedInts((m + 31) >> 5);
+
+        int newLen = (m + 31) >>> 5;
+        m_ints = resizedInts(newLen);
+
+        // Instead of flipping the high bits in the loop, explicitly clear any partial word above m bits
+        int partial = m & 31;
+        if (partial != 0)
+        {
+            m_ints[newLen - 1] &= (1 << partial) - 1;
+        }
     }
 
     public IntArray square(int m)
