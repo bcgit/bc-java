@@ -124,9 +124,12 @@ class IntArray
 
     public int getUsedLength()
     {
-        int highestIntPos = m_ints.length;
+        return getUsedLengthFrom(m_ints.length);
+    }
 
-        if (highestIntPos < 1)
+    public int getUsedLengthFrom(int from)
+    {
+        if (from < 1)
         {
             return 0;
         }
@@ -134,20 +137,20 @@ class IntArray
         // Check if first element will act as sentinel
         if (m_ints[0] != 0)
         {
-            while (m_ints[--highestIntPos] == 0)
+            while (m_ints[--from] == 0)
             {
             }
-            return highestIntPos + 1;
+            return from + 1;
         }
 
         do
         {
-            if (m_ints[--highestIntPos] != 0)
+            if (m_ints[--from] != 0)
             {
-                return highestIntPos + 1;
+                return from + 1;
             }
         }
-        while (highestIntPos > 0);
+        while (from > 0);
 
         return 0;
     }
@@ -256,7 +259,7 @@ class IntArray
         }
     }
 
-    private void shiftLeftQuick()
+    private int shiftLeftQuick()
     {
         int len = m_ints.length;
 
@@ -267,6 +270,7 @@ class IntArray
             m_ints[i] = (next << 1) | (prev >>> 31);
             prev = next;
         }
+        return prev >>> 31;
     }
 
     public IntArray shiftLeft(int n)
@@ -315,7 +319,7 @@ class IntArray
 
     public void addShiftedByBits(IntArray other, int bits)
     {
-        int words = bits >> 5;
+        int words = bits >>> 5;
         int shift = bits & 0x1F;
 
 //        IntArray vzShift = other.shiftLeft(shift);
@@ -377,7 +381,7 @@ class IntArray
     public void flipWord(int bit, int word)
     {
         int len = m_ints.length;
-        int n = bit >> 5;
+        int n = bit >>> 5;
         if (n < len)
         {
             int shift = bit & 31;
@@ -399,7 +403,7 @@ class IntArray
     public int getWord(int bit)
     {
         int len = m_ints.length;
-        int n = bit >> 5;
+        int n = bit >>> 5;
         if (n >= len)
         {
             return 0;
@@ -420,7 +424,7 @@ class IntArray
     public boolean testBit(int n)
     {
         // theInt = n / 32
-        int theInt = n >> 5;
+        int theInt = n >>> 5;
         // theBit = n % 32
         int theBit = n & 0x1F;
         int tester = 1 << theBit;
@@ -430,7 +434,7 @@ class IntArray
     public void flipBit(int n)
     {
         // theInt = n / 32
-        int theInt = n >> 5;
+        int theInt = n >>> 5;
         // theBit = n % 32
         int theBit = n & 0x1F;
         int flipper = 1 << theBit;
@@ -440,7 +444,7 @@ class IntArray
     public void setBit(int n)
     {
         // theInt = n / 32
-        int theInt = n >> 5;
+        int theInt = n >>> 5;
         // theBit = n % 32
         int theBit = n & 0x1F;
         int setter = 1 << theBit;
@@ -450,12 +454,51 @@ class IntArray
     public void clearBit(int n)
     {
         // theInt = n / 32
-        int theInt = n >> 5;
+        int theInt = n >>> 5;
         // theBit = n % 32
         int theBit = n & 0x1F;
         int setter = 1 << theBit;
         m_ints[theInt] &= ~setter;
     }
+
+    /*
+     * At the moment this is slower than multiply then reduce, but it ought to be possible to
+     * improve this by reducing 'b' after each word, and only reducing a single extra word for 'c'
+     * at the end.
+     */
+//    public IntArray modMult(IntArray other, int m, int[] ks)
+//    {
+//        int usedLen = getUsedLength();
+//        if (usedLen == 0)
+//        {
+//            return new IntArray(1);
+//        }
+//
+//        int mLen = (m + 31) >>> 5;
+//        int t = Math.min(usedLen, mLen);
+//
+//        int bLen = other.getUsedLength() + 1;
+//        IntArray b = new IntArray(other.resizedInts(bLen));
+//        IntArray c = new IntArray(t + bLen);
+//
+//        for (int j = 0; j < t; ++j)
+//        {
+//            int w = m_ints[j];
+//            int bits = j << 5;
+//
+//            for (int k = 0; k < 32; ++k)
+//            {
+//                if ((w & (1 << k)) != 0)
+//                {
+//                    c.addShiftedByBits(b, bits + k);
+//                }
+//            }
+//        }
+//
+//        c.reduce(m, ks);
+//
+//        return c;
+//    }
 
     public IntArray multiply(IntArray other, int m)
     {
@@ -465,11 +508,10 @@ class IntArray
             return new IntArray(1);
         }
 
-        int t = Math.min(usedLen, (m + 31) >> 5);
+        int mLen = (m + 31) >>> 5;
+        int t = Math.min(usedLen, mLen);
 
         IntArray b = new IntArray(other.resizedInts(other.getUsedLength() + 1));
-
-        // Length of c is 2m bits rounded up to the next int (32 bit)
         IntArray c = new IntArray(t + b.getLength());
 
         int testBit = 1;
@@ -520,8 +562,15 @@ class IntArray
 
     public void reduce(int m, int[] ks)
     {
+        int len = getUsedLength();
+        int mLen = (m + 31) >>> 5;
+        if (len < mLen)
+        {
+            return;
+        }
+
         int _2m = m << 1;
-        int pos = _2m - 2;
+        int pos = Math.min(_2m - 2, (len << 5) - 1);
 
         int kMax = ks[ks.length - 1];
         if (kMax < m - 31)
@@ -533,14 +582,16 @@ class IntArray
             reduceBitWise(pos, m, ks);
         }
 
-        int newLen = (m + 31) >>> 5;
-        m_ints = resizedInts(newLen);
-
         // Instead of flipping the high bits in the loop, explicitly clear any partial word above m bits
         int partial = m & 31;
         if (partial != 0)
         {
-            m_ints[newLen - 1] &= (1 << partial) - 1;
+            m_ints[mLen - 1] &= (1 << partial) - 1;
+        }
+
+        if (len > mLen)
+        {
+            m_ints = resizedInts(mLen);
         }
     }
 
@@ -588,16 +639,16 @@ class IntArray
         final int[] table = { 0x0, 0x1, 0x4, 0x5, 0x10, 0x11, 0x14, 0x15, 0x40,
             0x41, 0x44, 0x45, 0x50, 0x51, 0x54, 0x55 };
 
-        int t = (m + 31) >> 5;
-        if (m_ints.length < t)
+        int mLen = (m + 31) >>> 5;
+        if (m_ints.length < mLen)
         {
-            m_ints = resizedInts(t);
+            m_ints = resizedInts(mLen);
         }
 
-        IntArray c = new IntArray(t + t);
+        IntArray c = new IntArray(mLen + mLen);
 
         // TODO twice the same code, put in separate private method
-        for (int i = 0; i < t; i++)
+        for (int i = 0; i < mLen; i++)
         {
             int v0 = 0;
             for (int j = 0; j < 4; j++)
