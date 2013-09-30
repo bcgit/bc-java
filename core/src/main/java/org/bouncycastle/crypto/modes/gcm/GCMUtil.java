@@ -5,6 +5,30 @@ import org.bouncycastle.util.Arrays;
 
 abstract class GCMUtil
 {
+    private static final int E1 = 0xe1000000;
+
+    private static int[] generateLookup()
+    {
+        int[] lookup = new int[256];
+
+        for (int lsw = 0; lsw < 256; ++lsw)
+        {
+            int v = 0;
+            for (int i = 7; i >= 0; --i)
+            {
+                if ((lsw & (1 << i)) != 0)
+                {
+                    v ^= (E1 >>> (7 - i));
+                }
+            }
+            lookup[lsw] = v;
+        }
+
+        return lookup;
+    }
+
+    private static final int[] LOOKUP = generateLookup();
+
     static byte[] oneAsBytes()
     {
         byte[] tmp = new byte[16];
@@ -76,17 +100,17 @@ abstract class GCMUtil
         {
             // R = new int[]{ 0xe1000000, 0, 0, 0 };
 //            xor(v, R);
-            x[0] ^= 0xe1000000;
+            x[0] ^= E1;
         }
     }
 
-    static void multiplyP(int[] x, int[] output)
+    static void multiplyP(int[] x, int[] y)
     {
         boolean lsb = (x[3] & 1) != 0;
-        shiftRight(x, output);
+        shiftRight(x, y);
         if (lsb)
         {
-            output[0] ^= 0xe1000000;
+            y[0] ^= E1;
         }
     }
 
@@ -98,28 +122,16 @@ abstract class GCMUtil
 //            multiplyP(x);
 //        }
 
-        int lsw = x[3];
+        int lsw = x[3] & 0xFF;
         shiftRightN(x, 8);
-        for (int i = 7; i >= 0; --i)
-        {
-            if ((lsw & (1 << i)) != 0)
-            {
-                x[0] ^= (0xe1000000 >>> (7 - i));
-            }
-        }
+        x[0] ^= LOOKUP[lsw];
     }
 
-    static void multiplyP8(int[] x, int[] output)
+    static void multiplyP8(int[] x, int[] y)
     {
-        int lsw = x[3];
-        shiftRightN(x, 8, output);
-        for (int i = 7; i >= 0; --i)
-        {
-            if ((lsw & (1 << i)) != 0)
-            {
-                output[0] ^= (0xe1000000 >>> (7 - i));
-            }
-        }
+        int lsw = x[3] & 0xFF;
+        shiftRightN(x, 8, y);
+        y[0] ^= LOOKUP[lsw];
     }
 
     static void shiftRight(byte[] block)
