@@ -6,11 +6,25 @@ import java.math.BigInteger;
 
 class IntArray
 {
-    private static final int[] SQUARING_TABLE =
+    private static final int[] generateSquare8Table()
     {
-        0x00000000, 0x01000000, 0x04000000, 0x05000000, 0x10000000, 0x11000000, 0x14000000, 0x15000000,
-        0x40000000, 0x41000000, 0x44000000, 0x45000000, 0x50000000, 0x51000000, 0x54000000, 0x55000000
-    };
+        int[] t = new int[256];
+        for (int i = 0; i < 256; ++i)
+        {
+            int v = 0;
+            for (int bit = 0; bit < 8; ++bit)
+            {
+                if ((i & (1 << bit)) != 0)
+                {
+                    v ^= i << bit;
+                }
+            }
+            t[i] =  v << 16;
+        }
+        return t;
+    }
+
+    private static final int[] SQUARE8_TABLE = generateSquare8Table();
 
     // For toString(); must have length 32
     private static final String ZEROES = "00000000000000000000000000000000";
@@ -666,14 +680,7 @@ class IntArray
 
     private static int square16(int n)
     {
-        int x = SQUARING_TABLE[n & 0xF];
-        x >>>= 8; n >>>= 4;
-        x |= SQUARING_TABLE[n & 0xF];
-        x >>>= 8; n >>>= 4;
-        x |= SQUARING_TABLE[n & 0xF];
-        x >>>= 8; n >>>= 4;
-        x |= SQUARING_TABLE[n];
-        return x;
+        return (SQUARE8_TABLE[n & 0xFF] >>> 16) | SQUARE8_TABLE[n >>> 8];
     }
 
     public boolean equals(Object o)
