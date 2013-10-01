@@ -6,6 +6,12 @@ import java.math.BigInteger;
 
 class IntArray
 {
+    private static final int[] SQUARING_TABLE =
+    {
+        0x00000000, 0x01000000, 0x04000000, 0x05000000, 0x10000000, 0x11000000, 0x14000000, 0x15000000,
+        0x40000000, 0x41000000, 0x44000000, 0x45000000, 0x50000000, 0x51000000, 0x54000000, 0x55000000
+    };
+
     // For toString(); must have length 32
     private static final String ZEROES = "00000000000000000000000000000000";
 
@@ -644,10 +650,6 @@ class IntArray
 
     public IntArray square(int m)
     {
-        // TODO make the table static final
-        final int[] table = { 0x0, 0x1, 0x4, 0x5, 0x10, 0x11, 0x14, 0x15, 0x40,
-            0x41, 0x44, 0x45, 0x50, 0x51, 0x54, 0x55 };
-
         int mLen = (m + 31) >>> 5;
         if (m_ints.length < mLen)
         {
@@ -664,8 +666,7 @@ class IntArray
             {
                 v0 = v0 >>> 8;
                 int u = (m_ints[i] >>> (j * 4)) & 0xF;
-                int w = table[u] << 24;
-                v0 |= w;
+                v0 |= SQUARING_TABLE[u];
             }
             c.m_ints[i + i] = v0;
 
@@ -675,8 +676,7 @@ class IntArray
             {
                 v0 = v0 >>> 8;
                 int u = (upper >>> (j * 4)) & 0xF;
-                int w = table[u] << 24;
-                v0 |= w;
+                v0 |= SQUARING_TABLE[u];
             }
             c.m_ints[i + i + 1] = v0;
         }
