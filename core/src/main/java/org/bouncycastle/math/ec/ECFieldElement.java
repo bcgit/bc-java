@@ -1219,66 +1219,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement invert()
         {
-            // Inversion in F2m using the extended Euclidean algorithm
-            // Input: A nonzero polynomial a(z) of degree at most m-1
-            // Output: a(z)^(-1) mod f(z)
-
-            // u(z) := a(z)
-            IntArray uz = (IntArray)this.x.clone();
-
-            int t = (m + 31) >>> 5;
-
-            // v(z) := f(z)
-            IntArray vz = new IntArray(t);
-            vz.setBit(m);
-            vz.setBit(0);
-            vz.setBit(this.ks[0]);
-            if (this.representation == PPB) 
-            {
-                vz.setBit(this.ks[1]);
-                vz.setBit(this.ks[2]);
-            }
-
-            // g1(z) := 1, g2(z) := 0
-            IntArray g1z = new IntArray(t);
-            g1z.setBit(0);
-            IntArray g2z = new IntArray(t);
-
-            // while u != 0
-            while (!uz.isZero())
-//            while (uz.getUsedLength() > 0)
-//            while (uz.bitLength() > 1)
-            {
-                // j := deg(u(z)) - deg(v(z))
-                int j = uz.degree() - vz.degree();
-
-                // If j < 0 then: u(z) <-> v(z), g1(z) <-> g2(z), j := -j
-                if (j < 0) 
-                {
-                    final IntArray uzCopy = uz;
-                    uz = vz;
-                    vz = uzCopy;
-
-                    final IntArray g1zCopy = g1z;
-                    g1z = g2z;
-                    g2z = g1zCopy;
-
-                    j = -j;
-                }
-
-                // u(z) := u(z) + z^j * v(z)
-                // Note, that no reduction modulo f(z) is required, because
-                // deg(u(z) + z^j * v(z)) <= max(deg(u(z)), j + deg(v(z)))
-                // = max(deg(u(z)), deg(u(z)) - deg(v(z)) + deg(v(z))
-                // = deg(u(z))
-                // uz = uz.xor(vz.shiftLeft(j));
-                uz.addShiftedByBits(vz, j);
-
-                // g1(z) := g1(z) + z^j * g2(z)
-//                g1z = g1z.xor(g2z.shiftLeft(j));
-                g1z.addShiftedByBits(g2z, j);
-            }
-            return new ECFieldElement.F2m(this.m, this.ks, g2z);
+            return new ECFieldElement.F2m(this.m, this.ks, this.x.modInverse(m, ks));
         }
 
         public ECFieldElement sqrt()

@@ -53,6 +53,11 @@ class IntArray
         8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
     };
 
+    public static int getWordLength(int bits)
+    {
+        return (bits + 31) >>> 5;
+    }
+
     // TODO make m fixed for the IntArray, and hence compute T once and for all
 
     private int[] m_ints;
@@ -185,7 +190,7 @@ class IntArray
             k = (u == 0) ? 16 + bitLengths[t] : 24 + bitLengths[u];
         }
 
-        return (i << 5) + k + 1;
+        return (i << 5) + k;
     }
 
     private int[] resizedInts(int newLen)
@@ -235,35 +240,6 @@ class IntArray
         return new BigInteger(1, barr);
     }
 
-    public void shiftLeft()
-    {
-        int usedLen = getUsedLength();
-        if (usedLen == 0)
-        {
-            return;
-        }
-        if (m_ints[usedLen - 1] < 0)
-        {
-            // highest bit of highest used byte is set, so shifting left will
-            // make the IntArray one byte longer
-            usedLen++;
-            if (usedLen > m_ints.length)
-            {
-                // make the m_ints one byte longer, because we need one more
-                // byte which is not available in m_ints
-                m_ints = resizedInts(m_ints.length + 1);
-            }
-        }
-
-        int prev = 0;
-        for (int i = 0; i < usedLen; ++i)
-        {
-            int next = m_ints[i];
-            m_ints[i] = (next << 1) | prev;
-            prev = next >>> 31;
-        }
-    }
-
     private static int shiftLeftQuick(int[] x, int count)
     {
         int prev = 0;
@@ -274,39 +250,6 @@ class IntArray
             prev = next >>> 31;
         }
         return prev;
-    }
-
-    public IntArray shiftLeft(int n)
-    {
-        if (n == 0)
-        {
-            return this;
-        }
-
-        int usedLen = getUsedLength();
-        if (usedLen == 0)
-        {
-            return this;
-        }
-
-        if (n > 31)
-        {
-            throw new IllegalArgumentException("shiftLeft() for max 31 bits "
-                + ", " + n + " bit shift is not possible");
-        }
-
-        int[] newInts = new int[usedLen + 1];
-
-        int nm32 = 32 - n, prev = 0;
-        for (int i = 0; i < usedLen; i++)
-        {
-            int next = m_ints[i];
-            newInts[i] = (next << n) | (prev >>> nm32);
-            prev = next;
-        }
-        newInts[usedLen] = prev >>> nm32;
-
-        return new IntArray(newInts);
     }
 
     public void addOneShifted(int shift)
@@ -468,45 +411,6 @@ class IntArray
         m_ints[theInt] &= ~setter;
     }
 
-    /*
-     * At the moment this is slower than multiply then reduce, but it ought to be possible to
-     * improve this by reducing 'b' after each word, and only reducing a single extra word for 'c'
-     * at the end.
-     */
-//    public IntArray modMult(IntArray other, int m, int[] ks)
-//    {
-//        int usedLen = getUsedLength();
-//        if (usedLen == 0)
-//        {
-//            return new IntArray(1);
-//        }
-//
-//        int mLen = (m + 31) >>> 5;
-//        int t = Math.min(usedLen, mLen);
-//
-//        int bLen = other.getUsedLength() + 1;
-//        IntArray b = new IntArray(other.resizedInts(bLen));
-//        IntArray c = new IntArray(t + bLen);
-//
-//        for (int j = 0; j < t; ++j)
-//        {
-//            int w = m_ints[j];
-//            int bits = j << 5;
-//
-//            for (int k = 0; k < 32; ++k)
-//            {
-//                if ((w & (1 << k)) != 0)
-//                {
-//                    c.addShiftedByBits(b, bits + k);
-//                }
-//            }
-//        }
-//
-//        c.reduce(m, ks);
-//
-//        return c;
-//    }
-
     public IntArray multiply(IntArray other, int m)
     {
         int usedLen = getUsedLength();
@@ -665,6 +569,67 @@ class IntArray
     private static int square16(int n)
     {
         return EXPANSION_TABLE[n & 0xFF] | EXPANSION_TABLE[n >>> 8] << 16;
+    }
+
+    public IntArray modInverse(int m, int[] ks)
+    {
+        // Inversion in F2m using the extended Euclidean algorithm
+        // Input: A nonzero polynomial a(z) of degree at most m-1
+        // Output: a(z)^(-1) mod f(z)
+
+        // u(z) := a(z)
+        IntArray uz = (IntArray)clone();
+
+        int t = getWordLength(m);
+
+        // v(z) := f(z)
+        IntArray vz = new IntArray(t);
+        vz.setBit(m);
+        vz.setBit(0);
+        vz.setBit(ks[0]);
+        if (ks.length > 1) 
+        {
+            vz.setBit(ks[1]);
+            vz.setBit(ks[2]);
+        }
+
+        // g1(z) := 1, g2(z) := 0
+        IntArray g1z = new IntArray(t);
+        g1z.setBit(0);
+        IntArray g2z = new IntArray(t);
+
+        while (!uz.isZero())
+        {
+            // j := deg(u(z)) - deg(v(z))
+            int j = uz.degree() - vz.degree();
+
+            // If j < 0 then: u(z) <-> v(z), g1(z) <-> g2(z), j := -j
+            if (j < 0) 
+            {
+                final IntArray uzCopy = uz;
+                uz = vz;
+                vz = uzCopy;
+
+                final IntArray g1zCopy = g1z;
+                g1z = g2z;
+                g2z = g1zCopy;
+
+                j = -j;
+            }
+
+            // u(z) := u(z) + z^j * v(z)
+            // Note, that no reduction modulo f(z) is required, because
+            // deg(u(z) + z^j * v(z)) <= max(deg(u(z)), j + deg(v(z)))
+            // = max(deg(u(z)), deg(u(z)) - deg(v(z)) + deg(v(z))
+            // = deg(u(z))
+            // uz = uz.xor(vz.shiftLeft(j));
+            uz.addShiftedByBits(vz, j);
+
+            // g1(z) := g1(z) + z^j * g2(z)
+//            g1z = g1z.xor(g2z.shiftLeft(j));
+            g1z.addShiftedByBits(g2z, j);
+        }
+        return g2z;
     }
 
     public boolean equals(Object o)
