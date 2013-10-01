@@ -650,37 +650,30 @@ class IntArray
 
     public IntArray square(int m)
     {
-        int mLen = (m + 31) >>> 5;
-        if (m_ints.length < mLen)
+        int len = getUsedLength(), _2len = len << 1;
+        int[] r = new int[_2len];
+
+        int pos = 0;
+        while (pos < _2len)
         {
-            m_ints = resizedInts(mLen);
+            int mi = m_ints[pos >>> 1];
+            r[pos++] = square16(mi & 0xFFFF);
+            r[pos++] = square16(mi >>> 16);
         }
 
-        IntArray c = new IntArray(mLen + mLen);
+        return new IntArray(r);
+    }
 
-        // TODO twice the same code, put in separate private method
-        for (int i = 0; i < mLen; i++)
-        {
-            int v0 = 0;
-            for (int j = 0; j < 4; j++)
-            {
-                v0 = v0 >>> 8;
-                int u = (m_ints[i] >>> (j * 4)) & 0xF;
-                v0 |= SQUARING_TABLE[u];
-            }
-            c.m_ints[i + i] = v0;
-
-            v0 = 0;
-            int upper = m_ints[i] >>> 16;
-            for (int j = 0; j < 4; j++)
-            {
-                v0 = v0 >>> 8;
-                int u = (upper >>> (j * 4)) & 0xF;
-                v0 |= SQUARING_TABLE[u];
-            }
-            c.m_ints[i + i + 1] = v0;
-        }
-        return c;
+    private static int square16(int n)
+    {
+        int x = SQUARING_TABLE[n & 0xF];
+        x >>>= 8; n >>>= 4;
+        x |= SQUARING_TABLE[n & 0xF];
+        x >>>= 8; n >>>= 4;
+        x |= SQUARING_TABLE[n & 0xF];
+        x >>>= 8; n >>>= 4;
+        x |= SQUARING_TABLE[n];
+        return x;
     }
 
     public boolean equals(Object o)
