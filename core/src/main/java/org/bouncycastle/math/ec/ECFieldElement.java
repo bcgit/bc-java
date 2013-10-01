@@ -1016,11 +1016,6 @@ public abstract class ECFieldElement
         private int[] ks;
 
         /**
-         * The number of <code>int</code>s required to hold <code>m</code> bits.
-         */
-        private int t;
-
-        /**
          * The <code>IntArray</code> holding the bits.
          */
         private IntArray x;
@@ -1048,11 +1043,6 @@ public abstract class ECFieldElement
             int k3,
             BigInteger x)
         {
-            if (x == null || x.signum() < 0)
-            {
-                throw new IllegalArgumentException("x value invalid in F2m field element");
-            }
-
             if ((k2 == 0) && (k3 == 0))
             {
                 this.representation = TPB;
@@ -1075,9 +1065,7 @@ public abstract class ECFieldElement
             }
 
             this.m = m;
-            // t = m / 32 rounded up to the next integer
-            this.t = (m + 31) >> 5;
-            this.x = new IntArray(x, t);
+            this.x = new IntArray(x);
         }
 
         /**
@@ -1098,11 +1086,10 @@ public abstract class ECFieldElement
 
         private F2m(int m, int[] ks, IntArray x)
         {
-            this.t = (m + 31) >> 5;
-            this.x = x;
             this.m = m;
             this.representation = (ks.length == 1) ? TPB : PPB;
             this.ks = ks;
+            this.x = x;
         }
 
         public int bitLength()
@@ -1238,6 +1225,8 @@ public abstract class ECFieldElement
 
             // u(z) := a(z)
             IntArray uz = (IntArray)this.x.clone();
+
+            int t = (m + 31) >>> 5;
 
             // v(z) := f(z)
             IntArray vz = new IntArray(t);
