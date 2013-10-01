@@ -69,15 +69,11 @@ class IntArray
 
     public IntArray(BigInteger bigInt)
     {
-        this(bigInt, 0);
-    }
-
-    public IntArray(BigInteger bigInt, int minIntLen)
-    {
-        if (bigInt.signum() == -1)
+        if (bigInt == null || bigInt.signum() < 0)
         {
-            throw new IllegalArgumentException("Only positive Integers allowed");
+            throw new IllegalArgumentException("invalid F2m field value");
         }
+
         if (bigInt.equals(ECConstants.ZERO))
         {
             m_ints = new int[] { 0 };
@@ -95,14 +91,7 @@ class IntArray
             barrStart = 1;
         }
         int intLen = (barrLen + 3) / 4;
-        if (intLen < minIntLen)
-        {
-            m_ints = new int[minIntLen];
-        }
-        else
-        {
-            m_ints = new int[intLen];
-        }
+        m_ints = new int[intLen];
 
         int iarrJ = intLen - 1;
         int rem = barrLen % 4 + barrStart;
@@ -113,11 +102,7 @@ class IntArray
             for (; barrI < rem; barrI++)
             {
                 temp <<= 8;
-                int barrBarrI = barr[barrI];
-                if (barrBarrI < 0)
-                {
-                    barrBarrI += 256;
-                }
+                int barrBarrI = barr[barrI] & 0xFF;
                 temp |= barrBarrI;
             }
             m_ints[iarrJ--] = temp;
@@ -129,11 +114,7 @@ class IntArray
             for (int i = 0; i < 4; i++)
             {
                 temp <<= 8;
-                int barrBarrI = barr[barrI++];
-                if (barrBarrI < 0)
-                {
-                    barrBarrI += 256;
-                }
+                int barrBarrI = barr[barrI++] & 0xFF;
                 temp |= barrBarrI;
             }
             m_ints[iarrJ] = temp;
@@ -714,7 +695,8 @@ class IntArray
         int hash = 1;
         for (int i = 0; i < usedLen; i++)
         {
-            hash = hash * 31 + m_ints[i];
+            hash *= 31;
+            hash ^= m_ints[i];
         }
         return hash;
     }
