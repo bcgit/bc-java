@@ -1408,18 +1408,43 @@ public abstract class ECPoint
 
         protected void checkCurveEquation()
         {
-            if (getCurveCoordinateSystem() != ECCurve.COORD_LAMBDA_PROJECTIVE || isInfinity())
+            if (isInfinity())
             {
                 return;
             }
 
-            ECFieldElement X = this.x, L = this.y, Z = this.zs[0];
+            ECFieldElement Z;
+            switch (getCurveCoordinateSystem())
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+                Z = curve.fromBigInteger(BigInteger.ONE);
+                break;
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+                Z = this.zs[0];
+                break;
+            default:
+                return;
+            }
 
             if (Z.isZero())
             {
                 throw new IllegalStateException();
             }
 
+            ECFieldElement X = this.x;
+            if (X.isZero())
+            {
+                // NOTE: For x == 0, we expect the affine-y instead of the lambda-y 
+                ECFieldElement Y = this.y;
+                if (!Y.square().equals(curve.getB().multiply(Z)))
+                {
+                    throw new IllegalStateException();
+                }
+
+                return;
+            }
+
+            ECFieldElement L = this.y;
             ECFieldElement XSq = X.square();
             ECFieldElement ZSq = Z.square();
 
