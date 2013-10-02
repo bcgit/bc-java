@@ -833,7 +833,9 @@ class Tnaf
         {
             pu[i] = Tnaf.multiplyFromTnaf(p, alphaTnaf[i]);
         }
-        
+
+        p.getCurve().normalizeAll(pu);
+
         return pu;
     }
 }
