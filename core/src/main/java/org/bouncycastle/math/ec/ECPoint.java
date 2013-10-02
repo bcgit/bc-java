@@ -1260,10 +1260,13 @@ public abstract class ECPoint
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
+                if (X1.isZero())
+                {
+                    return b.addSimple(this);
+                }
+
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
                 ECFieldElement L2 = b.y, Z2 = b.zs[0];
-
-                // TODO Special case handling for Xi == 0
 
                 boolean Z1IsOne = Z1.bitLength() == 1;
                 ECFieldElement U2 = X2, S2 = L2;
@@ -1294,23 +1297,39 @@ public abstract class ECPoint
                     return (ECPoint.F2m)curve.getInfinity();
                 }
 
-                B = B.square();
-
-                ECFieldElement AU1 = A.multiply(U1);
-                ECFieldElement AU2 = A.multiply(U2);
-                ECFieldElement ABZ2 = A.multiply(B);
-                if (!Z2IsOne)
+                ECFieldElement X3, L3, Z3;
+                if (X2.isZero())
                 {
-                    ABZ2 = ABZ2.multiply(Z2);
+                    // TODO This can probably be optimized quite a bit
+
+                    ECFieldElement Y1 = getYCoord(), Y2 = L2;
+                    ECFieldElement L = Y1.add(Y2).divide(X1);
+
+                    X3 = L.square().add(L).add(X1).add(curve.getA());
+                    ECFieldElement Y3 = L.multiply(X1.add(X3)).add(X3).add(Y1);
+                    L3 = X3.isZero() ? Y3 : Y3.divide(X3).add(X3);
+                    Z3 = curve.fromBigInteger(ECConstants.ONE);
                 }
-
-                ECFieldElement X3 = AU1.multiply(AU2);
-                ECFieldElement L3 = AU2.add(B).square().add(ABZ2.multiply(L1.add(Z1)));
-
-                ECFieldElement Z3 = ABZ2;
-                if (!Z1IsOne)
+                else
                 {
-                    Z3 = Z3.multiply(Z1);
+                    B = B.square();
+    
+                    ECFieldElement AU1 = A.multiply(U1);
+                    ECFieldElement AU2 = A.multiply(U2);
+                    ECFieldElement ABZ2 = A.multiply(B);
+                    if (!Z2IsOne)
+                    {
+                        ABZ2 = ABZ2.multiply(Z2);
+                    }
+
+                    X3 = AU1.multiply(AU2);
+                    L3 = AU2.add(B).square().add(ABZ2.multiply(L1.add(Z1)));
+
+                    Z3 = ABZ2;
+                    if (!Z1IsOne)
+                    {
+                        Z3 = Z3.multiply(Z1);
+                    }
                 }
 
                 return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
@@ -1433,17 +1452,15 @@ public abstract class ECPoint
             {
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
-                // TODO Special case handling for X2 == 0
-
-                // NOTE: twicePlus() only optimized for affine argument
-                ECFieldElement Z2 = b.zs[0];
-                if (Z2.bitLength() != 1)
+                // NOTE: twicePlus() only optimized for lambda-affine argument
+                ECFieldElement X2 = b.x, Z2 = b.zs[0];
+                if (X2.isZero() || Z2.bitLength() != 1)
                 {
                     return twice().add(b);
                 }
 
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
-                ECFieldElement X2 = b.x, L2 = b.y;
+                ECFieldElement L2 = b.y;
 
                 ECFieldElement X1Sq = X1.square();
                 ECFieldElement L1Sq = L1.square();
