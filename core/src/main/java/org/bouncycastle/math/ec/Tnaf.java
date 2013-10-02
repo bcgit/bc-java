@@ -392,16 +392,7 @@ class Tnaf
      */
     public static ECPoint.F2m tau(ECPoint.F2m p)
     {
-        if (p.isInfinity())
-        {
-            return p;
-        }
-
-        ECPoint pn = p.normalize();
-        ECFieldElement x = pn.getAffineXCoord();
-        ECFieldElement y = pn.getAffineYCoord();
-
-        return new ECPoint.F2m(p.getCurve(), x.square(), y.square(), p.isCompressed());
+        return p.tau();
     }
 
     /**
