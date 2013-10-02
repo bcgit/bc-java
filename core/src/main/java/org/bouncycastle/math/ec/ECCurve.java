@@ -166,7 +166,7 @@ public abstract class ECCurve
         for (int i = 0; i < points.length; ++i)
         {
             ECPoint p = points[i];
-            if (!p.isNormalized())
+            if (null != p && !p.isNormalized())
             {
                 zs[count] = p.getZCoord(0);
                 indices[count++] = i;
@@ -294,7 +294,11 @@ public abstract class ECCurve
 
         for (int i = 0; i < points.length; ++i)
         {
-            checkPoint(points[i]);
+            ECPoint point = points[i];
+            if (null != point && this != point.getCurve())
+            {
+                throw new IllegalArgumentException("'points' entries must be null or on this curve");
+            }
         }
     }
 
@@ -700,10 +704,7 @@ public abstract class ECCurve
 
         protected ECMultiplier createDefaultMultiplier()
         {
-            // TODO Check what's needed for Tau-support in lambda coordinates
-            if (isKoblitz()
-                && COORD_LAMBDA_AFFINE != getCoordinateSystem()
-                && COORD_LAMBDA_PROJECTIVE != getCoordinateSystem())
+            if (isKoblitz())
             {
                 return new WTauNafMultiplier();
             }
