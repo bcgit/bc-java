@@ -696,21 +696,19 @@ public abstract class ECPoint
         // B.3 pg 62
         public ECPoint twice()
         {
-            if (this.isInfinity())
+            if (isInfinity())
             {
-                // Twice identity element (point at infinity) is identity
                 return this;
-            }
-            
-            ECFieldElement Y1 = this.y;
-            if (Y1.isZero()) 
-            {
-                // if y1 == 0, then (x1, y1) == (x1, -y1)
-                // and hence this = -this and thus 2(x1, y1) == infinity
-                return getCurve().getInfinity();
             }
 
             ECCurve curve = getCurve();
+
+            ECFieldElement Y1 = this.y;
+            if (Y1.isZero()) 
+            {
+                return curve.getInfinity();
+            }
+
             int coord = curve.getCoordinateSystem();
 
             ECFieldElement X1 = this.x;
@@ -827,7 +825,11 @@ public abstract class ECPoint
 
         public ECPoint twicePlus(ECPoint b)
         {
-            if (this.isInfinity())
+            if (this == b)
+            {
+                return threeTimes();
+            }
+            if (isInfinity())
             {
                 return b;
             }
@@ -835,9 +837,11 @@ public abstract class ECPoint
             {
                 return twice();
             }
-            if (this == b)
+
+            ECFieldElement Y1 = this.y;
+            if (Y1.isZero()) 
             {
-                return threeTimes();
+                return b;
             }
 
             ECCurve curve = getCurve();
@@ -847,7 +851,7 @@ public abstract class ECPoint
             {
             case ECCurve.COORD_AFFINE:
             {
-                ECFieldElement X1 = this.x, Y1 = this.y;
+                ECFieldElement X1 = this.x;
                 ECFieldElement X2 = b.x, Y2 = b.y;
 
                 ECFieldElement dx = X2.subtract(X1), dy = Y2.subtract(Y1);
@@ -898,7 +902,7 @@ public abstract class ECPoint
 
         public ECPoint threeTimes()
         {
-            if (this.isInfinity() || this.y.isZero())
+            if (isInfinity() || this.y.isZero())
             {
                 return this;
             }
