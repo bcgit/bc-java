@@ -19,6 +19,12 @@ public abstract class ECCurve
     public static final int COORD_LAMBDA_PROJECTIVE = 6;
     public static final int COORD_SKEWED = 7;
 
+    public static int[] getAllCoordinateSystems()
+    {
+        return new int[]{ COORD_AFFINE, COORD_HOMOGENEOUS, COORD_JACOBIAN, COORD_JACOBIAN_CHUDNOVSKY,
+            COORD_JACOBIAN_MODIFIED, COORD_LAMBDA_AFFINE, COORD_LAMBDA_PROJECTIVE, COORD_SKEWED };
+    }
+
     public class Config
     {
         protected int coord;
