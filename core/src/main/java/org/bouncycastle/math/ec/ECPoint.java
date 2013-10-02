@@ -1218,7 +1218,7 @@ public abstract class ECPoint
          */
         public ECPoint.F2m addSimple(ECPoint.F2m b)
         {
-            if (this.isInfinity())
+            if (isInfinity())
             {
                 return b;
             }
@@ -1262,6 +1262,8 @@ public abstract class ECPoint
             {
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
                 ECFieldElement L2 = b.y, Z2 = b.zs[0];
+
+                // TODO Special case handling for Xi == 0
 
                 boolean Z1IsOne = Z1.bitLength() == 1;
                 ECFieldElement U2 = X2, S2 = L2;
@@ -1349,21 +1351,16 @@ public abstract class ECPoint
             return addSimple((ECPoint.F2m)b.negate());
         }
 
-        /* (non-Javadoc)
-         * @see org.bouncycastle.math.ec.ECPoint#twice()
-         */
         public ECPoint twice()
         {
-            if (this.isInfinity()) 
+            if (isInfinity()) 
             {
-                // Twice identity element (point at infinity) is identity
                 return this;
             }
 
             ECCurve curve = getCurve();
 
             ECFieldElement X1 = this.x;
-
             if (X1.isZero()) 
             {
                 // A point with X == 0 is it's own additive inverse
@@ -1406,6 +1403,68 @@ public abstract class ECPoint
             default:
             {
                 throw new UnsupportedOperationException("unsupported coordinate system");
+            }
+            }
+        }
+
+        public ECPoint twicePlus(ECPoint b)
+        {
+            if (isInfinity()) 
+            {
+                return b;
+            }
+            if (b.isInfinity())
+            {
+                return twice();
+            }
+
+            ECCurve curve = getCurve();
+
+            ECFieldElement X1 = this.x;
+            if (X1.isZero()) 
+            {
+                // A point with X == 0 is it's own additive inverse
+                return b;
+            }
+
+            int coord = curve.getCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // TODO Special case handling for X2 == 0
+
+                // NOTE: twicePlus() only optimized for affine argument
+                ECFieldElement Z2 = b.zs[0];
+                if (Z2.bitLength() != 1)
+                {
+                    return twice().add(b);
+                }
+
+                ECFieldElement L1 = this.y, Z1 = this.zs[0];
+                ECFieldElement X2 = b.x, L2 = b.y;
+
+                ECFieldElement X1Sq = X1.square();
+                ECFieldElement L1Sq = L1.square();
+                ECFieldElement Z1Sq = Z1.square();
+                ECFieldElement L1Z1 = L1.multiply(Z1);
+
+                ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
+                ECFieldElement L2plus1 = L2.addOne();
+                ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiply(T).add(X1Sq.multiply(Z1Sq));
+                ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
+                ECFieldElement B = X2Z1Sq.add(T).square();
+
+                ECFieldElement X3 = A.square().multiply(X2Z1Sq);
+                ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
+                ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
+
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
+            }
+            default:
+            {
+                return twice().add(b);
             }
             }
         }
