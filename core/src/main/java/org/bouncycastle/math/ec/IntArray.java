@@ -240,10 +240,10 @@ class IntArray
         return new BigInteger(1, barr);
     }
 
-    private static int shiftLeftQuick(int[] x, int count)
+    private static int shiftLeftQuick(int[] x)
     {
         int prev = 0;
-        for (int i = 0; i < count; ++i)
+        for (int i = 0; i < x.length; ++i)
         {
             int next = x[i];
             x[i] = (next << 1) | prev;
@@ -295,6 +295,18 @@ class IntArray
         m_ints[otherUsedLen + words] ^= prev;
     }
 
+    private static long addShiftedByBitsQuick(int[] x, int[] y, int count, int shift)
+    {
+        int shiftInv = 32 - shift, prev = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            int next = y[i];
+            x[i] ^= (next << shift) | prev;
+            prev = next >>> shiftInv;
+        }
+        return prev;
+    }
+
     public void addShiftedByWords(IntArray other, int words)
     {
         int otherUsedLen = other.getUsedLength();
@@ -315,11 +327,19 @@ class IntArray
         }
     }
 
-    private void addShiftedByWordsQuick(int[] x, int xOff, int[] y, int count)
+    private static void addShiftedByWordsQuick(int[] x, int xOff, int[] y)
+    {
+        for (int i = 0; i < y.length; ++i)
+        {
+            x[xOff + i] ^= y[i];
+        }
+    }
+
+    private static void addQuick(int[] x, int[] y, int count)
     {
         for (int i = 0; i < count; ++i)
         {
-            x[xOff + i] ^= y[i];
+            x[i] ^= y[i];
         }
     }
 
@@ -413,42 +433,88 @@ class IntArray
 
     public IntArray multiply(IntArray other, int m)
     {
-        int usedLen = getUsedLength();
-        if (usedLen == 0)
+        int aLen = getUsedLength();
+        if (aLen == 0)
         {
             return new IntArray(1);
         }
 
-        int otherUsedLen = other.getUsedLength();
-        if (otherUsedLen == 0)
+        int bLen = other.getUsedLength();
+        if (bLen == 0)
         {
             return new IntArray(1);
         }
 
-        int[] a = m_ints;
-        int bLen = otherUsedLen + 1;
-        int[] b = other.resizedInts(bLen);
-        int[] c = new int[usedLen + otherUsedLen];
+        IntArray A = this, B = other;
+        if (aLen > bLen)
+        {
+            A = other; B = this;
+            int tmp = aLen; aLen = bLen; bLen = tmp;
+        }
 
-        int testBit = 1;
+        if (aLen == 1)
+        {
+            int a = A.m_ints[0];
+            int[] b = B.m_ints;
+            int[] c = new int[aLen + bLen];
+            if ((a & 1) != 0)
+            {
+                addQuick(c, b, bLen);
+            }
+            int k = 1;
+            while ((a >>>= 1) != 0)
+            {
+                if ((a & 1) != 0)
+                {
+                    addShiftedByBitsQuick(c, b, bLen, k);
+                }
+                ++k;
+            }
+            return new IntArray(c);
+        }
+
+        if ((B.m_ints[bLen - 1] >>> 17) != 0)
+        {
+            ++bLen;
+        }
+
+        int cLen = aLen + bLen;
+
+        int[] a = A.m_ints;
+        int[] b = B.resizedInts(bLen);
+        int[] c0 = new int[cLen];
+        int[] c1 = new int[cLen];
+
+        int bit1 = 1 << 16;
+
         for (;;)
         {
-            for (int j = 0; j < usedLen; ++j)
+            int bit2 = bit1 >>> 16;
+
+            for (int aPos = 0; aPos < aLen; ++aPos)
             {
-                // If the kth bit of a[j] is set...
-                if ((a[j] & testBit) != 0)
+                int aVal = a[aPos];
+                if ((aVal & bit1) != 0)
                 {
-                    addShiftedByWordsQuick(c, j, b, bLen);
+                    addShiftedByWordsQuick(c1, aPos, b);
+                }
+                if ((aVal & bit2) != 0)
+                {
+                    addShiftedByWordsQuick(c0, aPos, b);
                 }
             }
-            if ((testBit <<= 1) == 0)
+
+            if ((bit1 <<= 1) == 0)
             {
                 break;
             }
 
-            shiftLeftQuick(b, bLen);
+            shiftLeftQuick(b);
         }
-        return new IntArray(c);
+
+        addShiftedByBitsQuick(c0, c1, cLen, 16);
+
+        return new IntArray(c0);
     }
 
     // public IntArray multiplyLeftToRight(IntArray other, int m) {
