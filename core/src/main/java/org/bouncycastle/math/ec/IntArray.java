@@ -577,6 +577,12 @@ class IntArray
         // Input: A nonzero polynomial a(z) of degree at most m-1
         // Output: a(z)^(-1) mod f(z)
 
+        int uzDegree = degree();
+        if (uzDegree == 1)
+        {
+            return this;
+        }
+
         // u(z) := a(z)
         IntArray uz = (IntArray)clone();
 
@@ -598,10 +604,10 @@ class IntArray
         g1z.setBit(0);
         IntArray g2z = new IntArray(t);
 
-        while (!uz.isZero())
+        while (uzDegree != 0)
         {
             // j := deg(u(z)) - deg(v(z))
-            int j = uz.degree() - vz.degree();
+            int j = uzDegree - vz.degree();
 
             // If j < 0 then: u(z) <-> v(z), g1(z) <-> g2(z), j := -j
             if (j < 0) 
@@ -624,10 +630,14 @@ class IntArray
             // = deg(u(z))
             // uz = uz.xor(vz.shiftLeft(j));
             uz.addShiftedByBits(vz, j);
+            uzDegree = uz.degree();
 
             // g1(z) := g1(z) + z^j * g2(z)
 //            g1z = g1z.xor(g2z.shiftLeft(j));
-            g1z.addShiftedByBits(g2z, j);
+            if (uzDegree != 0)
+            {
+                g1z.addShiftedByBits(g2z, j);
+            }
         }
         return g2z;
     }
