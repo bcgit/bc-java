@@ -1016,9 +1016,9 @@ public abstract class ECFieldElement
         private int[] ks;
 
         /**
-         * The <code>IntArray</code> holding the bits.
+         * The <code>LongArray</code> holding the bits.
          */
-        private IntArray x;
+        private LongArray x;
 
         /**
          * Constructor for PPB.
@@ -1065,7 +1065,7 @@ public abstract class ECFieldElement
             }
 
             this.m = m;
-            this.x = new IntArray(x);
+            this.x = new LongArray(x);
         }
 
         /**
@@ -1084,7 +1084,7 @@ public abstract class ECFieldElement
             this(m, k, 0, 0, x);
         }
 
-        private F2m(int m, int[] ks, IntArray x)
+        private F2m(int m, int[] ks, LongArray x)
         {
             this.m = m;
             this.representation = (ks.length == 1) ? TPB : PPB;
@@ -1163,7 +1163,7 @@ public abstract class ECFieldElement
             // No check performed here for performance reasons. Instead the
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
-            IntArray iarrClone = (IntArray)this.x.clone();
+            LongArray iarrClone = (LongArray)this.x.clone();
             F2m bF2m = (F2m)b;
             iarrClone.addShiftedByWords(bF2m.x, 0);
             return new F2m(m, ks, iarrClone);
@@ -1171,7 +1171,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement addOne()
         {
-            IntArray iarrClone = (IntArray)this.x.clone();
+            LongArray iarrClone = (LongArray)this.x.clone();
             iarrClone.addOneShifted(0);
             return new F2m(m, ks, iarrClone);
         }
@@ -1184,7 +1184,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement multiply(final ECFieldElement b)
         {
-            // Right-to-left comb multiplication in the IntArray
+            // Right-to-left comb multiplication in the LongArray
             // Input: Binary polynomials a(z) and b(z) of degree at most m-1
             // Output: c(z) = a(z) * b(z) mod f(z)
 
@@ -1192,7 +1192,7 @@ public abstract class ECFieldElement
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
             F2m bF2m = (F2m)b;
-            IntArray mult = x.multiply(bF2m.x, m);
+            LongArray mult = x.multiply(bF2m.x, m);
             mult.reduce(m, ks);
             return new F2m(m, ks, mult);
         }
@@ -1212,7 +1212,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement square()
         {
-            IntArray squared = x.square(m);
+            LongArray squared = x.square(m);
             squared.reduce(m, ks);
             return new F2m(m, ks, squared);
         }
