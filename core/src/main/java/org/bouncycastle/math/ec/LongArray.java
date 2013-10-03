@@ -678,28 +678,18 @@ class LongArray
         while (pos < _2len)
         {
             long mi = m_ints[pos >>> 1];
-
-            {
-                int mi00 = (int)mi;
-                int r00 = square16(mi00 & 0xFFFF);
-                int r32 = square16(mi00 >>> 16);
-                r[pos++] = (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
-            }
-
-            {
-                int mi32 = (int)(mi >>> 32);
-                int r00 = square16(mi32 & 0xFFFF);
-                int r32 = square16(mi32 >>> 16);
-                r[pos++] = (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
-            }
+            r[pos++] = square32((int)mi);
+            r[pos++] = square32((int)(mi >>> 32));
         }
 
         return new LongArray(r);
     }
 
-    private static int square16(int n)
+    private static long square32(int n)
     {
-        return EXPANSION_TABLE[n & 0xFF] | EXPANSION_TABLE[n >>> 8] << 16;
+        int r00 = EXPANSION_TABLE[n & 0xFF] | EXPANSION_TABLE[(n >>> 8) & 0xFF] << 16;
+        int r32 = EXPANSION_TABLE[(n >>> 16) & 0xFF] | EXPANSION_TABLE[(n >>> 24) & 0xFF] << 16;
+        return (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
     }
 
     public LongArray modInverse(int m, int[] ks)
