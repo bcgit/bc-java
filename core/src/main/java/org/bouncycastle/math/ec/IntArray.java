@@ -6,11 +6,13 @@ import java.math.BigInteger;
 
 class IntArray
 {
+//    private static int DEINTERLEAVE_MASK = 0x55555555;
+
     /*
      * This expands 8 bit indices into 16 bit contents, by inserting 0s between bits.
      * In a binary field, this operation is the same as squaring an 8 bit number.
      */
-    private static final int[] EXPANSION_TABLE = new int[] { 0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014,
+    private static final int[] INTERLEAVE_TABLE = new int[] { 0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014,
         0x0015, 0x0040, 0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055, 0x0100, 0x0101, 0x0104, 0x0105, 0x0110,
         0x0111, 0x0114, 0x0115, 0x0140, 0x0141, 0x0144, 0x0145, 0x0150, 0x0151, 0x0154, 0x0155, 0x0400, 0x0401, 0x0404,
         0x0405, 0x0410, 0x0411, 0x0414, 0x0415, 0x0440, 0x0441, 0x0444, 0x0445, 0x0450, 0x0451, 0x0454, 0x0455, 0x0500,
@@ -251,7 +253,7 @@ class IntArray
         return new BigInteger(1, barr);
     }
 
-    private static int shiftLeftQuick(int[] x, int count)
+    private static int shiftLeft(int[] x, int count)
     {
         int prev = 0;
         for (int i = 0; i < count; ++i)
@@ -273,7 +275,7 @@ class IntArray
         m_ints[shift] ^= 1;
     }
 
-    public void addShiftedByBits(IntArray other, int bits)
+    private void addShiftedByBits(IntArray other, int bits)
     {
         int words = bits >>> 5;
         int shift = bits & 0x1F;
@@ -306,13 +308,25 @@ class IntArray
         m_ints[otherUsedLen + words] ^= prev;
     }
 
-    private static long addShiftedByBitsQuick(int[] x, int[] y, int count, int shift)
+    private static int addShiftedByBits(int[] x, int[] y, int count, int shift)
     {
         int shiftInv = 32 - shift, prev = 0;
         for (int i = 0; i < count; ++i)
         {
             int next = y[i];
             x[i] ^= (next << shift) | prev;
+            prev = next >>> shiftInv;
+        }
+        return prev;
+    }
+
+    private static int addShiftedByBits(int[] x, int xOff, int[] y, int yOff, int count, int shift)
+    {
+        int shiftInv = 32 - shift, prev = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            int next = y[yOff + i];
+            x[xOff + i] ^= (next << shift) | prev;
             prev = next >>> shiftInv;
         }
         return prev;
@@ -338,7 +352,7 @@ class IntArray
         }
     }
 
-    private static void addShiftedByWordsQuick(int[] x, int xOff, int[] y, int count)
+    private static void addShiftedByWords(int[] x, int xOff, int[] y, int count)
     {
         for (int i = 0; i < count; ++i)
         {
@@ -346,11 +360,21 @@ class IntArray
         }
     }
 
-    private static void addQuick(int[] x, int[] y, int count)
+    private static void add(int[] x, int[] y, int count)
     {
         for (int i = 0; i < count; ++i)
         {
             x[i] ^= y[i];
+        }
+    }
+
+    private static void distribute(int[] x, int dst1, int dst2, int src, int count)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            int v = x[src + i];
+            x[dst1 + i] ^= v;
+            x[dst2 + i] ^= v;
         }
     }
 
@@ -475,99 +499,112 @@ class IntArray
             int[] c = new int[aLen + bLen];
             if ((a & 1) != 0)
             {
-                addQuick(c, b, bLen);
+                add(c, b, bLen);
             }
             int k = 1;
             while ((a >>>= 1) != 0)
             {
                 if ((a & 1) != 0)
                 {
-                    addShiftedByBitsQuick(c, b, bLen, k);
+                    addShiftedByBits(c, b, bLen, k);
                 }
                 ++k;
             }
             return new IntArray(c);
         }
 
-        if ((B.m_ints[bLen - 1] >>> 17) != 0)
+        // TODO It'd be better to be able to tune the width directly (need support for interleaving arbitrary widths)
+        int complexity = aLen <= 8 ? 1 : 2;
+
+        int width = 1 << complexity;
+        int shifts = (32 >>> complexity);
+
+        int bExt = bLen;
+        if ((B.m_ints[bLen - 1] >>> (33 - shifts)) != 0)
         {
-            ++bLen;
+            ++bExt;
         }
 
-        int cLen = aLen + bLen;
+        int cLen = bExt + aLen;
 
-        int[] a = A.m_ints;
-        int[] b = B.resizedInts(bLen);
-        int[] c0 = new int[cLen];
-        int[] c1 = new int[cLen];
-        int[] c10 = new int[cLen];
+        int[] c = new int[cLen << width];
+        System.arraycopy(B.m_ints, 0, c, 0, bLen);
+        interleave(A.m_ints, 0, c, bExt, aLen, complexity);
 
-        int bit1 = 1 << 16;
+        int[] ci = new int[1 << width];
+        for (int i = 1; i < ci.length; ++i)
+        {
+            ci[i] = ci[i - 1] + cLen;
+        }
 
+        int MASK = (1 << width) - 1;
+
+        int k = 0;
         for (;;)
         {
-            int bit0 = bit1 >>> 16;
-            int bit10 = bit1 | bit0;
-
             for (int aPos = 0; aPos < aLen; ++aPos)
             {
-                int aVal = a[aPos];
-
-                if ((aVal & bit10) == bit10)
+                int index = (c[bExt + aPos] >>> k) & MASK;
+                if (index != 0)
                 {
-                    addShiftedByWordsQuick(c10, aPos, b, bLen);
-                }
-                else if ((aVal & bit1) != 0)
-                {
-                    addShiftedByWordsQuick(c1, aPos, b, bLen);
-                }
-                else if ((aVal & bit0) != 0)
-                {
-                    addShiftedByWordsQuick(c0, aPos, b, bLen);
+                    addShiftedByWords(c, aPos + ci[index], c, bExt);
                 }
             }
 
-            if ((bit1 <<= 1) == 0)
+            if ((k += width) >= 32)
             {
                 break;
             }
 
-            shiftLeftQuick(b, bLen);
+            shiftLeft(c, bExt);
         }
 
-        addQuick(c1, c10, cLen);
-        addQuick(c0, c10, cLen);
+        int ciPos = ci.length, pow2 = ciPos >>> 1, offset = 32;
+        while (--ciPos > 1)
+        {
+            if (ciPos == pow2)
+            {
+                offset -= shifts;
+                addShiftedByBits(c, ci[1], c, ci[pow2], cLen, offset);
+                pow2 >>>= 1;
+            }
+            else
+            {
+                distribute(c, ci[pow2], ci[ciPos - pow2], ci[ciPos], cLen);
+            }
+        }
 
-        addShiftedByBitsQuick(c0, c1, cLen, 16);
-
-        return new IntArray(c0);
+        // TODO reduce in place to avoid extra copying
+        IntArray p = new IntArray(cLen);
+        System.arraycopy(c, ci[1], p.m_ints, 0, cLen);
+        return p;
     }
 
-    // public IntArray multiplyLeftToRight(IntArray other, int m) {
-    // // Lenght of c is 2m bits rounded up to the next int (32 bit)
-    // int t = (m + 31) / 32;
-    // if (m_ints.length < t) {
-    // m_ints = resizedInts(t);
-    // }
-    //
-    // IntArray b = new IntArray(other.resizedInts(other.getLength() + 1));
-    // IntArray c = new IntArray((m + m + 31) / 32);
-    // // IntArray c = new IntArray(t + t);
-    // int testBit = 1 << 31;
-    // for (int k = 31; k >= 0; k--) {
-    // for (int j = 0; j < t; j++) {
-    // if ((m_ints[j] & testBit) != 0) {
-    // // The kth bit of m_ints[j] is set
-    // c.addShifted(b, j);
-    // }
-    // }
-    // testBit >>>= 1;
-    // if (k > 0) {
-    // c.shiftLeft();
-    // }
-    // }
-    // return c;
-    // }
+//    private static void deInterleave(int[] x, int xOff, int[] z, int zOff, int count, int rounds)
+//    {
+//        for (int i = 0; i < count; ++i)
+//        {
+//            z[zOff + i] = deInterleave(x[zOff + i], rounds);
+//        }
+//    }
+//
+//    private static int deInterleave(int x, int rounds)
+//    {
+//        while (--rounds >= 0)
+//        {
+//            x = deInterleave16(x & DEINTERLEAVE_MASK) | (deInterleave16((x >>> 1) & DEINTERLEAVE_MASK) << 16);
+//        }
+//        return x;
+//    }
+//
+//    private static int deInterleave16(int x)
+//    {
+//        x = (x | (x >>> 1)) & 0x33333333;
+//        x = (x | (x >>> 2)) & 0x0F0F0F0F;
+//        x = (x | (x >>> 4)) & 0x00FF00FF;
+//        x = (x | (x >>> 8)) & 0x0000FFFF;
+//        return x;
+//    }
 
     public void reduce(int m, int[] ks)
     {
@@ -657,16 +694,33 @@ class IntArray
         while (pos < _2len)
         {
             int mi = m_ints[pos >>> 1];
-            r[pos++] = square16(mi & 0xFFFF);
-            r[pos++] = square16(mi >>> 16);
+            r[pos++] = interleave16(mi & 0xFFFF);
+            r[pos++] = interleave16(mi >>> 16);
         }
 
         return new IntArray(r);
     }
 
-    private static int square16(int n)
+    private static void interleave(int[] x, int xOff, int[] z, int zOff, int count, int rounds)
     {
-        return EXPANSION_TABLE[n & 0xFF] | EXPANSION_TABLE[n >>> 8] << 16;
+        for (int i = 0; i < count; ++i)
+        {
+            z[zOff + i] = interleave(x[xOff + i], rounds);
+        }
+    }
+
+    private static int interleave(int x, int rounds)
+    {
+        while (--rounds >= 0)
+        {
+            x = interleave16(x & 0xFFFF) | (interleave16(x >>> 16) << 1);
+        }
+        return x;
+    }
+
+    private static int interleave16(int n)
+    {
+        return INTERLEAVE_TABLE[n & 0xFF] | INTERLEAVE_TABLE[n >>> 8] << 16;
     }
 
     public IntArray modInverse(int m, int[] ks)
