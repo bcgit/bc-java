@@ -500,21 +500,26 @@ class IntArray
         int[] b = B.resizedInts(bLen);
         int[] c0 = new int[cLen];
         int[] c1 = new int[cLen];
+        int[] c01 = new int[cLen];
 
         int bit1 = 1 << 16;
 
         for (;;)
         {
-            int bit2 = bit1 >>> 16;
+            int bit0 = bit1 >>> 16, bit01 = bit0 | bit1;
 
             for (int aPos = 0; aPos < aLen; ++aPos)
             {
                 int aVal = a[aPos];
-                if ((aVal & bit1) != 0)
+                if ((aVal & bit01) == bit01)
+                {
+                    addShiftedByWordsQuick(c01, aPos, b);
+                }
+                else if ((aVal & bit1) != 0)
                 {
                     addShiftedByWordsQuick(c1, aPos, b);
                 }
-                if ((aVal & bit2) != 0)
+                else if ((aVal & bit0) != 0)
                 {
                     addShiftedByWordsQuick(c0, aPos, b);
                 }
@@ -527,6 +532,9 @@ class IntArray
 
             shiftLeftQuick(b);
         }
+
+        addQuick(c1, c01, cLen);
+        addQuick(c0, c01, cLen);
 
         addShiftedByBitsQuick(c0, c1, cLen, 16);
 
