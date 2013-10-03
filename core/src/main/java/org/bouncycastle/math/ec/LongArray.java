@@ -521,41 +521,63 @@ class LongArray
         long[] c1 = new long[cLen];
         long[] c2 = new long[cLen];
         long[] c3 = new long[cLen];
+        long[] c10 = new long[cLen];
+        long[] c32 = new long[cLen];
 
-        long bit1 = 1L << 48;
+        long bit3 = 1L << 48;
 
         for (;;)
         {
-            long bit2 = bit1 >>> 16, bit3 = bit2 >>> 16, bit4 = bit3 >>> 16;
+            long bit2 = bit3 >>> 16, bit1 = bit2 >>> 16, bit0 = bit1 >>> 16;
+            long bit32 = bit3 | bit2, bit10 = bit1 | bit0;
 
             for (int aPos = 0; aPos < aLen; ++aPos)
             {
                 long aVal = a[aPos];
-                if ((aVal & bit1) != 0)
+
+                if ((aVal & bit32) == bit32)
+                {
+                    addShiftedByWordsQuick(c32, aPos, b);
+                }
+                else
+                if ((aVal & bit3) != 0)
                 {
                     addShiftedByWordsQuick(c3, aPos, b);
                 }
+                else
                 if ((aVal & bit2) != 0)
                 {
                     addShiftedByWordsQuick(c2, aPos, b);
                 }
-                if ((aVal & bit3) != 0)
+
+                if ((aVal & bit10) == bit10)
+                {
+                    addShiftedByWordsQuick(c10, aPos, b);
+                }
+                else
+                if ((aVal & bit1) != 0)
                 {
                     addShiftedByWordsQuick(c1, aPos, b);
                 }
-                if ((aVal & bit4) != 0)
+                else
+                if ((aVal & bit0) != 0)
                 {
                     addShiftedByWordsQuick(c0, aPos, b);
                 }
             }
 
-            if ((bit1 <<= 1) == 0L)
+            if ((bit3 <<= 1) == 0L)
             {
                 break;
             }
 
             shiftLeftQuick(b);
         }
+
+        addQuick(c3, c32, cLen);
+        addQuick(c2, c32, cLen);
+        addQuick(c1, c10, cLen);
+        addQuick(c0, c10, cLen);
 
         addShiftedByBitsQuick(c0, c1, cLen, 16);
         addShiftedByBitsQuick(c0, c2, cLen, 32);
