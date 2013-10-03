@@ -79,7 +79,7 @@ class IntArray
             throw new IllegalArgumentException("invalid F2m field value");
         }
 
-        if (bigInt.equals(ECConstants.ZERO))
+        if (bigInt.signum() == 0)
         {
             m_ints = new int[] { 0 };
             return;
@@ -128,8 +128,15 @@ class IntArray
 
     public boolean isZero()
     {
-        return m_ints.length == 0
-            || (m_ints[0] == 0 && getUsedLength() == 0);
+        int[] a = m_ints;
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] != 0)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public int getUsedLength()
@@ -139,15 +146,18 @@ class IntArray
 
     public int getUsedLengthFrom(int from)
     {
+        int[] a = m_ints;
+        from = Math.min(from, a.length);
+
         if (from < 1)
         {
             return 0;
         }
 
         // Check if first element will act as sentinel
-        if (m_ints[0] != 0)
+        if (a[0] != 0)
         {
-            while (m_ints[--from] == 0)
+            while (a[--from] == 0)
             {
             }
             return from + 1;
@@ -155,7 +165,7 @@ class IntArray
 
         do
         {
-            if (m_ints[--from] != 0)
+            if (a[--from] != 0)
             {
                 return from + 1;
             }
@@ -178,19 +188,20 @@ class IntArray
         }
         while (w == 0);
 
-        int t = w >>> 16, k;
+        return (i << 5) + bitLength(w);
+    }
+
+    private static int bitLength(int w)
+    {
+        int t = w >>> 16;
         if (t == 0)
         {
             t = w >>> 8;
-            k = (t == 0) ? bitLengths[w] : 8 + bitLengths[t];
-        }
-        else
-        {
-            int u = t >>> 8;
-            k = (u == 0) ? 16 + bitLengths[t] : 24 + bitLengths[u];
+            return (t == 0) ? bitLengths[w] : 8 + bitLengths[t];
         }
 
-        return (i << 5) + k;
+        int u = t >>> 8;
+        return (u == 0) ? 16 + bitLengths[t] : 24 + bitLengths[u];
     }
 
     private int[] resizedInts(int newLen)
@@ -389,6 +400,11 @@ class IntArray
             result |= m_ints[n] << (32 - shift);
         }
         return result;
+    }
+
+    public boolean testBitZero()
+    {
+        return m_ints.length > 0 && (m_ints[0] & 1) != 0;
     }
 
     public boolean testBit(int n)
@@ -618,7 +634,13 @@ class IntArray
 
     public IntArray square(int m)
     {
-        int len = getUsedLength(), _2len = len << 1;
+        int len = getUsedLength();
+        if (len == 0)
+        {
+            return this;
+        }
+
+        int _2len = len << 1;
         int[] r = new int[_2len];
 
         int pos = 0;

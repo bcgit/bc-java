@@ -79,7 +79,7 @@ class LongArray
             throw new IllegalArgumentException("invalid F2m field value");
         }
 
-        if (bigInt.equals(ECConstants.ZERO))
+        if (bigInt.signum() == 0)
         {
             m_ints = new long[] { 0L };
             return;
@@ -128,8 +128,15 @@ class LongArray
 
     public boolean isZero()
     {
-        return m_ints.length == 0
-            || (m_ints[0] == 0L && getUsedLength() == 0);
+        long[] a = m_ints;
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] != 0L)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public int getUsedLength()
@@ -139,15 +146,18 @@ class LongArray
 
     public int getUsedLengthFrom(int from)
     {
+        long[] a = m_ints;
+        from = Math.min(from, a.length);
+
         if (from < 1)
         {
             return 0;
         }
 
         // Check if first element will act as sentinel
-        if (m_ints[0] != 0)
+        if (a[0] != 0)
         {
-            while (m_ints[--from] == 0)
+            while (a[--from] == 0)
             {
             }
             return from + 1;
@@ -155,7 +165,7 @@ class LongArray
 
         do
         {
-            if (m_ints[--from] != 0)
+            if (a[--from] != 0)
             {
                 return from + 1;
             }
@@ -179,6 +189,11 @@ class LongArray
         }
         while (w == 0);
 
+        return (i << 6) + bitLength(w);
+    }
+
+    private static int bitLength(long w)
+    {
         int u = (int)(w >>> 32), b;
         if (u == 0)
         {
@@ -202,7 +217,7 @@ class LongArray
             k = (v == 0) ? 16 + bitLengths[t] : 24 + bitLengths[v];
         }
 
-        return (i << 6) + b + k;
+        return b + k;
     }
 
     private long[] resizedInts(int newLen)
@@ -404,6 +419,11 @@ class LongArray
             result |= m_ints[n] << (64 - shift);
         }
         return result;
+    }
+
+    public boolean testBitZero()
+    {
+        return m_ints.length > 0 && (m_ints[0] & 1L) != 0;
     }
 
     public boolean testBit(int n)
@@ -645,7 +665,13 @@ class LongArray
 
     public LongArray square(int m)
     {
-        int len = getUsedLength(), _2len = len << 1;
+        int len = getUsedLength();
+        if (len == 0)
+        {
+            return this;
+        }
+
+        int _2len = len << 1;
         long[] r = new long[_2len];
 
         int pos = 0;
