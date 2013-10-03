@@ -268,10 +268,10 @@ class LongArray
         return new BigInteger(1, barr);
     }
 
-    private static long shiftLeftQuick(long[] x)
+    private static long shiftLeftQuick(long[] x, int count)
     {
         long prev = 0;
-        for (int i = 0; i < x.length; ++i)
+        for (int i = 0; i < count; ++i)
         {
             long next = x[i];
             x[i] = (next << 1) | prev;
@@ -357,9 +357,9 @@ class LongArray
         }
     }
 
-    private static void addShiftedByWordsQuick(long[] x, int xOff, long[] y)
+    private static void addShiftedByWordsQuick(long[] x, int xOff, long[] y, int count)
     {
-        for (int i = 0; i < y.length; ++i)
+        for (int i = 0; i < count; ++i)
         {
             x[xOff + i] ^= y[i];
         }
@@ -537,32 +537,32 @@ class LongArray
 
                 if ((aVal & bit32) == bit32)
                 {
-                    addShiftedByWordsQuick(c32, aPos, b);
+                    addShiftedByWordsQuick(c32, aPos, b, bLen);
                 }
                 else
                 if ((aVal & bit3) != 0)
                 {
-                    addShiftedByWordsQuick(c3, aPos, b);
+                    addShiftedByWordsQuick(c3, aPos, b, bLen);
                 }
                 else
                 if ((aVal & bit2) != 0)
                 {
-                    addShiftedByWordsQuick(c2, aPos, b);
+                    addShiftedByWordsQuick(c2, aPos, b, bLen);
                 }
 
                 if ((aVal & bit10) == bit10)
                 {
-                    addShiftedByWordsQuick(c10, aPos, b);
+                    addShiftedByWordsQuick(c10, aPos, b, bLen);
                 }
                 else
                 if ((aVal & bit1) != 0)
                 {
-                    addShiftedByWordsQuick(c1, aPos, b);
+                    addShiftedByWordsQuick(c1, aPos, b, bLen);
                 }
                 else
                 if ((aVal & bit0) != 0)
                 {
-                    addShiftedByWordsQuick(c0, aPos, b);
+                    addShiftedByWordsQuick(c0, aPos, b, bLen);
                 }
             }
 
@@ -571,7 +571,7 @@ class LongArray
                 break;
             }
 
-            shiftLeftQuick(b);
+            shiftLeftQuick(b, bLen);
         }
 
         addQuick(c3, c32, cLen);

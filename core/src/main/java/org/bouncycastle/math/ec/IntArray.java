@@ -251,10 +251,10 @@ class IntArray
         return new BigInteger(1, barr);
     }
 
-    private static int shiftLeftQuick(int[] x)
+    private static int shiftLeftQuick(int[] x, int count)
     {
         int prev = 0;
-        for (int i = 0; i < x.length; ++i)
+        for (int i = 0; i < count; ++i)
         {
             int next = x[i];
             x[i] = (next << 1) | prev;
@@ -338,9 +338,9 @@ class IntArray
         }
     }
 
-    private static void addShiftedByWordsQuick(int[] x, int xOff, int[] y)
+    private static void addShiftedByWordsQuick(int[] x, int xOff, int[] y, int count)
     {
-        for (int i = 0; i < y.length; ++i)
+        for (int i = 0; i < count; ++i)
         {
             x[xOff + i] ^= y[i];
         }
@@ -515,15 +515,15 @@ class IntArray
 
                 if ((aVal & bit10) == bit10)
                 {
-                    addShiftedByWordsQuick(c10, aPos, b);
+                    addShiftedByWordsQuick(c10, aPos, b, bLen);
                 }
                 else if ((aVal & bit1) != 0)
                 {
-                    addShiftedByWordsQuick(c1, aPos, b);
+                    addShiftedByWordsQuick(c1, aPos, b, bLen);
                 }
                 else if ((aVal & bit0) != 0)
                 {
-                    addShiftedByWordsQuick(c0, aPos, b);
+                    addShiftedByWordsQuick(c0, aPos, b, bLen);
                 }
             }
 
@@ -532,7 +532,7 @@ class IntArray
                 break;
             }
 
-            shiftLeftQuick(b);
+            shiftLeftQuick(b, bLen);
         }
 
         addQuick(c1, c10, cLen);
