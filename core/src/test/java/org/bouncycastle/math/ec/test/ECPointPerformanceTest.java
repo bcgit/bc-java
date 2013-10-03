@@ -105,16 +105,35 @@ public class ECPointPerformanceTest extends TestCase
 //            randMult(name);
 //        }
         
+
+        randMult("sect113r1");
+        randMult("sect113r2");
+        randMult("sect131r1");
+        randMult("sect131r2");
         randMult("sect163k1");
+        randMult("sect163r1");
         randMult("sect163r2");
+        randMult("sect193r1");
+        randMult("sect193r2");
         randMult("sect233k1");
         randMult("sect233r1");
+        randMult("sect239k1");
         randMult("sect283k1");
         randMult("sect283r1");
         randMult("sect409k1");
         randMult("sect409r1");
         randMult("sect571k1");
         randMult("sect571r1");
+
+        randMult("secp112r1");
+        randMult("secp112r2");
+        randMult("secp128r1");
+        randMult("secp128r2");
+        randMult("secp160k1");
+        randMult("secp160r1");
+        randMult("secp160r2");
+        randMult("secp192k1");
+        randMult("secp192r1");
         randMult("secp224k1");
         randMult("secp224r1");
         randMult("secp256k1");
