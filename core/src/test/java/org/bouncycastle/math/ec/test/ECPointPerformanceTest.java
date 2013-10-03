@@ -24,13 +24,13 @@ public class ECPointPerformanceTest extends TestCase
 
     private void randMult(final String curveName) throws Exception
     {
-        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-        random.setSeed(System.currentTimeMillis());
-
         X9ECParameters spec = ECNamedCurveTable.getByName(curveName);
         ECCurve C = spec.getCurve();
         ECPoint G = (ECPoint) spec.getG();
         BigInteger n = spec.getN();
+
+        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+        random.setSeed(System.currentTimeMillis());
 
         System.out.println(curveName);
 
