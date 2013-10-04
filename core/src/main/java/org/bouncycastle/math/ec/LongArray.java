@@ -1144,10 +1144,6 @@ class LongArray
         {
             x = interleave2_32to64((int)x) | interleave2_32to64((int)(x >>> 32)) << 1;
         }
-//        while (--rounds >= 0)
-//        {
-//            x = interleave2_32to64((int)x) | interleave2_32to64((int)(x >>> 32)) << 1;
-//        }
         return x;
     }
 
