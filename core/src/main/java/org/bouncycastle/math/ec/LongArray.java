@@ -9,10 +9,10 @@ class LongArray
 //    private static long DEINTERLEAVE_MASK = 0x5555555555555555L;
 
     /*
-     * This expands 8 bit indices into 16 bit contents, by inserting 0s between bits.
+     * This expands 8 bit indices into 16 bit contents (high bit 14), by inserting 0s between bits.
      * In a binary field, this operation is the same as squaring an 8 bit number.
      */
-    private static final int[] INTERLEAVE_TABLE = new int[]
+    private static final int[] INTERLEAVE2_TABLE = new int[]
     {
         0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014, 0x0015,
         0x0040, 0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055,
@@ -49,7 +49,7 @@ class LongArray
     };
 
     /*
-     * This expands 7 bit indices into 21 bit contents, by inserting 0s between bits.
+     * This expands 7 bit indices into 21 bit contents (high bit 18), by inserting 0s between bits.
      */
     private static final int[] INTERLEAVE3_TABLE = new  int[]
     {
@@ -72,7 +72,46 @@ class LongArray
     };
 
     /*
-     * This expands 6 bit indices into 30 bit contents, by inserting 0s between bits.
+     * This expands 8 bit indices into 32 bit contents (high bit 28), by inserting 0s between bits.
+     */
+    private static final int[] INTERLEAVE4_TABLE = new int[]
+    {
+        0x00000000, 0x00000001, 0x00000010, 0x00000011, 0x00000100, 0x00000101, 0x00000110, 0x00000111,
+        0x00001000, 0x00001001, 0x00001010, 0x00001011, 0x00001100, 0x00001101, 0x00001110, 0x00001111,
+        0x00010000, 0x00010001, 0x00010010, 0x00010011, 0x00010100, 0x00010101, 0x00010110, 0x00010111,
+        0x00011000, 0x00011001, 0x00011010, 0x00011011, 0x00011100, 0x00011101, 0x00011110, 0x00011111,
+        0x00100000, 0x00100001, 0x00100010, 0x00100011, 0x00100100, 0x00100101, 0x00100110, 0x00100111,
+        0x00101000, 0x00101001, 0x00101010, 0x00101011, 0x00101100, 0x00101101, 0x00101110, 0x00101111,
+        0x00110000, 0x00110001, 0x00110010, 0x00110011, 0x00110100, 0x00110101, 0x00110110, 0x00110111,
+        0x00111000, 0x00111001, 0x00111010, 0x00111011, 0x00111100, 0x00111101, 0x00111110, 0x00111111,
+        0x01000000, 0x01000001, 0x01000010, 0x01000011, 0x01000100, 0x01000101, 0x01000110, 0x01000111,
+        0x01001000, 0x01001001, 0x01001010, 0x01001011, 0x01001100, 0x01001101, 0x01001110, 0x01001111,
+        0x01010000, 0x01010001, 0x01010010, 0x01010011, 0x01010100, 0x01010101, 0x01010110, 0x01010111,
+        0x01011000, 0x01011001, 0x01011010, 0x01011011, 0x01011100, 0x01011101, 0x01011110, 0x01011111,
+        0x01100000, 0x01100001, 0x01100010, 0x01100011, 0x01100100, 0x01100101, 0x01100110, 0x01100111,
+        0x01101000, 0x01101001, 0x01101010, 0x01101011, 0x01101100, 0x01101101, 0x01101110, 0x01101111,
+        0x01110000, 0x01110001, 0x01110010, 0x01110011, 0x01110100, 0x01110101, 0x01110110, 0x01110111,
+        0x01111000, 0x01111001, 0x01111010, 0x01111011, 0x01111100, 0x01111101, 0x01111110, 0x01111111,
+        0x10000000, 0x10000001, 0x10000010, 0x10000011, 0x10000100, 0x10000101, 0x10000110, 0x10000111,
+        0x10001000, 0x10001001, 0x10001010, 0x10001011, 0x10001100, 0x10001101, 0x10001110, 0x10001111,
+        0x10010000, 0x10010001, 0x10010010, 0x10010011, 0x10010100, 0x10010101, 0x10010110, 0x10010111,
+        0x10011000, 0x10011001, 0x10011010, 0x10011011, 0x10011100, 0x10011101, 0x10011110, 0x10011111,
+        0x10100000, 0x10100001, 0x10100010, 0x10100011, 0x10100100, 0x10100101, 0x10100110, 0x10100111,
+        0x10101000, 0x10101001, 0x10101010, 0x10101011, 0x10101100, 0x10101101, 0x10101110, 0x10101111,
+        0x10110000, 0x10110001, 0x10110010, 0x10110011, 0x10110100, 0x10110101, 0x10110110, 0x10110111,
+        0x10111000, 0x10111001, 0x10111010, 0x10111011, 0x10111100, 0x10111101, 0x10111110, 0x10111111,
+        0x11000000, 0x11000001, 0x11000010, 0x11000011, 0x11000100, 0x11000101, 0x11000110, 0x11000111,
+        0x11001000, 0x11001001, 0x11001010, 0x11001011, 0x11001100, 0x11001101, 0x11001110, 0x11001111,
+        0x11010000, 0x11010001, 0x11010010, 0x11010011, 0x11010100, 0x11010101, 0x11010110, 0x11010111,
+        0x11011000, 0x11011001, 0x11011010, 0x11011011, 0x11011100, 0x11011101, 0x11011110, 0x11011111,
+        0x11100000, 0x11100001, 0x11100010, 0x11100011, 0x11100100, 0x11100101, 0x11100110, 0x11100111,
+        0x11101000, 0x11101001, 0x11101010, 0x11101011, 0x11101100, 0x11101101, 0x11101110, 0x11101111,
+        0x11110000, 0x11110001, 0x11110010, 0x11110011, 0x11110100, 0x11110101, 0x11110110, 0x11110111,
+        0x11111000, 0x11111001, 0x11111010, 0x11111011, 0x11111100, 0x11111101, 0x11111110, 0x11111111
+    };
+
+    /*
+     * This expands 7 bit indices into 35 bit contents (high bit 30), by inserting 0s between bits.
      */
     private static final int[] INTERLEAVE5_TABLE = new int[] {
         0x00000000, 0x00000001, 0x00000020, 0x00000021, 0x00000400, 0x00000401, 0x00000420, 0x00000421,
@@ -83,10 +122,18 @@ class LongArray
         0x02008000, 0x02008001, 0x02008020, 0x02008021, 0x02008400, 0x02008401, 0x02008420, 0x02008421,
         0x02100000, 0x02100001, 0x02100020, 0x02100021, 0x02100400, 0x02100401, 0x02100420, 0x02100421,
         0x02108000, 0x02108001, 0x02108020, 0x02108021, 0x02108400, 0x02108401, 0x02108420, 0x02108421,
+        0x40000000, 0x40000001, 0x40000020, 0x40000021, 0x40000400, 0x40000401, 0x40000420, 0x40000421,
+        0x40008000, 0x40008001, 0x40008020, 0x40008021, 0x40008400, 0x40008401, 0x40008420, 0x40008421,
+        0x40100000, 0x40100001, 0x40100020, 0x40100021, 0x40100400, 0x40100401, 0x40100420, 0x40100421,
+        0x40108000, 0x40108001, 0x40108020, 0x40108021, 0x40108400, 0x40108401, 0x40108420, 0x40108421,
+        0x42000000, 0x42000001, 0x42000020, 0x42000021, 0x42000400, 0x42000401, 0x42000420, 0x42000421,
+        0x42008000, 0x42008001, 0x42008020, 0x42008021, 0x42008400, 0x42008401, 0x42008420, 0x42008421,
+        0x42100000, 0x42100001, 0x42100020, 0x42100021, 0x42100400, 0x42100401, 0x42100420, 0x42100421,
+        0x42108000, 0x42108001, 0x42108020, 0x42108021, 0x42108400, 0x42108401, 0x42108420, 0x42108421
     };
 
     /*
-     * This expands 9 bit indices into 63 bit (long) contents, by inserting 0s between bits.
+     * This expands 9 bit indices into 63 bit (long) contents (high bit 56), by inserting 0s between bits.
      */
     private static final long[] INTERLEAVE7_TABLE = new long[]
     {
@@ -724,18 +771,19 @@ class LongArray
         }
 
         int width, shifts, top;
-        if (aLen <= 2)
+
+        // NOTE: These work, but require too many shifts to be competitive
+//        width = 1; shifts = 64; top = 64;
+//        width = 2; shifts = 32; top = 64;
+//        width = 3; shifts = 21; top = 63;
+
+        if (aLen <= 16)
         {
-            // TODO Too high 'shifts' causes sub-optimal performance in 113 bit SEC curves
-            width = 2; shifts = 32; top = 64;
-        }
-        else if (aLen <= 4)
-        {
-            width = 3; shifts = 21; top = 63;
+            width = 4; shifts = 16; top = 64;
         }
         else if (aLen <= 32)
         {
-            width = 4; shifts = 16; top = 64;
+            width = 5; shifts = 13; top = 65;
         }
         else if (aLen <= 128)
         {
@@ -746,8 +794,14 @@ class LongArray
             width = 8; shifts = 8; top = 64;
         }
 
+        int actualShifts = shifts;
+        if (top >= 64)
+        {
+            --actualShifts;
+        }
+
         int bExt = bLen;
-        if ((B.m_ints[bLen - 1] >>> (top + 1 - shifts)) != 0L)
+        if ((B.m_ints[bLen - 1] >>> (64 - actualShifts)) != 0L)
         {
             ++bExt;
         }
@@ -760,6 +814,9 @@ class LongArray
         {
         case 3:
             interleave3(A.m_ints, 0, c, bExt, aLen);
+            break;
+        case 5:
+            interleave5(A.m_ints, 0, c, bExt, aLen);
             break;
         case 7:
             interleave7(A.m_ints, 0, c, bExt, aLen);
@@ -1001,35 +1058,33 @@ class LongArray
 
     private static long interleave5(long x)
     {
-        // TODO These bits need to be reversed?
-        long z = x & (0xFL << 60);
-        return z
-            | interleave5_12to60((int)x & 0xFFF)
-            | interleave5_12to60((int)(x >>> 12) & 0xFFF) << 1
-            | interleave5_12to60((int)(x >>> 24) & 0xFFF) << 2
-            | interleave5_12to60((int)(x >>> 36) & 0xFFF) << 3
-            | interleave5_12to60((int)(x >>> 48) & 0xFFF) << 4;
+        return interleave3_13to65((int)x & 0x1FFF)
+            | interleave3_13to65((int)(x >>> 13) & 0x1FFF) << 1
+            | interleave3_13to65((int)(x >>> 26) & 0x1FFF) << 2
+            | interleave3_13to65((int)(x >>> 39) & 0x1FFF) << 3
+            | interleave3_13to65((int)(x >>> 52) & 0x1FFF) << 4;
 
+//        long z = 0;
 //        int zPos = 0, wPos = 0, xPos = 0;
 //        for (;;)
 //        {
 //            z |= ((x >>> xPos) & 1L) << zPos;
-//            if (++zPos == 63)
+//            if (++zPos == 64)
 //            {
 //                return z;
 //            }
-//            if ((xPos += 12) >= 60)
+//            if ((xPos += 13) >= 64)
 //            {
 //                xPos = ++wPos;
 //            }
 //        }
     }
 
-    private static long interleave5_12to60(int x)
+    private static long interleave3_13to65(int x)
     {
-        int r00 = INTERLEAVE5_TABLE[x & 0x3F];
-        int r30 = INTERLEAVE5_TABLE[x >>> 6];
-        return (r30 & 0xFFFFFFFFL) << 30 | (r00 & 0xFFFFFFFFL);
+        int r00 = INTERLEAVE5_TABLE[x & 0x7F];
+        int r35 = INTERLEAVE5_TABLE[x >>> 7];
+        return (r35 & 0xFFFFFFFFL) << 35 | (r00 & 0xFFFFFFFFL);
     }
 
     private static void interleave7(long[] x, int xOff, long[] z, int zOff, int count)
@@ -1077,17 +1132,36 @@ class LongArray
 
     private static long interleave2_n(long x, int rounds)
     {
-        while (--rounds >= 0)
+        while (rounds > 1)
         {
-            x = interleave2_32to64((int)x) | (interleave2_32to64((int)(x >>> 32)) << 1);
+            rounds -= 2;
+            x = interleave4_16to64((int)x & 0xFFFF)
+                | interleave4_16to64((int)(x >>> 16) & 0xFFFF) << 1
+                | interleave4_16to64((int)(x >>> 32) & 0xFFFF) << 2
+                | interleave4_16to64((int)(x >>> 48) & 0xFFFF) << 3;
         }
+        if (rounds > 0)
+        {
+            x = interleave2_32to64((int)x) | interleave2_32to64((int)(x >>> 32)) << 1;
+        }
+//        while (--rounds >= 0)
+//        {
+//            x = interleave2_32to64((int)x) | interleave2_32to64((int)(x >>> 32)) << 1;
+//        }
         return x;
+    }
+
+    private static long interleave4_16to64(int x)
+    {
+        int r00 = INTERLEAVE4_TABLE[x & 0xFF];
+        int r32 = INTERLEAVE4_TABLE[x >>> 8];
+        return (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
     }
 
     private static long interleave2_32to64(int x)
     {
-        int r00 = INTERLEAVE_TABLE[x & 0xFF] | INTERLEAVE_TABLE[(x >>> 8) & 0xFF] << 16;
-        int r32 = INTERLEAVE_TABLE[(x >>> 16) & 0xFF] | INTERLEAVE_TABLE[(x >>> 24) & 0xFF] << 16;
+        int r00 = INTERLEAVE2_TABLE[x & 0xFF] | INTERLEAVE2_TABLE[(x >>> 8) & 0xFF] << 16;
+        int r32 = INTERLEAVE2_TABLE[(x >>> 16) & 0xFF] | INTERLEAVE2_TABLE[x >>> 24] << 16;
         return (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
     }
 
