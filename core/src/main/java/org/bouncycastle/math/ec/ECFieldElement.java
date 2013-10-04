@@ -1191,10 +1191,7 @@ public abstract class ECFieldElement
             // No check performed here for performance reasons. Instead the
             // elements involved are checked in ECPoint.F2m
             // checkFieldElements(this, b);
-            F2m bF2m = (F2m)b;
-            LongArray mult = x.multiply(bF2m.x, m);
-            mult.reduce(m, ks);
-            return new F2m(m, ks, mult);
+            return new F2m(m, ks, x.modMultiply(((F2m)b).x, m, ks));
         }
 
         public ECFieldElement divide(final ECFieldElement b)
@@ -1212,9 +1209,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement square()
         {
-            LongArray squared = x.square(m);
-            squared.reduce(m, ks);
-            return new F2m(m, ks, squared);
+            return new F2m(m, ks, x.modSquare(m, ks));
         }
 
         public ECFieldElement invert()
