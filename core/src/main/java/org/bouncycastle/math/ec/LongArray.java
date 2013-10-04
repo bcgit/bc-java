@@ -529,7 +529,7 @@ class LongArray
         m_ints[theInt] &= ~setter;
     }
 
-    public LongArray multiply(LongArray other, int m)
+    public LongArray modMultiply(LongArray other, int m, int[] ks)
     {
         int aLen = getUsedLength();
         if (aLen == 0)
@@ -568,7 +568,9 @@ class LongArray
                 }
                 ++k;
             }
-            return new LongArray(c);
+            LongArray p = new LongArray(c);
+            p.reduce(m, ks);
+            return p;
         }
 
         int width, shifts, top;
@@ -659,6 +661,7 @@ class LongArray
         // TODO reduce in place to avoid extra copying
         LongArray p = new LongArray(cLen);
         System.arraycopy(c, ci[1], p.m_ints, 0, cLen);
+        p.reduce(m, ks);
         return p;
     }
 
@@ -689,7 +692,7 @@ class LongArray
 //        return x;
 //    }
 
-    public void reduce(int m, int[] ks)
+    private void reduce(int m, int[] ks)
     {
         int len = getUsedLength();
         int mLen = (m + 63) >>> 6;
@@ -762,7 +765,7 @@ class LongArray
         }
     }
 
-    public LongArray square(int m)
+    public LongArray modSquare(int m, int[] ks)
     {
         int len = getUsedLength();
         if (len == 0)
@@ -781,7 +784,9 @@ class LongArray
             r[pos++] = expand32((int)(mi >>> 32));
         }
 
-        return new LongArray(r);
+        LongArray p = new LongArray(r);
+        p.reduce(m, ks);
+        return p;
     }
 
     private static void interleave3(long[] x, int xOff, long[] z, int zOff, int count)
