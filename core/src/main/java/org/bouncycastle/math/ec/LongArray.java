@@ -51,7 +51,8 @@ class LongArray
     /*
      * This expands 7 bit indices into 21 bit contents, by inserting 0s between bits.
      */
-    private static final int[] INTERLEAVE3_TABLE = new  int[] {
+    private static final int[] INTERLEAVE3_TABLE = new  int[]
+    {
         0x00000, 0x00001, 0x00008, 0x00009, 0x00040, 0x00041, 0x00048, 0x00049,
         0x00200, 0x00201, 0x00208, 0x00209, 0x00240, 0x00241, 0x00248, 0x00249,
         0x01000, 0x01001, 0x01008, 0x01009, 0x01040, 0x01041, 0x01048, 0x01049,
@@ -71,9 +72,24 @@ class LongArray
     };
 
     /*
+     * This expands 6 bit indices into 30 bit contents, by inserting 0s between bits.
+     */
+    private static final int[] INTERLEAVE5_TABLE = new int[] {
+        0x00000000, 0x00000001, 0x00000020, 0x00000021, 0x00000400, 0x00000401, 0x00000420, 0x00000421,
+        0x00008000, 0x00008001, 0x00008020, 0x00008021, 0x00008400, 0x00008401, 0x00008420, 0x00008421,
+        0x00100000, 0x00100001, 0x00100020, 0x00100021, 0x00100400, 0x00100401, 0x00100420, 0x00100421,
+        0x00108000, 0x00108001, 0x00108020, 0x00108021, 0x00108400, 0x00108401, 0x00108420, 0x00108421,
+        0x02000000, 0x02000001, 0x02000020, 0x02000021, 0x02000400, 0x02000401, 0x02000420, 0x02000421,
+        0x02008000, 0x02008001, 0x02008020, 0x02008021, 0x02008400, 0x02008401, 0x02008420, 0x02008421,
+        0x02100000, 0x02100001, 0x02100020, 0x02100021, 0x02100400, 0x02100401, 0x02100420, 0x02100421,
+        0x02108000, 0x02108001, 0x02108020, 0x02108021, 0x02108400, 0x02108401, 0x02108420, 0x02108421,
+    };
+
+    /*
      * This expands 9 bit indices into 63 bit (long) contents, by inserting 0s between bits.
      */
-    private static final long[] INTERLEAVE7_TABLE = new long[] {
+    private static final long[] INTERLEAVE7_TABLE = new long[]
+    {
         0x0000000000000000L, 0x0000000000000001L, 0x0000000000000080L, 0x0000000000000081L,
         0x0000000000004000L, 0x0000000000004001L, 0x0000000000004080L, 0x0000000000004081L,
         0x0000000000200000L, 0x0000000000200001L, 0x0000000000200080L, 0x0000000000200081L,
@@ -945,12 +961,13 @@ class LongArray
 
     private static long interleave3(long x)
     {
-        return (x & (1L << 63))
+        long z = x & (1L << 63);
+        return z
             | interleave3_21to63((int)x & 0x1FFFFF)
             | interleave3_21to63((int)(x >>> 21) & 0x1FFFFF) << 1
             | interleave3_21to63((int)(x >>> 42) & 0x1FFFFF) << 2;
 
-//        long z = x & (1L << 63), zPos = 0, wPos = 0, xPos = 0;
+//        int zPos = 0, wPos = 0, xPos = 0;
 //        for (;;)
 //        {
 //            z |= ((x >>> xPos) & 1L) << zPos;
@@ -970,8 +987,49 @@ class LongArray
     {
         int r00 = INTERLEAVE3_TABLE[x & 0x7F];
         int r21 = INTERLEAVE3_TABLE[(x >>> 7) & 0x7F];
-        int r42 = INTERLEAVE3_TABLE[(x >>> 14) & 0x7F];
+        int r42 = INTERLEAVE3_TABLE[x >>> 14];
         return (r42 & 0xFFFFFFFFL) << 42 | (r21 & 0xFFFFFFFFL) << 21 | (r00 & 0xFFFFFFFFL);
+    }
+
+    private static void interleave5(long[] x, int xOff, long[] z, int zOff, int count)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            z[zOff + i] = interleave5(x[xOff + i]);
+        }
+    }
+
+    private static long interleave5(long x)
+    {
+        // TODO These bits need to be reversed?
+        long z = x & (0xFL << 60);
+        return z
+            | interleave5_12to60((int)x & 0xFFF)
+            | interleave5_12to60((int)(x >>> 12) & 0xFFF) << 1
+            | interleave5_12to60((int)(x >>> 24) & 0xFFF) << 2
+            | interleave5_12to60((int)(x >>> 36) & 0xFFF) << 3
+            | interleave5_12to60((int)(x >>> 48) & 0xFFF) << 4;
+
+//        int zPos = 0, wPos = 0, xPos = 0;
+//        for (;;)
+//        {
+//            z |= ((x >>> xPos) & 1L) << zPos;
+//            if (++zPos == 63)
+//            {
+//                return z;
+//            }
+//            if ((xPos += 12) >= 60)
+//            {
+//                xPos = ++wPos;
+//            }
+//        }
+    }
+
+    private static long interleave5_12to60(int x)
+    {
+        int r00 = INTERLEAVE5_TABLE[x & 0x3F];
+        int r30 = INTERLEAVE5_TABLE[x >>> 6];
+        return (r30 & 0xFFFFFFFFL) << 30 | (r00 & 0xFFFFFFFFL);
     }
 
     private static void interleave7(long[] x, int xOff, long[] z, int zOff, int count)
@@ -984,7 +1042,8 @@ class LongArray
 
     private static long interleave7(long x)
     {
-        return (x & (1L << 63))
+        long z = x & (1L << 63);
+        return z
             | INTERLEAVE7_TABLE[(int)x & 0x1FF]
             | INTERLEAVE7_TABLE[(int)(x >>> 9) & 0x1FF] << 1
             | INTERLEAVE7_TABLE[(int)(x >>> 18) & 0x1FF] << 2
@@ -993,7 +1052,7 @@ class LongArray
             | INTERLEAVE7_TABLE[(int)(x >>> 45) & 0x1FF] << 5
             | INTERLEAVE7_TABLE[(int)(x >>> 54) & 0x1FF] << 6;
 
-//        long z = x & (1L << 63), zPos = 0, wPos = 0, xPos = 0;
+//        int zPos = 0, wPos = 0, xPos = 0;
 //        for (;;)
 //        {
 //            z |= ((x >>> xPos) & 1L) << zPos;
