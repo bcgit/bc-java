@@ -1502,8 +1502,21 @@ public abstract class ECPoint
 
                 ECFieldElement X3 = T.square();
                 ECFieldElement Z3 = Z1IsOne ? T : T.multiply(Z1Sq);
-                ECFieldElement X1Z1 = Z1IsOne ? X1 : X1.multiply(Z1);
-                ECFieldElement L3 = X1Z1.square().add(X3).add(T.multiply(L1Z1)).add(Z3);
+
+                ECFieldElement b = curve.getB();
+                ECFieldElement L3;
+                if (b.bitLength() < (curve.getFieldSize() >> 1))
+                {
+                    ECFieldElement t1 = L1.add(X1).square();
+                    ECFieldElement t2 = a.square().add(curve.getB());
+                    ECFieldElement t3 = aZ1Sq.square();
+                    L3 = t1.add(T).add(Z1Sq).multiply(t1).add(t2.multiply(Z1Sq.square())).add(X3).add(a.addOne().multiply(Z3));
+                }
+                else
+                {
+                    ECFieldElement X1Z1 = Z1IsOne ? X1 : X1.multiply(Z1);
+                    L3 = X1Z1.square().add(X3).add(T.multiply(L1Z1)).add(Z3);
+                }
 
                 return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
             }
