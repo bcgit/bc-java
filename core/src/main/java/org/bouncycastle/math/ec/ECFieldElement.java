@@ -1104,7 +1104,7 @@ public abstract class ECFieldElement
 
         public boolean testBitZero()
         {
-            return !x.isZero() && x.testBit(0);
+            return x.testBitZero();
         }
 
         public BigInteger toBigInteger()
@@ -1171,9 +1171,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement addOne()
         {
-            LongArray iarrClone = (LongArray)this.x.clone();
-            iarrClone.addOneShifted(0);
-            return new F2m(m, ks, iarrClone);
+            return new F2m(m, ks, x.addOne());
         }
 
         public ECFieldElement subtract(final ECFieldElement b)

@@ -61,6 +61,8 @@ class X509CRLObject
     private String sigAlgName;
     private byte[] sigAlgParams;
     private boolean isIndirect;
+    private boolean isHashCodeSet = false;
+    private int     hashCodeValue;
 
     static boolean isIndirectCRL(X509CRL crl)
         throws CRLException
@@ -573,6 +575,44 @@ class X509CRLObject
         }
 
         return false;
+    }
+
+    public boolean equals(Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+
+        if (!(other instanceof X509CRL))
+        {
+            return false;
+        }
+
+        if (other instanceof X509CRLObject && isHashCodeSet)
+        {
+            boolean otherIsHashCodeSet = ((X509CRLObject)other).isHashCodeSet;
+            if (otherIsHashCodeSet)
+            {
+                if (((X509CRLObject)other).hashCodeValue != hashCodeValue)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return super.equals(other);
+    }
+
+    public int hashCode()
+    {
+        if (!isHashCodeSet)
+        {
+            isHashCodeSet = true;
+            hashCodeValue = super.hashCode();
+        }
+
+        return hashCodeValue;
     }
 }
 
