@@ -270,7 +270,7 @@ class LongArray
     // For toString(); must have length 64
     private static final String ZEROES = "0000000000000000000000000000000000000000000000000000000000000000";
 
-    private final static byte[] bitLengths =
+    final static byte[] bitLengths =
     {
         0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
         5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -289,11 +289,6 @@ class LongArray
         8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
         8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
     };
-
-    public static int getWordLength(int bits)
-    {
-        return (bits + 63) >>> 6;
-    }
 
     // TODO make m fixed for the LongArray, and hence compute T once and for all
 
@@ -914,30 +909,27 @@ class LongArray
     private void reduce(int m, int[] ks)
     {
         int len = getUsedLength();
+
         int mLen = (m + 63) >>> 6;
         if (len < mLen)
         {
             return;
         }
 
-        int _2m = m << 1;
-        int pos = Math.min(_2m - 2, (len << 6) - 1);
-
         int kMax = ks[ks.length - 1];
-        if (kMax < m - 63)
+        int wordWiseLimit = Math.max(m, kMax + 64);
+
+        int numBits = len << 6;
+
+        if (numBits > wordWiseLimit)
         {
-            reduceWordWise(pos, m, ks);
-        }
-        else
-        {
-            reduceBitWise(pos, m, ks);
+            reduceWordWise(len, wordWiseLimit, m, ks);
+            numBits = wordWiseLimit;
         }
 
-        // Instead of flipping the high bits in the loop, explicitly clear any partial word above m bits
-        int partial = m & 0x3F;
-        if (partial != 0)
+        if (numBits > m)
         {
-            m_ints[mLen - 1] &= (1L << partial) - 1;
+            reduceBitWise(numBits, m, ks);
         }
 
         if (len > mLen)
@@ -946,14 +938,14 @@ class LongArray
         }
     }
 
-    private void reduceBitWise(int from, int m, int[] ks)
+    private void reduceBitWise(int bitlength, int m, int[] ks)
     {
-        for (int i = from; i >= m; --i)
+        while (--bitlength >= m)
         {
-            if (testBit(i))
+            if (testBit(bitlength))
             {
-//                clearBit(i);
-                int bit = i - m;
+                clearBit(bitlength);
+                int bit = bitlength - m;
                 flipBit(bit);
                 int j = ks.length;
                 while (--j >= 0)
@@ -964,23 +956,37 @@ class LongArray
         }
     }
 
-    private void reduceWordWise(int from, int m, int[] ks)
+    private void reduceWordWise(int len, int toBit, int m, int[] ks)
     {
-        int pos = m + ((from - m) & ~0x3F);
-        for (int i = pos; i >= m; i -= 64)
+        int toPos = toBit >>> 6;
+
+        while (--len > toPos)
         {
-            long word = getWord(i);
+            long word = m_ints[len];
             if (word != 0)
             {
-//                flipWord(i);
-                int bit = i - m;
-                flipWord(bit, word);
-                int j = ks.length;
-                while (--j >= 0)
-                {
-                    flipWord(ks[j] + bit, word);
-                }
+                m_ints[len] = 0;
+                reduceWord(word, (len << 6), m, ks);
             }
+        }
+
+        int partial = toBit & 0x3F;
+        long word = m_ints[toPos] >>> partial;
+        if (word != 0)
+        {
+            m_ints[toPos] ^= word << partial;
+            reduceWord(word, toBit, m, ks);
+        }
+    }
+
+    private void reduceWord(long word, int bit, int m, int[] ks)
+    {
+        int offset = bit - m;
+        flipWord(offset, word);
+        int j = ks.length;
+        while (--j >= 0)
+        {
+            flipWord(offset + ks[j], word);
         }
     }
 
@@ -1176,7 +1182,7 @@ class LongArray
         // u(z) := a(z)
         LongArray uz = (LongArray)clone();
 
-        int t = getWordLength(m);
+        int t = (m + 63) >>> 6;
 
         // v(z) := f(z)
         LongArray vz = new LongArray(t);
