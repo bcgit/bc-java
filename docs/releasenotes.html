@@ -33,6 +33,7 @@ Release 1.50
 <li>Occasionally the provider implementation of DH KeyAgreement would drop a leading zero byte off the start of the shared secret (see RFC 2631 2.1.2). This has been fixed.</li>
 <li>RFC3394WrapEngine was ignoring the offset parameter inOff and using zero instead. This has been fixed.</li>
 <li>GOST keys would not encode using the CryptoPro parameter set, even if it was available. This has been fixed.</li>
+<li>The TimeStampRequest stream constructor was not setting the extensions field properly. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
