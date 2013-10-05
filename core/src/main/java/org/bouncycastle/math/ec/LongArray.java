@@ -304,6 +304,19 @@ class LongArray
         m_ints = ints;
     }
 
+    public LongArray(long[] ints, int off, int len)
+    {
+        if (off == 0 && len == ints.length)
+        {
+            m_ints = ints;
+        }
+        else
+        {
+            m_ints = new long[len];
+            System.arraycopy(ints, off, m_ints, 0, len);
+        }
+    }
+
     public LongArray(BigInteger bigInt)
     {
         if (bigInt == null || bigInt.signum() < 0)
@@ -512,14 +525,17 @@ class LongArray
         return prev;
     }
 
-    public void addOneShifted(int shift)
+    public LongArray addOne()
     {
-        if (shift >= m_ints.length)
+        if (m_ints.length == 0)
         {
-            m_ints = resizedInts(shift + 1);
+            return new LongArray(new long[]{ 1L });
         }
 
-        m_ints[shift] ^= 1;
+        int resultLen = Math.max(1, getUsedLength());
+        long[] ints = resizedInts(resultLen);
+        ints[0] ^= 1L;
+        return new LongArray(ints);
     }
 
     private void addShiftedByBits(LongArray other, int bits)
@@ -554,19 +570,6 @@ class LongArray
             prev = next >>> shiftInv;
         }
         m_ints[otherUsedLen + words] ^= prev;
-    }
-
-    private static long addShiftedByBits(long[] x, long[] y, int count, int shift)
-    {
-        int shiftInv = 64 - shift;
-        long prev = 0;
-        for (int i = 0; i < count; ++i)
-        {
-            long next = y[i];
-            x[i] ^= (next << shift) | prev;
-            prev = next >>> shiftInv;
-        }
-        return prev;
     }
 
     private static long addShiftedByBits(long[] x, int xOff, long[] y, int yOff, int count, int shift)
@@ -633,48 +636,40 @@ class LongArray
         return m_ints.length;
     }
 
-    public void flipWord(int bit, long word)
+    private static void flipWord(long[] buf, int off, int bit, long word)
     {
-        int len = m_ints.length;
-        int n = bit >>> 6;
-        if (n < len)
+        int n = off + (bit >>> 6);
+        int shift = bit & 0x3F;
+        if (shift == 0)
         {
-            int shift = bit & 0x3F;
-            if (shift == 0)
+            buf[n] ^= word;
+        }
+        else
+        {
+            buf[n] ^= word << shift;
+            word >>>= (64 - shift);
+            if (word != 0)
             {
-                m_ints[n] ^= word;
-            }
-            else
-            {
-                m_ints[n] ^= word << shift;
-                if (++n < len)
-                {
-                    m_ints[n] ^= word >>> (64 - shift);
-                }
+                buf[++n] ^= word;
             }
         }
     }
 
-    public long getWord(int bit)
-    {
-        int len = m_ints.length;
-        int n = bit >>> 6;
-        if (n >= len)
-        {
-            return 0;
-        }
-        int shift = bit & 0x3F;
-        if (shift == 0)
-        {
-            return m_ints[n];
-        }
-        long result = m_ints[n] >>> shift;
-        if (++n < len)
-        {
-            result |= m_ints[n] << (64 - shift);
-        }
-        return result;
-    }
+//    private static long getWord(long[] buf, int off, int len, int bit)
+//    {
+//        int n = off + (bit >>> 6);
+//        int shift = bit & 0x3F;
+//        if (shift == 0)
+//        {
+//            return buf[n];
+//        }
+//        long result = buf[n] >>> shift;
+//        if (++n < len)
+//        {
+//            result |= buf[n] << (64 - shift);
+//        }
+//        return result;
+//    }
 
     public boolean testBitZero()
     {
@@ -683,42 +678,52 @@ class LongArray
 
     public boolean testBit(int n)
     {
+        return testBit(m_ints, 0, n);
+    }
+
+    private static boolean testBit(long[] buf, int off, int n)
+    {
         // theInt = n / 64
         int theInt = n >>> 6;
         // theBit = n % 64
         int theBit = n & 0x3F;
         long tester = 1L << theBit;
-        return (m_ints[theInt] & tester) != 0;
+        return (buf[off + theInt] & tester) != 0;
     }
 
-    public void flipBit(int n)
+    private static void flipBit(long[] buf, int off, int n)
     {
         // theInt = n / 64
         int theInt = n >>> 6;
         // theBit = n % 64
         int theBit = n & 0x3F;
         long flipper = 1L << theBit;
-        m_ints[theInt] ^= flipper;
+        buf[off + theInt] ^= flipper;
     }
 
     public void setBit(int n)
     {
-        // theInt = n / 64
-        int theInt = n >>> 6;
-        // theBit = n % 64
-        int theBit = n & 0x3F;
-        long setter = 1L << theBit;
-        m_ints[theInt] |= setter;
+        setBit(m_ints, 0, n);
     }
 
-    public void clearBit(int n)
+    private static void setBit(long[] buf, int off, int n)
     {
         // theInt = n / 64
         int theInt = n >>> 6;
         // theBit = n % 64
         int theBit = n & 0x3F;
         long setter = 1L << theBit;
-        m_ints[theInt] &= ~setter;
+        buf[off + theInt] |= setter;
+    }
+
+    private static void clearBit(long[] buf, int off, int n)
+    {
+        // theInt = n / 64
+        int theInt = n >>> 6;
+        // theBit = n % 64
+        int theBit = n & 0x3F;
+        long setter = 1L << theBit;
+        buf[off + theInt] &= ~setter;
     }
 
     public LongArray modMultiply(LongArray other, int m, int[] ks)
@@ -745,8 +750,13 @@ class LongArray
         if (aLen == 1)
         {
             long a = A.m_ints[0];
+            if (a == 1L)
+            {
+                return B;
+            }
+
             long[] b = B.m_ints;
-            long[] c = new long[aLen + bLen];
+            long[] c = new long[(bitLength(a) + B.degree() + 62) >>> 6];
             if ((a & 1L) != 0L)
             {
                 add(c, b, bLen);
@@ -756,13 +766,15 @@ class LongArray
             {
                 if ((a & 1L) != 0L)
                 {
-                    addShiftedByBits(c, b, bLen, k);
+                    long carry = addShiftedByBits(c, 0, b, 0, bLen, k);
+                    if (carry != 0)
+                    {
+                        c[bLen] ^= carry;
+                    }
                 }
                 ++k;
             }
-            LongArray p = new LongArray(c);
-            p.reduce(m, ks);
-            return p;
+            return new LongArray(c, 0, reduceInPlace(c, 0, c.length, m, ks));
         }
 
         int width, shifts, top;
@@ -872,11 +884,7 @@ class LongArray
             }
         }
 
-        // TODO reduce in place to avoid extra copying
-        LongArray p = new LongArray(cLen);
-        System.arraycopy(c, ci[1], p.m_ints, 0, cLen);
-        p.reduce(m, ks);
-        return p;
+        return new LongArray(c, ci[1], reduceInPlace(c, ci[1], cLen, m, ks));
     }
 
 //    private static void deInterleave(long[] x, int xOff, long[] z, int zOff, int count, int rounds)
@@ -906,14 +914,12 @@ class LongArray
 //        return x;
 //    }
 
-    private void reduce(int m, int[] ks)
+    private static int reduceInPlace(long[] buf, int off, int len, int m, int[] ks)
     {
-        int len = getUsedLength();
-
         int mLen = (m + 63) >>> 6;
         if (len < mLen)
         {
-            return;
+            return len;
         }
 
         int kMax = ks[ks.length - 1];
@@ -923,70 +929,67 @@ class LongArray
 
         if (numBits > wordWiseLimit)
         {
-            reduceWordWise(len, wordWiseLimit, m, ks);
+            reduceWordWise(buf, off, len, wordWiseLimit, m, ks);
             numBits = wordWiseLimit;
         }
 
         if (numBits > m)
         {
-            reduceBitWise(numBits, m, ks);
+            reduceBitWise(buf, off, numBits, m, ks);
         }
 
-        if (len > mLen)
-        {
-            m_ints = resizedInts(mLen);
-        }
+        return mLen;
     }
 
-    private void reduceBitWise(int bitlength, int m, int[] ks)
+    private static void reduceBitWise(long[] buf, int off, int bitlength, int m, int[] ks)
     {
         while (--bitlength >= m)
         {
-            if (testBit(bitlength))
+            if (testBit(buf, off, bitlength))
             {
-                clearBit(bitlength);
+                clearBit(buf, off, bitlength);
                 int bit = bitlength - m;
-                flipBit(bit);
+                flipBit(buf, off, bit);
                 int j = ks.length;
                 while (--j >= 0)
                 {
-                    flipBit(ks[j] + bit);
+                    flipBit(buf, off, ks[j] + bit);
                 }
             }
         }
     }
 
-    private void reduceWordWise(int len, int toBit, int m, int[] ks)
+    private static void reduceWordWise(long[] buf, int off, int len, int toBit, int m, int[] ks)
     {
         int toPos = toBit >>> 6;
 
         while (--len > toPos)
         {
-            long word = m_ints[len];
+            long word = buf[off + len];
             if (word != 0)
             {
-                m_ints[len] = 0;
-                reduceWord(word, (len << 6), m, ks);
+                buf[off + len] = 0;
+                reduceWord(buf, off, (len << 6), word, m, ks);
             }
         }
 
         int partial = toBit & 0x3F;
-        long word = m_ints[toPos] >>> partial;
+        long word = buf[off + toPos] >>> partial;
         if (word != 0)
         {
-            m_ints[toPos] ^= word << partial;
-            reduceWord(word, toBit, m, ks);
+            buf[off + toPos] ^= word << partial;
+            reduceWord(buf, off, toBit, word, m, ks);
         }
     }
 
-    private void reduceWord(long word, int bit, int m, int[] ks)
+    private static void reduceWord(long[] buf, int off, int bit, long word, int m, int[] ks)
     {
         int offset = bit - m;
-        flipWord(offset, word);
+        flipWord(buf, off, offset, word);
         int j = ks.length;
         while (--j >= 0)
         {
-            flipWord(offset + ks[j], word);
+            flipWord(buf, off, offset + ks[j], word);
         }
     }
 
@@ -1009,9 +1012,7 @@ class LongArray
             r[pos++] = interleave2_32to64((int)(mi >>> 32));
         }
 
-        LongArray p = new LongArray(r);
-        p.reduce(m, ks);
-        return p;
+        return new LongArray(r, 0, reduceInPlace(r, 0, r.length, m, ks));
     }
 
     private static void interleave3(long[] x, int xOff, long[] z, int zOff, int count)
