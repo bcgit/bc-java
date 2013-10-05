@@ -32,39 +32,45 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
 
         /*
          * NOTE This code optimizes the first window using the precomputed points to substitute an
-         * addition for 2 or more doublings. Not enabled until performance can be analyzed more,
-         * especially for coordinate systems where doubling is significantly cheaper than addition.
+         * addition for 2 or more doublings.
          */
-//        if (i > 1)
-//        {
-//            int wi = wnaf[--i];
-//            int digit = wi >> 16, zeroes = wi & 0xFFFF;
-//
-//            int n = Math.abs(digit);
-//            ECPoint[] table = digit < 0 ? preCompNeg : preComp;
-//
-//            int window = width - 1;
-//            if ((n << 1) < (1 << window))
-//            {
-//                int highest = IntArray.bitLengths[n] - 1;
-//                int lowBits =  n ^ (1 << highest);
-//                int scale = window - highest;
-//
-//                int i1 = ((1 << window) - 1);
-//                int i2 = (lowBits << scale) + 1;
-//
-//                R = table[i1 >>> 1].add(table[i2 >>> 1]);
-//                zeroes -= scale;
-//
-////              System.out.println("Optimized: 2^" + scale + " * " + n + " = " + i1 + " + " + i2);
-//            }
-//            else
-//            {
-//                R = table[n >>> 1];
-//            }
-//
-//            R = R.timesPow2(zeroes);
-//        }
+        if (i > 1)
+        {
+            int wi = wnaf[--i];
+            int digit = wi >> 16, zeroes = wi & 0xFFFF;
+
+            int n = Math.abs(digit);
+            ECPoint[] table = digit < 0 ? preCompNeg : preComp;
+
+            /*
+             * NOTE: We use this optimization conservatively, since some coordinate systems have
+             * significantly cheaper doubling relative to addition.
+             * 
+             * (n << 2) selects precomputed values in the lower half of the table
+             * (n << 3) selects precomputed values in the lower quarter of the table
+             */
+            //if ((n << 2) < (1 << width))
+            if ((n << 3) < (1 << width))
+            {
+                int highest = LongArray.bitLengths[n];
+                int lowBits =  n ^ (1 << (highest - 1));
+                int scale = width - highest;
+
+                int i1 = ((1 << (width - 1)) - 1);
+                int i2 = (lowBits << scale) + 1;
+                R = table[i1 >>> 1].add(table[i2 >>> 1]);
+
+                zeroes -= scale;
+
+//              System.out.println("Optimized: 2^" + scale + " * " + n + " = " + i1 + " + " + i2);
+            }
+            else
+            {
+                R = table[n >>> 1];
+            }
+
+            R = R.timesPow2(zeroes);
+        }
 
         while (i > 0)
         {
