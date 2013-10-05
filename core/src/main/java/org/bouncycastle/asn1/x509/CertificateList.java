@@ -31,6 +31,8 @@ public class CertificateList
     TBSCertList            tbsCertList;
     AlgorithmIdentifier    sigAlgId;
     DERBitString           sig;
+    boolean                isHashCodeSet = false;
+    int                    hashCodeValue;
 
     public static CertificateList getInstance(
         ASN1TaggedObject obj,
@@ -54,6 +56,10 @@ public class CertificateList
         return null;
     }
 
+    /**
+     * @deprecated use getInstance() method.
+     * @param seq
+     */
     public CertificateList(
         ASN1Sequence seq)
     {
@@ -123,5 +129,16 @@ public class CertificateList
         v.add(sig);
 
         return new DERSequence(v);
+    }
+
+    public int hashCode()
+    {
+        if (!isHashCodeSet)
+        {
+            hashCodeValue = super.hashCode();
+            isHashCodeSet = true;
+        }
+
+        return hashCodeValue;
     }
 }
