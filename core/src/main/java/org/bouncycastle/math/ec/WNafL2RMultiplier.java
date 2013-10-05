@@ -35,7 +35,7 @@ public class WNafL2RMultiplier extends AbstractECMultiplier
          * addition for 2 or more doublings. Not enabled until performance can be analyzed more,
          * especially for coordinate systems where doubling is significantly cheaper than addition.
          */
-        //        if (i > 1)
+//        if (i > 1)
 //        {
 //            int wi = wnaf[--i];
 //            int digit = wi >> 16, zeroes = wi & 0xFFFF;
