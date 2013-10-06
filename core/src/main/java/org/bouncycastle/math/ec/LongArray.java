@@ -513,13 +513,13 @@ class LongArray
         return new BigInteger(1, barr);
     }
 
-    private static long shiftLeft(long[] x, int count)
+    private static long shiftLeft(long[] x, int xOff, int count)
     {
         long prev = 0;
         for (int i = 0; i < count; ++i)
         {
-            long next = x[i];
-            x[i] = (next << 1) | prev;
+            long next = x[xOff + i];
+            x[xOff + i] = (next << 1) | prev;
             prev = next >>> 63;
         }
         return prev;
@@ -827,22 +827,26 @@ class LongArray
          * Create a single temporary buffer, with an offset table to find the positions of things in it 
          */
         int[] ci = new int[1 << width];
-//        ci[0] = 0;
-        int total = bMax + aLen;
-        ci[1] = total;
-        for (int i = 2; i < ci.length; ++i)
+        int total = aLen;
         {
+            ci[0] = total;
+            total += bMax;
+            ci[1] = total;
+            for (int i = 2; i < ci.length; ++i)
+            {
+                total += cLen;
+                ci[i] = total;
+            }
             total += cLen;
-            ci[i] = total;
         }
 
-        long[] c = new long[total + cLen];
-
-        // Make a working copy of B, since we will be shifting it
-        System.arraycopy(B.m_ints, 0, c, 0, bLen);
+        long[] c = new long[total];
 
         // Prepare A in interleaved form, according to the chosen width
-        interleave(A.m_ints, 0, c, bMax, aLen, width);
+        interleave(A.m_ints, 0, c, 0, aLen, width);
+
+        // Make a working copy of B, since we will be shifting it
+        System.arraycopy(B.m_ints, 0, c, aLen, bLen);
 
         /*
          * The main loop analyzes the interleaved windows in A, and for each non-zero window
@@ -858,7 +862,7 @@ class LongArray
             int aPos = 0;
             do
             {
-                long aVal = c[bMax + aPos] >>> k;
+                long aVal = c[aPos] >>> k;
                 int index = (int)(aVal) & MASK;
                 if (index != 0)
                 {
@@ -867,14 +871,14 @@ class LongArray
                      * interleaved form, the bits represent the current B shifted by 0, 'positions',
                      * 'positions' * 2, ..., 'positions' * ('width' - 1)
                      */
-                    add(c, ci[index] + aPos, c, 0, bLen);
+                    add(c, ci[index] + aPos, c, aLen, bLen);
                 }
             }
             while (++aPos < aLen);
 
             if ((k += width) >= top)
             {
-                if (k >= 64)
+                if (top >= 64)
                 {
                     break;
                 }
@@ -891,10 +895,10 @@ class LongArray
              * After each window position has been checked in all words of A, B is shifted to the
              * left 1 place and expanded if necessary.
              */
-            long carry = shiftLeft(c, bLen);
+            long carry = shiftLeft(c, aLen, bLen);
             if (carry != 0)
             {
-                c[bLen++] = carry;
+                c[aLen + bLen++] = carry;
             }
         }
 
