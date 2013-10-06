@@ -820,17 +820,8 @@ class LongArray
         /*
          * Determine if B will get bigger during shifting
          */
-        int shifts = positions;
-        if (top >= 64)
-        {
-            --shifts;
-        }
-
-        int bMax = bLen;
-        if ((B.m_ints[bLen - 1] >>> (64 - shifts)) != 0L)
-        {
-            ++bMax;
-        }
+        int shifts = top < 64 ? positions : positions - 1;
+        int bMax = (bDeg + shifts + 63) >>> 6;
 
         /*
          * Create a single temporary buffer, with an offset table to find the positions of things in it 
