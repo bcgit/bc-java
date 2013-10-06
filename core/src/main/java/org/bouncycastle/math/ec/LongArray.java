@@ -855,9 +855,11 @@ class LongArray
         int k = 0;
         for (;;)
         {
-            for (int aPos = 0; aPos < aLen; ++aPos)
+            int aPos = 0;
+            do
             {
-                int index = (int)(c[bMax + aPos] >>> k) & MASK;
+                long aVal = c[bMax + aPos] >>> k;
+                int index = (int)(aVal) & MASK;
                 if (index != 0)
                 {
                     /*
@@ -868,6 +870,7 @@ class LongArray
                     add(c, ci[index] + aPos, c, 0, bLen);
                 }
             }
+            while (++aPos < aLen);
 
             if ((k += width) >= top)
             {
