@@ -879,20 +879,22 @@ class LongArray
          * Create a single temporary buffer, with an offset table to find the positions of things in it 
          */
         int[] ci = new int[1 << width];
-        int total = aLen;
+        int cTotal = aLen;
         {
-            ci[0] = total;
-            total += bMax;
-            ci[1] = total;
+            ci[0] = cTotal;
+            cTotal += bMax;
+            ci[1] = cTotal;
             for (int i = 2; i < ci.length; ++i)
             {
-                total += cLen;
-                ci[i] = total;
+                cTotal += cLen;
+                ci[i] = cTotal;
             }
-            total += cLen;
+            cTotal += cLen;
         }
+        // NOTE: Provide a safe dump for "high zeroes" since we are adding 'bMax' and not 'bLen'
+        ++cTotal;
 
-        long[] c = new long[total];
+        long[] c = new long[cTotal];
 
         // Prepare A in interleaved form, according to the chosen width
         interleave(A.m_ints, 0, c, 0, aLen, width);
@@ -923,7 +925,7 @@ class LongArray
                      * interleaved form, the bits represent the current B shifted by 0, 'positions',
                      * 'positions' * 2, ..., 'positions' * ('width' - 1)
                      */
-                    add(c, ci[index] + aPos, c, aLen, bLen);
+                    add(c, ci[index] + aPos, c, aLen, bMax);
                 }
             }
             while (++aPos < aLen);
@@ -947,11 +949,7 @@ class LongArray
              * After each window position has been checked in all words of A, B is shifted to the
              * left 1 place and expanded if necessary.
              */
-            long carry = shiftLeft(c, aLen, bLen);
-            if (carry != 0)
-            {
-                c[aLen + bLen++] = carry;
-            }
+            shiftLeft(c, aLen, bMax);
         }
 
         int ciPos = ci.length;
