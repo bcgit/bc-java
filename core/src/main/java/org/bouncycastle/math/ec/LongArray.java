@@ -525,6 +525,32 @@ class LongArray
         return prev;
     }
 
+//    private static long shiftLeft(long[] x, int xOff, int count, int shift)
+//    {
+//        int shiftInv = 64 - shift;
+//        long prev = 0;
+//        for (int i = 0; i < count; ++i)
+//        {
+//            long next = x[xOff + i];
+//            x[xOff + i] = (next << shift) | prev;
+//            prev = next >>> shiftInv;
+//        }
+//        return prev;
+//    }
+//
+//    private static long shiftLeft(long[] x, int xOff, long[] z, int zOff, int count, int shift)
+//    {
+//        int shiftInv = 64 - shift;
+//        long prev = 0;
+//        for (int i = 0; i < count; ++i)
+//        {
+//            long next = x[xOff + i];
+//            z[zOff + i] = (next << shift) | prev;
+//            prev = next >>> shiftInv;
+//        }
+//        return prev;
+//    }
+
     public LongArray addOne()
     {
         if (m_ints.length == 0)
@@ -613,7 +639,7 @@ class LongArray
         }
     }
 
-    private static void distribute(long[] x, int dst1, int dst2, int src, int count)
+    private static void distribute(long[] x, int src, int dst1, int dst2, int count)
     {
         for (int i = 0; i < count; ++i)
         {
@@ -718,6 +744,27 @@ class LongArray
         buf[off + theInt] &= ~setter;
     }
 
+    private static void multiplyWord(long a, long[] b, int bLen, long[] c, int cOff)
+    {
+        if ((a & 1L) != 0L)
+        {
+            add(c, cOff, b, 0, bLen);
+        }
+        int k = 1;
+        while ((a >>>= 1) != 0)
+        {
+            if ((a & 1L) != 0L)
+            {
+                long carry = addShiftedByBits(c, cOff, b, 0, bLen, k);
+                if (carry != 0)
+                {
+                    c[cOff + bLen] ^= carry;
+                }
+            }
+            ++k;
+        }
+    }
+
     public LongArray modMultiply(LongArray other, int m, int[] ks)
     {
         /*
@@ -762,31 +809,36 @@ class LongArray
             /*
              * Fast path for small A, with performance dependent only on the number of set bits
              */
-            long[] b = B.m_ints;
             long[] c = new long[cLen];
-            if ((a & 1L) != 0L)
-            {
-                add(c, 0, b, 0, bLen);
-            }
-            int k = 1;
-            while ((a >>>= 1) != 0)
-            {
-                if ((a & 1L) != 0L)
-                {
-                    long carry = addShiftedByBits(c, 0, b, 0, bLen, k);
-                    if (carry != 0)
-                    {
-                        c[bLen] ^= carry;
-                    }
-                }
-                ++k;
-            }
+            multiplyWord(a, B.m_ints, bLen, c, 0);
 
             /*
              * Reduce the raw answer against the reduction coefficients
              */
             return reduceResult(c, 0, cLen, m, ks);
         }
+
+        // NOTE: This works, but is slower than width 4 processing
+//        if (aLen == 2)
+//        {
+//            /*
+//             * Use common-multiplicand optimization to save ~1/4 of the adds
+//             */
+//            long a1 = A.m_ints[0], a2 = A.m_ints[1];
+//            long aa = a1 & a2; a1 ^= aa; a2 ^= aa;
+//
+//            long[] b = B.m_ints;
+//            long[] c = new long[cLen];
+//            multiplyWord(aa, b, bLen, c, 1);
+//            add(c, 0, c, 1, cLen - 1);
+//            multiplyWord(a1, b, bLen, c, 0);
+//            multiplyWord(a2, b, bLen, c, 1);
+//
+//            /*
+//             * Reduce the raw answer against the reduction coefficients
+//             */
+//            return reduceResult(c, 0, cLen, m, ks);
+//        }
 
         /*
          * Determine the parameters of the interleaved window algorithm: the 'width' in bits to
@@ -878,7 +930,7 @@ class LongArray
 
             if ((k += width) >= top)
             {
-                if (top >= 64)
+                if (k >= 64)
                 {
                     break;
                 }
@@ -902,27 +954,22 @@ class LongArray
             }
         }
 
-        int ciPos = ci.length, pow2 = ciPos >>> 1;
-        int offset = top;
+        int ciPos = ci.length;
         while (--ciPos > 1)
         {
-            if (ciPos == pow2)
+            if ((ciPos & 1L) == 0L)
             {
                 /*
-                 * For powers of 2, we finally shift things back to the correct position and add to
-                 * the final result
+                 * For even numbers, shift contents and add to the right-shifted position
                  */
-                offset -= positions;
-                addShiftedByBits(c, ci[1], c, ci[pow2], cLen, offset);
-                pow2 >>>= 1;
+                addShiftedByBits(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
             }
             else
             {
                 /*
-                 * Non-powers of 2 are dealt with by 'distributing' down to the next-lowest power of
-                 * 2 and to the remainder (which will eventually distribute to the lower powers)
+                 * For odd numbers, 'distribute' contents to the result and the next-lowest position
                  */
-                distribute(c, ci[pow2], ci[ciPos - pow2], ci[ciPos], cLen);
+                distribute(c, ci[ciPos], ci[ciPos - 1], ci[1], cLen);
             }
         }
 
