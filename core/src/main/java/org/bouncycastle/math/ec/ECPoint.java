@@ -1508,9 +1508,9 @@ public abstract class ECPoint
                 if (b.bitLength() < (curve.getFieldSize() >> 1))
                 {
                     ECFieldElement t1 = L1.add(X1).square();
-                    ECFieldElement t2 = a.square().add(curve.getB());
-                    ECFieldElement t3 = aZ1Sq.square();
-                    L3 = t1.add(T).add(Z1Sq).multiply(t1).add(t2.multiply(Z1Sq.square())).add(X3).add(a.addOne().multiply(Z3));
+                    ECFieldElement t2 = aZ1Sq.square();
+                    ECFieldElement t3 = curve.getB().multiply(Z1Sq.square());
+                    L3 = t1.add(T).add(Z1Sq).multiply(t1).add(t2.add(t3)).add(X3).add(a.addOne().multiply(Z3));
                 }
                 else
                 {

@@ -513,17 +513,43 @@ class LongArray
         return new BigInteger(1, barr);
     }
 
-    private static long shiftLeft(long[] x, int count)
+    private static long shiftLeft(long[] x, int xOff, int count)
     {
         long prev = 0;
         for (int i = 0; i < count; ++i)
         {
-            long next = x[i];
-            x[i] = (next << 1) | prev;
+            long next = x[xOff + i];
+            x[xOff + i] = (next << 1) | prev;
             prev = next >>> 63;
         }
         return prev;
     }
+
+//    private static long shiftLeft(long[] x, int xOff, int count, int shift)
+//    {
+//        int shiftInv = 64 - shift;
+//        long prev = 0;
+//        for (int i = 0; i < count; ++i)
+//        {
+//            long next = x[xOff + i];
+//            x[xOff + i] = (next << shift) | prev;
+//            prev = next >>> shiftInv;
+//        }
+//        return prev;
+//    }
+//
+//    private static long shiftLeft(long[] x, int xOff, long[] z, int zOff, int count, int shift)
+//    {
+//        int shiftInv = 64 - shift;
+//        long prev = 0;
+//        for (int i = 0; i < count; ++i)
+//        {
+//            long next = x[xOff + i];
+//            z[zOff + i] = (next << shift) | prev;
+//            prev = next >>> shiftInv;
+//        }
+//        return prev;
+//    }
 
     public LongArray addOne()
     {
@@ -605,23 +631,15 @@ class LongArray
         }
     }
 
-    private static void addShiftedByWords(long[] x, int xOff, long[] y, int count)
+    private static void add(long[] x, int xOff, long[] y, int yOff, int count)
     {
         for (int i = 0; i < count; ++i)
         {
-            x[xOff + i] ^= y[i];
+            x[xOff + i] ^= y[yOff + i];
         }
     }
 
-    private static void add(long[] x, long[] y, int count)
-    {
-        for (int i = 0; i < count; ++i)
-        {
-            x[i] ^= y[i];
-        }
-    }
-
-    private static void distribute(long[] x, int dst1, int dst2, int src, int count)
+    private static void distribute(long[] x, int src, int dst1, int dst2, int count)
     {
         for (int i = 0; i < count; ++i)
         {
@@ -726,26 +744,59 @@ class LongArray
         buf[off + theInt] &= ~setter;
     }
 
+    private static void multiplyWord(long a, long[] b, int bLen, long[] c, int cOff)
+    {
+        if ((a & 1L) != 0L)
+        {
+            add(c, cOff, b, 0, bLen);
+        }
+        int k = 1;
+        while ((a >>>= 1) != 0)
+        {
+            if ((a & 1L) != 0L)
+            {
+                long carry = addShiftedByBits(c, cOff, b, 0, bLen, k);
+                if (carry != 0)
+                {
+                    c[cOff + bLen] ^= carry;
+                }
+            }
+            ++k;
+        }
+    }
+
     public LongArray modMultiply(LongArray other, int m, int[] ks)
     {
-        int aLen = getUsedLength();
-        if (aLen == 0)
+        /*
+         * Find out the degree of each argument and handle the zero cases
+         */
+        int aDeg = degree();
+        if (aDeg == 0)
         {
-            return new LongArray(1);
+            return this;
+        }
+        int bDeg = other.degree();
+        if (bDeg == 0)
+        {
+            return other;
         }
 
-        int bLen = other.getUsedLength();
-        if (bLen == 0)
-        {
-            return new LongArray(1);
-        }
-
+        /*
+         * Swap if necessary so that A is the smaller argument
+         */
         LongArray A = this, B = other;
-        if (aLen > bLen)
+        if (aDeg > bDeg)
         {
             A = other; B = this;
-            int tmp = aLen; aLen = bLen; bLen = tmp;
+            int tmp = aDeg; aDeg = bDeg; bDeg = tmp;
         }
+
+        /*
+         * Establish the word lengths of the arguments and result
+         */
+        int aLen = (aDeg + 63) >>> 6;
+        int bLen = (bDeg + 63) >>> 6;
+        int cLen = (aDeg + bDeg + 62) >>> 6;
 
         if (aLen == 1)
         {
@@ -755,103 +806,129 @@ class LongArray
                 return B;
             }
 
-            long[] b = B.m_ints;
-            long[] c = new long[(bitLength(a) + B.degree() + 62) >>> 6];
-            if ((a & 1L) != 0L)
-            {
-                add(c, b, bLen);
-            }
-            int k = 1;
-            while ((a >>>= 1) != 0)
-            {
-                if ((a & 1L) != 0L)
-                {
-                    long carry = addShiftedByBits(c, 0, b, 0, bLen, k);
-                    if (carry != 0)
-                    {
-                        c[bLen] ^= carry;
-                    }
-                }
-                ++k;
-            }
-            return new LongArray(c, 0, reduceInPlace(c, 0, c.length, m, ks));
+            /*
+             * Fast path for small A, with performance dependent only on the number of set bits
+             */
+            long[] c = new long[cLen];
+            multiplyWord(a, B.m_ints, bLen, c, 0);
+
+            /*
+             * Reduce the raw answer against the reduction coefficients
+             */
+            return reduceResult(c, 0, cLen, m, ks);
         }
 
-        int width, shifts, top;
+        // NOTE: This works, but is slower than width 4 processing
+//        if (aLen == 2)
+//        {
+//            /*
+//             * Use common-multiplicand optimization to save ~1/4 of the adds
+//             */
+//            long a1 = A.m_ints[0], a2 = A.m_ints[1];
+//            long aa = a1 & a2; a1 ^= aa; a2 ^= aa;
+//
+//            long[] b = B.m_ints;
+//            long[] c = new long[cLen];
+//            multiplyWord(aa, b, bLen, c, 1);
+//            add(c, 0, c, 1, cLen - 1);
+//            multiplyWord(a1, b, bLen, c, 0);
+//            multiplyWord(a2, b, bLen, c, 1);
+//
+//            /*
+//             * Reduce the raw answer against the reduction coefficients
+//             */
+//            return reduceResult(c, 0, cLen, m, ks);
+//        }
+
+        /*
+         * Determine the parameters of the interleaved window algorithm: the 'width' in bits to
+         * process together, the number of evaluation 'positions' implied by that width, and the
+         * 'top' position at which the regular window algorithm stops.
+         */
+        int width, positions, top;
 
         // NOTE: These work, but require too many shifts to be competitive
-//        width = 1; shifts = 64; top = 64;
-//        width = 2; shifts = 32; top = 64;
-//        width = 3; shifts = 21; top = 63;
+//        width = 1; positions = 64; top = 64;
+//        width = 2; positions = 32; top = 64;
+//        width = 3; positions = 21; top = 63;
 
         if (aLen <= 16)
         {
-            width = 4; shifts = 16; top = 64;
+            width = 4; positions = 16; top = 64;
         }
         else if (aLen <= 32)
         {
-            width = 5; shifts = 13; top = 65;
+            width = 5; positions = 13; top = 65;
         }
         else if (aLen <= 128)
         {
-            width = 7; shifts = 9; top = 63;
+            width = 7; positions = 9; top = 63;
         }
         else
         {
-            width = 8; shifts = 8; top = 64;
+            width = 8; positions = 8; top = 64;
         }
 
-        int actualShifts = shifts;
-        if (top >= 64)
-        {
-            --actualShifts;
-        }
+        /*
+         * Determine if B will get bigger during shifting
+         */
+        int shifts = top < 64 ? positions : positions - 1;
+        int bMax = (bDeg + shifts + 63) >>> 6;
 
-        int bExt = bLen;
-        if ((B.m_ints[bLen - 1] >>> (64 - actualShifts)) != 0L)
-        {
-            ++bExt;
-        }
-
-        int cLen = bExt + aLen;
-
-        long[] c = new long[cLen << width];
-        System.arraycopy(B.m_ints, 0, c, 0, bLen);
-        switch (width)
-        {
-        case 3:
-            interleave3(A.m_ints, 0, c, bExt, aLen);
-            break;
-        case 5:
-            interleave5(A.m_ints, 0, c, bExt, aLen);
-            break;
-        case 7:
-            interleave7(A.m_ints, 0, c, bExt, aLen);
-            break;
-        default:
-            interleave2_n(A.m_ints, 0, c, bExt, aLen, bitLengths[width] - 1);
-            break;
-        }
-
+        /*
+         * Create a single temporary buffer, with an offset table to find the positions of things in it 
+         */
         int[] ci = new int[1 << width];
-        for (int i = 1; i < ci.length; ++i)
+        int cTotal = aLen;
         {
-            ci[i] = ci[i - 1] + cLen;
+            ci[0] = cTotal;
+            cTotal += bMax;
+            ci[1] = cTotal;
+            for (int i = 2; i < ci.length; ++i)
+            {
+                cTotal += cLen;
+                ci[i] = cTotal;
+            }
+            cTotal += cLen;
         }
+        // NOTE: Provide a safe dump for "high zeroes" since we are adding 'bMax' and not 'bLen'
+        ++cTotal;
 
+        long[] c = new long[cTotal];
+
+        // Prepare A in interleaved form, according to the chosen width
+        interleave(A.m_ints, 0, c, 0, aLen, width);
+
+        // Make a working copy of B, since we will be shifting it
+        System.arraycopy(B.m_ints, 0, c, aLen, bLen);
+
+        /*
+         * The main loop analyzes the interleaved windows in A, and for each non-zero window
+         * a single word-array XOR is performed to a carefully selected slice of 'c'. The loop is
+         * breadth-first, checking the lowest window in each word, then looping again for the
+         * next higher window position.
+         */
         int MASK = (1 << width) - 1;
 
         int k = 0;
         for (;;)
         {
-            for (int aPos = 0; aPos < aLen; ++aPos)
+            int aPos = 0;
+            do
             {
-                int index = (int)(c[bExt + aPos] >>> k) & MASK;
+                long aVal = c[aPos] >>> k;
+                int index = (int)(aVal) & MASK;
                 if (index != 0)
                 {
-                    addShiftedByWords(c, aPos + ci[index], c, bExt);
+                    /*
+                     * Add to a 'c' buffer based on the bit-pattern of 'index'. Since A is in
+                     * interleaved form, the bits represent the current B shifted by 0, 'positions',
+                     * 'positions' * 2, ..., 'positions' * ('width' - 1)
+                     */
+                    add(c, ci[index] + aPos, c, aLen, bMax);
                 }
             }
+            while (++aPos < aLen);
 
             if ((k += width) >= top)
             {
@@ -860,31 +937,50 @@ class LongArray
                     break;
                 }
 
-                // NOTE: This adjustment allows to process the top bit for widths 3, 7
+                /*
+                 * Adjustment for window setups with top == 63, the final bit (if any) is processed
+                 * as the top-bit of a window
+                 */
                 k = 64 - width;
                 MASK &= MASK << (top - k);
             }
 
-            shiftLeft(c, bExt);
+            /*
+             * After each window position has been checked in all words of A, B is shifted to the
+             * left 1 place and expanded if necessary.
+             */
+            shiftLeft(c, aLen, bMax);
         }
 
-        int ciPos = ci.length, pow2 = ciPos >>> 1;
-        int offset = top;
+        int ciPos = ci.length;
         while (--ciPos > 1)
         {
-            if (ciPos == pow2)
+            if ((ciPos & 1L) == 0L)
             {
-                offset -= shifts;
-                addShiftedByBits(c, ci[1], c, ci[pow2], cLen, offset);
-                pow2 >>>= 1;
+                /*
+                 * For even numbers, shift contents and add to the right-shifted position
+                 */
+                addShiftedByBits(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
             }
             else
             {
-                distribute(c, ci[pow2], ci[ciPos - pow2], ci[ciPos], cLen);
+                /*
+                 * For odd numbers, 'distribute' contents to the result and the next-lowest position
+                 */
+                distribute(c, ci[ciPos], ci[ciPos - 1], ci[1], cLen);
             }
         }
 
-        return new LongArray(c, ci[1], reduceInPlace(c, ci[1], cLen, m, ks));
+        /*
+         * Finally the raw answer is collected, reduce it against the reduction coefficients
+         */
+        return reduceResult(c, ci[1], cLen, m, ks);
+    }
+
+    private static LongArray reduceResult(long[] buf, int off, int len, int m, int[] ks)
+    {
+        int rLen = reduceInPlace(buf, off, len, m, ks);
+        return new LongArray(buf, off, rLen);
     }
 
 //    private static void deInterleave(long[] x, int xOff, long[] z, int zOff, int count, int rounds)
@@ -1013,6 +1109,25 @@ class LongArray
         }
 
         return new LongArray(r, 0, reduceInPlace(r, 0, r.length, m, ks));
+    }
+
+    private static void interleave(long[] x, int xOff, long[] z, int zOff, int count, int width)
+    {
+        switch (width)
+        {
+        case 3:
+            interleave3(x, xOff, z, zOff, count);
+            break;
+        case 5:
+            interleave5(x, xOff, z, zOff, count);
+            break;
+        case 7:
+            interleave7(x, xOff, z, zOff, count);
+            break;
+        default:
+            interleave2_n(x, xOff, z, zOff, count, bitLengths[width] - 1);
+            break;
+        }
     }
 
     private static void interleave3(long[] x, int xOff, long[] z, int zOff, int count)

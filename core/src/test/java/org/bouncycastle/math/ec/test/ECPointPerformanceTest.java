@@ -69,27 +69,34 @@ public class ECPointPerformanceTest extends TestCase
 
     private double randMult(SecureRandom random, ECCurve c, ECPoint g, BigInteger n) throws Exception
     {
-        BigInteger k = new BigInteger(n.bitLength() - 1, random);
+        BigInteger[] ks = new BigInteger[16];
+        for (int i = 0; i < ks.length; ++i)
+        {
+            ks[i] = new BigInteger(n.bitLength() - 1, random);
+        }
 
+        int ki = 0;
         ECPoint p = g;
         for (int i = 1; i <= PRE_ROUNDS; i++)
         {
+            BigInteger k = ks[ki];
             p = g.multiply(k);
-            if (i % 10 == 0)
+            if (++ki == ks.length)
             {
+                ki = 0;
                 g = p;
             }
-            k = k.flipBit(i % n.bitLength());
         }
         long startTime = System.currentTimeMillis();
         for (int i = 1; i <= NUM_ROUNDS; i++)
         {
+            BigInteger k = ks[ki];
             p = g.multiply(k);
-            if (i % 10 == 0)
+            if (++ki == ks.length)
             {
+                ki = 0;
                 g = p;
             }
-            k = k.flipBit(i % n.bitLength());
         }
         long endTime = System.currentTimeMillis();
 
