@@ -437,6 +437,23 @@ class LongArray
         return (i << 6) + bitLength(w);
     }
 
+    private int degreeFrom(int limit)
+    {
+        int i = (limit + 62) >>> 6;
+        long w;
+        do
+        {
+            if (i == 0)
+            {
+                return 0;
+            }
+            w = m_ints[--i];
+        }
+        while (w == 0);
+
+        return (i << 6) + bitLength(w);
+    }
+
     private static int bitLength(long w)
     {
         int u = (int)(w >>> 32), b;
@@ -587,15 +604,8 @@ class LongArray
             m_ints = resizedInts(minLen);
         }
 
-        int shiftInv = 64 - shift;
-        long prev = 0;
-        for (int i = 0; i < otherUsedLen; ++i)
-        {
-            long next = other.m_ints[i];
-            m_ints[i + words] ^= (next << shift) | prev;
-            prev = next >>> shiftInv;
-        }
-        m_ints[otherUsedLen + words] ^= prev;
+        long carry = addShiftedByBits(m_ints, words, other.m_ints, 0, otherUsedLen, shift);
+        m_ints[otherUsedLen + words] ^= carry;
     }
 
     private static long addShiftedByBits(long[] x, int xOff, long[] y, int yOff, int count, int shift)
@@ -625,10 +635,7 @@ class LongArray
             m_ints = resizedInts(minLen);
         }
 
-        for (int i = 0; i < otherUsedLen; i++)
-        {
-            m_ints[words + i] ^= other.m_ints[i];
-        }
+        add(m_ints, words, other.m_ints, 0, otherUsedLen);
     }
 
     private static void add(long[] x, int xOff, long[] y, int yOff, int count)
@@ -694,11 +701,6 @@ class LongArray
         return m_ints.length > 0 && (m_ints[0] & 1L) != 0;
     }
 
-    public boolean testBit(int n)
-    {
-        return testBit(m_ints, 0, n);
-    }
-
     private static boolean testBit(long[] buf, int off, int n)
     {
         // theInt = n / 64
@@ -717,11 +719,6 @@ class LongArray
         int theBit = n & 0x3F;
         long flipper = 1L << theBit;
         buf[off + theInt] ^= flipper;
-    }
-
-    public void setBit(int n)
-    {
-        setBit(m_ints, 0, n);
     }
 
     private static void setBit(long[] buf, int off, int n)
@@ -1043,15 +1040,20 @@ class LongArray
         {
             if (testBit(buf, off, bitlength))
             {
-                clearBit(buf, off, bitlength);
-                int bit = bitlength - m;
-                flipBit(buf, off, bit);
-                int j = ks.length;
-                while (--j >= 0)
-                {
-                    flipBit(buf, off, ks[j] + bit);
-                }
+                reduceBit(buf, off, bitlength, m, ks);
             }
+        }
+    }
+
+    private static void reduceBit(long[] buf, int off, int bit, int m, int[] ks)
+    {
+        flipBit(buf, off, bit);
+        int base = bit - m;
+        flipBit(buf, off, base);
+        int j = ks.length;
+        while (--j >= 0)
+        {
+            flipBit(buf, off, ks[j] + base);
         }
     }
 
@@ -1110,6 +1112,38 @@ class LongArray
 
         return new LongArray(r, 0, reduceInPlace(r, 0, r.length, m, ks));
     }
+
+//    private LongArray modSquareN(int n, int m, int[] ks)
+//    {
+//        int len = getUsedLength();
+//        if (len == 0)
+//        {
+//            return this;
+//        }
+//
+//        int mLen = (m + 63) >>> 6;
+//        long[] r = new long[mLen << 1];
+//        System.arraycopy(m_ints, 0, r, 0, len);
+//
+//        while (--n >= 0)
+//        {
+//            squareInPlace(r, len, m, ks);
+//            len = reduceInPlace(r, 0, r.length, m, ks);
+//        }
+//
+//        return new LongArray(r, 0, len);
+//    }
+//
+//    private static void squareInPlace(long[] x, int xLen, int m, int[] ks)
+//    {
+//        int pos = xLen << 1;
+//        while (--xLen >= 0)
+//        {
+//            long xVal = x[xLen];
+//            x[--pos] = interleave2_32to64((int)(xVal >>> 32));
+//            x[--pos] = interleave2_32to64((int)xVal);
+//        }
+//    }
 
     private static void interleave(long[] x, int xOff, long[] z, int zOff, int count, int width)
     {
@@ -1283,12 +1317,89 @@ class LongArray
         return (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
     }
 
+//    private static LongArray expItohTsujii(LongArray x, int scale, int numTerms, int m, int[] ks)
+//    {
+//        if (numTerms == 1)
+//        {
+//            return x;
+//        }
+//
+//        LongArray x2 = x.modSquareN(scale, m, ks);
+//        LongArray x3 = x2.modMultiply(x, m, ks);
+//        LongArray r = expItohTsujii(x3, scale << 1, numTerms >>> 1, m, ks);
+//
+//        if ((numTerms & 1) != 0)
+//        {
+//            r = r.modSquareN(scale, m, ks);
+//            r = r.modMultiply(x, m, ks);
+//        }
+//        
+//        return r;
+//    }
+//
+//    private static LongArray expItohTsujii23(LongArray x, int scale, int numTerms, int m, int[] ks)
+//    {
+//        if (numTerms == 1)
+//        {
+//            return x;
+//        }
+//
+//        LongArray x2 = x.modSquareN(scale, m, ks);
+//        LongArray x3 = x2.modMultiply(x, m, ks);
+//
+//        if (numTerms % 3 == 0)
+//        {
+//            LongArray x4 = x2.modSquareN(scale, m, ks);
+//            LongArray x7 = x3.modMultiply(x4, m, ks);
+//            return expItohTsujii23(x7, scale * 3, numTerms / 3, m, ks);
+//        }
+//
+//        LongArray r = expItohTsujii23(x3, scale << 1, numTerms >>> 1, m, ks);
+//
+//        if ((numTerms & 1) != 0)
+//        {
+//            r = r.modSquareN(scale, m, ks);
+//            r = r.modMultiply(x, m, ks);
+//        }
+//        
+//        return r;
+//    }
+
     public LongArray modInverse(int m, int[] ks)
     {
-        // Inversion in F2m using the extended Euclidean algorithm
-        // Input: A nonzero polynomial a(z) of degree at most m-1
-        // Output: a(z)^(-1) mod f(z)
+        /*
+         * Fermat's Little Theorem
+         */
+//        LongArray A = this;
+//        LongArray B = A.modSquare(m, ks);
+//        LongArray R0 = B, R1 = B;
+//        for (int i = 2; i < m; ++i)
+//        {
+//            R1 = R1.modSquare(m, ks);
+//            R0 = R0.modMultiply(R1, m, ks);
+//        }
+//
+//        return R0;
 
+        /*
+         * Itoh-Tsujii
+         */
+//        LongArray B = modSquare(m, ks);
+//        switch (m)
+//        {
+//        case 409:
+//        case 571:
+//            return expItohTsujii23(B, 1, m - 1, m, ks);
+//        default:
+//            return expItohTsujii(B, 1, m - 1, m, ks);
+//        }
+
+        /*
+         * Inversion in F2m using the extended Euclidean algorithm
+         * 
+         * Input: A nonzero polynomial a(z) of degree at most m-1
+         * Output: a(z)^(-1) mod f(z)
+         */
         int uzDegree = degree();
         if (uzDegree == 1)
         {
@@ -1302,56 +1413,44 @@ class LongArray
 
         // v(z) := f(z)
         LongArray vz = new LongArray(t);
-        vz.setBit(m);
-        vz.setBit(0);
-        vz.setBit(ks[0]);
-        if (ks.length > 1) 
-        {
-            vz.setBit(ks[1]);
-            vz.setBit(ks[2]);
-        }
+        reduceBit(vz.m_ints, 0, m, m, ks);
 
         // g1(z) := 1, g2(z) := 0
         LongArray g1z = new LongArray(t);
-        g1z.setBit(0);
+        g1z.m_ints[0] ^= 1;
         LongArray g2z = new LongArray(t);
 
-        while (uzDegree != 0)
+        int[] ds = new int[]{ uzDegree, m + 1 };
+        LongArray[] uv = new LongArray[]{ uz, vz };
+        LongArray[] gs = new LongArray[]{ g1z, g2z };
+
+        int b = 1;
+        int d1 = ds[b];
+        int j = d1 - ds[1 - b];
+
+        for (;;)
         {
-            // j := deg(u(z)) - deg(v(z))
-            int j = uzDegree - vz.degree();
-
-            // If j < 0 then: u(z) <-> v(z), g1(z) <-> g2(z), j := -j
-            if (j < 0) 
+            if (j < 0)
             {
-                final LongArray uzCopy = uz;
-                uz = vz;
-                vz = uzCopy;
-
-                final LongArray g1zCopy = g1z;
-                g1z = g2z;
-                g2z = g1zCopy;
-
                 j = -j;
+                ds[b] = d1;
+                b = 1 - b;
+                d1 = ds[b];
             }
 
-            // u(z) := u(z) + z^j * v(z)
-            // Note, that no reduction modulo f(z) is required, because
-            // deg(u(z) + z^j * v(z)) <= max(deg(u(z)), j + deg(v(z)))
-            // = max(deg(u(z)), deg(u(z)) - deg(v(z)) + deg(v(z))
-            // = deg(u(z))
-            // uz = uz.xor(vz.shiftLeft(j));
-            uz.addShiftedByBits(vz, j);
-            uzDegree = uz.degree();
+            uv[b].addShiftedByBits(uv[1 - b], j);
 
-            // g1(z) := g1(z) + z^j * g2(z)
-//            g1z = g1z.xor(g2z.shiftLeft(j));
-            if (uzDegree != 0)
+            int d2 = uv[b].degreeFrom(d1);
+            if (d2 == 0)
             {
-                g1z.addShiftedByBits(g2z, j);
+                return gs[1 - b];
             }
+
+            gs[b].addShiftedByBits(gs[1 - b], j);
+
+            j += (d2 - d1);
+            d1 = d2;
         }
-        return g2z;
     }
 
     public boolean equals(Object o)
