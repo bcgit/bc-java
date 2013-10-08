@@ -524,19 +524,21 @@ class X509CRLObject
             throw new RuntimeException("X.509 CRL used with non X.509 Cert");
         }
 
-        TBSCertList.CRLEntry[] certs = c.getRevokedCertificates();
+        Enumeration certs = c.getRevokedCertificateEnumeration();
 
         X500Name caName = c.getIssuer();
 
-        if (certs != null)
+        if (certs.hasMoreElements())
         {
             BigInteger serial = ((X509Certificate)cert).getSerialNumber();
 
-            for (int i = 0; i < certs.length; i++)
+            while (certs.hasMoreElements())
             {
-                if (isIndirect && certs[i].hasExtensions())
+                TBSCertList.CRLEntry entry = TBSCertList.CRLEntry.getInstance(certs.nextElement());
+
+                if (isIndirect && entry.hasExtensions())
                 {
-                    Extension currentCaName = certs[i].getExtensions().getExtension(Extension.certificateIssuer);
+                    Extension currentCaName = entry.getExtensions().getExtension(Extension.certificateIssuer);
 
                     if (currentCaName != null)
                     {
@@ -544,7 +546,7 @@ class X509CRLObject
                     }
                 }
 
-                if (certs[i].getUserCertificate().getValue().equals(serial))
+                if (entry.getUserCertificate().getValue().equals(serial))
                 {
                     X500Name issuer;
 
