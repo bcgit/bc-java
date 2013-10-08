@@ -554,43 +554,43 @@ class LongArray
         return new BigInteger(1, barr);
     }
 
-    private static long shiftLeft(long[] x, int xOff, int count)
+//    private static long shiftLeft(long[] x, int xOff, int count)
+//    {
+//        long prev = 0;
+//        for (int i = 0; i < count; ++i)
+//        {
+//            long next = x[xOff + i];
+//            x[xOff + i] = (next << 1) | prev;
+//            prev = next >>> 63;
+//        }
+//        return prev;
+//    }
+
+    private static long shiftLeft(long[] x, int xOff, int count, int shift)
     {
+        int shiftInv = 64 - shift;
         long prev = 0;
         for (int i = 0; i < count; ++i)
         {
             long next = x[xOff + i];
-            x[xOff + i] = (next << 1) | prev;
-            prev = next >>> 63;
+            x[xOff + i] = (next << shift) | prev;
+            prev = next >>> shiftInv;
         }
         return prev;
     }
 
-//    private static long shiftLeft(long[] x, int xOff, int count, int shift)
-//    {
-//        int shiftInv = 64 - shift;
-//        long prev = 0;
-//        for (int i = 0; i < count; ++i)
-//        {
-//            long next = x[xOff + i];
-//            x[xOff + i] = (next << shift) | prev;
-//            prev = next >>> shiftInv;
-//        }
-//        return prev;
-//    }
-//
-//    private static long shiftLeft(long[] x, int xOff, long[] z, int zOff, int count, int shift)
-//    {
-//        int shiftInv = 64 - shift;
-//        long prev = 0;
-//        for (int i = 0; i < count; ++i)
-//        {
-//            long next = x[xOff + i];
-//            z[zOff + i] = (next << shift) | prev;
-//            prev = next >>> shiftInv;
-//        }
-//        return prev;
-//    }
+    private static long shiftLeft(long[] x, int xOff, long[] z, int zOff, int count, int shift)
+    {
+        int shiftInv = 64 - shift;
+        long prev = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            long next = x[xOff + i];
+            z[zOff + i] = (next << shift) | prev;
+            prev = next >>> shiftInv;
+        }
+        return prev;
+    }
 
     public LongArray addOne()
     {
@@ -886,35 +886,24 @@ class LongArray
          * process together, the number of evaluation 'positions' implied by that width, and the
          * 'top' position at which the regular window algorithm stops.
          */
-        int width, positions, top;
+        int width, positions, top, banks;
 
-        // NOTE: These work, but require too many shifts to be competitive
-//        width = 1; positions = 64; top = 64;
-//        width = 2; positions = 32; top = 64;
-//        width = 3; positions = 21; top = 63;
-
-        if (aLen <= 16)
-        {
-            width = 4; positions = 16; top = 64;
-        }
-        else if (aLen <= 32)
-        {
-            width = 5; positions = 13; top = 65;
-        }
-        else if (aLen <= 128)
-        {
-            width = 7; positions = 9; top = 63;
-        }
-        else
-        {
-            width = 8; positions = 8; top = 64;
-        }
+        // NOTE: width 4 is the fastest over the entire range of sizes used in current crypto 
+//        width = 1; positions = 64; top = 64; banks = 4;
+//        width = 2; positions = 32; top = 64; banks = 4;
+//        width = 3; positions = 21; top = 63; banks = 3;
+        width = 4; positions = 16; top = 64; banks = 2;
+//        width = 5; positions = 13; top = 65; banks = 7;
+//        width = 7; positions = 9; top = 63; banks = 9;
+//        width = 8; positions = 8; top = 64; banks = 8;
 
         /*
          * Determine if B will get bigger during shifting
          */
         int shifts = top < 64 ? positions : positions - 1;
         int bMax = (bDeg + shifts + 63) >>> 6;
+
+        int bTotal = bMax * banks, stride = width * banks;
 
         /*
          * Create a single temporary buffer, with an offset table to find the positions of things in it 
@@ -923,7 +912,7 @@ class LongArray
         int cTotal = aLen;
         {
             ci[0] = cTotal;
-            cTotal += bMax;
+            cTotal += bTotal;
             ci[1] = cTotal;
             for (int i = 2; i < ci.length; ++i)
             {
@@ -941,7 +930,14 @@ class LongArray
         interleave(A.m_ints, 0, c, 0, aLen, width);
 
         // Make a working copy of B, since we will be shifting it
-        System.arraycopy(B.m_ints, 0, c, aLen, bLen);
+        {
+            int bOff = aLen;
+            System.arraycopy(B.m_ints, 0, c, bOff, bLen);
+            for (int bank = 1; bank < banks; ++bank)
+            {
+                shiftLeft(c, aLen, c, bOff += bMax, bMax, bank);
+            }
+        }
 
         /*
          * The main loop analyzes the interleaved windows in A, and for each non-zero window
@@ -958,20 +954,30 @@ class LongArray
             do
             {
                 long aVal = c[aPos] >>> k;
-                int index = (int)(aVal) & MASK;
-                if (index != 0)
+                int bank = 0, bOff = aLen;
+                for (;;)
                 {
-                    /*
-                     * Add to a 'c' buffer based on the bit-pattern of 'index'. Since A is in
-                     * interleaved form, the bits represent the current B shifted by 0, 'positions',
-                     * 'positions' * 2, ..., 'positions' * ('width' - 1)
-                     */
-                    add(c, ci[index] + aPos, c, aLen, bMax);
+                    int index = (int)(aVal) & MASK;
+                    if (index != 0)
+                    {
+                        /*
+                         * Add to a 'c' buffer based on the bit-pattern of 'index'. Since A is in
+                         * interleaved form, the bits represent the current B shifted by 0, 'positions',
+                         * 'positions' * 2, ..., 'positions' * ('width' - 1)
+                         */
+                        add(c, aPos + ci[index], c, bOff, bMax);
+                    }
+                    if (++bank == banks)
+                    {
+                        break;
+                    }
+                    bOff += bMax;
+                    aVal >>>= width;
                 }
             }
             while (++aPos < aLen);
 
-            if ((k += width) >= top)
+            if ((k += stride) >= top)
             {
                 if (k >= 64)
                 {
@@ -990,7 +996,7 @@ class LongArray
              * After each window position has been checked in all words of A, B is shifted to the
              * left 1 place and expanded if necessary.
              */
-            shiftLeft(c, aLen, bMax);
+            shiftLeft(c, aLen, bTotal, banks);
         }
 
         int ciPos = ci.length;
