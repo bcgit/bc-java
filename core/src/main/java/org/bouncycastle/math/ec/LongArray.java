@@ -806,6 +806,152 @@ class LongArray
         }
     }
 
+    public LongArray modMultiplyLD(LongArray other, int m, int[] ks)
+    {
+        /*
+         * Find out the degree of each argument and handle the zero cases
+         */
+        int aDeg = degree();
+        if (aDeg == 0)
+        {
+            return this;
+        }
+        int bDeg = other.degree();
+        if (bDeg == 0)
+        {
+            return other;
+        }
+
+        /*
+         * Swap if necessary so that A is the smaller argument
+         */
+        LongArray A = this, B = other;
+        if (aDeg > bDeg)
+        {
+            A = other; B = this;
+            int tmp = aDeg; aDeg = bDeg; bDeg = tmp;
+        }
+
+        /*
+         * Establish the word lengths of the arguments and result
+         */
+        int aLen = (aDeg + 63) >>> 6;
+        int bLen = (bDeg + 63) >>> 6;
+        int cLen = (aDeg + bDeg + 62) >>> 6;
+
+        if (aLen == 1)
+        {
+            long a = A.m_ints[0];
+            if (a == 1L)
+            {
+                return B;
+            }
+
+            /*
+             * Fast path for small A, with performance dependent only on the number of set bits
+             */
+            long[] c = new long[cLen];
+            multiplyWord(a, B.m_ints, bLen, c, 0);
+
+            /*
+             * Reduce the raw answer against the reduction coefficients
+             */
+            return reduceResult(c, 0, cLen, m, ks);
+        }
+
+        /*
+         * Determine if B will get bigger during shifting
+         */
+        int bMax = (bDeg + 7 + 63) >>> 6;
+
+        /*
+         * Lookup table for the offset of each B in the tables
+         */
+        int[] ti = new int[16];
+
+        /*
+         * Precompute table of all 4-bit products of B
+         */
+        long[] T0 = new long[bMax << 4];
+        int tOff = bMax;
+        ti[1] = tOff;
+        System.arraycopy(B.m_ints, 0, T0, tOff, bLen);
+        for (int i = 2; i < 16; ++i)
+        {
+            ti[i] = (tOff += bMax);
+            if ((i & 1) == 0)
+            {
+                shiftLeft(T0, tOff >>> 1, T0, tOff, bMax, 1);
+            }
+            else
+            {
+                add(T0, tOff, T0, tOff - bMax, bMax);
+                add(T0, tOff, T0, bMax, bMax);
+            }
+        }
+
+        /*
+         * Second table with all 4-bit products of B shifted 4 bits
+         */
+        long[] T1 = new long[T0.length];
+        shiftLeft(T0, 0, T1, 0, T0.length, 4);
+
+        long[] a = A.m_ints;
+        long[] c = new long[cLen];
+
+        int MASK = 0xF;
+
+        /*
+         * Lopez-Dahab algorithm
+         */
+
+        for (int k = 56; k >= 0; k -= 8)
+        {
+            for (int j = 1; j < aLen; j += 2)
+            {
+                int aVal = (int)(a[j] >>> k);
+                int u = aVal & MASK;
+                if (u != 0)
+                {
+                    add(c, j - 1, T0, ti[u], bMax);
+                }
+                int v = (aVal >>> 4) & MASK;
+                if (v != 0)
+                {
+                    add(c, j - 1, T1, ti[v], bMax);
+                }
+            }
+            shiftLeft(c, 0, cLen, 8);
+        }
+
+        for (int k = 56; k >= 0; k -= 8)
+        {
+            for (int j = 0; j < aLen; j += 2)
+            {
+                int aVal = (int)(a[j] >>> k);
+                int u = aVal & MASK;
+                if (u != 0)
+                {
+                    add(c, j, T0, ti[u], bMax);
+                }
+                int v = (aVal >>> 4) & MASK;
+                if (v != 0)
+                {
+                    add(c, j, T1, ti[v], bMax);
+                }
+            }
+            if (k > 0)
+            {
+                shiftLeft(c, 0, cLen, 8);
+            }
+        }
+
+        /*
+         * Finally the raw answer is collected, reduce it against the reduction coefficients
+         */
+        return reduceResult(c, 0, cLen, m, ks);
+    }
+
     public LongArray modMultiply(LongArray other, int m, int[] ks)
     {
         /*
