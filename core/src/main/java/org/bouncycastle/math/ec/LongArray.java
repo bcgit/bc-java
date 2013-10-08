@@ -892,7 +892,7 @@ class LongArray
 //        width = 1; positions = 64; top = 64; banks = 4;
 //        width = 2; positions = 32; top = 64; banks = 4;
 //        width = 3; positions = 21; top = 63; banks = 3;
-        width = 4; positions = 16; top = 64; banks = 2;
+        width = 4; positions = 16; top = 64; banks = 8;
 //        width = 5; positions = 13; top = 65; banks = 7;
 //        width = 7; positions = 9; top = 63; banks = 9;
 //        width = 8; positions = 8; top = 64; banks = 8;
