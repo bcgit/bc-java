@@ -605,31 +605,51 @@ class LongArray
         return new LongArray(ints);
     }
 
-    private void addShiftedByBits(LongArray other, int bits)
+//    private void addShiftedByBits(LongArray other, int bits)
+//    {
+//        int words = bits >>> 6;
+//        int shift = bits & 0x3F;
+//
+//        if (shift == 0)
+//        {
+//            addShiftedByWords(other, words);
+//            return;
+//        }
+//
+//        int otherUsedLen = other.getUsedLength();
+//        if (otherUsedLen == 0)
+//        {
+//            return;
+//        }
+//
+//        int minLen = otherUsedLen + words + 1;
+//        if (minLen > m_ints.length)
+//        {
+//            m_ints = resizedInts(minLen);
+//        }
+//
+//        long carry = addShiftedByBits(m_ints, words, other.m_ints, 0, otherUsedLen, shift);
+//        m_ints[otherUsedLen + words] ^= carry;
+//    }
+
+    private void addShiftedByBitsSafe(LongArray other, int otherDegree, int bits)
     {
+        int otherLen = (otherDegree + 63) >>> 6;
+
         int words = bits >>> 6;
         int shift = bits & 0x3F;
 
         if (shift == 0)
         {
-            addShiftedByWords(other, words);
+            add(m_ints, words, other.m_ints, 0, otherLen);
             return;
         }
 
-        int otherUsedLen = other.getUsedLength();
-        if (otherUsedLen == 0)
+        long carry = addShiftedByBits(m_ints, words, other.m_ints, 0, otherLen, shift);
+        if (carry != 0L)
         {
-            return;
+            m_ints[otherLen + words] ^= carry;
         }
-
-        int minLen = otherUsedLen + words + 1;
-        if (minLen > m_ints.length)
-        {
-            m_ints = resizedInts(minLen);
-        }
-
-        long carry = addShiftedByBits(m_ints, words, other.m_ints, 0, otherUsedLen, shift);
-        m_ints[otherUsedLen + words] ^= carry;
     }
 
     private static long addShiftedByBits(long[] x, int xOff, long[] y, int yOff, int count, int shift)
@@ -745,25 +765,25 @@ class LongArray
         buf[off + theInt] ^= flipper;
     }
 
-    private static void setBit(long[] buf, int off, int n)
-    {
-        // theInt = n / 64
-        int theInt = n >>> 6;
-        // theBit = n % 64
-        int theBit = n & 0x3F;
-        long setter = 1L << theBit;
-        buf[off + theInt] |= setter;
-    }
-
-    private static void clearBit(long[] buf, int off, int n)
-    {
-        // theInt = n / 64
-        int theInt = n >>> 6;
-        // theBit = n % 64
-        int theBit = n & 0x3F;
-        long setter = 1L << theBit;
-        buf[off + theInt] &= ~setter;
-    }
+//    private static void setBit(long[] buf, int off, int n)
+//    {
+//        // theInt = n / 64
+//        int theInt = n >>> 6;
+//        // theBit = n % 64
+//        int theBit = n & 0x3F;
+//        long setter = 1L << theBit;
+//        buf[off + theInt] |= setter;
+//    }
+//
+//    private static void clearBit(long[] buf, int off, int n)
+//    {
+//        // theInt = n / 64
+//        int theInt = n >>> 6;
+//        // theBit = n % 64
+//        int theBit = n & 0x3F;
+//        long setter = 1L << theBit;
+//        buf[off + theInt] &= ~setter;
+//    }
 
     private static void multiplyWord(long a, long[] b, int bLen, long[] c, int cOff)
     {
@@ -1507,39 +1527,57 @@ class LongArray
 
         // g1(z) := 1, g2(z) := 0
         LongArray g1z = new LongArray(t);
-        g1z.m_ints[0] ^= 1;
+        g1z.m_ints[0] = 1L;
         LongArray g2z = new LongArray(t);
 
-        int[] ds = new int[]{ uzDegree, m + 1 };
+        int[] uvDeg = new int[]{ uzDegree, m + 1 };
         LongArray[] uv = new LongArray[]{ uz, vz };
-        LongArray[] gs = new LongArray[]{ g1z, g2z };
+
+        int[] ggDeg = new int[]{ 1, 0 };
+        LongArray[] gg = new LongArray[]{ g1z, g2z };
 
         int b = 1;
-        int d1 = ds[b];
-        int j = d1 - ds[1 - b];
+        int duv1 = uvDeg[b];
+        int dgg1 = ggDeg[b];
+        int j = duv1 - uvDeg[1 - b];
 
         for (;;)
         {
             if (j < 0)
             {
                 j = -j;
-                ds[b] = d1;
+                uvDeg[b] = duv1;
+                ggDeg[b] = dgg1;
                 b = 1 - b;
-                d1 = ds[b];
+                duv1 = uvDeg[b];
+                dgg1 = ggDeg[b];
             }
 
-            uv[b].addShiftedByBits(uv[1 - b], j);
+            uv[b].addShiftedByBitsSafe(uv[1 - b], uvDeg[1 - b], j);
 
-            int d2 = uv[b].degreeFrom(d1);
-            if (d2 == 0)
+            int duv2 = uv[b].degreeFrom(duv1);
+            if (duv2 == 0)
             {
-                return gs[1 - b];
+                return gg[1 - b];
             }
 
-            gs[b].addShiftedByBits(gs[1 - b], j);
+            {
+                int dgg2 = ggDeg[1 - b];
+                gg[b].addShiftedByBitsSafe(gg[1 - b], dgg2, j);
+                dgg2 += j;
 
-            j += (d2 - d1);
-            d1 = d2;
+                if (dgg2 > dgg1)
+                {
+                    dgg1 = dgg2;
+                }
+                else if (dgg2 == dgg1)
+                {
+                    dgg1 = gg[b].degreeFrom(dgg1);
+                }
+            }
+
+            j += (duv2 - duv1);
+            duv1 = duv2;
         }
     }
 
