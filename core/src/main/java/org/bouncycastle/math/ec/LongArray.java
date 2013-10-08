@@ -454,6 +454,30 @@ class LongArray
         return (i << 6) + bitLength(w);
     }
 
+//    private int lowestCoefficient()
+//    {
+//        for (int i = 0; i < m_ints.length; ++i)
+//        {
+//            long mi = m_ints[i];
+//            if (mi != 0)
+//            {
+//                int j = 0;
+//                while ((mi & 0xFFL) == 0)
+//                {
+//                    j += 8;
+//                    mi >>>= 8;
+//                }
+//                while ((mi & 1L) == 0)
+//                {
+//                    ++j;
+//                    mi >>>= 1;
+//                }
+//                return (i << 6) + j;
+//            }
+//        }
+//        return -1;
+//    }
+
     private static int bitLength(long w)
     {
         int u = (int)(w >>> 32), b;
@@ -1317,52 +1341,114 @@ class LongArray
         return (r32 & 0xFFFFFFFFL) << 32 | (r00 & 0xFFFFFFFFL);
     }
 
-//    private static LongArray expItohTsujii(LongArray x, int scale, int numTerms, int m, int[] ks)
+//    private static LongArray expItohTsujii2(LongArray B, int n, int m, int[] ks)
 //    {
-//        if (numTerms == 1)
+//        LongArray t1 = B, t3 = new LongArray(new long[]{ 1L });
+//        int scale = 1;
+//
+//        int numTerms = n;
+//        while (numTerms > 1)
 //        {
-//            return x;
+//            if ((numTerms & 1) != 0)
+//            {
+//                t3 = t3.modMultiply(t1, m, ks);
+//                t1 = t1.modSquareN(scale, m, ks);
+//            }
+//
+//            LongArray t2 = t1.modSquareN(scale, m, ks);
+//            t1 = t1.modMultiply(t2, m, ks);
+//            numTerms >>>= 1; scale <<= 1;
 //        }
 //
-//        LongArray x2 = x.modSquareN(scale, m, ks);
-//        LongArray x3 = x2.modMultiply(x, m, ks);
-//        LongArray r = expItohTsujii(x3, scale << 1, numTerms >>> 1, m, ks);
-//
-//        if ((numTerms & 1) != 0)
-//        {
-//            r = r.modSquareN(scale, m, ks);
-//            r = r.modMultiply(x, m, ks);
-//        }
-//        
-//        return r;
+//        return t3.modMultiply(t1, m, ks);
 //    }
 //
-//    private static LongArray expItohTsujii23(LongArray x, int scale, int numTerms, int m, int[] ks)
+//    private static LongArray expItohTsujii23(LongArray B, int n, int m, int[] ks)
 //    {
-//        if (numTerms == 1)
+//        LongArray t1 = B, t3 = new LongArray(new long[]{ 1L });
+//        int scale = 1;
+//
+//        int numTerms = n;
+//        while (numTerms > 1)
 //        {
-//            return x;
+//            boolean m03 = numTerms % 3 == 0;
+//            boolean m14 = !m03 && (numTerms & 1) != 0;
+//
+//            if (m14)
+//            {
+//                t3 = t3.modMultiply(t1, m, ks);
+//                t1 = t1.modSquareN(scale, m, ks);
+//            }
+//
+//            LongArray t2 = t1.modSquareN(scale, m, ks);
+//            t1 = t1.modMultiply(t2, m, ks);
+//
+//            if (m03)
+//            {
+//                t2 = t2.modSquareN(scale, m, ks);
+//                t1 = t1.modMultiply(t2, m, ks);
+//                numTerms /= 3; scale *= 3;
+//            }
+//            else
+//            {
+//                numTerms >>>= 1; scale <<= 1;
+//            }
 //        }
 //
-//        LongArray x2 = x.modSquareN(scale, m, ks);
-//        LongArray x3 = x2.modMultiply(x, m, ks);
+//        return t3.modMultiply(t1, m, ks);
+//    }
 //
-//        if (numTerms % 3 == 0)
+//    private static LongArray expItohTsujii235(LongArray B, int n, int m, int[] ks)
+//    {
+//        LongArray t1 = B, t4 = new LongArray(new long[]{ 1L });
+//        int scale = 1;
+//
+//        int numTerms = n;
+//        while (numTerms > 1)
 //        {
-//            LongArray x4 = x2.modSquareN(scale, m, ks);
-//            LongArray x7 = x3.modMultiply(x4, m, ks);
-//            return expItohTsujii23(x7, scale * 3, numTerms / 3, m, ks);
+//            if (numTerms % 5 == 0)
+//            {
+////                t1 = expItohTsujii23(t1, 5, m, ks);
+//
+//                LongArray t3 = t1;
+//                t1 = t1.modSquareN(scale, m, ks);
+//
+//                LongArray t2 = t1.modSquareN(scale, m, ks);
+//                t1 = t1.modMultiply(t2, m, ks);
+//                t2 = t1.modSquareN(scale << 1, m, ks);
+//                t1 = t1.modMultiply(t2, m, ks);
+//
+//                t1 = t1.modMultiply(t3, m, ks);
+//
+//                numTerms /= 5; scale *= 5;
+//                continue;
+//            }
+//
+//            boolean m03 = numTerms % 3 == 0;
+//            boolean m14 = !m03 && (numTerms & 1) != 0;
+//
+//            if (m14)
+//            {
+//                t4 = t4.modMultiply(t1, m, ks);
+//                t1 = t1.modSquareN(scale, m, ks);
+//            }
+//
+//            LongArray t2 = t1.modSquareN(scale, m, ks);
+//            t1 = t1.modMultiply(t2, m, ks);
+//
+//            if (m03)
+//            {
+//                t2 = t2.modSquareN(scale, m, ks);
+//                t1 = t1.modMultiply(t2, m, ks);
+//                numTerms /= 3; scale *= 3;
+//            }
+//            else
+//            {
+//                numTerms >>>= 1; scale <<= 1;
+//            }
 //        }
 //
-//        LongArray r = expItohTsujii23(x3, scale << 1, numTerms >>> 1, m, ks);
-//
-//        if ((numTerms & 1) != 0)
-//        {
-//            r = r.modSquareN(scale, m, ks);
-//            r = r.modMultiply(x, m, ks);
-//        }
-//        
-//        return r;
+//        return t4.modMultiply(t1, m, ks);
 //    }
 
     public LongArray modInverse(int m, int[] ks)
@@ -1388,10 +1474,14 @@ class LongArray
 //        switch (m)
 //        {
 //        case 409:
+//            return expItohTsujii23(B, m - 1, m, ks);
 //        case 571:
-//            return expItohTsujii23(B, 1, m - 1, m, ks);
+//            return expItohTsujii235(B, m - 1, m, ks);
+//        case 163:
+//        case 233:
+//        case 283:
 //        default:
-//            return expItohTsujii(B, 1, m - 1, m, ks);
+//            return expItohTsujii2(B, m - 1, m, ks);
 //        }
 
         /*
