@@ -690,6 +690,14 @@ class LongArray
         }
     }
 
+    private static void add(long[] x, int xOff, long[] y, int yOff, long[] z, int zOff, int count)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            z[zOff + i] = x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
     private static void distribute(long[] x, int src, int dst1, int dst2, int count)
     {
         for (int i = 0; i < count; ++i)
@@ -885,8 +893,7 @@ class LongArray
             }
             else
             {
-                add(T0, tOff, T0, tOff - bMax, bMax);
-                add(T0, tOff, T0, bMax, bMax);
+                add(T0, bMax, T0, tOff - bMax, T0, tOff, bMax);
             }
         }
 
@@ -895,6 +902,7 @@ class LongArray
          */
         long[] T1 = new long[T0.length];
         shiftLeft(T0, 0, T1, 0, T0.length, 4);
+//        shiftLeft(T0, bMax, T1, bMax, tOff, 4);
 
         long[] a = A.m_ints;
         long[] c = new long[cLen];
