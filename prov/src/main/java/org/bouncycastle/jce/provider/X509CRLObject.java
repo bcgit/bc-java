@@ -589,16 +589,23 @@ public class X509CRLObject
             return false;
         }
 
-        if (other instanceof X509CRLObject && isHashCodeSet)
+        if (other instanceof X509CRLObject)
         {
-            boolean otherIsHashCodeSet = ((X509CRLObject)other).isHashCodeSet;
-            if (otherIsHashCodeSet)
+            X509CRLObject crlObject = (X509CRLObject)other;
+
+            if (isHashCodeSet)
             {
-                if (((X509CRLObject)other).hashCodeValue != hashCodeValue)
+                boolean otherIsHashCodeSet = crlObject.isHashCodeSet;
+                if (otherIsHashCodeSet)
                 {
-                    return false;
+                    if (crlObject.hashCodeValue != hashCodeValue)
+                    {
+                        return false;
+                    }
                 }
             }
+
+            return this.c.equals(crlObject.c);
         }
 
         return super.equals(other);
