@@ -211,6 +211,23 @@ public class X509CRLEntryObject extends X509CRLEntry
         return hashValue;
     }
 
+    public boolean equals(Object o)
+    {
+        if (o == this)
+        {
+            return true;
+        }
+
+        if (o instanceof X509CRLEntryObject)
+        {
+            X509CRLEntryObject other = (X509CRLEntryObject)o;
+
+            return this.c.equals(other.c);
+        }
+
+        return super.equals(this);
+    }
+
     public byte[] getEncoded()
         throws CRLException
     {
