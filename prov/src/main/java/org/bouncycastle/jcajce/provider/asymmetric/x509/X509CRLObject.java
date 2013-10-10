@@ -54,7 +54,7 @@ import org.bouncycastle.util.encoders.Hex;
  * Delta CRL Indicator (critical)
  * Issuing Distribution Point (critical)
  */
-class X509CRLObject
+public class X509CRLObject
     extends X509CRL
 {
     private CertificateList c;
@@ -80,7 +80,7 @@ class X509CRLObject
         }
     }
 
-    public X509CRLObject(
+    protected X509CRLObject(
         CertificateList c)
         throws CRLException
     {
