@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
+import org.bouncycastle.crypto.prng.drbg.DualECPoints;
 import org.bouncycastle.crypto.prng.drbg.DualECSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
@@ -156,6 +157,20 @@ public class SP800SecureRandomBuilder
         return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new DualECDRBGProvider(digest, nonce, personalizationString, securityStrength), predictionResistant);
     }
 
+    /**
+     * Build a SecureRandom based on a SP 800-90A Dual EC DRBG.
+     *
+     * @param pointSet an array of DualECPoints to use for DRB generation.
+     * @param digest digest algorithm to use in the DRBG underneath the SecureRandom.
+     * @param nonce  nonce value to use in DRBG construction.
+     * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
+     * @return a SecureRandom supported by a Dual EC DRBG.
+     */
+    public SP800SecureRandom buildDualEC(DualECPoints[] pointSet, Digest digest, byte[] nonce, boolean predictionResistant)
+    {
+        return new SP800SecureRandom(random, entropySourceProvider.get(entropyBitsRequired), new ConfigurableDualECDRBGProvider(pointSet, digest, nonce, personalizationString, securityStrength), predictionResistant);
+    }
+
     private static class HashDRBGProvider
         implements DRBGProvider
     {
@@ -197,6 +212,31 @@ public class SP800SecureRandomBuilder
         public SP80090DRBG get(EntropySource entropySource)
         {
             return new DualECSP800DRBG(digest, securityStrength, entropySource, personalizationString, nonce);
+        }
+    }
+
+    private static class ConfigurableDualECDRBGProvider
+        implements DRBGProvider
+    {
+        private final DualECPoints[] pointSet;
+        private final Digest digest;
+        private final byte[] nonce;
+        private final byte[] personalizationString;
+        private final int securityStrength;
+
+        public ConfigurableDualECDRBGProvider(DualECPoints[] pointSet, Digest digest, byte[] nonce, byte[] personalizationString, int securityStrength)
+        {
+            this.pointSet = new DualECPoints[pointSet.length];
+            System.arraycopy(pointSet, 0, this.pointSet, 0, pointSet.length);
+            this.digest = digest;
+            this.nonce = nonce;
+            this.personalizationString = personalizationString;
+            this.securityStrength = securityStrength;
+        }
+
+        public SP80090DRBG get(EntropySource entropySource)
+        {
+            return new DualECSP800DRBG(pointSet, digest, securityStrength, entropySource, personalizationString, nonce);
         }
     }
 
