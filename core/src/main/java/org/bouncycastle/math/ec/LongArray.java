@@ -645,14 +645,14 @@ class LongArray
             return;
         }
 
-        long carry = addShiftedByBits(m_ints, words, other.m_ints, 0, otherLen, shift);
+        long carry = addShiftedLeft(m_ints, words, other.m_ints, 0, otherLen, shift);
         if (carry != 0L)
         {
             m_ints[otherLen + words] ^= carry;
         }
     }
 
-    private static long addShiftedByBits(long[] x, int xOff, long[] y, int yOff, int count, int shift)
+    private static long addShiftedLeft(long[] x, int xOff, long[] y, int yOff, int count, int shift)
     {
         int shiftInv = 64 - shift;
         long prev = 0;
@@ -664,6 +664,20 @@ class LongArray
         }
         return prev;
     }
+
+//    private static long addShiftedRight(long[] x, int xOff, long[] y, int yOff, int count, int shift)
+//    {
+//        int shiftInv = 64 - shift;
+//        long prev = 0;
+//        int i = count;
+//        while (--i >= 0)
+//        {
+//            long next = y[yOff + i];
+//            x[xOff + i] ^= (next >>> shift) | prev;
+//            prev = next << shiftInv;
+//        }
+//        return prev;
+//    }
 
     public void addShiftedByWords(LongArray other, int words)
     {
@@ -812,7 +826,7 @@ class LongArray
         {
             if ((a & 1L) != 0L)
             {
-                long carry = addShiftedByBits(c, cOff, b, 0, bLen, k);
+                long carry = addShiftedLeft(c, cOff, b, 0, bLen, k);
                 if (carry != 0)
                 {
                     c[cOff + bLen] ^= carry;
@@ -1053,10 +1067,10 @@ class LongArray
          * Lopez-Dahab (Modified) algorithm
          */
 
-        for (int j = 0; j < aLen; ++j)
+        for (int aPos = 0; aPos < aLen; ++aPos)
         {
-            long aVal = a[j];
-            int cOff = j;
+            long aVal = a[aPos];
+            int cOff = aPos;
             for (;;)
             {
                 int u = (int)aVal & MASK;
@@ -1074,7 +1088,7 @@ class LongArray
         int cOff = c.length;
         while ((cOff -= cLen) != 0)
         {
-            addShiftedByBits(c, cOff - cLen, c, cOff, cLen, 8);
+            addShiftedLeft(c, cOff - cLen, c, cOff, cLen, 8);
         }
 
         /*
@@ -1284,7 +1298,7 @@ class LongArray
                 /*
                  * For even numbers, shift contents and add to the right-shifted position
                  */
-                addShiftedByBits(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
+                addShiftedLeft(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
             }
             else
             {
@@ -1343,10 +1357,22 @@ class LongArray
         }
 
         int kMax = ks[ks.length - 1];
+        int numBits = Math.min(len << 6, (m << 1) - 1); // TODO use actual degree?
+
+        int excessBits = (len << 6) - numBits;
+        int vectorableWords = (excessBits + Math.min(numBits - m, m - kMax)) >>> 6;
+        if (vectorableWords > 1)
+        {
+            int vectorWiseWords = len - vectorableWords;
+            reduceVectorWise(buf, off, len, vectorWiseWords, m, ks);
+            while (len > vectorWiseWords)
+            {
+                buf[off + --len] = 0L;
+            }
+            numBits = vectorWiseWords << 6;
+        }
+
         int wordWiseLimit = Math.max(m, kMax + 64);
-
-        int numBits = len << 6;
-
         if (numBits > wordWiseLimit)
         {
             reduceWordWise(buf, off, len, wordWiseLimit, m, ks);
@@ -1415,6 +1441,33 @@ class LongArray
         while (--j >= 0)
         {
             flipWord(buf, off, offset + ks[j], word);
+        }
+    }
+
+    private static void reduceVectorWise(long[] buf, int off, int len, int words, int m, int[] ks)
+    {
+        int baseBit = (words << 6) - m;
+        flipVector(buf, off, buf, off + words, len - words, baseBit);
+        int j = ks.length;
+        while (--j >= 0)
+        {
+            flipVector(buf, off, buf, off + words, len - words, baseBit + ks[j]);
+        }
+    }
+
+    private static void flipVector(long[] x, int xOff, long[] y, int yOff, int yLen, int bits)
+    {
+        xOff += bits >>> 6;
+        bits &= 0x3F;
+
+        if (bits == 0)
+        {
+            add(x, xOff, y, yOff, yLen);
+        }
+        else
+        {
+            long carry = addShiftedLeft(x, xOff, y, yOff, yLen, bits);
+            x[xOff + yLen] ^= carry;
         }
     }
 
