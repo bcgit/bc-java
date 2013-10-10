@@ -5,15 +5,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 
+/**
+ * A CipherOutputStream is composed of an OutputStream and a cipher so that write() methods process
+ * the written data with the cipher, and the output of the cipher is in turn written to the
+ * underlying OutputStream. The cipher must be fully initialized before being used by a
+ * CipherInputStream.
+ * <p>
+ * For example, if the cipher is initialized for encryption, the CipherOutputStream will encrypt the
+ * data before writing the encrypted data to the underlying stream.
+ */
 public class CipherOutputStream
     extends FilterOutputStream
 {
     private BufferedBlockCipher bufferedBlockCipher;
     private StreamCipher streamCipher;
+    private AEADBlockCipher aeadBlockCipher;
 
-    private byte[] oneByte = new byte[1];
+    private final byte[] oneByte = new byte[1];
     private byte[] buf;
 
     /**
@@ -26,7 +38,6 @@ public class CipherOutputStream
     {
         super(os);
         this.bufferedBlockCipher = cipher;
-        this.buf = new byte[cipher.getBlockSize()];
     }
 
     /**
@@ -42,6 +53,15 @@ public class CipherOutputStream
     }
 
     /**
+     * Constructs a CipherOutputStream from an OutputStream and a AEADBlockCipher.
+     */
+    public CipherOutputStream(OutputStream os, AEADBlockCipher cipher)
+    {
+        super(os);
+        this.aeadBlockCipher = cipher;
+    }
+
+    /**
      * Writes the specified byte to this output stream.
      *
      * @param b the <code>byte</code>.
@@ -53,18 +73,12 @@ public class CipherOutputStream
     {
         oneByte[0] = (byte)b;
 
-        if (bufferedBlockCipher != null)
-        {
-            int len = bufferedBlockCipher.processBytes(oneByte, 0, 1, buf, 0);
-
-            if (len != 0)
-            {
-                out.write(buf, 0, len);
-            }
-        }
-        else
+        if (streamCipher != null)
         {
             out.write(streamCipher.returnByte((byte)b));
+        } else
+        {
+            write(oneByte, 0, 1);
         }
     }
 
@@ -103,24 +117,54 @@ public class CipherOutputStream
         int len)
         throws IOException
     {
+        ensureCapacity(len);
+
         if (bufferedBlockCipher != null)
         {
-            byte[] buf = new byte[bufferedBlockCipher.getOutputSize(len)];
-
             int outLen = bufferedBlockCipher.processBytes(b, off, len, buf, 0);
 
             if (outLen != 0)
             {
                 out.write(buf, 0, outLen);
             }
-        }
-        else
+        } else if (aeadBlockCipher != null)
         {
-            byte[] buf = new byte[len];
+            int outLen = aeadBlockCipher.processBytes(b, off, len, buf, 0);
 
+            if (outLen != 0)
+            {
+                out.write(buf, 0, outLen);
+            }
+        } else
+        {
             streamCipher.processBytes(b, off, len, buf, 0);
 
             out.write(buf, 0, len);
+        }
+    }
+
+    /**
+     * Ensure the ciphertext buffer has space sufficient to accept an upcoming output.
+     *
+     * @param outputSize the size of the pending update.
+     */
+    private void ensureCapacity(int outputSize)
+    {
+        // This overestimates buffer on updates for AEAD/padded, but keeps it simple.
+        int bufLen;
+        if (bufferedBlockCipher != null)
+        {
+            bufLen = bufferedBlockCipher.getOutputSize(outputSize);
+        } else if (aeadBlockCipher != null)
+        {
+            bufLen = aeadBlockCipher.getOutputSize(outputSize);
+        } else
+        {
+            bufLen = outputSize;
+        }
+        if ((buf == null) || (buf.length < bufLen))
+        {
+            buf = new byte[bufLen];
         }
     }
 
@@ -141,7 +185,7 @@ public class CipherOutputStream
     public void flush()
         throws IOException
     {
-        super.flush();
+        out.flush();
     }
 
     /**
@@ -157,32 +201,57 @@ public class CipherOutputStream
      * and calls the <code>close</code> method of the underlying output
      * stream.
      *
-     * @exception java.io.IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
+     * @throws InvalidCipherTextIOException if the data written to this stream was invalid ciphertext
+     *             (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
      */
     public void close()
         throws IOException
     {
+        ensureCapacity(0);
+        IOException error = null;
         try
         {
             if (bufferedBlockCipher != null)
             {
-                byte[] buf = new byte[bufferedBlockCipher.getOutputSize(0)];
-
                 int outLen = bufferedBlockCipher.doFinal(buf, 0);
 
                 if (outLen != 0)
                 {
                     out.write(buf, 0, outLen);
                 }
+            } else if (aeadBlockCipher != null)
+            {
+                int outLen = aeadBlockCipher.doFinal(buf, 0);
+
+                if (outLen != 0)
+                {
+                    out.write(buf, 0, outLen);
+                }
+            }
+        } catch (final InvalidCipherTextException e)
+        {
+            error = new InvalidCipherTextIOException("Error finalising cipher data", e);
+        } catch (Exception e)
+        {
+            error = new IOException("Error closing stream: ", e);
+        }
+
+        try
+        {
+            flush();
+            out.close();
+        } catch (IOException e)
+        {
+            // Invalid ciphertext takes precedence over close error
+            if (error == null)
+            {
+                error = e;
             }
         }
-        catch (Exception e)
+        if (error != null)
         {
-            throw new IOException("Error closing stream: " + e.toString());
+            throw error;
         }
-
-        flush();
-
-        super.close();
     }
 }
