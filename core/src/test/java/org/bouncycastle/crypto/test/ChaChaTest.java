@@ -9,7 +9,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * ChaChat Test
+ * ChaCha Test
  * <p>
  * Test cases generated using ref version of ChaCha20 in estreambench-20080905.
  */

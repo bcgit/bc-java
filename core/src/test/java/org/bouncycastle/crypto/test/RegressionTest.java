@@ -99,6 +99,7 @@ public class RegressionTest
         new SEEDTest(),
         new Salsa20Test(),
         new XSalsa20Test(),
+        new ChaChaTest(),
         new CMacTest(),
         new EAXTest(),
         new GCMTest(),
