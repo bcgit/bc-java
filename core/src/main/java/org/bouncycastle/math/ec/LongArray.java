@@ -665,19 +665,19 @@ class LongArray
         return prev;
     }
 
-//    private static long addShiftedDown(long[] x, int xOff, long[] y, int yOff, int count, int shift)
-//    {
-//        int shiftInv = 64 - shift;
-//        long prev = 0;
-//        int i = count;
-//        while (--i >= 0)
-//        {
-//            long next = y[yOff + i];
-//            x[xOff + i] ^= (next >>> shift) | prev;
-//            prev = next << shiftInv;
-//        }
-//        return prev;
-//    }
+    private static long addShiftedDown(long[] x, int xOff, long[] y, int yOff, int count, int shift)
+    {
+        int shiftInv = 64 - shift;
+        long prev = 0;
+        int i = count;
+        while (--i >= 0)
+        {
+            long next = y[yOff + i];
+            x[xOff + i] ^= (next >>> shift) | prev;
+            prev = next << shiftInv;
+        }
+        return prev;
+    }
 
     public void addShiftedByWords(LongArray other, int words)
     {
@@ -1355,12 +1355,15 @@ class LongArray
             return len;
         }
 
-        int kMax = ks[ks.length - 1];
-        int numBits = Math.min(len << 6, (m << 1) - 1); // TODO use actual degree?
+        int kLen = ks.length;
+        int kMax = ks[kLen - 1], kNext = kLen > 1 ? ks[kLen - 2] : 0;
 
+        int wordWiseLimit = Math.max(m, kMax + 64);
+
+        int numBits = Math.min(len << 6, (m << 1) - 1); // TODO use actual degree?
         int excessBits = (len << 6) - numBits;
-        // TODO If we use addShiftedDown (scans high-to-low), we can actually go to kMax + 64?
-        int vectorableWords = (excessBits + Math.min(numBits - m, m - kMax)) >>> 6;
+
+        int vectorableWords = (excessBits + Math.min(numBits - wordWiseLimit, m - kNext)) >> 6;
         if (vectorableWords > 1)
         {
             int vectorWiseWords = len - vectorableWords;
@@ -1372,7 +1375,6 @@ class LongArray
             numBits = vectorWiseWords << 6;
         }
 
-        int wordWiseLimit = Math.max(m, kMax + 64);
         if (numBits > wordWiseLimit)
         {
             reduceWordWise(buf, off, len, wordWiseLimit, m, ks);
@@ -1402,12 +1404,12 @@ class LongArray
     {
         flipBit(buf, off, bit);
         int base = bit - m;
-        flipBit(buf, off, base);
         int j = ks.length;
         while (--j >= 0)
         {
             flipBit(buf, off, ks[j] + base);
         }
+        flipBit(buf, off, base);
     }
 
     private static void reduceWordWise(long[] buf, int off, int len, int toBit, int m, int[] ks)
@@ -1436,23 +1438,28 @@ class LongArray
     private static void reduceWord(long[] buf, int off, int bit, long word, int m, int[] ks)
     {
         int offset = bit - m;
-        flipWord(buf, off, offset, word);
         int j = ks.length;
         while (--j >= 0)
         {
             flipWord(buf, off, offset + ks[j], word);
         }
+        flipWord(buf, off, offset, word);
     }
 
     private static void reduceVectorWise(long[] buf, int off, int len, int words, int m, int[] ks)
     {
+        /*
+         * NOTE: It's important we go from highest coefficient to lowest, because for the highest
+         * one (only) we allow the ranges to partially overlap, and therefore any changes must take
+         * effect for the subsequent lower coefficients.
+         */
         int baseBit = (words << 6) - m;
-        flipVector(buf, off, buf, off + words, len - words, baseBit);
         int j = ks.length;
         while (--j >= 0)
         {
             flipVector(buf, off, buf, off + words, len - words, baseBit + ks[j]);
         }
+        flipVector(buf, off, buf, off + words, len - words, baseBit);
     }
 
     private static void flipVector(long[] x, int xOff, long[] y, int yOff, int yLen, int bits)
@@ -1466,8 +1473,8 @@ class LongArray
         }
         else
         {
-            long carry = addShiftedUp(x, xOff, y, yOff, yLen, bits);
-            x[xOff + yLen] ^= carry;
+            long carry = addShiftedDown(x, xOff + 1, y, yOff, yLen, 64 - bits);
+            x[xOff] ^= carry;
         }
     }
 
