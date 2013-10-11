@@ -1355,14 +1355,16 @@ class LongArray
             return len;
         }
 
-        int kLen = ks.length;
-        int kMax = ks[kLen - 1], kNext = kLen > 1 ? ks[kLen - 2] : 0;
-
-        int wordWiseLimit = Math.max(m, kMax + 64);
-
         int numBits = Math.min(len << 6, (m << 1) - 1); // TODO use actual degree?
         int excessBits = (len << 6) - numBits;
+        while (excessBits >= 64)
+        {
+            --len;
+            excessBits -= 64;
+        }
 
+        int kLen = ks.length, kMax = ks[kLen - 1], kNext = kLen > 1 ? ks[kLen - 2] : 0;
+        int wordWiseLimit = Math.max(m, kMax + 64);
         int vectorableWords = (excessBits + Math.min(numBits - wordWiseLimit, m - kNext)) >> 6;
         if (vectorableWords > 1)
         {
