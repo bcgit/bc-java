@@ -554,7 +554,7 @@ class LongArray
         return new BigInteger(1, barr);
     }
 
-//    private static long shiftLeft(long[] x, int xOff, int count)
+//    private static long shiftUp(long[] x, int xOff, int count)
 //    {
 //        long prev = 0;
 //        for (int i = 0; i < count; ++i)
@@ -566,7 +566,7 @@ class LongArray
 //        return prev;
 //    }
 
-    private static long shiftLeft(long[] x, int xOff, int count, int shift)
+    private static long shiftUp(long[] x, int xOff, int count, int shift)
     {
         int shiftInv = 64 - shift;
         long prev = 0;
@@ -579,7 +579,7 @@ class LongArray
         return prev;
     }
 
-    private static long shiftLeft(long[] x, int xOff, long[] z, int zOff, int count, int shift)
+    private static long shiftUp(long[] x, int xOff, long[] z, int zOff, int count, int shift)
     {
         int shiftInv = 64 - shift;
         long prev = 0;
@@ -645,14 +645,14 @@ class LongArray
             return;
         }
 
-        long carry = addShiftedLeft(m_ints, words, other.m_ints, 0, otherLen, shift);
+        long carry = addShiftedUp(m_ints, words, other.m_ints, 0, otherLen, shift);
         if (carry != 0L)
         {
             m_ints[otherLen + words] ^= carry;
         }
     }
 
-    private static long addShiftedLeft(long[] x, int xOff, long[] y, int yOff, int count, int shift)
+    private static long addShiftedUp(long[] x, int xOff, long[] y, int yOff, int count, int shift)
     {
         int shiftInv = 64 - shift;
         long prev = 0;
@@ -665,7 +665,7 @@ class LongArray
         return prev;
     }
 
-//    private static long addShiftedRight(long[] x, int xOff, long[] y, int yOff, int count, int shift)
+//    private static long addShiftedDown(long[] x, int xOff, long[] y, int yOff, int count, int shift)
 //    {
 //        int shiftInv = 64 - shift;
 //        long prev = 0;
@@ -826,7 +826,7 @@ class LongArray
         {
             if ((a & 1L) != 0L)
             {
-                long carry = addShiftedLeft(c, cOff, b, 0, bLen, k);
+                long carry = addShiftedUp(c, cOff, b, 0, bLen, k);
                 if (carry != 0)
                 {
                     c[cOff + bLen] ^= carry;
@@ -911,7 +911,7 @@ class LongArray
             ti[i] = (tOff += bMax);
             if ((i & 1) == 0)
             {
-                shiftLeft(T0, tOff >>> 1, T0, tOff, bMax, 1);
+                shiftUp(T0, tOff >>> 1, T0, tOff, bMax, 1);
             }
             else
             {
@@ -923,8 +923,8 @@ class LongArray
          * Second table with all 4-bit products of B shifted 4 bits
          */
         long[] T1 = new long[T0.length];
-        shiftLeft(T0, 0, T1, 0, T0.length, 4);
-//        shiftLeft(T0, bMax, T1, bMax, tOff, 4);
+        shiftUp(T0, 0, T1, 0, T0.length, 4);
+//        shiftUp(T0, bMax, T1, bMax, tOff, 4);
 
         long[] a = A.m_ints;
         long[] c = new long[cLen];
@@ -944,7 +944,7 @@ class LongArray
                 int v = (aVal >>> 4) & MASK;
                 addBoth(c, j - 1, T0, ti[u], T1, ti[v], bMax);
             }
-            shiftLeft(c, 0, cLen, 8);
+            shiftUp(c, 0, cLen, 8);
         }
 
         for (int k = 56; k >= 0; k -= 8)
@@ -958,7 +958,7 @@ class LongArray
             }
             if (k > 0)
             {
-                shiftLeft(c, 0, cLen, 8);
+                shiftUp(c, 0, cLen, 8);
             }
         }
 
@@ -1043,7 +1043,7 @@ class LongArray
             ti[i] = (tOff += bMax);
             if ((i & 1) == 0)
             {
-                shiftLeft(T0, tOff >>> 1, T0, tOff, bMax, 1);
+                shiftUp(T0, tOff >>> 1, T0, tOff, bMax, 1);
             }
             else
             {
@@ -1055,8 +1055,8 @@ class LongArray
          * Second table with all 4-bit products of B shifted 4 bits
          */
         long[] T1 = new long[T0.length];
-        shiftLeft(T0, 0, T1, 0, T0.length, 4);
-//        shiftLeft(T0, bMax, T1, bMax, tOff, 4);
+        shiftUp(T0, 0, T1, 0, T0.length, 4);
+//        shiftUp(T0, bMax, T1, bMax, tOff, 4);
 
         long[] a = A.m_ints;
         long[] c = new long[cLen << 3];
@@ -1088,7 +1088,7 @@ class LongArray
         int cOff = c.length;
         while ((cOff -= cLen) != 0)
         {
-            addShiftedLeft(c, cOff - cLen, c, cOff, cLen, 8);
+            addShiftedUp(c, cOff - cLen, c, cOff, cLen, 8);
         }
 
         /*
@@ -1226,7 +1226,7 @@ class LongArray
             System.arraycopy(B.m_ints, 0, c, bOff, bLen);
             for (int bank = 1; bank < banks; ++bank)
             {
-                shiftLeft(c, aLen, c, bOff += bMax, bMax, bank);
+                shiftUp(c, aLen, c, bOff += bMax, bMax, bank);
             }
         }
 
@@ -1284,10 +1284,9 @@ class LongArray
             }
 
             /*
-             * After each window position has been checked in all words of A, B is shifted to the
-             * left 1 place and expanded if necessary.
+             * After each position has been checked for all words of A, B is shifted up 1 place
              */
-            shiftLeft(c, aLen, bTotal, banks);
+            shiftUp(c, aLen, bTotal, banks);
         }
 
         int ciPos = ci.length;
@@ -1296,9 +1295,9 @@ class LongArray
             if ((ciPos & 1L) == 0L)
             {
                 /*
-                 * For even numbers, shift contents and add to the right-shifted position
+                 * For even numbers, shift contents and add to the half-position
                  */
-                addShiftedLeft(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
+                addShiftedUp(c, ci[ciPos >>> 1], c, ci[ciPos], cLen, positions);
             }
             else
             {
@@ -1360,6 +1359,7 @@ class LongArray
         int numBits = Math.min(len << 6, (m << 1) - 1); // TODO use actual degree?
 
         int excessBits = (len << 6) - numBits;
+        // TODO If we use addShiftedDown (scans high-to-low), we can actually go to kMax + 64?
         int vectorableWords = (excessBits + Math.min(numBits - m, m - kMax)) >>> 6;
         if (vectorableWords > 1)
         {
@@ -1466,7 +1466,7 @@ class LongArray
         }
         else
         {
-            long carry = addShiftedLeft(x, xOff, y, yOff, yLen, bits);
+            long carry = addShiftedUp(x, xOff, y, yOff, yLen, bits);
             x[xOff + yLen] ^= carry;
         }
     }
