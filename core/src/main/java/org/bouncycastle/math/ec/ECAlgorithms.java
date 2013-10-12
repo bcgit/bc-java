@@ -110,18 +110,17 @@ public class ECAlgorithms
             points[0].negate(), infinity, points[0],
             points[1], points[2], points[3] };
 
-        byte[] kNaf = WNafUtil.generateNaf(k);
-        byte[] lNaf = WNafUtil.generateNaf(l);
+        byte[] jsf = WNafUtil.generateJSF(k, l);
 
         ECPoint R = infinity;
 
-        int i = Math.max(kNaf.length, lNaf.length);
+        int i = jsf.length;
         while (--i >= 0)
         {
-            int kni = i < kNaf.length ? kNaf[i] + 1 : 1;
-            int lni = i < lNaf.length ? lNaf[i] + 1 : 1;
+            int jsfi = jsf[i];
+            int kDigit = (jsfi >> 4), lDigit = ((jsfi << 28) >> 28);
 
-            int index = kni * 3 + lni;
+            int index = 4 + (kDigit * 3) + lDigit;
             R = R.twicePlus(table[index]);
         }
 
