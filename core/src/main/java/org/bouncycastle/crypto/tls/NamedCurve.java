@@ -36,6 +36,13 @@ public class NamedCurve
     public static final int secp256r1 = 23;
     public static final int secp384r1 = 24;
     public static final int secp521r1 = 25;
+    
+    /*
+     * RFC 7027
+     */
+    public static final int brainpoolP256r1 = 26;
+    public static final int brainpoolP384r1 = 27;
+    public static final int brainpoolP512r1 = 28;
 
     /*
      * reserved (0xFE00..0xFEFF)
