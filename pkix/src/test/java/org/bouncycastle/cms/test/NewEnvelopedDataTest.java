@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
@@ -604,6 +605,42 @@ public class NewEnvelopedDataTest
             fail("recipients not matched using general recipient ID.");
         }
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testKeyTransRC2bit40()
+        throws Exception
+    {
+        byte[]          data     = "WallaWallaBouncyCastle".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 40).setProvider(BC).build());
+
+        RecipientInformationStore  recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getContentEncryptionAlgorithm().getAlgorithm(), CMSAlgorithm.RC2_CBC);
+
+        RC2CBCParameter rc2P = RC2CBCParameter.getInstance(ed.getContentEncryptionAlgorithm().getParameters());
+        assertEquals(160, rc2P.getRC2ParameterVersion().intValue());
+
+        Collection  c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator    it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation   recipient = (RecipientInformation)it.next();
+
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertEquals(true, Arrays.equals(data, recData));
+        }
     }
 
     public void testKeyTransRC4()
