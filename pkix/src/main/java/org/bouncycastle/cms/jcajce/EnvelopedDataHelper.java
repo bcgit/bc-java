@@ -492,7 +492,7 @@ public class EnvelopedDataHelper
         {
             AlgorithmParameterGenerator pGen = createAlgorithmParameterGenerator(encryptionOID);
 
-            if (encryptionOID.equals(CMSEnvelopedDataGenerator.RC2_CBC))
+            if (encryptionOID.equals(CMSAlgorithm.RC2_CBC))
             {
                 byte[]  iv = new byte[8];
 
