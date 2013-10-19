@@ -148,6 +148,16 @@ public abstract class ECCurve
         return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
+    /**
+     * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+     * coordinates reflect those of the equivalent point in an affine coordinate system. Where more
+     * than one point is to be normalized, this method will generally be more efficient than
+     * normalizing each point separately.
+     * 
+     * @param points
+     *            An array of points that will be updated in place with their normalized versions,
+     *            where necessary
+     */
     public void normalizeAll(ECPoint[] points)
     {
         checkPoints(points);
