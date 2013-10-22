@@ -11,11 +11,10 @@ public class DoubleAddMultiplier extends AbstractECMultiplier
     {
         ECPoint[] R = new ECPoint[]{ p.getCurve().getInfinity(), p };
 
-        BigInteger bits = k;
         int n = k.bitLength();
         for (int i = 0; i < n; ++i)
         {
-            int b = bits.testBit(i) ? 1 : 0;
+            int b = k.testBit(i) ? 1 : 0;
             int bp = 1 - b;
             R[bp] = R[bp].twicePlus(R[b]);
         }

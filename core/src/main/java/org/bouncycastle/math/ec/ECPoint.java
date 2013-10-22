@@ -74,38 +74,81 @@ public abstract class ECPoint
     }
 
     /**
-     * @deprecated Use getAffineXCoord instead
+     * Normalizes this point, and then returns the affine x-coordinate.
+     * 
+     * Note: normalization can be expensive, this method is deprecated in favour
+     * of caller-controlled normalization.
+     * 
+     * @deprecated Use getAffineXCoord, or normalize() and getXCoord(), instead
      */
     public ECFieldElement getX()
     {
-        return getAffineXCoord();
+        return normalize().getXCoord();
     }
 
+
     /**
-     * @deprecated Use getAffineYCoord instead
+     * Normalizes this point, and then returns the affine y-coordinate.
+     * 
+     * Note: normalization can be expensive, this method is deprecated in favour
+     * of caller-controlled normalization.
+     * 
+     * @deprecated Use getAffineYCoord, or normalize() and getYCoord(), instead
      */
     public ECFieldElement getY()
     {
-        return getAffineYCoord();
+        return normalize().getYCoord();
     }
 
+    /**
+     * Returns the affine x-coordinate after checking that this point is normalized.
+     * 
+     * @return The affine x-coordinate of this point
+     * @throws IllegalStateException if the point is not normalized
+     */
     public ECFieldElement getAffineXCoord()
     {
         checkNormalized();
         return getXCoord();
     }
 
+    /**
+     * Returns the affine y-coordinate after checking that this point is normalized
+     * 
+     * @return The affine y-coordinate of this point
+     * @throws IllegalStateException if the point is not normalized
+     */
     public ECFieldElement getAffineYCoord()
     {
         checkNormalized();
         return getYCoord();
     }
 
+    /**
+     * Returns the x-coordinate.
+     * 
+     * Caution: depending on the curve's coordinate system, this may not be the same value as in an
+     * affine coordinate system; use normalize() to get a point where the coordinates have their
+     * affine values, or use getAffineXCoord if you expect the point to already have been
+     * normalized.
+     * 
+     * @return the x-coordinate of this point
+     */
     public ECFieldElement getXCoord()
     {
         return x;
     }
 
+    /**
+     * Returns the y-coordinate.
+     * 
+     * Caution: depending on the curve's coordinate system, this may not be the same value as in an
+     * affine coordinate system; use normalize() to get a point where the coordinates have their
+     * affine values, or use getAffineYCoord if you expect the point to already have been
+     * normalized.
+     * 
+     * @return the y-coordinate of this point
+     */
     public ECFieldElement getYCoord()
     {
         return y;
@@ -156,6 +199,12 @@ public abstract class ECPoint
             || zs[0].bitLength() == 1;
     }
 
+    /**
+     * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+     * coordinates reflect those of the equivalent point in an affine coordinate system.
+     * 
+     * @return a new ECPoint instance representing the same point, but with normalized coordinates
+     */
     public ECPoint normalize()
     {
         if (isInfinity())
