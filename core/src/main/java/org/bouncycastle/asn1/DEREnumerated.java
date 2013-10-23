@@ -55,7 +55,7 @@ public class DEREnumerated
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
      */
-    public static DEREnumerated getInstance(
+    public static ASN1Enumerated getInstance(
         ASN1TaggedObject obj,
         boolean          explicit)
     {
