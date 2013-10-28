@@ -41,12 +41,16 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 
 public class EnvelopedDataHelper
 {
+    protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
+
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
@@ -172,6 +176,33 @@ public class EnvelopedDataHelper
         }
 
         throw new IllegalArgumentException("unknown generic key type");
+    }
+
+    public void keySizeCheck(AlgorithmIdentifier keyAlgorithm, Key key)
+        throws CMSException
+    {
+        int expectedKeySize = EnvelopedDataHelper.KEY_SIZE_PROVIDER.getKeySize(keyAlgorithm);
+        if (expectedKeySize > 0)
+        {
+            byte[] keyEnc = null;
+
+            try
+            {
+                keyEnc = key.getEncoded();
+            }
+            catch (Exception e)
+            {
+                // ignore - we're using a HSM...
+            }
+
+            if (keyEnc != null)
+            {
+                if (keyEnc.length * 8 != expectedKeySize)
+                {
+                    throw new CMSException("Expected key size for algorithm OID not found in recipient.");
+                }
+            }
+        }
     }
 
     Cipher createCipher(ASN1ObjectIdentifier algorithm)
