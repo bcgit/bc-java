@@ -27,7 +27,7 @@ import org.bouncycastle.jcajce.ProviderJcaJceHelper;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
-import org.bouncycastle.operator.DefaultSecretKeyProvider;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -37,7 +37,7 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
     private boolean      wrongPKCS12Zero = false;
-    private SecretKeySizeProvider keySizeProvider = DefaultSecretKeyProvider.INSTANCE;
+    private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
 
     public JcePKCSPBEInputDecryptorProviderBuilder()
     {
