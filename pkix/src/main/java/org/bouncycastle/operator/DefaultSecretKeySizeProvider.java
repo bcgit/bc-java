@@ -12,10 +12,10 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.Integers;
 
-public class DefaultSecretKeyProvider
+public class DefaultSecretKeySizeProvider
     implements SecretKeySizeProvider
 {
-    public static final SecretKeySizeProvider INSTANCE = new DefaultSecretKeyProvider();
+    public static final SecretKeySizeProvider INSTANCE = new DefaultSecretKeySizeProvider();
 
     private static final Map KEY_SIZES;
 
@@ -25,7 +25,7 @@ public class DefaultSecretKeyProvider
 
         keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
 
-        keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
+        keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
 
         keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
         keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
@@ -42,8 +42,22 @@ public class DefaultSecretKeyProvider
 
     public int getKeySize(AlgorithmIdentifier algorithmIdentifier)
     {
-        // TODO: not all ciphers/oid relationships are this simple.
-        Integer keySize = (Integer)KEY_SIZES.get(algorithmIdentifier.getAlgorithm());
+        int keySize = getKeySize(algorithmIdentifier.getAlgorithm());
+
+        // just need the OID
+        if (keySize > 0)
+        {
+            return keySize;
+        }
+
+        // TODO: support OID/Parameter key sizes (e.g. RC2).
+
+        return -1;
+    }
+
+    public int getKeySize(ASN1ObjectIdentifier algorithm)
+    {
+        Integer keySize = (Integer)KEY_SIZES.get(algorithm);
 
         if (keySize != null)
         {
@@ -52,6 +66,4 @@ public class DefaultSecretKeyProvider
 
         return -1;
     }
-
-
 }

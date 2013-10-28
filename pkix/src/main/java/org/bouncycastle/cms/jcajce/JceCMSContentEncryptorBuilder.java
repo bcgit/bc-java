@@ -5,8 +5,6 @@ import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
@@ -14,40 +12,19 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
-import org.bouncycastle.util.Integers;
 
 public class JceCMSContentEncryptorBuilder
 {
-    private static Map keySizes = new HashMap();
+    private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
 
-    static
-    {
-        keySizes.put(CMSAlgorithm.AES128_CBC, Integers.valueOf(128));
-        keySizes.put(CMSAlgorithm.AES192_CBC, Integers.valueOf(192));
-        keySizes.put(CMSAlgorithm.AES256_CBC, Integers.valueOf(256));
-
-        keySizes.put(CMSAlgorithm.CAMELLIA128_CBC, Integers.valueOf(128));
-        keySizes.put(CMSAlgorithm.CAMELLIA192_CBC, Integers.valueOf(192));
-        keySizes.put(CMSAlgorithm.CAMELLIA256_CBC, Integers.valueOf(256));
-    }
-
-    private static int getKeySize(ASN1ObjectIdentifier oid)
-    {
-        Integer size = (Integer)keySizes.get(oid);
-
-        if (size != null)
-        {
-            return size.intValue();
-        }
-
-        return -1;
-    }
 
     private final ASN1ObjectIdentifier encryptionOID;
     private final int                  keySize;
@@ -57,13 +34,30 @@ public class JceCMSContentEncryptorBuilder
 
     public JceCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID)
     {
-        this(encryptionOID, getKeySize(encryptionOID));
+        this(encryptionOID, KEY_SIZE_PROVIDER.getKeySize(encryptionOID));
     }
 
     public JceCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID, int keySize)
     {
         this.encryptionOID = encryptionOID;
         this.keySize = keySize;
+
+        int fixedSize = KEY_SIZE_PROVIDER.getKeySize(encryptionOID);
+
+        if (encryptionOID.equals(PKCSObjectIdentifiers.des_EDE3_CBC))
+        {
+            if (keySize != 168 && keySize != fixedSize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+        }
+        else
+        {
+            if (fixedSize > 0 && fixedSize != keySize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+        }
     }
 
     public JceCMSContentEncryptorBuilder setProvider(Provider provider)
@@ -116,6 +110,10 @@ public class JceCMSContentEncryptorBuilder
             }
             else
             {
+                if (encryptionOID.equals(PKCSObjectIdentifiers.des_EDE3_CBC) && keySize == 192)
+                {
+                    keySize = 168;
+                }
                 keyGen.init(keySize, random);
             }
 
