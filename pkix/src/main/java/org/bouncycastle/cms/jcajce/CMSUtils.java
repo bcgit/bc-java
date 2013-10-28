@@ -7,8 +7,8 @@ import java.security.cert.X509Certificate;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
-import org.bouncycastle.asn1.x509.X509Extension;
 
 class CMSUtils
 {
@@ -30,7 +30,7 @@ class CMSUtils
 
     static byte[] getSubjectKeyId(X509Certificate cert)
     {
-        byte[] ext = cert.getExtensionValue(X509Extension.subjectKeyIdentifier.getId());
+        byte[] ext = cert.getExtensionValue(Extension.subjectKeyIdentifier.getId());
 
         if (ext != null)
         {
