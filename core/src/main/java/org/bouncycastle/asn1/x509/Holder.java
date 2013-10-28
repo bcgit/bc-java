@@ -31,9 +31,9 @@ import org.bouncycastle.asn1.DERTaggedObject;
  * 
  * <pre>
  *         subject CHOICE {
- *          baseCertificateID [0] IssuerSerial,
+ *          baseCertificateID [0] EXPLICIT IssuerSerial,
  *          -- associated with a Public Key Certificate
- *          subjectName [1] GeneralNames },
+ *          subjectName [1] EXPLICIT GeneralNames },
  *          -- associated with a name
  * </pre>
  */
@@ -79,10 +79,10 @@ public class Holder
         switch (tagObj.getTagNo())
         {
         case 0:
-            baseCertificateID = IssuerSerial.getInstance(tagObj, false);
+            baseCertificateID = IssuerSerial.getInstance(tagObj, true);
             break;
         case 1:
-            entityName = GeneralNames.getInstance(tagObj, false);
+            entityName = GeneralNames.getInstance(tagObj, true);
             break;
         default:
             throw new IllegalArgumentException("unknown tag in Holder");
@@ -234,11 +234,11 @@ public class Holder
         {
             if (entityName != null)
             {
-                return new DERTaggedObject(false, 1, entityName);
+                return new DERTaggedObject(true, 1, entityName);
             }
             else
             {
-                return new DERTaggedObject(false, 0, baseCertificateID);
+                return new DERTaggedObject(true, 0, baseCertificateID);
             }
         }
     }

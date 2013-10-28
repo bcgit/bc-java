@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
 import org.bouncycastle.asn1.x509.AttCertValidityPeriod;
@@ -201,7 +200,42 @@ public class CertificateTest
     + "BQUAA4GBABd4Odx3yEMGL/BvItuT1RafNR2uuWuZbajg0pD6bshUsl+WCIfRiEkq"
     + "lHMkpI7WqAZikdnAEQ5jQsVWEuVejWxR6gjejKxc0fb9qpIui7/GoI5Eh6dmG20e"
     + "xbwJL3+6YYFrZwxR8cC5rPvWrblUR5XKJy+Zp/H5+t9iANnL1L8J");
-                
+
+    // V1 attribute certificate
+    private static final byte[] attrCertv1 = Base64.decode(
+        "MIIFdDCCBFygXTBbMFOkUTBPMQswCQYDVQQGEwJERTEcMBoGA1UECgwTRGV1"
+      + "dHNjaGUgVGVsZWtvbSBBRzEiMCAGA1UEAwwZVGVsZVNlYyBQS1MgU2lnRyBD"
+      + "QSAxNzpQTgIEG1toDjBTpFEwTzELMAkGA1UEBhMCREUxHDAaBgNVBAoME0Rl"
+      + "dXRzY2hlIFRlbGVrb20gQUcxIjAgBgNVBAMMGVRlbGVTZWMgUEtTIFNpZ0cg"
+      + "Q0EgMjU6UE4wDQYJKoZIhvcNAQELBQACBCep3f0wIhgPMjAxMDA0MTIxMTI5"
+      + "MTJaGA8yMDEyMDQxMjEwNTkyOFowggGmMIIBogYFKyQIAwgxggGXDIIBk1Ro"
+      + "ZSBxdWFsaWZpZWQgc2lnbmF0dXJlIGF0IGhhbmQgaXMgcmVzdHJpY3RlZCB0"
+      + "byBwcmVzZW50aW5nIGludm9pY2VzIG9yIGNyZWRpdHMgdG8gY3VzdG9tZXJz"
+      + "IGFjY29yZGluZyB0byBFVSBDb3VuY2lsIGRpcmVjdGl2ZSAyMDAxLzExNS9F"
+      + "QyAoMjB0aCBEZWNlbWJlciAyMDAxKSBhbmQgR2VybWFuIFZBVCB0YXggKMKn"
+      + "MTQgVVN0RykuICBEaWUgdm9ybGllZ2VuZGUgcXVhbGlmaXppZXJ0ZSBTaWdu"
+      + "YXR1ciBpc3QgYXVmIGRpZSAgUHJhZXNlbnRhdGlvbiB2b24gUmVjaG51bmdl"
+      + "biBvZGVyIEd1dHNjaHJpZnRlbiBnZW1hZXNzIEVVIERpcmVrdGl2ZSAyMDAx"
+      + "LzExNS9FQyAoMjAuIERlemVtYmVyIDIwMDEpIHVuZCBkZXV0c2NoZW0gVW1z"
+      + "YXR6c3RldWVyZ2VzZXR6ICAowqcxNCBVU3RHKSBiZXNjaHJhZW5rdC4wggHB"
+      + "MB8GA1UdIwQYMBaAFM6i1yR/z8IikpxpU/Fdh8BPxhq8MEMGA1UdIAQ8MDow"
+      + "OAYFKyQIAQEwLzAtBggrBgEFBQcCARYhaHR0cDovL3Brcy50ZWxlc2VjLmRl"
+      + "L2Nwcy9jcHMucGRmMIIBBAYDVR0fBIH8MIH5MIH2oG2ga4Y1bGRhcDovL3Br"
+      + "cy1sZGFwLnRlbGVzZWMuZGUvbz1EZXV0c2NoZSBUZWxla29tIEFHLGM9ZGWG"
+      + "Mmh0dHA6Ly9wa3MudGVsZXNlYy5kZS90ZWxlc2VjL3NlcnZsZXQvZG93bmxv"
+      + "YWRfY3JsooGEpIGBMH8xCzAJBgNVBAYTAkRFMRwwGgYDVQQKFBNEZXV0c2No"
+      + "ZSBUZWxla29tIEFHMR8wHQYDVQQLFBZQcm9kdWt0emVudHJ1bSBUZWxlU2Vj"
+      + "MTEwDAYHAoIGAQoHFBMBMTAhBgNVBAMUGlRlbGVTZWMgUEtTIFNpZ0cgRElS"
+      + "IDM1OlBOMDcGCCsGAQUFBwEBBCswKTAnBggrBgEFBQcwAYYbaHR0cDovL3Br"
+      + "cy50ZWxlc2VjLmRlL29jc3ByMBgGCCsGAQUFBwEDBAwwCjAIBgYEAI5GAQEw"
+      + "DQYJKoZIhvcNAQELBQADggEBAEz2OvU9YytJUKHMDQcND5njIyUXTkSrlWjV"
+      + "F28uwxVlveO4JPTAY7PvXy69HUuTPwlvqCfJIUF2RLPZFQx0wFto8ajC9v5X"
+      + "SqwQcINXRakpE6FPAdQFnH44TaIQWXW1hy9xr8GuD0uhQLTJGYqVzHfLoM8e"
+      + "llPNHUVhC7CEOxDb1PTHCUlQFNkFRmeeqzEVoj1F0pM6wI5zf8+w2WwrFPCD"
+      + "jrjEr/VoBRoEi/tKnsLq6oOkizUKT0KJEnSyYxoOa7euT1yX+Co94SPnMZi5"
+      + "qukHSj8Kiio6Jecl//qDPG/mHo1ro+8rH+rbze7EEfKMp5yeWCwXGthL9oYo"
+      + "RYl+UuI=");
+
    String[] subjects = 
    {
        "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Webserver Team,CN=www2.connect4.com.au,E=webmaster@connect4.com.au",
@@ -358,20 +392,102 @@ public class CertificateTest
     {
         ByteArrayInputStream bIn;
         ASN1InputStream aIn;
-        String dump = "";
 
         bIn = new ByteArrayInputStream(cert);
         aIn = new ASN1InputStream(bIn);
 
         ASN1Sequence seq = (ASN1Sequence) aIn.readObject();
-        dump = ASN1Dump.dumpAsString(seq);
+//        String dump = ASN1Dump.dumpAsString(seq);
 
-        AttributeCertificate obj = new AttributeCertificate(seq);
+        AttributeCertificate obj = AttributeCertificate.getInstance(seq);
         AttributeCertificateInfo acInfo = obj.getAcinfo();
 
         // Version
         if (!(acInfo.getVersion().equals(new ASN1Integer(1)))
                 && (!(acInfo.getVersion().equals(new ASN1Integer(2)))))
+        {
+            fail(
+                    "failed AC Version test for id " + id);
+        }
+
+        // Holder
+        Holder h = acInfo.getHolder();
+        if (h == null)
+        {
+            fail(
+                    "failed AC Holder test, it's null, for id " + id);
+        }
+
+        // Issuer
+        AttCertIssuer aci = acInfo.getIssuer();
+        if (aci == null)
+        {
+            fail(
+                    "failed AC Issuer test, it's null, for id " + id);
+        }
+
+        // Signature
+        AlgorithmIdentifier sig = acInfo.getSignature();
+        if (sig == null)
+        {
+            fail(
+                    "failed AC Signature test for id " + id);
+        }
+
+        // Serial
+        ASN1Integer serial = acInfo.getSerialNumber();
+
+        // Validity
+        AttCertValidityPeriod validity = acInfo.getAttrCertValidityPeriod();
+        if (validity == null)
+        {
+            fail("failed AC AttCertValidityPeriod test for id " + id);
+        }
+
+        // Attributes
+        ASN1Sequence attribSeq = acInfo.getAttributes();
+        Attribute att[] = new Attribute[attribSeq.size()];
+        for (int i = 0; i < attribSeq.size(); i++)
+        {
+            att[i] = Attribute.getInstance(attribSeq.getObjectAt(i));
+        }
+
+        // IssuerUniqueId
+        // TODO, how to best test?
+
+        // X509 Extensions
+        Extensions ext = acInfo.getExtensions();
+        if (ext != null)
+        {
+            Enumeration en = ext.oids();
+            while (en.hasMoreElements())
+            {
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) en
+                        .nextElement();
+                Extension extVal = ext.getExtension(oid);
+            }
+        }
+    }
+
+    public void checkV1AttributeCertificate(
+        int     id,
+        byte[]  cert)
+        throws Exception
+    {
+        ByteArrayInputStream bIn;
+        ASN1InputStream aIn;
+
+        bIn = new ByteArrayInputStream(cert);
+        aIn = new ASN1InputStream(bIn);
+
+        ASN1Sequence seq = (ASN1Sequence) aIn.readObject();
+        //String dump = ASN1Dump.dumpAsString(seq);
+
+        AttributeCertificate obj = AttributeCertificate.getInstance(seq);
+        AttributeCertificateInfo acInfo = obj.getAcinfo();
+
+        // Version
+        if (!(acInfo.getVersion().equals(new ASN1Integer(0))))
         {
             fail(
                     "failed AC Version test for id " + id);
@@ -447,6 +563,7 @@ public class CertificateTest
         checkCertificate(6, cert6);
         checkCertificate(7, cert7);
         checkAttributeCertificate(8,cert8);
+        checkV1AttributeCertificate(9, attrCertv1);
     }
 
     public static void main(

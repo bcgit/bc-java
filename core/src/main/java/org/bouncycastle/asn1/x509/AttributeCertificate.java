@@ -41,7 +41,10 @@ public class AttributeCertificate
         this.signatureAlgorithm = signatureAlgorithm;
         this.signatureValue = signatureValue;
     }
-    
+
+    /**
+     * @deprecated use getInstance() method.
+     */
     public AttributeCertificate(
         ASN1Sequence    seq)
     {
