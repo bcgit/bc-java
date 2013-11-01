@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
  * the written data with the cipher, and the output of the cipher is in turn written to the
  * underlying OutputStream. The cipher must be fully initialized before being used by a
  * CipherInputStream.
- * <p>
+ * <p/>
  * For example, if the cipher is initialized for encryption, the CipherOutputStream will encrypt the
  * data before writing the encrypted data to the underlying stream.
  */
@@ -65,7 +65,7 @@ public class CipherOutputStream
      * Writes the specified byte to this output stream.
      *
      * @param b the <code>byte</code>.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
      */
     public void write(
         int b)
@@ -76,7 +76,8 @@ public class CipherOutputStream
         if (streamCipher != null)
         {
             out.write(streamCipher.returnByte((byte)b));
-        } else
+        }
+        else
         {
             write(oneByte, 0, 1);
         }
@@ -85,14 +86,14 @@ public class CipherOutputStream
     /**
      * Writes <code>b.length</code> bytes from the specified byte array
      * to this output stream.
-     * <p>
+     * <p/>
      * The <code>write</code> method of
      * <code>CipherOutputStream</code> calls the <code>write</code>
      * method of three arguments with the three arguments
      * <code>b</code>, <code>0</code>, and <code>b.length</code>.
      *
      * @param b the data.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
      * @see #write(byte[], int, int)
      */
     public void write(
@@ -106,10 +107,10 @@ public class CipherOutputStream
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to this output stream.
      *
-     * @param b the data.
+     * @param b   the data.
      * @param off the start offset in the data.
      * @param len the number of bytes to write.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
      */
     public void write(
         byte[] b,
@@ -127,7 +128,8 @@ public class CipherOutputStream
             {
                 out.write(buf, 0, outLen);
             }
-        } else if (aeadBlockCipher != null)
+        }
+        else if (aeadBlockCipher != null)
         {
             int outLen = aeadBlockCipher.processBytes(b, off, len, buf, 0);
 
@@ -135,7 +137,8 @@ public class CipherOutputStream
             {
                 out.write(buf, 0, outLen);
             }
-        } else
+        }
+        else
         {
             streamCipher.processBytes(b, off, len, buf, 0);
 
@@ -155,10 +158,12 @@ public class CipherOutputStream
         if (bufferedBlockCipher != null)
         {
             bufLen = bufferedBlockCipher.getOutputSize(outputSize);
-        } else if (aeadBlockCipher != null)
+        }
+        else if (aeadBlockCipher != null)
         {
             bufLen = aeadBlockCipher.getOutputSize(outputSize);
-        } else
+        }
+        else
         {
             bufLen = outputSize;
         }
@@ -172,15 +177,15 @@ public class CipherOutputStream
      * Flushes this output stream by forcing any buffered output bytes
      * that have already been processed by the encapsulated cipher object
      * to be written out.
-     *
-     * <p>
+     * <p/>
+     * <p/>
      * Any bytes buffered by the encapsulated cipher
      * and waiting to be processed by it will not be written out. For example,
      * if the encapsulated cipher is a block cipher, and the total number of
      * bytes written using one of the <code>write</code> methods is less than
      * the cipher's block size, no bytes will be written out.
      *
-     * @exception java.io.IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
      */
     public void flush()
         throws IOException
@@ -191,19 +196,19 @@ public class CipherOutputStream
     /**
      * Closes this output stream and releases any system resources
      * associated with this stream.
-     * <p>
+     * <p/>
      * This method invokes the <code>doFinal</code> method of the encapsulated
      * cipher object, which causes any bytes buffered by the encapsulated
      * cipher to be processed. The result is written out by calling the
      * <code>flush</code> method of this output stream.
-     * <p>
+     * <p/>
      * This method resets the encapsulated cipher object to its initial state
      * and calls the <code>close</code> method of the underlying output
      * stream.
      *
      * @throws java.io.IOException if an I/O error occurs.
      * @throws InvalidCipherTextIOException if the data written to this stream was invalid ciphertext
-     *             (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
+     * (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
      */
     public void close()
         throws IOException
@@ -220,7 +225,8 @@ public class CipherOutputStream
                 {
                     out.write(buf, 0, outLen);
                 }
-            } else if (aeadBlockCipher != null)
+            }
+            else if (aeadBlockCipher != null)
             {
                 int outLen = aeadBlockCipher.doFinal(buf, 0);
 
@@ -229,19 +235,22 @@ public class CipherOutputStream
                     out.write(buf, 0, outLen);
                 }
             }
-        } catch (final InvalidCipherTextException e)
+        }
+        catch (final InvalidCipherTextException e)
         {
             error = new InvalidCipherTextIOException("Error finalising cipher data", e);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
-            error = new IOException("Error closing stream: ", e);
+            error = new IOException("Error closing stream: " + e);
         }
 
         try
         {
             flush();
             out.close();
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             // Invalid ciphertext takes precedence over close error
             if (error == null)
