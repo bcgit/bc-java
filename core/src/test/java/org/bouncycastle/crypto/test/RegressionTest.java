@@ -125,6 +125,7 @@ public class RegressionTest
         new RSAKeyEncapsulationTest(),
         new ECIESKeyEncapsulationTest(),
         new HashCommitmentTest(),
+        new CipherStreamTest(),
         new BlockCipherResetTest(),
         new StreamCipherResetTest(),
         new SM3DigestTest(),
