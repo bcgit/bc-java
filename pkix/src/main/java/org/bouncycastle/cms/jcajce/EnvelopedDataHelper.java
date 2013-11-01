@@ -348,14 +348,7 @@ public class EnvelopedDataHelper
                     {
                         AlgorithmParameters params = createAlgorithmParameters(encryptionAlgID.getAlgorithm());
 
-                        try
-                        {
-                            params.init(sParams.toASN1Primitive().getEncoded(), "ASN.1");
-                        }
-                        catch (IOException e)
-                        {
-                            throw new CMSException("error decoding algorithm parameters.", e);
-                        }
+                        loadParameters(sParams, params);
 
                         cipher.init(Cipher.DECRYPT_MODE, sKey, params);
                     }
@@ -397,6 +390,51 @@ public class EnvelopedDataHelper
         });
     }
 
+    private static ASN1Encodable getAsn1Parameters(AlgorithmParameters params)
+        throws CMSException
+    {
+        // we try ASN.1 explicitly first just in case and then role back to the default.
+        ASN1Encodable asn1Params;
+        try
+        {
+            asn1Params = ASN1Primitive.fromByteArray(params.getEncoded("ASN.1"));
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                asn1Params = ASN1Primitive.fromByteArray(params.getEncoded());
+            }
+            catch (IOException e)
+            {
+                throw new CMSException("cannot extract parameters: " + e.getMessage(), e);
+            }
+        }
+
+        return asn1Params;
+    }
+
+    private static void loadParameters(ASN1Encodable sParams, AlgorithmParameters params)
+        throws CMSException
+    {
+        // we try ASN.1 explicitly first just in case and then role back to the default.
+        try
+        {
+            params.init(sParams.toASN1Primitive().getEncoded(), "ASN.1");
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                params.init(sParams.toASN1Primitive().getEncoded());
+            }
+            catch (IOException e)
+            {
+                throw new CMSException("error encoding algorithm parameters.", e);
+            }
+        }
+    }
+
     Mac createContentMac(final Key sKey, final AlgorithmIdentifier macAlgId)
         throws CMSException
     {
@@ -417,14 +455,7 @@ public class EnvelopedDataHelper
                     {
                         AlgorithmParameters params = createAlgorithmParameters(macAlgId.getAlgorithm());
 
-                        try
-                        {
-                            params.init(sParams.toASN1Primitive().getEncoded(), "ASN.1");
-                        }
-                        catch (IOException e)
-                        {
-                            throw new CMSException("error decoding algorithm parameters.", e);
-                        }
+                        loadParameters(sParams, params);
 
                         mac.init(sKey, params.getParameterSpec(IvParameterSpec.class));
                     }
@@ -559,14 +590,7 @@ public class EnvelopedDataHelper
         ASN1Encodable asn1Params;
         if (params != null)
         {
-            try
-            {
-                asn1Params = ASN1Primitive.fromByteArray(params.getEncoded("ASN.1"));
-            }
-            catch (IOException e)
-            {
-                throw new CMSException("cannot encode parameters: " + e.getMessage(), e);
-            }
+            asn1Params = getAsn1Parameters(params);
         }
         else
         {
