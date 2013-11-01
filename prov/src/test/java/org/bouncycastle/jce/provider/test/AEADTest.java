@@ -14,8 +14,8 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -40,9 +40,18 @@ public class AEADTest extends SimpleTest
     @Override
     public void performTest() throws Exception
     {
-        checkCipherWithAD(K2, N2, A2, P2, C2_short);
-        testGCMParameterSpec(K2, N2, A2, P2, C2);
-        testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
+        try
+        {
+            this.getClass().getClassLoader().loadClass("javax.crypto.spec.GCMParameterSpec");
+
+            checkCipherWithAD(K2, N2, A2, P2, C2_short);
+            testGCMParameterSpec(K2, N2, A2, P2, C2);
+            testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
+        }
+        catch (Exception e)
+        {
+            System.err.println("AEADTest disabled due to JDK");
+        }
     }
 
     private void checkCipherWithAD(byte[] K,
