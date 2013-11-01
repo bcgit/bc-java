@@ -41,7 +41,7 @@ public class KDFFeedbackGeneratorTest
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("Something is rotten in the state of Denmark", e);
+            throw new IllegalStateException("Something is rotten in the state of Denmark ", e);
         }
     }
 

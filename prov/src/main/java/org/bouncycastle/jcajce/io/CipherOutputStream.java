@@ -123,7 +123,7 @@ public class CipherOutputStream
         }
         catch (Exception e)
         {
-            error = new IOException("Error closing stream: ", e);
+            error = new IOException("Error closing stream: " + e);
         }
         try
         {
