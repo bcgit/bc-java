@@ -332,7 +332,7 @@ public class CipherStreamTest2
         {
             // javax.crypto.CipherInputStream/CipherOutputStream
             // are broken wrt handling AEAD failures
-            System.err.println("Broken JCE Streams: " + message);
+            // System.err.println("Broken JCE Streams: " + message);
         }
     }
 
@@ -346,7 +346,7 @@ public class CipherStreamTest2
         {
             // javax.crypto.CipherInputStream/CipherOutputStream
             // are broken wrt handling AEAD failures
-            System.err.println("Broken JCE Streams: " + message + " : " + throwable);
+            //System.err.println("Broken JCE Streams: " + message + " : " + throwable);
             throwable.printStackTrace();
         }
     }
