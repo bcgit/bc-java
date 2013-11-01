@@ -45,6 +45,23 @@ public class CipherStreamTest
         + "2B4F97E0FF16924A52DF269515110A07"
         + "F9E460BC65EF95DA58F740B7D1DBB0AA");
 
+    private static final byte[] XSK = Hex.decode("d5c7f6797b7e7e9c1d7fd2610b2abf2bc5a7885fb3ff78092fb3abe8986d35e2");
+    private static final byte[] XSIV = Hex.decode("744e17312b27969d826444640e9c4a378ae334f185369c95");
+    private static final byte[] XSIN = Hex.decode("7758298c628eb3a4b6963c5445ef66971222be5d1a4ad839715d1188071739b77cc6e05d5410f963a64167629757");
+    private static final byte[] XSOUT= Hex.decode("27b8cfe81416a76301fd1eec6a4d99675069b2da2776c360db1bdfea7c0aa613913e10f7a60fec04d11e65f2d64e");
+
+    private static final byte[] CHAK = Hex.decode("80000000000000000000000000000000");
+    private static final byte[] CHAIV = Hex.decode("0000000000000000");
+    private static final byte[] CHAIN =  Hex.decode(
+                                              "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000");
+    private static final byte[] CHAOUT = Hex.decode("FBB87FBB8395E05DAA3B1D683C422046"
+                                                    + "F913985C2AD9B23CFC06C1D8D04FF213"
+                                                    + "D44A7A7CDB84929F915420A8A3DC58BF"
+                                                    + "0F7ECB4B1F167BB1A5E6153FDAF4493D");
+
     private static final byte[] HCIN = new byte[64];
     private static final byte[] HCIV = new byte[32];
 
@@ -152,7 +169,7 @@ public class CipherStreamTest
         byte[] enc = in.doFinal(plainText);
         if (!areEqual(enc, cipherText))
         {
-            fail(name + ": cipher text doesn't match");
+            fail(name + ": cipher text doesn't match got " + new String(Hex.encode(enc)));
         }
 
         byte[] dec = out.doFinal(enc);
@@ -185,7 +202,7 @@ public class CipherStreamTest
                     (byte)137, (byte)138, (byte)140, (byte)143 };
 
             byte[] keyBytes;
-            if (name.equals("HC256"))
+            if (name.equals("HC256") || name.equals("XSalsa20"))
             {
                 keyBytes = key256;
             }
@@ -299,10 +316,10 @@ public class CipherStreamTest
         testAlgorithm("Salsa20", SK, SIV, SIN, SOUT);
         runTest("XSalsa20");
         testException("XSalsa20");
-        testAlgorithm("XSalsa20", SK, SIV, SIN, SOUT);
+        testAlgorithm("XSalsa20", XSK, XSIV, XSIN, XSOUT);
         runTest("ChaCha");
         testException("ChaCha");
-        testAlgorithm("ChaCha", SK, SIV, SIN, SOUT);
+        testAlgorithm("ChaCha", CHAK, CHAIV, CHAIN, CHAOUT);
         runTest("HC128");
         testException("HC128");
         testAlgorithm("HC128", HCK128A, HCIV, HCIN, HC128A);
