@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jcajce.JcaJceHelper;
+import org.bouncycastle.jcajce.JcaJceUtils;
 import org.bouncycastle.operator.OperatorCreationException;
 
 class OperatorHelper
@@ -298,7 +299,7 @@ class OperatorHelper
             {
                 AlgorithmParameters params = helper.createAlgorithmParameters(algName);
 
-                params.init(algorithm.getParameters().toASN1Primitive().getEncoded(), "ASN.1");
+                JcaJceUtils.loadParameters(params, algorithm.getParameters());
 
                 PSSParameterSpec spec = (PSSParameterSpec)params.getParameterSpec(PSSParameterSpec.class);
                 sig.setParameter(spec);
