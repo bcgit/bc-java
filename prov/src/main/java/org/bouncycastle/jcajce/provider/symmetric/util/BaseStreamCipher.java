@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.symmetric.util;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
@@ -201,7 +202,7 @@ public class BaseStreamCipher
         }
         else
         {
-            throw new IllegalArgumentException("unknown parameter type.");
+            throw new InvalidAlgorithmParameterException("unknown parameter type.");
         }
 
         if ((ivLength != 0) && !(param instanceof ParametersWithIV))
@@ -227,18 +228,25 @@ public class BaseStreamCipher
             }
         }
 
-        switch (opmode)
+        try
         {
-        case Cipher.ENCRYPT_MODE:
-        case Cipher.WRAP_MODE:
-            cipher.init(true, param);
-            break;
-        case Cipher.DECRYPT_MODE:
-        case Cipher.UNWRAP_MODE:
-            cipher.init(false, param);
-            break;
-        default:
-            System.out.println("eeek!");
+            switch (opmode)
+            {
+            case Cipher.ENCRYPT_MODE:
+            case Cipher.WRAP_MODE:
+                cipher.init(true, param);
+                break;
+            case Cipher.DECRYPT_MODE:
+            case Cipher.UNWRAP_MODE:
+                cipher.init(false, param);
+                break;
+            default:
+                throw new InvalidParameterException("unknown opmode " + opmode + " passed");
+            }
+        }
+        catch (Exception e)
+        {
+            throw new InvalidKeyException(e.getMessage());
         }
     }
 
