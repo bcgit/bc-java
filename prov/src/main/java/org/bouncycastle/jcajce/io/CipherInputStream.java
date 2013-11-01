@@ -1,78 +1,46 @@
-package org.bouncycastle.crypto.io;
+package org.bouncycastle.jcajce.io;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.StreamCipher;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+
+import org.bouncycastle.crypto.io.InvalidCipherTextIOException;
 
 /**
  * A CipherInputStream is composed of an InputStream and a cipher so that read() methods return data
  * that are read in from the underlying InputStream but have been additionally processed by the
  * Cipher. The cipher must be fully initialized before being used by a CipherInputStream.
  * <p/>
- * For example, if the Cipher is initialized for decryption, the
- * CipherInputStream will attempt to read in data and decrypt them,
- * before returning the decrypted data.
+ * For example, if the Cipher is initialized for decryption, the CipherInputStream will attempt to
+ * read in data and decrypt them, before returning the decrypted data.
+ * <p/>
+ * This is a reimplementation of {@link javax.crypto.CipherInputStream} that is safe for use with
+ * AEAD block ciphers, and does not silently catch {@link BadPaddingException} and
+ * {@link IllegalBlockSizeException} errors. Any errors that occur during {@link Cipher#doFinal()
+ * finalisation} are rethrown wrapped in an {@link InvalidCipherTextIOException}.
  */
 public class CipherInputStream
     extends FilterInputStream
 {
-    private BufferedBlockCipher bufferedBlockCipher;
-    private StreamCipher streamCipher;
-    private AEADBlockCipher aeadBlockCipher;
-
-    private final byte[] buf;
-    private final byte[] inBuf;
-
-    private int bufOff;
+    private final Cipher cipher;
+    private final byte[] inputBuffer = new byte[512];
+    private boolean finalized = false;
+    private byte[] buf;
     private int maxBuf;
-    private boolean finalized;
-
-    private static final int INPUT_BUF_SIZE = 2048;
+    private int bufOff;
 
     /**
-     * Constructs a CipherInputStream from an InputStream and a
-     * BufferedBlockCipher.
+     * Constructs a CipherInputStream from an InputStream and an initialised Cipher.
      */
-    public CipherInputStream(
-        InputStream is,
-        BufferedBlockCipher cipher)
+    public CipherInputStream(InputStream input, Cipher cipher)
     {
-        super(is);
-
-        this.bufferedBlockCipher = cipher;
-
-        buf = new byte[cipher.getOutputSize(INPUT_BUF_SIZE)];
-        inBuf = new byte[INPUT_BUF_SIZE];
-    }
-
-    public CipherInputStream(
-        InputStream is,
-        StreamCipher cipher)
-    {
-        super(is);
-
-        this.streamCipher = cipher;
-
-        buf = new byte[INPUT_BUF_SIZE];
-        inBuf = new byte[INPUT_BUF_SIZE];
-    }
-
-    /**
-     * Constructs a CipherInputStream from an InputStream and an AEADBlockCipher.
-     */
-    public CipherInputStream(InputStream is, AEADBlockCipher cipher)
-    {
-        super(is);
-
-        this.aeadBlockCipher = cipher;
-
-        buf = new byte[cipher.getOutputSize(INPUT_BUF_SIZE)];
-        inBuf = new byte[INPUT_BUF_SIZE];
+        super(input);
+        this.cipher = cipher;
     }
 
     /**
@@ -95,67 +63,38 @@ public class CipherInputStream
         // Keep reading until EOF or cipher processing produces data
         while (maxBuf == 0)
         {
-            int read = in.read(inBuf);
+            int read = in.read(inputBuffer);
             if (read == -1)
             {
-                finaliseCipher();
-                if (maxBuf == 0)
+                buf = finaliseCipher();
+                if ((buf == null) || (buf.length == 0))
                 {
                     return -1;
                 }
+                maxBuf = buf.length;
                 return maxBuf;
             }
 
-            try
+            buf = cipher.update(inputBuffer, 0, read);
+            if (buf != null)
             {
-                if (bufferedBlockCipher != null)
-                {
-                    maxBuf = bufferedBlockCipher.processBytes(inBuf, 0, read, buf, 0);
-                }
-                else if (aeadBlockCipher != null)
-                {
-                    maxBuf = aeadBlockCipher.processBytes(inBuf, 0, read, buf, 0);
-                }
-                else
-                {
-                    streamCipher.processBytes(inBuf, 0, read, buf, 0);
-                    maxBuf = read;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new IOException("Error processing stream " + e);
+                maxBuf = buf.length;
             }
         }
         return maxBuf;
     }
 
-    private void finaliseCipher()
-        throws IOException
+    private byte[] finaliseCipher()
+        throws InvalidCipherTextIOException
     {
         try
         {
             finalized = true;
-            if (bufferedBlockCipher != null)
-            {
-                maxBuf = bufferedBlockCipher.doFinal(buf, 0);
-            }
-            else if (aeadBlockCipher != null)
-            {
-                maxBuf = aeadBlockCipher.doFinal(buf, 0);
-            }
-            else
-            {
-                maxBuf = 0; // a stream cipher
-            }
+            return cipher.doFinal();
         }
-        catch (final InvalidCipherTextException e)
+        catch (GeneralSecurityException e)
         {
             throw new InvalidCipherTextIOException("Error finalising cipher", e);
-        }
-        catch (Exception e)
-        {
-            throw new IOException("Error finalising cipher " + e);
         }
     }
 
@@ -185,26 +124,6 @@ public class CipherInputStream
 
     /**
      * Reads data from the underlying stream and processes it with the cipher until the cipher
-     * outputs data, and then returns up to <code>b.length</code> bytes in the provided array.
-     * <p/>
-     * If the underlying stream is exhausted by this call, the cipher will be finalised.
-     *
-     * @param b the buffer into which the data is read.
-     * @return the total number of bytes read into the buffer, or <code>-1</code> if there is no
-     *         more data because the end of the stream has been reached.
-     * @throws IOException if there was an error closing the input stream.
-     * @throws InvalidCipherTextIOException if the data read from the stream was invalid ciphertext
-     * (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
-     */
-    public int read(
-        byte[] b)
-        throws IOException
-    {
-        return read(b, 0, b.length);
-    }
-
-    /**
-     * Reads data from the underlying stream and processes it with the cipher until the cipher
      * outputs data, and then returns up to <code>len</code> bytes in the provided array.
      * <p/>
      * If the underlying stream is exhausted by this call, the cipher will be finalised.
@@ -218,10 +137,7 @@ public class CipherInputStream
      * @throws InvalidCipherTextIOException if the data read from the stream was invalid ciphertext
      * (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
      */
-    public int read(
-        byte[] b,
-        int off,
-        int len)
+    public int read(byte[] b, int off, int len)
         throws IOException
     {
         if (bufOff >= maxBuf)
@@ -238,8 +154,7 @@ public class CipherInputStream
         return toSupply;
     }
 
-    public long skip(
-        long n)
+    public long skip(long n)
         throws IOException
     {
         if (n <= 0)
@@ -259,7 +174,8 @@ public class CipherInputStream
     }
 
     /**
-     * Closes the underlying input stream and finalises the processing of the data by the cipher.
+     * Closes the underlying input stream, and then finalises the processing of the data by the
+     * cipher.
      *
      * @throws IOException if there was an error closing the input stream.
      * @throws InvalidCipherTextIOException if the data read from the stream was invalid ciphertext
