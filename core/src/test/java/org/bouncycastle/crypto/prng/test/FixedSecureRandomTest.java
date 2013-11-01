@@ -12,13 +12,11 @@ public class FixedSecureRandomTest
     byte[]  r1 = Hex.decode("cafebabecafebabe");
     byte[]  r2 = Hex.decode("ffffffffcafebabedeadbeef");
 
-    @Override
     public String getName()
     {
         return "FixedSecureRandom";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

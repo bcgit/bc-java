@@ -56,8 +56,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CipherStreamTest
     extends SimpleTest
 {
-
-    @Override
     public String getName()
     {
         return "CipherStreamTest";
@@ -140,14 +138,16 @@ public class CipherStreamTest
             {
             }
             fail("Expected invalid ciphertext after tamper and read : " + cipher.getAlgorithmName());
-        } catch (InvalidCipherTextIOException e)
+        }
+        catch (InvalidCipherTextIOException e)
         {
             // Expected
         }
         try
         {
             input.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception after tamper and read : " + cipher.getAlgorithmName());
         }
@@ -177,11 +177,13 @@ public class CipherStreamTest
             try
             {
                 read = input.read();
-            } catch (InvalidCipherTextIOException e)
+            }
+            catch (InvalidCipherTextIOException e)
             {
                 // Expected
                 break;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 fail("Unexpected exception  on truncated read : " + cipher.getAlgorithmName());
                 break;
@@ -195,7 +197,8 @@ public class CipherStreamTest
         try
         {
             input.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception after truncate and read : " + cipher.getAlgorithmName());
         }
@@ -227,7 +230,8 @@ public class CipherStreamTest
         {
             output.close();
             fail("Expected invalid ciphertext after tamper and write : " + cipher.getAlgorithmName());
-        } catch (InvalidCipherTextIOException e)
+        }
+        catch (InvalidCipherTextIOException e)
         {
             // Expected
         }
@@ -310,7 +314,8 @@ public class CipherStreamTest
             }
             cIn.close();
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception " + getName(cipher), e);
         }
@@ -450,7 +455,8 @@ public class CipherStreamTest
             cOut.flush();
             cOut.close();
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception " + getName(cipher), e);
         }
@@ -462,7 +468,6 @@ public class CipherStreamTest
         }
     }
 
-    @Override
     public void performTest()
         throws Exception
     {
@@ -483,7 +488,7 @@ public class CipherStreamTest
         testModes(new RC6Engine(), new RC6Engine(), 16);
         testModes(new CamelliaEngine(), new CamelliaEngine(), 16);
         testModes(new ThreefishEngine(ThreefishEngine.BLOCKSIZE_512),
-                new ThreefishEngine(ThreefishEngine.BLOCKSIZE_512), 64);
+            new ThreefishEngine(ThreefishEngine.BLOCKSIZE_512), 64);
 
         testMode(new RC4Engine(), new KeyParameter(new byte[16]));
         testMode(new Salsa20Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));

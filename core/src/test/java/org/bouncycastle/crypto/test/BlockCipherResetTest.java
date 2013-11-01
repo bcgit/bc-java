@@ -39,13 +39,11 @@ public class BlockCipherResetTest
     extends SimpleTest
 {
 
-    @Override
     public String getName()
     {
         return "Block Cipher Reset";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

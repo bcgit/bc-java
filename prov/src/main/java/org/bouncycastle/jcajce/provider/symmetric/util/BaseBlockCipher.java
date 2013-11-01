@@ -577,16 +577,16 @@ public class BaseBlockCipher
 
             try
             {
-                Method tLen = gcmSpecClass.getDeclaredMethod("getTLen");
-                Method iv= gcmSpecClass.getDeclaredMethod("getIV");
+                Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
 
                 if (key instanceof RepeatedSecretKeySpec)
                 {
-                    param = new AEADParameters(null, ((Integer)tLen.invoke(params)).intValue(), (byte[])iv.invoke(params));
+                    param = new AEADParameters(null, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
                 }
                 else
                 {
-                    param = new AEADParameters(new KeyParameter(key.getEncoded()), ((Integer)tLen.invoke(params)).intValue(), (byte[])iv.invoke(params));
+                    param = new AEADParameters(new KeyParameter(key.getEncoded()), ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
                 }
             }
             catch (Exception e)
