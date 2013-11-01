@@ -1,8 +1,12 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -12,13 +16,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * check that cipher input/output streams are working correctly
@@ -207,18 +208,18 @@ public class CipherStreamTest
                 // too
                 // small to hold the result
                 ecipher.update(new byte[20], 0, 20, cipherText);
-                
+
                 fail("failed exception test - no ShortBufferException thrown");
             }
             catch (ShortBufferException e)
             {
                 // ignore
             }
-            
+
             try
             {
                 Cipher c = Cipher.getInstance(name, "BC");
-    
+
                 Key k = new PublicKey()
                 {
 
@@ -236,22 +237,22 @@ public class CipherStreamTest
                     {
                         return null;
                     }
-                    
+
                 };
-    
+
                 c.init(Cipher.ENCRYPT_MODE, k);
-    
+
                 fail("failed exception test - no InvalidKeyException thrown for public key");
             }
             catch (InvalidKeyException e)
             {
                 // okay
             }
-            
+
             try
             {
                 Cipher c = Cipher.getInstance(name, "BC");
-    
+
                 Key k = new PrivateKey()
                 {
 
@@ -269,11 +270,11 @@ public class CipherStreamTest
                     {
                         return null;
                     }
-                    
+
                 };
-    
+
                 c.init(Cipher.DECRYPT_MODE, k);
-    
+
                 fail("failed exception test - no InvalidKeyException thrown for private key");
             }
             catch (InvalidKeyException e)
@@ -286,7 +287,7 @@ public class CipherStreamTest
             fail("unexpected exception.", e);
         }
     }
-    
+
     public void performTest()
         throws Exception
     {
@@ -296,6 +297,12 @@ public class CipherStreamTest
         runTest("Salsa20");
         testException("Salsa20");
         testAlgorithm("Salsa20", SK, SIV, SIN, SOUT);
+        runTest("XSalsa20");
+        testException("XSalsa20");
+        testAlgorithm("XSalsa20", SK, SIV, SIN, SOUT);
+        runTest("ChaCha");
+        testException("ChaCha");
+        testAlgorithm("ChaCha", SK, SIV, SIN, SOUT);
         runTest("HC128");
         testException("HC128");
         testAlgorithm("HC128", HCK128A, HCIV, HCIN, HC128A);
