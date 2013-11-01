@@ -1,5 +1,7 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -47,6 +49,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.paddings.TBCPadding;
 import org.bouncycastle.crypto.paddings.X923Padding;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -62,6 +65,8 @@ public class BaseBlockCipher
     extends BaseWrapCipher
     implements PBE
 {
+    private static final Class gcmSpecClass = lookup("javax.crypto.spec.GCMParameterSpec");
+
     //
     // specs we can handle.
     //
@@ -71,7 +76,8 @@ public class BaseBlockCipher
                                         RC5ParameterSpec.class,
                                         IvParameterSpec.class,
                                         PBEParameterSpec.class,
-                                        GOST28147ParameterSpec.class
+                                        GOST28147ParameterSpec.class,
+                                        gcmSpecClass
                                     };
 
     private BlockCipher             baseEngine;
@@ -87,6 +93,20 @@ public class BaseBlockCipher
     private String                  pbeAlgorithm = null;
 
     private String                  modeName = null;
+
+    private static Class lookup(String className)
+    {
+        try
+        {
+            Class def = BaseBlockCipher.class.getClassLoader().loadClass(className);
+
+            return def;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
 
     protected BaseBlockCipher(
         BlockCipher engine)
@@ -548,12 +568,38 @@ public class BaseBlockCipher
                 ivParam = (ParametersWithIV)param;
             }
         }
+        else if (gcmSpecClass != null && gcmSpecClass.isInstance(params))
+        {
+            if (!isAEADModeName(modeName))
+            {
+                throw new InvalidAlgorithmParameterException("GCMParameterSpec can only be used with AEAD modes.");
+            }
+
+            try
+            {
+                Method tLen = gcmSpecClass.getDeclaredMethod("getTLen");
+                Method iv= gcmSpecClass.getDeclaredMethod("getIV");
+
+                if (key instanceof RepeatedSecretKeySpec)
+                {
+                    param = new AEADParameters(null, ((Integer)tLen.invoke(params)).intValue(), (byte[])iv.invoke(params));
+                }
+                else
+                {
+                    param = new AEADParameters(new KeyParameter(key.getEncoded()), ((Integer)tLen.invoke(params)).intValue(), (byte[])iv.invoke(params));
+                }
+            }
+            catch (Exception e)
+            {
+                throw new InvalidAlgorithmParameterException("Cannot process GCMParameterSpec.");
+            }
+        }
         else
         {
             throw new InvalidAlgorithmParameterException("unknown parameter type.");
         }
 
-        if ((ivLength != 0) && !(param instanceof ParametersWithIV))
+        if ((ivLength != 0) && !(param instanceof ParametersWithIV) && !(param instanceof AEADParameters))
         {
             SecureRandom    ivRandom = random;
 
@@ -616,6 +662,11 @@ public class BaseBlockCipher
         {
             for (int i = 0; i != availableSpecs.length; i++)
             {
+                if (availableSpecs[i] == null)
+                {
+                    continue;
+                }
+
                 try
                 {
                     paramSpec = params.getParameterSpec(availableSpecs[i]);
@@ -652,6 +703,18 @@ public class BaseBlockCipher
         {
             throw new InvalidKeyException(e.getMessage());
         }
+    }
+
+    protected void engineUpdateAAD(byte[] input, int offset, int length)
+    {
+        cipher.updateAAD(input, offset, length);
+    }
+
+    protected void engineUpdateAAD(ByteBuffer bytebuffer)
+    {
+        int offset = bytebuffer.arrayOffset() + bytebuffer.position();
+        int length = bytebuffer.limit() - bytebuffer.position();
+        engineUpdateAAD(bytebuffer.array(), offset, length);
     }
 
     protected byte[] engineUpdate(
@@ -803,6 +866,8 @@ public class BaseBlockCipher
 
         public int getUpdateOutputSize(int len);
 
+        public void updateAAD(byte[] input, int offset, int length);
+
         public int processByte(byte in, byte[] out, int outOff)
             throws DataLengthException;
 
@@ -864,6 +929,11 @@ public class BaseBlockCipher
             return cipher.getUpdateOutputSize(len);
         }
 
+        public void updateAAD(byte[] input, int offset, int length)
+        {
+            throw new UnsupportedOperationException("AAD is not supported in the current mode.");
+        }
+
         public int processByte(byte in, byte[] out, int outOff) throws DataLengthException
         {
             return cipher.processByte(in, out, outOff);
@@ -919,6 +989,11 @@ public class BaseBlockCipher
         public int getUpdateOutputSize(int len)
         {
             return cipher.getUpdateOutputSize(len);
+        }
+
+        public void updateAAD(byte[] input, int offset, int length)
+        {
+            cipher.processAADBytes(input, offset, length);
         }
 
         public int processByte(byte in, byte[] out, int outOff) throws DataLengthException
