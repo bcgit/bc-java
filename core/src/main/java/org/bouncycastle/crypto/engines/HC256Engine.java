@@ -99,6 +99,7 @@ public class HC256Engine
             iv = newIV;
         }
 
+        idx = 0;
         cnt = 0;
 
         int[] w = new int[2560];
@@ -226,7 +227,6 @@ public class HC256Engine
 
     public void reset()
     {
-        idx = 0;
         init();
     }
 
