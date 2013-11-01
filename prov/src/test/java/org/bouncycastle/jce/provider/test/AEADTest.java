@@ -31,13 +31,11 @@ public class AEADTest extends SimpleTest
     // C2 with only 64bit MAC (default for EAX)
     private byte[] C2_short = Hex.decode("19DD5C4C9331049D0BDA");
 
-    @Override
     public String getName()
     {
         return "AEAD";
     }
 
-    @Override
     public void performTest() throws Exception
     {
         try

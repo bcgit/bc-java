@@ -45,6 +45,7 @@ public class RegressionTest
         new WrapTest(),
         new DoFinalTest(),
         new CipherStreamTest(),
+        new CipherStreamTest2(),
         new NamedCurveTest(),
         new PKIXTest(),
         new NetscapeCertRequestTest(),
