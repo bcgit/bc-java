@@ -12,8 +12,17 @@ public class InvalidCipherTextIOException
 {
     private static final long serialVersionUID = 1L;
 
-    public InvalidCipherTextIOException(final String message, final Throwable cause)
+    private final Throwable cause;
+
+    public InvalidCipherTextIOException(String message, Throwable cause)
     {
-        super(message, cause);
+        super(message);
+
+        this.cause = cause;
+    }
+
+    public Throwable getCause()
+    {
+        return cause;
     }
 }

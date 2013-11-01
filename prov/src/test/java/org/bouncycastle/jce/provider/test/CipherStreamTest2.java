@@ -12,8 +12,8 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.io.InvalidCipherTextIOException;
-import org.bouncycastle.jce.io.CipherInputStream;
-import org.bouncycastle.jce.io.CipherOutputStream;
+import org.bouncycastle.jcajce.io.CipherInputStream;
+import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
@@ -105,14 +105,16 @@ public class CipherStreamTest2
             {
             }
             fail("Expected invalid ciphertext after tamper and read : " + name, authenticated, useBc);
-        } catch (InvalidCipherTextIOException e)
+        }
+        catch (InvalidCipherTextIOException e)
         {
             // Expected
         }
         try
         {
             input.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception : " + name, e, authenticated, useBc);
         }
@@ -153,11 +155,13 @@ public class CipherStreamTest2
             try
             {
                 read = input.read();
-            } catch (InvalidCipherTextIOException e)
+            }
+            catch (InvalidCipherTextIOException e)
             {
                 // Expected
                 break;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 fail("Unexpected exception : " + name, e, authenticated, useBc);
                 break;
@@ -171,7 +175,8 @@ public class CipherStreamTest2
         try
         {
             input.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception : " + name, e, authenticated, useBc);
         }
@@ -211,7 +216,8 @@ public class CipherStreamTest2
         {
             output.close();
             fail("Expected invalid ciphertext after tamper and write : " + name, authenticated, useBc);
-        } catch (InvalidCipherTextIOException e)
+        }
+        catch (InvalidCipherTextIOException e)
         {
             // Expected
         }
@@ -303,7 +309,8 @@ public class CipherStreamTest2
             }
             cIn.close();
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception " + name, e, authenticated, useBc);
         }
@@ -394,7 +401,8 @@ public class CipherStreamTest2
             cOut.flush();
             cOut.close();
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected exception " + name, e, authenticated, useBc);
         }
@@ -431,46 +439,46 @@ public class CipherStreamTest2
         for (String algo : blockCiphers64)
         {
             testModes(algo, new String[]{
-                    "/ECB/PKCS5Padding",
-                    "/CBC/PKCS5Padding",
-                    "/OFB/NoPadding",
-                    "/CFB/NoPadding",
-                    "/CTS/NoPadding",}, false);
+                "/ECB/PKCS5Padding",
+                "/CBC/PKCS5Padding",
+                "/OFB/NoPadding",
+                "/CFB/NoPadding",
+                "/CTS/NoPadding",}, false);
             testModes(algo, new String[]{"/EAX/NoPadding"}, true);
         }
 
         final String[] blockCiphers128 = new String[]{
-                "AES",
-                "NOEKEON",
-                "Twofish",
-                "CAST6",
-                "SEED",
-                "Serpent",
-                "RC6",
-                "CAMELLIA"};
+            "AES",
+            "NOEKEON",
+            "Twofish",
+            "CAST6",
+            "SEED",
+            "Serpent",
+            "RC6",
+            "CAMELLIA"};
 
         for (String algo : blockCiphers128)
         {
             testModes(algo, new String[]{
-                    "/ECB/PKCS5Padding",
-                    "/CBC/PKCS5Padding",
-                    "/OFB/NoPadding",
-                    "/CFB/NoPadding",
-                    "/CTS/NoPadding",
-                    "/CTR/NoPadding",
-                    "/SIC/NoPadding"}, false);
+                "/ECB/PKCS5Padding",
+                "/CBC/PKCS5Padding",
+                "/OFB/NoPadding",
+                "/CFB/NoPadding",
+                "/CTS/NoPadding",
+                "/CTR/NoPadding",
+                "/SIC/NoPadding"}, false);
             testModes(algo, new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/GCM/NoPadding", "/OCB/NoPadding"}, true);
         }
 
         final String[] streamCiphers = new String[]{
-                "ARC4",
-                "SALSA20",
-                "XSalsa20",
-                "ChaCha",
-                "Grainv1",
-                "Grain128",
-                "HC128",
-                "HC256"};
+            "ARC4",
+            "SALSA20",
+            "XSalsa20",
+            "ChaCha",
+            "Grainv1",
+            "Grain128",
+            "HC128",
+            "HC256"};
 
         for (String algo : streamCiphers)
         {
