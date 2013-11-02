@@ -56,8 +56,8 @@ public class SkeinMacTest
 
         public String toString()
         {
-            return String.format("new Case(%d, %d, \"%s\", \"%s\", \"%s\"),", blockSize, outputSize,
-                new String(Hex.encode(message)), new String(Hex.encode(key)), new String(Hex.encode(digest)));
+            return "new Case(" + blockSize + ", " + outputSize + ", \"" + new String(Hex.encode(message)) + "\", \""
+                + new String(Hex.encode(key)) + "\", \"" + new String(Hex.encode(digest)) + "\"";
         }
 
     }
