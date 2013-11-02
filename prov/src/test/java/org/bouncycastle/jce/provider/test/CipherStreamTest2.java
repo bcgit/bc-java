@@ -43,7 +43,7 @@ public class CipherStreamTest2
             testReadWrite(algo + transform, key, authenticated, false, false);
             testReadWrite(algo + transform, key, authenticated, false, true);
 
-            if (!transform.contains("CTS"))
+            if (!(transform.indexOf("CTS") > -1))
             {
                 testWriteReadEmpty(algo + transform, key, authenticated, true, false);
                 testWriteReadEmpty(algo + transform, key, authenticated, true, true);
@@ -66,12 +66,14 @@ public class CipherStreamTest2
     private InputStream createInputStream(byte[] data, Cipher cipher, boolean useBc)
     {
         ByteArrayInputStream bytes = new ByteArrayInputStream(data);
-        return useBc ? new CipherInputStream(bytes, cipher) : new javax.crypto.CipherInputStream(bytes, cipher);
+        // cast required for earlier JDK
+        return useBc ? (InputStream)new CipherInputStream(bytes, cipher) : (InputStream)new javax.crypto.CipherInputStream(bytes, cipher);
     }
 
     private OutputStream createOutputStream(ByteArrayOutputStream bytes, Cipher cipher, boolean useBc)
     {
-        return useBc ? new CipherOutputStream(bytes, cipher) : new javax.crypto.CipherOutputStream(bytes, cipher);
+        // cast required for earlier JDK
+        return useBc ? (OutputStream)new CipherOutputStream(bytes, cipher) : (OutputStream)new javax.crypto.CipherOutputStream(bytes, cipher);
     }
 
     /**
