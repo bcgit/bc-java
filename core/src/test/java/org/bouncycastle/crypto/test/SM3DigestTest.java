@@ -37,7 +37,6 @@ public class SM3DigestTest
         super(new SM3Digest(), messages, digests);
     }
 
-    @Override
     public void performTest()
     {
         super.performTest();

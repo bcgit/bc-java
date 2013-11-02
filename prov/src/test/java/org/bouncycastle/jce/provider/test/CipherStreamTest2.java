@@ -21,7 +21,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CipherStreamTest2
     extends SimpleTest
 {
-    @Override
     public String getName()
     {
         return "CipherStreamTest";
@@ -31,8 +30,10 @@ public class CipherStreamTest2
         throws Exception
     {
         Key key = generateKey(algo);
-        for (String transform : transforms)
+        for (int i = 0; i != transforms.length; i++)
         {
+            String transform = transforms[i];
+
             testWriteRead(algo + transform, key, authenticated, true, false);
             testWriteRead(algo + transform, key, authenticated, true, true);
             testWriteRead(algo + transform, key, authenticated, false, false);
@@ -42,7 +43,7 @@ public class CipherStreamTest2
             testReadWrite(algo + transform, key, authenticated, false, false);
             testReadWrite(algo + transform, key, authenticated, false, true);
 
-            if (!transform.contains("CTS"))
+            if (!(transform.indexOf("CTS") > -1))
             {
                 testWriteReadEmpty(algo + transform, key, authenticated, true, false);
                 testWriteReadEmpty(algo + transform, key, authenticated, true, true);
@@ -62,17 +63,17 @@ public class CipherStreamTest2
         }
     }
 
-    @SuppressWarnings("resource")
     private InputStream createInputStream(byte[] data, Cipher cipher, boolean useBc)
     {
         ByteArrayInputStream bytes = new ByteArrayInputStream(data);
-        return useBc ? new CipherInputStream(bytes, cipher) : new javax.crypto.CipherInputStream(bytes, cipher);
+        // cast required for earlier JDK
+        return useBc ? (InputStream)new CipherInputStream(bytes, cipher) : (InputStream)new javax.crypto.CipherInputStream(bytes, cipher);
     }
 
-    @SuppressWarnings("resource")
     private OutputStream createOutputStream(ByteArrayOutputStream bytes, Cipher cipher, boolean useBc)
     {
-        return useBc ? new CipherOutputStream(bytes, cipher) : new javax.crypto.CipherOutputStream(bytes, cipher);
+        // cast required for earlier JDK
+        return useBc ? (OutputStream)new CipherOutputStream(bytes, cipher) : (OutputStream)new javax.crypto.CipherOutputStream(bytes, cipher);
     }
 
     /**
@@ -430,21 +431,20 @@ public class CipherStreamTest2
         return kGen.generateKey();
     }
 
-    @Override
     public void performTest()
         throws Exception
     {
         final String[] blockCiphers64 = new String[]{"BLOWFISH", "DES", "DESEDE", "TEA", "CAST5", "RC2", "XTEA"};
 
-        for (String algo : blockCiphers64)
+        for (int i = 0; i != blockCiphers64.length; i++)
         {
-            testModes(algo, new String[]{
+            testModes(blockCiphers64[i], new String[]{
                 "/ECB/PKCS5Padding",
                 "/CBC/PKCS5Padding",
                 "/OFB/NoPadding",
                 "/CFB/NoPadding",
                 "/CTS/NoPadding",}, false);
-            testModes(algo, new String[]{"/EAX/NoPadding"}, true);
+            testModes(blockCiphers64[i], new String[]{"/EAX/NoPadding"}, true);
         }
 
         final String[] blockCiphers128 = new String[]{
@@ -457,9 +457,9 @@ public class CipherStreamTest2
             "RC6",
             "CAMELLIA"};
 
-        for (String algo : blockCiphers128)
+        for (int i = 0; i != blockCiphers128.length; i++)
         {
-            testModes(algo, new String[]{
+            testModes(blockCiphers128[i], new String[]{
                 "/ECB/PKCS5Padding",
                 "/CBC/PKCS5Padding",
                 "/OFB/NoPadding",
@@ -467,7 +467,7 @@ public class CipherStreamTest2
                 "/CTS/NoPadding",
                 "/CTR/NoPadding",
                 "/SIC/NoPadding"}, false);
-            testModes(algo, new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/GCM/NoPadding", "/OCB/NoPadding"}, true);
+            testModes(blockCiphers128[i], new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/GCM/NoPadding", "/OCB/NoPadding"}, true);
         }
 
         final String[] streamCiphers = new String[]{
@@ -480,9 +480,9 @@ public class CipherStreamTest2
             "HC128",
             "HC256"};
 
-        for (String algo : streamCiphers)
+        for (int i = 0; i != streamCiphers.length; i++)
         {
-            testModes(algo, new String[]{""}, false);
+            testModes(streamCiphers[i], new String[]{""}, false);
         }
     }
 
