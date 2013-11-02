@@ -15,8 +15,7 @@ import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.TestFailedException;
 
 public final class KDFDoublePipelineCounterTests
-    implements
-    CAVPListener
+    implements CAVPListener
 {
     private PrintWriter out;
 

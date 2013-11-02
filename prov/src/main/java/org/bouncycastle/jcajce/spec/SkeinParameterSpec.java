@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 /**
  * Parameters for the Skein hash function - a series of byte[] strings identified by integer tags.
@@ -104,7 +105,7 @@ public class SkeinParameterSpec
      */
     public byte[] getKey()
     {
-        return Arrays.clone((byte[])parameters.get(Integer.valueOf(PARAM_TYPE_KEY)));
+        return Arrays.clone((byte[])parameters.get(Integers.valueOf(PARAM_TYPE_KEY)));
     }
 
     /**
@@ -113,7 +114,7 @@ public class SkeinParameterSpec
      */
     public byte[] getPersonalisation()
     {
-        return Arrays.clone((byte[])parameters.get(Integer.valueOf(PARAM_TYPE_PERSONALISATION)));
+        return Arrays.clone((byte[])parameters.get(Integers.valueOf(PARAM_TYPE_PERSONALISATION)));
     }
 
     /**
@@ -122,7 +123,7 @@ public class SkeinParameterSpec
      */
     public byte[] getPublicKey()
     {
-        return Arrays.clone((byte[])parameters.get(Integer.valueOf(PARAM_TYPE_PUBLIC_KEY)));
+        return Arrays.clone((byte[])parameters.get(Integers.valueOf(PARAM_TYPE_PUBLIC_KEY)));
     }
 
     /**
@@ -131,7 +132,7 @@ public class SkeinParameterSpec
      */
     public byte[] getKeyIdentifier()
     {
-        return Arrays.clone((byte[])parameters.get(Integer.valueOf(PARAM_TYPE_KEY_IDENTIFIER)));
+        return Arrays.clone((byte[])parameters.get(Integers.valueOf(PARAM_TYPE_KEY_IDENTIFIER)));
     }
 
     /**
@@ -140,7 +141,7 @@ public class SkeinParameterSpec
      */
     public byte[] getNonce()
     {
-        return Arrays.clone((byte[])parameters.get(Integer.valueOf(PARAM_TYPE_NONCE)));
+        return Arrays.clone((byte[])parameters.get(Integers.valueOf(PARAM_TYPE_NONCE)));
     }
 
     /**
@@ -193,7 +194,7 @@ public class SkeinParameterSpec
                 throw new IllegalArgumentException("Parameter type " + PARAM_TYPE_CONFIG
                     + " is reserved for internal use.");
             }
-            this.parameters.put(Integer.valueOf(type), value);
+            this.parameters.put(Integers.valueOf(type), value);
             return this;
         }
 
@@ -242,7 +243,7 @@ public class SkeinParameterSpec
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Byte I/O failed.", e);
+                throw new IllegalStateException("Byte I/O failed: " + e);
             }
         }
 

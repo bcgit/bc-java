@@ -1265,7 +1265,7 @@ public class BcCertTest
     private void pemTest()
         throws Exception
     {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
         X509Certificate cert = readPEMCert(cf, PEMData.CERTIFICATE_1);
         if (cert == null)
