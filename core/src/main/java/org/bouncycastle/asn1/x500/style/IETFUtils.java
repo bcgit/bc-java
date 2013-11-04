@@ -405,7 +405,7 @@ public class IETFUtils
         int start = 0;
         if (vBuf.length() > 0)
         {
-            while (vBuf.charAt(start) == ' ')
+            while (vBuf.length() > start && vBuf.charAt(start) == ' ')
             {
                 vBuf.insert(start, "\\");
                 start += 2;

@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStrictStyle;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -146,6 +147,8 @@ public class X500NameTest
     public void performTest()
         throws Exception
     {
+        ietfUtilsTest();
+
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
         testEncodingPrintableString(BCStyle.DN_QUALIFIER, "123456");
@@ -670,6 +673,12 @@ public class X500NameTest
     private String getValue(RDN vl)
     {
         return ((ASN1String)vl.getFirst().getValue()).getString();
+    }
+
+    private void ietfUtilsTest()
+        throws Exception
+    {
+        IETFUtils.valueToString(new DERUTF8String(" "));
     }
 
     /*
