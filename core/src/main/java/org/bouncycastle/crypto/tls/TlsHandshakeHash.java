@@ -7,7 +7,13 @@ interface TlsHandshakeHash
 {
     void init(TlsContext context);
 
-    TlsHandshakeHash commit();
+    TlsHandshakeHash notifyPRFDetermined();
+
+    void trackHashAlgorithm(short hashAlgorithm);
+
+    void sealHashAlgorithms();
+
+    void keepHashAlgorithms(short[] hashAlgorithms);
 
     Digest fork();
 }
