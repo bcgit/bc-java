@@ -1020,7 +1020,7 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length);
     }
 
-    public static final Digest createHash(int hashAlgorithm)
+    public static final Digest createHash(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
@@ -1041,7 +1041,7 @@ public class TlsUtils
         }
     }
 
-    public static final Digest cloneHash(int hashAlgorithm, Digest hash)
+    public static final Digest cloneHash(short hashAlgorithm, Digest hash)
     {
         switch (hashAlgorithm)
         {
@@ -1099,7 +1099,7 @@ public class TlsUtils
         }
     }
 
-    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(int hashAlgorithm)
+    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {

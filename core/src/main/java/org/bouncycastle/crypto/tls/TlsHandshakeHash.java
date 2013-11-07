@@ -5,10 +5,15 @@ import org.bouncycastle.crypto.Digest;
 interface TlsHandshakeHash
     extends Digest
 {
-
     void init(TlsContext context);
 
-    TlsHandshakeHash commit();
+    TlsHandshakeHash notifyPRFDetermined();
 
-    TlsHandshakeHash fork();
+    void trackHashAlgorithm(short hashAlgorithm);
+
+    void sealHashAlgorithms();
+
+    void keepHashAlgorithms(short[] hashAlgorithms);
+
+    Digest fork();
 }
