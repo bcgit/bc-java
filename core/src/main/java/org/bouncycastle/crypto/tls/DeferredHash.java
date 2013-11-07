@@ -23,13 +23,6 @@ class DeferredHash
         this.hashes = null;
     }
 
-    private DeferredHash(int prfAlgorithm, Digest prfHash)
-    {
-        this.buf = null;
-        this.hashes = new Hashtable();
-        this.hashes.put(Integers.valueOf(prfAlgorithm), prfHash);
-    }
-
     public void init(TlsContext context)
     {
         this.context = context;
