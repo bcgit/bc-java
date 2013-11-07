@@ -4,7 +4,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Shorts;
 
 /**
  * Buffers input until the hash algorithm is determined.
@@ -20,7 +20,7 @@ class DeferredHash
     DeferredHash()
     {
         this.buf = new DigestInputBuffer();
-        this.hashes = null;
+        this.hashes = new Hashtable();
     }
 
     public void init(TlsContext context)
@@ -30,21 +30,33 @@ class DeferredHash
 
     public TlsHandshakeHash commit()
     {
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
-        Digest prfHash = TlsUtils.createPRFHash(prfAlgorithm);
-
-        buf.updateDigest(prfHash);
-
-        if (prfHash instanceof TlsHandshakeHash)
+        // Ensure the PRF hash algorithm is being tracked
         {
-            TlsHandshakeHash tlsPRFHash = (TlsHandshakeHash)prfHash;
-            tlsPRFHash.init(context);
-            return tlsPRFHash.commit();
+            int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+            if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+            {
+                CombinedHash legacyHash = new CombinedHash();
+                legacyHash.init(context);
+                buf.updateDigest(legacyHash);
+                return legacyHash.commit();
+            }
+
+            short prfHashAlgorithm = TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
+            if (!this.hashes.containsKey(Shorts.valueOf(prfHashAlgorithm)))
+            {
+                Digest prfHash = TlsUtils.createHash(prfHashAlgorithm);
+                this.hashes.put(Shorts.valueOf(prfHashAlgorithm), prfHash);
+            }
+        }
+
+        Enumeration e = hashes.elements();
+        while (e.hasMoreElements())
+        {
+            Digest hash = (Digest)e.nextElement();
+            buf.updateDigest(hash);
         }
 
         this.buf = null;
-        this.hashes = new Hashtable();
-        this.hashes.put(Integers.valueOf(prfAlgorithm), prfHash);
 
         return this;
     }
@@ -52,21 +64,27 @@ class DeferredHash
     public Digest fork()
     {
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
-
-        Digest prfHash = (Digest)hashes.get(Integers.valueOf(prfAlgorithm));
-        if (prfHash == null)
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            throw new IllegalStateException("PRF digest not registered");
+            throw new IllegalStateException("Legacy PRF shouldn't be calling this");
         }
 
-        prfHash = TlsUtils.clonePRFHash(prfAlgorithm, prfHash);
-        
+        short hashAlgorithm = TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
+
         if (buf != null)
         {
-            buf.updateDigest(prfHash);
+            Digest hash = TlsUtils.createHash(hashAlgorithm);
+            buf.updateDigest(hash);
+            return hash;
         }
 
-        return prfHash;
+        Digest hash = (Digest)hashes.get(Shorts.valueOf(hashAlgorithm));
+        if (hash == null)
+        {
+            throw new IllegalStateException("Digest not registered");
+        }
+
+        return TlsUtils.cloneHash(hashAlgorithm, hash);
     }
 
     public String getAlgorithmName()
