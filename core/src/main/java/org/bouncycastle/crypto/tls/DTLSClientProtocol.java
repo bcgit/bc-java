@@ -255,6 +255,8 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        // TODO Seal the handshake hash list of digests
+
         Vector clientSupplementalData = state.client.getClientSupplementalData();
         if (clientSupplementalData != null)
         {
@@ -485,6 +487,8 @@ public class DTLSClientProtocol
         TlsProtocol.assertEmpty(buf);
 
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
+
+        // TODO Let the handshake hash know what digests it needs to be tracking for this
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)

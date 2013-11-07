@@ -160,6 +160,9 @@ public class TlsServerProtocol
                     if (this.certificateRequest != null)
                     {
                         this.keyExchange.validateCertificateRequest(certificateRequest);
+
+                        // TODO Let the handshake hash know what digests it needs to be tracking for this
+
                         sendCertificateRequestMessage(certificateRequest);
                     }
                 }
@@ -167,6 +170,8 @@ public class TlsServerProtocol
 
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
+
+                // TODO Seal the handshake hash list of digests
 
                 break;
             }
