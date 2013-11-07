@@ -456,6 +456,8 @@ public class TlsClientProtocol
 
                 this.keyExchange.validateCertificateRequest(this.certificateRequest);
 
+                // TODO Let the handshake hash know what digests it needs to be tracking for this
+
                 break;
             }
             default:
@@ -661,6 +663,7 @@ public class TlsClientProtocol
                 {
                     // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
+                    // TODO[compat-polarssl] PolarSSL test server sends server extensions e.g. ec_point_formats
 //                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
@@ -824,7 +827,9 @@ public class TlsClientProtocol
             if (noRenegExt && noSCSV)
             {
                 // TODO Consider whether to default to a client extension instead
-                offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+//                this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.clientExtensions);
+//                this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
+                this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
             TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
