@@ -91,7 +91,8 @@ class RecordStream
 
     void notifyHelloComplete()
     {
-        this.hash = this.hash.commit();
+        this.hash = this.hash.notifyPRFDetermined();
+        this.hash.sealHashAlgorithms();
     }
 
     void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher)
@@ -295,7 +296,7 @@ class RecordStream
      */
     byte[] getCurrentHash(byte[] sender)
     {
-        TlsHandshakeHash d = hash.fork();
+        Digest d = hash.fork();
 
         if (TlsUtils.isSSL(context))
         {
