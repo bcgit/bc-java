@@ -9,5 +9,5 @@ interface TlsHandshakeHash
 
     TlsHandshakeHash commit();
 
-    TlsHandshakeHash fork();
+    Digest fork();
 }
