@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
@@ -36,7 +37,7 @@ class DTLSReliableHandshake
 
     byte[] getCurrentHash()
     {
-        TlsHandshakeHash copyOfHash = hash.fork();
+        Digest copyOfHash = hash.fork();
         byte[] result = new byte[copyOfHash.getDigestSize()];
         copyOfHash.doFinal(result, 0);
         return result;
