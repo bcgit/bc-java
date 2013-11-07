@@ -32,7 +32,8 @@ class DTLSReliableHandshake
 
     void notifyHelloComplete()
     {
-        this.hash = this.hash.commit();
+        this.hash = this.hash.notifyPRFDetermined();
+        this.hash.sealHashAlgorithms();
     }
 
     byte[] getCurrentHash()
