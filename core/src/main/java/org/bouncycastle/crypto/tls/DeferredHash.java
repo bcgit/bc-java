@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.tls;
 
+import java.util.Enumeration;
+import java.util.Hashtable;
+
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Integers;
 
 /**
  * Buffers input until the hash algorithm is determined.
@@ -10,19 +14,20 @@ class DeferredHash
 {
     protected TlsContext context;
 
-    private DigestInputBuffer buf = new DigestInputBuffer();
-    private Digest hash = null;
+    private DigestInputBuffer buf;
+    private Hashtable hashes;
 
     DeferredHash()
     {
         this.buf = new DigestInputBuffer();
-        this.hash = null;
+        this.hashes = null;
     }
 
-    private DeferredHash(Digest hash)
+    private DeferredHash(int prfAlgorithm, Digest prfHash)
     {
         this.buf = null;
-        this.hash = hash;
+        this.hashes = new Hashtable();
+        this.hashes.put(Integers.valueOf(prfAlgorithm), prfHash);
     }
 
     public void init(TlsContext context)
@@ -44,28 +49,41 @@ class DeferredHash
             return tlsPRFHash.commit();
         }
 
-        this.hash = prfHash;
         this.buf = null;
+        this.hashes = new Hashtable();
+        this.hashes.put(Integers.valueOf(prfAlgorithm), prfHash);
 
         return this;
     }
 
-    public TlsHandshakeHash fork()
+    public Digest fork()
     {
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
-        Digest prfHash = TlsUtils.clonePRFHash(prfAlgorithm, checkHash());
 
-        return new DeferredHash(prfHash);
+        Digest prfHash = (Digest)hashes.get(Integers.valueOf(prfAlgorithm));
+        if (prfHash == null)
+        {
+            throw new IllegalStateException("PRF digest not registered");
+        }
+
+        prfHash = TlsUtils.clonePRFHash(prfAlgorithm, prfHash);
+        
+        if (buf != null)
+        {
+            buf.updateDigest(prfHash);
+        }
+
+        return prfHash;
     }
 
     public String getAlgorithmName()
     {
-        return checkHash().getAlgorithmName();
+        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
     }
 
     public int getDigestSize()
     {
-        return checkHash().getDigestSize();
+        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
     }
 
     public void update(byte input)
@@ -76,7 +94,12 @@ class DeferredHash
             return;
         }
 
-        hash.update(input);
+        Enumeration e = hashes.elements();
+        while (e.hasMoreElements())
+        {
+            Digest hash = (Digest)e.nextElement();
+            hash.update(input);
+        }
     }
 
     public void update(byte[] input, int inOff, int len)
@@ -87,12 +110,17 @@ class DeferredHash
             return;
         }
 
-        hash.update(input, inOff, len);
+        Enumeration e = hashes.elements();
+        while (e.hasMoreElements())
+        {
+            Digest hash = (Digest)e.nextElement();
+            hash.update(input, inOff, len);
+        }
     }
 
     public int doFinal(byte[] output, int outOff)
     {
-        return checkHash().doFinal(output, outOff);
+        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
     }
 
     public void reset()
@@ -103,16 +131,11 @@ class DeferredHash
             return;
         }
 
-        hash.reset();
-    }
-
-    protected Digest checkHash()
-    {
-        if (buf != null)
+        Enumeration e = hashes.elements();
+        while (e.hasMoreElements())
         {
-            throw new IllegalStateException("No hash algorithm has been decided on");
+            Digest hash = (Digest)e.nextElement();
+            hash.reset();
         }
-
-        return hash;
     }
 }

@@ -35,7 +35,7 @@ class CombinedHash
         return this;
     }
 
-    public TlsHandshakeHash fork()
+    public Digest fork()
     {
         return new CombinedHash(this);
     }
