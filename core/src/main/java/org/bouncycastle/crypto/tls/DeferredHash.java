@@ -33,7 +33,6 @@ class DeferredHash
     public TlsHandshakeHash commit()
     {
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
-
         Digest prfHash = TlsUtils.createPRFHash(prfAlgorithm);
 
         buf.updateDigest(prfHash);
@@ -53,70 +52,67 @@ class DeferredHash
 
     public TlsHandshakeHash fork()
     {
-        checkHash();
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
-        return new DeferredHash(TlsUtils.clonePRFHash(prfAlgorithm, hash));
+        Digest prfHash = TlsUtils.clonePRFHash(prfAlgorithm, checkHash());
+
+        return new DeferredHash(prfHash);
     }
 
     public String getAlgorithmName()
     {
-        checkHash();
-        return hash.getAlgorithmName();
+        return checkHash().getAlgorithmName();
     }
 
     public int getDigestSize()
     {
-        checkHash();
-        return hash.getDigestSize();
+        return checkHash().getDigestSize();
     }
 
     public void update(byte input)
     {
-        if (hash == null)
+        if (buf != null)
         {
             buf.write(input);
+            return;
         }
-        else
-        {
-            hash.update(input);
-        }
+
+        hash.update(input);
     }
 
     public void update(byte[] input, int inOff, int len)
     {
-        if (hash == null)
+        if (buf != null)
         {
             buf.write(input, inOff, len);
+            return;
         }
-        else
-        {
-            hash.update(input, inOff, len);
-        }
+
+        hash.update(input, inOff, len);
     }
 
     public int doFinal(byte[] output, int outOff)
     {
-        checkHash();
-        return hash.doFinal(output, outOff);
+        return checkHash().doFinal(output, outOff);
     }
 
     public void reset()
     {
-        if (hash == null)
+        if (buf != null)
         {
             buf.reset();
+            return;
         }
-        else
-        {
-            hash.reset();
-        }
+
+        hash.reset();
     }
 
-    protected void checkHash()
+    protected Digest checkHash()
     {
-        if (hash == null)
+        if (buf != null)
         {
-            throw new IllegalStateException("No hash algorithm has been set");
+            throw new IllegalStateException("No hash algorithm has been decided on");
         }
+
+        return hash;
     }
 }

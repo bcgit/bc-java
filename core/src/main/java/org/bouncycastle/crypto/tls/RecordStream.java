@@ -295,7 +295,7 @@ class RecordStream
      */
     byte[] getCurrentHash(byte[] sender)
     {
-        TlsHandshakeHash d = hash.fork();
+        Digest d = hash.fork();
 
         if (TlsUtils.isSSL(context))
         {
