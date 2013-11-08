@@ -387,6 +387,8 @@ public class TlsClientProtocol
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
 
+                this.recordStream.getHandshakeHash().stopTracking();
+
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
                 this.connection_state = CS_CLIENT_FINISHED;

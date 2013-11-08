@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -287,8 +286,12 @@ public class TlsServerProtocol
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
+
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
+
+                this.recordStream.getHandshakeHash().stopTracking();
+
                 break;
             }
             default:
@@ -572,7 +575,12 @@ public class TlsServerProtocol
 
         if (expectCertificateVerifyMessage())
         {
+            // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
             this.certificateVerifyHash = recordStream.getCurrentHash(null);
+        }
+        else
+        {
+            this.recordStream.getHandshakeHash().stopTracking();
         }
     }
 

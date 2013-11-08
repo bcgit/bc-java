@@ -235,6 +235,11 @@ public class DTLSServerProtocol
             }
         }
 
+        if (!expectCertificateVerifyMessage(state))
+        {
+            handshake.getHandshakeHash().stopTracking();
+        }
+
         if (clientMessage.getType() == HandshakeType.client_key_exchange)
         {
             processClientKeyExchange(state, clientMessage.getBody());
@@ -254,9 +259,12 @@ public class DTLSServerProtocol
          */
         if (expectCertificateVerifyMessage(state))
         {
+            // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
             byte[] certificateVerifyHash = handshake.getCurrentHash();
             byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
             processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
+
+            handshake.getHandshakeHash().stopTracking();
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client

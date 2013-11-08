@@ -325,6 +325,8 @@ public class DTLSClientProtocol
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
+        handshake.getHandshakeHash().stopTracking();
+
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
             handshake.getCurrentHash());

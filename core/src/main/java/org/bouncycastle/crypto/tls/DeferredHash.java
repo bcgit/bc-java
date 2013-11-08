@@ -65,24 +65,14 @@ class DeferredHash
         checkStopBuffering();
     }
 
-    public void keepHashAlgorithms(short[] hashAlgorithms)
+    public void stopTracking()
     {
-        Hashtable kept = new Hashtable();
-
-        Enumeration e = hashes.keys();
-        while (e.hasMoreElements())
+        if (hashes.size() > 1)
         {
-            Short key = (Short)e.nextElement();
-            short hashAlgorithm = key.shortValue();
-
-            if (hashAlgorithm == prfHashAlgorithm.shortValue()
-                || TlsProtocol.arrayContains(hashAlgorithms, hashAlgorithm))
-            {
-                kept.put(key, hashes.get(key));
-            }
+            Digest prfHash = (Digest)hashes.get(prfHashAlgorithm);
+            hashes = new Hashtable();
+            hashes.put(prfHashAlgorithm, prfHash);
         }
-
-        this.hashes = kept;
 
         checkStopBuffering();
     }
