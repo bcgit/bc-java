@@ -81,18 +81,12 @@ class DeferredHash
     {
         if (buf != null)
         {
-            Digest hash = TlsUtils.createHash(prfHashAlgorithm.shortValue());
-            buf.updateDigest(hash);
-            return hash;
+            Digest prfHash = TlsUtils.createHash(prfHashAlgorithm.shortValue());
+            buf.updateDigest(prfHash);
+            return prfHash;
         }
 
-        Digest prfHash = (Digest)hashes.get(prfHashAlgorithm);
-        if (prfHash == null)
-        {
-            throw new IllegalStateException("PRF hash algorithm not tracked");
-        }
-
-        return TlsUtils.cloneHash(prfHashAlgorithm.shortValue(), prfHash);
+        return TlsUtils.cloneHash(prfHashAlgorithm.shortValue(), (Digest)hashes.get(prfHashAlgorithm));
     }
 
     public String getAlgorithmName()
