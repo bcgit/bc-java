@@ -44,7 +44,7 @@ class CombinedHash
     {
     }
 
-    public void keepHashAlgorithms(short[] hashAlgorithms)
+    public void stopTracking()
     {
     }
 
