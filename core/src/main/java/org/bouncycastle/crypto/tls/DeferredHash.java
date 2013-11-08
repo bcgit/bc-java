@@ -77,7 +77,7 @@ class DeferredHash
         checkStopBuffering();
     }
 
-    public Digest fork()
+    public Digest forkPRFHash()
     {
         if (buf != null)
         {

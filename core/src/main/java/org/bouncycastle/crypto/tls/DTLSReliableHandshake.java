@@ -36,9 +36,9 @@ class DTLSReliableHandshake
         return handshakeHash;
     }
 
-    byte[] getCurrentHash()
+    byte[] getCurrentPRFHash()
     {
-        Digest copyOfHash = handshakeHash.fork();
+        Digest copyOfHash = handshakeHash.forkPRFHash();
         byte[] result = new byte[copyOfHash.getDigestSize()];
         copyOfHash.doFinal(result, 0);
         return result;

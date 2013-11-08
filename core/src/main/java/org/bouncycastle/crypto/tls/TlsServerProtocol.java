@@ -576,7 +576,7 @@ public class TlsServerProtocol
         if (expectCertificateVerifyMessage())
         {
             // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
-            this.certificateVerifyHash = recordStream.getCurrentHash(null);
+            this.certificateVerifyHash = recordStream.getCurrentPRFHash(null);
         }
         else
         {

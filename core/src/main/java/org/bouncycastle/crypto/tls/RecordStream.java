@@ -293,15 +293,15 @@ class RecordStream
     /**
      * 'sender' only relevant to SSLv3
      */
-    byte[] getCurrentHash(byte[] sender)
+    byte[] getCurrentPRFHash(byte[] sslSender)
     {
-        Digest d = handshakeHash.fork();
+        Digest d = handshakeHash.forkPRFHash();
 
         if (TlsUtils.isSSL(context))
         {
-            if (sender != null)
+            if (sslSender != null)
             {
-                d.update(sender, 0, sender.length);
+                d.update(sslSender, 0, sslSender.length);
             }
         }
 
