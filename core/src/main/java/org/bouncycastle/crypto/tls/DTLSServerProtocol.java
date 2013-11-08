@@ -183,10 +183,11 @@ public class DTLSServerProtocol
             {
                 state.keyExchange.validateCertificateRequest(state.certificateRequest);
 
-                // TODO Let the handshake hash know what digests it needs to be tracking for this
-
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
+
+                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
+                    state.certificateRequest.getSupportedSignatureAlgorithms());
             }
         }
 

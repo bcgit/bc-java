@@ -236,6 +236,14 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.certificate_request)
         {
             processCertificateRequest(state, serverMessage.getBody());
+
+            /*
+             * TODO Give the client a chance to immediately select the CertificateVerify hash
+             * algorithm here to avoid tracking the other hash algorithms unnecessarily?
+             */
+            TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
+                state.certificateRequest.getSupportedSignatureAlgorithms());
+
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -487,8 +495,6 @@ public class DTLSClientProtocol
         TlsProtocol.assertEmpty(buf);
 
         state.keyExchange.validateCertificateRequest(state.certificateRequest);
-
-        // TODO Let the handshake hash know what digests it needs to be tracking for this
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
