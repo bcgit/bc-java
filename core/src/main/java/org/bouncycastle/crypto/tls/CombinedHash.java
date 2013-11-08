@@ -48,7 +48,7 @@ class CombinedHash
     {
     }
 
-    public Digest fork()
+    public Digest forkPRFHash()
     {
         return new CombinedHash(this);
     }

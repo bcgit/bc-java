@@ -15,5 +15,5 @@ interface TlsHandshakeHash
 
     void stopTracking();
 
-    Digest fork();
+    Digest forkPRFHash();
 }

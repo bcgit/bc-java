@@ -154,12 +154,12 @@ public class DTLSClientProtocol
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
             byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-                ExporterLabel.server_finished, handshake.getCurrentHash());
+                ExporterLabel.server_finished, handshake.getCurrentPRFHash());
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
             // NOTE: Calculated exclusive of the Finished message itself
             byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-                handshake.getCurrentHash());
+                handshake.getCurrentPRFHash());
             handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
             handshake.finish();
@@ -318,7 +318,7 @@ public class DTLSClientProtocol
              * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
              */
             SignatureAndHashAlgorithm algorithm = null;
-            byte[] hash = handshake.getCurrentHash();
+            byte[] hash = handshake.getCurrentPRFHash();
             byte[] signature = signerCredentials.generateCertificateSignature(hash);
             DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
@@ -329,7 +329,7 @@ public class DTLSClientProtocol
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-            handshake.getCurrentHash());
+            handshake.getCurrentPRFHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
         if (state.expectSessionTicket)
@@ -347,7 +347,7 @@ public class DTLSClientProtocol
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
         byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-            ExporterLabel.server_finished, handshake.getCurrentHash());
+            ExporterLabel.server_finished, handshake.getCurrentPRFHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
         handshake.finish();

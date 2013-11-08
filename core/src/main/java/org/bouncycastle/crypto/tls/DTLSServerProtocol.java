@@ -260,7 +260,7 @@ public class DTLSServerProtocol
         if (expectCertificateVerifyMessage(state))
         {
             // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
-            byte[] certificateVerifyHash = handshake.getCurrentHash();
+            byte[] certificateVerifyHash = handshake.getCurrentPRFHash();
             byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
             processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
 
@@ -269,7 +269,7 @@ public class DTLSServerProtocol
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
         byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
-            ExporterLabel.client_finished, handshake.getCurrentHash());
+            ExporterLabel.client_finished, handshake.getCurrentPRFHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -281,7 +281,7 @@ public class DTLSServerProtocol
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
-            handshake.getCurrentHash());
+            handshake.getCurrentPRFHash());
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 
         handshake.finish();

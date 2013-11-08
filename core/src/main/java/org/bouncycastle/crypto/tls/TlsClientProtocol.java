@@ -379,7 +379,7 @@ public class TlsClientProtocol
                      * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
                     SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = recordStream.getCurrentHash(null);
+                    byte[] hash = recordStream.getCurrentPRFHash(null);
                     byte[] signature = signerCreds.generateCertificateSignature(hash);
                     DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
