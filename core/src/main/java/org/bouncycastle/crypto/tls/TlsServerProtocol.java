@@ -161,9 +161,10 @@ public class TlsServerProtocol
                     {
                         this.keyExchange.validateCertificateRequest(certificateRequest);
 
-                        // TODO Let the handshake hash know what digests it needs to be tracking for this
-
                         sendCertificateRequestMessage(certificateRequest);
+
+                        TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
+                            this.certificateRequest.getSupportedSignatureAlgorithms());
                     }
                 }
                 this.connection_state = CS_CERTIFICATE_REQUEST;
