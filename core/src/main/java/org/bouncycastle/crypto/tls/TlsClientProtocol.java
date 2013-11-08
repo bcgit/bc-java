@@ -250,7 +250,7 @@ public class TlsClientProtocol
                  */
                 this.securityParameters.verifyDataLength = 12;
 
-                this.recordStream.notifyHelloComplete();
+                this.recordStream.getHandshakeHash().notifyPRFDetermined();
 
                 if (this.resumedSession)
                 {
@@ -322,7 +322,7 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                // TODO Seal the handshake hash list of digests
+                this.recordStream.getHandshakeHash().sealHashAlgorithms();
 
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)

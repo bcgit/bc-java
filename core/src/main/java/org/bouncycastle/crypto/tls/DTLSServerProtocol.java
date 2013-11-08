@@ -125,7 +125,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        handshake.notifyHelloComplete();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -192,7 +192,7 @@ public class DTLSServerProtocol
 
         handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
 
-        // TODO Seal the handshake hash list of digests
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         clientMessage = handshake.receiveMessage();
 

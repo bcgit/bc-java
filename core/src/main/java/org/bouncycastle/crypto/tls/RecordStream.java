@@ -23,7 +23,7 @@ class RecordStream
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsContext context = null;
-    private TlsHandshakeHash hash = null;
+    private TlsHandshakeHash handshakeHash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
@@ -46,8 +46,8 @@ class RecordStream
     void init(TlsContext context)
     {
         this.context = context;
-        this.hash = new DeferredHash();
-        this.hash.init(context);
+        this.handshakeHash = new DeferredHash();
+        this.handshakeHash.init(context);
     }
 
     int getPlaintextLimit()
@@ -87,12 +87,6 @@ class RecordStream
     void setRestrictReadVersion(boolean enabled)
     {
         this.restrictReadVersion = enabled;
-    }
-
-    void notifyHelloComplete()
-    {
-        this.hash = this.hash.notifyPRFDetermined();
-        this.hash.sealHashAlgorithms();
     }
 
     void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher)
@@ -286,9 +280,14 @@ class RecordStream
         output.flush();
     }
 
+    TlsHandshakeHash getHandshakeHash()
+    {
+        return handshakeHash;
+    }
+
     void updateHandshakeData(byte[] message, int offset, int len)
     {
-        hash.update(message, offset, len);
+        handshakeHash.update(message, offset, len);
     }
 
     /**
@@ -296,7 +295,7 @@ class RecordStream
      */
     byte[] getCurrentHash(byte[] sender)
     {
-        Digest d = hash.fork();
+        Digest d = handshakeHash.fork();
 
         if (TlsUtils.isSSL(context))
         {
