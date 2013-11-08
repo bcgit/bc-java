@@ -136,7 +136,7 @@ public class DTLSClientProtocol
          */
         securityParameters.verifyDataLength = 12;
 
-        handshake.notifyHelloComplete();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         boolean resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
             && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
@@ -255,7 +255,7 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        // TODO Seal the handshake hash list of digests
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         Vector clientSupplementalData = state.client.getClientSupplementalData();
         if (clientSupplementalData != null)

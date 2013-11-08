@@ -171,7 +171,7 @@ public class TlsServerProtocol
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                // TODO Seal the handshake hash list of digests
+                this.recordStream.getHandshakeHash().sealHashAlgorithms();
 
                 break;
             }
@@ -728,7 +728,7 @@ public class TlsServerProtocol
 
         message.writeToRecordStream();
 
-        recordStream.notifyHelloComplete();
+        this.recordStream.getHandshakeHash().notifyPRFDetermined();
     }
 
     protected void sendServerHelloDoneMessage()

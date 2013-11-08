@@ -15,7 +15,7 @@ class DTLSReliableHandshake
 
     private final DTLSRecordLayer recordLayer;
 
-    private TlsHandshakeHash hash = new DeferredHash();
+    private TlsHandshakeHash handshakeHash;
 
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
@@ -27,18 +27,18 @@ class DTLSReliableHandshake
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport)
     {
         this.recordLayer = transport;
-        this.hash.init(context);
+        this.handshakeHash = new DeferredHash();
+        this.handshakeHash.init(context);
     }
 
-    void notifyHelloComplete()
+    TlsHandshakeHash getHandshakeHash()
     {
-        this.hash = this.hash.notifyPRFDetermined();
-        this.hash.sealHashAlgorithms();
+        return handshakeHash;
     }
 
     byte[] getCurrentHash()
     {
-        Digest copyOfHash = hash.fork();
+        Digest copyOfHash = handshakeHash.fork();
         byte[] result = new byte[copyOfHash.getDigestSize()];
         copyOfHash.doFinal(result, 0);
         return result;
@@ -292,7 +292,7 @@ class DTLSReliableHandshake
 
     void resetHandshakeMessagesDigest()
     {
-        hash.reset();
+        handshakeHash.reset();
     }
 
     /**
@@ -340,8 +340,8 @@ class DTLSReliableHandshake
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
             TlsUtils.writeUint24(0, buf, 6);
             TlsUtils.writeUint24(body.length, buf, 9);
-            hash.update(buf, 0, buf.length);
-            hash.update(body, 0, body.length);
+            handshakeHash.update(buf, 0, buf.length);
+            handshakeHash.update(body, 0, body.length);
         }
         return message;
     }
