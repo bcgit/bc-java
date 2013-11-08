@@ -2,6 +2,14 @@ allprojects {
     apply plugin: 'idea'
 }
 
+ext {
+    bcTestDataHome = file('core/src/test/data').absolutePath
+}
+
+task printProperties << {
+    println bcTestDataHome
+}
+
 subprojects {
     apply plugin: 'eclipse'
     apply plugin: 'java'
@@ -17,5 +25,9 @@ subprojects {
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
     version = '1.50-b01'
+
+test {
+  systemProperty 'bc.test.data.home', bcTestDataHome
+}
 }
 
