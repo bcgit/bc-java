@@ -10,14 +10,14 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
 public class DefaultTlsEncryptionCredentials
-    implements TlsEncryptionCredentials
+    extends AbstractTlsEncryptionCredentials
 {
     protected TlsContext context;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
 
     public DefaultTlsEncryptionCredentials(TlsContext context, Certificate certificate,
-                                           AsymmetricKeyParameter privateKey)
+        AsymmetricKeyParameter privateKey)
     {
         if (certificate == null)
         {
