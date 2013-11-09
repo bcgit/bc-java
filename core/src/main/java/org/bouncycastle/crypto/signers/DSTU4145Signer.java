@@ -154,7 +154,7 @@ public class DSTU4145Signer
         byte[] data = Arrays.clone(hash);
         reverseBytes(data);
         BigInteger num = new BigInteger(1, data);
-        while (num.bitLength() >= curve.getFieldSize())
+        while (num.bitLength() > curve.getFieldSize())
         {
             num = num.clearBit(num.bitLength() - 1);
         }
