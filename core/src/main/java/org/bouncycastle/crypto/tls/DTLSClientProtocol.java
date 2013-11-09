@@ -136,7 +136,7 @@ public class DTLSClientProtocol
          */
         securityParameters.verifyDataLength = 12;
 
-        handshake.notifyHelloComplete();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         boolean resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
             && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
@@ -154,12 +154,12 @@ public class DTLSClientProtocol
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
             byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-                ExporterLabel.server_finished, handshake.getCurrentHash());
+                ExporterLabel.server_finished, handshake.getCurrentPRFHash());
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
             // NOTE: Calculated exclusive of the Finished message itself
             byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-                handshake.getCurrentHash());
+                handshake.getCurrentPRFHash());
             handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
             handshake.finish();
@@ -236,6 +236,14 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.certificate_request)
         {
             processCertificateRequest(state, serverMessage.getBody());
+
+            /*
+             * TODO Give the client a chance to immediately select the CertificateVerify hash
+             * algorithm here to avoid tracking the other hash algorithms unnecessarily?
+             */
+            TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
+                state.certificateRequest.getSupportedSignatureAlgorithms());
+
             serverMessage = handshake.receiveMessage();
         }
         else
@@ -254,6 +262,8 @@ public class DTLSClientProtocol
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
+
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         Vector clientSupplementalData = state.client.getClientSupplementalData();
         if (clientSupplementalData != null)
@@ -308,16 +318,18 @@ public class DTLSClientProtocol
              * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
              */
             SignatureAndHashAlgorithm algorithm = null;
-            byte[] hash = handshake.getCurrentHash();
+            byte[] hash = handshake.getCurrentPRFHash();
             byte[] signature = signerCredentials.generateCertificateSignature(hash);
             DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
+        handshake.getHandshakeHash().stopTracking();
+
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-            handshake.getCurrentHash());
+            handshake.getCurrentPRFHash());
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
         if (state.expectSessionTicket)
@@ -335,7 +347,7 @@ public class DTLSClientProtocol
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
         byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-            ExporterLabel.server_finished, handshake.getCurrentHash());
+            ExporterLabel.server_finished, handshake.getCurrentPRFHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
         handshake.finish();

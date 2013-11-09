@@ -125,7 +125,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        handshake.notifyHelloComplete();
+        handshake.getHandshakeHash().notifyPRFDetermined();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -185,10 +185,15 @@ public class DTLSServerProtocol
 
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
+
+                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
+                    state.certificateRequest.getSupportedSignatureAlgorithms());
             }
         }
 
         handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
+
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         clientMessage = handshake.receiveMessage();
 
@@ -230,6 +235,11 @@ public class DTLSServerProtocol
             }
         }
 
+        if (!expectCertificateVerifyMessage(state))
+        {
+            handshake.getHandshakeHash().stopTracking();
+        }
+
         if (clientMessage.getType() == HandshakeType.client_key_exchange)
         {
             processClientKeyExchange(state, clientMessage.getBody());
@@ -249,14 +259,17 @@ public class DTLSServerProtocol
          */
         if (expectCertificateVerifyMessage(state))
         {
-            byte[] certificateVerifyHash = handshake.getCurrentHash();
+            // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
+            byte[] certificateVerifyHash = handshake.getCurrentPRFHash();
             byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
             processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
+
+            handshake.getHandshakeHash().stopTracking();
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
         byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
-            ExporterLabel.client_finished, handshake.getCurrentHash());
+            ExporterLabel.client_finished, handshake.getCurrentPRFHash());
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -268,7 +281,7 @@ public class DTLSServerProtocol
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
-            handshake.getCurrentHash());
+            handshake.getCurrentPRFHash());
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 
         handshake.finish();

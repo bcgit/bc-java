@@ -250,7 +250,7 @@ public class TlsClientProtocol
                  */
                 this.securityParameters.verifyDataLength = 12;
 
-                this.recordStream.notifyHelloComplete();
+                this.recordStream.getHandshakeHash().notifyPRFDetermined();
 
                 if (this.resumedSession)
                 {
@@ -322,6 +322,8 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
+                this.recordStream.getHandshakeHash().sealHashAlgorithms();
+
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)
                 {
@@ -377,13 +379,15 @@ public class TlsClientProtocol
                      * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
                     SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = recordStream.getCurrentHash(null);
+                    byte[] hash = recordStream.getCurrentPRFHash(null);
                     byte[] signature = signerCreds.generateCertificateSignature(hash);
                     DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
+
+                this.recordStream.getHandshakeHash().stopTracking();
 
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
@@ -456,7 +460,12 @@ public class TlsClientProtocol
 
                 this.keyExchange.validateCertificateRequest(this.certificateRequest);
 
-                // TODO Let the handshake hash know what digests it needs to be tracking for this
+                /*
+                 * TODO Give the client a chance to immediately select the CertificateVerify hash
+                 * algorithm here to avoid tracking the other hash algorithms unnecessarily?
+                 */
+                TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
+                    this.certificateRequest.getSupportedSignatureAlgorithms());
 
                 break;
             }

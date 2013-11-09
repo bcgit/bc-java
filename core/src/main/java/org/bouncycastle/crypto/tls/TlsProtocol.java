@@ -747,11 +747,11 @@ public abstract class TlsProtocol
         if (isServer)
         {
             return TlsUtils.calculateVerifyData(context, ExporterLabel.server_finished,
-                recordStream.getCurrentHash(TlsUtils.SSL_SERVER));
+                recordStream.getCurrentPRFHash(TlsUtils.SSL_SERVER));
         }
 
         return TlsUtils.calculateVerifyData(context, ExporterLabel.client_finished,
-            recordStream.getCurrentHash(TlsUtils.SSL_CLIENT));
+            recordStream.getCurrentPRFHash(TlsUtils.SSL_CLIENT));
     }
 
     /**
