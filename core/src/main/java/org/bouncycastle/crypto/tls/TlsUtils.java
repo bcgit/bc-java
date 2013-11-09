@@ -1191,6 +1191,20 @@ public class TlsUtils
         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
+    static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)
+    {
+        if (supportedSignatureAlgorithms != null)
+        {
+            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            {
+                SignatureAndHashAlgorithm signatureAndHashAlgorithm = (SignatureAndHashAlgorithm)
+                    supportedSignatureAlgorithms.elementAt(i);
+                short hashAlgorithm = signatureAndHashAlgorithm.getHash();
+                handshakeHash.trackHashAlgorithm(hashAlgorithm);
+            }
+        }
+    }
+
     public static boolean hasSigningCapability(short clientCertificateType)
     {
         switch (clientCertificateType)
