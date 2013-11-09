@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
 public class DefaultTlsSignerCredentials
-    implements TlsSignerCredentials
+    extends AbstractTlsSignerCredentials
 {
     protected TlsContext context;
     protected Certificate certificate;
@@ -19,7 +19,6 @@ public class DefaultTlsSignerCredentials
 
     public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
     {
-
         if (certificate == null)
         {
             throw new IllegalArgumentException("'certificate' cannot be null");

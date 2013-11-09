@@ -11,9 +11,8 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.util.BigIntegers;
 
 public class DefaultTlsAgreementCredentials
-    implements TlsAgreementCredentials
+    extends AbstractTlsAgreementCredentials
 {
-
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
 
