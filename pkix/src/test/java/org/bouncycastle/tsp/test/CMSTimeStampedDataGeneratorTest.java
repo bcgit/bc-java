@@ -136,7 +136,7 @@ public class CMSTimeStampedDataGeneratorTest
         TimeStampToken timeStampToken = createTimeStampToken(hashCalculator.getDigest(), NISTObjectIdentifiers.id_sha256);
         CMSTimeStampedData cmsTimeStampedData = cmsTimeStampedDataGenerator.generate(timeStampToken, baseData);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i <= 3; i++)
         {
             byte[] newRequestData = cmsTimeStampedData.calculateNextHash(hashCalculator);
             TimeStampToken newTimeStampToken = createTimeStampToken(newRequestData, NISTObjectIdentifiers.id_sha256);
@@ -213,7 +213,7 @@ public class CMSTimeStampedDataGeneratorTest
         byte[] digest = imprintCalculator.getDigest();
 
         TimeStampToken[] tokens = cmsTspData.getTimeStampTokens();
-        assertEquals("TimeStampToken expected and verified are different", 4, tokens.length);
+        assertEquals("TimeStampToken expected and verified are different", 5, tokens.length);
         for (int i = 0; i < tokens.length; i++)
         {
             cmsTspData.validate(newCalculatorProvider, digest, tokens[i]);
@@ -243,7 +243,7 @@ public class CMSTimeStampedDataGeneratorTest
         byte[] digest = imprintCalculator.getDigest();
 
         TimeStampToken[] tokens = cmsTspData.getTimeStampTokens();
-        assertEquals("TimeStampToken expected and verified are different", 4, tokens.length);
+        assertEquals("TimeStampToken expected and verified are different", 5, tokens.length);
         for (int i = 0; i < tokens.length; i++)
         {
             cmsTspData.validate(newCalculatorProvider, digest, tokens[i]);
