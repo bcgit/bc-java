@@ -25,6 +25,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             case PGPPublicKey.ELGAMAL_ENCRYPT:
             case PGPPublicKey.ELGAMAL_GENERAL:
                 break;
+            case PGPPublicKey.ECDH:
+                break;
             case PGPPublicKey.DSA:
                 throw new IllegalArgumentException("Can't use DSA for encryption.");
             case PGPPublicKey.ECDSA:

@@ -1,7 +1,10 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+
+import org.bouncycastle.util.io.Streams;
 
 /**
  * basic packet for a PGP public key
@@ -12,8 +15,8 @@ public class PublicKeyEncSessionPacket
     private int            version;
     private long           keyID;
     private int            algorithm;
-    private BigInteger[]   data;
-    
+    private byte[][]       data;
+
     PublicKeyEncSessionPacket(
         BCPGInputStream    in)
         throws IOException
@@ -35,16 +38,21 @@ public class PublicKeyEncSessionPacket
         {
         case RSA_ENCRYPT:
         case RSA_GENERAL:
-            data = new BigInteger[1];
+            data = new byte[1][];
             
-            data[0] = new MPInteger(in).getValue();
+            data[0] = new MPInteger(in).getEncoded();
             break;
         case ELGAMAL_ENCRYPT:
         case ELGAMAL_GENERAL:
-            data = new BigInteger[2];
+            data = new byte[2][];
             
-            data[0] = new MPInteger(in).getValue();
-            data[1] = new MPInteger(in).getValue();
+            data[0] = new MPInteger(in).getEncoded();
+            data[1] = new MPInteger(in).getEncoded();
+            break;
+        case ECDH:
+            data = new byte[1][];
+
+            data[0] = Streams.readAll(in);
             break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered");
@@ -59,7 +67,19 @@ public class PublicKeyEncSessionPacket
         this.version = 3;
         this.keyID = keyID;
         this.algorithm = algorithm;
-        this.data = data;
+        this.data = new byte[data.length][];
+
+        for (int i = 0; i != data.length; i++)
+        {
+            try
+            {
+                this.data[i] = new MPInteger(data[i]).getEncoded();
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("Invalid BigInteger passed to PublicKeyEncSessionPacket");
+            }
+        }
     }
     
     public int getVersion()
@@ -77,11 +97,11 @@ public class PublicKeyEncSessionPacket
         return algorithm;
     }
     
-    public BigInteger[] getEncSessionKey()
+    public byte[][] getEncSessionKey()
     {
         return data;
     }
-    
+
     public void encode(
         BCPGOutputStream    out)
         throws IOException
@@ -104,7 +124,7 @@ public class PublicKeyEncSessionPacket
         
         for (int i = 0; i != data.length; i++)
         {
-            pOut.writeObject(new MPInteger(data[i]));
+            pOut.write(data[i]);
         }
         
         out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray(), true);

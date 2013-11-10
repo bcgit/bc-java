@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -75,7 +74,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
          return new PublicKeyDataDecryptorFactory()
          {
-             public byte[] recoverSessionData(int keyAlgorithm, BigInteger[] secKeyData)
+             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                  throws PGPException
              {
                  return decryptSessionData(keyAlgorithm, privKey, secKeyData);
@@ -94,7 +93,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
          return new PublicKeyDataDecryptorFactory()
          {
-             public byte[] recoverSessionData(int keyAlgorithm, BigInteger[] secKeyData)
+             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                  throws PGPException
              {
                  return decryptSessionData(keyAlgorithm, keyConverter.getPrivateKey(privKey), secKeyData);
@@ -108,76 +107,77 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
          };
     }
 
-    private byte[] decryptSessionData(int keyAlgorithm, PrivateKey privKey, BigInteger[] secKeyData)
+    private byte[] decryptSessionData(int keyAlgorithm, PrivateKey privKey, byte[][] secKeyData)
         throws PGPException
     {
         Cipher c1 = helper.createPublicKeyCipher(keyAlgorithm);
+        byte[] plain;
 
-        try
+        if (keyAlgorithm == PGPPublicKey.ECDH)
         {
-            c1.init(Cipher.DECRYPT_MODE, privKey);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new PGPException("error setting asymmetric cipher", e);
-        }
-
-        if (keyAlgorithm == PGPPublicKey.RSA_ENCRYPT
-            || keyAlgorithm == PGPPublicKey.RSA_GENERAL)
-        {
-            byte[] bi = secKeyData[0].toByteArray();
-
-            if (bi[0] == 0)
-            {
-                c1.update(bi, 1, bi.length - 1);
-            }
-            else
-            {
-                c1.update(bi);
-            }
+            plain = null;
         }
         else
         {
-            ElGamalKey k = (ElGamalKey)privKey;
-            int size = (k.getParameters().getP().bitLength() + 7) / 8;
-            byte[] tmp = new byte[size];
-
-            byte[] bi = secKeyData[0].toByteArray();
-            if (bi.length > size)
+            try
             {
-                c1.update(bi, 1, bi.length - 1);
+                c1.init(Cipher.DECRYPT_MODE, privKey);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new PGPException("error setting asymmetric cipher", e);
+            }
+
+            if (keyAlgorithm == PGPPublicKey.RSA_ENCRYPT
+                || keyAlgorithm == PGPPublicKey.RSA_GENERAL)
+            {
+                byte[] bi = secKeyData[0];  // encoded MPI
+
+                c1.update(bi, 2, bi.length - 2);
             }
             else
             {
-                System.arraycopy(bi, 0, tmp, tmp.length - bi.length, bi.length);
-                c1.update(tmp);
+                ElGamalKey k = (ElGamalKey)privKey;
+                int size = (k.getParameters().getP().bitLength() + 7) / 8;
+                byte[] tmp = new byte[size];
+
+                byte[] bi = secKeyData[0]; // encoded MPI
+                if (bi.length - 2 > size)  // leading Zero? Shouldn't happen but...
+                {
+                    c1.update(bi, 3, bi.length - 3);
+                }
+                else
+                {
+                    System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
+                    c1.update(tmp);
+                }
+
+                bi = secKeyData[1];  // encoded MPI
+                for (int i = 0; i != tmp.length; i++)
+                {
+                    tmp[i] = 0;
+                }
+
+                if (bi.length - 2 > size) // leading Zero? Shouldn't happen but...
+                {
+                    c1.update(bi, 3, bi.length - 3);
+                }
+                else
+                {
+                    System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
+                    c1.update(tmp);
+                }
             }
 
-            bi = secKeyData[1].toByteArray();
-            for (int i = 0; i != tmp.length; i++)
-            {
-                tmp[i] = 0;
-            }
 
-            if (bi.length > size)
+            try
             {
-                c1.update(bi, 1, bi.length - 1);
+                plain = c1.doFinal();
             }
-            else
+            catch (Exception e)
             {
-                System.arraycopy(bi, 0, tmp, tmp.length - bi.length, bi.length);
-                c1.update(tmp);
+                throw new PGPException("exception decrypting session data", e);
             }
-        }
-
-        byte[] plain;
-        try
-        {
-            plain = c1.doFinal();
-        }
-        catch (Exception e)
-        {
-            throw new PGPException("exception decrypting session data", e);
         }
 
         return plain;
