@@ -1282,6 +1282,25 @@ public class NewSignedDataStreamTest
         assertEquals(new JcaX509CertificateHolder(_origCert), it.next());
     }
 
+    public void testCertsOnly()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        certList.add(_signCert);
+    
+        Store certs = new JcaCertStore(certList);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
+        gen.addCertificates(certs);
+
+        gen.open(bOut).close();
+
+        checkSigParseable(bOut.toByteArray());
+    }
+
     public static Test suite()
         throws Exception
     {
