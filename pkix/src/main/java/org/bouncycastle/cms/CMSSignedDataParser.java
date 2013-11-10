@@ -202,11 +202,6 @@ public class CMSSignedDataParser
         {
             throw new CMSException("io exception: " + e.getMessage(), e);
         }
-        
-        if (digests.isEmpty())
-        {
-            throw new CMSException("no digests could be created for message.");
-        }
     }
 
     /**
