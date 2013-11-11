@@ -81,7 +81,7 @@ public class CMSTimeStampedDataGeneratorTest
         throws Exception
     {
         BcDigestCalculatorProvider calculatorProvider = new BcDigestCalculatorProvider();
-        String algOID = "2.16.840.1.101.3.4.2.1"; // SHA-256
+        ASN1ObjectIdentifier algOID = new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"); // SHA-256
         DigestCalculator hashCalculator = calculatorProvider.get(new AlgorithmIdentifier(algOID));
 
         cmsTimeStampedDataGenerator.initialiseMessageImprintDigestCalculator(hashCalculator);
@@ -125,7 +125,7 @@ public class CMSTimeStampedDataGeneratorTest
         cmsTimeStampedDataGenerator.setMetaData(true, fileInput, "TXT");
 
         BcDigestCalculatorProvider calculatorProvider = new BcDigestCalculatorProvider();
-        String algOID = "2.16.840.1.101.3.4.2.1"; // SHA-256
+        ASN1ObjectIdentifier algOID = new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"); // SHA-256
         DigestCalculator hashCalculator = calculatorProvider.get(new AlgorithmIdentifier(algOID));
 
         cmsTimeStampedDataGenerator.initialiseMessageImprintDigestCalculator(hashCalculator);
