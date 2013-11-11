@@ -2,8 +2,8 @@ package org.bouncycastle.bcpg;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -62,7 +62,7 @@ public class PublicKeyEncSessionPacket
     public PublicKeyEncSessionPacket(
         long           keyID,
         int            algorithm,
-        BigInteger[]   data)
+        byte[][]       data)
     {
         this.version = 3;
         this.keyID = keyID;
@@ -71,14 +71,7 @@ public class PublicKeyEncSessionPacket
 
         for (int i = 0; i != data.length; i++)
         {
-            try
-            {
-                this.data[i] = new MPInteger(data[i]).getEncoded();
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("Invalid BigInteger passed to PublicKeyEncSessionPacket");
-            }
+            this.data[i] = Arrays.clone(data[i]);
         }
     }
     
