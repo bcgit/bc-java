@@ -334,6 +334,8 @@
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -351,6 +353,8 @@
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
                     <attribute name="Codebase" value="*" />
+                    <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                    <attribute name="Caller-Allowable-Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -433,9 +437,11 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle JCE and Provider" />
-                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -453,6 +459,8 @@
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
                     <attribute name="Codebase" value="*" />
+                    <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                    <attribute name="Caller-Allowable-Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -501,6 +509,8 @@
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -547,6 +557,8 @@
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -592,9 +604,11 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle OpenPGP API" />
-                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -654,6 +668,8 @@
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile-test>
     </target>

@@ -136,7 +136,7 @@ public class DTLSClientProtocol
          */
         securityParameters.verifyDataLength = 12;
 
-        handshake.getHandshakeHash().notifyPRFDetermined();
+        handshake.notifyHelloComplete();
 
         boolean resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
             && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
