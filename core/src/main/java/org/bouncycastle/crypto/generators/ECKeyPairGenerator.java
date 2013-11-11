@@ -26,6 +26,11 @@ public class ECKeyPairGenerator
 
         this.random = ecP.getRandom();
         this.params = ecP.getDomainParameters();
+
+        if (this.random == null)
+        {
+            this.random = new SecureRandom();
+        }
     }
 
     /**
