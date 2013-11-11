@@ -250,7 +250,7 @@ public class TlsClientProtocol
                  */
                 this.securityParameters.verifyDataLength = 12;
 
-                this.recordStream.getHandshakeHash().notifyPRFDetermined();
+                this.recordStream.notifyHelloComplete();
 
                 if (this.resumedSession)
                 {
