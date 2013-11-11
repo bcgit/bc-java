@@ -737,7 +737,7 @@ public class TlsServerProtocol
 
         message.writeToRecordStream();
 
-        this.recordStream.getHandshakeHash().notifyPRFDetermined();
+        this.recordStream.notifyHelloComplete();
     }
 
     protected void sendServerHelloDoneMessage()

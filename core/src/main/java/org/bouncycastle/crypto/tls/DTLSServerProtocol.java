@@ -125,7 +125,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 
-        handshake.getHandshakeHash().notifyPRFDetermined();
+        handshake.notifyHelloComplete();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
