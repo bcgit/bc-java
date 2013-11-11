@@ -31,6 +31,11 @@ class DTLSReliableHandshake
         this.handshakeHash.init(context);
     }
 
+    void notifyHelloComplete()
+    {
+        this.handshakeHash = handshakeHash.notifyPRFDetermined();
+    }
+
     TlsHandshakeHash getHandshakeHash()
     {
         return handshakeHash;
