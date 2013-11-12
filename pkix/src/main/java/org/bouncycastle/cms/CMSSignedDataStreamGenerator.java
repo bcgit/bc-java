@@ -340,7 +340,7 @@ public class CMSSignedDataStreamGenerator
         {
             SignerInfoGenerator s = (SignerInfoGenerator)it.next();
 
-            if (s.getGeneratedVersion().getValue().intValue() == 3)
+            if (s.getGeneratedVersion() == 3)
             {
                 return true;
             }
