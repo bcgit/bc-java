@@ -57,9 +57,15 @@ public class TimeStampRequest
     public TimeStampRequest(InputStream in) 
         throws IOException
     {
+        this(loadRequest(in));
+    }
+ 
+    private static TimeStampReq loadRequest(InputStream in)
+        throws IOException
+    {
         try
         {
-            this.req = TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
+            return TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
         }
         catch (ClassCastException e)
         {
