@@ -56,7 +56,7 @@ public class ECFixedTransform
         ECPoint  gamma = g.multiply(k);
         ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
 
-        return new ECPair(cipherText.getX().add(gamma), phi);
+        return new ECPair(cipherText.getX().add(gamma).normalize(), phi.normalize());
     }
 
     /**
