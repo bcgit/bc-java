@@ -69,6 +69,6 @@ public class ECNewPublicKeyTransform
         ECPoint  gamma = g.multiply(k);
         ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
 
-        return new ECPair(gamma, phi);
+        return new ECPair(gamma.normalize(), phi.normalize());
     }
 }
