@@ -27,6 +27,14 @@ class DeferredHash
         this.prfHashAlgorithm = null;
     }
 
+    private DeferredHash(Short prfHashAlgorithm, Digest prfHash)
+    {
+        this.buf = null;
+        this.hashes = new Hashtable();
+        this.prfHashAlgorithm = prfHashAlgorithm;
+        hashes.put(prfHashAlgorithm, prfHash);
+    }
+
     public void init(TlsContext context)
     {
         this.context = context;
@@ -65,20 +73,22 @@ class DeferredHash
         checkStopBuffering();
     }
 
-    public void stopTracking()
+    public TlsHandshakeHash stopTracking()
     {
-        if (hashes.size() > 1)
+        Digest prfHash = TlsUtils.cloneHash(prfHashAlgorithm.shortValue(), (Digest)hashes.get(prfHashAlgorithm));
+        if (buf != null)
         {
-            Digest prfHash = (Digest)hashes.get(prfHashAlgorithm);
-            hashes = new Hashtable();
-            hashes.put(prfHashAlgorithm, prfHash);
+            buf.updateDigest(prfHash);
         }
-
-        checkStopBuffering();
+        DeferredHash result = new DeferredHash(prfHashAlgorithm, prfHash);
+        result.init(context);
+        return result;
     }
 
     public Digest forkPRFHash()
     {
+        checkStopBuffering();
+
         if (buf != null)
         {
             Digest prfHash = TlsUtils.createHash(prfHashAlgorithm.shortValue());
