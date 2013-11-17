@@ -290,27 +290,16 @@ class RecordStream
         return handshakeHash;
     }
 
+    TlsHandshakeHash prepareToFinish()
+    {
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = handshakeHash.stopTracking();
+        return result;
+    }
+
     void updateHandshakeData(byte[] message, int offset, int len)
     {
         handshakeHash.update(message, offset, len);
-    }
-
-    /**
-     * 'sender' only relevant to SSLv3
-     */
-    byte[] getCurrentPRFHash(byte[] sslSender)
-    {
-        Digest d = handshakeHash.forkPRFHash();
-
-        if (TlsUtils.isSSL(context))
-        {
-            if (sslSender != null)
-            {
-                d.update(sslSender, 0, sslSender.length);
-            }
-        }
-
-        return doFinal(d);
     }
 
     protected void safeClose()
@@ -343,13 +332,6 @@ class RecordStream
         byte[] contents = buffer.toByteArray();
         buffer.reset();
         return contents;
-    }
-
-    private static byte[] doFinal(Digest d)
-    {
-        byte[] bs = new byte[d.getDigestSize()];
-        d.doFinal(bs, 0);
-        return bs;
     }
 
     private static void checkType(short type, short alertDescription)

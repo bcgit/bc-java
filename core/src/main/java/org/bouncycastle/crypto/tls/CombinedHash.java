@@ -44,8 +44,9 @@ class CombinedHash
     {
     }
 
-    public void stopTracking()
+    public TlsHandshakeHash stopTracking()
     {
+        return new CombinedHash(this);
     }
 
     public Digest forkPRFHash()

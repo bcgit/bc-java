@@ -235,11 +235,6 @@ public class DTLSServerProtocol
             }
         }
 
-        if (!expectCertificateVerifyMessage(state))
-        {
-            handshake.getHandshakeHash().stopTracking();
-        }
-
         if (clientMessage.getType() == HandshakeType.client_key_exchange)
         {
             processClientKeyExchange(state, clientMessage.getBody());
@@ -252,6 +247,8 @@ public class DTLSServerProtocol
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
 
+        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
+
         /*
          * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
          * capability (i.e., all certificates except those containing fixed Diffie-Hellman
@@ -259,17 +256,13 @@ public class DTLSServerProtocol
          */
         if (expectCertificateVerifyMessage(state))
         {
-            // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
-            byte[] certificateVerifyHash = handshake.getCurrentPRFHash();
             byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
-            processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
-
-            handshake.getHandshakeHash().stopTracking();
+            processCertificateVerify(state, certificateVerifyBody, prepareFinishHash);
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
-            ExporterLabel.client_finished, handshake.getCurrentPRFHash());
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.client_finished,
+            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -281,7 +274,7 @@ public class DTLSServerProtocol
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
-            handshake.getCurrentPRFHash());
+            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 
         handshake.finish();
@@ -469,7 +462,7 @@ public class DTLSServerProtocol
         notifyClientCertificate(state, clientCertificate);
     }
 
-    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, byte[] certificateVerifyHash)
+    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, TlsHandshakeHash prepareFinishHash)
         throws IOException
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
@@ -481,6 +474,9 @@ public class DTLSServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
+            // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
+            byte[] certificateVerifyHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+
             org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
