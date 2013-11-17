@@ -41,11 +41,10 @@ class DTLSReliableHandshake
         return handshakeHash;
     }
 
-    byte[] getCurrentPRFHash()
+    TlsHandshakeHash prepareToFinish()
     {
-        Digest copyOfHash = handshakeHash.forkPRFHash();
-        byte[] result = new byte[copyOfHash.getDigestSize()];
-        copyOfHash.doFinal(result, 0);
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = handshakeHash.stopTracking();
         return result;
     }
 

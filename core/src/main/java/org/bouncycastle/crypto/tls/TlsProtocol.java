@@ -11,6 +11,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -747,11 +748,11 @@ public abstract class TlsProtocol
         if (isServer)
         {
             return TlsUtils.calculateVerifyData(context, ExporterLabel.server_finished,
-                recordStream.getCurrentPRFHash(TlsUtils.SSL_SERVER));
+                getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_SERVER));
         }
 
         return TlsUtils.calculateVerifyData(context, ExporterLabel.client_finished,
-            recordStream.getCurrentPRFHash(TlsUtils.SSL_CLIENT));
+            getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_CLIENT));
     }
 
     /**
@@ -879,6 +880,23 @@ public abstract class TlsProtocol
                 Arrays.fill(pre_master_secret, (byte)0);
             }
         }
+    }
+
+    /**
+     * 'sender' only relevant to SSLv3
+     */
+    protected static byte[] getCurrentPRFHash(TlsContext context, TlsHandshakeHash handshakeHash, byte[] sslSender)
+    {
+        Digest d = handshakeHash.forkPRFHash();
+
+        if (sslSender != null && TlsUtils.isSSL(context))
+        {
+            d.update(sslSender, 0, sslSender.length);
+        }
+
+        byte[] bs = new byte[d.getDigestSize()];
+        d.doFinal(bs, 0);
+        return bs;
     }
 
     protected static Hashtable readExtensions(ByteArrayInputStream input)

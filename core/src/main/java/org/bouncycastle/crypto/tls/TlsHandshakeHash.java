@@ -13,7 +13,7 @@ interface TlsHandshakeHash
 
     void sealHashAlgorithms();
 
-    void stopTracking();
+    TlsHandshakeHash stopTracking();
 
     Digest forkPRFHash();
 }
