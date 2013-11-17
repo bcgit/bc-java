@@ -23,7 +23,7 @@ public class TlsServerProtocol
     protected CertificateRequest certificateRequest = null;
 
     protected short clientCertificateType = -1;
-    protected byte[] certificateVerifyHash = null;
+    protected TlsHandshakeHash prepareFinishHash = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
@@ -70,7 +70,7 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
-        this.certificateVerifyHash = null;
+        this.prepareFinishHash = null;
     }
 
     protected AbstractTlsContext getContext()
@@ -282,15 +282,13 @@ public class TlsServerProtocol
                  * signing capability (i.e., all certificates except those containing fixed
                  * Diffie-Hellman parameters).
                  */
-                if (this.certificateVerifyHash == null)
+                if (!expectCertificateVerifyMessage())
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
 
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
-
-                this.recordStream.getHandshakeHash().stopTracking();
 
                 break;
             }
@@ -305,7 +303,7 @@ public class TlsServerProtocol
             {
             case CS_CLIENT_KEY_EXCHANGE:
             {
-                if (this.certificateVerifyHash != null)
+                if (expectCertificateVerifyMessage())
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
@@ -434,6 +432,9 @@ public class TlsServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
+            // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
+            byte[] certificateVerifyHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+
             org.bouncycastle.asn1.x509.Certificate x509Cert = this.peerCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
@@ -441,7 +442,7 @@ public class TlsServerProtocol
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(this.clientCertificateType);
             tlsSigner.init(getContext());
             tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, this.certificateVerifyHash);
+                clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
         }
         catch (Exception e)
         {
@@ -568,19 +569,11 @@ public class TlsServerProtocol
         establishMasterSecret(getContext(), keyExchange);
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
+        this.prepareFinishHash = recordStream.prepareToFinish();
+
         if (!expectSessionTicket)
         {
             sendChangeCipherSpecMessage();
-        }
-
-        if (expectCertificateVerifyMessage())
-        {
-            // TODO For TLS 1.2, this can't be calculated until we see what hash algorithm the sender used
-            this.certificateVerifyHash = recordStream.getCurrentPRFHash(null);
-        }
-        else
-        {
-            this.recordStream.getHandshakeHash().stopTracking();
         }
     }
 

@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -69,6 +68,6 @@ public class ECElGamalEncryptor
         ECPoint  gamma = g.multiply(k);
         ECPoint  phi = key.getQ().multiply(k).add(point);
 
-        return new ECPair(gamma, phi);
+        return new ECPair(gamma.normalize(), phi.normalize());
     }
 }

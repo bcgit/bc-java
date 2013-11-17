@@ -153,13 +153,13 @@ public class DTLSClientProtocol
             recordLayer.initPendingEpoch(state.client.getCipher());
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
-            byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-                ExporterLabel.server_finished, handshake.getCurrentPRFHash());
+            byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.server_finished,
+                TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
             // NOTE: Calculated exclusive of the Finished message itself
             byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-                handshake.getCurrentPRFHash());
+                TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
             handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
             handshake.finish();
@@ -311,6 +311,8 @@ public class DTLSClientProtocol
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
 
+        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
+
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials)state.clientCredentials;
@@ -318,18 +320,16 @@ public class DTLSClientProtocol
              * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
              */
             SignatureAndHashAlgorithm algorithm = null;
-            byte[] hash = handshake.getCurrentPRFHash();
+            byte[] hash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
             byte[] signature = signerCredentials.generateCertificateSignature(hash);
             DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
 
-        handshake.getHandshakeHash().stopTracking();
-
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-            handshake.getCurrentPRFHash());
+            TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
         if (state.expectSessionTicket)
@@ -346,8 +346,8 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
-        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext,
-            ExporterLabel.server_finished, handshake.getCurrentPRFHash());
+        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.server_finished,
+            TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
         handshake.finish();

@@ -372,6 +372,8 @@ public class TlsClientProtocol
                 establishMasterSecret(getContext(), keyExchange);
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
+                TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
+
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
                     TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
@@ -379,15 +381,13 @@ public class TlsClientProtocol
                      * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
                     SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = recordStream.getCurrentPRFHash(null);
+                    byte[] hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
                     byte[] signature = signerCreds.generateCertificateSignature(hash);
                     DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
-
-                this.recordStream.getHandshakeHash().stopTracking();
 
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
