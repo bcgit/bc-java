@@ -25,7 +25,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Tests are taken from RFC 6979 - "Deterministic Usage of the Digital Signature Algorithm (DSA) and Elliptic Curve Digital Signature Algorithm (ECDSA)"
  */
-public class DetermisticDSATest
+public class DeterministicDSATest
     extends SimpleTest
 {
 
@@ -367,7 +367,7 @@ public class DetermisticDSATest
             "C21FD60613BCA65C063A61226E050A680B3ABD4", 16), new BigInteger("013B7581E98F6A63FBBCB3E49BCDA60F816DB230B888506D105DC229600497C3" +
             "B46588C784BE3AA9343BEF82F7C9C80AEB63C3B", 16));
 
-        doTestHMACDetECDSATest(new SHA1Digest(), privKey,   new BigInteger("049F54E7C10D2732B4638473053782C6919218BBEFCEC8B51640FC193E832291" +
+        doTestHMACDetECDSATest(new SHA1Digest(), privKey, new BigInteger("049F54E7C10D2732B4638473053782C6919218BBEFCEC8B51640FC193E832291" +
             "F05FA12371E9B448417B3290193F08EE9319195", 16), new BigInteger("0499E267DEC84E02F6F108B10E82172C414F15B1B7364BE8BFD66ADC0C5DE23F" +
             "EE3DF0D811134C25AFE0E05A6672F98889F28F1", 16));
         doTestHMACDetECDSATest(new SHA224Digest(), privKey, new BigInteger("0B1527FFAA7DD7C7E46B628587A5BEC0539A2D04D3CF27C54841C2544E1BBDB4" +
@@ -425,18 +425,18 @@ public class DetermisticDSATest
                                                                             "8D6D4DE7358DF7E", 16));
 
         doTestHMACDetECDSATest(new SHA1Digest(), privKey, new BigInteger("133F5414F2A9BC41466D339B79376038A64D045E5B0F792A98E5A7AA87E0AD01" +
-                                                                        "6419E5F8D176007D5C9C10B5FD9E2E0AB8331B195797C0358BA05ECBF24ACE59" +
-                                                                        "C5F368A6C0997CC", 16),
-                                                              new BigInteger("3D16743AE9F00F0B1A500F738719C5582550FEB64689DA241665C4CE4F328BA0" +
-                                                                  "E34A7EF527ED13BFA5889FD2D1D214C11EB17D6BC338E05A56F41CAFF1AF7B8D" +
-                                                                  "574DB62EF0D0F21", 16));
+            "6419E5F8D176007D5C9C10B5FD9E2E0AB8331B195797C0358BA05ECBF24ACE59" +
+            "C5F368A6C0997CC", 16),
+            new BigInteger("3D16743AE9F00F0B1A500F738719C5582550FEB64689DA241665C4CE4F328BA0" +
+                "E34A7EF527ED13BFA5889FD2D1D214C11EB17D6BC338E05A56F41CAFF1AF7B8D" +
+                "574DB62EF0D0F21", 16));
 
         doTestHMACDetECDSATest(new SHA224Digest(), privKey, new BigInteger("3048E76506C5C43D92B2E33F62B33E3111CEEB87F6C7DF7C7C01E3CDA28FA5E8" +
-                                                                    "BE04B5B23AA03C0C70FEF8F723CBCEBFF0B7A52A3F5C8B84B741B4F6157E69A5" +
-                                                                    "FB0524B48F31828", 16),
-                                                              new BigInteger("2C99078CCFE5C82102B8D006E3703E020C46C87C75163A2CD839C885550BA5CB" +
-                                                                  "501AC282D29A1C26D26773B60FBE05AAB62BFA0BA32127563D42F7669C97784C" +
-                                                                  "8897C22CFB4B8FA", 16));
+            "BE04B5B23AA03C0C70FEF8F723CBCEBFF0B7A52A3F5C8B84B741B4F6157E69A5" +
+            "FB0524B48F31828", 16),
+            new BigInteger("2C99078CCFE5C82102B8D006E3703E020C46C87C75163A2CD839C885550BA5CB" +
+                "501AC282D29A1C26D26773B60FBE05AAB62BFA0BA32127563D42F7669C97784C" +
+                "8897C22CFB4B8FA", 16));
 
         doTestHMACDetECDSATest(new SHA256Digest(), privKey, new BigInteger("184BC808506E11A65D628B457FDA60952803C604CC7181B59BD25AEE1411A66D" +
                                                                     "12A777F3A0DC99E1190C58D0037807A95E5080FA1B2E5CCAA37B50D401CFFC34" +
@@ -446,17 +446,17 @@ public class DetermisticDSATest
                                                                   "E03921E4DC98333", 16));
 
         doTestHMACDetECDSATest(new SHA384Digest(), privKey, new BigInteger("319EE57912E7B0FAA1FBB145B0505849A89C6DB1EC06EA20A6A7EDE072A6268A" +
-                                                                    "F6FD9C809C7E422A5F33C6C3326EAD7402467DF3272A1B2726C1C20975950F0F" +
-                                                                    "50D8324578F13EC", 16),
-                                                              new BigInteger("2CF3EA27EADD0612DD2F96F46E89AB894B01A10DF985C5FC099CFFE0EA083EB4" +
-                                                                  "4BE682B08BFE405DAD5F37D0A2C59015BA41027E24B99F8F75A70B6B7385BF39" +
-                                                                  "BBEA02513EB880C", 16));
+            "F6FD9C809C7E422A5F33C6C3326EAD7402467DF3272A1B2726C1C20975950F0F" +
+            "50D8324578F13EC", 16),
+            new BigInteger("2CF3EA27EADD0612DD2F96F46E89AB894B01A10DF985C5FC099CFFE0EA083EB4" +
+                "4BE682B08BFE405DAD5F37D0A2C59015BA41027E24B99F8F75A70B6B7385BF39" +
+                "BBEA02513EB880C", 16));
         doTestHMACDetECDSATest(new SHA512Digest(), privKey, new BigInteger("2AA1888EAB05F7B00B6A784C4F7081D2C833D50794D9FEAF6E22B8BE728A2A90" +
             "BFCABDC803162020AA629718295A1489EE7ED0ECB8AAA197B9BDFC49D18DDD78" +
             "FC85A48F9715544", 16),
-                                                              new BigInteger("0AA5371FE5CA671D6ED9665849C37F394FED85D51FEF72DA2B5F28EDFB2C6479" +
-                                                                  "CA63320C19596F5E1101988E2C619E302DD05112F47E8823040CE540CD3E90DC" +
-                                                                  "F41DBC461744EE9", 16));
+            new BigInteger("0AA5371FE5CA671D6ED9665849C37F394FED85D51FEF72DA2B5F28EDFB2C6479" +
+                "CA63320C19596F5E1101988E2C619E302DD05112F47E8823040CE540CD3E90DC" +
+                "F41DBC461744EE9", 16));
 
     }
 
@@ -507,7 +507,7 @@ public class DetermisticDSATest
     public static void main(
         String[] args)
     {
-        runTest(new DetermisticDSATest());
+        runTest(new DeterministicDSATest());
     }
 }
 
