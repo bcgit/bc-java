@@ -41,18 +41,20 @@ Release 1.50
 <ul>
 <li>Additional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages and allow for non-default parameters.</li>
 <li>OCB implementation updated to account for changes in draft-irtf-cfrg-ocb-03.</li>
-<li>RFC 6637 ECDSA support has been added to the OpenPGP API.</li>
+<li>RFC 6637 ECDSA and ECDH support has been added to the OpenPGP API.</li>
 <li>Implementations of Threefish and Skein have been added to the provider and the lightweight API.</li>
 <li>Implementations of the SM3 digest have been added to the provider and the lightweight API.</li>
 <li>The 3 MAC based KDF generators in NIST SP 800-108 have been added to the lightweight API.</li>
 <li>Support has been added for the GOST PKCS#5 PBKDF2 PBE function and handling of GOST PKCS#12 files.</li>
 <li>Support has been added for the CryptoPro GOST CFB mode key meshing.</li>
 <li>Implementations of XSalsa20 and ChaCha have been added. Support for reduced round Salas20 has been added.</li>
+<li>Support has been added for RFC 6979 Determinstic DSA/ECDSA to the light weight API.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
 <li>org.bouncycastle.crypto.DerivationFunction is now a base interface, the getDigest() method appears on DigestDerivationFunction.</li>
 <li>Recent developments at NIST indicate the SHA-3 may be changed before final standardisation. Please bare this in mind if you are using it.</li>
+<li>Most deprecated methods have been removed from the PKIX API.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
