@@ -76,7 +76,8 @@ public class RegressionTest
         new Poly1305Test(),
         new SipHashTest(),
         new SHA3Test(),
-        new SkeinTest()
+        new SkeinTest(),
+        new Shacal2Test()
     };
 
     public static void main(

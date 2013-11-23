@@ -131,6 +131,7 @@ public class RegressionTest
         new BlockCipherResetTest(),
         new StreamCipherResetTest(),
         new SM3DigestTest(),
+        new Shacal2Test(),
         new KDFCounterGeneratorTest(),
         new KDFDoublePipelineIteratorGeneratorTest(),
         new KDFFeedbackGeneratorTest()
