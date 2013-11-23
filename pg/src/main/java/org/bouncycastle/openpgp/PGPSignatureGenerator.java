@@ -500,6 +500,11 @@ public class PGPSignatureGenerator
         PGPPublicKey    pubKey)
         throws SignatureException, PGPException
     {
+        if ((sigType == PGPSignature.SUBKEY_REVOCATION || sigType == PGPSignature.SUBKEY_BINDING) && !pubKey.isMasterKey())
+        {
+            throw new IllegalArgumentException("certifications involving subkey requires public key of revoking key as well.");
+        }
+
         updateWithPublicKey(pubKey);
 
         return this.generate();

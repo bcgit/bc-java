@@ -807,7 +807,7 @@ public class PGPRSATest
 
             keySigGen.setHashedSubpackets(svg.generate());
 
-            pKey = PGPPublicKey.addCertification(pKey, keySigGen.generateCertification(pKey));
+            pKey = PGPPublicKey.addCertification(pKey, pKey.isMasterKey() ? keySigGen.generateCertification(pKey) : keySigGen.generateCertification(sgnKeyPair.getPublicKey(), pKey));
 
             if (pKey.isEncryptionKey())
             {
