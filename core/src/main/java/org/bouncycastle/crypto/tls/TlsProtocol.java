@@ -65,7 +65,7 @@ public abstract class TlsProtocol
     private volatile boolean closed = false;
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
-    private volatile boolean writeExtraEmptyRecords = true;
+    private volatile boolean splitApplicationDataRecords = true;
     private byte[] expected_verify_data = null;
 
     protected TlsSession tlsSession = null;
@@ -150,7 +150,7 @@ public abstract class TlsProtocol
 
             this.recordStream.finaliseHandshake();
 
-            this.writeExtraEmptyRecords = !TlsUtils.isTLSv11(getContext());
+            this.splitApplicationDataRecords = !TlsUtils.isTLSv11(getContext());
 
             /*
              * If this was an initial handshake, we are now ready to send and receive application data.
@@ -537,22 +537,30 @@ public abstract class TlsProtocol
             /*
              * RFC 5246 6.2.1. Zero-length fragments of Application data MAY be sent as they are
              * potentially useful as a traffic analysis countermeasure.
+             * 
+             * NOTE: Actually, implementations appear to have settled on 1/n-1 record splitting.
              */
-            if (this.writeExtraEmptyRecords)
+
+            if (this.splitApplicationDataRecords)
             {
                 /*
                  * Protect against known IV attack!
                  * 
-                 * DO NOT REMOVE THIS LINE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
+                 * DO NOT REMOVE THIS CODE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
                  */
-                safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+                safeWriteRecord(ContentType.application_data, buf, offset, 1);
+                ++offset;
+                --len;
             }
 
-            // Fragment data according to the current fragment limit.
-            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
-            safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
-            offset += toWrite;
-            len -= toWrite;
+            if (len > 0)
+            {
+                // Fragment data according to the current fragment limit.
+                int toWrite = Math.min(len, recordStream.getPlaintextLimit());
+                safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
+                offset += toWrite;
+                len -= toWrite;
+            }
         }
     }
 
