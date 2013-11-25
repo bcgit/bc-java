@@ -79,11 +79,11 @@ public final class SessionParameters
         }
     }
 
-    private final int cipherSuite;
-    private final short compressionAlgorithm;
-    private final byte[] masterSecret;
-    private final Certificate peerCertificate;
-    private final byte[] encodedServerExtensions;
+    private int cipherSuite;
+    private short compressionAlgorithm;
+    private byte[] masterSecret;
+    private Certificate peerCertificate;
+    private byte[] encodedServerExtensions;
 
     private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret,
         Certificate peerCertificate, byte[] encodedServerExtensions)
