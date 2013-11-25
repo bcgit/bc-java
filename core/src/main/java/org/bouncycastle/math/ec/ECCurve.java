@@ -162,7 +162,7 @@ public abstract class ECCurve
     {
         checkPoints(points);
 
-        if (getCoordinateSystem() == ECCurve.COORD_AFFINE)
+        if (this.getCoordinateSystem() == ECCurve.COORD_AFFINE)
         {
             return;
         }
@@ -385,7 +385,7 @@ public abstract class ECCurve
 
         public ECPoint importPoint(ECPoint p)
         {
-            if (this != p.getCurve() && getCoordinateSystem() == COORD_JACOBIAN && !p.isInfinity())
+            if (this != p.getCurve() && this.getCoordinateSystem() == COORD_JACOBIAN && !p.isInfinity())
             {
                 switch (p.getCurve().getCoordinateSystem())
                 {
@@ -737,7 +737,7 @@ public abstract class ECCurve
         {
             ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
 
-            switch (getCoordinateSystem())
+            switch (this.getCoordinateSystem())
             {
             case COORD_LAMBDA_AFFINE:
             case COORD_LAMBDA_PROJECTIVE:
@@ -842,7 +842,7 @@ public abstract class ECCurve
 
                 yp = xp.multiply(z);
 
-                switch (getCoordinateSystem())
+                switch (this.getCoordinateSystem())
                 {
                 case COORD_LAMBDA_AFFINE:
                 case COORD_LAMBDA_PROJECTIVE:
