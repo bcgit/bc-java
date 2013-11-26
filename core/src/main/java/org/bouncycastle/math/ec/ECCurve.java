@@ -52,7 +52,7 @@ public abstract class ECCurve
         {
             if (!supportsCoordinateSystem(coord))
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
 
             ECCurve c = cloneCurve();
