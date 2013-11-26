@@ -4,12 +4,10 @@ import java.io.IOException;
 import javax.microedition.io.DatagramConnection;
 import javax.microedition.io.Datagram;
 
-import org.bouncycastle.crypto.tls.AlertDescription;
-import org.bouncycastle.crypto.tls.TlsFatalAlert;
-
 public class UDPTransport
     implements DatagramTransport
 {
+
     protected final static int MIN_IP_OVERHEAD = 20;
     protected final static int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
     protected final static int UDP_OVERHEAD = 8;
@@ -82,7 +80,7 @@ public class UDPTransport
              * the DTLS implementation SHOULD generate an error, thus avoiding sending a packet
              * which will be fragmented."
              */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            // TODO Exception
         }
 
         if (off == 0)
