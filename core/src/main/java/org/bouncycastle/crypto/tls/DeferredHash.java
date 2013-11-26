@@ -101,12 +101,12 @@ class DeferredHash
 
     public String getAlgorithmName()
     {
-        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
+        throw new IllegalStateException("Use fork() to get a definite Digest");
     }
 
     public int getDigestSize()
     {
-        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
+        throw new IllegalStateException("Use fork() to get a definite Digest");
     }
 
     public void update(byte input)
@@ -143,7 +143,7 @@ class DeferredHash
 
     public int doFinal(byte[] output, int outOff)
     {
-        throw new UnsupportedOperationException("Use fork() to get a definite Digest");
+        throw new IllegalStateException("Use fork() to get a definite Digest");
     }
 
     public void reset()
