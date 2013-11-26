@@ -135,7 +135,7 @@ public class BaseMac
         Iterator keys = paramsMap.keySet().iterator();
         while (keys.hasNext())
         {
-            Integer key = (Integer)keys.next();
+            Object key = keys.next();
             newTable.put(key, paramsMap.get(key));
         }
 

@@ -371,7 +371,7 @@ public class RFC4519Style
         Enumeration keys = paramsMap.keys();
         while (keys.hasMoreElements())
         {
-            Integer key = (Integer)keys.nextElement();
+            Object key = keys.nextElement();
             newTable.put(key, paramsMap.get(key));
         }
 
