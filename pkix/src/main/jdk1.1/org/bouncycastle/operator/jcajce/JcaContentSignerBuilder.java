@@ -102,7 +102,7 @@ public class JcaContentSignerBuilder
         {
             throw new OperatorCreationException("cannot create signer: " + e.getMessage(), e);
         }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new OperatorCreationException("cannot create signer: " + e.getMessage(), e);
         }
