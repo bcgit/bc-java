@@ -1305,7 +1305,7 @@ public abstract class ECPoint
                 ECFieldElement X3 = L.square().add(L).add(sumX).add(curve.getA());
                 ECFieldElement Y3 = L.multiply(X1.add(X3)).add(X3).add(Y1);
 
-                return new ECPoint.F2m(curve, X3, Y3, withCompression);
+                return new ECPoint.F2m(curve, X3, Y3, this.withCompression);
             }
             case ECCurve.COORD_HOMOGENEOUS:
             {
@@ -1340,7 +1340,7 @@ public abstract class ECPoint
                 ECFieldElement Y3 = VSqZ2.multiply(U.multiply(X1).add(Y1.multiply(V))).add(A.multiply(U.add(V)));
                 ECFieldElement Z3 = VSq.multiply(V).multiply(W);
 
-                return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, withCompression);
+                return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
@@ -1416,7 +1416,7 @@ public abstract class ECPoint
                     }
                 }
 
-                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
             default:
             {
@@ -1472,13 +1472,13 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             {
                 ECFieldElement Y1 = this.y;
-                return new ECPoint.F2m(curve, X1.square(), Y1.square(), withCompression);
+                return new ECPoint.F2m(curve, X1.square(), Y1.square(), this.withCompression);
             }
             case ECCurve.COORD_HOMOGENEOUS:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
                 ECFieldElement Y1 = this.y, Z1 = this.zs[0];
-                return new ECPoint.F2m(curve, X1.square(), Y1.square(), new ECFieldElement[]{ Z1.square() }, withCompression);
+                return new ECPoint.F2m(curve, X1.square(), Y1.square(), new ECFieldElement[]{ Z1.square() }, this.withCompression);
             }
             default:
             {
@@ -1516,7 +1516,7 @@ public abstract class ECPoint
                 ECFieldElement X3 = L1.square().add(L1).add(curve.getA());
                 ECFieldElement Y3 = X1.square().add(X3.multiply(L1.addOne()));
 
-                return new ECPoint.F2m(curve, X3, Y3, withCompression);
+                return new ECPoint.F2m(curve, X3, Y3, this.withCompression);
             }
             case ECCurve.COORD_HOMOGENEOUS:
             {
@@ -1536,7 +1536,7 @@ public abstract class ECPoint
                 ECFieldElement Y3 = h.multiply(S.add(V)).add(X1Sq.square().multiply(V));
                 ECFieldElement Z3 = V.multiply(vSquared);    
 
-                return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, withCompression);
+                return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
@@ -1567,7 +1567,7 @@ public abstract class ECPoint
                     L3 = X1Z1.square().add(X3).add(T.multiply(L1Z1)).add(Z3);
                 }
 
-                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
             default:
             {
@@ -1627,7 +1627,7 @@ public abstract class ECPoint
                 ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
                 ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
 
-                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, withCompression);
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
             default:
             {
@@ -1647,7 +1647,7 @@ public abstract class ECPoint
             switch (this.getCurveCoordinateSystem())
             {
             case ECCurve.COORD_LAMBDA_AFFINE:
-                Z = curve.fromBigInteger(BigInteger.ONE);
+                Z = curve.fromBigInteger(ECConstants.ONE);
                 break;
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
                 Z = this.zs[0];
