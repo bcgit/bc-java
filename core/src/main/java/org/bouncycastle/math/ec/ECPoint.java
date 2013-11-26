@@ -737,7 +737,7 @@ public abstract class ECPoint
             }
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
@@ -867,7 +867,7 @@ public abstract class ECPoint
 
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
@@ -1420,7 +1420,7 @@ public abstract class ECPoint
             }
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
@@ -1482,7 +1482,7 @@ public abstract class ECPoint
             }
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
@@ -1571,7 +1571,7 @@ public abstract class ECPoint
             }
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
@@ -1725,7 +1725,7 @@ public abstract class ECPoint
             }
             default:
             {
-                throw new UnsupportedOperationException("unsupported coordinate system");
+                throw new IllegalStateException("unsupported coordinate system");
             }
             }
         }
