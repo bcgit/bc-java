@@ -257,7 +257,7 @@ public abstract class ECPoint
 
     protected ECPoint createScaledPoint(ECFieldElement sx, ECFieldElement sy)
     {
-        return this.getCurve().createRawPoint(getRawXCoord().multiply(sx), getRawYCoord().multiply(sy), withCompression);
+        return this.getCurve().createRawPoint(getRawXCoord().multiply(sx), getRawYCoord().multiply(sy), this.withCompression);
     }
 
     public boolean isInfinity()
@@ -267,7 +267,7 @@ public abstract class ECPoint
 
     public boolean isCompressed()
     {
-        return withCompression;
+        return this.withCompression;
     }
 
     public boolean equals(ECPoint other)
@@ -375,7 +375,7 @@ public abstract class ECPoint
 
     public byte[] getEncoded()
     {
-        return getEncoded(withCompression);
+        return getEncoded(this.withCompression);
     }
 
     /**
@@ -1705,23 +1705,23 @@ public abstract class ECPoint
             case ECCurve.COORD_AFFINE:
             {
                 ECFieldElement Y = this.y;
-                return new ECPoint.F2m(curve, X, Y.add(X), withCompression);
+                return new ECPoint.F2m(curve, X, Y.add(X), this.withCompression);
             }
             case ECCurve.COORD_HOMOGENEOUS:
             {
                 ECFieldElement Y = this.y, Z = this.zs[0];
-                return new ECPoint.F2m(curve, X, Y.add(X), new ECFieldElement[]{ Z }, withCompression);
+                return new ECPoint.F2m(curve, X, Y.add(X), new ECFieldElement[]{ Z }, this.withCompression);
             }
             case ECCurve.COORD_LAMBDA_AFFINE:
             {
                 ECFieldElement L = this.y;
-                return new ECPoint.F2m(curve, X, L.addOne(), withCompression);
+                return new ECPoint.F2m(curve, X, L.addOne(), this.withCompression);
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
                 // L is actually Lambda (X + Y/X) here
                 ECFieldElement L = this.y, Z = this.zs[0];
-                return new ECPoint.F2m(curve, X, L.add(Z), new ECFieldElement[]{ Z }, withCompression);
+                return new ECPoint.F2m(curve, X, L.add(Z), new ECFieldElement[]{ Z }, this.withCompression);
             }
             default:
             {
