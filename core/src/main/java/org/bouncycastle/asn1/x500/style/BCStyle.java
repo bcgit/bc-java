@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.x500.style;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -281,8 +282,8 @@ public class BCStyle
 
     protected BCStyle()
     {
-        defaultSymbols = new Hashtable(DefaultSymbols);
-        defaultLookUp = new Hashtable(DefaultLookUp);
+        defaultSymbols = copyHashTable(DefaultSymbols);
+        defaultLookUp = copyHashTable(DefaultLookUp);
     }
     
     public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
@@ -462,5 +463,19 @@ public class BCStyle
         }
 
         return buf.toString();
+    }
+
+    private static Hashtable copyHashTable(Hashtable paramsMap)
+    {
+        Hashtable newTable = new Hashtable();
+
+        Enumeration keys = paramsMap.keys();
+        while (keys.hasMoreElements())
+        {
+            Integer key = (Integer)keys.nextElement();
+            newTable.put(key, paramsMap.get(key));
+        }
+
+        return newTable;
     }
 }

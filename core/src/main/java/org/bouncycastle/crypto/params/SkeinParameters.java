@@ -8,8 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SkeinDigest;
@@ -157,12 +155,12 @@ public class SkeinParameters
         {
         }
 
-        public Builder(Map paramsMap)
+        public Builder(Hashtable paramsMap)
         {
-            Iterator keys = paramsMap.keySet().iterator();
-            while (keys.hasNext())
+            Enumeration keys = paramsMap.keys();
+            while (keys.hasMoreElements())
             {
-                Integer key = (Integer)keys.next();
+                Integer key = (Integer)keys.nextElement();
                 parameters.put(key, paramsMap.get(key));
             }
         }
