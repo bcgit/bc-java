@@ -58,7 +58,7 @@ public class PGPECDSATest
     {
         KeyPairGenerator        keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
 
-        keyGen.initialize(new ECGenParameterSpec("P-256"));
+        keyGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
 
         KeyPair kpSign = keyGen.generateKeyPair();
 

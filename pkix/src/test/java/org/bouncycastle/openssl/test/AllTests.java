@@ -34,8 +34,11 @@ public class
     extends TestCase
 {
     public void testOpenSSL()
-    {   
-        Security.addProvider(new BouncyCastleProvider());
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
         
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
         {
@@ -57,6 +60,11 @@ public class
     public void testPKCS8Encrypted()
         throws Exception
     {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
 
         kpGen.initialize(1024);
@@ -98,6 +106,11 @@ public class
     public void testPKCS8PlainNew()
         throws Exception
     {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
 
         kpGen.initialize(1024);

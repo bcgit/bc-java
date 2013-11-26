@@ -90,7 +90,7 @@ public class PGPECDHTest
         //
         KeyPairGenerator        keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
 
-        keyGen.initialize(new ECGenParameterSpec("P-256"));
+        keyGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
 
         KeyPair kpSign = keyGen.generateKeyPair();
 
@@ -101,7 +101,7 @@ public class PGPECDHTest
         //
         keyGen = KeyPairGenerator.getInstance("ECDH", "BC");
 
-        keyGen.initialize(new ECGenParameterSpec("P-256"));
+        keyGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
 
         KeyPair kpEnc = keyGen.generateKeyPair();
 
@@ -181,7 +181,7 @@ public class PGPECDHTest
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH", "BC");
 
-        keyGen.initialize(new ECGenParameterSpec("P-256"));
+        keyGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
 
         KeyPair kpEnc = keyGen.generateKeyPair();
 
