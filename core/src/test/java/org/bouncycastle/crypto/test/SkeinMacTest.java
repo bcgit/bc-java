@@ -1,11 +1,11 @@
 package org.bouncycastle.crypto.test;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.macs.SkeinMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -144,7 +144,7 @@ public class SkeinMacTest
         byte[] output = new byte[digest.getMacSize()];
         digest.doFinal(output, 0);
 
-        if (!MessageDigest.isEqual(output, dc.getDigest()))
+        if (!Arrays.areEqual(output, dc.getDigest()))
         {
             fail(digest.getAlgorithmName() + " message " + (dc.getMessage().length * 8) + " mismatch.\n Message  " + new String(Hex.encode(dc.getMessage()))
                 + "\n Key      " + new String(Hex.encode(dc.getKey())) + "\n Expected "

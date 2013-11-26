@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
@@ -23,6 +22,7 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 public class SignerInfoGenerator
@@ -123,12 +123,12 @@ public class SignerInfoGenerator
 
     public SignerIdentifier getSID()
     {
-    	return signerIdentifier;
+        return signerIdentifier;
     }
 
-    public ASN1Integer getGeneratedVersion()
+    public int getGeneratedVersion()
     {
-    	return new ASN1Integer(signerIdentifier.isTagged() ? 3 : 1);
+        return signerIdentifier.isTagged() ? 3 : 1;
     }
 
     public boolean hasAssociatedCertificate()
@@ -190,7 +190,7 @@ public class SignerInfoGenerator
                 digestAlg = digester.getAlgorithmIdentifier();
                 calculatedDigest = digester.getDigest();
                 Map parameters = getBaseParameters(contentType, digester.getAlgorithmIdentifier(), calculatedDigest);
-                AttributeTable signed = sAttrGen.getAttributes(new HashMap(parameters));
+                AttributeTable signed = sAttrGen.getAttributes(Collections.unmodifiableMap(parameters));
 
                 signedAttr = getAttributeSet(signed);
 
@@ -221,9 +221,9 @@ public class SignerInfoGenerator
             if (unsAttrGen != null)
             {
                 Map parameters = getBaseParameters(contentType, digestAlg, calculatedDigest);
-                parameters.put(CMSAttributeTableGenerator.SIGNATURE, sigBytes.clone());
+                parameters.put(CMSAttributeTableGenerator.SIGNATURE, Arrays.clone(sigBytes));
 
-                AttributeTable unsigned = unsAttrGen.getAttributes(new HashMap(parameters));
+                AttributeTable unsigned = unsAttrGen.getAttributes(Collections.unmodifiableMap(parameters));
 
                 unsignedAttr = getAttributeSet(unsigned);
             }
@@ -265,7 +265,7 @@ public class SignerInfoGenerator
         }
 
         param.put(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER, digAlgId);
-        param.put(CMSAttributeTableGenerator.DIGEST,  hash.clone());
+        param.put(CMSAttributeTableGenerator.DIGEST,  Arrays.clone(hash));
         return param;
     }
 
@@ -273,7 +273,7 @@ public class SignerInfoGenerator
     {
         if (calculatedDigest != null)
         {
-            return (byte[])calculatedDigest.clone();
+            return Arrays.clone(calculatedDigest);
         }
 
         return null;

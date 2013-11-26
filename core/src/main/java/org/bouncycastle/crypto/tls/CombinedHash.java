@@ -37,7 +37,7 @@ class CombinedHash
 
     public void trackHashAlgorithm(short hashAlgorithm)
     {
-        throw new UnsupportedOperationException("CombinedHash only supports calculating the legacy PRF for handshake hash");
+        throw new IllegalStateException("CombinedHash only supports calculating the legacy PRF for handshake hash");
     }
 
     public void sealHashAlgorithms()

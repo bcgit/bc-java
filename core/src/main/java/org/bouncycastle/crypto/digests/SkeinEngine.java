@@ -67,10 +67,10 @@ public class SkeinEngine
         public Configuration(long outputSizeBits)
         {
             // 0..3 = ASCII SHA3
-            bytes[0] = 'S';
-            bytes[1] = 'H';
-            bytes[2] = 'A';
-            bytes[3] = '3';
+            bytes[0] = (byte)'S';
+            bytes[1] = (byte)'H';
+            bytes[2] = (byte)'A';
+            bytes[3] = (byte)'3';
 
             // 4..5 = version number in LSB order
             bytes[4] = 1;
