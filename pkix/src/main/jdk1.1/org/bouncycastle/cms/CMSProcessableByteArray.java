@@ -7,6 +7,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.util.Arrays;
 
 /**
  * a holding class for a byte array of data to be processed.
@@ -44,7 +45,7 @@ public class CMSProcessableByteArray
 
     public Object getContent()
     {
-        return bytes.clone();
+        return Arrays.clone(bytes);
     }
 
     public ASN1ObjectIdentifier getContentType()

@@ -2,6 +2,7 @@ package org.bouncycastle.operator.jcajce;
 
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.Provider;
 import java.security.ProviderException;
 import java.security.PublicKey;
@@ -117,6 +118,9 @@ public class JceAsymmetricKeyWrapper
             }
             encryptedKeyBytes = keyEncryptionCipher.wrap(OperatorUtils.getJceKey(encryptionKey));
         }
+        catch (InvalidKeyException e)
+        {
+        }
         catch (GeneralSecurityException e)
         {
         }
@@ -137,6 +141,10 @@ public class JceAsymmetricKeyWrapper
             {
                 keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
                 encryptedKeyBytes = keyEncryptionCipher.doFinal(OperatorUtils.getJceKey(encryptionKey).getEncoded());
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new OperatorException("unable to encrypt contents key", e);
             }
             catch (GeneralSecurityException e)
             {

@@ -1,8 +1,8 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 
@@ -164,7 +164,11 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             return PGPUtil.unpadSessionData(paddedSessionKey.getEncoded());
         }
-        catch (GeneralSecurityException e)
+        catch (InvalidKeyException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+        catch (NoSuchAlgorithmException e)
         {
             throw new PGPException("error setting asymmetric cipher", e);
         }
