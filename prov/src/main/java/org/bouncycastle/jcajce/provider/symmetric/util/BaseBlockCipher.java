@@ -22,6 +22,7 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -84,6 +85,7 @@ public class BaseBlockCipher
     private BlockCipherProvider     engineProvider;
     private GenericBlockCipher      cipher;
     private ParametersWithIV        ivParam;
+    private AEADParameters          aeadParams;
 
     private int                     ivLength = 0;
 
@@ -123,6 +125,14 @@ public class BaseBlockCipher
         engineProvider = provider;
 
         cipher = new BufferedGenericBlockCipher(provider.get());
+    }
+
+    protected BaseBlockCipher(
+        AEADBlockCipher engine)
+    {
+        baseEngine = engine.getUnderlyingCipher();
+        ivLength = baseEngine.getBlockSize();
+        cipher = new AEADGenericBlockCipher(engine);
     }
 
     protected BaseBlockCipher(
@@ -196,6 +206,18 @@ public class BaseBlockCipher
                 {
                     engineParams = AlgorithmParameters.getInstance(name, BouncyCastleProvider.PROVIDER_NAME);
                     engineParams.init(ivParam.getIV());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+            }
+            else if (aeadParams != null)
+            {
+                try
+                {
+                    engineParams = AlgorithmParameters.getInstance("GCM", BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize()).getEncoded());
                 }
                 catch (Exception e)
                 {
@@ -405,6 +427,7 @@ public class BaseBlockCipher
         this.pbeSpec = null;
         this.pbeAlgorithm = null;
         this.engineParams = null;
+        this.aeadParams = null;
 
         //
         // basic key check
@@ -570,7 +593,7 @@ public class BaseBlockCipher
         }
         else if (gcmSpecClass != null && gcmSpecClass.isInstance(params))
         {
-            if (!isAEADModeName(modeName))
+            if (!isAEADModeName(modeName) && !(cipher instanceof AEADGenericBlockCipher))
             {
                 throw new InvalidAlgorithmParameterException("GCMParameterSpec can only be used with AEAD modes.");
             }
@@ -582,11 +605,11 @@ public class BaseBlockCipher
 
                 if (key instanceof RepeatedSecretKeySpec)
                 {
-                    param = new AEADParameters(null, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
+                    param = aeadParams = new AEADParameters(null, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
                 }
                 else
                 {
-                    param = new AEADParameters(new KeyParameter(key.getEncoded()), ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
+                    param = aeadParams = new AEADParameters(new KeyParameter(key.getEncoded()), ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
                 }
             }
             catch (Exception e)
