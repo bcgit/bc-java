@@ -1,5 +1,7 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.IOException;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -14,8 +16,10 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -31,6 +35,10 @@ public class AEADTest extends SimpleTest
     // C2 with only 64bit MAC (default for EAX)
     private byte[] C2_short = Hex.decode("19DD5C4C9331049D0BDA");
 
+    private byte[] KGCM = Hex.decode("00000000000000000000000000000000");
+    private byte[] NGCM = Hex.decode("000000000000000000000000");
+    private byte[] CGCM = Hex.decode("58e2fccefa7e3061367f1d57a4e7455a");
+
     public String getName()
     {
         return "AEAD";
@@ -45,8 +53,9 @@ public class AEADTest extends SimpleTest
             checkCipherWithAD(K2, N2, A2, P2, C2_short);
             testGCMParameterSpec(K2, N2, A2, P2, C2);
             testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
+            testGCMGeneric(KGCM, NGCM, new byte[0], new byte[0], CGCM);
         }
-        catch (Exception e)
+        catch (ClassNotFoundException e)
         {
             System.err.println("AEADTest disabled due to JDK");
         }
@@ -88,10 +97,11 @@ public class AEADTest extends SimpleTest
                                       byte[] N,
                                       byte[] A,
                                       byte[] P,
-                                      byte[] C) throws InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException,
-            IllegalBlockSizeException, BadPaddingException,
-            InvalidAlgorithmParameterException, NoSuchProviderException
+                                      byte[] C)
+        throws InvalidKeyException,
+        NoSuchAlgorithmException, NoSuchPaddingException,
+        IllegalBlockSizeException, BadPaddingException,
+        InvalidAlgorithmParameterException, NoSuchProviderException, IOException
     {
         Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
@@ -117,6 +127,17 @@ public class AEADTest extends SimpleTest
         {
             fail("JCE decrypt with additional data and GCMParameterSpec failed.");
         }
+
+        AlgorithmParameters algParams = eax.getParameters();
+
+        byte[] encParams = algParams.getEncoded();
+
+        GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
+
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        {
+            fail("parameters mismatch");
+        }
     }
 
     private void testGCMParameterSpecWithRepeatKey(byte[] K,
@@ -124,9 +145,9 @@ public class AEADTest extends SimpleTest
                                                    byte[] A,
                                                    byte[] P,
                                                    byte[] C)
-            throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException,
-            BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException
+        throws InvalidKeyException, NoSuchAlgorithmException,
+        NoSuchPaddingException, IllegalBlockSizeException,
+        BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException, IOException
     {
         Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
@@ -150,6 +171,65 @@ public class AEADTest extends SimpleTest
         {
             fail("JCE decrypt with additional data and RepeatedSecretKeySpec failed.");
         }
+
+        AlgorithmParameters algParams = eax.getParameters();
+
+        byte[] encParams = algParams.getEncoded();
+
+        GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
+
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        {
+            fail("parameters mismatch");
+        }
+    }
+
+    private void testGCMGeneric(byte[] K,
+                                      byte[] N,
+                                      byte[] A,
+                                      byte[] P,
+                                      byte[] C)
+        throws InvalidKeyException,
+        NoSuchAlgorithmException, NoSuchPaddingException,
+        IllegalBlockSizeException, BadPaddingException,
+        InvalidAlgorithmParameterException, NoSuchProviderException, IOException
+    {
+        Cipher eax = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        SecretKeySpec key = new SecretKeySpec(K, "AES");
+
+        // GCMParameterSpec mapped to AEADParameters and overrides default MAC
+        // size
+        GCMParameterSpec spec = new GCMParameterSpec(128, N);
+        eax.init(Cipher.ENCRYPT_MODE, key, spec);
+
+        eax.updateAAD(A);
+        byte[] c = eax.doFinal(P);
+
+        if (!areEqual(C, c))
+        {
+            fail("JCE encrypt with additional data and GCMParameterSpec failed.");
+        }
+
+        eax = Cipher.getInstance("GCM", "BC");
+        eax.init(Cipher.DECRYPT_MODE, key, spec);
+        eax.updateAAD(A);
+        byte[] p = eax.doFinal(C);
+
+        if (!areEqual(P, p))
+        {
+            fail("JCE decrypt with additional data and GCMParameterSpec failed.");
+        }
+
+        AlgorithmParameters algParams = eax.getParameters();
+
+        byte[] encParams = algParams.getEncoded();
+
+        GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
+
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        {
+            fail("parameters mismatch");
+        }
     }
 
     public static void main(String[] args) throws Exception
@@ -158,5 +238,4 @@ public class AEADTest extends SimpleTest
 
         runTest(new AEADTest());
     }
-
 }
