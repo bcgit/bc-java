@@ -5,20 +5,26 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.security.SecureRandom;
+import java.util.Vector;
 
 import junit.framework.TestCase;
+
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
+import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.crypto.tls.SignatureAlgorithm;
+import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
+import org.bouncycastle.util.Arrays;
 
 public class TlsProtocolTest
     extends TestCase
@@ -107,6 +113,11 @@ public class TlsProtocolTest
                 + alertDescription + ")");
         }
 
+        public ProtocolVersion getClientVersion()
+        {
+            return ProtocolVersion.TLSv12;
+        }
+
         public TlsAuthentication getAuthentication()
             throws IOException
         {
@@ -130,19 +141,35 @@ public class TlsProtocolTest
                     throws IOException
                 {
                     short[] certificateTypes = certificateRequest.getCertificateTypes();
-                    if (certificateTypes != null)
+                    if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
                     {
-                        for (int i = 0; i < certificateTypes.length; ++i)
+                        return null;
+                    }
+
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
+                    Vector sigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+                    if (sigAlgs != null)
+                    {
+                        for (int i = 0; i < sigAlgs.size(); ++i)
                         {
-                            if (certificateTypes[i] == ClientCertificateType.rsa_sign)
+                            SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
+                                sigAlgs.elementAt(i);
+                            if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
                             {
-                                // TODO Create a distinct client certificate for use here
-                                return TlsTestUtils.loadSignerCredentials(context, new String[]{"x509-server.pem",
-                                    "x509-ca.pem"}, "x509-server-key.pem");
+                                signatureAndHashAlgorithm = sigAlg;
+                                break;
                             }
                         }
+
+                        if (signatureAndHashAlgorithm == null)
+                        {
+                            return null;
+                        }
                     }
-                    return null;
+
+                    // TODO Create a distinct client certificate for use here
+                    return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem", "x509-ca.pem" },
+                        "x509-server-key.pem", signatureAndHashAlgorithm);
                 }
             };
         }
@@ -172,6 +199,11 @@ public class TlsProtocolTest
             out.println("TLS server received alert (AlertLevel." + alertLevel + ", AlertDescription."
                 + alertDescription + ")");
         }
+
+//        protected ProtocolVersion getMaximumVersion()
+//        {
+//            return ProtocolVersion.TLSv12;
+//        }
 
         public CertificateRequest getCertificateRequest()
         {
