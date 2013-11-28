@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -74,11 +75,11 @@ public class TlsECDHEKeyExchange
             /*
              * If no named curves are suitable, check if the client supports explicit curves.
              */
-            if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
+            if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
             {
                 curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
             }
-            else if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
+            else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
             {
                 curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
             }

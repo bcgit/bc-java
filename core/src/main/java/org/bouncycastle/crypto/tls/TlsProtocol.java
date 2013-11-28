@@ -807,30 +807,6 @@ public abstract class TlsProtocol
         return maxFragmentLength;
     }
 
-    protected static boolean arrayContains(short[] a, short n)
-    {
-        for (int i = 0; i < a.length; ++i)
-        {
-            if (a[i] == n)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static boolean arrayContains(int[] a, int n)
-    {
-        for (int i = 0; i < a.length; ++i)
-        {
-            if (a[i] == n)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * Make sure the InputStream 'buf' now empty. Fail otherwise.
      *
