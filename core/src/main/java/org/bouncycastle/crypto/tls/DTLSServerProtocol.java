@@ -338,7 +338,7 @@ public class DTLSServerProtocol
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         state.selectedCipherSuite = state.server.getSelectedCipherSuite();
-        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+        if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
@@ -348,7 +348,7 @@ public class DTLSServerProtocol
         validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.internal_error);
 
         state.selectedCompressionMethod = state.server.getSelectedCompressionMethod();
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod))
+        if (!Arrays.contains(state.offeredCompressionMethods, state.selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -569,7 +569,7 @@ public class DTLSServerProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (TlsProtocol.arrayContains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
+            if (Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
                 state.secure_renegotiation = true;
             }

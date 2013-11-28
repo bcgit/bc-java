@@ -428,7 +428,7 @@ public class DTLSClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !TlsProtocol.arrayContains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noSCSV)
             {
@@ -598,7 +598,7 @@ public class DTLSClientProtocol
         state.client.notifySessionID(state.selectedSessionID);
 
         state.selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+        if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
@@ -610,7 +610,7 @@ public class DTLSClientProtocol
         state.client.notifySelectedCipherSuite(state.selectedCipherSuite);
 
         state.selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod))
+        if (!Arrays.contains(state.offeredCompressionMethods, state.selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
