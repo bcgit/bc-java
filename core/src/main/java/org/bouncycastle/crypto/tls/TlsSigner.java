@@ -12,14 +12,14 @@ public interface TlsSigner
         throws CryptoException;
 
     byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm,
-        AsymmetricKeyParameter privateKey, byte[] md5AndSha1)
+        AsymmetricKeyParameter privateKey, byte[] hash)
         throws CryptoException;
 
     boolean verifyRawSignature(byte[] sigBytes, AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
         throws CryptoException;
 
     boolean verifyRawSignature(SignatureAndHashAlgorithm algorithm, byte[] sigBytes,
-        AsymmetricKeyParameter publicKey, byte[] md5AndSha1)
+        AsymmetricKeyParameter publicKey, byte[] hash)
         throws CryptoException;
 
     Signer createSigner(AsymmetricKeyParameter privateKey);
