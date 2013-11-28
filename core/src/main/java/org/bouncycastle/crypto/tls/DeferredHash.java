@@ -104,7 +104,7 @@ class DeferredHash
         Digest d = (Digest)hashes.get(Shorts.valueOf(hashAlgorithm));
         if (d == null)
         {
-            return null;
+            throw new IllegalStateException("HashAlgorithm " + hashAlgorithm + " is not being tracked");
         }
 
         d = TlsUtils.cloneHash(hashAlgorithm, d);

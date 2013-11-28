@@ -376,14 +376,32 @@ public class TlsClientProtocol
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
-                    TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
+                    TlsSignerCredentials signerCredentials = (TlsSignerCredentials)clientCreds;
+
                     /*
-                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+                     * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
-                    SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
-                    byte[] signature = signerCreds.generateCertificateSignature(hash);
-                    DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+                    byte[] hash;
+
+                    if (TlsUtils.isTLSv12(getContext()))
+                    {
+                        signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+                        if (signatureAndHashAlgorithm == null)
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+
+                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                    }
+                    else
+                    {
+                        signatureAndHashAlgorithm = null;
+                        hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                    }
+
+                    byte[] signature = signerCredentials.generateCertificateSignature(hash);
+                    DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
