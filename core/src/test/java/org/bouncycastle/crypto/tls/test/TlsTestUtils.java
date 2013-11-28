@@ -75,10 +75,9 @@ public class TlsTestUtils
     }
 
     static TlsAgreementCredentials loadAgreementCredentials(TlsContext context,
-                                                            String[] certResources, String keyResource)
+        String[] certResources, String keyResource)
         throws IOException
     {
-
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
@@ -86,10 +85,9 @@ public class TlsTestUtils
     }
 
     static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context,
-                                                              String[] certResources, String keyResource)
+        String[] certResources, String keyResource)
         throws IOException
     {
-
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
@@ -97,10 +95,9 @@ public class TlsTestUtils
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
-                                                      String keyResource)
+        String keyResource)
         throws IOException
     {
-
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
@@ -110,7 +107,6 @@ public class TlsTestUtils
     static Certificate loadCertificateChain(String[] resources)
         throws IOException
     {
-
         org.bouncycastle.asn1.x509.Certificate[] chain = new org.bouncycastle.asn1.x509.Certificate[resources.length];
         for (int i = 0; i < resources.length; ++i)
         {
@@ -122,7 +118,6 @@ public class TlsTestUtils
     static org.bouncycastle.asn1.x509.Certificate loadCertificateResource(String resource)
         throws IOException
     {
-
         PemObject pem = loadPemResource(resource);
         if (pem.getType().endsWith("CERTIFICATE"))
         {
@@ -134,7 +129,6 @@ public class TlsTestUtils
     static AsymmetricKeyParameter loadPrivateKeyResource(String resource)
         throws IOException
     {
-
         PemObject pem = loadPemResource(resource);
         if (pem.getType().endsWith("RSA PRIVATE KEY"))
         {
@@ -153,7 +147,6 @@ public class TlsTestUtils
     static PemObject loadPemResource(String resource)
         throws IOException
     {
-
         InputStream s = TlsTestUtils.class.getResourceAsStream(resource);
         PemReader p = new PemReader(new InputStreamReader(s));
         PemObject o = p.readPemObject();
