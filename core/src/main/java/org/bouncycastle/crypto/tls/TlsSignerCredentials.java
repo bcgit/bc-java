@@ -5,6 +5,8 @@ import java.io.IOException;
 public interface TlsSignerCredentials
     extends TlsCredentials
 {
-    byte[] generateCertificateSignature(byte[] md5andsha1)
+    byte[] generateCertificateSignature(byte[] hash)
         throws IOException;
+
+    SignatureAndHashAlgorithm getSignatureAndHashAlgorithm();
 }
