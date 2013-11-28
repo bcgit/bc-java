@@ -7,12 +7,14 @@ import java.io.PrintStream;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
+import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsCredentials;
@@ -107,6 +109,11 @@ public class TlsProtocolTest
                 + alertDescription + ")");
         }
 
+        public ProtocolVersion getClientVersion()
+        {
+            return ProtocolVersion.TLSv12;
+        }
+
         public TlsAuthentication getAuthentication()
             throws IOException
         {
@@ -172,6 +179,11 @@ public class TlsProtocolTest
             out.println("TLS server received alert (AlertLevel." + alertLevel + ", AlertDescription."
                 + alertDescription + ")");
         }
+
+//        protected ProtocolVersion getMaximumVersion()
+//        {
+//            return ProtocolVersion.TLSv12;
+//        }
 
         public CertificateRequest getCertificateRequest()
         {
