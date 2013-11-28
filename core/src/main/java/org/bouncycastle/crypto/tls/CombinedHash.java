@@ -54,6 +54,11 @@ class CombinedHash
         return new CombinedHash(this);
     }
 
+    public byte[] getFinalHash(short hashAlgorithm)
+    {
+        throw new IllegalStateException("CombinedHash doesn't support multiple hashes");
+    }
+
     /**
      * @see org.bouncycastle.crypto.Digest#getAlgorithmName()
      */

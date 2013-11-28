@@ -14,10 +14,17 @@ public class DefaultTlsSignerCredentials
     protected TlsContext context;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
+    protected SignatureAndHashAlgorithm signatureAndHashAlgorithm;
 
     protected TlsSigner signer;
 
     public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
+    {
+        this(context, certificate, privateKey, null);
+    }
+
+    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey,
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         if (certificate == null)
         {
@@ -34,6 +41,10 @@ public class DefaultTlsSignerCredentials
         if (!privateKey.isPrivate())
         {
             throw new IllegalArgumentException("'privateKey' must be private");
+        }
+        if (TlsUtils.isTLSv12(context) && signatureAndHashAlgorithm == null)
+        {
+            throw new IllegalArgumentException("'signatureAndHashAlgorithm' cannot be null for (D)TLS 1.2+");
         }
 
         if (privateKey instanceof RSAKeyParameters)
@@ -58,6 +69,7 @@ public class DefaultTlsSignerCredentials
         this.context = context;
         this.certificate = certificate;
         this.privateKey = privateKey;
+        this.signatureAndHashAlgorithm = signatureAndHashAlgorithm;
     }
 
     public Certificate getCertificate()
@@ -65,16 +77,28 @@ public class DefaultTlsSignerCredentials
         return certificate;
     }
 
-    public byte[] generateCertificateSignature(byte[] md5andsha1)
+    public byte[] generateCertificateSignature(byte[] hash)
         throws IOException
     {
         try
         {
-            return signer.generateRawSignature(privateKey, md5andsha1);
+            if (TlsUtils.isTLSv12(context))
+            {
+                return signer.generateRawSignature(signatureAndHashAlgorithm, privateKey, hash);
+            }
+            else
+            {
+                return signer.generateRawSignature(privateKey, hash);
+            }
         }
         catch (CryptoException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    public SignatureAndHashAlgorithm getSignatureAndHashAlgorithm()
+    {
+        return signatureAndHashAlgorithm;
     }
 }

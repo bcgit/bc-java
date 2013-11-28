@@ -77,7 +77,8 @@ public class RegressionTest
         new SipHashTest(),
         new SHA3Test(),
         new SkeinTest(),
-        new Shacal2Test()
+        new Shacal2Test(),
+        new DetDSATest()
     };
 
     public static void main(

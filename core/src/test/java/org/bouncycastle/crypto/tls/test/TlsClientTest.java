@@ -9,16 +9,24 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.SecureRandom;
+import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
+import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
+import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
+import org.bouncycastle.crypto.tls.MaxFragmentLength;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
+import org.bouncycastle.crypto.tls.SignatureAlgorithm;
+import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClient;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
+import org.bouncycastle.crypto.tls.TlsCredentials;
+import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
 import org.bouncycastle.crypto.tls.TlsSession;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -93,10 +101,10 @@ public class TlsClientTest
             return this.session;
         }
 
-//        public ProtocolVersion getClientVersion()
-//        {
-//            return ProtocolVersion.TLSv12;
-//        }
+        public ProtocolVersion getClientVersion()
+        {
+            return ProtocolVersion.TLSv12;
+        }
 
         public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
         {
@@ -124,6 +132,10 @@ public class TlsClientTest
         {
             return new int[]
             {
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
                 CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
                 CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
                 CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
@@ -133,16 +145,15 @@ public class TlsClientTest
             };
         }
 
-//        @Override
-//        public Hashtable getClientExtensions() throws IOException
-//        {
-//            Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-//            TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
-//            TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
-//            // For testing draft-gutmann-tls-encrypt-then-mac
-////            clientExtensions.put(Integers.valueOf(0x10), TlsExtensionsUtils.createEmptyExtensionData());
-//            return clientExtensions;
-//        }
+        public Hashtable getClientExtensions() throws IOException
+        {
+            Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+            TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+            TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+            // For testing draft-gutmann-tls-encrypt-then-mac
+//            clientExtensions.put(Integers.valueOf(0x42), TlsExtensionsUtils.createEmptyExtensionData());
+            return clientExtensions;
+        }
 
         public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
         {
@@ -154,18 +165,55 @@ public class TlsClientTest
         public TlsAuthentication getAuthentication()
             throws IOException
         {
-            return new ServerOnlyTlsAuthentication()
+            return new TlsAuthentication()
             {
                 public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate)
                     throws IOException
                 {
                     Certificate[] chain = serverCertificate.getCertificateList();
-                    System.out.println("Received server certificate chain with " + chain.length + " entries");
+                    System.out.println("Received server certificate chain of length " + chain.length);
                     for (int i = 0; i != chain.length; i++)
                     {
                         Certificate entry = chain[i];
-                        System.out.println("    " + entry.getSubject());
+                        // TODO Create fingerprint based on certificate signature algorithm digest
+                        System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
+                            + entry.getSubject() + ")");
                     }
+                }
+
+                public TlsCredentials getClientCredentials(CertificateRequest certificateRequest)
+                    throws IOException
+                {
+                    short[] certificateTypes = certificateRequest.getCertificateTypes();
+                    if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
+                    {
+                        return null;
+                    }
+
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
+                    Vector sigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+                    if (sigAlgs != null)
+                    {
+                        for (int i = 0; i < sigAlgs.size(); ++i)
+                        {
+                            SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
+                                sigAlgs.elementAt(i);
+                            if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
+                            {
+                                signatureAndHashAlgorithm = sigAlg;
+                                break;
+                            }
+                        }
+
+                        if (signatureAndHashAlgorithm == null)
+                        {
+                            return null;
+                        }
+                    }
+
+                    // TODO Create a distinct client certificate for use here
+                    return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem", "x509-ca.pem" },
+                        "x509-server-key.pem", signatureAndHashAlgorithm);
                 }
             };
         }

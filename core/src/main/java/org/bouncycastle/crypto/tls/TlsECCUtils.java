@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 
@@ -73,7 +74,7 @@ public class TlsECCUtils
         {
             ecPointFormats = new short[] { ECPointFormat.uncompressed };
         }
-        else if (!TlsProtocol.arrayContains(ecPointFormats, ECPointFormat.uncompressed))
+        else if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
         {
             /*
              * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
@@ -132,7 +133,7 @@ public class TlsECCUtils
 
         TlsProtocol.assertEmpty(buf);
 
-        if (!TlsProtocol.arrayContains(ecPointFormats, ECPointFormat.uncompressed))
+        if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
         {
             /*
              * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
@@ -524,7 +525,7 @@ public class TlsECCUtils
 
     private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
     {
-        if (namedCurves != null && !TlsProtocol.arrayContains(namedCurves, namedCurve))
+        if (namedCurves != null && !Arrays.contains(namedCurves, namedCurve))
         {
             /*
              * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite

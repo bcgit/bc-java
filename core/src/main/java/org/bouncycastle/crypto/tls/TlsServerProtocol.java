@@ -525,7 +525,7 @@ public class TlsServerProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
+            if (Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
                 this.secure_renegotiation = true;
             }
@@ -639,7 +639,7 @@ public class TlsServerProtocol
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
 
         int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
-        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
+        if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
@@ -648,7 +648,7 @@ public class TlsServerProtocol
         securityParameters.cipherSuite = selectedCipherSuite;
 
         short selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
-        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
+        if (!Arrays.contains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
