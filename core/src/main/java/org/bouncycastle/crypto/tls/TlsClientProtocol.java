@@ -376,14 +376,32 @@ public class TlsClientProtocol
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
-                    TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
+                    TlsSignerCredentials signerCredentials = (TlsSignerCredentials)clientCreds;
+
                     /*
-                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+                     * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
-                    SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
-                    byte[] signature = signerCreds.generateCertificateSignature(hash);
-                    DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+                    byte[] hash;
+
+                    if (TlsUtils.isTLSv12(getContext()))
+                    {
+                        signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+                        if (signatureAndHashAlgorithm == null)
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+
+                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                    }
+                    else
+                    {
+                        signatureAndHashAlgorithm = null;
+                        hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                    }
+
+                    byte[] signature = signerCredentials.generateCertificateSignature(hash);
+                    DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
@@ -606,7 +624,7 @@ public class TlsClientProtocol
          * ones.
          */
         int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
+        if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
@@ -620,7 +638,7 @@ public class TlsClientProtocol
          * offered ones.
          */
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
+        if (!Arrays.contains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -804,8 +822,8 @@ public class TlsClientProtocol
 
         if (session_id.length > 0 && this.sessionParameters != null)
         {
-            if (!arrayContains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
-                || !arrayContains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
+            if (!Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
+                || !Arrays.contains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
             {
                 session_id = TlsUtils.EMPTY_BYTES;
             }
@@ -831,7 +849,7 @@ public class TlsClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !TlsProtocol.arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noSCSV)
             {

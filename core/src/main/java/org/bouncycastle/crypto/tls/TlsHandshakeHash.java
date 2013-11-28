@@ -16,4 +16,6 @@ interface TlsHandshakeHash
     TlsHandshakeHash stopTracking();
 
     Digest forkPRFHash();
+
+    byte[] getFinalHash(short hashAlgorithm);
 }

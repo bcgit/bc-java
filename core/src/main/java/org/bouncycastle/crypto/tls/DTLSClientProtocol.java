@@ -316,13 +316,31 @@ public class DTLSClientProtocol
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
             TlsSignerCredentials signerCredentials = (TlsSignerCredentials)state.clientCredentials;
+
             /*
-             * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+             * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
              */
-            SignatureAndHashAlgorithm algorithm = null;
-            byte[] hash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
+            SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+            byte[] hash;
+
+            if (TlsUtils.isTLSv12(state.clientContext))
+            {
+                signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+                if (signatureAndHashAlgorithm == null)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+            }
+            else
+            {
+                signatureAndHashAlgorithm = null;
+                hash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
+            }
+
             byte[] signature = signerCredentials.generateCertificateSignature(hash);
-            DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
+            DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
@@ -428,7 +446,7 @@ public class DTLSClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !TlsProtocol.arrayContains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noSCSV)
             {
@@ -598,7 +616,7 @@ public class DTLSClientProtocol
         state.client.notifySessionID(state.selectedSessionID);
 
         state.selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+        if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
         {
@@ -610,7 +628,7 @@ public class DTLSClientProtocol
         state.client.notifySelectedCipherSuite(state.selectedCipherSuite);
 
         state.selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod))
+        if (!Arrays.contains(state.offeredCompressionMethods, state.selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

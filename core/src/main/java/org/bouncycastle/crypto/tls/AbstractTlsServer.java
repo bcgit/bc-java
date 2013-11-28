@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Arrays;
+
 public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer
@@ -194,7 +196,7 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < cipherSuites.length; ++i)
         {
             int cipherSuite = cipherSuites[i];
-            if (TlsProtocol.arrayContains(this.offeredCipherSuites, cipherSuite)
+            if (Arrays.contains(this.offeredCipherSuites, cipherSuite)
                 && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite)))
             {
                 return this.selectedCipherSuite = cipherSuite;
@@ -209,7 +211,7 @@ public abstract class AbstractTlsServer
         short[] compressionMethods = getCompressionMethods();
         for (int i = 0; i < compressionMethods.length; ++i)
         {
-            if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i]))
+            if (Arrays.contains(offeredCompressionMethods, compressionMethods[i]))
             {
                 return this.selectedCompressionMethod = compressionMethods[i];
             }

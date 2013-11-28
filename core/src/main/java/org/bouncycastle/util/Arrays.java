@@ -231,6 +231,30 @@ public final class Arrays
         return true;
     }
 
+    public static boolean contains(short[] a, short n)
+    {
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] == n)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean contains(int[] a, int n)
+    {
+        for (int i = 0; i < a.length; ++i)
+        {
+            if (a[i] == n)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void fill(
         byte[] array,
         byte value)
