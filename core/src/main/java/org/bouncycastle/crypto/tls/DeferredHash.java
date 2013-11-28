@@ -99,6 +99,25 @@ class DeferredHash
         return TlsUtils.cloneHash(prfHashAlgorithm.shortValue(), (Digest)hashes.get(prfHashAlgorithm));
     }
 
+    public byte[] getFinalHash(short hashAlgorithm)
+    {
+        Digest d = (Digest)hashes.get(Shorts.valueOf(hashAlgorithm));
+        if (d == null)
+        {
+            return null;
+        }
+
+        d = TlsUtils.cloneHash(hashAlgorithm, d);
+        if (buf != null)
+        {
+            buf.updateDigest(d);
+        }
+
+        byte[] bs = new byte[d.getDigestSize()];
+        d.doFinal(bs, 0);
+        return bs;
+    }
+
     public String getAlgorithmName()
     {
         throw new IllegalStateException("Use fork() to get a definite Digest");
