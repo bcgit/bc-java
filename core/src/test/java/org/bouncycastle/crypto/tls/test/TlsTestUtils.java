@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.DefaultTlsAgreementCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
+import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAgreementCredentials;
 import org.bouncycastle.crypto.tls.TlsContext;
 import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
@@ -98,10 +99,17 @@ public class TlsTestUtils
         String keyResource)
         throws IOException
     {
+        return loadSignerCredentials(context, certResources, keyResource, null);
+    }
+
+    static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
+        String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+        throws IOException
+    {
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new DefaultTlsSignerCredentials(context, certificate, privateKey);
+        return new DefaultTlsSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
     }
 
     static Certificate loadCertificateChain(String[] resources)
