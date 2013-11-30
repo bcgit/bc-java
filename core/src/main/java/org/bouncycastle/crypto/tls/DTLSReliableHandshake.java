@@ -13,7 +13,7 @@ class DTLSReliableHandshake
 {
     private final static int MAX_RECEIVE_AHEAD = 10;
 
-    private final DTLSRecordLayer recordLayer;
+    private DTLSRecordLayer recordLayer;
 
     private TlsHandshakeHash handshakeHash;
 
