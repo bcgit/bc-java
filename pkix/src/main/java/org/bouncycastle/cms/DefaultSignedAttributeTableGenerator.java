@@ -1,6 +1,7 @@
 package org.bouncycastle.cms;
 
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public class DefaultSignedAttributeTableGenerator
     protected Hashtable createStandardAttributeTable(
         Map parameters)
     {
-        Hashtable std = (Hashtable)table.clone();
+        Hashtable std = copyHashTable(table);
 
         if (!std.containsKey(CMSAttributes.contentType))
         {
@@ -102,5 +103,19 @@ public class DefaultSignedAttributeTableGenerator
     public AttributeTable getAttributes(Map parameters)
     {
         return new AttributeTable(createStandardAttributeTable(parameters));
+    }
+
+    private static Hashtable copyHashTable(Hashtable paramsMap)
+    {
+        Hashtable newTable = new Hashtable();
+
+        Enumeration keys = paramsMap.keys();
+        while (keys.hasMoreElements())
+        {
+            Object key = keys.nextElement();
+            newTable.put(key, paramsMap.get(key));
+        }
+
+        return newTable;
     }
 }
