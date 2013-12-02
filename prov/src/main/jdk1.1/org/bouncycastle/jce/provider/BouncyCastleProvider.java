@@ -42,7 +42,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.50b";
+    private static String info = "BouncyCastle Security Provider v1.50";
 
     public static final String PROVIDER_NAME = "BC";
 
