@@ -6,14 +6,13 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
 {
     private final static int MAX_RECEIVE_AHEAD = 10;
 
-    private DTLSRecordLayer recordLayer;
+    private final DTLSRecordLayer recordLayer;
 
     private TlsHandshakeHash handshakeHash;
 

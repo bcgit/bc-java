@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
@@ -14,7 +15,7 @@ class DTLSReliableHandshake
 
     private DTLSRecordLayer recordLayer;
 
-    private TlsHandshakeHash hash = new DeferredHash();
+    private TlsHandshakeHash handshakeHash;
 
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
@@ -26,25 +27,32 @@ class DTLSReliableHandshake
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport)
     {
         this.recordLayer = transport;
-        this.hash.init(context);
+        this.handshakeHash = new DeferredHash();
+        this.handshakeHash.init(context);
     }
 
     void notifyHelloComplete()
     {
-        this.hash = this.hash.commit();
+        this.handshakeHash = handshakeHash.notifyPRFDetermined();
     }
 
-    byte[] getCurrentHash()
+    TlsHandshakeHash getHandshakeHash()
     {
-        TlsHandshakeHash copyOfHash = hash.fork();
-        byte[] result = new byte[copyOfHash.getDigestSize()];
-        copyOfHash.doFinal(result, 0);
+        return handshakeHash;
+    }
+
+    TlsHandshakeHash prepareToFinish()
+    {
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = handshakeHash.stopTracking();
         return result;
     }
 
     void sendMessage(short msg_type, byte[] body)
         throws IOException
     {
+        TlsUtils.checkUint24(body.length);
+
         if (!sending)
         {
             checkInboundFlight();
@@ -58,6 +66,18 @@ class DTLSReliableHandshake
 
         writeMessage(message);
         updateHandshakeMessagesDigest(message);
+    }
+
+    byte[] receiveMessageBody(short msg_type)
+        throws IOException
+    {
+        Message message = receiveMessage();
+        if (message.getType() != msg_type)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        return message.getBody();
     }
 
     Message receiveMessage()
@@ -276,7 +296,7 @@ class DTLSReliableHandshake
 
     void resetHandshakeMessagesDigest()
     {
-        hash.reset();
+        handshakeHash.reset();
     }
 
     /**
@@ -324,8 +344,8 @@ class DTLSReliableHandshake
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
             TlsUtils.writeUint24(0, buf, 6);
             TlsUtils.writeUint24(body.length, buf, 9);
-            hash.update(buf, 0, buf.length);
-            hash.update(body, 0, body.length);
+            handshakeHash.update(buf, 0, buf.length);
+            handshakeHash.update(body, 0, body.length);
         }
         return message;
     }
@@ -394,7 +414,6 @@ class DTLSReliableHandshake
 
     static class Message
     {
-
         private final int message_seq;
         private final short msg_type;
         private final byte[] body;
@@ -422,7 +441,7 @@ class DTLSReliableHandshake
         }
     }
 
-    private static class RecordLayerBuffer extends ByteArrayOutputStream
+    static class RecordLayerBuffer extends ByteArrayOutputStream
     {
         RecordLayerBuffer(int size)
         {
