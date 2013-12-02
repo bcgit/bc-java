@@ -96,13 +96,6 @@ public class TlsTestUtils
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
-        String keyResource)
-        throws IOException
-    {
-        return loadSignerCredentials(context, certResources, keyResource, null);
-    }
-
-    static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
         String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
         throws IOException
     {
