@@ -113,11 +113,6 @@ public class TlsProtocolTest
                 + alertDescription + ")");
         }
 
-        public ProtocolVersion getClientVersion()
-        {
-            return ProtocolVersion.TLSv12;
-        }
-
         public TlsAuthentication getAuthentication()
             throws IOException
         {
