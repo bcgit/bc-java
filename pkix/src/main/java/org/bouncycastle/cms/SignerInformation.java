@@ -162,7 +162,7 @@ public class SignerInformation
             throw new IllegalStateException("method can only be called after verify.");
         }
         
-        return (byte[])resultDigest.clone();
+        return Arrays.clone(resultDigest);
     }
     
     /**
@@ -222,7 +222,7 @@ public class SignerInformation
      */
     public byte[] getSignature()
     {
-        return (byte[])signature.clone();
+        return Arrays.clone(signature);
     }
 
     /**

@@ -52,7 +52,7 @@ public abstract class AbstractTlsClient
         // return ProtocolVersion.SSLv3;
 
         // "the lowest version number supported by the client"
-        // return getMinimumServerVersion();
+        // return getMinimumVersion();
 
         // "the value of ClientHello.client_version"
         return getClientVersion();
@@ -60,7 +60,7 @@ public abstract class AbstractTlsClient
 
     public ProtocolVersion getClientVersion()
     {
-        return ProtocolVersion.TLSv11;
+        return ProtocolVersion.TLSv12;
     }
 
     public Hashtable getClientExtensions()

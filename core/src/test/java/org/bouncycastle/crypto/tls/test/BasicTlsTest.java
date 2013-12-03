@@ -36,6 +36,13 @@ public class BasicTlsTest
     public void testConnection()
         throws Exception
     {
+        String vmVersion = System.getProperty("java.specification.version");
+
+        if (vmVersion == null || !vmVersion.equals("1.7"))
+        {
+            return;      // only works on later VMs.
+        }
+
         Thread server = new HTTPSServerThread();
 
         server.start();

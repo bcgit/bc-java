@@ -38,6 +38,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Integers;
 
 public final class AES
 {
@@ -432,9 +433,9 @@ public final class AES
             {
                 try
                 {
-                    Constructor constructor = gcmSpecClass.getConstructor(byte[].class, Integer.class);
+                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { byte[].class, Integer.class });
 
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { gcmParams.getNonce(), gcmParams.getIcvLen() });
+                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { gcmParams.getNonce(), Integers.valueOf(gcmParams.getIcvLen()) });
                 }
                 catch (NoSuchMethodException e)
                 {
