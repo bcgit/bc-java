@@ -6,7 +6,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake

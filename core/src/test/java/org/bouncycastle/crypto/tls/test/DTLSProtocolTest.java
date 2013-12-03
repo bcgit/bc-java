@@ -33,13 +33,7 @@ public class DTLSProtocolTest
 
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
-        MockDTLSClient client = new MockDTLSClient(null)
-        {
-            public ProtocolVersion getClientVersion()
-            {
-                return ProtocolVersion.DTLSv10;
-            }
-        };
+        MockDTLSClient client = new MockDTLSClient(null);
 
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 

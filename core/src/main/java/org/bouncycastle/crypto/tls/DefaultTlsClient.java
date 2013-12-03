@@ -17,11 +17,10 @@ public abstract class DefaultTlsClient
 
     public int[] getCipherSuites()
     {
-        return new int[]{CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA, CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,};
+        return new int[] { CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256, CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA };
     }
 
     public TlsKeyExchange getKeyExchange()
