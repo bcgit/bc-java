@@ -1,0 +1,31 @@
+#!/bin/sh -
+#
+# build script for 1.4
+#
+# If it's given a buildname it creates a subdirectory and places a build in it,
+# otherwise it just creates the docs and class files.
+#
+
+JDKPATH=/opt/jdk1.4.2
+JAVA_MAIL_HOME=/opt/javamail-1.3.1
+JAVA_ACTIVATION_HOME=/opt/jaf-1.0.2
+
+JAVA_HOME=$JDKPATH
+export JAVA_HOME
+
+PATH=$JDKPATH/bin:$PATH
+export PATH
+
+CLASSPATH=$JAVA_MAIL_HOME/mail.jar:$JAVA_ACTIVATION_HOME/activation.jar:$CLASSPATH
+export CLASSPATH
+
+if [ "$1" = "test" ]
+then
+    ant -f ant/jdk14.xml test
+else
+    if ant -f ant/jdk14.xml build-provider
+    then
+        ant -f ant/jdk14.xml build
+        ant -f ant/jdk14.xml zip-src
+    fi
+fi
