@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="crypto1.4" default="build" basedir="..">
+
+    <property name="bc.javac.source" value="1.4" />
+    <property name="bc.javac.target" value="1.4" />
+    <property name="build.dir" value="build" />
+    <property name="jdk.name" value="jdk1.4" />
+    <property name="src.dir" value="${build.dir}/${jdk.name}" />
+    <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}" />
+    <property name="target.prefix" value="jdk14" />
+    <property name="javadoc.args" value="-breakiterator" />
+
+    <target name="init">
+        <mkdir dir="${src.dir}" />
+        <mkdir dir="${artifacts.dir}" />
+        <mkdir dir="${artifacts.dir}/reports" />
+        <mkdir dir="${artifacts.dir}/reports/xml" />
+        <mkdir dir="${artifacts.dir}/reports/html" />
+        <mkdir dir="${artifacts.dir}/jars" />
+        <mkdir dir="${artifacts.dir}/checkstyle" />
+        <copy todir="${src.dir}">
+            <fileset dir="core/src/main/java">
+                <exclude name="**/ntru/**/*.java" />
+            </fileset>
+            <fileset dir="pg/src/main/java" />
+            <fileset dir="pkix/src/main/java" />
+            <fileset dir="mail/src/main/java">
+                <exclude name="**/ValidateSignedMail.java"/>
+            </fileset>
+            <fileset dir="prov/src/main/java">
+                <exclude name="**/ECPointUtil.java" />
+                <exclude name="**/ECNamedCurveSpec.java" />
+                <exclude name="**/BCEC*.java" />
+                <exclude name="**/JCEEC5*.java" />
+                <exclude name="**/provider/JCEEC*.java" />
+                <exclude name="**/EC5*.java" />
+                <exclude name="**/JDKPKCS12StoreParameter.java" />
+                <exclude name="**/NTRU*.java" />
+                <exclude name="**/IndexGenerator.java" />
+                <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/asymmetric/DSTU*.java" />
+                <exclude name="**/asymmetric/dstu/*.java" />
+		<exclude name="**/provider/config/PKCS12StoreParameter.java" />
+            </fileset>
+	    <fileset dir="prov/src/main/resources" includes="**/*.properties" />
+            <fileset dir="core/src/test/java" >
+                <exclude name="**/speedy/*.java" />
+                <exclude name="**/cavp/*.java" />
+                <exclude name="**/i18n/**/*.java" />
+                <exclude name="**/KDFFeed*.java" />
+                <exclude name="**/KDFDoublePipeline*.java" />
+                <exclude name="**/KDFCounterGener*.java" />
+                <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/NTRU*.java" />
+                <exclude name="**/pqc/**/EncryptionKeyTest.java" />
+                <exclude name="**/pqc/**/BitStringTest.java" />
+                <exclude name="**/GetInstanceTest.java" />
+            </fileset>
+            <fileset dir="pg/src/test/java" />
+            <fileset dir="pkix/src/test/java" />
+            <fileset dir="mail/src/test/java" />
+            <fileset dir="prov/src/test/java">
+                <exclude name="**/AEADTest.java" />
+                <exclude name="**/DetDSATest.java" />
+                <exclude name="**/ECDSA5Test.java" />
+                <exclude name="**/CRL5Test.java" />
+                <exclude name="**/NamedCurveTest.java" />
+                <exclude name="**/X509LDAPCertStoreTest.java" />
+                <exclude name="**/X509StoreTest.java" />
+                <exclude name="**/MQVTest.java" />
+                <exclude name="**/pem/AllTests.java" />
+                <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/NTRU*.java" />
+                <exclude name="**/crypto/engines/test/BitStringTest.java" />
+                <exclude name="**/crypto/engines/test/AllTests.java" />
+                <exclude name="**/crypto/signers/test/AllTests.java" />
+                <exclude name="**/jce/**/DSTU*.java" />
+                <exclude name="**/pqc/**/EncryptionKeyTest.java" />
+                <exclude name="**/pqc/**/BitStringTest.java" />
+		<exclude name="**/jcajce/provider/test/*.java" />
+		<exclude name="**/jce/provider/test/JceTestUtil.java" />
+            </fileset>
+            <fileset dir="core/src/test/" includes="**/*.properties" />
+            <fileset dir="prov/src/main/" includes="**/*.properties" />
+            <fileset dir="pkix/src/test/resources" includes="**/*.*" />
+            <fileset dir="core/src/test/resources" includes="**/*.*" />
+            <fileset dir="pg/src/test/resources" includes="**/*.*" />
+            <fileset dir="core/src/test/data" includes="**/*.pem" />
+            <fileset dir="core/src/test/data" includes="**/*.properties" />
+            <fileset dir="core/src/test/data" includes="**/*.eml" />
+            <fileset dir="core/src/test/data" includes="**/*.sig" />
+            <fileset dir="core/src/test/data" includes="**/*.p7m" />
+            <fileset dir="core/src/test/data" includes="**/*.data" />
+            <fileset dir="core/src/test/data" includes="**/*.crt" />
+            <fileset dir="core/src/test/data" includes="**/*.crl" />
+            <fileset dir="core/src/test/data" includes="**/*.message" />
+            <fileset dir="core/src/test/data" includes="**/*.der" />
+            <fileset dir="core/src/test/data" includes="**/*.csr" />
+            <fileset dir="core/src/test/data" includes="**/*.cer" />
+            <fileset dir="core/src/test/data" includes="**/*.cvcert" />
+        </copy>
+        <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="core/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="prov/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="pg/src/test/jdk1.4" includes="**/*.java" />
+        </copy>
+        <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
+    </target>
+
+    <target name="checkstyle-on" if="checkstyle.on">
+        <taskdef resource="checkstyletask.properties" />
+        <checkstyle config="checkstyle/bc-checks.xml">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/sasn1/*.java"/>
+                <exclude name="**/sasn1/test/*.java"/>
+            </fileset>
+            <formatter type="plain"/>
+            <formatter type="xml" toFile="${artifacts.dir}/checkstyle/${jdk.name}-errors.xml"/>
+        </checkstyle>
+    </target>
+    
+    <target name="checkstyle-off" unless="checkstyle.on">
+    </target>
+
+    <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
+    </target>
+
+    <target name="build-lw" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
+    </target>
+
+    <target name="build-provider" depends="init,checkstyle-on,checkstyle-off">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-provider" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-provider" />
+    </target>
+
+    <target name="build-test" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-test" />
+    </target>
+
+    <target name="test" depends="build-test">
+        <ant antfile="ant/bc+-build.xml" dir="." target="test" />
+    </target>
+
+    <target name="test-lw" depends="build-test">
+        <ant antfile="ant/bc+-build.xml" dir="." target="test-lw" />
+    </target>
+
+    <target name="zip-src">
+        <ant antfile="ant/bc+-build.xml" dir="." target="zip-src" />
+    </target>
+</project>
