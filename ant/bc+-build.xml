@@ -316,7 +316,6 @@
         <compile target="${provider}">
             <jarFileSet>
                 <include name="**/*.class"/>
-                <exclude name="**/IDEA*.class"/>
                 <exclude name="**/javax/crypto/**/*.class"/>
                 <exclude name="**/NTRU*.class" />
                 <exclude name="**/ntru/**/*.class" />
@@ -423,7 +422,6 @@
         <compile target="${jce}">
             <jarFileSet>
                 <include name="**/*.class"/>
-                <exclude name="**/IDEA*.class"/>
                 <exclude name="**/NTRU*.class" />
                 <exclude name="**/ntru/**/*.class" />
                 <include name="**/*.properties"/>
@@ -961,7 +959,6 @@
 
     <target name="zip-src-jce" if="jce.present">
         <zip basedir="${jce.target.src.dir}" destfile="${jce.target.src.zip}">
-            <exclude name="**/IDEA*.java"/>
             <exclude name="**/NTRU*.java" />
             <exclude name="**/ntru/**/*.java" />
         </zip>
@@ -969,7 +966,6 @@
 
     <target name="zip-src-provider" if="provider.present">
         <zip basedir="${provider.target.src.dir}" destfile="${provider.target.src.zip}">
-            <exclude name="**/IDEA*.java"/>
             <exclude name="**/javax/crypto/**/*.java"/>
             <exclude name="**/NTRU*.java" />
             <exclude name="**/ntru/**/*.java" />

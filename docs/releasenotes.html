@@ -13,12 +13,13 @@
 </font>
 </center>
 <h2>1.0 Introduction</h2>
+<p>
 The Bouncy Castle Crypto package is a Java implementation of 
 cryptographic algorithms.  The package is organised so that it 
 contains a light-weight API suitable for use in any environment
 (including the newly released J2ME) with the additional infrastructure
 to conform the algorithms to the JCE framework.
-<p>
+</p>
 <h2>2.0 Release History</h2>
 
 <h3>2.1.1 Version</h3>
@@ -48,13 +49,21 @@ Release 1.50
 <li>Support has been added for the GOST PKCS#5 PBKDF2 PBE function and handling of GOST PKCS#12 files.</li>
 <li>Support has been added for the CryptoPro GOST CFB mode key meshing.</li>
 <li>Implementations of XSalsa20 and ChaCha have been added. Support for reduced round Salas20 has been added.</li>
-<li>Support has been added for RFC 6979 Determinstic DSA/ECDSA to the light weight API.</li>
+<li>Support has been added for RFC 6979 Determinstic DSA/ECDSA to the provider and the lightweight API.</li>
+<li>Support for RC2 and RC4 in the CMS API has been generalised to work for other JCE providers.</li>
+<li>OpenSSL JcaPEMKeyConverter now supports OIDs for RSA and DSA as well as ECDSA.</li>
+<li>A simplified certificate path API has been added to the PKIX package. It is not fully NIST compliant yet, however it does provide a range of basic validations without having to use the JCA.</li>
+<li>Package version inforamation is now included in the jar MANIFEST.MF.</li>
+<li>The JDK 1.5+ provider will now recognise and use GCMParameterSpec if it is run in a 1.7 JVM.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
 <li>org.bouncycastle.crypto.DerivationFunction is now a base interface, the getDigest() method appears on DigestDerivationFunction.</li>
 <li>Recent developments at NIST indicate the SHA-3 may be changed before final standardisation. Please bare this in mind if you are using it.</li>
+<li>Other recent developments have raised concerns about the DualECDRGB. We have left the class in place for now, but it is now possible to provide your own parameter values, rather than using the NIST defined ones, if you choose to do so.</li>
 <li>Most deprecated methods have been removed from the PKIX API.</li>
+<li>As the IDEA patent has finally expired, IDEA is now supported by the standard provider.</li>
+<li>ECDH support for OpenPGP should still be regarded as experimental. It is still possible there will be compliance issues with other implementations.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
@@ -97,6 +106,7 @@ class NonMemoableDigest has been added which hides the Memoable interface where 
 <li>The org.bouncycastle.crypto.tls package has been extended to support client and server side TLS 1.1.</li>
 <li>The org.bouncycastle.crypto.tls package has been extended to support client and server side DTLS 1.0.</li>
 <li>A basic commitment package has been introduced into the lightweight API containing a digest based commitment scheme.</li>
+<li>It is now possible to set the NotAfter and NotBefore date in the CRMF CertificateRequestMessageBuilder class.</li>
 </ul>
 <h3>2.2.4 Notes</h3>
 <ul>
