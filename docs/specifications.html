@@ -150,6 +150,7 @@ be operated in.
 <tr><td><b>CFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
 <tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
+<tr><td><b>GCFBlockCipher</b></td><td>BlockCipher</td><td>GOST CFB mode with CryptoPro key meshing.</td></tr>
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
@@ -520,6 +521,7 @@ The policy files can be found at the same place you downloaded the JDK.
 <li>OpenPGPCFB
 <li>CTS (equivalent to CBC/WithCTS)
 <li>GOFB
+<li>GCFB
 <li>CCM (AEAD)
 <li>EAX (AEAD)
 <li>GCM (AEAD)
@@ -576,8 +578,9 @@ Note: default key sizes are in bold.
 <tr><td>DES</td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESede</td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESedeWrap</td><td>128, 192</td><td>128 bit</td><td>A Draft IETF DESede key wrapper</td></tr>
+<tr><td>GCM</td><td>128, 192, 256<b>(192)</b></td><td>AEAD Mode Cipher</td><td>Galois/Counter Mode, as defined in NIST Special Publication SP 800-38D.</td></tr>
 <tr><td>GOST28147</td><td>256</td><td>64 bit</td><td>&nbsp;</td></tr>
-<tr><td>IDEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>Only included in extended provider jar.</td></tr>
+<tr><td>IDEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>Noekeon</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>RC2</td><td>0 .. 1024 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>RC5</td><td>0 .. 128 <b>(128)</b></td><td>64 bit</td><td>Uses a 32 bit word</td></tr>
@@ -757,7 +760,21 @@ change as the draft is finalised.
 <li>RIPEMD160withECDSA
 <li>RIPEMD256withRSA
 <li>SHA1withDSA
+<li>SHA224withDSA
+<li>SHA256withDSA
+<li>SHA384withDSA
+<li>SHA512withDSA
+<li>SHA1withDetDSA
+<li>SHA224withDetDSA
+<li>SHA256withDetDSA
+<li>SHA384withDetDSA
+<li>SHA512withDetDSA
 <li>NONEwithDSA
+<li>SHA1withDetECDSA
+<li>SHA224withDetECDSA
+<li>SHA256withDetECDSA
+<li>SHA384withDetECDSA
+<li>SHA512withDetECDSA
 <li>SHA1withECDSA
 <li>NONEwithECDSA
 <li>SHA224withECDSA
