@@ -72,7 +72,7 @@ class MockTlsClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("Negotiated " + serverVersion);
+        System.out.println("TLS client negotiated " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication()
@@ -84,7 +84,7 @@ class MockTlsClient
                 throws IOException
             {
                 Certificate[] chain = serverCertificate.getCertificateList();
-                System.out.println("Received server certificate chain of length " + chain.length);
+                System.out.println("TLS client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
                     Certificate entry = chain[i];
