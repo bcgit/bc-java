@@ -408,7 +408,7 @@ public abstract class ECCurve
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement x = fromBigInteger(X1);
-            ECFieldElement alpha = x.multiply(x.square().add(a)).add(b);
+            ECFieldElement alpha = x.square().add(a).multiply(x).add(b);
             ECFieldElement beta = alpha.sqrt();
 
             //
@@ -420,11 +420,10 @@ public abstract class ECCurve
                 throw new RuntimeException("Invalid point compression");
             }
 
-            BigInteger betaValue = beta.toBigInteger();
-            if (betaValue.testBit(0) != (yTilde == 1))
+            if (beta.testBitZero() != (yTilde == 1))
             {
                 // Use the other root
-                beta = fromBigInteger(q.subtract(betaValue));
+                beta = beta.negate();
             }
 
             return new ECPoint.Fp(this, x, beta, true);
