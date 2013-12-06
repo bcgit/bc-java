@@ -215,6 +215,19 @@ public class TlsClientProtocol
             {
             case CS_CLIENT_FINISHED:
             {
+                if (this.expectSessionTicket)
+                {
+                    /*
+                     * RFC 5077 3.3. This message MUST be sent if the server included a
+                     * SessionTicket extension in the ServerHello.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+
+                // NB: Fall through to next case label
+            }
+            case CS_SERVER_SESSION_TICKET:
+            {
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
