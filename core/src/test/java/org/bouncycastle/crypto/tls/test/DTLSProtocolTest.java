@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
 import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSProtocolTest
