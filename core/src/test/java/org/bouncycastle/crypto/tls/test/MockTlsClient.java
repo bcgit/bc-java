@@ -43,7 +43,7 @@ class MockTlsClient
             + ")");
         if (message != null)
         {
-            out.println(message);
+            out.println("> " + message);
         }
         if (cause != null)
         {
