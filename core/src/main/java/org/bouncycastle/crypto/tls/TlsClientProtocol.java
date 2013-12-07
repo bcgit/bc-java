@@ -74,7 +74,7 @@ public class TlsClientProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
-        this.securityParameters.clientRandom = createRandomBlock(secureRandom);
+        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), secureRandom);
 
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
