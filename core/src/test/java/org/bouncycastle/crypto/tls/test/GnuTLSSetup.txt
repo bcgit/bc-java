@@ -1,6 +1,7 @@
------------------------------------------------------------------------
-Instructions for setting up a GnuTLS server for use with DTLSClientTest
------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Instructions for setting up a GnuTLS server for use with DTLSClientTest,
+TlsClientTest.
+--------------------------------------------------------------------------------
 
 - Download GnuTLS from http://www.gnutls.org/download.html
 
