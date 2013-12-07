@@ -32,7 +32,7 @@ public class DTLSClientProtocol
 
         SecurityParameters securityParameters = new SecurityParameters();
         securityParameters.entity = ConnectionEnd.client;
-        securityParameters.clientRandom = TlsProtocol.createRandomBlock(secureRandom);
+        securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(), secureRandom);
 
         ClientHandshakeState state = new ClientHandshakeState();
         state.client = client;
@@ -618,7 +618,8 @@ public class DTLSClientProtocol
         state.selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || !TlsUtils.isValidCipherSuiteForVersion(state.selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

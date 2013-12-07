@@ -197,9 +197,9 @@ public abstract class AbstractTlsServer
         {
             int cipherSuite = cipherSuites[i];
 
-            // TODO Certain cipher suites may only be available starting at a particular version
             if (Arrays.contains(this.offeredCipherSuites, cipherSuite)
-                && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite)))
+                && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite))
+                && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion))
             {
                 return this.selectedCipherSuite = cipherSuite;
             }

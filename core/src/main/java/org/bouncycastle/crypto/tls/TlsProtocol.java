@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Times;
 
 /**
  * An implementation of all high level protocols in TLS 1.0/1.1.
@@ -822,18 +823,18 @@ public abstract class TlsProtocol
         }
     }
 
-    protected static byte[] createRandomBlock(SecureRandom random)
+    protected static byte[] createRandomBlock(boolean useGMTUnixTime, SecureRandom random)
     {
-        random.setSeed(System.currentTimeMillis());
+        random.setSeed(Times.nanoTime());
 
         byte[] result = new byte[32];
         random.nextBytes(result);
-        /*
-         * The consensus seems to be that using the time here is neither all that useful, nor
-         * secure. Perhaps there could be an option to (re-)enable it. Instead, we seed the random
-         * source with the current time to retain it's main benefit.
-         */
-//        TlsUtils.writeGMTUnixTime(result, 0);
+
+        if (useGMTUnixTime)
+        {
+            TlsUtils.writeGMTUnixTime(result, 0);
+        }
+
         return result;
     }
 

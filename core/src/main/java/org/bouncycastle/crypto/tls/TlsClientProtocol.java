@@ -74,7 +74,7 @@ public class TlsClientProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
-        this.securityParameters.clientRandom = createRandomBlock(secureRandom);
+        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), secureRandom);
 
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
@@ -634,12 +634,13 @@ public class TlsClientProtocol
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
-         * ones.
+         * ones, and is a valid selection for the negotiated version.
          */
         int selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

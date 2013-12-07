@@ -43,7 +43,7 @@ class MockTlsClient
             + ")");
         if (message != null)
         {
-            out.println(message);
+            out.println("> " + message);
         }
         if (cause != null)
         {
@@ -58,15 +58,15 @@ class MockTlsClient
             + alertDescription + ")");
     }
 
-//    public Hashtable getClientExtensions() throws IOException
-//    {
-//        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-//        TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
-//        TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
-//        // For testing draft-gutmann-tls-encrypt-then-mac
-////        clientExtensions.put(Integers.valueOf(0x42), TlsExtensionsUtils.createEmptyExtensionData());
-//        return clientExtensions;
-//    }
+    public Hashtable getClientExtensions() throws IOException
+    {
+        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+        TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+        // For testing draft-gutmann-tls-encrypt-then-mac
+//        clientExtensions.put(Integers.valueOf(0x42), TlsExtensionsUtils.createEmptyExtensionData());
+        return clientExtensions;
+    }
 
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
@@ -124,9 +124,8 @@ class MockTlsClient
                     }
                 }
 
-                // TODO Create a distinct client certificate for use here
-                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem", "x509-ca.pem" },
-                    "x509-server-key.pem", signatureAndHashAlgorithm);
+                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-client.pem", "x509-ca.pem" },
+                    "x509-client-key.pem", signatureAndHashAlgorithm);
             }
         };
     }

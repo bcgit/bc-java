@@ -8,13 +8,11 @@ import org.bouncycastle.crypto.tls.DatagramTransport;
 
 public class MockDatagramAssociation
 {
-
     private int mtu;
     private MockDatagramTransport client, server;
 
     public MockDatagramAssociation(int mtu)
     {
-
         this.mtu = mtu;
 
         Vector clientQueue = new Vector();
@@ -37,7 +35,6 @@ public class MockDatagramAssociation
     private class MockDatagramTransport
         implements DatagramTransport
     {
-
         private Vector receiveQueue, sendQueue;
 
         MockDatagramTransport(Vector receiveQueue, Vector sendQueue)

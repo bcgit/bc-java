@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls.test;
 
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
@@ -8,6 +9,8 @@ import junit.framework.TestCase;
 
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 public class TlsProtocolTest
     extends TestCase
@@ -31,17 +34,24 @@ public class TlsProtocolTest
         MockTlsClient client = new MockTlsClient(null);
         clientProtocol.connect(client);
 
-        // byte[] data = new byte[64];
-        // secureRandom.nextBytes(data);
-        //
-        // OutputStream output = clientProtocol.getOutputStream();
-        // output.write(data);
-        // output.close();
-        //
-        // byte[] echo = Streams.readAll(clientProtocol.getInputStream());
-        serverThread.join();
+        // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
+        int length = 1000;
 
-        // assertTrue(Arrays.areEqual(data, echo));
+        byte[] data = new byte[length];
+        secureRandom.nextBytes(data);
+
+        OutputStream output = clientProtocol.getOutputStream();
+        output.write(data);
+
+        byte[] echo = new byte[data.length];
+        int count = Streams.readFully(clientProtocol.getInputStream(), echo);
+
+        assertEquals(count, data.length);
+        assertTrue(Arrays.areEqual(data, echo));
+
+        output.close();
+
+        serverThread.join();
     }
 
     static class ServerThread
@@ -60,13 +70,12 @@ public class TlsProtocolTest
             {
                 MockTlsServer server = new MockTlsServer();
                 serverProtocol.accept(server);
-                // Streams.pipeAll(serverProtocol.getInputStream(),
-                // serverProtocol.getOutputStream());
+                Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
             }
         }
     }
