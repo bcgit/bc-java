@@ -1,12 +1,15 @@
 package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
+import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS client.
@@ -49,16 +52,12 @@ public class TlsServerTest
         {
             try
             {
-                long time1 = System.currentTimeMillis();
-
                 MockTlsServer server = new MockTlsServer();
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream(), secureRandom);
                 serverProtocol.accept(server);
-                // Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
+                OutputStream log = new TeeOutputStream(serverProtocol.getOutputStream(), System.out);
+                Streams.pipeAll(serverProtocol.getInputStream(), log);
                 serverProtocol.close();
-
-                long time2 = System.currentTimeMillis();
-                System.out.println("Elapsed 1: " + (time2 - time1) + "ms");
             }
             catch (Exception e)
             {
