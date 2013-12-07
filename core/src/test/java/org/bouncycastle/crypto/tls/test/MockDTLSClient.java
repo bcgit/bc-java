@@ -137,9 +137,8 @@ public class MockDTLSClient
                     }
                 }
 
-                // TODO Create a distinct client certificate for use here
-                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-server.pem", "x509-ca.pem" },
-                    "x509-server-key.pem", signatureAndHashAlgorithm);
+                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-client.pem", "x509-ca.pem" },
+                    "x509-client-key.pem", signatureAndHashAlgorithm);
             }
         };
     }
