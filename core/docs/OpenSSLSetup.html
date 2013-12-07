@@ -15,7 +15,7 @@ TlsClientTest, TlsServerTest.</h3>
 <li>
 TLS:
 <pre>
-    openssl s_client -connect localhost:5556 -debug -msg -state -tls1_2 -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
+    openssl s_client -connect localhost:5556 -debug -msg -state -tls1_2 -CAfile x509-ca.pem -cert x509-client.pem -key x509-client-key.pem -verify 0
     openssl s_server -accept 5556 -debug -msg -state -tls1_2 -www -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
 </pre>
 </li>
