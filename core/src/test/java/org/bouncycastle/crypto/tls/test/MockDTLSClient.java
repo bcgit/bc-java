@@ -8,7 +8,6 @@ import java.util.Vector;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
-import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.MaxFragmentLength;
@@ -71,11 +70,7 @@ public class MockDTLSClient
 
     public Hashtable getClientExtensions() throws IOException
     {
-        Hashtable clientExtensions = super.getClientExtensions();
-        if (clientExtensions == null)
-        {
-            clientExtensions = new Hashtable();
-        }
+        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;
