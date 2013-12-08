@@ -433,9 +433,9 @@ public final class AES
             {
                 try
                 {
-                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { byte[].class, Integer.class });
+                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
 
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { gcmParams.getNonce(), Integers.valueOf(gcmParams.getIcvLen()) });
+                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(gcmParams.getIcvLen()), gcmParams.getNonce() });
                 }
                 catch (NoSuchMethodException e)
                 {
