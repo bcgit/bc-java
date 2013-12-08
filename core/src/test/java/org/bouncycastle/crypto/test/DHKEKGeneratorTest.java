@@ -1,6 +1,6 @@
 package org.bouncycastle.crypto.test;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
@@ -17,11 +17,11 @@ public class DHKEKGeneratorTest
     extends SimpleTest
 {
     private byte[] seed1 = Hex.decode("000102030405060708090a0b0c0d0e0f10111213");
-    private DERObjectIdentifier alg1 = PKCSObjectIdentifiers.id_alg_CMS3DESwrap;
+    private ASN1ObjectIdentifier alg1 = PKCSObjectIdentifiers.id_alg_CMS3DESwrap;
     private byte[] result1 = Hex.decode("a09661392376f7044d9052a397883246b67f5f1ef63eb5fb");
 
     private byte[] seed2 = Hex.decode("000102030405060708090a0b0c0d0e0f10111213");
-    private DERObjectIdentifier alg2 = PKCSObjectIdentifiers.id_alg_CMSRC2wrap;
+    private ASN1ObjectIdentifier alg2 = PKCSObjectIdentifiers.id_alg_CMSRC2wrap;
     private byte[] partyAInfo = Hex.decode(
                                      "0123456789abcdeffedcba9876543201"
                                    + "0123456789abcdeffedcba9876543201"
