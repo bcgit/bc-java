@@ -7,6 +7,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -192,7 +193,7 @@ public class AEADTest extends SimpleTest
         throws InvalidKeyException,
         NoSuchAlgorithmException, NoSuchPaddingException,
         IllegalBlockSizeException, BadPaddingException,
-        InvalidAlgorithmParameterException, NoSuchProviderException, IOException
+        InvalidAlgorithmParameterException, NoSuchProviderException, IOException, InvalidParameterSpecException
     {
         Cipher eax = Cipher.getInstance("AES/GCM/NoPadding", "BC");
         SecretKeySpec key = new SecretKeySpec(K, "AES");
@@ -229,6 +230,18 @@ public class AEADTest extends SimpleTest
         if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
         {
             fail("parameters mismatch");
+        }
+
+        GCMParameterSpec gcmSpec = algParams.getParameterSpec(GCMParameterSpec.class);
+
+        if (!Arrays.areEqual(gcmSpec.getIV(), gcmParameters.getNonce()) || gcmSpec.getTLen() != gcmParameters.getIcvLen())
+        {
+            fail("spec parameters mismatch");
+        }
+
+        if (!Arrays.areEqual(eax.getIV(), gcmParameters.getNonce()))
+        {
+            fail("iv mismatch");
         }
     }
 
