@@ -238,6 +238,11 @@ public class AEADTest extends SimpleTest
         {
             fail("spec parameters mismatch");
         }
+
+        if (!Arrays.areEqual(eax.getIV(), gcmParameters.getNonce()))
+        {
+            fail("iv mismatch");
+        }
     }
 
     public static void main(String[] args) throws Exception

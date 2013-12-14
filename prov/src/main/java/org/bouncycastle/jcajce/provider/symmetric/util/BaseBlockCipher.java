@@ -162,6 +162,11 @@ public class BaseBlockCipher
 
     protected byte[] engineGetIV()
     {
+        if (aeadParams != null)
+        {
+            return aeadParams.getNonce();
+        }
+
         return (ivParam != null) ? ivParam.getIV() : null;
     }
 
