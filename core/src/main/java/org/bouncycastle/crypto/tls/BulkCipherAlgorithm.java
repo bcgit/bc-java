@@ -8,7 +8,6 @@ package org.bouncycastle.crypto.tls;
  */
 public class BulkCipherAlgorithm
 {
-
     public static final int _null = 0;
     public static final int rc4 = 1;
     public static final int rc2 = 2;

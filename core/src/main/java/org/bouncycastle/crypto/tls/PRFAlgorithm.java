@@ -8,7 +8,6 @@ package org.bouncycastle.crypto.tls;
  */
 public class PRFAlgorithm
 {
-
     /*
      * Placeholder to refer to the legacy TLS algorithm
      */

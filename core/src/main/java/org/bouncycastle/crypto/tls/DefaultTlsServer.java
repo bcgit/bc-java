@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.params.DHParameters;
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
-
     public DefaultTlsServer()
     {
         super();
