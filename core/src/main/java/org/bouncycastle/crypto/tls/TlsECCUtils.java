@@ -70,11 +70,7 @@ public class TlsECCUtils
 
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
     {
-        if (ecPointFormats == null)
-        {
-            ecPointFormats = new short[] { ECPointFormat.uncompressed };
-        }
-        else if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
+        if (ecPointFormats == null || !Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
         {
             /*
              * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
@@ -82,11 +78,7 @@ public class TlsECCUtils
              */
 
             // NOTE: We add it at the end (lowest preference)
-            short[] tmp = new short[ecPointFormats.length + 1];
-            System.arraycopy(ecPointFormats, 0, tmp, 0, ecPointFormats.length);
-            tmp[ecPointFormats.length] = ECPointFormat.uncompressed;
-
-            ecPointFormats = tmp;
+            ecPointFormats = Arrays.append(ecPointFormats, ECPointFormat.uncompressed);
         }
 
         return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
