@@ -8,7 +8,6 @@ package org.bouncycastle.crypto.tls;
  */
 public class EncryptionAlgorithm
 {
-
     public static final int NULL = 0;
     public static final int RC4_40 = 1;
     public static final int RC4_128 = 2;
