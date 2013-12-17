@@ -752,6 +752,20 @@ public final class Arrays
         return result;
     }
 
+    public static short[] append(short[] a, short b)
+    {
+        if (a == null)
+        {
+            return new short[]{ b };
+        }
+
+        int length = a.length;
+        short[] result = new short[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
     public static int[] append(int[] a, int b)
     {
         if (a == null)
@@ -849,6 +863,34 @@ public final class Arrays
 
         int length = a.length;
         byte[] result = new byte[length + 1];
+        System.arraycopy(a, 0, result, 1, length);
+        result[0] = b;
+        return result;
+    }
+
+    public static short[] prepend(short[] a, byte b)
+    {
+        if (a == null)
+        {
+            return new short[]{ b };
+        }
+
+        int length = a.length;
+        short[] result = new short[length + 1];
+        System.arraycopy(a, 0, result, 1, length);
+        result[0] = b;
+        return result;
+    }
+
+    public static int[] prepend(int[] a, int b)
+    {
+        if (a == null)
+        {
+            return new int[]{ b };
+        }
+
+        int length = a.length;
+        int[] result = new int[length + 1];
         System.arraycopy(a, 0, result, 1, length);
         result[0] = b;
         return result;
