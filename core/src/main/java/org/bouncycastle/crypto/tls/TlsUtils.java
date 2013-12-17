@@ -43,7 +43,7 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
-    public static byte[] EMPTY_BYTES = new byte[0];
+    public static final byte[] EMPTY_BYTES = new byte[0];
 
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
 
