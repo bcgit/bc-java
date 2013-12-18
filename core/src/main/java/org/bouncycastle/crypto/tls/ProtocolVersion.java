@@ -94,6 +94,7 @@ public final class ProtocolVersion
         switch (major)
         {
         case 0x03:
+        {
             switch (minor)
             {
             case 0x00:
@@ -105,7 +106,10 @@ public final class ProtocolVersion
             case 0x03:
                 return TLSv12;
             }
+            break;
+        }
         case 0xFE:
+        {
             switch (minor)
             {
             case 0xFF:
@@ -113,6 +117,8 @@ public final class ProtocolVersion
             case 0xFD:
                 return DTLSv12;
             }
+            break;
+        }
         }
 
         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
