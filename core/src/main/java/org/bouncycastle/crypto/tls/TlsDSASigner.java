@@ -66,20 +66,22 @@ public abstract class TlsDSASigner
             throw new IllegalStateException();
         }
 
+        // TODO For TLS 1.2+, lift the SHA-1 restriction here
         if (algorithm != null
             && (algorithm.getHash() != HashAlgorithm.sha1 || algorithm.getSignature() != getSignatureAlgorithm()))
         {
             throw new IllegalStateException();
         }
 
-        Digest d = raw ? new NullDigest() : TlsUtils.createHash(HashAlgorithm.sha1);
+        short hashAlgorithm = algorithm == null ? HashAlgorithm.sha1 : algorithm.getHash();
+        Digest d = raw ? new NullDigest() : TlsUtils.createHash(hashAlgorithm);
 
-        Signer s = new DSADigestSigner(createDSAImpl(), d);
+        Signer s = new DSADigestSigner(createDSAImpl(hashAlgorithm), d);
         s.init(forSigning, cp);
         return s;
     }
 
     protected abstract short getSignatureAlgorithm();
 
-    protected abstract DSA createDSAImpl();
+    protected abstract DSA createDSAImpl(short hashAlgorithm);
 }
