@@ -53,7 +53,8 @@ public class NamedCurve
 
     public static boolean isValid(int namedCurve)
     {
-        return namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1;
+        return (namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1)
+            || (namedCurve >= arbitrary_explicit_prime_curves && namedCurve <= arbitrary_explicit_char2_curves);
     }
 
     public static boolean refersToASpecificNamedCurve(int namedCurve)
