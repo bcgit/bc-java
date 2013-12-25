@@ -460,32 +460,32 @@ public class TlsECCUtils
 
                 int m = TlsUtils.readUint16(input);
                 short basis = TlsUtils.readUint8(input);
-                ECCurve curve;
-                switch (basis) {
-                case ECBasisType.ec_basis_trinomial:
+                if (!ECBasisType.isValid(basis))
                 {
-                    int k = readECExponent(m, input);
-                    BigInteger a = readECFieldElement(m, input);
-                    BigInteger b = readECFieldElement(m, input);
-                    curve = new ECCurve.F2m(m, k, a, b);
-                    break;
-                }
-                case ECBasisType.ec_basis_pentanomial:
-                {
-                    int k1 = readECExponent(m, input);
-                    int k2 = readECExponent(m, input);
-                    int k3 = readECExponent(m, input);
-                    BigInteger a = readECFieldElement(m, input);
-                    BigInteger b = readECFieldElement(m, input);
-                    curve = new ECCurve.F2m(m, k1, k2, k3, a, b);
-                    break;
-                }
-                default:
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
-                ECPoint base = deserializeECPoint(ecPointFormats, curve, TlsUtils.readOpaque8(input));
+
+                int k1 = readECExponent(m, input), k2 = -1, k3 = -1;
+                if (basis == ECBasisType.ec_basis_pentanomial)
+                {
+                    k2 = readECExponent(m, input);
+                    k3 = readECExponent(m, input);
+                }
+
+                BigInteger a = readECFieldElement(m, input);
+                BigInteger b = readECFieldElement(m, input);
+
+                byte[] baseEncoding = TlsUtils.readOpaque8(input);
                 BigInteger order = readECParameter(input);
                 BigInteger cofactor = readECParameter(input);
+
+                // TODO The order/cofactor are currently needed for tau-adic optimization if Koblitz
+                ECCurve curve = (basis == ECBasisType.ec_basis_pentanomial)
+                    ? new ECCurve.F2m(m, k1, k2, k3, a, b, order, cofactor)
+                    : new ECCurve.F2m(m, k1, a, b, order, cofactor);
+
+                ECPoint base = deserializeECPoint(ecPointFormats, curve, baseEncoding);
+
                 return new ECDomainParameters(curve, base, order, cofactor);
             }
             case ECCurveType.named_curve:
