@@ -114,9 +114,10 @@ public abstract class WNafUtil
         BigInteger k0 = g, k1 = h;
         int j = 0, d0 = 0, d1 = 0;
 
-        while (k0.signum() > 0 || k1.signum() > 0 || d0 > 0 || d1 > 0)
+        int offset = 0;
+        while ((d0 | d1) != 0 || k0.bitLength() > offset || k1.bitLength() > offset)
         {
-            int n0 = (k0.intValue() + d0) & 7, n1 = (k1.intValue() + d1) & 7;
+            int n0 = ((k0.intValue() >>> offset) + d0) & 7, n1 = ((k1.intValue() >>> offset) + d1) & 7;
 
             int u0 = n0 & 1;
             if (u0 != 0)
@@ -140,15 +141,19 @@ public abstract class WNafUtil
 
             if ((d0 << 1) == 1 + u0)
             {
-                d0 = 1 - d0;
+                d0 ^= 1;
             }
             if ((d1 << 1) == 1 + u1)
             {
-                d1 = 1 - d1;
+                d1 ^= 1;
             }
 
-            k0 = k0.shiftRight(1);
-            k1 = k1.shiftRight(1);
+            if (++offset == 30)
+            {
+                offset = 0;
+                k0 = k0.shiftRight(30);
+                k1 = k1.shiftRight(30);
+            }
 
             jsf[j++] = (byte)((u0 << 4) | (u1 & 0xF));
         }
