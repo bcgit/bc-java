@@ -172,7 +172,7 @@ public class ASN1Dump
         {
             ASN1OctetString oct = (ASN1OctetString)obj;
 
-            if (obj instanceof BEROctetString || obj instanceof  BERConstructedOctetString)
+            if (obj instanceof BEROctetString)
             {
                 buf.append(indent + "BER Constructed Octet String" + "[" + oct.getOctets().length + "] ");
             }
