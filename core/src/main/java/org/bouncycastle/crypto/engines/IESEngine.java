@@ -290,7 +290,7 @@ public class IESEngine
         int len;
 
         /* Ensure that the length of the input is greater than the MAC in bytes */
-        if (inLen <= (macKeySize / 8))
+        if (inLen <= (param.getMacKeySize() / 8))
         {
             throw new InvalidCipherTextException("Length of input must be greater than the MAC");
         }
