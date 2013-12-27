@@ -18,6 +18,8 @@ import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.strippedcastle.crypto.params.Nonce;
+import org.strippedcastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.util.Pack;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -87,6 +89,35 @@ public class IESEngine
         this.cipher = cipher;
     }
 
+    /**
+     * TODO PERHAPS MAKE A NONCE INTERFACE RATHER THAN USING CIPHERPARAMETERS
+     * WHICH DOES NOT ACTUALLY HAVE ANYTHING SPECIFIED IN THE INTERFACE.
+     * 
+     * set up for use in conjunction with a block cipher mode of operating using
+     * a nonce/IV to handle the message.
+     *
+     * @param agree  the key agreement used as the basis for the encryption
+     * @param kdf    the key derivation function used for byte generation
+     * @param mac    the message authentication code generator for the message
+     * @param cipher the cipher to used for encrypting the message
+     * @param nonce the nonce/IV used by the block cipher, currently the only
+     * supported block ciphers are SIC/CTR, CBC, OFB, and CFB. The nonce 
+     * provided must be an instance of the Nonce class.
+     */
+    public IESEngine(
+        BasicAgreement agree,
+        DerivationFunction kdf,
+        Mac mac,
+        BufferedBlockCipher cipher,
+        CipherParameters nonce)
+    {
+        this.agree = agree;
+        this.kdf = kdf;
+        this.mac = mac;
+        this.macBuf = new byte[mac.getMacSize()];
+        this.cipher = cipher;
+        this.nonce = nonce;
+    }
 
     /**
      * Initialise the encryptor.
@@ -198,7 +229,17 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            cipher.init(true, new KeyParameter(K1));
+            /* If nonce provided get an IV and initialize the cipher */
+            if (nonce != null)
+            {
+                byte[] IV = ((Nonce)nonce).nextNonce();
+                cipher.init(true, new ParametersWithIV(new KeyParameter(K1), IV));
+            }
+            else
+            {
+                cipher.init(true, new KeyParameter(K1));    
+            }
+            
             C = new byte[cipher.getOutputSize(inLen)];
             len = cipher.processBytes(in, inOff, inLen, C, 0);
             len += cipher.doFinal(C, len);
@@ -287,7 +328,16 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            cipher.init(false, new KeyParameter(K1));
+            /* If nonce provided get an IV and initialize the cipher */
+            if (nonce != null)
+            {
+                byte[] IV = ((Nonce)nonce).nextNonce();
+                cipher.init(false, new ParametersWithIV(new KeyParameter(K1), IV));
+            }
+            else
+            {
+                cipher.init(false, new KeyParameter(K1));    
+            }
 
             M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
             len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
