@@ -2,7 +2,9 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESCompEngine;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
@@ -306,9 +308,14 @@ public class GCMTest
         testExceptions();
     }    
 
+    protected BlockCipher createAESEngine()
+    {
+        return new AESFastEngine();
+    }
+
     private void testExceptions() throws InvalidCipherTextException
     {
-        GCMBlockCipher gcm = new GCMBlockCipher(new AESFastEngine());
+        GCMBlockCipher gcm = new GCMBlockCipher(createAESEngine());
 
         try
         {
@@ -332,7 +339,7 @@ public class GCMTest
             // expected
         }
         
-        AEADTestUtil.testReset(this, new GCMBlockCipher(new AESEngine()), new GCMBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
+        AEADTestUtil.testReset(this, new GCMBlockCipher(createAESEngine()), new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
         AEADTestUtil.testTampering(this, gcm, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
     }
 
@@ -420,7 +427,7 @@ public class GCMTest
 
     private GCMBlockCipher initCipher(GCMMultiplier m, boolean forEncryption, AEADParameters parameters)
     {
-        GCMBlockCipher c = new GCMBlockCipher(new AESFastEngine(), m);
+        GCMBlockCipher c = new GCMBlockCipher(createAESEngine(), m);
         c.init(forEncryption, parameters);
         return c;
     }
@@ -525,7 +532,7 @@ public class GCMTest
         byte[] IV = new byte[ivLength];
         srng.nextBytes(IV);
 
-        GCMBlockCipher cipher = new GCMBlockCipher(new AESFastEngine(), m);
+        GCMBlockCipher cipher = new GCMBlockCipher(createAESEngine(), m);
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
         cipher.init(true, parameters);
         byte[] C = new byte[cipher.getOutputSize(P.length)];
@@ -615,7 +622,7 @@ public class GCMTest
         byte[] A = null;
         byte[] IV = new byte[16];
 
-        GCMBlockCipher cipher = new GCMBlockCipher(new AESFastEngine(), new BasicGCMMultiplier());
+        GCMBlockCipher cipher = new GCMBlockCipher(createAESEngine(), new BasicGCMMultiplier());
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
 
         cipher.init(true, parameters);
