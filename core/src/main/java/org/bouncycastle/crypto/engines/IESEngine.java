@@ -35,6 +35,7 @@ public class IESEngine
     DerivationFunction kdf;
     Mac mac;
     BufferedBlockCipher cipher;
+    CipherParameters nonce;
     byte[] macBuf;
 
     boolean forEncryption;
@@ -287,6 +288,12 @@ public class IESEngine
     {
         byte[] M = null, K = null, K1 = null, K2 = null;
         int len;
+
+        /* Ensure that the length of the input is greater than the MAC in bytes */
+        if (inLen <= (macKeySize / 8))
+        {
+            throw new InvalidCipherTextException("Length of input must be greater than the MAC");
+        }
 
         if (cipher == null)
         {
