@@ -242,8 +242,8 @@ public abstract class ECFieldElement
             BigInteger u = qMinusOne.shiftRight(2);
             BigInteger k = u.shiftLeft(1).add(ECConstants.ONE);
 
-            BigInteger Q = this.x;
-            BigInteger fourQ = modDouble(modDouble(Q));
+            BigInteger X = this.x;
+            BigInteger fourX = modDouble(modDouble(X));
 
             BigInteger U, V;
             Random rand = new Random();
@@ -255,13 +255,13 @@ public abstract class ECFieldElement
                     P = new BigInteger(q.bitLength(), rand);
                 }
                 while (P.compareTo(q) >= 0
-                    || !(P.multiply(P).subtract(fourQ).modPow(legendreExponent, q).equals(qMinusOne)));
+                    || !(modMult(P, P).subtract(fourX).modPow(legendreExponent, q).equals(qMinusOne)));
 
-                BigInteger[] result = lucasSequence(P, Q, k);
+                BigInteger[] result = lucasSequence(P, X, k);
                 U = result[0];
                 V = result[1];
 
-                if (modMult(V, V).equals(fourQ))
+                if (modMult(V, V).equals(fourX))
                 {
                     // Integer division by 2, mod q
                     if (V.testBit(0))

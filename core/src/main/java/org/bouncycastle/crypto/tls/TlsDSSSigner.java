@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 
 public class TlsDSSSigner
     extends TlsDSASigner
@@ -13,9 +14,9 @@ public class TlsDSSSigner
         return publicKey instanceof DSAPublicKeyParameters;
     }
 
-    protected DSA createDSAImpl()
+    protected DSA createDSAImpl(short hashAlgorithm)
     {
-        return new DSASigner();
+        return new DSASigner(new HMacDSAKCalculator(TlsUtils.createHash(hashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()
