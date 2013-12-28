@@ -69,6 +69,8 @@ public abstract class ECCurve
     }
 
     protected ECFieldElement a, b;
+    protected BigInteger order, cofactor;
+
     protected int coord = COORD_AFFINE;
     protected ECMultiplier multiplier = null;
 
@@ -209,6 +211,16 @@ public abstract class ECCurve
         return b;
     }
 
+    public BigInteger getOrder()
+    {
+        return order;
+    }
+
+    public BigInteger getCofactor()
+    {
+        return cofactor;
+    }
+
     public int getCoordinateSystem()
     {
         return coord;
@@ -324,16 +336,28 @@ public abstract class ECCurve
 
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
+            this(q, a, b, null, null);
+        }
+
+        public Fp(BigInteger q, BigInteger a, BigInteger b, BigInteger order, BigInteger cofactor)
+        {
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
 
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
+            this.order = order;
+            this.cofactor = cofactor;
             this.coord = FP_DEFAULT_COORDS;
         }
 
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
+        {
+            this(q, r, a, b, null, null);
+        }
+
+        protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
             this.q = q;
             this.r = r;
@@ -341,12 +365,14 @@ public abstract class ECCurve
 
             this.a = a;
             this.b = b;
+            this.order = order;
+            this.cofactor = cofactor;
             this.coord = FP_DEFAULT_COORDS;
         }
 
         protected ECCurve cloneCurve()
         {
-            return new Fp(q, r, a, b);
+            return new Fp(q, r, a, b, order, cofactor);
         }
 
         public boolean supportsCoordinateSystem(int coord)
@@ -497,16 +523,6 @@ public abstract class ECCurve
          * represents the reduction polynomial <code>f(z)</code>.<br>
          */
         private int k3;  // can't be final - JDK 1.1
-
-        /**
-         * The order of the base point of the curve.
-         */
-        private BigInteger n;  // can't be final - JDK 1.1
-
-        /**
-         * The cofactor of the curve.
-         */
-        private BigInteger h;  // can't be final - JDK 1.1
         
          /**
          * The point at infinity on this curve.
@@ -638,15 +654,15 @@ public abstract class ECCurve
             int k3,
             BigInteger a, 
             BigInteger b,
-            BigInteger n,
-            BigInteger h)
+            BigInteger order,
+            BigInteger cofactor)
         {
             this.m = m;
             this.k1 = k1;
             this.k2 = k2;
             this.k3 = k3;
-            this.n = n;
-            this.h = h;
+            this.order = order;
+            this.cofactor = cofactor;
 
             if (k1 == 0)
             {
@@ -679,14 +695,14 @@ public abstract class ECCurve
             this.coord = F2M_DEFAULT_COORDS;
         }
 
-        protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger n, BigInteger h)
+        protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
             this.m = m;
             this.k1 = k1;
             this.k2 = k2;
             this.k3 = k3;
-            this.n = n;
-            this.h = h;
+            this.order = order;
+            this.cofactor = cofactor;
 
             this.infinity = new ECPoint.F2m(this, null, null);
             this.a = a;
@@ -696,7 +712,7 @@ public abstract class ECCurve
 
         protected ECCurve cloneCurve()
         {
-            return new F2m(m, k1, k2, k3, a, b, n, h);
+            return new F2m(m, k1, k2, k3, a, b, order, cofactor);
         }
 
         public boolean supportsCoordinateSystem(int coord)
@@ -773,7 +789,7 @@ public abstract class ECCurve
          */
         public boolean isKoblitz()
         {
-            return n != null && h != null && a.bitLength() <= 1 && b.bitLength() == 1;
+            return order != null && cofactor != null && a.bitLength() <= 1 && b.bitLength() == 1;
         }
 
         /**
@@ -958,14 +974,20 @@ public abstract class ECCurve
             return k3;
         }
 
+        /**
+         * @deprecated use {@link #getOrder()} instead
+         */
         public BigInteger getN()
         {
-            return n;
+            return order;
         }
 
+        /**
+         * @deprecated use {@link #getCofactor()} instead
+         */
         public BigInteger getH()
         {
-            return h;
+            return cofactor;
         }
     }
 }
