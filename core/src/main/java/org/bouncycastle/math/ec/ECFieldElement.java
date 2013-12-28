@@ -444,6 +444,11 @@ public abstract class ECFieldElement
 //            else
             if (r != null)
             {
+                boolean negative = x.signum() < 0;
+                if (negative)
+                {
+                    x = x.abs();
+                }
                 int qLen = q.bitLength();
                 while (x.bitLength() > (qLen + 1))
                 {
@@ -458,6 +463,10 @@ public abstract class ECFieldElement
                 while (x.compareTo(q) >= 0)
                 {
                     x = x.subtract(q);
+                }
+                if (negative)
+                {
+                    x = q.subtract(x);
                 }
             }
             else
