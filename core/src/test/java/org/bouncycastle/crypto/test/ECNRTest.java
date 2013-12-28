@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECNRSigner;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -32,15 +33,18 @@ public class ECNRTest
 
     private void ecNR239bitPrime()
     {
+        BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+            n);
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
