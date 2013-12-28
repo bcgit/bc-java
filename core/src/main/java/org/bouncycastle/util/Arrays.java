@@ -895,4 +895,22 @@ public final class Arrays
         result[0] = b;
         return result;
     }
+
+    public static byte[] reverse(byte[] a)
+    {
+        if (a == null)
+        {
+            return null;
+        }
+
+        int p1 = 0, p2 = a.length;
+        byte[] result = new byte[p2];
+        
+        while (--p2 >= 0)
+        {
+            result[p2] = a[p1++];
+        }
+
+        return result;
+    }
 }

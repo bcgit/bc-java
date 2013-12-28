@@ -136,40 +136,24 @@ public class DSTU4145Signer
     {
         return new BigInteger(n.bitLength() - 1, random);
     }
-    
-    private static void reverseBytes(byte[] bytes)
-    {
-        byte tmp;
-        
-        for (int i=0; i<bytes.length/2; i++)
-        {
-            tmp=bytes[i];
-            bytes[i]=bytes[bytes.length-1-i];
-            bytes[bytes.length-1-i]=tmp;
-        }
-    }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)
     {
-        byte[] data = Arrays.clone(hash);
-        reverseBytes(data);
-        BigInteger num = new BigInteger(1, data);
-        while (num.bitLength() > curve.getFieldSize())
-        {
-            num = num.clearBit(num.bitLength() - 1);
-        }
-
-        return curve.fromBigInteger(num);
+        byte[] data = Arrays.reverse(hash);
+        return curve.fromBigInteger(truncate(new BigInteger(1, data), curve.getFieldSize()));
     }
 
-    private static BigInteger fieldElement2Integer(BigInteger n, ECFieldElement fieldElement)
+    private static BigInteger fieldElement2Integer(BigInteger n, ECFieldElement fe)
     {
-        BigInteger num = fieldElement.toBigInteger();
-        while (num.bitLength() >= n.bitLength())
-        {
-            num = num.clearBit(num.bitLength() - 1);
-        }
+        return truncate(fe.toBigInteger(), n.bitLength() - 1);
+    }
 
-        return num;
+    private static BigInteger truncate(BigInteger x, int bitLength)
+    {
+        if (x.bitLength() > bitLength)
+        {
+            x = x.mod(BigInteger.ONE.shiftLeft(bitLength));
+        }
+        return x;
     }
 }
