@@ -464,7 +464,7 @@ public abstract class ECFieldElement
                 {
                     x = x.subtract(q);
                 }
-                if (negative)
+                if (negative && x.signum() != 0)
                 {
                     x = q.subtract(x);
                 }
