@@ -779,13 +779,12 @@ public abstract class ECPoint
                 ECFieldElement Z1 = this.zs[0];
 
                 boolean Z1IsOne = Z1.bitLength() == 1;
-                ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
 
                 // TODO Optimize for small negative a4 and -3
                 ECFieldElement w = curve.getA();
-                if (!Z1IsOne)
+                if (!w.isZero() && !Z1IsOne)
                 {
-                    w = w.multiply(Z1Squared);
+                    w = w.multiply(Z1.square());
                 }
                 w = w.add(three(X1.square()));
                 
@@ -808,7 +807,6 @@ public abstract class ECPoint
                 ECFieldElement Z1 = this.zs[0];
 
                 boolean Z1IsOne = Z1.bitLength() == 1;
-                ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
 
                 ECFieldElement Y1Squared = Y1.square();
                 ECFieldElement T = Y1Squared.square();
@@ -819,6 +817,7 @@ public abstract class ECPoint
                 ECFieldElement M, S;
                 if (a4Neg.toBigInteger().equals(BigInteger.valueOf(3)))
                 {
+                    ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
                     M = three(X1.add(Z1Squared).multiply(X1.subtract(Z1Squared)));
                     S = four(Y1Squared.multiply(X1));
                 }
@@ -830,8 +829,9 @@ public abstract class ECPoint
                     {
                         M = M.add(a4);
                     }
-                    else
+                    else if (!a4.isZero())
                     {
+                        ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
                         ECFieldElement Z1Pow4 = Z1Squared.square();
                         if (a4Neg.bitLength() < a4.bitLength())
                         {
@@ -1059,13 +1059,18 @@ public abstract class ECPoint
 
         protected ECFieldElement calculateJacobianModifiedW(ECFieldElement Z, ECFieldElement ZSquared)
         {
+            ECFieldElement a4 = this.getCurve().getA();
+            if (a4.isZero())
+            {
+                return a4;
+            }
+
             if (ZSquared == null)
             {
                 ZSquared = Z.square();
             }
 
             ECFieldElement W = ZSquared.square();
-            ECFieldElement a4 = this.getCurve().getA();
             ECFieldElement a4Neg = a4.negate();
             if (a4Neg.bitLength() < a4.bitLength())
             {
