@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
@@ -45,17 +46,20 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("6140507067065001063065065565667405560006161556565665656654"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom k = new FixedSecureRandom(kData);
+
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
 
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
             new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
                 curve,
                 curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
-                new BigInteger("6277101735386680763835789423176059013767194773182842284081")); // n
+                n);
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("651056770906015076056810763456358567190100156695615665659"), // d
@@ -135,17 +139,20 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-        SecureRandom    k = new FixedSecureRandom(true, kData);
+        SecureRandom k = new FixedSecureRandom(true, kData);
+
+        BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
 
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+            n);
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
@@ -198,20 +205,23 @@ public class ECTest
     
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("1542725565216523985789236956265265265235675811949404040041"));
         
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom k = new FixedSecureRandom(kData);
+
+        BigInteger n = new BigInteger("1569275433846670190958947355803350458831205595451630533029");
+        BigInteger h = BigInteger.valueOf(2);
 
         ECCurve.F2m curve = new ECCurve.F2m(
             191, // m
             9, //k
             new BigInteger("2866537B676752636A68F56554E12640276B649EF7526267", 16), // a
-            new BigInteger("2E45EF571F00786F67B0081B9495A3D95462F5DE0AA185EC", 16)); // b
-    
+            new BigInteger("2E45EF571F00786F67B0081B9495A3D95462F5DE0AA185EC", 16), // b
+            n, h);
+
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("0436B3DAF8A23206F9C4F299D7B21A9C369137F2C84AE1AA0D765BE73433B3F95E332932E70EA245CA2418EA0EF98018FB")), // G
-            new BigInteger("1569275433846670190958947355803350458831205595451630533029"), // n
-            BigInteger.valueOf(2)); // h
-    
+            n, h);
+
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("1275552191113212300012030439187146164646146646466749494799"), // d
             params);
@@ -263,20 +273,23 @@ public class ECTest
     
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
         
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom k = new FixedSecureRandom(kData);
+
+        BigInteger n = new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783");
+        BigInteger h = BigInteger.valueOf(4);
 
         ECCurve.F2m curve = new ECCurve.F2m(
             239, // m
             36, //k
             new BigInteger("32010857077C5431123A46B808906756F543423E8D27877578125778AC76", 16), // a
-            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16)); // b
-    
+            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16), // b
+            n, h);
+
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("0457927098FA932E7C0A96D3FD5B706EF7E5F5C156E16B7E7C86038552E91D61D8EE5077C33FECF6F1A16B268DE469C3C7744EA9A971649FC7A9616305")), // G
-            new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783"), // n
-            BigInteger.valueOf(4)); // h
-    
+            n, h);
+
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("145642755521911534651321230007534120304391871461646461466464667494947990"), // d
             params);
@@ -560,18 +573,21 @@ public class ECTest
         
         SecureRandom    k = new FixedSecureRandom(kData);
 
+        BigInteger n = new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783");
+        BigInteger h = BigInteger.valueOf(4);
+
         ECCurve.F2m curve = new ECCurve.F2m(
             239, // m
             36, //k
             new BigInteger("32010857077C5431123A46B808906756F543423E8D27877578125778AC76", 16), // a
-            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16)); // b
-    
+            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16), // b
+            n, h);
+
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("0457927098FA932E7C0A96D3FD5B706EF7E5F5C156E16B7E7C86038552E91D61D8EE5077C33FECF6F1A16B268DE469C3C7744EA9A971649FC7A9616305")), // G
-            new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783"), // n
-            BigInteger.valueOf(4)); // h
-    
+            n, h);
+
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("145642755521911534651321230007534120304391871461646461466464667494947990"), // d
             params);
@@ -615,17 +631,20 @@ public class ECTest
      */
     private void testECDSAKeyGenTest()
     {
-        SecureRandom    random = new SecureRandom();
+        SecureRandom random = new SecureRandom();
+
+        BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-
+            n);
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();
         ECKeyGenerationParameters   genParam = new ECKeyGenerationParameters(
@@ -658,17 +677,20 @@ public class ECTest
      */
     private void testECBasicAgreementTest()
     {
-        SecureRandom    random = new SecureRandom();
+        SecureRandom random = new SecureRandom();
+
+        BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
             curve,
             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-
+            n);
 
         ECKeyPairGenerator          pGen = new ECKeyPairGenerator();
         ECKeyGenerationParameters   genParam = new ECKeyGenerationParameters(
@@ -801,15 +823,18 @@ public class ECTest
      {
          SecureRandom random = new SecureRandom();
 
+         BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
+
          ECCurve.Fp curve = new ECCurve.Fp(
              new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
              new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-             new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+             new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16), // b
+             n, ECConstants.ONE);
 
          ECDomainParameters parameters = new ECDomainParameters(
              curve,
              curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-             new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+             n);
 
          ECKeyPairGenerator pGen = new ECKeyPairGenerator();
 

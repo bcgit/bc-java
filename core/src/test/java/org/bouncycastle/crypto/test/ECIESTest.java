@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -47,15 +48,18 @@ public class ECIESTest
     private void staticTest()
         throws Exception
     {
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
             new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
                 curve,
                 curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
-                new BigInteger("6277101735386680763835789423176059013767194773182842284081")); // n
+                n);
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("651056770906015076056810763456358567190100156695615665659"), // d
@@ -146,15 +150,18 @@ public class ECIESTest
     private void doEphemeralTest()
         throws Exception
     {
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
             new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
                 curve,
                 curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
-                new BigInteger("6277101735386680763835789423176059013767194773182842284081")); // n
+                n);
 
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("651056770906015076056810763456358567190100156695615665659"), // d
@@ -317,16 +324,19 @@ public class ECIESTest
         throws Exception
     {
         staticTest();
-        
+
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
             new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
 
         ECDomainParameters params = new ECDomainParameters(
                 curve,
                 curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
-                new BigInteger("6277101735386680763835789423176059013767194773182842284081")); // n
+                n);
 
         ECKeyPairGenerator eGen = new ECKeyPairGenerator();
         KeyGenerationParameters gParam = new ECKeyGenerationParameters(params, new SecureRandom());

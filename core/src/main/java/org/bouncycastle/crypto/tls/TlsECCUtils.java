@@ -448,10 +448,11 @@ public class TlsECCUtils
                 BigInteger prime_p = readECParameter(input);
                 BigInteger a = readECFieldElement(prime_p.bitLength(), input);
                 BigInteger b = readECFieldElement(prime_p.bitLength(), input);
-                ECCurve curve = new ECCurve.Fp(prime_p, a, b);
-                ECPoint base = deserializeECPoint(ecPointFormats, curve, TlsUtils.readOpaque8(input));
+                byte[] baseEncoding = TlsUtils.readOpaque8(input);
                 BigInteger order = readECParameter(input);
                 BigInteger cofactor = readECParameter(input);
+                ECCurve curve = new ECCurve.Fp(prime_p, a, b, order, cofactor);
+                ECPoint base = deserializeECPoint(ecPointFormats, curve, baseEncoding);
                 return new ECDomainParameters(curve, base, order, cofactor);
             }
             case ECCurveType.explicit_char2:
@@ -474,12 +475,10 @@ public class TlsECCUtils
 
                 BigInteger a = readECFieldElement(m, input);
                 BigInteger b = readECFieldElement(m, input);
-
                 byte[] baseEncoding = TlsUtils.readOpaque8(input);
                 BigInteger order = readECParameter(input);
                 BigInteger cofactor = readECParameter(input);
 
-                // TODO The order/cofactor are currently needed for tau-adic optimization if Koblitz
                 ECCurve curve = (basis == ECBasisType.ec_basis_pentanomial)
                     ? new ECCurve.F2m(m, k1, k2, k3, a, b, order, cofactor)
                     : new ECCurve.F2m(m, k1, a, b, order, cofactor);
