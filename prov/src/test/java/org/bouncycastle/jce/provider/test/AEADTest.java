@@ -6,6 +6,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidParameterSpecException;
 
@@ -55,6 +56,7 @@ public class AEADTest extends SimpleTest
             testGCMParameterSpec(K2, N2, A2, P2, C2);
             testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
             testGCMGeneric(KGCM, NGCM, new byte[0], new byte[0], CGCM);
+            testGCMParameterSpecWithMultipleUpdates(K2, N2, A2, P2, C2);
         }
         catch (ClassNotFoundException e)
         {
@@ -140,6 +142,62 @@ public class AEADTest extends SimpleTest
             fail("parameters mismatch");
         }
     }
+
+    private void testGCMParameterSpecWithMultipleUpdates(byte[] K,
+                                      byte[] N,
+                                      byte[] A,
+                                      byte[] P,
+                                      byte[] C)
+        throws Exception
+    {
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
+        SecretKeySpec key = new SecretKeySpec(K, "AES");
+        SecureRandom random = new SecureRandom();
+
+        // GCMParameterSpec mapped to AEADParameters and overrides default MAC
+        // size
+        GCMParameterSpec spec = new GCMParameterSpec(128, N);
+
+        for (int i = 900; i != 1024; i++)
+        {
+            byte[] message = new byte[i];
+
+            random.nextBytes(message);
+
+            eax.init(Cipher.ENCRYPT_MODE, key, spec);
+
+            byte[] out = new byte[eax.getOutputSize(i)];
+
+            int offSet = 0;
+
+            int count;
+            for (count = 0; count < i / 21; count++)
+            {
+                offSet += eax.update(message, count * 21, 21, out, offSet);
+            }
+
+            offSet += eax.doFinal(message, count * 21, i - (count * 21), out, offSet);
+
+            byte[] dec = new byte[i];
+            int    len = offSet;
+
+            eax.init(Cipher.DECRYPT_MODE, key, spec);
+
+            offSet = 0;
+            for (count = 0; count < len / 10; count++)
+            {
+                offSet += eax.update(out, count * 10, 10, dec, offSet);
+            }
+
+            offSet += eax.doFinal(out, count * 10, len - (count * 10), dec, offSet);
+
+            if (!Arrays.areEqual(message, dec) || offSet != message.length)
+            {
+                fail("message mismatch");
+            }
+        }
+    }
+
 
     private void testGCMParameterSpecWithRepeatKey(byte[] K,
                                                    byte[] N,
