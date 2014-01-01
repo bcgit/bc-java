@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -138,18 +139,7 @@ public class ECIESKeyEncapsulation
         byte[] PEH = hTilde.getAffineXCoord().getEncoded();
 
         // Initialise the KDF
-        byte[] kdfInput;
-        if (SingleHashMode)
-        {
-            kdfInput = new byte[C.length + PEH.length];
-            System.arraycopy(C, 0, kdfInput, 0, C.length);
-            System.arraycopy(PEH, 0, kdfInput, C.length, PEH.length);
-        }
-        else
-        {
-            kdfInput = PEH;
-        }
-
+        byte[] kdfInput = SingleHashMode ? Arrays.concatenate(C, PEH) : PEH;
         kdf.init(new KDFParameters(kdfInput, null));
 
         // Generate the secret key
@@ -221,17 +211,7 @@ public class ECIESKeyEncapsulation
         byte[] PEH = hTilde.getAffineXCoord().getEncoded();
 
         // Initialise the KDF
-        byte[] kdfInput;
-        if (SingleHashMode)
-        {
-            kdfInput = new byte[C.length + PEH.length];
-            System.arraycopy(C, 0, kdfInput, 0, C.length);
-            System.arraycopy(PEH, 0, kdfInput, C.length, PEH.length);
-        }
-        else
-        {
-            kdfInput = PEH;
-        }
+        byte[] kdfInput = SingleHashMode ? Arrays.concatenate(C, PEH) : PEH;
         kdf.init(new KDFParameters(kdfInput, null));
 
         // Generate the secret key
