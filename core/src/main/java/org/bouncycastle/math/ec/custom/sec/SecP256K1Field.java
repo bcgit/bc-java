@@ -115,7 +115,7 @@ public class SecP256K1Field
     public static void square(int[] x, int[] z)
     {
         int[] tt = createDouble();
-        // NOTE: The simple unrolled loops in 'mul' perform better than 'square'
+        // NOTE: The simpler 'mul' performs better than 'square'
         // Nat256.square(x, tt);
         Nat256.mul(x, x, tt);
         reduce(tt, z);
