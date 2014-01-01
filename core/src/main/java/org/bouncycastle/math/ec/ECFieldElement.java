@@ -27,6 +27,11 @@ public abstract class ECFieldElement
         return toBigInteger().bitLength();
     }
 
+    public boolean isOne()
+    {
+        return bitLength() == 1;
+    }
+
     public boolean isZero()
     {
         return 0 == toBigInteger().signum();
@@ -1104,6 +1109,11 @@ public abstract class ECFieldElement
         public int bitLength()
         {
             return x.degree();
+        }
+
+        public boolean isOne()
+        {
+            return x.isOne();
         }
 
         public boolean isZero()
