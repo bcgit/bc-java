@@ -34,6 +34,36 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int addBothTo(int[] x, int[] y, int[] z)
+    {
+        long c = 0;
+        c += (x[0] & M) + (y[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (y[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (y[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (y[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (y[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (y[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += (x[6] & M) + (y[6] & M) + (z[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        c += (x[7] & M) + (y[7] & M) + (z[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
     public static int addDWord(long x, int[] z, int zOff)
     {
         assert zOff < 6;
@@ -362,6 +392,36 @@ public abstract class Nat256
         z[6] = (int)c;
         c >>= 32;
         c += (x[7] & M) - (y[7] & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    public static int subBothFrom(int[] x, int[] y, int[] z)
+    {
+        long c = 0;
+        c += (z[0] & M) - (x[0] & M) - (y[0] & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - (x[1] & M) - (y[1] & M);
+        z[1] = (int)c;
+        c >>= 32;
+        c += (z[2] & M) - (x[2] & M) - (y[2] & M);
+        z[2] = (int)c;
+        c >>= 32;
+        c += (z[3] & M) - (x[3] & M) - (y[3] & M);
+        z[3] = (int)c;
+        c >>= 32;
+        c += (z[4] & M) - (x[4] & M) - (y[4] & M);
+        z[4] = (int)c;
+        c >>= 32;
+        c += (z[5] & M) - (x[5] & M) - (y[5] & M);
+        z[5] = (int)c;
+        c >>= 32;
+        c += (z[6] & M) - (x[6] & M) - (y[6] & M);
+        z[6] = (int)c;
+        c >>= 32;
+        c += (z[7] & M) - (x[7] & M) - (y[7] & M);
         z[7] = (int)c;
         c >>= 32;
         return (int)c;
