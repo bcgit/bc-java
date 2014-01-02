@@ -49,7 +49,7 @@ public class SecP256K1FieldElement extends ECFieldElement
 
     public String getFieldName()
     {
-        return "FEp256k1";
+        return "SecP256K1Field";
     }
 
     public int getFieldSize()
