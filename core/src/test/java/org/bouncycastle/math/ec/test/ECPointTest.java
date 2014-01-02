@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.CustomNamedCurves;
 
 /**
  * Test class for {@link org.bouncycastle.math.ec.ECPoint ECPoint}. All
@@ -413,6 +414,24 @@ public class ECPointTest extends TestCase
         assertPointsEqual("Error decoding compressed point", p, decComp);
     }
 
+    private void implAddSubtractMultiplyTwiceEncodingTest(X9ECParameters x9ECParameters)
+    {
+        BigInteger n = x9ECParameters.getN();
+
+        // The generator is multiplied by random b to get random q
+        BigInteger b = new BigInteger(n.bitLength(), secRand);
+        ECPoint g = x9ECParameters.getG();
+        ECPoint q = g.multiply(b).normalize();
+
+        // Get point at infinity on the curve
+        ECPoint infinity = x9ECParameters.getCurve().getInfinity();
+
+        implTestAddSubtract(q, infinity);
+        implTestMultiply(q, n.bitLength());
+        implTestMultiply(infinity, n.bitLength());
+        implTestEncoding(q);
+    }
+
     /**
      * Calls <code>implTestAddSubtract()</code>,
      * <code>implTestMultiply</code> and <code>implTestEncoding</code> for
@@ -424,22 +443,15 @@ public class ECPointTest extends TestCase
         while (curveEnum.hasMoreElements())
         {
             String name = (String) curveEnum.nextElement();
+
             X9ECParameters x9ECParameters = SECNamedCurves.getByName(name);
+            implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
 
-            BigInteger n = x9ECParameters.getN();
-
-            // The generator is multiplied by random b to get random q
-            BigInteger b = new BigInteger(n.bitLength(), secRand);
-            ECPoint g = x9ECParameters.getG();
-            ECPoint q = g.multiply(b).normalize();
-
-            // Get point at infinity on the curve
-            ECPoint infinity = x9ECParameters.getCurve().getInfinity();
-
-            implTestAddSubtract(q, infinity);
-            implTestMultiply(q, n.bitLength());
-            implTestMultiply(infinity, n.bitLength());
-            implTestEncoding(q);
+            x9ECParameters = CustomNamedCurves.getByName(name);
+            if (x9ECParameters != null)
+            {
+                implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
+            }
         }
     }
 
