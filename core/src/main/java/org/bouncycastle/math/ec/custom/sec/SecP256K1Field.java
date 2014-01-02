@@ -106,7 +106,7 @@ public class SecP256K1Field
 
         if (c != 0 || (tt[7] == -1 && Nat256.gte(tt, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.addDWord(PInv, tt, 0);
         }
 
         System.arraycopy(tt, 0, z, 0, 8);
