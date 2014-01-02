@@ -17,8 +17,8 @@ import org.bouncycastle.math.ec.custom.CustomNamedCurves;
  */
 public class ECPointPerformanceTest extends TestCase
 {
-    public static final int PRE_ROUNDS = 100;
-    public static final int NUM_ROUNDS = 1000;
+    public static final int PRE_ROUNDS = 10;
+    public static final int NUM_ROUNDS = 100;
 
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
         "JACOBIAN-MODIFIED", "LAMBDA-AFFINE", "LAMBDA-PROJECTIVE", "SKEWED" };
