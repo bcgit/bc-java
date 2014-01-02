@@ -50,7 +50,7 @@ public class SecP256K1Point extends ECPoint
         this.withCompression = withCompression;
     }
 
-    public SecP256K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs,
+    SecP256K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs,
         boolean withCompression)
     {
         super(curve, x, y, zs);
@@ -206,7 +206,7 @@ public class SecP256K1Point extends ECPoint
 
         ECFieldElement X1Squared = X1.square();
         ECFieldElement M = three(X1Squared);
-        ECFieldElement S = four(X1.multiply(Y1Squared));
+        ECFieldElement S = four(Y1Squared.multiply(X1));
 
         ECFieldElement X3 = M.square().subtract(two(S));
         ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
