@@ -371,6 +371,23 @@ class LongArray
         }
     }
 
+    public boolean isOne()
+    {
+        long[] a = m_ints;
+        if (a[0] != 1L)
+        {
+            return false;
+        }
+        for (int i = 1; i < a.length; ++i)
+        {
+            if (a[i] != 0L)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean isZero()
     {
         long[] a = m_ints;

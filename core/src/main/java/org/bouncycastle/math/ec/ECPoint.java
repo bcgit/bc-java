@@ -196,7 +196,7 @@ public abstract class ECPoint
         return coord == ECCurve.COORD_AFFINE
             || coord == ECCurve.COORD_LAMBDA_AFFINE
             || isInfinity()
-            || zs[0].bitLength() == 1;
+            || zs[0].isOne();
     }
 
     /**
@@ -222,7 +222,7 @@ public abstract class ECPoint
         default:
         {
             ECFieldElement Z1 = getZCoord(0);
-            if (Z1.bitLength() == 1)
+            if (Z1.isOne())
             {
                 return this;
             }
@@ -569,8 +569,8 @@ public abstract class ECPoint
                 ECFieldElement Z1 = this.zs[0];
                 ECFieldElement Z2 = b.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
-                boolean Z2IsOne = Z2.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
+                boolean Z2IsOne = Z2.isOne();
 
                 ECFieldElement u1 = Z1IsOne ? Y2 : Y2.multiply(Z1);
                 ECFieldElement u2 = Z2IsOne ? Y1 : Y1.multiply(Z2);
@@ -612,7 +612,7 @@ public abstract class ECPoint
                 ECFieldElement Z1 = this.zs[0];
                 ECFieldElement Z2 = b.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
 
                 ECFieldElement X3, Y3, Z3, Z3Squared = null;
 
@@ -662,7 +662,7 @@ public abstract class ECPoint
                         S2 = Z1Cubed.multiply(Y2);
                     }
 
-                    boolean Z2IsOne = Z2.bitLength() == 1;
+                    boolean Z2IsOne = Z2.isOne();
                     ECFieldElement Z2Squared, U1, S1;
                     if (Z2IsOne)
                     {
@@ -778,7 +778,7 @@ public abstract class ECPoint
             {
                 ECFieldElement Z1 = this.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
 
                 // TODO Optimize for small negative a4 and -3
                 ECFieldElement w = curve.getA();
@@ -806,7 +806,7 @@ public abstract class ECPoint
             {
                 ECFieldElement Z1 = this.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
 
                 ECFieldElement Y1Squared = Y1.square();
                 ECFieldElement T = Y1Squared.square();
@@ -1107,7 +1107,7 @@ public abstract class ECPoint
             ECFieldElement _8T = eight(T);
             ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
             ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
-            ECFieldElement Z3 = two(Z1.bitLength() == 1 ? Y1 : Y1.multiply(Z1));
+            ECFieldElement Z3 = two(Z1.isOne() ? Y1 : Y1.multiply(Z1));
 
             return new ECPoint.Fp(this.getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
         }
@@ -1194,7 +1194,7 @@ public abstract class ECPoint
                 if (ECCurve.COORD_LAMBDA_PROJECTIVE == coord)
                 {
                     ECFieldElement Z = zs[0];
-                    if (Z.bitLength() != 1)
+                    if (!Z.isOne())
                     {
                         Y = Y.divide(Z);
                     }
@@ -1317,7 +1317,7 @@ public abstract class ECPoint
                 ECFieldElement Y1 = this.y, Z1 = this.zs[0];
                 ECFieldElement Y2 = b.y, Z2 = b.zs[0];
 
-                boolean Z2IsOne = Z2.bitLength() == 1;
+                boolean Z2IsOne = Z2.isOne();
 
                 ECFieldElement U1 = Z1.multiply(Y2); 
                 ECFieldElement U2 = Z2IsOne ? Y1 : Y1.multiply(Z2);
@@ -1357,7 +1357,7 @@ public abstract class ECPoint
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
                 ECFieldElement L2 = b.y, Z2 = b.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
                 ECFieldElement U2 = X2, S2 = L2;
                 if (!Z1IsOne)
                 {
@@ -1365,7 +1365,7 @@ public abstract class ECPoint
                     S2 = S2.multiply(Z1);
                 }
 
-                boolean Z2IsOne = Z2.bitLength() == 1;
+                boolean Z2IsOne = Z2.isOne();
                 ECFieldElement U1 = X1, S1 = L1;
                 if (!Z2IsOne)
                 {
@@ -1527,7 +1527,7 @@ public abstract class ECPoint
             {
                 ECFieldElement Y1 = this.y, Z1 = this.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
                 ECFieldElement X1Z1 = Z1IsOne ? X1 : X1.multiply(Z1);
                 ECFieldElement Y1Z1 = Z1IsOne ? Y1 : Y1.multiply(Z1);
 
@@ -1547,7 +1547,7 @@ public abstract class ECPoint
             {
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
 
-                boolean Z1IsOne = Z1.bitLength() == 1;
+                boolean Z1IsOne = Z1.isOne();
                 ECFieldElement L1Z1 = Z1IsOne ? L1 : L1.multiply(Z1);
                 ECFieldElement Z1Sq = Z1IsOne ? Z1 : Z1.square();
                 ECFieldElement a = curve.getA();
@@ -1609,7 +1609,7 @@ public abstract class ECPoint
             {
                 // NOTE: twicePlus() only optimized for lambda-affine argument
                 ECFieldElement X2 = b.x, Z2 = b.zs[0];
-                if (X2.isZero() || Z2.bitLength() != 1)
+                if (X2.isZero() || !Z2.isOne())
                 {
                     return twice().add(b);
                 }
