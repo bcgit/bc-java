@@ -7,7 +7,7 @@ public class SecP256K1Field
     private static final long M = 0xFFFFFFFFL;
 
     // 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
-    private static final int[] P = new int[] { 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    private static final int[] P = new int[]{ 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
     private static final long PInv = 0x00000001000003D1L;
@@ -83,9 +83,7 @@ public class SecP256K1Field
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat256.createExt();
-        // NOTE: The simpler 'mul' performs better than 'square'
-        // Nat256.square(x, tt);
-        Nat256.mul(x, x, tt);
+        Nat256.square(x, tt);
         reduce(tt, z);
     }
 
