@@ -82,7 +82,7 @@ public abstract class Nat256
 
     public static int addDWord(long x, int[] z, int zOff)
     {
-        assert zOff < 6;
+        // assert zOff < 6;
         long c = x;
         c += (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -95,7 +95,7 @@ public abstract class Nat256
 
     public static int addExt(int[] x, int xOff, int[] zz, int zzOff)
     {
-        assert zzOff <= 8;
+        // assert zzOff <= 8;
         long c = 0;
         c += (x[xOff + 0] & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
@@ -126,7 +126,7 @@ public abstract class Nat256
 
     public static int addWordExt(int x, int[] zz, int zzOff)
     {
-        assert zzOff < 15;
+        // assert zzOff < 15;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -145,7 +145,7 @@ public abstract class Nat256
 
     public static int dec(int[] z, int zOff)
     {
-        assert zOff < 8;
+        // assert zOff < 8;
         int i = zOff;
         do
         {
@@ -206,7 +206,7 @@ public abstract class Nat256
 
     public static int inc(int[] z, int zOff)
     {
-        assert zOff < 8;
+        // assert zOff < 8;
         for (int i = zOff; i < 8; ++i)
         {
             if (++z[i] != 0)
@@ -219,7 +219,7 @@ public abstract class Nat256
 
     public static int incExt(int[] zz, int zzOff)
     {
-        assert zzOff < 16;
+        // assert zzOff < 16;
         for (int i = zzOff; i < 16; ++i)
         {
             if (++zz[i] != 0)
@@ -384,8 +384,8 @@ public abstract class Nat256
 
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
     {
-        assert yyOff <= 8;
-        assert zzOff <= 8;
+        // assert yyOff <= 8;
+        // assert zzOff <= 8;
         long c = 0, xVal = x & M;
         int i = 0;
         do
@@ -400,7 +400,7 @@ public abstract class Nat256
 
     public static int squareWordAddExt(int[] x, int xPos, int[] zz)
     {
-        assert xPos > 0 && xPos < 8;
+        // assert xPos > 0 && xPos < 8;
         long c = 0, xVal = x[xPos] & M;
         int i = 0;
         do
@@ -415,7 +415,7 @@ public abstract class Nat256
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
-        assert zOff < 5;
+        // assert zOff < 5;
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -431,7 +431,7 @@ public abstract class Nat256
 
     public static int mulWordExt(int x, int[] y, int[] zz, int zzOff)
     {
-        assert zzOff <= 8;
+        // assert zzOff <= 8;
         long c = 0, xVal = x & M;
         int i = 0;
         do

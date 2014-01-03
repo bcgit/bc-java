@@ -70,7 +70,7 @@ public class SecP256K1Field
         long c = Nat256.mulWordDwordAdd((int)PInv, extra, tt, 0) & M;
         c += Nat256.addDWord(extra, tt, 1);
 
-        assert c == 0L || c == 1L;
+        // assert c == 0L || c == 1L;
 
         if (c != 0 || (tt[7] == P7 && Nat256.gte(tt, P)))
         {

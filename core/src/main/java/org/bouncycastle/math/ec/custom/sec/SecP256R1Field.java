@@ -109,7 +109,7 @@ public class SecP256R1Field
             while (c != 0);
         }
 
-        assert c == 0;
+        // assert c == 0;
 
         if (z[7] == P7 && Nat256.gte(z, P))
         {
