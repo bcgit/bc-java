@@ -38,6 +38,18 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int addExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) + (yy[i] & M);
+            zz[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -446,23 +458,157 @@ public abstract class Nat256
 
     public static void square(int[] x, int[] zz)
     {
-        int c = 0;
-        int j = 8, k = 16;
-        do
         {
-            long xVal = (x[--j] & M);
-            long p = xVal * xVal;
-            zz[--k] = (c << 31) | (int)(p >>> 33);
-            zz[--k] = (int)(p >>> 1);
-            c = (int)p;
+            int c = 0, i = 8, j = 16;
+            do
+            {
+                long xVal = (x[--i] & M);
+                long p = xVal * xVal;
+                zz[--j] = (c << 31) | (int)(p >>> 33);
+                zz[--j] = (int)(p >>> 1);
+                c = (int)p;
+            }
+            while (i > 0);
         }
-        while (j > 0);
 
-        for (int i = 1; i < 8; ++i)
+        long x_0 = x[0] & M;
+        long x_1 = x[1] & M;
+        long x_2 = x[2] & M;
+        long x_3 = x[3] & M;
+        long x_4 = x[4] & M;
+        long x_5 = x[5] & M;
+        long x_6 = x[6] & M;
+        long x_7 = x[7] & M;
+
+        int[] carries = createExt();
+        
         {
-            c = squareWordAddExt(x, i, zz);
-            addWordExt(c, zz, i << 1);
+            // c = squareWordAddExt(x, 1, zz);
+            long cc = 0;
+            cc += x_1 * x_0 + (zz[1] & M);
+            zz[1] = (int)cc;
+            cc >>>= 32;
+            carries[2] = (int)cc;
         }
+
+        {
+            // c = squareWordAddExt(x, 2, zz);
+            long cc = 0;
+            cc += x_2 * x_0 + (zz[2] & M);
+            zz[2] = (int)cc;
+            cc >>>= 32;
+            cc += x_2 * x_1 + (zz[3] & M);
+            zz[3] = (int)cc;
+            cc >>>= 32;
+            carries[4] = (int)cc;
+        }
+
+        {
+            // c = squareWordAddExt(x, 3, zz);
+            long cc = 0;
+            cc += x_3 * x_0 + (zz[3] & M);
+            zz[3] = (int)cc;
+            cc >>>= 32;
+            cc += x_3 * x_1 + (zz[4] & M);
+            zz[4] = (int)cc;
+            cc >>>= 32;
+            cc += x_3 * x_2 + (zz[5] & M);
+            zz[5] = (int)cc;
+            cc >>>= 32;
+            carries[6] = (int)cc;
+        }
+
+        {
+            // c = squareWordAddExt(x, 4, zz);
+            long cc = 0;
+            cc += x_4 * x_0 + (zz[4] & M);
+            zz[4] = (int)cc;
+            cc >>>= 32;
+            cc += x_4 * x_1 + (zz[5] & M);
+            zz[5] = (int)cc;
+            cc >>>= 32;
+            cc += x_4 * x_2 + (zz[6] & M);
+            zz[6] = (int)cc;
+            cc >>>= 32;
+            cc += x_4 * x_3 + (zz[7] & M);
+            zz[7] = (int)cc;
+            cc >>>= 32;
+            carries[8] = (int)cc;
+        }
+
+        {
+            // c = squareWordAddExt(x, 5, zz);
+            long cc = 0;
+            cc += x_5 * x_0 + (zz[5] & M);
+            zz[5] = (int)cc;
+            cc >>>= 32;
+            cc += x_5 * x_1 + (zz[6] & M);
+            zz[6] = (int)cc;
+            cc >>>= 32;
+            cc += x_5 * x_2 + (zz[7] & M);
+            zz[7] = (int)cc;
+            cc >>>= 32;
+            cc += x_5 * x_3 + (zz[8] & M);
+            zz[8] = (int)cc;
+            cc >>>= 32;
+            cc += x_5 * x_4 + (zz[9] & M);
+            zz[9] = (int)cc;
+            cc >>>= 32;
+            carries[10] = (int)cc;
+        }
+
+        {
+            // c = squareWordAddExt(x, 6, zz);
+            long cc = 0;
+            cc += x_6 * x_0 + (zz[6] & M);
+            zz[6] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_1 + (zz[7] & M);
+            zz[7] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_2 + (zz[8] & M);
+            zz[8] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_3 + (zz[9] & M);
+            zz[9] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_4 + (zz[10] & M);
+            zz[10] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_5 + (zz[11] & M);
+            zz[11] = (int)cc;
+            cc >>>= 32;
+            carries[12] = (int)cc;
+        }
+
+        {
+            // c = squareWordAddExt(x, 7, zz);
+            long cc = 0;
+            cc += x_7 * x_0 + (zz[7] & M);
+            zz[7] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_1 + (zz[8] & M);
+            zz[8] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_2 + (zz[9] & M);
+            zz[9] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_3 + (zz[10] & M);
+            zz[10] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_4 + (zz[11] & M);
+            zz[11] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_5 + (zz[12] & M);
+            zz[12] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_6 + (zz[13] & M);
+            zz[13] = (int)cc;
+            cc >>>= 32;
+            carries[14] = (int)cc;
+        }
+
+        addExt(zz, carries, zz);
 
         shiftUp(zz, 16);
         zz[0] |= x[0] & 1;
