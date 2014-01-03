@@ -29,22 +29,22 @@ public class SecP256K1FieldElement extends ECFieldElement
 
     public boolean isZero()
     {
-        return SecP256K1Field.isZero(x);
+        return Nat256.isZero(x);
     }
 
     public boolean isOne()
     {
-        return SecP256K1Field.isOne(x);
+        return Nat256.isOne(x);
     }
 
     public boolean testBitZero()
     {
-        return SecP256K1Field.testBit(x, 0);
+        return Nat256.getBit(x, 0) == 1;
     }
 
     public BigInteger toBigInteger()
     {
-        return SecP256K1Field.toBigInteger(x);
+        return Nat256.toBigInteger(x);
     }
 
     public String getFieldName()
@@ -64,28 +64,28 @@ public class SecP256K1FieldElement extends ECFieldElement
 
     public ECFieldElement add(ECFieldElement b)
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.add(x, ((SecP256K1FieldElement)b).x, z);
         return new SecP256K1FieldElement(z);
     }
 
     public ECFieldElement addOne()
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.addOne(x, z);
         return new SecP256K1FieldElement(z);
     }
 
     public ECFieldElement subtract(ECFieldElement b)
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.subtract(x, ((SecP256K1FieldElement)b).x, z);
         return new SecP256K1FieldElement(z);
     }
 
     public ECFieldElement multiply(ECFieldElement b)
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.multiply(x, ((SecP256K1FieldElement)b).x, z);
         return new SecP256K1FieldElement(z);
     }
@@ -93,21 +93,21 @@ public class SecP256K1FieldElement extends ECFieldElement
     public ECFieldElement divide(ECFieldElement b)
     {
         int[] y = SecP256K1Field.fromBigInteger(b.invert().toBigInteger());
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.multiply(x, y, z);
         return new SecP256K1FieldElement(z);
     }
 
     public ECFieldElement negate()
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.negate(x, z);
         return new SecP256K1FieldElement(z);
     }
 
     public ECFieldElement square()
     {
-        int[] z = SecP256K1Field.create();
+        int[] z = Nat256.create();
         SecP256K1Field.square(x, z);
         return new SecP256K1FieldElement(z);
     }
