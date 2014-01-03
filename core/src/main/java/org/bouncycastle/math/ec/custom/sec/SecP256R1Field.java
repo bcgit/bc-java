@@ -7,7 +7,7 @@ public class SecP256R1Field
     private static final long M = 0xFFFFFFFFL;
 
     // 2^256 - 2^224 + 2^192 + 2^96 - 1
-    private static final int[] P = new int[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
+    private static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
 
@@ -61,37 +61,37 @@ public class SecP256R1Field
 
     private static void reduce(int[] tt, int[] z)
     {
-        long t08 = tt[ 8] & M, t09 = tt[ 9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
+        long t08 = tt[8] & M, t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
         long t12 = tt[12] & M, t13 = tt[13] & M, t14 = tt[14] & M, t15 = tt[15] & M;
 
         long cc = 0;
-        cc += (tt[ 0] & M) + t08 + t09 - t11 - t12 - t13 - t14;
+        cc += (tt[0] & M) + t08 + t09 - t11 - t12 - t13 - t14;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 1] & M) + t09 + t10 - t12 - t13 - t14 - t15;
+        cc += (tt[1] & M) + t09 + t10 - t12 - t13 - t14 - t15;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 2] & M) + t10 + t11 - t13 - t14 - t15;
+        cc += (tt[2] & M) + t10 + t11 - t13 - t14 - t15;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 3] & M) + ((t11 + t12) << 1) + t13 - t15 - t08 - t09;
+        cc += (tt[3] & M) + ((t11 + t12) << 1) + t13 - t15 - t08 - t09;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 4] & M) + ((t12 + t13) << 1) + t14 - t09 - t10;
+        cc += (tt[4] & M) + ((t12 + t13) << 1) + t14 - t09 - t10;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 5] & M) + ((t13 + t14) << 1) + t15 - t10 - t11;
+        cc += (tt[5] & M) + ((t13 + t14) << 1) + t15 - t10 - t11;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 6] & M) + ((t14 + t15) << 1) + t14 + t13 - t08 - t09;
+        cc += (tt[6] & M) + ((t14 + t15) << 1) + t14 + t13 - t08 - t09;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (tt[ 7] & M) + (t15 << 1) + t15 + t08 - t10 - t11 - t12 - t13;
+        cc += (tt[7] & M) + (t15 << 1) + t15 + t08 - t10 - t11 - t12 - t13;
         z[7] = (int)cc;
         cc >>= 32;
 
         int c = (int)cc;
-        
+
         if (c > 0)
         {
             do
@@ -120,9 +120,7 @@ public class SecP256R1Field
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat256.createExt();
-        // NOTE: The simpler 'mul' performs better than 'square'
-        // Nat256.square(x, tt);
-        Nat256.mul(x, x, tt);
+        Nat256.square(x, tt);
         reduce(tt, z);
     }
 
