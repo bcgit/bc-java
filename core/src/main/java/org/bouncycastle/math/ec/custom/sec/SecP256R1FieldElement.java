@@ -22,6 +22,11 @@ public class SecP256R1FieldElement extends ECFieldElement
         this.x = SecP256R1Field.fromBigInteger(x);
     }
 
+    protected SecP256R1FieldElement()
+    {
+        this.x = Nat256.create();
+    }
+
     protected SecP256R1FieldElement(int[] x)
     {
         this.x = x;
