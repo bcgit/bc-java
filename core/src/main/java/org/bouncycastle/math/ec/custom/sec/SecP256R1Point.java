@@ -1,10 +1,12 @@
 package org.bouncycastle.math.ec.custom.sec;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 
-public class SecP256K1Point extends ECPoint
+public class SecP256R1Point extends ECPoint
 {
     /**
      * Create a point which encodes with point compression.
@@ -18,7 +20,7 @@ public class SecP256K1Point extends ECPoint
      * 
      * @deprecated Use ECCurve.createPoint to construct points
      */
-    public SecP256K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
+    public SecP256R1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {
         this(curve, x, y, false);
     }
@@ -38,7 +40,7 @@ public class SecP256K1Point extends ECPoint
      * @deprecated per-point compression property will be removed, refer
      *             {@link #getEncoded(boolean)}
      */
-    public SecP256K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
+    public SecP256R1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, boolean withCompression)
     {
         super(curve, x, y);
 
@@ -50,8 +52,7 @@ public class SecP256K1Point extends ECPoint
         this.withCompression = withCompression;
     }
 
-    SecP256K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs,
-        boolean withCompression)
+    SecP256R1Point(ECCurve curve, ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
     {
         super(curve, x, y, zs);
 
@@ -110,6 +111,15 @@ public class SecP256K1Point extends ECPoint
         // X3 = dy.square().subtract(W1).subtract(W2);
         // Y3 = W1.subtract(X3).multiply(dy).subtract(A1);
         // Z3 = dx;
+        //
+        // if (Z1IsOne)
+        // {
+        // Z3Squared = C;
+        // }
+        // else
+        // {
+        // Z3 = Z3.multiply(Z1);
+        // }
         // }
         // else
         {
@@ -180,7 +190,7 @@ public class SecP256K1Point extends ECPoint
 
         ECFieldElement[] zs = new ECFieldElement[] { Z3 };
 
-        return new SecP256K1Point(curve, X3, Y3, zs, this.withCompression);
+        return new SecP256R1Point(curve, X3, Y3, zs, this.withCompression);
     }
 
     // B.3 pg 62
@@ -204,20 +214,22 @@ public class SecP256K1Point extends ECPoint
         ECFieldElement Y1Squared = Y1.square();
         ECFieldElement T = Y1Squared.square();
 
-        ECFieldElement X1Squared = X1.square();
-        ECFieldElement M = three(X1Squared);
+        boolean Z1IsOne = Z1.isOne();
+
+        ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
+        ECFieldElement M = three(X1.add(Z1Squared).multiply(X1.subtract(Z1Squared)));
         ECFieldElement S = four(Y1Squared.multiply(X1));
 
         ECFieldElement X3 = M.square().subtract(two(S));
         ECFieldElement Y3 = S.subtract(X3).multiply(M).subtract(eight(T));
 
         ECFieldElement Z3 = two(Y1);
-        if (!Z1.isOne())
+        if (!Z1IsOne)
         {
             Z3 = Z3.multiply(Z1);
         }
 
-        return new SecP256K1Point(curve, X3, Y3, new ECFieldElement[] { Z3 }, this.withCompression);
+        return new SecP256R1Point(curve, X3, Y3, new ECFieldElement[] { Z3 }, this.withCompression);
     }
 
     public ECPoint twicePlus(ECPoint b)
@@ -275,6 +287,16 @@ public class SecP256K1Point extends ECPoint
         return four(two(x));
     }
 
+    protected ECFieldElement doubleProductFromSquares(ECFieldElement a, ECFieldElement b, ECFieldElement aSquared,
+        ECFieldElement bSquared)
+    {
+        /*
+         * NOTE: If squaring in the field is faster than multiplication, then this is a quicker way
+         * to calculate 2.A.B, if A^2 and B^2 are already known.
+         */
+        return a.add(b).square().subtract(aSquared).subtract(bSquared);
+    }
+
     // D.3.2 pg 102 (see Note:)
     public ECPoint subtract(ECPoint b)
     {
@@ -294,6 +316,6 @@ public class SecP256K1Point extends ECPoint
             return this;
         }
 
-        return new SecP256K1Point(curve, this.x, this.y.negate(), this.zs, this.withCompression);
+        return new SecP256R1Point(curve, this.x, this.y.negate(), this.zs, this.withCompression);
     }
 }
