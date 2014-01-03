@@ -68,6 +68,8 @@ public class CustomNamedCurves
     {
         defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
         defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
+
+        objIds.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
     }
 
     public static X9ECParameters getByName(String name)
