@@ -789,7 +789,7 @@ public abstract class ECCurve
          */
         public boolean isKoblitz()
         {
-            return order != null && cofactor != null && a.bitLength() <= 1 && b.bitLength() == 1;
+            return order != null && cofactor != null && a.bitLength() <= 1 && b.isOne();
         }
 
         /**

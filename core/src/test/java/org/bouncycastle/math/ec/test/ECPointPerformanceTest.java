@@ -9,10 +9,11 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.CustomNamedCurves;
 
 /**
- * Compares the performance of the the window NAF point multiplication against
- * conventional point multiplication.
+ * Compares the performance of the the window NAF point multiplication against conventional point
+ * multiplication.
  */
 public class ECPointPerformanceTest extends TestCase
 {
@@ -22,17 +23,31 @@ public class ECPointPerformanceTest extends TestCase
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
         "JACOBIAN-MODIFIED", "LAMBDA-AFFINE", "LAMBDA-PROJECTIVE", "SKEWED" };
 
-    private void randMult(final String curveName) throws Exception
+    private void randMult(String curveName) throws Exception
     {
         X9ECParameters spec = ECNamedCurveTable.getByName(curveName);
+        if (spec != null)
+        {
+            randMult(curveName, spec);
+        }
+
+        spec = CustomNamedCurves.getByName(curveName);
+        if (spec != null)
+        {
+            randMult(curveName + " (custom)", spec);
+        }
+    }
+
+    private void randMult(String label, X9ECParameters spec) throws Exception
+    {
         ECCurve C = spec.getCurve();
-        ECPoint G = (ECPoint) spec.getG();
+        ECPoint G = (ECPoint)spec.getG();
         BigInteger n = spec.getN();
 
         SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
         random.setSeed(System.currentTimeMillis());
 
-        System.out.println(curveName);
+        System.out.println(label);
 
         int[] coords = ECCurve.getAllCoordinateSystems();
         for (int i = 0; i < coords.length; ++i)
@@ -100,18 +115,17 @@ public class ECPointPerformanceTest extends TestCase
         }
         long endTime = System.currentTimeMillis();
 
-        return (double) (endTime - startTime) / NUM_ROUNDS;
+        return (double)(endTime - startTime) / NUM_ROUNDS;
     }
 
     public void testMultiply() throws Exception
     {
-//        Enumeration e = SECNamedCurves.getNames();
-//        while (e.hasMoreElements())
-//        {
-//            String name = (String)e.nextElement();
-//            randMult(name);
-//        }
-        
+        // Enumeration e = SECNamedCurves.getNames();
+        // while (e.hasMoreElements())
+        // {
+        // String name = (String)e.nextElement();
+        // randMult(name);
+        // }
 
         randMult("sect113r1");
         randMult("sect113r2");
@@ -147,7 +161,7 @@ public class ECPointPerformanceTest extends TestCase
         randMult("secp256r1");
         randMult("secp384r1");
         randMult("secp521r1");
-        
+
         randMult("brainpoolp160r1");
         randMult("brainpoolp160t1");
         randMult("brainpoolp192r1");
@@ -162,6 +176,30 @@ public class ECPointPerformanceTest extends TestCase
         randMult("brainpoolp384t1");
         randMult("brainpoolp512r1");
         randMult("brainpoolp512t1");
+
+        randMult("prime192v1");
+        randMult("prime192v2");
+        randMult("prime192v3");
+        randMult("prime239v1");
+        randMult("prime239v2");
+        randMult("prime239v3");
+        randMult("prime256v1");
+        randMult("c2pnb163v1");
+        randMult("c2pnb163v2");
+        randMult("c2pnb163v3");
+        randMult("c2pnb176w1");
+        randMult("c2tnb191v1");
+        randMult("c2tnb191v2");
+        randMult("c2tnb191v3");
+        randMult("c2pnb208w1");
+        randMult("c2tnb239v1");
+        randMult("c2tnb239v2");
+        randMult("c2tnb239v3");
+        randMult("c2pnb272w1");
+        randMult("c2pnb304w1");
+        randMult("c2tnb359v1");
+        randMult("c2pnb368w1");
+        randMult("c2tnb431r1");
     }
 
     // public static void main(String argv[]) throws Exception

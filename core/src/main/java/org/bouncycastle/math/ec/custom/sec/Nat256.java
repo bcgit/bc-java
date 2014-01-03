@@ -1,5 +1,9 @@
 package org.bouncycastle.math.ec.custom.sec;
 
+import java.math.BigInteger;
+
+import org.bouncycastle.crypto.util.Pack;
+
 public abstract class Nat256
 {
     private static final long M = 0xFFFFFFFFL;
@@ -29,6 +33,36 @@ public abstract class Nat256
         z[6] = (int)c;
         c >>>= 32;
         c += (x[7] & M) + (y[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
+    public static int addBothTo(int[] x, int[] y, int[] z)
+    {
+        long c = 0;
+        c += (x[0] & M) + (y[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (y[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (y[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (y[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (y[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (y[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += (x[6] & M) + (y[6] & M) + (z[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        c += (x[7] & M) + (y[7] & M) + (z[7] & M);
         z[7] = (int)c;
         c >>>= 32;
         return (int)c;
@@ -87,6 +121,16 @@ public abstract class Nat256
         return c == 0 ? 0 : incExt(zz, zzOff + 1);
     }
 
+    public static int[] create()
+    {
+        return new int[8];
+    }
+
+    public static int[] createExt()
+    {
+        return new int[16];
+    }
+
     public static int dec(int[] z, int zOff)
     {
         assert zOff < 8;
@@ -98,8 +142,40 @@ public abstract class Nat256
                 return 0;
             }
         }
-        while(++i < 8);
+        while (++i < 8);
         return -1;
+    }
+
+    public static int[] fromBigInteger(BigInteger x)
+    {
+        if (x.signum() < 0 || x.bitLength() > 256)
+        {
+            throw new IllegalArgumentException();
+        }
+
+        int[] z = create();
+        int i = 0;
+        while (x.signum() != 0)
+        {
+            z[i++] = x.intValue();
+            x = x.shiftRight(32);
+        }
+        return z;
+    }
+
+    public static int getBit(int[] x, int bit)
+    {
+        if (bit == 0)
+        {
+            return x[0] & 1;
+        }
+        if ((bit & 255) != bit)
+        {
+            return 0;
+        }
+        int w = bit >>> 5;
+        int b = bit & 31;
+        return (x[w] >>> b) & 1;
     }
 
     public static boolean gte(int[] x, int[] y)
@@ -176,19 +252,122 @@ public abstract class Nat256
 
     public static void mul(int[] x, int[] y, int[] zz)
     {
-        zz[8] = mulWordExt(x[0], y, zz, 0);
+        long y_0 = y[0] & M;
+        long y_1 = y[1] & M;
+        long y_2 = y[2] & M;
+        long y_3 = y[3] & M;
+        long y_4 = y[4] & M;
+        long y_5 = y[5] & M;
+        long y_6 = y[6] & M;
+        long y_7 = y[7] & M;
+
+        {
+            long c = 0, x_0 = x[0] & M;
+            c += x_0 * y_0;
+            zz[0] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_1;
+            zz[1] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_2;
+            zz[2] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_3;
+            zz[3] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_4;
+            zz[4] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_5;
+            zz[5] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_6;
+            zz[6] = (int)c;
+            c >>>= 32;
+            c += x_0 * y_7;
+            zz[7] = (int)c;
+            c >>>= 32;
+            zz[8] = (int)c;
+        }
+
         for (int i = 1; i < 8; ++i)
         {
-            zz[i + 8] = mulWordAddExt(x[i], y, 0, zz, i);
+            long c = 0, x_i = x[i] & M;
+            c += x_i * y_0 + (zz[i + 0] & M);
+            zz[i + 0] = (int)c;
+            c >>>= 32;
+            c += x_i * y_1 + (zz[i + 1] & M);
+            zz[i + 1] = (int)c;
+            c >>>= 32;
+            c += x_i * y_2 + (zz[i + 2] & M);
+            zz[i + 2] = (int)c;
+            c >>>= 32;
+            c += x_i * y_3 + (zz[i + 3] & M);
+            zz[i + 3] = (int)c;
+            c >>>= 32;
+            c += x_i * y_4 + (zz[i + 4] & M);
+            zz[i + 4] = (int)c;
+            c >>>= 32;
+            c += x_i * y_5 + (zz[i + 5] & M);
+            zz[i + 5] = (int)c;
+            c >>>= 32;
+            c += x_i * y_6 + (zz[i + 6] & M);
+            zz[i + 6] = (int)c;
+            c >>>= 32;
+            c += x_i * y_7 + (zz[i + 7] & M);
+            zz[i + 7] = (int)c;
+            c >>>= 32;
+            zz[i + 8] = (int)c;
         }
     }
 
-    public static void mulAdd(int[] x, int[] y, int[] zz)
+    public static int mulAdd(int[] x, int[] y, int[] zz)
     {
+        long y_0 = y[0] & M;
+        long y_1 = y[1] & M;
+        long y_2 = y[2] & M;
+        long y_3 = y[3] & M;
+        long y_4 = y[4] & M;
+        long y_5 = y[5] & M;
+        long y_6 = y[6] & M;
+        long y_7 = y[7] & M;
+
+        long t = 0;
+
         for (int i = 0; i < 8; ++i)
         {
-            zz[i + 8] += mulWordAddExt(x[i], y, 0, zz, i);
+            long c = 0, x_i = x[i] & M;
+            c += x_i * y_0 + (zz[i + 0] & M);
+            zz[i + 0] = (int)c;
+            c >>>= 32;
+            c += x_i * y_1 + (zz[i + 1] & M);
+            zz[i + 1] = (int)c;
+            c >>>= 32;
+            c += x_i * y_2 + (zz[i + 2] & M);
+            zz[i + 2] = (int)c;
+            c >>>= 32;
+            c += x_i * y_3 + (zz[i + 3] & M);
+            zz[i + 3] = (int)c;
+            c >>>= 32;
+            c += x_i * y_4 + (zz[i + 4] & M);
+            zz[i + 4] = (int)c;
+            c >>>= 32;
+            c += x_i * y_5 + (zz[i + 5] & M);
+            zz[i + 5] = (int)c;
+            c >>>= 32;
+            c += x_i * y_6 + (zz[i + 6] & M);
+            zz[i + 6] = (int)c;
+            c >>>= 32;
+            c += x_i * y_7 + (zz[i + 7] & M);
+            zz[i + 7] = (int)c;
+            c >>>= 32;
+            c += t + (zz[i + 8] & M);
+            zz[i + 8] = (int)c;
+            c >>>= 32;
+            t = c;
         }
+
+        return (int)t;
     }
 
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
@@ -204,30 +383,6 @@ public abstract class Nat256
             c >>>= 32;
         }
         while (++i < 8);
-//        c += xVal * (yy[yyOff + 0] & M) + (zz[zzOff + 0] & M);
-//        zz[zzOff + 0] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 1] & M) + (zz[zzOff + 1] & M);
-//        zz[zzOff + 1] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 2] & M) + (zz[zzOff + 2] & M);
-//        zz[zzOff + 2] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 3] & M) + (zz[zzOff + 3] & M);
-//        zz[zzOff + 3] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 4] & M) + (zz[zzOff + 4] & M);
-//        zz[zzOff + 4] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 5] & M) + (zz[zzOff + 5] & M);
-//        zz[zzOff + 5] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 6] & M) + (zz[zzOff + 6] & M);
-//        zz[zzOff + 6] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (yy[yyOff + 7] & M) + (zz[zzOff + 7] & M);
-//        zz[zzOff + 7] = (int)c;
-//        c >>>= 32;
         return (int)c;
     }
 
@@ -274,30 +429,6 @@ public abstract class Nat256
             c >>>= 32;
         }
         while (++i < 8);
-//        c += xVal * (y[0] & M);
-//        zz[zzOff + 0] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[1] & M);
-//        zz[zzOff + 1] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[2] & M);
-//        zz[zzOff + 2] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[3] & M);
-//        zz[zzOff + 3] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[4] & M);
-//        zz[zzOff + 4] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[5] & M);
-//        zz[zzOff + 5] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[6] & M);
-//        zz[zzOff + 6] = (int)c;
-//        c >>>= 32;
-//        c += xVal * (y[7] & M);
-//        zz[zzOff + 7] = (int)c;
-//        c >>>= 32;
         return (int)c;
     }
 
@@ -367,6 +498,36 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int subBothFrom(int[] x, int[] y, int[] z)
+    {
+        long c = 0;
+        c += (z[0] & M) - (x[0] & M) - (y[0] & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - (x[1] & M) - (y[1] & M);
+        z[1] = (int)c;
+        c >>= 32;
+        c += (z[2] & M) - (x[2] & M) - (y[2] & M);
+        z[2] = (int)c;
+        c >>= 32;
+        c += (z[3] & M) - (x[3] & M) - (y[3] & M);
+        z[3] = (int)c;
+        c >>= 32;
+        c += (z[4] & M) - (x[4] & M) - (y[4] & M);
+        z[4] = (int)c;
+        c >>= 32;
+        c += (z[5] & M) - (x[5] & M) - (y[5] & M);
+        z[5] = (int)c;
+        c >>= 32;
+        c += (z[6] & M) - (x[6] & M) - (y[6] & M);
+        z[6] = (int)c;
+        c >>= 32;
+        c += (z[7] & M) - (x[7] & M) - (y[7] & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
     public static int subDWord(long x, int[] z)
     {
         x = -x;
@@ -377,6 +538,20 @@ public abstract class Nat256
         z[1] = (int)x;
         x >>= 32;
         return x == 0 ? 0 : dec(z, 2);
+    }
+
+    public static BigInteger toBigInteger(int[] x)
+    {
+        byte[] bs = new byte[32];
+        for (int i = 0; i < 8; ++i)
+        {
+            int x_i = x[i];
+            if (x_i != 0)
+            {
+                Pack.intToBigEndian(x_i, bs, (7 - i) << 2);
+            }
+        }
+        return new BigInteger(1, bs);
     }
 
     public static void zero(int[] z)
