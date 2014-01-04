@@ -38,18 +38,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int addExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 16; ++i)
-        {
-            c += (xx[i] & M) + (yy[i] & M);
-            zz[i] = (int)c;
-            c >>>= 32;
-        }
-        return (int)c;
-    }
-
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -93,7 +81,19 @@ public abstract class Nat256
         return c == 0 ? 0 : inc(z, zOff + 2);
     }
 
-    public static int addExt(int[] x, int xOff, int[] zz, int zzOff)
+    public static int addExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) + (yy[i] & M);
+            zz[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int addToExt(int[] x, int xOff, int[] zz, int zzOff)
     {
         // assert zzOff <= 8;
         long c = 0;
@@ -204,6 +204,20 @@ public abstract class Nat256
         return false;
     }
 
+    public static boolean gteExt(int[] xx, int[] yy)
+    {
+        for (int i = 15; i >= 0; --i)
+        {
+            int xx_i = xx[i] ^ Integer.MIN_VALUE;
+            int yy_i = yy[i] ^ Integer.MIN_VALUE;
+            if (xx_i < yy_i)
+                return false;
+            if (xx_i > yy_i)
+                return true;
+        }
+        return false;
+    }
+
     public static int inc(int[] z, int zOff)
     {
         // assert zOff < 8;
@@ -255,6 +269,22 @@ public abstract class Nat256
         for (int i = 1; i < 8; ++i)
         {
             if (x[i] != 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isZeroExt(int[] xx)
+    {
+        if (xx[0] != 0)
+        {
+            return false;
+        }
+        for (int i = 1; i < 16; ++i)
+        {
+            if (xx[i] != 0)
             {
                 return false;
             }
@@ -666,6 +696,49 @@ public abstract class Nat256
         z[1] = (int)x;
         x >>= 32;
         return x == 0 ? 0 : dec(z, 2);
+    }
+
+    public static int subExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) - (yy[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int subFromExt(int[] x, int xOff, int[] zz, int zzOff)
+    {
+        // assert zzOff <= 8;
+        long c = 0;
+        c += (zz[zzOff + 0] & M) - (x[xOff + 0] & M);
+        zz[zzOff + 0] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 1] & M) - (x[xOff + 1] & M);
+        zz[zzOff + 1] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 2] & M) - (x[xOff + 2] & M);
+        zz[zzOff + 2] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 3] & M) - (x[xOff + 3] & M);
+        zz[zzOff + 3] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 4] & M) - (x[xOff + 4] & M);
+        zz[zzOff + 4] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 5] & M) - (x[xOff + 5] & M);
+        zz[zzOff + 5] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 6] & M) - (x[xOff + 6] & M);
+        zz[zzOff + 6] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 7] & M) - (x[xOff + 7] & M);
+        zz[zzOff + 7] = (int)c;
+        c >>= 32;
+        return (int)c;
     }
 
     public static BigInteger toBigInteger(int[] x)

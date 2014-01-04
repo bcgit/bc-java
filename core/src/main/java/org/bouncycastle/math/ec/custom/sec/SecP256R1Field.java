@@ -10,6 +10,9 @@ public class SecP256R1Field
     private static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
+    private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
+        0x00000002, 0xFFFFFFFE };
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -17,6 +20,15 @@ public class SecP256R1Field
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
             Nat256.sub(z, P, z);
+        }
+    }
+
+    public static void addExt(int[] xx, int[] yy, int[] zz)
+    {
+        int c = Nat256.addExt(xx, yy, zz);
+        if (c != 0 || Nat256.gteExt(zz, PExt))
+        {
+            Nat256.subExt(zz, PExt, zz);
         }
     }
 
@@ -59,7 +71,7 @@ public class SecP256R1Field
         }
     }
 
-    private static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] tt, int[] z)
     {
         long t08 = tt[8] & M, t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
         long t12 = tt[12] & M, t13 = tt[13] & M, t14 = tt[14] & M, t15 = tt[15] & M;
@@ -130,6 +142,15 @@ public class SecP256R1Field
         if (c != 0)
         {
             Nat256.add(z, P, z);
+        }
+    }
+
+    public static void subtractExt(int[] xx, int[] yy, int[] zz)
+    {
+        int c = Nat256.subExt(xx, yy, zz);
+        if (c != 0)
+        {
+            Nat256.addExt(zz, PExt, zz);
         }
     }
 }
