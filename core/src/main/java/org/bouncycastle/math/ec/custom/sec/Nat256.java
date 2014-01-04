@@ -476,140 +476,105 @@ public abstract class Nat256
         long zz_2 = zz[2] & M;
 
         {
-            long cc = 0;
-            cc += x_1 * x_0 + zz_1;
-            zz[1] = (int)cc;
-            cc >>>= 32;
-            zz_2 += cc;
+            zz_1 += x_1 * x_0;
+            zz[1] = (int)zz_1;
+            zz_2 += zz_1 >>> 32;
         }
 
         long x_2 = x[2] & M;
         long zz_3 = zz[3] & M;
         long zz_4 = zz[4] & M;
         {
-            long cc = 0;
-            cc += x_2 * x_0 + zz_2;
-            zz[2] = (int)cc;
-            cc >>>= 32;
-            cc += x_2 * x_1 + zz_3;
-            zz_3 = cc & M;
-            cc >>>= 32;
-            zz_4 += cc;
+            zz_2 += x_2 * x_0;
+            zz[2] = (int)zz_2;
+            zz_3 += (zz_2 >>> 32) + x_2 * x_1;
+            zz_4 += zz_3 >>> 32;
+            zz_3 &= M;
         }
 
         long x_3 = x[3] & M;
         long zz_5 = zz[5] & M;
         long zz_6 = zz[6] & M;
         {
-            long cc = 0;
-            cc += x_3 * x_0 + zz_3;
-            zz[3] = (int)cc;
-            cc >>>= 32;
-            cc += x_3 * x_1 + zz_4;
-            zz_4 = cc & M;
-            cc >>>= 32;
-            cc += x_3 * x_2 + zz_5;
-            zz_5 = cc & M;
-            cc >>>= 32;
-            zz_6 += cc;
+            zz_3 += x_3 * x_0;
+            zz[3] = (int)zz_3;
+            zz_4 += (zz_3 >>> 32) + x_3 * x_1;
+            zz_5 += (zz_4 >>> 32) + x_3 * x_2;
+            zz_4 &= M;
+            zz_6 += zz_5 >>> 32;
+            zz_5 &= M;
         }
 
         long x_4 = x[4] & M;
         long zz_7 = zz[7] & M;
         long zz_8 = zz[8] & M;
         {
-            long cc = 0;
-            cc += x_4 * x_0 + zz_4;
-            zz[4] = (int)cc;
-            cc >>>= 32;
-            cc += x_4 * x_1 + zz_5;
-            zz_5 = cc & M;
-            cc >>>= 32;
-            cc += x_4 * x_2 + zz_6;
-            zz_6 = cc & M;
-            cc >>>= 32;
-            cc += x_4 * x_3 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            zz_8 += cc;
+            zz_4 += x_4 * x_0;
+            zz[4] = (int)zz_4;
+            zz_5 += (zz_4 >>> 32) + x_4 * x_1;
+            zz_6 += (zz_5 >>> 32) + x_4 * x_2;
+            zz_5 &= M;
+            zz_7 += (zz_6 >>> 32) + x_4 * x_3;
+            zz_6 &= M;
+            zz_8 += zz_7 >>> 32;
+            zz_7 &= M;
         }
 
         long x_5 = x[5] & M;
         long zz_9 = zz[9] & M;
         long zz_10 = zz[10] & M;
         {
-            long cc = 0;
-            cc += x_5 * x_0 + zz_5;
-            zz[5] = (int)cc;
-            cc >>>= 32;
-            cc += x_5 * x_1 + zz_6;
-            zz_6 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_2 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_3 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_4 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            zz_10 += cc;
+            zz_5 += x_5 * x_0;
+            zz[5] = (int)zz_5;
+            zz_6 += (zz_5 >>> 32) + x_5 * x_1;
+            zz_7 += (zz_6 >>> 32) + x_5 * x_2;
+            zz_6 &= M;
+            zz_8 += (zz_7 >>> 32) + x_5 * x_3;
+            zz_7 &= M;
+            zz_9 += (zz_8 >>> 32) + x_5 * x_4;
+            zz_8 &= M;
+            zz_10 += zz_9 >>> 32;
+            zz_9 &= M;
         }
 
         long x_6 = x[6] & M;
         long zz_11 = zz[11] & M;
         long zz_12 = zz[12] & M;
         {
-            long cc = 0;
-            cc += x_6 * x_0 + zz_6;
-            zz[6] = (int)cc;
-            cc >>>= 32;
-            cc += x_6 * x_1 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_2 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_3 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_4 + zz_10;
-            zz_10 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_5 + zz_11;
-            zz_11 = cc & M;
-            cc >>>= 32;
-            zz_12 += cc;
+            zz_6 += x_6 * x_0;
+            zz[6] = (int)zz_6;
+            zz_7 += (zz_6 >>> 32) + x_6 * x_1;
+            zz_8 += (zz_7 >>> 32) + x_6 * x_2;
+            zz_7 &= M;
+            zz_9 += (zz_8 >>> 32) + x_6 * x_3;
+            zz_8 &= M;
+            zz_10 += (zz_9 >>> 32) + x_6 * x_4;
+            zz_9 &= M;
+            zz_11 += (zz_10 >>> 32) + x_6 * x_5;
+            zz_10 &= M;
+            zz_12 += zz_11 >>> 32;
+            zz_11 &= M;
         }
 
         long x_7 = x[7] & M;
         long zz_13 = zz[13] & M;
         long zz_14 = zz[14] & M;
         {
-            long cc = 0;
-            cc += x_7 * x_0 + zz_7;
-            zz[7] = (int)cc;
-            cc >>>= 32;
-            cc += x_7 * x_1 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_2 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_3 + zz_10;
-            zz_10 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_4 + zz_11;
-            zz_11 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_5 + zz_12;
-            zz_12 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_6 + zz_13;
-            zz_13 = cc & M;
-            cc >>>= 32;
-            zz_14 += cc;
+            zz_7 += x_7 * x_0;
+            zz[7] = (int)zz_7;
+            zz_8 += (zz_7 >>> 32) + x_7 * x_1;
+            zz_9 += (zz_8 >>> 32) + x_7 * x_2;
+            zz_8 &= M;
+            zz_10 += (zz_9 >>> 32) + x_7 * x_3;
+            zz_9 &= M;
+            zz_11 += (zz_10 >>> 32) + x_7 * x_4;
+            zz_10 &= M;
+            zz_12 += (zz_11 >>> 32) + x_7 * x_5;
+            zz_11 &= M;
+            zz_13 += (zz_12 >>> 32) + x_7 * x_6;
+            zz_12 &= M;
+            zz_14 += zz_13 >>> 32;
+            zz_13 &= M;
         }
 
         zz[8] = (int)zz_8;
