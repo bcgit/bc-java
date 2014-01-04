@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.CustomNamedCurves;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -150,12 +151,16 @@ public class TlsECCUtils
             return null;
         }
 
-        // Lazily created the first time a particular curve is accessed
-        X9ECParameters ecP = ECNamedCurveTable.getByName(curveName);
+        // Parameters are lazily created the first time a particular curve is accessed
 
+        X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
         if (ecP == null)
         {
-            return null;
+            ecP = ECNamedCurveTable.getByName(curveName);
+            if (ecP == null)
+            {
+                return null;
+            }
         }
 
         // It's a bit inefficient to do this conversion every time
