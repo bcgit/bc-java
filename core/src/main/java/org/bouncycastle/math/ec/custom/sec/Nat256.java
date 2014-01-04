@@ -457,22 +457,29 @@ public abstract class Nat256
 
     public static void square(int[] x, int[] zz)
     {
+        long x_0 = x[0] & M;
+        long zz_1;
+
         {
-            int c = 0, i = 8, j = 16;
+            int c = 0, i = 7, j = 16;
             do
             {
-                long xVal = (x[--i] & M);
+                long xVal = (x[i--] & M);
                 long p = xVal * xVal;
                 zz[--j] = (c << 31) | (int)(p >>> 33);
                 zz[--j] = (int)(p >>> 1);
                 c = (int)p;
             }
             while (i > 0);
+
+            {
+                long p = x_0 * x_0;
+                zz_1 = ((c << 31) & M) | (p >>> 33);
+                zz[0] = (int)(p >>> 1);
+            }
         }
 
-        long x_0 = x[0] & M;
         long x_1 = x[1] & M;
-        long zz_1 = zz[1] & M;
         long zz_2 = zz[2] & M;
 
         {
