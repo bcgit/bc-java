@@ -7,12 +7,11 @@ import java.util.Enumeration;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
+import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.CustomNamedCurves;
 
 /**
  * Test class for {@link org.bouncycastle.math.ec.ECPoint ECPoint}. All
@@ -447,7 +446,7 @@ public class ECPointTest extends TestCase
             X9ECParameters x9ECParameters = SECNamedCurves.getByName(name);
             implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
 
-            x9ECParameters = CustomNamedCurves.getByName(name);
+            x9ECParameters = SECCustomNamedCurves.getByName(name);
             if (x9ECParameters != null)
             {
                 implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
