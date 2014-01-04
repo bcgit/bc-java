@@ -38,6 +38,18 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int addExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) + (yy[i] & M);
+            zz[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -70,7 +82,7 @@ public abstract class Nat256
 
     public static int addDWord(long x, int[] z, int zOff)
     {
-        assert zOff < 6;
+        // assert zOff < 6;
         long c = x;
         c += (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -83,7 +95,7 @@ public abstract class Nat256
 
     public static int addExt(int[] x, int xOff, int[] zz, int zzOff)
     {
-        assert zzOff <= 8;
+        // assert zzOff <= 8;
         long c = 0;
         c += (x[xOff + 0] & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
@@ -114,7 +126,7 @@ public abstract class Nat256
 
     public static int addWordExt(int x, int[] zz, int zzOff)
     {
-        assert zzOff < 15;
+        // assert zzOff < 15;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -133,7 +145,7 @@ public abstract class Nat256
 
     public static int dec(int[] z, int zOff)
     {
-        assert zOff < 8;
+        // assert zOff < 8;
         int i = zOff;
         do
         {
@@ -194,7 +206,7 @@ public abstract class Nat256
 
     public static int inc(int[] z, int zOff)
     {
-        assert zOff < 8;
+        // assert zOff < 8;
         for (int i = zOff; i < 8; ++i)
         {
             if (++z[i] != 0)
@@ -207,7 +219,7 @@ public abstract class Nat256
 
     public static int incExt(int[] zz, int zzOff)
     {
-        assert zzOff < 16;
+        // assert zzOff < 16;
         for (int i = zzOff; i < 16; ++i)
         {
             if (++zz[i] != 0)
@@ -372,8 +384,8 @@ public abstract class Nat256
 
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
     {
-        assert yyOff <= 8;
-        assert zzOff <= 8;
+        // assert yyOff <= 8;
+        // assert zzOff <= 8;
         long c = 0, xVal = x & M;
         int i = 0;
         do
@@ -388,7 +400,7 @@ public abstract class Nat256
 
     public static int squareWordAddExt(int[] x, int xPos, int[] zz)
     {
-        assert xPos > 0 && xPos < 8;
+        // assert xPos > 0 && xPos < 8;
         long c = 0, xVal = x[xPos] & M;
         int i = 0;
         do
@@ -403,7 +415,7 @@ public abstract class Nat256
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
-        assert zOff < 5;
+        // assert zOff < 5;
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -419,7 +431,7 @@ public abstract class Nat256
 
     public static int mulWordExt(int x, int[] y, int[] zz, int zzOff)
     {
-        assert zzOff <= 8;
+        // assert zzOff <= 8;
         long c = 0, xVal = x & M;
         int i = 0;
         do
@@ -432,40 +444,193 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int shiftUp(int[] x, int xLen)
+    public static int shiftUp(int[] x, int xLen, int bit)
     {
-        int prev = 0;
         for (int i = 0; i < xLen; ++i)
         {
             int next = x[i];
-            x[i] = (next << 1) | prev;
-            prev = next >>> 31;
+            x[i] = (next << 1) | bit;
+            bit = next >>> 31;
         }
-        return prev;
+        return bit;
     }
 
     public static void square(int[] x, int[] zz)
     {
-        int c = 0;
-        int j = 8, k = 16;
-        do
         {
-            long xVal = (x[--j] & M);
-            long p = xVal * xVal;
-            zz[--k] = (c << 31) | (int)(p >>> 33);
-            zz[--k] = (int)(p >>> 1);
-            c = (int)p;
-        }
-        while (j > 0);
-
-        for (int i = 1; i < 8; ++i)
-        {
-            c = squareWordAddExt(x, i, zz);
-            addWordExt(c, zz, i << 1);
+            int c = 0, i = 8, j = 16;
+            do
+            {
+                long xVal = (x[--i] & M);
+                long p = xVal * xVal;
+                zz[--j] = (c << 31) | (int)(p >>> 33);
+                zz[--j] = (int)(p >>> 1);
+                c = (int)p;
+            }
+            while (i > 0);
         }
 
-        shiftUp(zz, 16);
-        zz[0] |= x[0] & 1;
+        long x_0 = x[0] & M;
+        long x_1 = x[1] & M;
+        long zz_1 = zz[1] & M;
+        long zz_2 = zz[2] & M;
+
+        {
+            long cc = 0;
+            cc += x_1 * x_0 + zz_1;
+            zz[1] = (int)cc;
+            cc >>>= 32;
+            zz_2 += cc;
+        }
+
+        long x_2 = x[2] & M;
+        long zz_3 = zz[3] & M;
+        long zz_4 = zz[4] & M;
+        {
+            long cc = 0;
+            cc += x_2 * x_0 + zz_2;
+            zz[2] = (int)cc;
+            cc >>>= 32;
+            cc += x_2 * x_1 + zz_3;
+            zz_3 = cc & M;
+            cc >>>= 32;
+            zz_4 += cc;
+        }
+
+        long x_3 = x[3] & M;
+        long zz_5 = zz[5] & M;
+        long zz_6 = zz[6] & M;
+        {
+            long cc = 0;
+            cc += x_3 * x_0 + zz_3;
+            zz[3] = (int)cc;
+            cc >>>= 32;
+            cc += x_3 * x_1 + zz_4;
+            zz_4 = cc & M;
+            cc >>>= 32;
+            cc += x_3 * x_2 + zz_5;
+            zz_5 = cc & M;
+            cc >>>= 32;
+            zz_6 += cc;
+        }
+
+        long x_4 = x[4] & M;
+        long zz_7 = zz[7] & M;
+        long zz_8 = zz[8] & M;
+        {
+            long cc = 0;
+            cc += x_4 * x_0 + zz_4;
+            zz[4] = (int)cc;
+            cc >>>= 32;
+            cc += x_4 * x_1 + zz_5;
+            zz_5 = cc & M;
+            cc >>>= 32;
+            cc += x_4 * x_2 + zz_6;
+            zz_6 = cc & M;
+            cc >>>= 32;
+            cc += x_4 * x_3 + zz_7;
+            zz_7 = cc & M;
+            cc >>>= 32;
+            zz_8 += cc;
+        }
+
+        long x_5 = x[5] & M;
+        long zz_9 = zz[9] & M;
+        long zz_10 = zz[10] & M;
+        {
+            long cc = 0;
+            cc += x_5 * x_0 + zz_5;
+            zz[5] = (int)cc;
+            cc >>>= 32;
+            cc += x_5 * x_1 + zz_6;
+            zz_6 = cc & M;
+            cc >>>= 32;
+            cc += x_5 * x_2 + zz_7;
+            zz_7 = cc & M;
+            cc >>>= 32;
+            cc += x_5 * x_3 + zz_8;
+            zz_8 = cc & M;
+            cc >>>= 32;
+            cc += x_5 * x_4 + zz_9;
+            zz_9 = cc & M;
+            cc >>>= 32;
+            zz_10 += cc;
+        }
+
+        long x_6 = x[6] & M;
+        long zz_11 = zz[11] & M;
+        long zz_12 = zz[12] & M;
+        {
+            long cc = 0;
+            cc += x_6 * x_0 + zz_6;
+            zz[6] = (int)cc;
+            cc >>>= 32;
+            cc += x_6 * x_1 + zz_7;
+            zz_7 = cc & M;
+            cc >>>= 32;
+            cc += x_6 * x_2 + zz_8;
+            zz_8 = cc & M;
+            cc >>>= 32;
+            cc += x_6 * x_3 + zz_9;
+            zz_9 = cc & M;
+            cc >>>= 32;
+            cc += x_6 * x_4 + zz_10;
+            zz_10 = cc & M;
+            cc >>>= 32;
+            cc += x_6 * x_5 + zz_11;
+            zz_11 = cc & M;
+            cc >>>= 32;
+            zz_12 += cc;
+        }
+
+        long x_7 = x[7] & M;
+        long zz_13 = zz[13] & M;
+        long zz_14 = zz[14] & M;
+        {
+            long cc = 0;
+            cc += x_7 * x_0 + zz_7;
+            zz[7] = (int)cc;
+            cc >>>= 32;
+            cc += x_7 * x_1 + zz_8;
+            zz_8 = cc & M;
+            cc >>>= 32;
+            cc += x_7 * x_2 + zz_9;
+            zz_9 = cc & M;
+            cc >>>= 32;
+            cc += x_7 * x_3 + zz_10;
+            zz_10 = cc & M;
+            cc >>>= 32;
+            cc += x_7 * x_4 + zz_11;
+            zz_11 = cc & M;
+            cc >>>= 32;
+            cc += x_7 * x_5 + zz_12;
+            zz_12 = cc & M;
+            cc >>>= 32;
+            cc += x_7 * x_6 + zz_13;
+            zz_13 = cc & M;
+            cc >>>= 32;
+            zz_14 += cc;
+        }
+
+        long zz_15 = zz[15] & M;
+        {
+            long cc = 0;
+            cc += zz_14;
+            zz[14] = (int)cc;
+            cc >>>= 32;
+            zz_15 += cc;
+        }
+
+        zz[8] = (int)zz_8;
+        zz[9] = (int)zz_9;
+        zz[10] = (int)zz_10;
+        zz[11] = (int)zz_11;
+        zz[12] = (int)zz_12;
+        zz[13] = (int)zz_13;
+        zz[14] = (int)zz_14;
+        zz[15] = (int)zz_15;
+
+        shiftUp(zz, 16, (int)x_0 & 1);
     }
 
     public static int sub(int[] x, int[] y, int[] z)
