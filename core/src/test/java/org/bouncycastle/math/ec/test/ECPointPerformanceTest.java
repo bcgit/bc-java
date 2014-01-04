@@ -4,12 +4,11 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
-
+import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.CustomNamedCurves;
 
 /**
  * Compares the performance of the the window NAF point multiplication against conventional point
@@ -31,7 +30,7 @@ public class ECPointPerformanceTest extends TestCase
             randMult(curveName, spec);
         }
 
-        spec = CustomNamedCurves.getByName(curveName);
+        spec = SECCustomNamedCurves.getByName(curveName);
         if (spec != null)
         {
             randMult(curveName + " (custom)", spec);
