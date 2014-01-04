@@ -10,6 +10,10 @@ public class SecP256K1Field
     private static final int[] P = new int[]{ 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
+    private static final int[] PExt = new int[]{ 0x000E90A1, 0x000007A2, 0x00000001, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0xFFFFF85E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int PExt15 = 0xFFFFFFFF;
     private static final long PInv = 0x00000001000003D1L;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -18,6 +22,15 @@ public class SecP256K1Field
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
             Nat256.addDWord(PInv, z, 0);
+        }
+    }
+
+    public static void addExt(int[] xx, int[] yy, int[] zz)
+    {
+        int c = Nat256.addExt(xx, yy, zz);
+        if (c != 0 || (zz[15] == PExt15 && Nat256.gteExt(zz, PExt)))
+        {
+            Nat256.subExt(zz, PExt, zz);
         }
     }
 
@@ -60,11 +73,11 @@ public class SecP256K1Field
         }
     }
 
-    private static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] tt, int[] z)
     {
         long extra = -(tt[8] & M);
         extra += Nat256.mulWordAddExt((int)PInv, tt, 8, tt, 0) & M;
-        extra += (Nat256.addExt(tt, 8, tt, 1) & M) << 32;
+        extra += (Nat256.addToExt(tt, 8, tt, 1) & M) << 32;
         extra += (tt[8] & M);
 
         long c = Nat256.mulWordDwordAdd((int)PInv, extra, tt, 0) & M;
@@ -93,6 +106,15 @@ public class SecP256K1Field
         if (c != 0)
         {
             Nat256.subDWord(PInv, z);
+        }
+    }
+
+    public static void subtractExt(int[] xx, int[] yy, int[] zz)
+    {
+        int c = Nat256.subExt(xx, yy, zz);
+        if (c != 0)
+        {
+            Nat256.addExt(zz, PExt, zz);
         }
     }
 }
