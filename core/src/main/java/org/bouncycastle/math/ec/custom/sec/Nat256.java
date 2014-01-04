@@ -444,15 +444,15 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int shiftUp(int[] x, int xLen, int bit)
+    public static int shiftUp(int[] x, int xLen, int c)
     {
         for (int i = 0; i < xLen; ++i)
         {
             int next = x[i];
-            x[i] = (next << 1) | bit;
-            bit = next >>> 31;
+            x[i] = (next << 1) | (c >>> 31);
+            c = next;
         }
-        return bit;
+        return c >>> 31;
     }
 
     public static void square(int[] x, int[] zz)
@@ -630,7 +630,7 @@ public abstract class Nat256
         zz[14] = (int)zz_14;
         zz[15] = (int)zz_15;
 
-        shiftUp(zz, 16, (int)x_0 & 1);
+        shiftUp(zz, 16, (int)x_0 << 31);
     }
 
     public static int sub(int[] x, int[] y, int[] z)
