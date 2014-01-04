@@ -1,10 +1,9 @@
-package org.bouncycastle.math.ec.custom;
+package org.bouncycastle.asn1.sec;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.math.ec.ECCurve;
@@ -14,7 +13,7 @@ import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
-public class CustomNamedCurves
+public class SECCustomNamedCurves
 {
     private static ECCurve configureCurve(ECCurve curve)
     {
