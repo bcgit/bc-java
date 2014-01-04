@@ -612,15 +612,6 @@ public abstract class Nat256
             zz_14 += cc;
         }
 
-        long zz_15 = zz[15] & M;
-        {
-            long cc = 0;
-            cc += zz_14;
-            zz[14] = (int)cc;
-            cc >>>= 32;
-            zz_15 += cc;
-        }
-
         zz[8] = (int)zz_8;
         zz[9] = (int)zz_9;
         zz[10] = (int)zz_10;
@@ -628,7 +619,7 @@ public abstract class Nat256
         zz[12] = (int)zz_12;
         zz[13] = (int)zz_13;
         zz[14] = (int)zz_14;
-        zz[15] = (int)zz_15;
+        zz[15] += (int)(zz_14 >>> 32);
 
         shiftUp(zz, 16, (int)x_0 << 31);
     }
