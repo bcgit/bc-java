@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -245,7 +246,11 @@ public class ECUtil
         
         if (params == null)
         {
-            params = SECNamedCurves.getByOID(oid);
+            params = SECCustomNamedCurves.getByOID(oid);
+            if (params == null)
+            {
+                params = SECNamedCurves.getByOID(oid);
+            }      else { System.out.println("using custom curve"); }
             if (params == null)
             {
                 params = NISTNamedCurves.getByOID(oid);
