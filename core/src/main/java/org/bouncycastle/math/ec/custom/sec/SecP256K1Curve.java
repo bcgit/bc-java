@@ -5,7 +5,11 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.ECPointMap;
+import org.bouncycastle.math.ec.GLVMultiplier;
+import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecP256K1Curve extends ECCurve
@@ -20,6 +24,8 @@ public class SecP256K1Curve extends ECCurve
 
     public SecP256K1Curve()
     {
+        super(FiniteFields.getPrimeField(q));
+
         this.infinity = new SecP256K1Point(this, null, null);
 
         this.a = fromBigInteger(ECConstants.ZERO);

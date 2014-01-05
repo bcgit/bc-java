@@ -3,6 +3,8 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 import java.util.Random;
 
+import org.bouncycastle.math.field.FiniteField;
+import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -68,11 +70,17 @@ public abstract class ECCurve
         }
     }
 
+    protected FiniteField field;
     protected ECFieldElement a, b;
     protected BigInteger order, cofactor;
 
     protected int coord = COORD_AFFINE;
     protected ECMultiplier multiplier = null;
+
+    protected ECCurve(FiniteField field)
+    {
+        this.field = field;
+    }
 
     public abstract int getFieldSize();
 
@@ -200,6 +208,11 @@ public abstract class ECCurve
     }
 
     public abstract ECPoint getInfinity();
+
+    public FiniteField getField()
+    {
+        return field;
+    }
 
     public ECFieldElement getA()
     {
@@ -341,6 +354,8 @@ public abstract class ECCurve
 
         public Fp(BigInteger q, BigInteger a, BigInteger b, BigInteger order, BigInteger cofactor)
         {
+            super(FiniteFields.getPrimeField(q));
+
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
@@ -359,6 +374,8 @@ public abstract class ECCurve
 
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
+            super(FiniteFields.getPrimeField(q));
+
             this.q = q;
             this.r = r;
             this.infinity = new ECPoint.Fp(this, null, null);
@@ -492,6 +509,36 @@ public abstract class ECCurve
     public static class F2m extends ECCurve
     {
         private static final int F2M_DEFAULT_COORDS = COORD_AFFINE;
+
+        private static FiniteField buildField(int m, int k1, int k2, int k3)
+        {
+            if (k1 == 0)
+            {
+                throw new IllegalArgumentException("k1 must be > 0");
+            }
+
+            if (k2 == 0)
+            {
+                if (k3 != 0)
+                {
+                    throw new IllegalArgumentException("k3 must be 0 if k2 == 0");
+                }
+
+                return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, m });
+            }
+
+            if (k2 <= k1)
+            {
+                throw new IllegalArgumentException("k2 must be > k1");
+            }
+
+            if (k3 <= k2)
+            {
+                throw new IllegalArgumentException("k3 must be > k2");
+            }
+
+            return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, k2, k3, m });
+        }
 
         /**
          * The exponent <code>m</code> of <code>F<sub>2<sup>m</sup></sub></code>.
@@ -657,37 +704,14 @@ public abstract class ECCurve
             BigInteger order,
             BigInteger cofactor)
         {
+            super(buildField(m, k1, k2, k3));
+
             this.m = m;
             this.k1 = k1;
             this.k2 = k2;
             this.k3 = k3;
             this.order = order;
             this.cofactor = cofactor;
-
-            if (k1 == 0)
-            {
-                throw new IllegalArgumentException("k1 must be > 0");
-            }
-
-            if (k2 == 0)
-            {
-                if (k3 != 0)
-                {
-                    throw new IllegalArgumentException("k3 must be 0 if k2 == 0");
-                }
-            }
-            else
-            {
-                if (k2 <= k1)
-                {
-                    throw new IllegalArgumentException("k2 must be > k1");
-                }
-
-                if (k3 <= k2)
-                {
-                    throw new IllegalArgumentException("k3 must be > k2");
-                }
-            }
 
             this.infinity = new ECPoint.F2m(this, null, null);
             this.a = fromBigInteger(a);
@@ -697,6 +721,8 @@ public abstract class ECCurve
 
         protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
+            super(buildField(m, k1, k2, k3));
+
             this.m = m;
             this.k1 = k1;
             this.k2 = k2;
