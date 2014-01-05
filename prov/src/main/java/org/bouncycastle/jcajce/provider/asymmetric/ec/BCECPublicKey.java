@@ -132,7 +132,6 @@ public class BCECPublicKey
         ECDomainParameters      dp = params.getParameters();
 
         this.algorithm = algorithm;
-        this.q = params.getQ();
 
         if (spec == null)
         {
@@ -146,6 +145,8 @@ public class BCECPublicKey
 
             this.ecSpec = EC5Util.convertSpec(ellipticCurve, spec);
         }
+
+        this.q = EC5Util.convertCurve(ecSpec.getCurve()).createPoint(params.getQ().getAffineXCoord().toBigInteger(), params.getQ().getAffineYCoord().toBigInteger());
 
         this.configuration = configuration;
     }

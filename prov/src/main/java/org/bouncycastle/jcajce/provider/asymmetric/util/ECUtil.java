@@ -242,15 +242,15 @@ public class ECUtil
     public static X9ECParameters getNamedCurveByOid(
         ASN1ObjectIdentifier oid)
     {
-        X9ECParameters params = X962NamedCurves.getByOID(oid);
-        
+        X9ECParameters params = SECCustomNamedCurves.getByOID(oid);
+
         if (params == null)
         {
-            params = SECCustomNamedCurves.getByOID(oid);
+            params = X962NamedCurves.getByOID(oid);
             if (params == null)
             {
                 params = SECNamedCurves.getByOID(oid);
-            }      else { System.out.println("using custom curve"); }
+            }
             if (params == null)
             {
                 params = NISTNamedCurves.getByOID(oid);

@@ -7,13 +7,27 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
+import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 public class EC5Util
 {
+    private static Map customCurves = new HashMap();
+
+    static
+    {
+        customCurves.put(SECNamedCurves.getByName("secp256k1").getCurve(), SECCustomNamedCurves.getByName("secp256k1").getCurve());
+        customCurves.put(SECNamedCurves.getByName("secp256r1").getCurve(), SECCustomNamedCurves.getByName("secp256r1").getCurve());
+    }
+
     public static EllipticCurve convertCurve(
         ECCurve curve, 
         byte[]  seed)
@@ -23,6 +37,15 @@ public class EC5Util
         if (curve instanceof ECCurve.Fp)
         {
             return new EllipticCurve(new ECFieldFp(((ECCurve.Fp)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
+        }
+        // TODO: really need an interface for these!!
+        else if (curve instanceof SecP256R1Curve)
+        {
+            return new EllipticCurve(new ECFieldFp(((SecP256R1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
+        }
+        else if (curve instanceof SecP256K1Curve)
+        {
+            return new EllipticCurve(new ECFieldFp(((SecP256K1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
         }
         else
         {
@@ -53,7 +76,14 @@ public class EC5Util
 
         if (field instanceof ECFieldFp)
         {
-            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
+            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
+
+            if (customCurves.containsKey(curve))
+            {
+                return (ECCurve)customCurves.get(curve);
+            }
+
+            return curve;
         }
         else
         {
