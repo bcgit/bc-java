@@ -354,24 +354,7 @@ public class BCDSTU4145PublicKey
     {
         if (ecSpec == null)
         {
-            if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
-            {
-                return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getAffineXCoord(), q.getAffineYCoord());
-            }
-            // TODO: fix when custom curves have common interface
-            else if (q instanceof SecP256K1Point)
-            {
-                return new SecP256K1Point(null, q.getAffineXCoord(), q.getAffineYCoord());
-            }
-            // TODO: fix when custom curves have common interface
-            else if (q instanceof SecP256R1Point)
-            {
-                return new SecP256R1Point(null, q.getAffineXCoord(), q.getAffineYCoord());
-            }
-            else
-            {
-                return new org.bouncycastle.math.ec.ECPoint.F2m(null, q.getAffineXCoord(), q.getAffineYCoord());
-            }
+            return q.getDetachedPoint();
         }
 
         return q;

@@ -62,10 +62,17 @@ public abstract class ECPoint
         this.zs = zs;
     }
 
+    public final ECPoint getDetachedPoint()
+    {
+        return normalize().detach();
+    }
+
     public ECCurve getCurve()
     {
         return curve;
     }
+
+    protected abstract ECPoint detach();
 
     protected int getCurveCoordinateSystem()
     {
@@ -500,6 +507,11 @@ public abstract class ECPoint
             super(curve, x, y, zs);
 
             this.withCompression = withCompression;
+        }
+
+        protected ECPoint detach()
+        {
+            return new ECPoint.Fp(null, getAffineXCoord(), getAffineYCoord());
         }
 
         protected boolean getCompressionYTilde()
@@ -1171,6 +1183,11 @@ public abstract class ECPoint
             this.withCompression = withCompression;
 
 //            checkCurveEquation();
+        }
+
+        protected ECPoint detach()
+        {
+            return new ECPoint.F2m(null, getAffineXCoord(), getAffineYCoord());
         }
 
         public ECFieldElement getYCoord()

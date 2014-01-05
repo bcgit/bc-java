@@ -58,6 +58,11 @@ public class SecP256K1Point extends ECPoint
         this.withCompression = withCompression;
     }
 
+    protected ECPoint detach()
+    {
+        return new SecP256K1Point(null, getAffineXCoord(), getAffineYCoord());
+    }
+
     protected boolean getCompressionYTilde()
     {
         return this.getAffineYCoord().testBitZero();

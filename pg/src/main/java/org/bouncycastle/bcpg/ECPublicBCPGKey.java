@@ -8,10 +8,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -139,11 +137,9 @@ public abstract class ECPublicBCPGKey
         {
             throw new IOException(oid.getId() + " does not match any known curve.");
         }
-        // TODO: fix when custom curves have common interface
-        if (!((curve.getCurve() instanceof ECCurve.Fp) || (curve.getCurve() instanceof SecP256K1Curve))
-            || (curve.getCurve() instanceof SecP256R1Curve))
+        if (!ECAlgorithms.isFpCurve(curve.getCurve()))
         {
-            throw new IOException("Only FPCurves are supported.");
+            throw new IOException("Only prime field curves are supported.");
         }
 
         return curve.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
