@@ -18,11 +18,10 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -324,14 +323,13 @@ public class TlsECCUtils
          * used.
          */
         boolean compressed = false;
-        if (curve instanceof ECCurve.F2m)
-        {
-            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
-        }
-        // TODO: need a better indicator for a custom curve
-        else if (curve instanceof ECCurve.Fp || curve instanceof SecP256K1Curve || curve instanceof SecP256R1Curve)
+        if (ECAlgorithms.isFpCurve(curve))
         {
             compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_prime);
+        }
+        else if (ECAlgorithms.isF2mCurve(curve))
+        {
+            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
         }
         return point.getEncoded(compressed);
     }
@@ -561,28 +559,11 @@ public class TlsECCUtils
     {
         ECCurve curve = ecParameters.getCurve();
 
-        if (curve instanceof ECCurve.Fp)
+        if (ECAlgorithms.isFpCurve(curve))
         {
             TlsUtils.writeUint8(ECCurveType.explicit_prime, output);
 
-            ECCurve.Fp fp = (ECCurve.Fp) curve;
-            writeECParameter(fp.getQ(), output);
-        }
-        // TODO: need a better indicator for a custom curve
-        else if (curve instanceof SecP256K1Curve)
-        {
-            TlsUtils.writeUint8(ECCurveType.explicit_prime, output);
-
-            SecP256K1Curve fp = (SecP256K1Curve) curve;
-            writeECParameter(fp.getQ(), output);
-        }
-        // TODO: need a better indicator for a custom curve
-        else if (curve instanceof SecP256R1Curve)
-        {
-            TlsUtils.writeUint8(ECCurveType.explicit_prime, output);
-
-            SecP256R1Curve fp = (SecP256R1Curve) curve;
-            writeECParameter(fp.getQ(), output);
+            writeECParameter(curve.getField().getCharacteristic(), output);
         }
         else if (curve instanceof ECCurve.F2m)
         {

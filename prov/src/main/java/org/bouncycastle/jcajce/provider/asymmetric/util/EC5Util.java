@@ -14,9 +14,8 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 public class EC5Util
 {
@@ -34,18 +33,9 @@ public class EC5Util
     {
         // TODO: the Sun EC implementation doesn't currently handle the seed properly
         // so at the moment it's set to null. Should probably look at making this configurable
-        if (curve instanceof ECCurve.Fp)
+        if (ECAlgorithms.isFpCurve(curve))
         {
-            return new EllipticCurve(new ECFieldFp(((ECCurve.Fp)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-        }
-        // TODO: really need an interface for these!!
-        else if (curve instanceof SecP256R1Curve)
-        {
-            return new EllipticCurve(new ECFieldFp(((SecP256R1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-        }
-        else if (curve instanceof SecP256K1Curve)
-        {
-            return new EllipticCurve(new ECFieldFp(((SecP256K1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
+            return new EllipticCurve(new ECFieldFp(curve.getField().getCharacteristic()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
         }
         else
         {

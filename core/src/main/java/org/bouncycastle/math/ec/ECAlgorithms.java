@@ -2,8 +2,23 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.field.FiniteField;
+import org.bouncycastle.math.field.PolynomialExtensionField;
+
 public class ECAlgorithms
 {
+    public static boolean isF2mCurve(ECCurve c)
+    {
+        FiniteField field = c.getField();
+        return field.getDimension() > 1 && field.getCharacteristic().equals(ECConstants.TWO)
+            && field instanceof PolynomialExtensionField;
+    }
+
+    public static boolean isFpCurve(ECCurve c)
+    {
+        return c.getField().getDimension() == 1;
+    }
+
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
         ECPoint Q, BigInteger b)
     {
