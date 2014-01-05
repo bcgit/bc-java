@@ -21,19 +21,35 @@ public class ECNamedCurveTable
     public static ECNamedCurveParameterSpec getParameterSpec(
         String  name)
     {
-        X9ECParameters  ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByName(name);
+        X9ECParameters  ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName(name);
         if (ecP == null)
         {
             try
             {
-                ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID(new ASN1ObjectIdentifier(name));
+                ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByOID(new ASN1ObjectIdentifier(name));
             }
             catch (IllegalArgumentException e)
             {
                 // ignore - not an oid
             }
+
+            if (ecP == null)
+            {
+                ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByName(name);
+                if (ecP == null)
+                {
+                    try
+                    {
+                        ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID(new ASN1ObjectIdentifier(name));
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        // ignore - not an oid
+                    }
+                }
+            }
         }
-        
+
         if (ecP == null)
         {
             return null;

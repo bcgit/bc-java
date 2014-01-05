@@ -38,18 +38,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int addExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 16; ++i)
-        {
-            c += (xx[i] & M) + (yy[i] & M);
-            zz[i] = (int)c;
-            c >>>= 32;
-        }
-        return (int)c;
-    }
-
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -93,7 +81,19 @@ public abstract class Nat256
         return c == 0 ? 0 : inc(z, zOff + 2);
     }
 
-    public static int addExt(int[] x, int xOff, int[] zz, int zzOff)
+    public static int addExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) + (yy[i] & M);
+            zz[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int addToExt(int[] x, int xOff, int[] zz, int zzOff)
     {
         // assert zzOff <= 8;
         long c = 0;
@@ -204,6 +204,20 @@ public abstract class Nat256
         return false;
     }
 
+    public static boolean gteExt(int[] xx, int[] yy)
+    {
+        for (int i = 15; i >= 0; --i)
+        {
+            int xx_i = xx[i] ^ Integer.MIN_VALUE;
+            int yy_i = yy[i] ^ Integer.MIN_VALUE;
+            if (xx_i < yy_i)
+                return false;
+            if (xx_i > yy_i)
+                return true;
+        }
+        return false;
+    }
+
     public static int inc(int[] z, int zOff)
     {
         // assert zOff < 8;
@@ -255,6 +269,22 @@ public abstract class Nat256
         for (int i = 1; i < 8; ++i)
         {
             if (x[i] != 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isZeroExt(int[] xx)
+    {
+        if (xx[0] != 0)
+        {
+            return false;
+        }
+        for (int i = 1; i < 16; ++i)
+        {
+            if (xx[i] != 0)
             {
                 return false;
             }
@@ -444,181 +474,144 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int shiftUp(int[] x, int xLen, int bit)
+    public static int shiftUp(int[] x, int xLen, int c)
     {
         for (int i = 0; i < xLen; ++i)
         {
             int next = x[i];
-            x[i] = (next << 1) | bit;
-            bit = next >>> 31;
+            x[i] = (next << 1) | (c >>> 31);
+            c = next;
         }
-        return bit;
+        return c >>> 31;
     }
 
     public static void square(int[] x, int[] zz)
     {
+        long x_0 = x[0] & M;
+        long zz_1;
+
         {
-            int c = 0, i = 8, j = 16;
+            int c = 0, i = 7, j = 16;
             do
             {
-                long xVal = (x[--i] & M);
+                long xVal = (x[i--] & M);
                 long p = xVal * xVal;
                 zz[--j] = (c << 31) | (int)(p >>> 33);
                 zz[--j] = (int)(p >>> 1);
                 c = (int)p;
             }
             while (i > 0);
+
+            {
+                long p = x_0 * x_0;
+                zz_1 = ((c << 31) & M) | (p >>> 33);
+                zz[0] = (int)(p >>> 1);
+            }
         }
 
-        long x_0 = x[0] & M;
         long x_1 = x[1] & M;
-        long zz_1 = zz[1] & M;
         long zz_2 = zz[2] & M;
 
         {
-            long cc = 0;
-            cc += x_1 * x_0 + zz_1;
-            zz[1] = (int)cc;
-            cc >>>= 32;
-            zz_2 += cc;
+            zz_1 += x_1 * x_0;
+            zz[1] = (int)zz_1;
+            zz_2 += zz_1 >>> 32;
         }
 
         long x_2 = x[2] & M;
         long zz_3 = zz[3] & M;
         long zz_4 = zz[4] & M;
         {
-            long cc = 0;
-            cc += x_2 * x_0 + zz_2;
-            zz[2] = (int)cc;
-            cc >>>= 32;
-            cc += x_2 * x_1 + zz_3;
-            zz_3 = cc & M;
-            cc >>>= 32;
-            zz_4 += cc;
+            zz_2 += x_2 * x_0;
+            zz[2] = (int)zz_2;
+            zz_3 += (zz_2 >>> 32) + x_2 * x_1;
+            zz_4 += zz_3 >>> 32;
+            zz_3 &= M;
         }
 
         long x_3 = x[3] & M;
         long zz_5 = zz[5] & M;
         long zz_6 = zz[6] & M;
         {
-            long cc = 0;
-            cc += x_3 * x_0 + zz_3;
-            zz[3] = (int)cc;
-            cc >>>= 32;
-            cc += x_3 * x_1 + zz_4;
-            zz_4 = cc & M;
-            cc >>>= 32;
-            cc += x_3 * x_2 + zz_5;
-            zz_5 = cc & M;
-            cc >>>= 32;
-            zz_6 += cc;
+            zz_3 += x_3 * x_0;
+            zz[3] = (int)zz_3;
+            zz_4 += (zz_3 >>> 32) + x_3 * x_1;
+            zz_5 += (zz_4 >>> 32) + x_3 * x_2;
+            zz_4 &= M;
+            zz_6 += zz_5 >>> 32;
+            zz_5 &= M;
         }
 
         long x_4 = x[4] & M;
         long zz_7 = zz[7] & M;
         long zz_8 = zz[8] & M;
         {
-            long cc = 0;
-            cc += x_4 * x_0 + zz_4;
-            zz[4] = (int)cc;
-            cc >>>= 32;
-            cc += x_4 * x_1 + zz_5;
-            zz_5 = cc & M;
-            cc >>>= 32;
-            cc += x_4 * x_2 + zz_6;
-            zz_6 = cc & M;
-            cc >>>= 32;
-            cc += x_4 * x_3 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            zz_8 += cc;
+            zz_4 += x_4 * x_0;
+            zz[4] = (int)zz_4;
+            zz_5 += (zz_4 >>> 32) + x_4 * x_1;
+            zz_6 += (zz_5 >>> 32) + x_4 * x_2;
+            zz_5 &= M;
+            zz_7 += (zz_6 >>> 32) + x_4 * x_3;
+            zz_6 &= M;
+            zz_8 += zz_7 >>> 32;
+            zz_7 &= M;
         }
 
         long x_5 = x[5] & M;
         long zz_9 = zz[9] & M;
         long zz_10 = zz[10] & M;
         {
-            long cc = 0;
-            cc += x_5 * x_0 + zz_5;
-            zz[5] = (int)cc;
-            cc >>>= 32;
-            cc += x_5 * x_1 + zz_6;
-            zz_6 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_2 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_3 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_5 * x_4 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            zz_10 += cc;
+            zz_5 += x_5 * x_0;
+            zz[5] = (int)zz_5;
+            zz_6 += (zz_5 >>> 32) + x_5 * x_1;
+            zz_7 += (zz_6 >>> 32) + x_5 * x_2;
+            zz_6 &= M;
+            zz_8 += (zz_7 >>> 32) + x_5 * x_3;
+            zz_7 &= M;
+            zz_9 += (zz_8 >>> 32) + x_5 * x_4;
+            zz_8 &= M;
+            zz_10 += zz_9 >>> 32;
+            zz_9 &= M;
         }
 
         long x_6 = x[6] & M;
         long zz_11 = zz[11] & M;
         long zz_12 = zz[12] & M;
         {
-            long cc = 0;
-            cc += x_6 * x_0 + zz_6;
-            zz[6] = (int)cc;
-            cc >>>= 32;
-            cc += x_6 * x_1 + zz_7;
-            zz_7 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_2 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_3 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_4 + zz_10;
-            zz_10 = cc & M;
-            cc >>>= 32;
-            cc += x_6 * x_5 + zz_11;
-            zz_11 = cc & M;
-            cc >>>= 32;
-            zz_12 += cc;
+            zz_6 += x_6 * x_0;
+            zz[6] = (int)zz_6;
+            zz_7 += (zz_6 >>> 32) + x_6 * x_1;
+            zz_8 += (zz_7 >>> 32) + x_6 * x_2;
+            zz_7 &= M;
+            zz_9 += (zz_8 >>> 32) + x_6 * x_3;
+            zz_8 &= M;
+            zz_10 += (zz_9 >>> 32) + x_6 * x_4;
+            zz_9 &= M;
+            zz_11 += (zz_10 >>> 32) + x_6 * x_5;
+            zz_10 &= M;
+            zz_12 += zz_11 >>> 32;
+            zz_11 &= M;
         }
 
         long x_7 = x[7] & M;
         long zz_13 = zz[13] & M;
         long zz_14 = zz[14] & M;
         {
-            long cc = 0;
-            cc += x_7 * x_0 + zz_7;
-            zz[7] = (int)cc;
-            cc >>>= 32;
-            cc += x_7 * x_1 + zz_8;
-            zz_8 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_2 + zz_9;
-            zz_9 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_3 + zz_10;
-            zz_10 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_4 + zz_11;
-            zz_11 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_5 + zz_12;
-            zz_12 = cc & M;
-            cc >>>= 32;
-            cc += x_7 * x_6 + zz_13;
-            zz_13 = cc & M;
-            cc >>>= 32;
-            zz_14 += cc;
-        }
-
-        long zz_15 = zz[15] & M;
-        {
-            long cc = 0;
-            cc += zz_14;
-            zz[14] = (int)cc;
-            cc >>>= 32;
-            zz_15 += cc;
+            zz_7 += x_7 * x_0;
+            zz[7] = (int)zz_7;
+            zz_8 += (zz_7 >>> 32) + x_7 * x_1;
+            zz_9 += (zz_8 >>> 32) + x_7 * x_2;
+            zz_8 &= M;
+            zz_10 += (zz_9 >>> 32) + x_7 * x_3;
+            zz_9 &= M;
+            zz_11 += (zz_10 >>> 32) + x_7 * x_4;
+            zz_10 &= M;
+            zz_12 += (zz_11 >>> 32) + x_7 * x_5;
+            zz_11 &= M;
+            zz_13 += (zz_12 >>> 32) + x_7 * x_6;
+            zz_12 &= M;
+            zz_14 += zz_13 >>> 32;
+            zz_13 &= M;
         }
 
         zz[8] = (int)zz_8;
@@ -628,9 +621,9 @@ public abstract class Nat256
         zz[12] = (int)zz_12;
         zz[13] = (int)zz_13;
         zz[14] = (int)zz_14;
-        zz[15] = (int)zz_15;
+        zz[15] += (int)(zz_14 >>> 32);
 
-        shiftUp(zz, 16, (int)x_0 & 1);
+        shiftUp(zz, 16, (int)x_0 << 31);
     }
 
     public static int sub(int[] x, int[] y, int[] z)
@@ -703,6 +696,49 @@ public abstract class Nat256
         z[1] = (int)x;
         x >>= 32;
         return x == 0 ? 0 : dec(z, 2);
+    }
+
+    public static int subExt(int[] xx, int[] yy, int[] zz)
+    {
+        long c = 0;
+        for (int i = 0; i < 16; ++i)
+        {
+            c += (xx[i] & M) - (yy[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
+        }
+        return (int)c;
+    }
+
+    public static int subFromExt(int[] x, int xOff, int[] zz, int zzOff)
+    {
+        // assert zzOff <= 8;
+        long c = 0;
+        c += (zz[zzOff + 0] & M) - (x[xOff + 0] & M);
+        zz[zzOff + 0] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 1] & M) - (x[xOff + 1] & M);
+        zz[zzOff + 1] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 2] & M) - (x[xOff + 2] & M);
+        zz[zzOff + 2] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 3] & M) - (x[xOff + 3] & M);
+        zz[zzOff + 3] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 4] & M) - (x[xOff + 4] & M);
+        zz[zzOff + 4] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 5] & M) - (x[xOff + 5] & M);
+        zz[zzOff + 5] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 6] & M) - (x[xOff + 6] & M);
+        zz[zzOff + 6] = (int)c;
+        c >>= 32;
+        c += (zz[zzOff + 7] & M) - (x[xOff + 7] & M);
+        zz[zzOff + 7] = (int)c;
+        c >>= 32;
+        return (int)c;
     }
 
     public static BigInteger toBigInteger(int[] x)

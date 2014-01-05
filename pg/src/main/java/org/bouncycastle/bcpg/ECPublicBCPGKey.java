@@ -10,6 +10,8 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * base class for an EC Public Key.
@@ -136,11 +138,12 @@ public abstract class ECPublicBCPGKey
         {
             throw new IOException(oid.getId() + " does not match any known curve.");
         }
-        if (!(curve.getCurve() instanceof ECCurve.Fp))
+        // TODO: fix when custom curves have common interface
+        if (!((curve.getCurve() instanceof ECCurve.Fp) || (curve.getCurve() instanceof SecP256R1Curve)))
         {
             throw new IOException("Only FPCurves are supported.");
         }
 
-        return curve.getCurve().decodePoint(encodedPoint.toByteArray());
+        return curve.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
     }
 }

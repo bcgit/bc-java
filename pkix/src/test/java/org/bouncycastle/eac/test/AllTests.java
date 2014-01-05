@@ -119,7 +119,7 @@ public class AllTests
 
         if (!certHolder.isSignatureValid(verifier))
         {
-            fail("first signature test failed");
+            fail("second signature test failed");
         }
     }
 
@@ -157,7 +157,7 @@ public class AllTests
 
         if (!certHolder.isSignatureValid(verifier))
         {
-            fail("first signature test failed");
+            fail("second signature test failed");
         }
     }
 
@@ -192,7 +192,7 @@ public class AllTests
     public static Test suite()
         throws Exception
     {
-        TestSuite suite= new TestSuite("EAC tests");
+        TestSuite suite = new TestSuite("EAC tests");
 
         suite.addTestSuite(AllTests.class);
 

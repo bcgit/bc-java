@@ -1,7 +1,5 @@
 package org.bouncycastle.math.ec.custom.sec;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
