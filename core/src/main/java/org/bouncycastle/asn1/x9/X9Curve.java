@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 /**
  * ASN.1 def for Elliptic-Curve Curve structure. See
@@ -103,7 +105,8 @@ public class X9Curve
 
     private void setFieldIdentifier()
     {
-        if (curve instanceof ECCurve.Fp)
+        // TODO: need a better way of recognising custom curves
+        if (curve instanceof ECCurve.Fp || curve instanceof SecP256R1Curve || curve instanceof SecP256K1Curve)
         {
             fieldIdentifier = prime_field;
         }
