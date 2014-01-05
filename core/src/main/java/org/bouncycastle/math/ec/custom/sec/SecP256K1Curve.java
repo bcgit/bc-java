@@ -5,10 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.ECPointMap;
-import org.bouncycastle.math.ec.GLVMultiplier;
 import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.encoders.Hex;
 
