@@ -34,6 +34,8 @@ import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Point;
 
 public class BCECPublicKey
     implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
@@ -375,6 +377,16 @@ public class BCECPublicKey
             if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
             {
                 return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getAffineXCoord(), q.getAffineYCoord());
+            }
+            // TODO: fix when custom curves have common interface
+            else if (q instanceof SecP256K1Point)
+            {
+                return new SecP256K1Point(null, q.getAffineXCoord(), q.getAffineYCoord());
+            }
+            // TODO: fix when custom curves have common interface
+            else if (q instanceof SecP256R1Point)
+            {
+                return new SecP256R1Point(null, q.getAffineXCoord(), q.getAffineYCoord());
             }
             else
             {
