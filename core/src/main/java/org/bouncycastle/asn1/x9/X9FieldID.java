@@ -38,6 +38,20 @@ public class X9FieldID
      * @param m  The exponent <code>m</code> of
      * <code>F<sub>2<sup>m</sup></sub></code>.
      * @param k1 The integer <code>k1</code> where <code>x<sup>m</sup> +
+     * x<sup>k1</sup> + 1</code>
+     * represents the reduction polynomial <code>f(z)</code>.
+     */
+    public X9FieldID(int m, int k1)
+    {
+        this(m, k1, 0, 0);
+    }
+
+    /**
+     * Constructor for elliptic curves over binary fields
+     * <code>F<sub>2<sup>m</sup></sub></code>.
+     * @param m  The exponent <code>m</code> of
+     * <code>F<sub>2<sup>m</sup></sub></code>.
+     * @param k1 The integer <code>k1</code> where <code>x<sup>m</sup> +
      * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
      * represents the reduction polynomial <code>f(z)</code>.
      * @param k2 The integer <code>k2</code> where <code>x<sup>m</sup> +

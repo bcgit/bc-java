@@ -6,9 +6,8 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 /**
  * specification signifying that the curve parameters can also be
@@ -23,18 +22,9 @@ public class ECNamedCurveSpec
         ECCurve  curve,
         byte[]   seed)
     {
-        if (curve instanceof ECCurve.Fp)
+        if (ECAlgorithms.isFpCurve(curve))
         {
-            return new EllipticCurve(new ECFieldFp(((ECCurve.Fp)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), seed);
-        }
-        // TODO: really need an interface for these!!
-        else if (curve instanceof SecP256R1Curve)
-        {
-            return new EllipticCurve(new ECFieldFp(((SecP256R1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-        }
-        else if (curve instanceof SecP256K1Curve)
-        {
-            return new EllipticCurve(new ECFieldFp(((SecP256K1Curve)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
+            return new EllipticCurve(new ECFieldFp(curve.getField().getCharacteristic()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), seed);
         }
         else
         {

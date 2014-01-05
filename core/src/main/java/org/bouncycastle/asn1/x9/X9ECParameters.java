@@ -9,10 +9,10 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
+import org.bouncycastle.math.field.PolynomialExtensionField;
 
 /**
  * ASN.1 def for Elliptic-Curve ECParameters structure. See
@@ -110,27 +110,30 @@ public class X9ECParameters
         this.h = h;
         this.seed = seed;
 
-        if (curve instanceof ECCurve.Fp)
+        if (ECAlgorithms.isFpCurve(curve))
         {
-            this.fieldID = new X9FieldID(((ECCurve.Fp)curve).getQ());
+            this.fieldID = new X9FieldID(curve.getField().getCharacteristic());
         }
-        // TODO: need a better indicator for a custom curve
-        else if (curve instanceof SecP256R1Curve)
+        else if (ECAlgorithms.isF2mCurve(curve))
         {
-            this.fieldID = new X9FieldID(((SecP256R1Curve)curve).getQ());
-        }
-        else if (curve instanceof SecP256K1Curve)
-        {
-            this.fieldID = new X9FieldID(((SecP256K1Curve)curve).getQ());
+            PolynomialExtensionField field = (PolynomialExtensionField)curve.getField();
+            int[] exponents = field.getMinimalPolynomial().getExponentsPresent();
+            if (exponents.length == 3)
+            {
+                this.fieldID = new X9FieldID(exponents[2], exponents[1]);
+            }
+            else if (exponents.length == 5)
+            {
+                this.fieldID = new X9FieldID(exponents[4], exponents[3], exponents[2], exponents[1]);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Only trinomial and pentomial curves are supported");
+            }
         }
         else
         {
-            if (curve instanceof ECCurve.F2m)
-            {
-                ECCurve.F2m curveF2m = (ECCurve.F2m)curve;
-                this.fieldID = new X9FieldID(curveF2m.getM(), curveF2m.getK1(),
-                    curveF2m.getK2(), curveF2m.getK3());
-            }
+            throw new IllegalArgumentException("'curve' is of an unsupported type");
         }
     }
 
