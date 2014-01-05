@@ -40,11 +40,14 @@ import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.ECKeyUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -739,7 +742,22 @@ public class ECDSA5Test
     private void testNamedCurveSigning()
         throws Exception
     {
-        AlgorithmParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
+        testCustomNamedCurveSigning("secp256r1");
+        testCustomNamedCurveSigning("secp256k1");
+    }
+
+    private void testCustomNamedCurveSigning(String name)
+        throws Exception
+    {
+        X9ECParameters x9Params = ECUtil.getNamedCurveByOid(ECUtil.getNamedCurveOid(name));
+
+        // TODO: one day this may have to change
+        if (x9Params.getCurve() instanceof ECCurve.Fp)
+        {
+            fail("curve not custom curve!!");
+        }
+
+        AlgorithmParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(name);
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("EC", "BC");
         keygen.initialize(ecSpec, new ECRandom());
 
