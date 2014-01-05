@@ -124,7 +124,7 @@ public class X9ECParameters
             }
             else if (exponents.length == 5)
             {
-                this.fieldID = new X9FieldID(exponents[4], exponents[3], exponents[2], exponents[1]);
+                this.fieldID = new X9FieldID(exponents[4], exponents[1], exponents[2], exponents[3]);
             }
             else
             {
