@@ -69,11 +69,21 @@ public class X9FieldID
         
         if (k2 == 0) 
         {
+            if (k3 != 0)
+            {
+                throw new IllegalArgumentException("inconsistent k values");
+            }
+
             fieldIdParams.add(tpBasis);
             fieldIdParams.add(new ASN1Integer(k1));
         } 
         else 
         {
+            if (k2 <= k1 || k3 <= k2)
+            {
+                throw new IllegalArgumentException("inconsistent k values");
+            }
+
             fieldIdParams.add(ppBasis);
             ASN1EncodableVector pentanomialParams = new ASN1EncodableVector();
             pentanomialParams.add(new ASN1Integer(k1));

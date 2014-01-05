@@ -22,6 +22,7 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.field.PolynomialExtensionField;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -565,28 +566,33 @@ public class TlsECCUtils
 
             writeECParameter(curve.getField().getCharacteristic(), output);
         }
-        else if (curve instanceof ECCurve.F2m)
+        else if (ECAlgorithms.isF2mCurve(curve))
         {
+            PolynomialExtensionField field = (PolynomialExtensionField)curve.getField();
+            int[] exponents = field.getMinimalPolynomial().getExponentsPresent();
+
             TlsUtils.writeUint8(ECCurveType.explicit_char2, output);
 
-            ECCurve.F2m f2m = (ECCurve.F2m) curve;
-            int m = f2m.getM();
+            int m = exponents[exponents.length - 1];
             TlsUtils.checkUint16(m);
             TlsUtils.writeUint16(m, output);
 
-            if (f2m.isTrinomial())
+            if (exponents.length == 3)
             {
                 TlsUtils.writeUint8(ECBasisType.ec_basis_trinomial, output);
-                writeECExponent(f2m.getK1(), output);
+                writeECExponent(exponents[1], output);
+            }
+            else if (exponents.length == 5)
+            {
+                TlsUtils.writeUint8(ECBasisType.ec_basis_pentanomial, output);
+                writeECExponent(exponents[1], output);
+                writeECExponent(exponents[2], output);
+                writeECExponent(exponents[3], output);
             }
             else
             {
-                TlsUtils.writeUint8(ECBasisType.ec_basis_pentanomial, output);
-                writeECExponent(f2m.getK1(), output);
-                writeECExponent(f2m.getK2(), output);
-                writeECExponent(f2m.getK3(), output);
+                throw new IllegalArgumentException("Only trinomial and pentomial curves are supported");
             }
-
         }
         else
         {
