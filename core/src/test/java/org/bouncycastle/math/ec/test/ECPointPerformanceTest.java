@@ -4,9 +4,9 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -30,7 +30,7 @@ public class ECPointPerformanceTest extends TestCase
             randMult(curveName, spec);
         }
 
-        spec = SECCustomNamedCurves.getByName(curveName);
+        spec = CustomNamedCurves.getByName(curveName);
         if (spec != null)
         {
             randMult(curveName + " (custom)", spec);

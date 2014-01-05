@@ -10,8 +10,8 @@ import java.security.spec.EllipticCurve;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
@@ -24,8 +24,8 @@ public class EC5Util
 
     static
     {
-        customCurves.put(SECNamedCurves.getByName("secp256k1").getCurve(), SECCustomNamedCurves.getByName("secp256k1").getCurve());
-        customCurves.put(SECNamedCurves.getByName("secp256r1").getCurve(), SECCustomNamedCurves.getByName("secp256r1").getCurve());
+        customCurves.put(SECNamedCurves.getByName("secp256k1").getCurve(), CustomNamedCurves.getByName("secp256k1").getCurve());
+        customCurves.put(SECNamedCurves.getByName("secp256r1").getCurve(), CustomNamedCurves.getByName("secp256r1").getCurve());
     }
 
     public static EllipticCurve convertCurve(
