@@ -16,7 +16,7 @@ public class SecP256R1FieldElement extends ECFieldElement
     {
         if (x == null || x.signum() < 0 || x.compareTo(Q) >= 0)
         {
-            throw new IllegalArgumentException("x value invalid in FEp256k1 field element");
+            throw new IllegalArgumentException("x value invalid for SecP256R1FieldElement");
         }
 
         this.x = SecP256R1Field.fromBigInteger(x);
