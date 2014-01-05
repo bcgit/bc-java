@@ -27,6 +27,8 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -734,6 +736,61 @@ public class ECDSA5Test
         }
     }
 
+    private void testNamedCurveSigning()
+        throws Exception
+    {
+        AlgorithmParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("EC", "BC");
+        keygen.initialize(ecSpec, new ECRandom());
+
+        KeyPair keys = keygen.generateKeyPair();
+
+        PrivateKeyInfo priv1 = PrivateKeyInfo.getInstance(keys.getPrivate().getEncoded());
+        SubjectPublicKeyInfo pub1 = SubjectPublicKeyInfo.getInstance(keys.getPublic().getEncoded());
+
+        keygen = KeyPairGenerator.getInstance("EC", "BC");
+        keygen.initialize(new ECGenParameterSpec("secp256r1"), new ECRandom());
+
+        Signature ecdsaSigner = Signature.getInstance("ECDSA", "BC");
+
+        ecdsaSigner.initSign(keys.getPrivate());
+
+        ecdsaSigner.update(new byte[100]);
+
+        byte[] sig = ecdsaSigner.sign();
+
+        ecdsaSigner.initVerify(keys.getPublic());
+
+        ecdsaSigner.update(new byte[100]);
+
+        if (!ecdsaSigner.verify(sig))
+        {
+            fail("signature failed to verify");
+        }
+
+        KeyFactory kFact = KeyFactory.getInstance("EC", "BC");
+
+        PublicKey pub = kFact.generatePublic(new X509EncodedKeySpec(pub1.getEncoded()));
+        PrivateKey pri = kFact.generatePrivate(new PKCS8EncodedKeySpec(priv1.getEncoded()));
+
+        ecdsaSigner = Signature.getInstance("ECDSA", "BC");
+
+        ecdsaSigner.initSign(pri);
+
+        ecdsaSigner.update(new byte[100]);
+
+        sig = ecdsaSigner.sign();
+
+        ecdsaSigner.initVerify(pub);
+
+        ecdsaSigner.update(new byte[100]);
+
+        if (!ecdsaSigner.verify(sig))
+        {
+            fail("signature failed to verify");
+        }
+    }
+
     protected BigInteger[] derDecode(
         byte[]  encoding)
         throws IOException
@@ -766,6 +823,7 @@ public class ECDSA5Test
         testGeneration();
         testKeyPairGenerationWithOIDs();
         testNamedCurveParameterPreservation();
+        testNamedCurveSigning();
     }
 
     public static void main(
