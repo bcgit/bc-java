@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 /**
  * ASN.1 def for Elliptic-Curve ECParameters structure. See
@@ -111,6 +113,15 @@ public class X9ECParameters
         if (curve instanceof ECCurve.Fp)
         {
             this.fieldID = new X9FieldID(((ECCurve.Fp)curve).getQ());
+        }
+        // TODO: need a better indicator for a custom curve
+        else if (curve instanceof SecP256R1Curve)
+        {
+            this.fieldID = new X9FieldID(((SecP256R1Curve)curve).getQ());
+        }
+        else if (curve instanceof SecP256K1Curve)
+        {
+            this.fieldID = new X9FieldID(((SecP256K1Curve)curve).getQ());
         }
         else
         {
