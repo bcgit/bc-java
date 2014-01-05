@@ -82,6 +82,8 @@ public class BCECPublicKey
             ECCurve curve = spec.getParams().getCurve();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getParams().getSeed());
 
+            // this may seem a little long-winded but it's how we pick up the custom curve.
+            this.q = EC5Util.convertCurve(ellipticCurve).createPoint(spec.getQ().getAffineXCoord().toBigInteger(), spec.getQ().getAffineYCoord().toBigInteger());
             this.ecSpec = EC5Util.convertSpec(ellipticCurve, spec.getParams());
         }
         else
