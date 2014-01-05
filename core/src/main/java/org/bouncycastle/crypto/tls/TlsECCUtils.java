@@ -8,11 +8,11 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Hashtable;
 
-import org.bouncycastle.asn1.sec.SECCustomNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -153,7 +153,7 @@ public class TlsECCUtils
 
         // Parameters are lazily created the first time a particular curve is accessed
 
-        X9ECParameters ecP = SECCustomNamedCurves.getByName(curveName);
+        X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
         if (ecP == null)
         {
             ecP = ECNamedCurveTable.getByName(curveName);
