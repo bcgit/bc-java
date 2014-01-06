@@ -12,15 +12,15 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.field.PolynomialExtensionField;
 import org.bouncycastle.util.Arrays;
 
 public class DSTU4145ECBinary
     extends ASN1Object
 {
-
     BigInteger version = BigInteger.valueOf(0);
 
     DSTU4145BinaryField f;
@@ -31,17 +31,27 @@ public class DSTU4145ECBinary
 
     public DSTU4145ECBinary(ECDomainParameters params)
     {
-        if (!(params.getCurve() instanceof ECCurve.F2m))
+        ECCurve curve = params.getCurve();
+        if (!ECAlgorithms.isF2mCurve(curve))
         {
             throw new IllegalArgumentException("only binary domain is possible");
         }
 
         // We always use big-endian in parameter encoding
-        ECCurve.F2m curve = (ECCurve.F2m)params.getCurve();
-        f = new DSTU4145BinaryField(curve.getM(), curve.getK1(), curve.getK2(), curve.getK3());
+
+        PolynomialExtensionField field = (PolynomialExtensionField)curve.getField();
+        int[] exponents = field.getMinimalPolynomial().getExponentsPresent();
+        if (exponents.length == 3)
+        {
+            f = new DSTU4145BinaryField(exponents[2], exponents[1]);
+        }
+        else if (exponents.length == 5)
+        {
+            f = new DSTU4145BinaryField(exponents[4], exponents[1], exponents[2], exponents[3]);
+        }
+
         a = new ASN1Integer(curve.getA().toBigInteger());
-        X9IntegerConverter converter = new X9IntegerConverter();
-        b = new DEROctetString(converter.integerToBytes(curve.getB().toBigInteger(), converter.getByteLength(curve)));
+        b = new DEROctetString(curve.getB().getEncoded());
         n = new ASN1Integer(params.getN());
         bp = new DEROctetString(DSTU4145PointEncoder.encodePoint(params.getG()));
     }

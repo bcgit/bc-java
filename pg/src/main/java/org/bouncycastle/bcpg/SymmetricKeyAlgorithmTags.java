@@ -16,4 +16,7 @@ public interface SymmetricKeyAlgorithmTags
     public static final int AES_192 = 8;     // Reserved for AES with 192-bit key
     public static final int AES_256 = 9;     // Reserved for AES with 256-bit key
     public static final int TWOFISH = 10;    // Reserved for Twofish
+    public static final int CAMELLIA_128 = 11;    // Reserved for Camellia with 128-bit key
+    public static final int CAMELLIA_192 = 12;    // Reserved for Camellia with 192-bit key
+    public static final int CAMELLIA_256 = 13;    // Reserved for Camellia with 256-bit key
 }

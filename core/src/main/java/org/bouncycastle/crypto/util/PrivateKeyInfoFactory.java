@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -55,10 +56,13 @@ public class PrivateKeyInfoFactory
             ECDomainParameters domainParams = priv.getParameters();
             ASN1Encodable params;
 
-            // TODO: need to handle named curves
             if (domainParams == null)
             {
                 params = new X962Parameters(DERNull.INSTANCE);      // Implicitly CA
+            }
+            else if (domainParams instanceof ECNamedDomainParameters)
+            {
+                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
             }
             else
             {
