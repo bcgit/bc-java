@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
@@ -36,6 +37,7 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
@@ -160,23 +162,29 @@ public class PublicKeyFactory
             X962Parameters params = X962Parameters.getInstance(algId.getParameters());
 
             X9ECParameters x9;
+            ECDomainParameters dParams;
+
             if (params.isNamedCurve())
             {
                 ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
-                x9 = ECNamedCurveTable.getByOID(oid);
+
+                x9 = CustomNamedCurves.getByOID(oid);
+                if (x9 == null)
+                {
+                    x9 = ECNamedCurveTable.getByOID(oid);
+                }
+                dParams = new ECNamedDomainParameters(
+                         oid, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
             }
             else
             {
                 x9 = X9ECParameters.getInstance(params.getParameters());
+                dParams = new ECDomainParameters(
+                         x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
             }
 
             ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
             X9ECPoint derQ = new X9ECPoint(x9.getCurve(), key);
-
-            // TODO We lose any named parameters here
-            
-            ECDomainParameters dParams = new ECDomainParameters(
-                    x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
 
             return new ECPublicKeyParameters(derQ.getPoint(), dParams);
         }

@@ -143,6 +143,10 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.AES_192:
             case SymmetricKeyAlgorithmTags.AES_256:
                 return helper.createCipher("AESWrap");
+            case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+                return helper.createCipher("CamelliaWrap");
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }

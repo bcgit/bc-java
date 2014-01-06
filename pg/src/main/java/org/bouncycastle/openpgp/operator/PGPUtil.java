@@ -67,6 +67,18 @@ class PGPUtil
             keySize = 256;
             algName = "Twofish";
             break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            keySize = 128;
+            algName = "Camellia";
+            break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            keySize = 192;
+            algName = "Camellia";
+            break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            keySize = 256;
+            algName = "Camellia";
+            break;
         default:
             throw new PGPException("unknown symmetric algorithm: " + algorithm);
         }
