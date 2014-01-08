@@ -6,6 +6,7 @@ import java.util.Random;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 
 /**
  * base class for an elliptic curve
@@ -337,6 +338,26 @@ public abstract class ECCurve
         }
     }
 
+    public boolean equals(ECCurve other)
+    {
+        return this == other
+            || (getField().equals(other.getField())
+                && getA().equals(other.getA())
+                && getB().equals(other.getB()));
+    }
+
+    public boolean equals(Object obj) 
+    {
+        return this == obj || (obj instanceof ECCurve && equals((ECCurve)obj));
+    }
+
+    public int hashCode() 
+    {
+        return getField().hashCode()
+            ^ Integers.rotateLeft(getA().hashCode(), 8)
+            ^ Integers.rotateLeft(getB().hashCode(), 16);
+    }
+
     /**
      * Elliptic curve over Fp
      */
@@ -475,30 +496,6 @@ public abstract class ECCurve
         public ECPoint getInfinity()
         {
             return infinity;
-        }
-
-        public boolean equals(
-            Object anObject) 
-        {
-            if (anObject == this) 
-            {
-                return true;
-            }
-
-            if (!(anObject instanceof ECCurve.Fp)) 
-            {
-                return false;
-            }
-
-            ECCurve.Fp other = (ECCurve.Fp) anObject;
-
-            return this.q.equals(other.q) 
-                    && a.equals(other.a) && b.equals(other.b);
-        }
-
-        public int hashCode() 
-        {
-            return a.hashCode() ^ b.hashCode() ^ q.hashCode();
         }
     }
 
@@ -943,31 +940,6 @@ public abstract class ECCurve
             while (gamma.isZero());
 
             return z;
-        }
-        
-        public boolean equals(
-            Object anObject)
-        {
-            if (anObject == this) 
-            {
-                return true;
-            }
-
-            if (!(anObject instanceof ECCurve.F2m)) 
-            {
-                return false;
-            }
-
-            ECCurve.F2m other = (ECCurve.F2m)anObject;
-
-            return (this.m == other.m) && (this.k1 == other.k1)
-                && (this.k2 == other.k2) && (this.k3 == other.k3)
-                && a.equals(other.a) && b.equals(other.b);
-        }
-
-        public int hashCode()
-        {
-            return this.a.hashCode() ^ this.b.hashCode() ^ m ^ k1 ^ k2 ^ k3;
         }
 
         public int getM()

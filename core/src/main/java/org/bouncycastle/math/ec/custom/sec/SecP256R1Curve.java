@@ -99,26 +99,4 @@ public class SecP256R1Curve extends ECCurve
     {
         return infinity;
     }
-
-    public boolean equals(Object anObject)
-    {
-        if (anObject == this)
-        {
-            return true;
-        }
-
-        if (!(anObject instanceof SecP256R1Curve))
-        {
-            return false;
-        }
-
-        SecP256R1Curve other = (SecP256R1Curve)anObject;
-
-        return this.q.equals(other.q) && a.equals(other.a) && b.equals(other.b);
-    }
-
-    public int hashCode()
-    {
-        return a.hashCode() ^ b.hashCode() ^ q.hashCode();
-    }
 }
