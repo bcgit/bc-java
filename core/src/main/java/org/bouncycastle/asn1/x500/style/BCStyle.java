@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.x500.style;
 
-import java.io.IOException;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -8,7 +7,6 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -284,41 +282,25 @@ public class BCStyle
         defaultLookUp = copyHashTable(DefaultLookUp);
     }
     
-    public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
-    {
-        if (value.length() != 0 && value.charAt(0) == '#')
+    
+    @Override
+    protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid,
+    		String value) {
+    	if (oid.equals(EmailAddress) || oid.equals(DC))
         {
-            try
-            {
-                return IETFUtils.valueFromHexString(value, 1);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("can't recode value for oid " + oid.getId());
-            }
+            return new DERIA5String(value);
         }
-        else
+        else if (oid.equals(DATE_OF_BIRTH))  // accept time string as well as # (for compatibility)
         {
-            if (value.length() != 0 && value.charAt(0) == '\\')
-            {
-                value = value.substring(1);
-            }
-            if (oid.equals(EmailAddress) || oid.equals(DC))
-            {
-                return new DERIA5String(value);
-            }
-            else if (oid.equals(DATE_OF_BIRTH))  // accept time string as well as # (for compatibility)
-            {
-                return new ASN1GeneralizedTime(value);
-            }
-            else if (oid.equals(C) || oid.equals(SN) || oid.equals(DN_QUALIFIER)
-                || oid.equals(TELEPHONE_NUMBER))
-            {
-                return new DERPrintableString(value);
-            }
+            return new ASN1GeneralizedTime(value);
         }
-
-        return new DERUTF8String(value);
+        else if (oid.equals(C) || oid.equals(SN) || oid.equals(DN_QUALIFIER)
+            || oid.equals(TELEPHONE_NUMBER))
+        {
+            return new DERPrintableString(value);
+        }
+    	
+    	return super.encodeStringValue(oid, value);
     }
 
     public String oidToDisplayName(ASN1ObjectIdentifier oid)
