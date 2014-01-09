@@ -1,9 +1,15 @@
 package org.bouncycastle.asn1.x500.style;
 
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DERPrintableString;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -61,6 +67,55 @@ public abstract class AbstractX500NameStyle implements X500NameStyle {
 		}
 
 		return hashCodeValue;
+	}
+	
+	
+	/**
+	 * For all string values starting with '#' is assumed, that these are
+	 * already valid ASN.1 objects encoded in hex.
+	 * 
+	 * All other string values are send to
+	 * {@link AbstractX500NameStyle#encodeStringValue(ASN1ObjectIdentifier, String)}.
+	 * 
+	 * Subclasses should overwrite
+	 * {@link AbstractX500NameStyle#encodeStringValue(ASN1ObjectIdentifier, String)}
+	 * to change the encoding of specific types.
+	 * 
+	 */
+	public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
+    {
+        if (value.length() != 0 && value.charAt(0) == '#')
+        {
+            try
+            {
+                return IETFUtils.valueFromHexString(value, 1);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("can't recode value for oid " + oid.getId());
+            }
+        }
+       
+        if (value.length() != 0 && value.charAt(0) == '\\')
+        {
+            value = value.substring(1);
+        }
+
+        return encodeStringValue(oid, value);
+    }
+	
+	/**
+	 * Encoded every value into a UTF8String.
+	 * 
+	 * Subclasses should overwrite
+	 * this method to change the encoding of specific types.
+	 * 
+	 * @param oid of the value
+	 * @param value to encode
+	 * @return a the value encoded into a ASN.1 object. Never returns <code>null</code>.
+	 */
+	protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid, String value) {
+		return new DERUTF8String(value);
 	}
 	
     public boolean areEqual(X500Name name1, X500Name name2)
