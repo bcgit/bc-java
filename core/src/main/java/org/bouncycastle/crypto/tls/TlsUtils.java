@@ -178,91 +178,91 @@ public class TlsUtils
     public static void writeUint16(int i, OutputStream output)
         throws IOException
     {
-        output.write(i >> 8);
+        output.write(i >>> 8);
         output.write(i);
     }
 
     public static void writeUint16(int i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 8);
         buf[offset + 1] = (byte)i;
     }
 
     public static void writeUint24(int i, OutputStream output)
         throws IOException
     {
-        output.write(i >> 16);
-        output.write(i >> 8);
+        output.write(i >>> 16);
+        output.write(i >>> 8);
         output.write(i);
     }
 
     public static void writeUint24(int i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 16);
-        buf[offset + 1] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 16);
+        buf[offset + 1] = (byte)(i >>> 8);
         buf[offset + 2] = (byte)(i);
     }
 
     public static void writeUint32(long i, OutputStream output)
         throws IOException
     {
-        output.write((int)(i >> 24));
-        output.write((int)(i >> 16));
-        output.write((int)(i >> 8));
+        output.write((int)(i >>> 24));
+        output.write((int)(i >>> 16));
+        output.write((int)(i >>> 8));
         output.write((int)(i));
     }
 
     public static void writeUint32(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 24);
-        buf[offset + 1] = (byte)(i >> 16);
-        buf[offset + 2] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 24);
+        buf[offset + 1] = (byte)(i >>> 16);
+        buf[offset + 2] = (byte)(i >>> 8);
         buf[offset + 3] = (byte)(i);
     }
 
     public static void writeUint48(long i, OutputStream output)
         throws IOException
     {
-        output.write((byte)(i >> 40));
-        output.write((byte)(i >> 32));
-        output.write((byte)(i >> 24));
-        output.write((byte)(i >> 16));
-        output.write((byte)(i >> 8));
+        output.write((byte)(i >>> 40));
+        output.write((byte)(i >>> 32));
+        output.write((byte)(i >>> 24));
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
         output.write((byte)(i));
     }
 
     public static void writeUint48(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 40);
-        buf[offset + 1] = (byte)(i >> 32);
-        buf[offset + 2] = (byte)(i >> 24);
-        buf[offset + 3] = (byte)(i >> 16);
-        buf[offset + 4] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 40);
+        buf[offset + 1] = (byte)(i >>> 32);
+        buf[offset + 2] = (byte)(i >>> 24);
+        buf[offset + 3] = (byte)(i >>> 16);
+        buf[offset + 4] = (byte)(i >>> 8);
         buf[offset + 5] = (byte)(i);
     }
 
     public static void writeUint64(long i, OutputStream output)
         throws IOException
     {
-        output.write((byte)(i >> 56));
-        output.write((byte)(i >> 48));
-        output.write((byte)(i >> 40));
-        output.write((byte)(i >> 32));
-        output.write((byte)(i >> 24));
-        output.write((byte)(i >> 16));
-        output.write((byte)(i >> 8));
+        output.write((byte)(i >>> 56));
+        output.write((byte)(i >>> 48));
+        output.write((byte)(i >>> 40));
+        output.write((byte)(i >>> 32));
+        output.write((byte)(i >>> 24));
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
         output.write((byte)(i));
     }
 
     public static void writeUint64(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 56);
-        buf[offset + 1] = (byte)(i >> 48);
-        buf[offset + 2] = (byte)(i >> 40);
-        buf[offset + 3] = (byte)(i >> 32);
-        buf[offset + 4] = (byte)(i >> 24);
-        buf[offset + 5] = (byte)(i >> 16);
-        buf[offset + 6] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 56);
+        buf[offset + 1] = (byte)(i >>> 48);
+        buf[offset + 2] = (byte)(i >>> 40);
+        buf[offset + 3] = (byte)(i >>> 32);
+        buf[offset + 4] = (byte)(i >>> 24);
+        buf[offset + 5] = (byte)(i >>> 16);
+        buf[offset + 6] = (byte)(i >>> 8);
         buf[offset + 7] = (byte)(i);
     }
 
@@ -634,9 +634,9 @@ public class TlsUtils
     public static void writeGMTUnixTime(byte[] buf, int offset)
     {
         int t = (int)(System.currentTimeMillis() / 1000L);
-        buf[offset] = (byte)(t >> 24);
-        buf[offset + 1] = (byte)(t >> 16);
-        buf[offset + 2] = (byte)(t >> 8);
+        buf[offset] = (byte)(t >>> 24);
+        buf[offset + 1] = (byte)(t >>> 16);
+        buf[offset + 2] = (byte)(t >>> 8);
         buf[offset + 3] = (byte)t;
     }
 
