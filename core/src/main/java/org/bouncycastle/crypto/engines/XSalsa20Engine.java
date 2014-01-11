@@ -9,7 +9,6 @@ import org.bouncycastle.crypto.util.Pack;
  */
 public class XSalsa20Engine extends Salsa20Engine
 {
-
     public String getAlgorithmName()
     {
         return "XSalsa20";
@@ -27,6 +26,11 @@ public class XSalsa20Engine extends Salsa20Engine
      */
     protected void setKey(byte[] keyBytes, byte[] ivBytes)
     {
+        if (keyBytes == null)
+        {
+            throw new IllegalArgumentException(getAlgorithmName() + " doesn't support re-init with null key");
+        }
+
         if (keyBytes.length != 32)
         {
             throw new IllegalArgumentException(getAlgorithmName() + " requires a 256 bit key");
@@ -57,9 +61,5 @@ public class XSalsa20Engine extends Salsa20Engine
         // Last 64 bits of input IV
         engineState[6] = Pack.littleEndianToInt(ivBytes, 16);
         engineState[7] = Pack.littleEndianToInt(ivBytes, 20);
-
-        // Counter reset
-        resetCounter();
     }
-
 }

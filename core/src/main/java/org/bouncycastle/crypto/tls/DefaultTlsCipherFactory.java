@@ -4,20 +4,18 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.engines.Salsa20Engine;
-import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -121,18 +119,14 @@ public class DefaultTlsCipherFactory
         throws IOException
     {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsStreamCipher createSalsa20Cipher(TlsContext context, int rounds, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        /*
-         * TODO To be able to support UMAC96, we need to give the TlsStreamCipher a Mac instead of
-         * assuming HMAC and passing a digest.
-         */
         return new TlsStreamCipher(context, createSalsa20StreamCipher(rounds), createSalsa20StreamCipher(rounds),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, true);
     }
 
     protected TlsBlockCipher createSEEDCipher(TlsContext context, int macAlgorithm)
@@ -142,20 +136,25 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
     }
 
+    protected BlockCipher createAESEngine()
+    {
+        return new AESEngine();
+    }
+
     protected BlockCipher createAESBlockCipher()
     {
-        return new CBCBlockCipher(new AESFastEngine());
+        return new CBCBlockCipher(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
     {
-        return new CCMBlockCipher(new AESFastEngine());
+        return new CCMBlockCipher(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
     {
         // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(new AESFastEngine());
+        return new GCMBlockCipher(createAESEngine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()
@@ -201,18 +200,6 @@ public class DefaultTlsCipherFactory
             return new SHA512Digest();
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    protected Mac createMac(int macAlgorithm) throws IOException
-    {
-        switch (macAlgorithm)
-        {
-        // TODO Need an implementation of UMAC
-//        case MACAlgorithm.umac96:
-//            return
-        default:
-            return new HMac(createHMACDigest(macAlgorithm));
         }
     }
 }
