@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
@@ -142,20 +142,25 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
     }
 
+    protected BlockCipher createAESEngine()
+    {
+        return new AESEngine();
+    }
+
     protected BlockCipher createAESBlockCipher()
     {
-        return new CBCBlockCipher(new AESFastEngine());
+        return new CBCBlockCipher(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
     {
-        return new CCMBlockCipher(new AESFastEngine());
+        return new CCMBlockCipher(createAESEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
     {
         // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(new AESFastEngine());
+        return new GCMBlockCipher(createAESEngine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()
