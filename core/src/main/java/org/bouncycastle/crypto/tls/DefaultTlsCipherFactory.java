@@ -119,14 +119,14 @@ public class DefaultTlsCipherFactory
         throws IOException
     {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsStreamCipher createSalsa20Cipher(TlsContext context, int rounds, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsStreamCipher(context, createSalsa20StreamCipher(rounds), createSalsa20StreamCipher(rounds),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, true);
     }
 
     protected TlsBlockCipher createSEEDCipher(TlsContext context, int macAlgorithm)
