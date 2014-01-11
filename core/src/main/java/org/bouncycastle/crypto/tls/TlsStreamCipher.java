@@ -90,7 +90,7 @@ public class TlsStreamCipher
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         /*
-         * TODO[draft-josefsson-salsa20-tls-02] Note that Salsa20 requires a 64-bit nonce. That
+         * TODO draft-josefsson-salsa20-tls-04 2.1 Note that Salsa20 requires a 64-bit nonce. That
          * nonce is updated on the encryption of every TLS record, and is set to be the 64-bit TLS
          * record sequence number. In case of DTLS the 64-bit nonce is formed as the concatenation
          * of the 16-bit epoch with the 48-bit sequence number.
@@ -118,7 +118,7 @@ public class TlsStreamCipher
         throws IOException
     {
         /*
-         * TODO[draft-josefsson-salsa20-tls-02] Note that Salsa20 requires a 64-bit nonce. That
+         * TODO draft-josefsson-salsa20-tls-04 2.1 Note that Salsa20 requires a 64-bit nonce. That
          * nonce is updated on the encryption of every TLS record, and is set to be the 64-bit TLS
          * record sequence number. In case of DTLS the 64-bit nonce is formed as the concatenation
          * of the 16-bit epoch with the 48-bit sequence number.

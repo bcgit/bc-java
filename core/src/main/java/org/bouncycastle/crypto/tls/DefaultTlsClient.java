@@ -78,9 +78,7 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_SHA1:
-        case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_UMAC96:
         case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
             return createDHEKeyExchange(KeyExchangeAlgorithm.DHE_RSA);
 
@@ -114,11 +112,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_SALSA20_SHA1:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_SALSA20_UMAC96:
             return createECDHEKeyExchange(KeyExchangeAlgorithm.ECDHE_ECDSA);
 
         case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
@@ -129,11 +125,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_UMAC96:
             return createECDHEKeyExchange(KeyExchangeAlgorithm.ECDHE_RSA);
 
         case CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA:
@@ -150,14 +144,12 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_UMAC96:
         case CipherSuite.TLS_RSA_WITH_NULL_MD5:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
         case CipherSuite.TLS_RSA_WITH_RC4_128_MD5:
         case CipherSuite.TLS_RSA_WITH_RC4_128_SHA:
         case CipherSuite.TLS_RSA_WITH_SALSA20_SHA1:
-        case CipherSuite.TLS_RSA_WITH_SALSA20_UMAC96:
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
             return createRSAKeyExchange();
 
@@ -291,12 +283,6 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.ESTREAM_SALSA20, MACAlgorithm.hmac_sha1);
 
-        case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_UMAC96:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_UMAC96:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_UMAC96:
-        case CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_UMAC96:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.ESTREAM_SALSA20, MACAlgorithm.umac96);
-
         case CipherSuite.TLS_RSA_WITH_NULL_MD5:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.NULL, MACAlgorithm.hmac_md5);
 
@@ -325,12 +311,6 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1:
         case CipherSuite.TLS_RSA_WITH_SALSA20_SHA1:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.SALSA20, MACAlgorithm.hmac_sha1);
-
-        case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_UMAC96:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_SALSA20_UMAC96:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_UMAC96:
-        case CipherSuite.TLS_RSA_WITH_SALSA20_UMAC96:
-            return cipherFactory.createCipher(context, EncryptionAlgorithm.SALSA20, MACAlgorithm.umac96);
 
         case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
