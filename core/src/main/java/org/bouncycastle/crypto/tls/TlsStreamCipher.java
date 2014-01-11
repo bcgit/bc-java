@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 public class TlsStreamCipher
@@ -21,13 +22,26 @@ public class TlsStreamCipher
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
+    protected boolean usesNonce;
+
+    /**
+     * @deprecated Use version with additional 'usesNonce' argument
+     */
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
         StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize) throws IOException
     {
+        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest, cipherKeySize, false);
+    }
+
+    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
+        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
+        int cipherKeySize, boolean usesNonce) throws IOException
+    {
         boolean isServer = context.isServer();
 
         this.context = context;
+        this.usesNonce = usesNonce;
 
         this.encryptCipher = clientWriteCipher;
         this.decryptCipher = serverWriteCipher;
@@ -78,6 +92,13 @@ public class TlsStreamCipher
             decryptParams = serverWriteKey;
         }
 
+        if (usesNonce)
+        {
+            byte[] dummyNonce = new byte[8];
+            encryptParams = new ParametersWithIV(encryptParams, dummyNonce);
+            decryptParams = new ParametersWithIV(decryptParams, dummyNonce);
+        }
+
         this.encryptCipher.init(true, encryptParams);
         this.decryptCipher.init(false, decryptParams);
     }
@@ -90,11 +111,15 @@ public class TlsStreamCipher
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
     {
         /*
-         * TODO[draft-josefsson-salsa20-tls-02] Note that Salsa20 requires a 64-bit nonce. That
+         * draft-josefsson-salsa20-tls-04 2.1 Note that Salsa20 requires a 64-bit nonce. That
          * nonce is updated on the encryption of every TLS record, and is set to be the 64-bit TLS
          * record sequence number. In case of DTLS the 64-bit nonce is formed as the concatenation
          * of the 16-bit epoch with the 48-bit sequence number.
          */
+        if (usesNonce)
+        {
+            updateIV(encryptCipher, true, seqNo);
+        }
 
         byte[] outBuf = new byte[len + writeMac.getSize()];
 
@@ -118,11 +143,15 @@ public class TlsStreamCipher
         throws IOException
     {
         /*
-         * TODO[draft-josefsson-salsa20-tls-02] Note that Salsa20 requires a 64-bit nonce. That
+         * draft-josefsson-salsa20-tls-04 2.1 Note that Salsa20 requires a 64-bit nonce. That
          * nonce is updated on the encryption of every TLS record, and is set to be the 64-bit TLS
          * record sequence number. In case of DTLS the 64-bit nonce is formed as the concatenation
          * of the 16-bit epoch with the 48-bit sequence number.
          */
+        if (usesNonce)
+        {
+            updateIV(decryptCipher, false, seqNo);
+        }
 
         int macSize = readMac.getSize();
         if (len < macSize)
@@ -159,5 +188,13 @@ public class TlsStreamCipher
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
+    }
+
+    private void updateIV(StreamCipher cipher, boolean forEncryption, long seqNo)
+    {
+        byte[] nonce = new byte[8];
+        TlsUtils.writeUint64(seqNo, nonce, 0);
+        cipher.init(forEncryption, new ParametersWithIV(null, nonce));
+
     }
 }
