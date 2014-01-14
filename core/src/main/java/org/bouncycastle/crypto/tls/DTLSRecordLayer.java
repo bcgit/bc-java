@@ -515,6 +515,6 @@ class DTLSRecordLayer
 
     private static long getMacSequenceNumber(int epoch, long sequence_number)
     {
-        return ((long)epoch << 48) | sequence_number;
+        return ((epoch & 0xFFFFFFFFL) << 48) | sequence_number;
     }
 }
