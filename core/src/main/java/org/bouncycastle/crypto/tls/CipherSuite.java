@@ -255,6 +255,18 @@ public class CipherSuite
     public static final int TLS_EMPTY_RENEGOTIATION_INFO_SCSV = 0x00FF;
 
     /*
+     * RFC 6367
+     */
+    public static final int TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xC072;
+    public static final int TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xC073;
+    public static final int TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xC074;
+    public static final int TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xC075;
+    public static final int TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xC076;
+    public static final int TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xC077;
+    public static final int TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xC078;
+    public static final int TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xC079;
+
+    /*
      * RFC 6655
      */
     public static final int TLS_RSA_WITH_AES_128_CCM = 0xC09C;
