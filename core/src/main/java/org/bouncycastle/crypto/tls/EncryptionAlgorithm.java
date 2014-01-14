@@ -30,7 +30,7 @@ public class EncryptionAlgorithm
     public static final int AES_256_GCM = 11;
 
     /*
-     * RFC 4132
+     * RFC 5932
      */
     public static final int CAMELLIA_128_CBC = 12;
     public static final int CAMELLIA_256_CBC = 13;
@@ -49,8 +49,19 @@ public class EncryptionAlgorithm
     public static final int AES_256_CCM_8 = 18;
 
     /*
+     * RFC 6367
+     */
+    public static final int CAMELLIA_128_GCM = 19;
+    public static final int CAMELLIA_256_GCM = 20;
+
+    /*
      * draft-josefsson-salsa20-tls-04 
      */
     public static final int ESTREAM_SALSA20 = 100;
     public static final int SALSA20 = 101;
+
+    /*
+     * draft-agl-tls-chacha20poly1305-04
+     */
+    public static final int AEAD_CHACHA20_POLY1305 = 102;
 }

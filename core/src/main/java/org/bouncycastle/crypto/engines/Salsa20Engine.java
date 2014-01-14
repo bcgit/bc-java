@@ -197,7 +197,7 @@ public class Salsa20Engine
                 advanceCounter();
             }
 
-            out[i+outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
+            out[i + outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
             index = (index + 1) & 63;
         }
     }
@@ -305,39 +305,39 @@ public class Salsa20Engine
 
         for (int i = rounds; i > 0; i -= 2)
         {
-            x04 ^= rotl((x00+x12), 7);
-            x08 ^= rotl((x04+x00), 9);
-            x12 ^= rotl((x08+x04),13);
-            x00 ^= rotl((x12+x08),18);
-            x09 ^= rotl((x05+x01), 7);
-            x13 ^= rotl((x09+x05), 9);
-            x01 ^= rotl((x13+x09),13);
-            x05 ^= rotl((x01+x13),18);
-            x14 ^= rotl((x10+x06), 7);
-            x02 ^= rotl((x14+x10), 9);
-            x06 ^= rotl((x02+x14),13);
-            x10 ^= rotl((x06+x02),18);
-            x03 ^= rotl((x15+x11), 7);
-            x07 ^= rotl((x03+x15), 9);
-            x11 ^= rotl((x07+x03),13);
-            x15 ^= rotl((x11+x07),18);
+            x04 ^= rotl(x00 + x12, 7);
+            x08 ^= rotl(x04 + x00, 9);
+            x12 ^= rotl(x08 + x04, 13);
+            x00 ^= rotl(x12 + x08, 18);
+            x09 ^= rotl(x05 + x01, 7);
+            x13 ^= rotl(x09 + x05, 9);
+            x01 ^= rotl(x13 + x09, 13);
+            x05 ^= rotl(x01 + x13, 18);
+            x14 ^= rotl(x10 + x06, 7);
+            x02 ^= rotl(x14 + x10, 9);
+            x06 ^= rotl(x02 + x14, 13);
+            x10 ^= rotl(x06 + x02, 18);
+            x03 ^= rotl(x15 + x11, 7);
+            x07 ^= rotl(x03 + x15, 9);
+            x11 ^= rotl(x07 + x03, 13);
+            x15 ^= rotl(x11 + x07, 18);
 
-            x01 ^= rotl((x00+x03), 7);
-            x02 ^= rotl((x01+x00), 9);
-            x03 ^= rotl((x02+x01),13);
-            x00 ^= rotl((x03+x02),18);
-            x06 ^= rotl((x05+x04), 7);
-            x07 ^= rotl((x06+x05), 9);
-            x04 ^= rotl((x07+x06),13);
-            x05 ^= rotl((x04+x07),18);
-            x11 ^= rotl((x10+x09), 7);
-            x08 ^= rotl((x11+x10), 9);
-            x09 ^= rotl((x08+x11),13);
-            x10 ^= rotl((x09+x08),18);
-            x12 ^= rotl((x15+x14), 7);
-            x13 ^= rotl((x12+x15), 9);
-            x14 ^= rotl((x13+x12),13);
-            x15 ^= rotl((x14+x13),18);
+            x01 ^= rotl(x00 + x03, 7);
+            x02 ^= rotl(x01 + x00, 9);
+            x03 ^= rotl(x02 + x01, 13);
+            x00 ^= rotl(x03 + x02, 18);
+            x06 ^= rotl(x05 + x04, 7);
+            x07 ^= rotl(x06 + x05, 9);
+            x04 ^= rotl(x07 + x06, 13);
+            x05 ^= rotl(x04 + x07, 18);
+            x11 ^= rotl(x10 + x09, 7);
+            x08 ^= rotl(x11 + x10, 9);
+            x09 ^= rotl(x08 + x11, 13);
+            x10 ^= rotl(x09 + x08, 18);
+            x12 ^= rotl(x15 + x14, 7);
+            x13 ^= rotl(x12 + x15, 9);
+            x14 ^= rotl(x13 + x12, 13);
+            x15 ^= rotl(x14 + x13, 18);
         }
 
         x[ 0] = x00 + input[ 0];

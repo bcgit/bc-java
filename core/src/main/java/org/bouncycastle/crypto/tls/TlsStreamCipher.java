@@ -195,6 +195,5 @@ public class TlsStreamCipher
         byte[] nonce = new byte[8];
         TlsUtils.writeUint64(seqNo, nonce, 0);
         cipher.init(forEncryption, new ParametersWithIV(null, nonce));
-
     }
 }
