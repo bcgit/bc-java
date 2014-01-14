@@ -1263,18 +1263,26 @@ public class TlsUtils
     {
         switch (ciphersuite)
         {
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
@@ -1287,6 +1295,8 @@ public class TlsUtils
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
@@ -1324,6 +1334,8 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_AES_256_CCM:
         case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
             return ProtocolVersion.TLSv12;
 

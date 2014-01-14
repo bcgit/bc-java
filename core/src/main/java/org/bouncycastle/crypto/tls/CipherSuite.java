@@ -56,7 +56,7 @@ public class CipherSuite
     public static final int TLS_DH_anon_WITH_AES_256_CBC_SHA = 0x003A;
 
     /*
-     * RFC 4132
+     * RFC 5932
      */
     public static final int TLS_RSA_WITH_CAMELLIA_128_CBC_SHA = 0x0041;
     public static final int TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA = 0x0042;
@@ -64,12 +64,27 @@ public class CipherSuite
     public static final int TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA = 0x0044;
     public static final int TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA = 0x0045;
     public static final int TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA = 0x0046;
+
     public static final int TLS_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0084;
     public static final int TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA = 0x0085;
     public static final int TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0086;
     public static final int TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA = 0x0087;
     public static final int TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0088;
     public static final int TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA = 0x0089;
+
+    public static final int TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BA;
+    public static final int TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BB;
+    public static final int TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BC;
+    public static final int TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BD;
+    public static final int TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BE;
+    public static final int TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256 = 0x00BF;
+
+    public static final int TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C0;
+    public static final int TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C1;
+    public static final int TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C2;
+    public static final int TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C3;
+    public static final int TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C4;
+    public static final int TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256 = 0x00C5;
 
     /*
      * RFC 4162
