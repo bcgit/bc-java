@@ -90,10 +90,9 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsAEADCipher createChaCha20Poly1305(TlsContext context) throws IOException
+    protected TlsCipher createChaCha20Poly1305(TlsContext context) throws IOException
     {
-        // TODO[draft-agl-tls-chacha20poly1305]
-        throw new TlsFatalAlert(AlertDescription.internal_error);
+        return new Chacha20Poly1305(context);
     }
 
     protected TlsAEADCipher createCipher_AES_CCM(TlsContext context, int cipherKeySize, int macSize)
