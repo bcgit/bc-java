@@ -36,7 +36,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA:
             return createDHKeyExchange(KeyExchangeAlgorithm.DH_DSS);
 
@@ -48,7 +50,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA:
             return createDHKeyExchange(KeyExchangeAlgorithm.DH_RSA);
 
@@ -60,7 +64,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
             return createDHEKeyExchange(KeyExchangeAlgorithm.DHE_DSS);
 
@@ -76,7 +82,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
         case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_SHA1:
@@ -145,7 +153,9 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1:
         case CipherSuite.TLS_RSA_WITH_NULL_MD5:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA:
@@ -278,12 +288,26 @@ public abstract class DefaultTlsClient
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_128_CBC, MACAlgorithm.hmac_sha1);
 
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_128_CBC, MACAlgorithm.hmac_sha256);
+
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
             return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC, MACAlgorithm.hmac_sha1);
+
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+            return cipherFactory.createCipher(context, EncryptionAlgorithm.CAMELLIA_256_CBC, MACAlgorithm.hmac_sha256);
 
         case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1:

@@ -30,7 +30,7 @@ public class EncryptionAlgorithm
     public static final int AES_256_GCM = 11;
 
     /*
-     * RFC 4132
+     * RFC 5932
      */
     public static final int CAMELLIA_128_CBC = 12;
     public static final int CAMELLIA_256_CBC = 13;
