@@ -31,6 +31,9 @@ public class DefaultTlsCipherFactory
         {
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return createDESedeCipher(context, macAlgorithm);
+        case EncryptionAlgorithm.AEAD_CHACHA20_POLY1305:
+            // NOTE: Ignores macAlgorithm
+            return createChaCha20Poly1305(context);
         case EncryptionAlgorithm.AES_128_CBC:
             return createAESCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CCM:
@@ -79,6 +82,20 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
+    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
+        throws IOException
+    {
+        return new TlsBlockCipher(context, createCamelliaBlockCipher(),
+            createCamelliaBlockCipher(), createHMACDigest(macAlgorithm),
+            createHMACDigest(macAlgorithm), cipherKeySize);
+    }
+
+    protected TlsAEADCipher createChaCha20Poly1305(TlsContext context) throws IOException
+    {
+        // TODO[draft-agl-tls-chacha20poly1305]
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
     protected TlsAEADCipher createCipher_AES_CCM(TlsContext context, int cipherKeySize, int macSize)
         throws IOException
     {
@@ -91,14 +108,6 @@ public class DefaultTlsCipherFactory
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(),
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize);
-    }
-
-    protected TlsBlockCipher createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsBlockCipher(context, createCamelliaBlockCipher(),
-            createCamelliaBlockCipher(), createHMACDigest(macAlgorithm),
-            createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
     protected TlsBlockCipher createDESedeCipher(TlsContext context, int macAlgorithm)

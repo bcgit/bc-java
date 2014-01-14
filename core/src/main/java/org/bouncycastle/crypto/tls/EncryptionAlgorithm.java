@@ -53,4 +53,9 @@ public class EncryptionAlgorithm
      */
     public static final int ESTREAM_SALSA20 = 100;
     public static final int SALSA20 = 101;
+
+    /*
+     * draft-agl-tls-chacha20poly1305-04
+     */
+    public static final int AEAD_CHACHA20_POLY1305 = 102;
 }

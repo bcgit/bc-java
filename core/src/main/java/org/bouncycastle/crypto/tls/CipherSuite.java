@@ -260,6 +260,13 @@ public class CipherSuite
     public static final int TLS_PSK_DHE_WITH_AES_256_CCM_8 = 0xC0AB;
 
     /*
+     * draft-agl-tls-chacha20poly1305-04
+     */
+    public static final int TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC13;
+    public static final int TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC14;
+    public static final int TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC15;
+
+    /*
      * draft-josefsson-salsa20-tls-04
      */
     public static final int TLS_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE410;
