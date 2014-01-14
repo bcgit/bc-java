@@ -253,6 +253,12 @@ public class TlsECCUtils
         case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
 
         /*
+         * draft-agl-tls-chacha20poly1305-04
+         */
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+
+        /*
          * draft-josefsson-salsa20-tls-04 
          */
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1:
