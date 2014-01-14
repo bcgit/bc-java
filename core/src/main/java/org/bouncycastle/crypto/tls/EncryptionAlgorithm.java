@@ -49,6 +49,12 @@ public class EncryptionAlgorithm
     public static final int AES_256_CCM_8 = 18;
 
     /*
+     * RFC 6367
+     */
+    public static final int CAMELLIA_128_GCM = 19;
+    public static final int CAMELLIA_256_GCM = 20;
+
+    /*
      * draft-josefsson-salsa20-tls-04 
      */
     public static final int ESTREAM_SALSA20 = 100;

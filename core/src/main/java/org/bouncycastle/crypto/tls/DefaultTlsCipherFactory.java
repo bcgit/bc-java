@@ -58,8 +58,14 @@ public class DefaultTlsCipherFactory
             return createCipher_AES_GCM(context, 32, 16);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return createCamelliaCipher(context, 16, macAlgorithm);
+        case EncryptionAlgorithm.CAMELLIA_128_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_Camellia_GCM(context, 16, 16);
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
             return createCamelliaCipher(context, 32, macAlgorithm);
+        case EncryptionAlgorithm.CAMELLIA_256_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_Camellia_GCM(context, 32, 16);
         case EncryptionAlgorithm.ESTREAM_SALSA20:
             return createSalsa20Cipher(context, 12, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
@@ -109,6 +115,13 @@ public class DefaultTlsCipherFactory
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize);
     }
 
+    protected TlsAEADCipher createCipher_Camellia_GCM(TlsContext context, int cipherKeySize, int macSize)
+        throws IOException
+    {
+        return new TlsAEADCipher(context, createAEADBlockCipher_Camellia_GCM(),
+            createAEADBlockCipher_Camellia_GCM(), cipherKeySize, macSize);
+    }
+
     protected TlsBlockCipher createDESedeCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
@@ -149,6 +162,11 @@ public class DefaultTlsCipherFactory
         return new AESEngine();
     }
 
+    protected BlockCipher createCamelliaEngine()
+    {
+        return new CamelliaEngine();
+    }
+
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(createAESEngine());
@@ -165,9 +183,15 @@ public class DefaultTlsCipherFactory
         return new GCMBlockCipher(createAESEngine());
     }
 
+    protected AEADBlockCipher createAEADBlockCipher_Camellia_GCM()
+    {
+        // TODO Consider allowing custom configuration of multiplier
+        return new GCMBlockCipher(createCamelliaEngine());
+    }
+
     protected BlockCipher createCamelliaBlockCipher()
     {
-        return new CBCBlockCipher(new CamelliaEngine());
+        return new CBCBlockCipher(createCamelliaEngine());
     }
 
     protected BlockCipher createDESedeBlockCipher()
