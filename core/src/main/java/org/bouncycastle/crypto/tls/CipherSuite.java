@@ -287,6 +287,21 @@ public class CipherSuite
     public static final int TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xC08C;
     public static final int TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xC08D;
 
+    public static final int TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256 = 0xC08E;
+    public static final int TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384 = 0xC08F;
+    public static final int TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256 = 0xC090;
+    public static final int TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384 = 0xC091;
+    public static final int TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256 = 0xC092;
+    public static final int TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384 = 0xC093;
+    public static final int TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 = 0xC094;
+    public static final int TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 = 0xC095;
+    public static final int TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 = 0xC096;
+    public static final int TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 = 0xC097;
+    public static final int TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256 = 0xC098;
+    public static final int TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384 = 0xC099;
+    public static final int TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 = 0xC09A;
+    public static final int TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 = 0xC09B;
+
     /*
      * RFC 6655
      */
