@@ -26,22 +26,10 @@ public class Chacha20Poly1305 implements TlsCipher
 
         this.context = context;
 
-        int cipherKeySize = 32;
-        int key_block_size = 2 * cipherKeySize;
+        byte[] key_block = TlsUtils.calculateKeyBlock(context, 64);
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
-
-        int offset = 0;
-
-        KeyParameter client_write_key = new KeyParameter(key_block, offset, cipherKeySize);
-        offset += cipherKeySize;
-        KeyParameter server_write_key = new KeyParameter(key_block, offset, cipherKeySize);
-        offset += cipherKeySize;
-
-        if (offset != key_block_size)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        KeyParameter client_write_key = new KeyParameter(key_block, 0, 32);
+        KeyParameter server_write_key = new KeyParameter(key_block, 32, 32);
 
         this.encryptCipher = new ChaChaEngine(20);
         this.decryptCipher = new ChaChaEngine(20);
@@ -94,7 +82,7 @@ public class Chacha20Poly1305 implements TlsCipher
 
         int plaintextLength = len - 16;
 
-        byte[] receivedMAC = Arrays.copyOfRange(ciphertext, offset + plaintextLength,  offset + len);
+        byte[] receivedMAC = Arrays.copyOfRange(ciphertext, offset + plaintextLength, offset + len);
 
         KeyParameter macKey = initRecordMAC(decryptCipher, false, seqNo);
 
@@ -116,6 +104,7 @@ public class Chacha20Poly1305 implements TlsCipher
     {
         byte[] nonce = new byte[8];
         TlsUtils.writeUint64(seqNo, nonce, 0);
+
         cipher.init(forEncryption, new ParametersWithIV(null, nonce));
 
         byte[] firstBlock = new byte[64];
@@ -123,15 +112,15 @@ public class Chacha20Poly1305 implements TlsCipher
 
         // NOTE: The BC implementation puts 'r' after 'k'
         System.arraycopy(firstBlock, 0, firstBlock, 32, 16);
-        KeyParameter pKey = new KeyParameter(firstBlock, 16, 32);
-        Poly1305KeyGenerator.clamp(pKey.getKey());
-        return pKey;
+        KeyParameter macKey = new KeyParameter(firstBlock, 16, 32);
+        Poly1305KeyGenerator.clamp(macKey.getKey());
+        return macKey;
     }
 
-    protected byte[] calculateRecordMAC(KeyParameter key, byte[] additionalData, byte[] buf, int off, int len)
+    protected byte[] calculateRecordMAC(KeyParameter macKey, byte[] additionalData, byte[] buf, int off, int len)
     {
         Poly1305 p = new Poly1305();
-        p.init(key);
+        p.init(macKey);
 
         p.update(additionalData, 0, additionalData.length);
 
@@ -148,8 +137,7 @@ public class Chacha20Poly1305 implements TlsCipher
         return mac;
     }
 
-    protected byte[] getAdditionalData(long seqNo, short type, int len)
-        throws IOException
+    protected byte[] getAdditionalData(long seqNo, short type, int len) throws IOException
     {
         /*
          * additional_data = seq_num + TLSCompressed.type + TLSCompressed.version +
