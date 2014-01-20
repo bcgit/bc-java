@@ -217,19 +217,18 @@ public class SecP256K1Point extends ECPoint
         int[] T = Nat256.create();
         SecP256K1Field.square(Y1Squared, T);
 
-        int[] X1Squared = Nat256.create();
-        SecP256K1Field.square(X1.x, X1Squared);
+        int[] t1 = Nat256.create();
+        SecP256K1Field.square(X1.x, t1);
 
         int[] M = Nat256.create();
-        SecP256K1Field.twice(X1Squared, M);
-        SecP256K1Field.add(M, X1Squared, M);
+        SecP256K1Field.twice(t1, M);
+        SecP256K1Field.add(M, t1, M);
 
         int[] S = Y1Squared;
         SecP256K1Field.multiply(Y1Squared, X1.x, S);
         SecP256K1Field.twice(S, S);
         SecP256K1Field.twice(S, S);
 
-        int[] t1 = Nat256.create();
         SecP256K1Field.twice(T, t1);
         SecP256K1Field.twice(t1, t1);
         SecP256K1Field.twice(t1, t1);
