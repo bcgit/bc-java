@@ -806,9 +806,11 @@ public abstract class ECPoint
                 ECFieldElement _4B = four(B);
                 ECFieldElement h = w.square().subtract(two(_4B));
 
-                ECFieldElement X3 = two(h.multiply(s));
-                ECFieldElement Y3 = w.multiply(_4B.subtract(h)).subtract(two(two(t).square()));
-                ECFieldElement _4sSquared = Z1IsOne ? four(t) : two(s).square();
+                ECFieldElement _2s = two(s);
+                ECFieldElement X3 = h.multiply(_2s);
+                ECFieldElement _2t = two(t);
+                ECFieldElement Y3 = _4B.subtract(h).multiply(w).subtract(two(_2t.square()));
+                ECFieldElement _4sSquared = Z1IsOne ? two(_2t) : _2s.square();
                 ECFieldElement Z3 = two(_4sSquared).multiply(s);
 
                 return new ECPoint.Fp(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
