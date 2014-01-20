@@ -91,6 +91,9 @@ public class SecP256R1Point extends ECPoint
         SecP256R1FieldElement Z1 = (SecP256R1FieldElement)this.zs[0];
         SecP256R1FieldElement Z2 = (SecP256R1FieldElement)b.getZCoord(0);
 
+        int[] tt1 = Nat256.createExt();
+        int[] tt2 = Nat256.createExt();
+
         boolean Z1IsOne = Z1.isOne();
         int[] U2, S2;
         if (Z1IsOne)
@@ -103,7 +106,7 @@ public class SecP256R1Point extends ECPoint
             S2 = Nat256.create();
             SecP256R1Field.square(Z1.x, S2);
 
-            U2 = Nat256.create();
+            U2 = tt2;
             SecP256R1Field.multiply(S2, X2.x, U2);
 
             SecP256R1Field.multiply(S2, Z1.x, S2);
@@ -122,7 +125,7 @@ public class SecP256R1Point extends ECPoint
             S1 = Nat256.create();
             SecP256R1Field.square(Z2.x, S1);
 
-            U1 = Nat256.create();
+            U1 = tt1;
             SecP256R1Field.multiply(S1, X1.x, U1);
 
             SecP256R1Field.multiply(S1, Z2.x, S1);
@@ -132,7 +135,7 @@ public class SecP256R1Point extends ECPoint
         int[] H = Nat256.create();
         SecP256R1Field.subtract(U1, U2, H);
 
-        int[] R = Nat256.createExt();
+        int[] R = tt2;
         SecP256R1Field.subtract(S1, S2, R);
 
         // Check if b == this or b == -this
@@ -163,12 +166,10 @@ public class SecP256R1Point extends ECPoint
         SecP256R1Field.subtract(X3.x, V, X3.x);
         SecP256R1Field.subtract(X3.x, V, X3.x);
 
-        int[] tt1 = Nat256.createExt();
         Nat256.mul(S1, G, tt1);
 
         SecP256R1FieldElement Y3 = new SecP256R1FieldElement(G);
         SecP256R1Field.subtract(V, X3.x, Y3.x);
-        int[] tt2 = R;
         Nat256.mul(Y3.x, R, tt2);
         SecP256R1Field.subtractExt(tt2, tt1, tt2);
         SecP256R1Field.reduce(tt2, Y3.x);
