@@ -856,7 +856,8 @@ public abstract class ECPoint
                             M = M.add(Z1Pow4.multiply(a4));
                         }
                     }
-                    S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+//                  S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+                    S = four(X1.multiply(Y1Squared));
                 }
 
                 ECFieldElement X3 = M.square().subtract(two(S));
@@ -1114,14 +1115,15 @@ public abstract class ECPoint
 
             ECFieldElement X1Squared = X1.square();
             ECFieldElement M = three(X1Squared).add(W1);
-            ECFieldElement Y1Squared = Y1.square();
-            ECFieldElement T = Y1Squared.square();
-            ECFieldElement S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
+            ECFieldElement _2Y1 = two(Y1);
+            ECFieldElement _2Y1Squared = _2Y1.multiply(Y1);
+            ECFieldElement S = two(X1.multiply(_2Y1Squared));
             ECFieldElement X3 = M.square().subtract(two(S));
-            ECFieldElement _8T = eight(T);
+            ECFieldElement _4T = _2Y1Squared.square();
+            ECFieldElement _8T = two(_4T);
             ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
             ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
-            ECFieldElement Z3 = two(Z1.isOne() ? Y1 : Y1.multiply(Z1));
+            ECFieldElement Z3 = Z1.isOne() ? _2Y1 : _2Y1.multiply(Z1);
 
             return new ECPoint.Fp(this.getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
         }
