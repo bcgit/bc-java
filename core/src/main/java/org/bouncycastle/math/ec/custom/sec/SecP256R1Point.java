@@ -227,21 +227,21 @@ public class SecP256R1Point extends ECPoint
 
         int[] t1 = Nat256.create();
         SecP256R1Field.subtract(X1.x, Z1Squared, t1);
+
         int[] M = Nat256.create();
         SecP256R1Field.add(X1.x, Z1Squared, M);
         SecP256R1Field.multiply(M, t1, M);
-        SecP256R1Field.add(M, M, t1);
+        SecP256R1Field.twice(M, t1);
         SecP256R1Field.add(M, t1, M);
 
         int[] S = Y1Squared;
         SecP256R1Field.multiply(Y1Squared, X1.x, S);
-        SecP256R1Field.add(S, S, S);
-        SecP256R1Field.add(S, S, S);
+        SecP256R1Field.twice(S, S);
+        SecP256R1Field.twice(S, S);
 
-        // eight(T)
-        SecP256R1Field.add(T, T, t1);
-        SecP256R1Field.add(t1, t1, t1);
-        SecP256R1Field.add(t1, t1, t1);
+        SecP256R1Field.twice(T, t1);
+        SecP256R1Field.twice(t1, t1);
+        SecP256R1Field.twice(t1, t1);
 
         SecP256R1FieldElement X3 = new SecP256R1FieldElement(T);
         SecP256R1Field.square(M, X3.x);
@@ -254,7 +254,7 @@ public class SecP256R1Point extends ECPoint
         SecP256R1Field.subtract(Y3.x, t1, Y3.x);
 
         SecP256R1FieldElement Z3 = new SecP256R1FieldElement(M);
-        SecP256R1Field.add(Y1.x, Y1.x, Z3.x);
+        SecP256R1Field.twice(Y1.x, Z3.x);
         if (!Z1IsOne)
         {
             SecP256R1Field.multiply(Z3.x, Z1.x, Z3.x);
