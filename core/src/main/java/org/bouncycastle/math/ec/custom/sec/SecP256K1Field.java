@@ -54,6 +54,19 @@ public class SecP256K1Field
         return z;
     }
 
+    public static void half(int[] x, int[] z)
+    {
+        if ((x[0] & 1) == 0)
+        {
+            Nat256.shiftDownBit(x, 0, z);
+        }
+        else
+        {
+            int c = Nat256.add(x, P, z);
+            Nat256.shiftDownBit(z, c, z);
+        }
+    }
+
     public static void multiply(int[] x, int[] y, int[] z)
     {
         int[] tt = Nat256.createExt();
@@ -115,6 +128,15 @@ public class SecP256K1Field
         if (c != 0)
         {
             Nat256.addExt(zz, PExt, zz);
+        }
+    }
+
+    public static void twice(int[] x, int[] z)
+    {
+        int c = Nat256.shiftUpBit(x, 0, z);
+        if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
+        {
+            Nat256.addDWord(PInv, z, 0);
         }
     }
 }
