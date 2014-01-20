@@ -94,6 +94,7 @@ public class SecP256K1Point extends ECPoint
 
         int[] tt1 = Nat256.createExt();
         int[] tt2 = Nat256.createExt();
+        int[] t3 = Nat256.create();
 
         boolean Z1IsOne = Z1.isOne();
         int[] U2, S2;
@@ -104,7 +105,7 @@ public class SecP256K1Point extends ECPoint
         }
         else
         {
-            S2 = Nat256.create();
+            S2 = t3;
             SecP256K1Field.square(Z1.x, S2);
 
             U2 = tt2;
@@ -152,7 +153,7 @@ public class SecP256K1Point extends ECPoint
             return curve.getInfinity();
         }
 
-        int[] HSquared = Nat256.create();
+        int[] HSquared = t3;
         SecP256K1Field.square(H, HSquared);
 
         int[] G = Nat256.create();
