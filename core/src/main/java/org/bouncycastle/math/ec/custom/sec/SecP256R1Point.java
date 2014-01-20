@@ -209,6 +209,9 @@ public class SecP256R1Point extends ECPoint
 
         SecP256R1FieldElement X1 = (SecP256R1FieldElement)this.x, Z1 = (SecP256R1FieldElement)this.zs[0];
 
+        int[] t1 = Nat256.create();
+        int[] t2 = Nat256.create();
+
         int[] Y1Squared = Nat256.create();
         SecP256R1Field.square(Y1.x, Y1Squared);
 
@@ -220,14 +223,13 @@ public class SecP256R1Point extends ECPoint
         int[] Z1Squared = Z1.x;
         if (!Z1IsOne)
         {
-            Z1Squared = Nat256.create();
+            Z1Squared = t2;
             SecP256R1Field.square(Z1.x, Z1Squared);
         }
 
-        int[] t1 = Nat256.create();
         SecP256R1Field.subtract(X1.x, Z1Squared, t1);
 
-        int[] M = Nat256.create();
+        int[] M = t2;
         SecP256R1Field.add(X1.x, Z1Squared, M);
         SecP256R1Field.multiply(M, t1, M);
         SecP256R1Field.twice(M, t1);
