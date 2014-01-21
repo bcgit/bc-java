@@ -2,8 +2,16 @@ package org.bouncycastle.math.ec.test;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import junit.framework.TestCase;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -16,8 +24,8 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class ECPointPerformanceTest extends TestCase
 {
-    public static final int PRE_ROUNDS = 10;
-    public static final int NUM_ROUNDS = 100;
+    public static final int PRE_ROUNDS = 100;
+    public static final int NUM_ROUNDS = 1000;
 
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
         "JACOBIAN-MODIFIED", "LAMBDA-AFFINE", "LAMBDA-PROJECTIVE", "SKEWED" };
@@ -56,13 +64,14 @@ public class ECPointPerformanceTest extends TestCase
             {
                 ECCurve c = C;
                 ECPoint g = G;
+
                 if (c.getCoordinateSystem() != coord)
                 {
                     c = C.configure().setCoordinateSystem(coord).create();
                     g = c.importPoint(G);
                 }
 
-                double avgDuration = randMult(random, c, g, n);
+                double avgDuration = randMult(random, g, n);
                 String coordName = COORD_NAMES[coord];
                 StringBuffer sb = new StringBuffer();
                 sb.append("  ");
@@ -81,9 +90,9 @@ public class ECPointPerformanceTest extends TestCase
         System.out.println();
     }
 
-    private double randMult(SecureRandom random, ECCurve c, ECPoint g, BigInteger n) throws Exception
+    private double randMult(SecureRandom random, ECPoint g, BigInteger n) throws Exception
     {
-        BigInteger[] ks = new BigInteger[16];
+        BigInteger[] ks = new BigInteger[128];
         for (int i = 0; i < ks.length; ++i)
         {
             ks[i] = new BigInteger(n.bitLength() - 1, random);
@@ -119,91 +128,17 @@ public class ECPointPerformanceTest extends TestCase
 
     public void testMultiply() throws Exception
     {
-        // Enumeration e = SECNamedCurves.getNames();
-        // while (e.hasMoreElements())
-        // {
-        // String name = (String)e.nextElement();
-        // randMult(name);
-        // }
-
-        randMult("sect113r1");
-        randMult("sect113r2");
-        randMult("sect131r1");
-        randMult("sect131r2");
-        randMult("sect163k1");
-        randMult("sect163r1");
-        randMult("sect163r2");
-        randMult("sect193r1");
-        randMult("sect193r2");
-        randMult("sect233k1");
-        randMult("sect233r1");
-        randMult("sect239k1");
-        randMult("sect283k1");
-        randMult("sect283r1");
-        randMult("sect409k1");
-        randMult("sect409r1");
-        randMult("sect571k1");
-        randMult("sect571r1");
-
-        randMult("secp112r1");
-        randMult("secp112r2");
-        randMult("secp128r1");
-        randMult("secp128r2");
-        randMult("secp160k1");
-        randMult("secp160r1");
-        randMult("secp160r2");
-        randMult("secp192k1");
-        randMult("secp192r1");
-        randMult("secp224k1");
-        randMult("secp224r1");
-        randMult("secp256k1");
-        randMult("secp256r1");
-        randMult("secp384r1");
-        randMult("secp521r1");
-
-        randMult("brainpoolp160r1");
-        randMult("brainpoolp160t1");
-        randMult("brainpoolp192r1");
-        randMult("brainpoolp192t1");
-        randMult("brainpoolp224r1");
-        randMult("brainpoolp224t1");
-        randMult("brainpoolp256r1");
-        randMult("brainpoolp256t1");
-        randMult("brainpoolp320r1");
-        randMult("brainpoolp320t1");
-        randMult("brainpoolp384r1");
-        randMult("brainpoolp384t1");
-        randMult("brainpoolp512r1");
-        randMult("brainpoolp512t1");
-
-        randMult("prime192v1");
-        randMult("prime192v2");
-        randMult("prime192v3");
-        randMult("prime239v1");
-        randMult("prime239v2");
-        randMult("prime239v3");
-        randMult("prime256v1");
-        randMult("c2pnb163v1");
-        randMult("c2pnb163v2");
-        randMult("c2pnb163v3");
-        randMult("c2pnb176w1");
-        randMult("c2tnb191v1");
-        randMult("c2tnb191v2");
-        randMult("c2tnb191v3");
-        randMult("c2pnb208w1");
-        randMult("c2tnb239v1");
-        randMult("c2tnb239v2");
-        randMult("c2tnb239v3");
-        randMult("c2pnb272w1");
-        randMult("c2pnb304w1");
-        randMult("c2tnb359v1");
-        randMult("c2pnb368w1");
-        randMult("c2tnb431r1");
+        Set oids = new HashSet();
+        SortedSet names = new TreeSet(Collections.list(ECNamedCurveTable.getNames()));
+        Iterator it = names.iterator();
+        while (it.hasNext())
+        {
+            String name = (String)it.next();
+            ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(name);
+            if (oids.add(oid))
+            {
+                randMult(name);
+            }
+        }
     }
-
-    // public static void main(String argv[]) throws Exception
-    // {
-    // ECMultiplyPerformanceTest test = new ECMultiplyPerformanceTest();
-    // test.testMultiply();
-    // }
 }
