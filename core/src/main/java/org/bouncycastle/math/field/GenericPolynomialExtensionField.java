@@ -25,7 +25,7 @@ class GenericPolynomialExtensionField implements PolynomialExtensionField
         return subfield.getDimension() * minimalPolynomial.getDegree();
     }
 
-    public final FiniteField getSubfield()
+    public FiniteField getSubfield()
     {
         return subfield;
     }
