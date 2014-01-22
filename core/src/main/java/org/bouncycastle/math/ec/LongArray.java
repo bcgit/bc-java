@@ -839,12 +839,12 @@ class LongArray
             add(c, cOff, b, 0, bLen);
         }
         int k = 1;
-        while ((a >>>= 1) != 0)
+        while ((a >>>= 1) != 0L)
         {
             if ((a & 1L) != 0L)
             {
                 long carry = addShiftedUp(c, cOff, b, 0, bLen, k);
-                if (carry != 0)
+                if (carry != 0L)
                 {
                     c[cOff + bLen] ^= carry;
                 }
@@ -888,8 +888,8 @@ class LongArray
 
         if (aLen == 1)
         {
-            long a = A.m_ints[0];
-            if (a == 1L)
+            long a0 = A.m_ints[0];
+            if (a0 == 1L)
             {
                 return B;
             }
@@ -897,13 +897,13 @@ class LongArray
             /*
              * Fast path for small A, with performance dependent only on the number of set bits
              */
-            long[] c = new long[cLen];
-            multiplyWord(a, B.m_ints, bLen, c, 0);
+            long[] c0 = new long[cLen];
+            multiplyWord(a0, B.m_ints, bLen, c0, 0);
 
             /*
              * Reduce the raw answer against the reduction coefficients
              */
-            return reduceResult(c, 0, cLen, m, ks);
+            return reduceResult(c0, 0, cLen, m, ks);
         }
 
         /*
@@ -1020,8 +1020,8 @@ class LongArray
 
         if (aLen == 1)
         {
-            long a = A.m_ints[0];
-            if (a == 1L)
+            long a0 = A.m_ints[0];
+            if (a0 == 1L)
             {
                 return B;
             }
@@ -1029,13 +1029,13 @@ class LongArray
             /*
              * Fast path for small A, with performance dependent only on the number of set bits
              */
-            long[] c = new long[cLen];
-            multiplyWord(a, B.m_ints, bLen, c, 0);
+            long[] c0 = new long[cLen];
+            multiplyWord(a0, B.m_ints, bLen, c0, 0);
 
             /*
              * Reduce the raw answer against the reduction coefficients
              */
-            return reduceResult(c, 0, cLen, m, ks);
+            return reduceResult(c0, 0, cLen, m, ks);
         }
 
         /*
@@ -1094,7 +1094,8 @@ class LongArray
                 aVal >>>= 4;
                 int v = (int)aVal & MASK;
                 addBoth(c, cOff, T0, ti[u], T1, ti[v], bMax);
-                if ((aVal >>>= 4) == 0L)
+                aVal >>>= 4;
+                if (aVal == 0L)
                 {
                     break;
                 }
@@ -1102,10 +1103,12 @@ class LongArray
             }
         }
 
-        int cOff = c.length;
-        while ((cOff -= cLen) != 0)
         {
-            addShiftedUp(c, cOff - cLen, c, cOff, cLen, 8);
+            int cOff = c.length;
+            while ((cOff -= cLen) != 0)
+            {
+                addShiftedUp(c, cOff - cLen, c, cOff, cLen, 8);
+            }
         }
 
         /*
@@ -1149,8 +1152,8 @@ class LongArray
 
         if (aLen == 1)
         {
-            long a = A.m_ints[0];
-            if (a == 1L)
+            long a0 = A.m_ints[0];
+            if (a0 == 1L)
             {
                 return B;
             }
@@ -1158,13 +1161,13 @@ class LongArray
             /*
              * Fast path for small A, with performance dependent only on the number of set bits
              */
-            long[] c = new long[cLen];
-            multiplyWord(a, B.m_ints, bLen, c, 0);
+            long[] c0 = new long[cLen];
+            multiplyWord(a0, B.m_ints, bLen, c0, 0);
 
             /*
              * Reduce the raw answer against the reduction coefficients
              */
-            return reduceResult(c, 0, cLen, m, ks);
+            return reduceResult(c0, 0, cLen, m, ks);
         }
 
         // NOTE: This works, but is slower than width 4 processing
@@ -1422,13 +1425,13 @@ class LongArray
     private static void reduceBit(long[] buf, int off, int bit, int m, int[] ks)
     {
         flipBit(buf, off, bit);
-        int base = bit - m;
+        int n = bit - m;
         int j = ks.length;
         while (--j >= 0)
         {
-            flipBit(buf, off, ks[j] + base);
+            flipBit(buf, off, ks[j] + n);
         }
-        flipBit(buf, off, base);
+        flipBit(buf, off, n);
     }
 
     private static void reduceWordWise(long[] buf, int off, int len, int toBit, int m, int[] ks)
@@ -1445,12 +1448,14 @@ class LongArray
             }
         }
 
-        int partial = toBit & 0x3F;
-        long word = buf[off + toPos] >>> partial;
-        if (word != 0)
         {
-            buf[off + toPos] ^= word << partial;
-            reduceWord(buf, off, toBit, word, m, ks);
+            int partial = toBit & 0x3F;
+            long word = buf[off + toPos] >>> partial;
+            if (word != 0)
+            {
+                buf[off + toPos] ^= word << partial;
+                reduceWord(buf, off, toBit, word, m, ks);
+            }
         }
     }
 
