@@ -180,25 +180,12 @@ public abstract class ECFieldElement
 
         public ECFieldElement divide(ECFieldElement b)
         {
-            return new Fp(q, modMult(x, b.toBigInteger().modInverse(q)));
+            return new Fp(q, r, modMult(x, b.toBigInteger().modInverse(q)));
         }
 
         public ECFieldElement negate()
         {
-            BigInteger x2;
-            if (x.signum() == 0)
-            {
-                x2 = x;
-            }
-            else if (ONE.equals(r))
-            {
-                x2 = q.xor(x);
-            }
-            else
-            {
-                x2 = q.subtract(x);
-            }
-            return new Fp(q, r, x2);
+            return x.signum() == 0 ? this : new Fp(q, r, q.subtract(x));
         }
 
         public ECFieldElement square()
@@ -276,7 +263,7 @@ public abstract class ECFieldElement
 
                     V = V.shiftRight(1);
 
-                    //assert V.multiply(V).mod(q).equals(x);
+                    //assert modMult(V, V).equals(X);
 
                     return new ECFieldElement.Fp(q, r, V);
                 }
@@ -284,69 +271,19 @@ public abstract class ECFieldElement
             while (U.equals(ECConstants.ONE) || U.equals(qMinusOne));
 
             return null;
-
-//            BigInteger qMinusOne = q.subtract(ECConstants.ONE);
-//            BigInteger legendreExponent = qMinusOne.shiftRight(1); //divide(ECConstants.TWO);
-//            if (!(x.modPow(legendreExponent, q).equals(ECConstants.ONE)))
-//            {
-//                return null;
-//            }
-//
-//            Random rand = new Random();
-//            BigInteger fourX = x.shiftLeft(2);
-//
-//            BigInteger r;
-//            do
-//            {
-//                r = new BigInteger(q.bitLength(), rand);
-//            }
-//            while (r.compareTo(q) >= 0
-//                || !(r.multiply(r).subtract(fourX).modPow(legendreExponent, q).equals(qMinusOne)));
-//
-//            BigInteger n1 = qMinusOne.shiftRight(2); //.divide(ECConstants.FOUR);
-//            BigInteger n2 = n1.add(ECConstants.ONE); //q.add(ECConstants.THREE).divide(ECConstants.FOUR);
-//
-//            BigInteger wOne = WOne(r, x, q);
-//            BigInteger wSum = W(n1, wOne, q).add(W(n2, wOne, q)).mod(q);
-//            BigInteger twoR = r.shiftLeft(1); //ECConstants.TWO.multiply(r);
-//
-//            BigInteger root = twoR.modPow(q.subtract(ECConstants.TWO), q)
-//                .multiply(x).mod(q)
-//                .multiply(wSum).mod(q);
-//
-//            return new Fp(q, root);
         }
-
-//        private static BigInteger W(BigInteger n, BigInteger wOne, BigInteger p)
-//        {
-//            if (n.equals(ECConstants.ONE))
-//            {
-//                return wOne;
-//            }
-//            boolean isEven = !n.testBit(0);
-//            n = n.shiftRight(1);//divide(ECConstants.TWO);
-//            if (isEven)
-//            {
-//                BigInteger w = W(n, wOne, p);
-//                return w.multiply(w).subtract(ECConstants.TWO).mod(p);
-//            }
-//            BigInteger w1 = W(n.add(ECConstants.ONE), wOne, p);
-//            BigInteger w2 = W(n, wOne, p);
-//            return w1.multiply(w2).subtract(wOne).mod(p);
-//        }
-//
-//        private BigInteger WOne(BigInteger r, BigInteger x, BigInteger p)
-//        {
-//            return r.multiply(r).multiply(x.modPow(q.subtract(ECConstants.TWO), q)).subtract(ECConstants.TWO).mod(p);
-//        }
 
         private BigInteger[] lucasSequence(
             BigInteger  P,
             BigInteger  Q,
             BigInteger  k)
         {
+            // TODO Research and apply "common-multiplicand multiplication here"
+
             int n = k.bitLength();
             int s = k.getLowestSetBit();
+
+            // assert k.testBit(s);
 
             BigInteger Uh = ECConstants.ONE;
             BigInteger Vl = ECConstants.TWO;
