@@ -76,7 +76,7 @@ public class ECAlgorithms
         return c.importPoint(p);
     }
 
-    static void implMontgomeryTrick(ECFieldElement[] zs, int off, int len)
+    public static void montgomeryTrick(ECFieldElement[] zs, int off, int len)
     {
         /*
          * Uses the "Montgomery Trick" to invert many field elements, with only a single actual
