@@ -245,7 +245,7 @@ public abstract class ECCurve
     /**
      * Sets the default <code>ECMultiplier</code>, unless already set. 
      */
-    public ECMultiplier getMultiplier()
+    public synchronized ECMultiplier getMultiplier()
     {
         if (this.multiplier == null)
         {
