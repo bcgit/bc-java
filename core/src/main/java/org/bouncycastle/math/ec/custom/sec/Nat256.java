@@ -451,16 +451,15 @@ public abstract class Nat256
 
     public static int shiftDownBits(int[] x, int xLen, int bits, int c)
     {
-        assert bits > 0 && bits < 32;
-
+//        assert bits > 0 && bits < 32;
         int i = xLen;
         while (--i >= 0)
         {
             int next = x[i];
-            x[i] = (next >>> bits) | (c << 32 - bits);
+            x[i] = (next >>> bits) | (c << -bits);
             c = next;
         }
-        return c << 32 - bits;
+        return c << -bits;
     }
 
     public static int shiftDownWord(int[] x, int xLen, int c)
