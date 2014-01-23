@@ -199,7 +199,7 @@ public abstract class ECCurve
             return;
         }
 
-        ECAlgorithms.implMontgomeryTrick(zs, 0, count);
+        ECAlgorithms.montgomeryTrick(zs, 0, count);
 
         for (int j = 0; j < count; ++j)
         {
@@ -245,7 +245,7 @@ public abstract class ECCurve
     /**
      * Sets the default <code>ECMultiplier</code>, unless already set. 
      */
-    public ECMultiplier getMultiplier()
+    public synchronized ECMultiplier getMultiplier()
     {
         if (this.multiplier == null)
         {

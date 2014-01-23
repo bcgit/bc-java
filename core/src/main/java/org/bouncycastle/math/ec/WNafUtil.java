@@ -312,11 +312,11 @@ public abstract class WNafUtil
 
         if (preCompLen < reqPreCompLen)
         {
-            ECPoint twiceP = wnafPreCompInfo.getTwiceP();
+            ECPoint twiceP = wnafPreCompInfo.getTwice();
             if (twiceP == null)
             {
                 twiceP = preComp[0].twice().normalize();
-                wnafPreCompInfo.setTwiceP(twiceP);
+                wnafPreCompInfo.setTwice(twiceP);
             }
 
             preComp = resizeTable(preComp, reqPreCompLen);

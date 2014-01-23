@@ -164,13 +164,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement subtract(ECFieldElement b)
         {
-            BigInteger x2 = b.toBigInteger();
-            BigInteger x3 = x.subtract(x2);
-            if (x3.signum() < 0)
-            {
-                x3 = x3.add(q);
-            }
-            return new Fp(q, r, x3);
+            return new Fp(q, r, modSubtract(x, b.toBigInteger()));
         }
 
         public ECFieldElement multiply(ECFieldElement b)
@@ -180,7 +174,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement divide(ECFieldElement b)
         {
-            return new Fp(q, r, modMult(x, b.toBigInteger().modInverse(q)));
+            return new Fp(q, r, modMult(x, modInverse(b.toBigInteger())));
         }
 
         public ECFieldElement negate()
@@ -196,7 +190,7 @@ public abstract class ECFieldElement
         public ECFieldElement invert()
         {
             // TODO Modular inversion can be faster for a (Generalized) Mersenne Prime.
-            return new Fp(q, r, x.modInverse(q));
+            return new Fp(q, r, modInverse(x));
         }
 
         // D.1.4 91
@@ -347,6 +341,17 @@ public abstract class ECFieldElement
             return _2x;
         }
 
+        protected BigInteger modInverse(BigInteger x)
+        {
+            return x.modInverse(q);
+//            int len = (getFieldSize() + 31) >> 5;
+//            int[] p = Nat.fromBigInteger(len, q);
+//            int[] n = Nat.fromBigInteger(len, x);
+//            int[] z = Nat.create(len);
+//            Mod.invert(p, n, z);
+//            return Nat.toBigInteger(len, z);
+        }
+
         protected BigInteger modMult(BigInteger x1, BigInteger x2)
         {
             return modReduce(x1.multiply(x2));
@@ -416,6 +421,16 @@ public abstract class ECFieldElement
                 x = x.mod(q);
             }
             return x;
+        }
+
+        protected BigInteger modSubtract(BigInteger x1, BigInteger x2)
+        {
+            BigInteger x3 = x1.subtract(x2);
+            if (x3.signum() < 0)
+            {
+                x3 = x3.add(q);
+            }
+            return x3;
         }
 
         public boolean equals(Object other)
