@@ -76,7 +76,7 @@ public class ECAlgorithms
         return c.importPoint(p);
     }
 
-    static void implMontgomeryTrick(ECFieldElement[] zs, int off, int len)
+    public static void montgomeryTrick(ECFieldElement[] zs, int off, int len)
     {
         /*
          * Uses the "Montgomery Trick" to invert many field elements, with only a single actual
@@ -133,7 +133,9 @@ public class ECAlgorithms
         while (--i >= 0)
         {
             int jsfi = jsf[i];
-            int kDigit = (jsfi >> 4), lDigit = ((jsfi << 28) >> 28);
+
+            // NOTE: The shifting ensures the sign is extended correctly
+            int kDigit = ((jsfi << 24) >> 28), lDigit = ((jsfi << 28) >> 28);
 
             int index = 4 + (kDigit * 3) + lDigit;
             R = R.twicePlus(table[index]);

@@ -87,7 +87,10 @@ public class WTauNafMultiplier extends AbstractECMultiplier
         if ((preCompInfo == null) || !(preCompInfo instanceof WTauNafPreCompInfo))
         {
             pu = Tnaf.getPreComp(p, a);
-            curve.setPreCompInfo(p, new WTauNafPreCompInfo(pu));
+
+            WTauNafPreCompInfo pre = new WTauNafPreCompInfo();
+            pre.setPreComp(pu);
+            curve.setPreCompInfo(p, pre);
         }
         else
         {
