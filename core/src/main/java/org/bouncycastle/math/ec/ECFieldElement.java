@@ -164,13 +164,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement subtract(ECFieldElement b)
         {
-            BigInteger x2 = b.toBigInteger();
-            BigInteger x3 = x.subtract(x2);
-            if (x3.signum() < 0)
-            {
-                x3 = x3.add(q);
-            }
-            return new Fp(q, r, x3);
+            return new Fp(q, r, modSubtract(x, b.toBigInteger()));
         }
 
         public ECFieldElement multiply(ECFieldElement b)
@@ -416,6 +410,16 @@ public abstract class ECFieldElement
                 x = x.mod(q);
             }
             return x;
+        }
+
+        protected BigInteger modSubtract(BigInteger x1, BigInteger x2)
+        {
+            BigInteger x3 = x1.subtract(x2);
+            if (x3.signum() < 0)
+            {
+                x3 = x3.add(q);
+            }
+            return x3;
         }
 
         public boolean equals(Object other)
