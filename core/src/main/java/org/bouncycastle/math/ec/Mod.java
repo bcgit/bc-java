@@ -19,7 +19,7 @@ abstract class Mod
 
         if ((u[0] & 1) == 0)
         {
-            inversionStep(p, u, a);
+            inversionStep(p, u, len, a);
         }
         if (Nat.isOne(len, u))
         {
@@ -30,15 +30,22 @@ abstract class Mod
         int[] v = Arrays.clone(p);
         int[] b = Nat.create(len);
 
+        int uvLen = len;
+
         for (;;)
         {
+            while (u[uvLen - 1] == 0 && v[uvLen - 1] == 0)
+            {
+                --uvLen;
+            }
+
             if (Nat.gte(len, u, v))
             {
                 subtract(p, a, b, a);
                 Nat.sub(len, u, v, u);
                 if ((u[0] & 1) == 0)
                 {
-                    inversionStep(p, u, a);
+                    inversionStep(p, u, uvLen, a);
                 }
                 if (Nat.isOne(len, u))
                 {
@@ -52,7 +59,7 @@ abstract class Mod
                 Nat.sub(len, v, u, v);
                 if ((v[0] & 1) == 0)
                 {
-                    inversionStep(p, v, b);
+                    inversionStep(p, v, uvLen, b);
                 }
                 if (Nat.isOne(len, v))
                 {
@@ -73,21 +80,23 @@ abstract class Mod
         }
     }
 
-    private static void inversionStep(int[] p, int[] u, int[] x)
+    private static void inversionStep(int[] p, int[] u, int uLen, int[] x)
     {
         int len = p.length;
         int count = 0;
         while (u[0] == 0)
         {
-            Nat.shiftDownWord(u, len, 0);
+            Nat.shiftDownWord(u, uLen, 0);
             count += 32;
         }
 
-        int zeroes = getTrailingZeroes(u[0]);
-        if (zeroes > 0)
         {
-            Nat.shiftDownBits(u, len, zeroes, 0);
-            count += zeroes;
+            int zeroes = getTrailingZeroes(u[0]);
+            if (zeroes > 0)
+            {
+                Nat.shiftDownBits(u, uLen, zeroes, 0);
+                count += zeroes;
+            }
         }
 
         for (int i = 0; i < count; ++i)
