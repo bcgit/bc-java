@@ -2,7 +2,7 @@ package org.bouncycastle.math.ec;
 
 import org.bouncycastle.util.Arrays;
 
-abstract class Mod
+public abstract class Mod
 {
     public static void invert(int[] p, int[] x, int[] z)
     {

@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.util.Pack;
 
-abstract class Nat
+public abstract class Nat
 {
     private static final long M = 0xFFFFFFFFL;
 
