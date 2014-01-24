@@ -343,13 +343,13 @@ public abstract class ECFieldElement
 
         protected BigInteger modInverse(BigInteger x)
         {
-            return x.modInverse(q);
-//            int len = (getFieldSize() + 31) >> 5;
-//            int[] p = Nat.fromBigInteger(len, q);
-//            int[] n = Nat.fromBigInteger(len, x);
-//            int[] z = Nat.create(len);
-//            Mod.invert(p, n, z);
-//            return Nat.toBigInteger(len, z);
+//            return x.modInverse(q);
+            int len = (getFieldSize() + 31) >> 5;
+            int[] p = Nat.fromBigInteger(len, q);
+            int[] n = Nat.fromBigInteger(len, x);
+            int[] z = Nat.create(len);
+            Mod.invert(p, n, z);
+            return Nat.toBigInteger(len, z);
         }
 
         protected BigInteger modMult(BigInteger x1, BigInteger x2)
@@ -397,11 +397,12 @@ public abstract class ECFieldElement
                     x = x.abs();
                 }
                 int qLen = q.bitLength();
+                boolean rIsOne = r.equals(ECConstants.ONE);
                 while (x.bitLength() > (qLen + 1))
                 {
                     BigInteger u = x.shiftRight(qLen);
                     BigInteger v = x.subtract(u.shiftLeft(qLen));
-                    if (!r.equals(ONE))
+                    if (!rIsOne)
                     {
                         u = u.multiply(r);
                     }
