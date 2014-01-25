@@ -505,7 +505,7 @@ public abstract class ECCurve
      */
     public static class F2m extends ECCurve
     {
-        private static final int F2M_DEFAULT_COORDS = COORD_AFFINE;
+        private static final int F2M_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
 
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
@@ -780,7 +780,14 @@ public abstract class ECCurve
             case COORD_LAMBDA_AFFINE:
             case COORD_LAMBDA_PROJECTIVE:
             {
-                if (!X.isZero())
+                if (X.isZero())
+                {
+                    if (!Y.square().equals(getB()))
+                    {
+                        throw new IllegalArgumentException();
+                    }
+                }
+                else
                 {
                     // Y becomes Lambda (X + Y/X) here
                     Y = Y.divide(X).add(X);
@@ -856,14 +863,10 @@ public abstract class ECCurve
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement xp = fromBigInteger(X1);
-            ECFieldElement yp = null;
+            ECFieldElement yp;
             if (xp.isZero())
             {
-                yp = (ECFieldElement.F2m)b;
-                for (int i = 0; i < m - 1; i++)
-                {
-                    yp = yp.square();
-                }
+                yp = b.sqrt();
             }
             else
             {
