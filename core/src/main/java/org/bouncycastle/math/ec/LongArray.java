@@ -1878,6 +1878,10 @@ class LongArray
          * Output: a(z)^(-1) mod f(z)
          */
         int uzDegree = degree();
+        if (uzDegree == 0)
+        {
+            throw new IllegalStateException();
+        }
         if (uzDegree == 1)
         {
             return this;

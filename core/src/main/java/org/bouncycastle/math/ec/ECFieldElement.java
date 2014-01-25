@@ -1189,7 +1189,17 @@ public abstract class ECFieldElement
 
         public ECFieldElement sqrt()
         {
-            throw new RuntimeException("Not implemented");
+            LongArray root = this.x;
+            if (root.isOne() || root.isZero())
+            {
+                return this;
+            }
+
+            for (int i = 1; i < m; ++i)
+            {
+                root = root.modSquare(m, ks);
+            }
+            return new ECFieldElement.F2m(m, ks, root);
         }
 
         /**
