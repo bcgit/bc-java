@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.util.Pack;
 
-abstract class Nat
+public abstract class Nat
 {
     private static final long M = 0xFFFFFFFFL;
 
@@ -265,21 +265,6 @@ abstract class Nat
         return (int)c;
     }
 
-    public static int squareWordAddExt(int len, int[] x, int xPos, int[] zz)
-    {
-        // assert xPos > 0 && xPos < len;
-        long c = 0, xVal = x[xPos] & M;
-        int i = 0;
-        do
-        {
-            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
-            zz[xPos + i] = (int)c;
-            c >>>= 32;
-        }
-        while (++i < xPos);
-        return (int)c;
-    }
-
     public static int mulWordDwordAdd(int len, int x, long y, int[] z, int zOff)
     {
         // assert zOff < (len - 3);
@@ -404,6 +389,21 @@ abstract class Nat
         }
 
         shiftUpBit(zz, extLen, x[0] << 31);
+    }
+
+    public static int squareWordAddExt(int len, int[] x, int xPos, int[] zz)
+    {
+        // assert xPos > 0 && xPos < len;
+        long c = 0, xVal = x[xPos] & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
+            zz[xPos + i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < xPos);
+        return (int)c;
     }
 
     public static int sub(int len, int[] x, int[] y, int[] z)

@@ -7,7 +7,8 @@ import java.util.Enumeration;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
+
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
@@ -413,22 +414,45 @@ public class ECPointTest extends TestCase
         assertPointsEqual("Error decoding compressed point", p, decComp);
     }
 
-    private void implAddSubtractMultiplyTwiceEncodingTest(X9ECParameters x9ECParameters)
+    private void implAddSubtractMultiplyTwiceEncodingTest(ECCurve curve, ECPoint q, BigInteger n)
     {
-        BigInteger n = x9ECParameters.getN();
-
-        // The generator is multiplied by random b to get random q
-        BigInteger b = new BigInteger(n.bitLength(), secRand);
-        ECPoint g = x9ECParameters.getG();
-        ECPoint q = g.multiply(b).normalize();
-
         // Get point at infinity on the curve
-        ECPoint infinity = x9ECParameters.getCurve().getInfinity();
+        ECPoint infinity = curve.getInfinity();
 
         implTestAddSubtract(q, infinity);
         implTestMultiply(q, n.bitLength());
         implTestMultiply(infinity, n.bitLength());
         implTestEncoding(q);
+    }
+
+    private void implAddSubtractMultiplyTwiceEncodingTestAllCoords(X9ECParameters x9ECParameters)
+    {
+        BigInteger n = x9ECParameters.getN();
+        ECPoint G = x9ECParameters.getG();
+        ECCurve C = x9ECParameters.getCurve();
+
+        int[] coords = ECCurve.getAllCoordinateSystems();
+        for (int i = 0; i < coords.length; ++i)
+        {
+            int coord = coords[i];
+            if (C.supportsCoordinateSystem(coord))
+            {
+                ECCurve c = C;
+                ECPoint g = G;
+
+                if (c.getCoordinateSystem() != coord)
+                {
+                    c = C.configure().setCoordinateSystem(coord).create();
+                    g = c.importPoint(G);
+                }
+
+                // The generator is multiplied by random b to get random q
+                BigInteger b = new BigInteger(n.bitLength(), secRand);
+                ECPoint q = g.multiply(b).normalize();
+
+                implAddSubtractMultiplyTwiceEncodingTest(c, q, n);
+            }
+        }
     }
 
     /**
@@ -438,18 +462,18 @@ public class ECPointTest extends TestCase
      */
     public void testAddSubtractMultiplyTwiceEncoding()
     {
-        Enumeration curveEnum = SECNamedCurves.getNames();
+        Enumeration curveEnum = ECNamedCurveTable.getNames();
         while (curveEnum.hasMoreElements())
         {
             String name = (String) curveEnum.nextElement();
 
-            X9ECParameters x9ECParameters = SECNamedCurves.getByName(name);
-            implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
+            X9ECParameters x9ECParameters = ECNamedCurveTable.getByName(name);
+            implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9ECParameters);
 
             x9ECParameters = CustomNamedCurves.getByName(name);
             if (x9ECParameters != null)
             {
-                implAddSubtractMultiplyTwiceEncodingTest(x9ECParameters);
+                implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9ECParameters);
             }
         }
     }
