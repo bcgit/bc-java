@@ -86,7 +86,7 @@ public abstract class ECPoint
      * Note: normalization can be expensive, this method is deprecated in favour
      * of caller-controlled normalization.
      * 
-     * @deprecated Use getAffineXCoord, or normalize() and getXCoord(), instead
+     * @deprecated Use getAffineXCoord(), or normalize() and getXCoord(), instead
      */
     public ECFieldElement getX()
     {
@@ -100,7 +100,7 @@ public abstract class ECPoint
      * Note: normalization can be expensive, this method is deprecated in favour
      * of caller-controlled normalization.
      * 
-     * @deprecated Use getAffineYCoord, or normalize() and getYCoord(), instead
+     * @deprecated Use getAffineYCoord(), or normalize() and getYCoord(), instead
      */
     public ECFieldElement getY()
     {
@@ -136,7 +136,7 @@ public abstract class ECPoint
      * 
      * Caution: depending on the curve's coordinate system, this may not be the same value as in an
      * affine coordinate system; use normalize() to get a point where the coordinates have their
-     * affine values, or use getAffineXCoord if you expect the point to already have been
+     * affine values, or use getAffineXCoord() if you expect the point to already have been
      * normalized.
      * 
      * @return the x-coordinate of this point
@@ -151,7 +151,7 @@ public abstract class ECPoint
      * 
      * Caution: depending on the curve's coordinate system, this may not be the same value as in an
      * affine coordinate system; use normalize() to get a point where the coordinates have their
-     * affine values, or use getAffineYCoord if you expect the point to already have been
+     * affine values, or use getAffineYCoord() if you expect the point to already have been
      * normalized.
      * 
      * @return the y-coordinate of this point
@@ -747,6 +747,7 @@ public abstract class ECPoint
 
                 return new ECPoint.Fp(curve, X3, Y3, zs, this.withCompression);
             }
+
             default:
             {
                 throw new IllegalStateException("unsupported coordinate system");

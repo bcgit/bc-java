@@ -2,11 +2,15 @@ package org.bouncycastle.math.ec;
 
 import org.bouncycastle.util.Arrays;
 
-abstract class Mod
+public abstract class Mod
 {
     public static void invert(int[] p, int[] x, int[] z)
     {
         int len = p.length;
+        if (Nat.isZero(len, x))
+        {
+            throw new IllegalArgumentException("'x' cannot be 0");
+        }
         if (Nat.isOne(len, x))
         {
             System.arraycopy(x, 0, z, 0, len);
@@ -16,47 +20,52 @@ abstract class Mod
         int[] u = Arrays.clone(x);
         int[] a = Nat.create(len);
         a[0] = 1;
+        int ac = 0;
 
         if ((u[0] & 1) == 0)
         {
-            inversionStep(p, u, a);
+            ac = inversionStep(p, u, len, a, ac);
         }
         if (Nat.isOne(len, u))
         {
-            System.arraycopy(a, 0, z, 0, len);
+            inversionResult(p, ac, a, z);
             return;
         }
 
         int[] v = Arrays.clone(p);
         int[] b = Nat.create(len);
+        int bc = 0;
+
+        int uvLen = len;
 
         for (;;)
         {
+            while (u[uvLen - 1] == 0 && v[uvLen - 1] == 0)
+            {
+                --uvLen;
+            }
+
             if (Nat.gte(len, u, v))
             {
-                subtract(p, a, b, a);
                 Nat.sub(len, u, v, u);
-                if ((u[0] & 1) == 0)
-                {
-                    inversionStep(p, u, a);
-                }
+//              assert (u[0] & 1) == 0;
+                ac += Nat.sub(len, a, b, a) - bc;
+                ac = inversionStep(p, u, uvLen, a, ac);
                 if (Nat.isOne(len, u))
                 {
-                    System.arraycopy(a, 0, z, 0, len);
+                    inversionResult(p, ac, a, z);
                     return;
                 }
             }
             else
             {
-                subtract(p, b, a, b);
                 Nat.sub(len, v, u, v);
-                if ((v[0] & 1) == 0)
-                {
-                    inversionStep(p, v, b);
-                }
+//              assert (v[0] & 1) == 0;
+                bc += Nat.sub(len, b, a, b) - ac;
+                bc = inversionStep(p, v, uvLen, b, bc);
                 if (Nat.isOne(len, v))
                 {
-                    System.arraycopy(b, 0, z, 0, len);
+                    inversionResult(p, bc, b, z);
                     return;
                 }
             }
@@ -73,28 +82,56 @@ abstract class Mod
         }
     }
 
-    private static void inversionStep(int[] p, int[] u, int[] x)
+    private static void inversionResult(int[] p, int ac, int[] a, int[] z)
+    {
+        if (ac < 0)
+        {
+            Nat.add(p.length, a, p, z);
+        }
+        else
+        {
+            System.arraycopy(a, 0, z, 0, p.length);
+        }
+    }
+
+    private static int inversionStep(int[] p, int[] u, int uLen, int[] x, int xc)
     {
         int len = p.length;
         int count = 0;
         while (u[0] == 0)
         {
-            Nat.shiftDownWord(u, len, 0);
+            Nat.shiftDownWord(u, uLen, 0);
             count += 32;
         }
 
-        int zeroes = getTrailingZeroes(u[0]);
-        if (zeroes > 0)
         {
-            Nat.shiftDownBits(u, len, zeroes, 0);
-            count += zeroes;
+            int zeroes = getTrailingZeroes(u[0]);
+            if (zeroes > 0)
+            {
+                Nat.shiftDownBits(u, uLen, zeroes, 0);
+                count += zeroes;
+            }
         }
 
         for (int i = 0; i < count; ++i)
         {
-            int c = (x[0] & 1) == 0 ? 0 : Nat.add(len, x, p, x);
-            Nat.shiftDownBit(x, len, c);
+            if ((x[0] & 1) != 0)
+            {
+                if (xc < 0)
+                {
+                    xc += Nat.add(len, x, p, x);
+                }
+                else
+                {
+                    xc += Nat.sub(len, x, p, x);
+                }
+            }
+
+//            assert xc == 0 || xc == 1;
+            Nat.shiftDownBit(x, len, xc);
         }
+        
+        return xc;
     }
 
     private static int getTrailingZeroes(int x)

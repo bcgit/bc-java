@@ -7,7 +7,7 @@ public class SecP256R1Field
     private static final long M = 0xFFFFFFFFL;
 
     // 2^256 - 2^224 + 2^192 + 2^96 - 1
-    private static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
+    static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
     private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
