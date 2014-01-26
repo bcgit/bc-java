@@ -32,18 +32,18 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int addDWord(int len, long x, int[] z, int zOff)
-    {
-        // assert zOff < (len - 2);
-        long c = x;
-        c += (z[zOff + 0] & M);
-        z[zOff + 0] = (int)c;
-        c >>>= 32;
-        c += (z[zOff + 1] & M);
-        z[zOff + 1] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(len, z, zOff + 2);
-    }
+//    public static int addDWord(int len, long x, int[] z, int zOff)
+//    {
+//        // assert zOff < (len - 2);
+//        long c = x;
+//        c += (z[zOff + 0] & M);
+//        z[zOff + 0] = (int)c;
+//        c >>>= 32;
+//        c += (z[zOff + 1] & M);
+//        z[zOff + 1] = (int)c;
+//        c >>>= 32;
+//        return c == 0 ? 0 : inc(len, z, zOff + 2);
+//    }
 
     public static int addExt(int len, int[] xx, int[] yy, int[] zz)
     {
@@ -129,7 +129,11 @@ public abstract class Nat
         {
             return x[0] & 1;
         }
-        int w = bit >>> 5;
+        int w = bit >> 5;
+        if ((w - Integer.MIN_VALUE) > x.length)
+        {
+            return 0;
+        }
         int b = bit & 31;
         return (x[w] >>> b) & 1;
     }
@@ -208,11 +212,7 @@ public abstract class Nat
 
     public static boolean isZero(int len, int[] x)
     {
-        if (x[0] != 0)
-        {
-            return false;
-        }
-        for (int i = 1; i < len; ++i)
+        for (int i = 0; i < len; ++i)
         {
             if (x[i] != 0)
             {
@@ -224,12 +224,8 @@ public abstract class Nat
 
     public static boolean isZeroExt(int len, int[] xx)
     {
-        if (xx[0] != 0)
-        {
-            return false;
-        }
         int extLen = len << 1;
-        for (int i = 1; i < extLen; ++i)
+        for (int i = 0; i < extLen; ++i)
         {
             if (xx[i] != 0)
             {
@@ -430,17 +426,17 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int subDWord(int len, long x, int[] z)
-    {
-        long c = -x;
-        c += (z[0] & M);
-        z[0] = (int)c;
-        c >>= 32;
-        c += (z[1] & M);
-        z[1] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(len, z, 2);
-    }
+//    public static int subDWord(int len, long x, int[] z)
+//    {
+//        long c = -x;
+//        c += (z[0] & M);
+//        z[0] = (int)c;
+//        c >>= 32;
+//        c += (z[1] & M);
+//        z[1] = (int)c;
+//        c >>= 32;
+//        return c == 0 ? 0 : dec(len, z, 2);
+//    }
 
     public static int subExt(int len, int[] xx, int[] yy, int[] zz)
     {

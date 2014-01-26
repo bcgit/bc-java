@@ -68,6 +68,7 @@ public abstract class Nat256
         return (int)c;
     }
 
+    // TODO Re-write to allow full range for x?
     public static int addDWord(long x, int[] z, int zOff)
     {
         // assert zOff < 6;
@@ -262,11 +263,7 @@ public abstract class Nat256
 
     public static boolean isZero(int[] x)
     {
-        if (x[0] != 0)
-        {
-            return false;
-        }
-        for (int i = 1; i < 8; ++i)
+        for (int i = 0; i < 8; ++i)
         {
             if (x[i] != 0)
             {
@@ -278,11 +275,7 @@ public abstract class Nat256
 
     public static boolean isZeroExt(int[] xx)
     {
-        if (xx[0] != 0)
-        {
-            return false;
-        }
-        for (int i = 1; i < 16; ++i)
+        for (int i = 0; i < 16; ++i)
         {
             if (xx[i] != 0)
             {
@@ -376,21 +369,6 @@ public abstract class Nat256
             c >>>= 32;
         }
         while (++i < 8);
-        return (int)c;
-    }
-
-    public static int squareWordAddExt(int[] x, int xPos, int[] zz)
-    {
-        // assert xPos > 0 && xPos < 8;
-        long c = 0, xVal = x[xPos] & M;
-        int i = 0;
-        do
-        {
-            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
-            zz[xPos + i] = (int)c;
-            c >>>= 32;
-        }
-        while (++i < xPos);
         return (int)c;
     }
 
@@ -612,17 +590,11 @@ public abstract class Nat256
             zz[7] = (int)zz_7;
             zz_8 += (zz_7 >>> 32) + x_7 * x_1;
             zz_9 += (zz_8 >>> 32) + x_7 * x_2;
-            zz_8 &= M;
             zz_10 += (zz_9 >>> 32) + x_7 * x_3;
-            zz_9 &= M;
             zz_11 += (zz_10 >>> 32) + x_7 * x_4;
-            zz_10 &= M;
             zz_12 += (zz_11 >>> 32) + x_7 * x_5;
-            zz_11 &= M;
             zz_13 += (zz_12 >>> 32) + x_7 * x_6;
-            zz_12 &= M;
             zz_14 += zz_13 >>> 32;
-            zz_13 &= M;
         }
 
         zz[8] = (int)zz_8;
@@ -635,6 +607,21 @@ public abstract class Nat256
         zz[15] += (int)(zz_14 >>> 32);
 
         shiftUpBit(zz, 16, (int)x_0 << 31);
+    }
+
+    public static int squareWordAddExt(int[] x, int xPos, int[] zz)
+    {
+        // assert xPos > 0 && xPos < 8;
+        long c = 0, xVal = x[xPos] & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
+            zz[xPos + i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < xPos);
+        return (int)c;
     }
 
     public static int sub(int[] x, int[] y, int[] z)
@@ -697,16 +684,17 @@ public abstract class Nat256
         return (int)c;
     }
 
+    // TODO Re-write to allow full range for x?
     public static int subDWord(long x, int[] z)
     {
-        x = -x;
-        x += (z[0] & M);
-        z[0] = (int)x;
-        x >>= 32;
-        x += (z[1] & M);
-        z[1] = (int)x;
-        x >>= 32;
-        return x == 0 ? 0 : dec(z, 2);
+        long c = -x;
+        c += (z[0] & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M);
+        z[1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : dec(z, 2);
     }
 
     public static int subExt(int[] xx, int[] yy, int[] zz)

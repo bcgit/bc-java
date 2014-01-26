@@ -91,7 +91,7 @@ public abstract class ECFieldElement
         static BigInteger calculateResidue(BigInteger p)
         {
             int bitLength = p.bitLength();
-            if (bitLength > 128)
+            if (bitLength >= 96)
             {
                 BigInteger firstWord = p.shiftRight(bitLength - 64);
                 if (firstWord.longValue() == -1L)
