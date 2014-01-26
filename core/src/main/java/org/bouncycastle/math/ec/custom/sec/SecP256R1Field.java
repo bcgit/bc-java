@@ -116,7 +116,6 @@ public class SecP256R1Field
         cc >>= 32;
 
         int c = (int)cc;
-
         if (c > 0)
         {
             do
@@ -124,6 +123,11 @@ public class SecP256R1Field
                 c += Nat256.sub(z, P, z);
             }
             while (c != 0);
+
+            if (z[7] == P7 && Nat256.gte(z, P))
+            {
+                Nat256.sub(z, P, z);
+            }
         }
         else if (c < 0)
         {
@@ -132,13 +136,6 @@ public class SecP256R1Field
                 c += Nat256.add(z, P, z);
             }
             while (c != 0);
-        }
-
-        // assert c == 0;
-
-        if (z[7] == P7 && Nat256.gte(z, P))
-        {
-            Nat256.sub(z, P, z);
         }
     }
 
