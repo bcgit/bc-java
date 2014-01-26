@@ -14,7 +14,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Test vectors from the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-03">The OCB Authenticated-Encryption
+ * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-05">The OCB Authenticated-Encryption
  * Algorithm</a>
  */
 public class OCBTest
