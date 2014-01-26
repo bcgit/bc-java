@@ -9,7 +9,6 @@ import org.bouncycastle.util.Arrays;
 public class SecP256K1FieldElement extends ECFieldElement
 {
     public static final BigInteger Q = SecP256K1Curve.q;
-    public static final BigInteger Qr = SecP256K1Curve.r;
 
     protected int[] x;
 
@@ -23,7 +22,7 @@ public class SecP256K1FieldElement extends ECFieldElement
         this.x = SecP256K1Field.fromBigInteger(x);
     }
 
-    protected SecP256K1FieldElement()
+    public SecP256K1FieldElement()
     {
         this.x = Nat256.create();
     }
@@ -61,11 +60,6 @@ public class SecP256K1FieldElement extends ECFieldElement
     public int getFieldSize()
     {
         return Q.bitLength();
-    }
-
-    public BigInteger getQ()
-    {
-        return Q;
     }
 
     public ECFieldElement add(ECFieldElement b)

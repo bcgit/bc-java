@@ -188,6 +188,11 @@ public abstract class ECPoint
         return y;
     }
 
+    protected final ECFieldElement[] getRawZCoords()
+    {
+        return zs;
+    }
+
     protected void checkNormalized()
     {
         if (!isNormalized())
