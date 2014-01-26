@@ -13,7 +13,6 @@ public class SecP256K1Curve extends ECCurve
 {
     public static final BigInteger q = new BigInteger(1,
         Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"));
-    public static final BigInteger r = ECConstants.ONE.shiftLeft(256).subtract(q);
 
     private static final int SECP256K1_DEFAULT_COORDS = COORD_JACOBIAN;
 

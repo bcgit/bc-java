@@ -42,7 +42,7 @@ public class SecP256K1Point extends ECPoint
     {
         super(curve, x, y);
 
-        if ((x != null && y == null) || (x == null && y != null))
+        if ((x == null) != (y == null))
         {
             throw new IllegalArgumentException("Exactly one of the field elements is null");
         }
