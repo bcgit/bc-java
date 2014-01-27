@@ -12,8 +12,6 @@ import org.bouncycastle.util.Arrays;
 public class TlsStreamCipher
     implements TlsCipher
 {
-    private static boolean encryptThenMAC = false;
-
     protected TlsContext context;
 
     protected StreamCipher encryptCipher;
@@ -125,16 +123,8 @@ public class TlsStreamCipher
 
         encryptCipher.processBytes(plaintext, offset, len, outBuf, 0);
 
-        if (encryptThenMAC)
-        {
-            byte[] mac = writeMac.calculateMac(seqNo, type, outBuf, 0, len);
-            System.arraycopy(mac, 0, outBuf, len, mac.length);
-        }
-        else
-        {
-            byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
-            encryptCipher.processBytes(mac, 0, mac.length, outBuf, len);
-        }
+        byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+        encryptCipher.processBytes(mac, 0, mac.length, outBuf, len);
 
         return outBuf;
     }
@@ -161,21 +151,10 @@ public class TlsStreamCipher
 
         int plaintextLength = len - macSize;
 
-        if (encryptThenMAC)
-        {
-            int ciphertextEnd = offset + len;
-            checkMAC(seqNo, type, ciphertext, ciphertextEnd - macSize, ciphertextEnd, ciphertext, offset, plaintextLength);
-            byte[] deciphered = new byte[plaintextLength];
-            decryptCipher.processBytes(ciphertext, offset, plaintextLength, deciphered, 0);
-            return deciphered;
-        }
-        else
-        {
-            byte[] deciphered = new byte[len];
-            decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
-            checkMAC(seqNo, type, deciphered, plaintextLength, len, deciphered, 0, plaintextLength);
-            return Arrays.copyOfRange(deciphered, 0, plaintextLength);
-        }
+        byte[] deciphered = new byte[len];
+        decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
+        checkMAC(seqNo, type, deciphered, plaintextLength, len, deciphered, 0, plaintextLength);
+        return Arrays.copyOfRange(deciphered, 0, plaintextLength);
     }
 
     private void checkMAC(long seqNo, short type, byte[] recBuf, int recStart, int recEnd, byte[] calcBuf, int calcOff, int calcLen)
