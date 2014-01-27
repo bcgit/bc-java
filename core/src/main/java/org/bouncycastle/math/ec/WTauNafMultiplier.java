@@ -49,21 +49,12 @@ public class WTauNafMultiplier extends AbstractECMultiplier
     private ECPoint.F2m multiplyWTnaf(ECPoint.F2m p, ZTauElement lambda,
             PreCompInfo preCompInfo, byte a, byte mu)
     {
-        ZTauElement[] alpha;
-        if (a == 0)
-        {
-            alpha = Tnaf.alpha0;
-        }
-        else
-        {
-            // a == 1
-            alpha = Tnaf.alpha1;
-        }
+        ZTauElement[] alpha = (a == 0) ? Tnaf.alpha0 : Tnaf.alpha1;
 
         BigInteger tw = Tnaf.getTw(mu, Tnaf.WIDTH);
 
         byte[]u = Tnaf.tauAdicWNaf(mu, lambda, Tnaf.WIDTH,
-                BigInteger.valueOf(Tnaf.POW_2_WIDTH), tw, alpha);
+            BigInteger.valueOf(Tnaf.POW_2_WIDTH), tw, alpha);
 
         return multiplyFromWTnaf(p, u, preCompInfo);
     }
@@ -77,8 +68,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
      * @param u The the WTNAF of <code>&lambda;</code>..
      * @return <code>&lambda; * p</code>
      */
-    private static ECPoint.F2m multiplyFromWTnaf(ECPoint.F2m p, byte[] u,
-            PreCompInfo preCompInfo)
+    private static ECPoint.F2m multiplyFromWTnaf(ECPoint.F2m p, byte[] u, PreCompInfo preCompInfo)
     {
         ECCurve.F2m curve = (ECCurve.F2m)p.getCurve();
         byte a = curve.getA().toBigInteger().byteValue();
@@ -102,16 +92,16 @@ public class WTauNafMultiplier extends AbstractECMultiplier
         for (int i = u.length - 1; i >= 0; i--)
         {
             q = Tnaf.tau(q);
-            if (u[i] != 0)
+            byte ui = u[i];
+            if (ui != 0)
             {
-                if (u[i] > 0)
+                if (ui > 0)
                 {
-                    q = q.addSimple(pu[u[i]]);
+                    q = q.addSimple(pu[ui]);
                 }
                 else
                 {
-                    // u[i] < 0
-                    q = q.subtractSimple(pu[-u[i]]);
+                    q = q.subtractSimple(pu[-ui]);
                 }
             }
         }
