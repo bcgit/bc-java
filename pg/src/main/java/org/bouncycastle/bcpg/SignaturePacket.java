@@ -27,7 +27,7 @@ public class SignaturePacket
     private SignatureSubpacket[]   unhashedData;
     private byte[]                 signatureEncoding;
     
-    SignaturePacket(
+    public SignaturePacket(
         BCPGInputStream    in)
         throws IOException
     {
