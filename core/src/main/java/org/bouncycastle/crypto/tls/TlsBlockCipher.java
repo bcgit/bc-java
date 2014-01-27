@@ -11,11 +11,14 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0-1.1 / SSLv3 block cipher. This can be used for AES or 3DES for example.
+ * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
  */
 public class TlsBlockCipher
     implements TlsCipher
 {
+    /*
+     * See http://tools.ietf.org/html/draft-gutmann-tls-encrypt-then-mac-05
+     */
     private static boolean encryptThenMAC = false;
 
     protected TlsContext context;
