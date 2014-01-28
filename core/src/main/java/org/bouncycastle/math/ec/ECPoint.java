@@ -1767,12 +1767,17 @@ public abstract class ECPoint
                 throw new IllegalStateException();
             }
 
+            ECCurve curve = this.getCurve();
+
+            boolean ZIsOne = Z.isOne();
+            ECFieldElement ZSq = ZIsOne ? Z : Z.square();
+
             ECFieldElement X = this.x;
             if (X.isZero())
             {
                 // NOTE: For x == 0, we expect the affine-y instead of the lambda-y 
                 ECFieldElement Y = this.y;
-                if (!Y.square().equals(curve.getB().multiply(Z)))
+                if (!Y.square().equals(curve.getB().multiply(ZSq)))
                 {
                     throw new IllegalStateException();
                 }
@@ -1780,14 +1785,23 @@ public abstract class ECPoint
                 return;
             }
 
+            ECFieldElement A = curve.getA(), B = curve.getB();
             ECFieldElement L = this.y;
             ECFieldElement XSq = X.square();
-            ECFieldElement ZSq = Z.square();
 
-            // TODO Delayed modular reduction for sum of products
-            ECFieldElement lhs = L.add(Z).multiply(L).add(this.getCurve().getA().multiply(ZSq)).multiply(XSq);
-            // TODO If sqrt(b) is precomputed this can be simplified to a single square
-            ECFieldElement rhs = ZSq.square().multiply(this.getCurve().getB()).add(XSq.square());
+            ECFieldElement lhs, rhs;
+            if (ZIsOne)
+            {
+                lhs = L.square().add(L).add(A).multiply(XSq);
+                rhs = XSq.square().add(B);
+            }
+            else
+            {
+                // TODO Delayed modular reduction for sum of products
+                lhs = L.add(Z).multiply(L).add(A.multiply(ZSq)).multiply(XSq);
+                // TODO If sqrt(b) is precomputed this can be simplified to a single square
+                rhs = ZSq.square().multiply(B).add(XSq.square());
+            }
             
             if (!lhs.equals(rhs))
             {
