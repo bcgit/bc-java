@@ -1189,17 +1189,14 @@ public abstract class ECFieldElement
 
         public ECFieldElement sqrt()
         {
-            LongArray root = this.x;
-            if (root.isOne() || root.isZero())
+            LongArray x1 = this.x;
+            if (x1.isOne() || x1.isZero())
             {
                 return this;
             }
 
-            for (int i = 1; i < m; ++i)
-            {
-                root = root.modSquare(m, ks);
-            }
-            return new ECFieldElement.F2m(m, ks, root);
+            LongArray x2 = x1.modSquareN(m - 1, m, ks);
+            return new ECFieldElement.F2m(m, ks, x2);
         }
 
         /**
