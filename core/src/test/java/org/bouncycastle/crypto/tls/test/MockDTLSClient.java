@@ -71,6 +71,7 @@ public class MockDTLSClient
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;

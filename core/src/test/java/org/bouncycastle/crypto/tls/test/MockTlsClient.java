@@ -61,10 +61,9 @@ class MockTlsClient
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
-        // For testing draft-gutmann-tls-encrypt-then-mac
-//        clientExtensions.put(Integers.valueOf(0x42), TlsExtensionsUtils.createEmptyExtensionData());
         return clientExtensions;
     }
 
