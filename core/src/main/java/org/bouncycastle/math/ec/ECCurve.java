@@ -862,15 +862,14 @@ public abstract class ECCurve
          */
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECFieldElement xp = fromBigInteger(X1);
-            ECFieldElement yp;
+            ECFieldElement xp = fromBigInteger(X1), yp;
             if (xp.isZero())
             {
                 yp = b.sqrt();
             }
             else
             {
-                ECFieldElement beta = xp.add(a).add(b.multiply(xp.square().invert()));
+                ECFieldElement beta = xp.square().invert().multiply(b).add(a).add(xp);
                 ECFieldElement z = solveQuadraticEquation(beta);
                 if (z == null)
                 {
@@ -881,18 +880,17 @@ public abstract class ECCurve
                     z = z.addOne();
                 }
 
-                yp = xp.multiply(z);
-
                 switch (this.getCoordinateSystem())
                 {
                 case COORD_LAMBDA_AFFINE:
                 case COORD_LAMBDA_PROJECTIVE:
                 {
-                    yp = yp.divide(xp).add(xp);
+                    yp = z.add(xp);
                     break;
                 }
                 default:
                 {
+                    yp = z.multiply(xp);
                     break;
                 }
                 }
