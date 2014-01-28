@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.Poly1305;
@@ -119,22 +120,23 @@ public class Chacha20Poly1305 implements TlsCipher
 
     protected byte[] calculateRecordMAC(KeyParameter macKey, byte[] additionalData, byte[] buf, int off, int len)
     {
-        Poly1305 p = new Poly1305();
-        p.init(macKey);
+        Mac mac = new Poly1305();
+        mac.init(macKey);
 
-        p.update(additionalData, 0, additionalData.length);
+        updateRecordMAC(mac, additionalData, 0, additionalData.length);
+        updateRecordMAC(mac, buf, off, len);
 
-        byte[] adLen = Pack.longToLittleEndian(additionalData.length & 0xFFFFFFFFL);
-        p.update(adLen, 0, adLen.length);
+        byte[] output = new byte[mac.getMacSize()];
+        mac.doFinal(output, 0);
+        return output;
+    }
 
-        p.update(buf, off, len);
+    protected void updateRecordMAC(Mac mac, byte[] buf, int off, int len)
+    {
+        mac.update(buf, off, len);
 
-        byte[] compLen = Pack.longToLittleEndian(len & 0xFFFFFFFFL);
-        p.update(compLen, 0, compLen.length);
-
-        byte[] mac = new byte[p.getMacSize()];
-        p.doFinal(mac, 0);
-        return mac;
+        byte[] longLen = Pack.longToLittleEndian(len & 0xFFFFFFFFL);
+        mac.update(longLen, 0, longLen.length);
     }
 
     protected byte[] getAdditionalData(long seqNo, short type, int len) throws IOException
