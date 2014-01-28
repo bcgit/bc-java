@@ -49,6 +49,13 @@ public class ExtensionType
     public static final int heartbeat = 15;
 
     /*
+     * draft-gutmann-tls-encrypt-then-mac-05
+     * 
+     * NOTE: This value has not yet been reserved by the IETF 
+     */
+    public static final int encrypt_then_mac = 66;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;
