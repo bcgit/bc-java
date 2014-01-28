@@ -1215,15 +1215,15 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
-                // TODO The X == 0 stuff needs further thought
-                if (this.isInfinity() || x.isZero())
+                ECFieldElement X = x, L = y;
+
+                if (this.isInfinity() || X.isZero())
                 {
-                    return y;
+                    return L;
                 }
 
                 // Y is actually Lambda (X + Y/X) here; convert to affine value on the fly
-                ECFieldElement X = x, L = y;
-                ECFieldElement Y = L.subtract(X).multiply(X);
+                ECFieldElement Y = L.add(X).multiply(X);
                 if (ECCurve.COORD_LAMBDA_PROJECTIVE == coord)
                 {
                     ECFieldElement Z = zs[0];
