@@ -622,8 +622,8 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
-         * @param n The order of the main subgroup of the elliptic curve.
-         * @param h The cofactor of the elliptic curve, i.e.
+         * @param order The order of the main subgroup of the elliptic curve.
+         * @param cofactor The cofactor of the elliptic curve, i.e.
          * <code>#E<sub>a</sub>(F<sub>2<sup>m</sup></sub>) = h * n</code>.
          */
         public F2m(
@@ -631,10 +631,10 @@ public abstract class ECCurve
             int k, 
             BigInteger a, 
             BigInteger b,
-            BigInteger n,
-            BigInteger h)
+            BigInteger order,
+            BigInteger cofactor)
         {
-            this(m, k, 0, 0, a, b, n, h);
+            this(m, k, 0, 0, a, b, order, cofactor);
         }
 
         /**
@@ -687,8 +687,8 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
-         * @param n The order of the main subgroup of the elliptic curve.
-         * @param h The cofactor of the elliptic curve, i.e.
+         * @param order The order of the main subgroup of the elliptic curve.
+         * @param cofactor The cofactor of the elliptic curve, i.e.
          * <code>#E<sub>a</sub>(F<sub>2<sup>m</sup></sub>) = h * n</code>.
          */
         public F2m(
@@ -819,7 +819,7 @@ public abstract class ECCurve
          */
         public boolean isKoblitz()
         {
-            return order != null && cofactor != null && a.bitLength() <= 1 && b.isOne();
+            return order != null && cofactor != null && b.isOne() && (a.isZero() || a.isOne());
         }
 
         /**
