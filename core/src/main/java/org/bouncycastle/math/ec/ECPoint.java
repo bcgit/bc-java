@@ -1605,13 +1605,12 @@ public abstract class ECPoint
                 ECFieldElement a = curve.getA();
                 ECFieldElement aZ1Sq = Z1IsOne ? a : a.multiply(Z1Sq);
                 ECFieldElement T = L1.square().add(L1Z1).add(aZ1Sq);
-
-                ECFieldElement X3 = T.square();
-                if (X3.isZero())
+                if (T.isZero())
                 {
-                    return new ECPoint.F2m(curve, X3, curve.getB().sqrt(), withCompression);
+                    return new ECPoint.F2m(curve, T, curve.getB().sqrt(), withCompression);
                 }
 
+                ECFieldElement X3 = T.square();
                 ECFieldElement Z3 = Z1IsOne ? T : T.multiply(Z1Sq);
 
                 ECFieldElement b = curve.getB();
@@ -1656,75 +1655,80 @@ public abstract class ECPoint
             }
         }
 
-//        public ECPoint twicePlus(ECPoint b)
-//        {
-//            if (this.isInfinity()) 
-//            {
-//                return b;
-//            }
-//            if (b.isInfinity())
-//            {
-//                return twice();
-//            }
-//
-//            ECCurve curve = this.getCurve();
-//
-//            ECFieldElement X1 = this.x;
-//            if (X1.isZero()) 
-//            {
-//                // A point with X == 0 is it's own additive inverse
-//                return b;
-//            }
-//
-//            int coord = curve.getCoordinateSystem();
-//
-//            switch (coord)
-//            {
-//            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-//            {
-//                // NOTE: twicePlus() only optimized for lambda-affine argument
-//                ECFieldElement X2 = b.x, Z2 = b.zs[0];
-//                if (X2.isZero() || !Z2.isOne())
-//                {
-//                    return twice().add(b);
-//                }
-//
-//                ECFieldElement L1 = this.y, Z1 = this.zs[0];
-//                ECFieldElement L2 = b.y;
-//
-//                ECFieldElement X1Sq = X1.square();
-//                ECFieldElement L1Sq = L1.square();
-//                ECFieldElement Z1Sq = Z1.square();
-//                ECFieldElement L1Z1 = L1.multiply(Z1);
-//
-//                ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
-//                ECFieldElement L2plus1 = L2.addOne();
-//                ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiply(T).add(X1Sq.multiply(Z1Sq));
-//                ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
-//
-//                ECFieldElement X3 = A.square().multiply(X2Z1Sq);
-//                if (X3.isZero())
-//                {
-//                    return new ECPoint.F2m(curve, X3, curve.getB().sqrt(), withCompression);
-//                }
-//
-//                ECFieldElement B = X2Z1Sq.add(T).square();
-//                if (B.isZero())
-//                {
-//                    return curve.getInfinity();
-//                }
-//
-//                ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
-//                ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
-//
-//                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
-//            }
-//            default:
-//            {
-//                return twice().add(b);
-//            }
-//            }
-//        }
+        public ECPoint twicePlus(ECPoint b)
+        {
+            if (this.isInfinity()) 
+            {
+                return b;
+            }
+            if (b.isInfinity())
+            {
+                return twice();
+            }
+
+            ECCurve curve = this.getCurve();
+
+            ECFieldElement X1 = this.x;
+            if (X1.isZero()) 
+            {
+                // A point with X == 0 is it's own additive inverse
+                return b;
+            }
+
+            int coord = curve.getCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // NOTE: twicePlus() only optimized for lambda-affine argument
+                ECFieldElement X2 = b.x, Z2 = b.zs[0];
+                if (X2.isZero() || !Z2.isOne())
+                {
+                    return twice().add(b);
+                }
+
+                ECFieldElement L1 = this.y, Z1 = this.zs[0];
+                ECFieldElement L2 = b.y;
+
+                ECFieldElement X1Sq = X1.square();
+                ECFieldElement L1Sq = L1.square();
+                ECFieldElement Z1Sq = Z1.square();
+                ECFieldElement L1Z1 = L1.multiply(Z1);
+
+                ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
+                ECFieldElement L2plus1 = L2.addOne();
+                ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiply(T).add(X1Sq.multiply(Z1Sq));
+                ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
+                ECFieldElement B = X2Z1Sq.add(T).square();
+
+                if (B.isZero())
+                {
+                    if (A.isZero())
+                    {
+                        return b.twice();
+                    }
+
+                    return curve.getInfinity();
+                }
+
+                if (A.isZero())
+                {
+                    return new ECPoint.F2m(curve, A, curve.getB().sqrt(), withCompression);
+                }
+
+                ECFieldElement X3 = A.square().multiply(X2Z1Sq);
+                ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
+                ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
+
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
+            }
+            default:
+            {
+                return twice().add(b);
+            }
+            }
+        }
 
         protected void checkCurveEquation()
         {
