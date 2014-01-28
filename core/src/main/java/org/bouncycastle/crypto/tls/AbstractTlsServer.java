@@ -19,6 +19,7 @@ public abstract class AbstractTlsServer
     protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
+    protected boolean encryptThenMACOffered;
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
     protected Vector supportedSignatureAlgorithms;
@@ -39,6 +40,11 @@ public abstract class AbstractTlsServer
     public AbstractTlsServer(TlsCipherFactory cipherFactory)
     {
         this.cipherFactory = cipherFactory;
+    }
+
+    protected boolean allowEncryptThenMAC()
+    {
+        return true;
     }
 
     protected boolean allowTruncatedHMac()
@@ -126,6 +132,7 @@ public abstract class AbstractTlsServer
 
         if (clientExtensions != null)
         {
+            this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
             this.maxFragmentLengthOffered = TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions);
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
 
@@ -226,6 +233,11 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
+        if (this.encryptThenMACOffered && allowEncryptThenMAC())
+        {
+            TlsExtensionsUtils.addEncryptThenMACExtension(checkServerExtensions());
+        }
+
         if (this.maxFragmentLengthOffered >= 0)
         {
             TlsExtensionsUtils.addMaxFragmentLengthExtension(checkServerExtensions(), this.maxFragmentLengthOffered);

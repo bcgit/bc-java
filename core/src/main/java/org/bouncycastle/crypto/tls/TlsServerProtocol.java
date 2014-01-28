@@ -695,6 +695,8 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
+            this.securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(this.serverExtensions);
+
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientExtensions,
                 this.serverExtensions, AlertDescription.internal_error);
 

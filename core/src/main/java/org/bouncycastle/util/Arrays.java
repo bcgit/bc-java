@@ -854,6 +854,23 @@ public final class Arrays
         }
     }
 
+    public static int[] concatenate(int[] a, int[] b)
+    {
+        if (a == null)
+        {
+            return clone(b);
+        }
+        if (b == null)
+        {
+            return clone(a);
+        }
+
+        int[] c = new int[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
     public static byte[] prepend(byte[] a, byte b)
     {
         if (a == null)

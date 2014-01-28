@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.tls.TlsUtils;
+import org.bouncycastle.util.Arrays;
 
 public class MockDTLSServer
     extends DefaultTlsServer
@@ -45,13 +46,15 @@ public class MockDTLSServer
 
     protected int[] getCipherSuites()
     {
-        return new int[] { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256, CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA };
+        return Arrays.concatenate(super.getCipherSuites(),
+            new int[]
+            {
+                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
+                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
+                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
+                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
+            });
     }
 
     public CertificateRequest getCertificateRequest()

@@ -1524,37 +1524,37 @@ class LongArray
         return new LongArray(r, 0, reduceInPlace(r, 0, r.length, m, ks));
     }
 
-//    private LongArray modSquareN(int n, int m, int[] ks)
-//    {
-//        int len = getUsedLength();
-//        if (len == 0)
-//        {
-//            return this;
-//        }
-//
-//        int mLen = (m + 63) >>> 6;
-//        long[] r = new long[mLen << 1];
-//        System.arraycopy(m_ints, 0, r, 0, len);
-//
-//        while (--n >= 0)
-//        {
-//            squareInPlace(r, len, m, ks);
-//            len = reduceInPlace(r, 0, r.length, m, ks);
-//        }
-//
-//        return new LongArray(r, 0, len);
-//    }
-//
-//    private static void squareInPlace(long[] x, int xLen, int m, int[] ks)
-//    {
-//        int pos = xLen << 1;
-//        while (--xLen >= 0)
-//        {
-//            long xVal = x[xLen];
-//            x[--pos] = interleave2_32to64((int)(xVal >>> 32));
-//            x[--pos] = interleave2_32to64((int)xVal);
-//        }
-//    }
+    public LongArray modSquareN(int n, int m, int[] ks)
+    {
+        int len = getUsedLength();
+        if (len == 0)
+        {
+            return this;
+        }
+
+        int mLen = (m + 63) >>> 6;
+        long[] r = new long[mLen << 1];
+        System.arraycopy(m_ints, 0, r, 0, len);
+
+        while (--n >= 0)
+        {
+            squareInPlace(r, len, m, ks);
+            len = reduceInPlace(r, 0, r.length, m, ks);
+        }
+
+        return new LongArray(r, 0, len);
+    }
+
+    private static void squareInPlace(long[] x, int xLen, int m, int[] ks)
+    {
+        int pos = xLen << 1;
+        while (--xLen >= 0)
+        {
+            long xVal = x[xLen];
+            x[--pos] = interleave2_32to64((int)(xVal >>> 32));
+            x[--pos] = interleave2_32to64((int)xVal);
+        }
+    }
 
     private static void interleave(long[] x, int xOff, long[] z, int zOff, int count, int width)
     {
