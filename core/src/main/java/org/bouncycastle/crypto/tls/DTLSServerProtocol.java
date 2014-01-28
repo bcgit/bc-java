@@ -389,6 +389,8 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
+
             state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, state.serverExtensions,
                 AlertDescription.internal_error);
 

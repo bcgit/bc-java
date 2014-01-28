@@ -68,9 +68,23 @@ public class MockDTLSClient
         return ProtocolVersion.DTLSv10;
     }
 
+//    public int[] getCipherSuites()
+//    {
+//        return Arrays.concatenate(super.getCipherSuites(),
+//            new int[]
+//            {
+//                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+//                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
+//                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
+//                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
+//                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
+//            });
+//    }
+
     public Hashtable getClientExtensions() throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;

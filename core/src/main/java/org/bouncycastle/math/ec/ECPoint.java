@@ -1215,15 +1215,15 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
-                // TODO The X == 0 stuff needs further thought
-                if (this.isInfinity() || x.isZero())
+                ECFieldElement X = x, L = y;
+
+                if (this.isInfinity() || X.isZero())
                 {
-                    return y;
+                    return L;
                 }
 
                 // Y is actually Lambda (X + Y/X) here; convert to affine value on the fly
-                ECFieldElement X = x, L = y;
-                ECFieldElement Y = L.subtract(X).multiply(X);
+                ECFieldElement Y = L.add(X).multiply(X);
                 if (ECCurve.COORD_LAMBDA_PROJECTIVE == coord)
                 {
                     ECFieldElement Z = zs[0];
@@ -1257,7 +1257,7 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
                 // Y is actually Lambda (X + Y/X) here
-                return Y.subtract(X).testBitZero();
+                return Y.testBitZero() != X.testBitZero();
             }
             default:
             {
@@ -1327,9 +1327,10 @@ public abstract class ECPoint
                 ECFieldElement Y1 = this.y;
                 ECFieldElement Y2 = b.y;
 
-                if (X1.equals(X2))
+                ECFieldElement dx = X1.add(X2), dy = Y1.add(Y2);
+                if (dx.isZero())
                 {
-                    if (Y1.equals(Y2))
+                    if (dy.isZero())
                     {
                         return (ECPoint.F2m)twice();
                     }
@@ -1337,10 +1338,9 @@ public abstract class ECPoint
                     return (ECPoint.F2m)curve.getInfinity();
                 }
 
-                ECFieldElement sumX = X1.add(X2);
-                ECFieldElement L = Y1.add(Y2).divide(sumX);
+                ECFieldElement L = dy.divide(dx);
 
-                ECFieldElement X3 = L.square().add(L).add(sumX).add(curve.getA());
+                ECFieldElement X3 = L.square().add(L).add(dx).add(curve.getA());
                 ECFieldElement Y3 = L.multiply(X1.add(X3)).add(X3).add(Y1);
 
                 return new ECPoint.F2m(curve, X3, Y3, this.withCompression);
@@ -1354,14 +1354,14 @@ public abstract class ECPoint
 
                 ECFieldElement U1 = Z1.multiply(Y2); 
                 ECFieldElement U2 = Z2IsOne ? Y1 : Y1.multiply(Z2);
-                ECFieldElement U = U1.subtract(U2);
+                ECFieldElement U = U1.add(U2);
                 ECFieldElement V1 = Z1.multiply(X2);
                 ECFieldElement V2 = Z2IsOne ? X1 : X1.multiply(Z2);
-                ECFieldElement V = V1.subtract(V2);
+                ECFieldElement V = V1.add(V2);
 
-                if (V1.equals(V2))
+                if (V.isZero())
                 {
-                    if (U1.equals(U2))
+                    if (U.isZero())
                     {
                         return (ECPoint.F2m)twice();
                     }
@@ -1369,14 +1369,18 @@ public abstract class ECPoint
                     return (ECPoint.F2m)curve.getInfinity();
                 }
 
-                ECFieldElement VSq =  V.square();
+                ECFieldElement VSq = V.square();
+                ECFieldElement VCu = VSq.multiply(V);
                 ECFieldElement W = Z2IsOne ? Z1 : Z1.multiply(Z2);
-                ECFieldElement A = U.square().add(U.multiply(V).add(VSq.multiply(curve.getA()))).multiply(W).add(V.multiply(VSq));
+                ECFieldElement uv = U.add(V);
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement A = uv.multiply(U).add(VSq.multiply(curve.getA())).multiply(W).add(VCu);
 
                 ECFieldElement X3 = V.multiply(A);
                 ECFieldElement VSqZ2 = Z2IsOne ? VSq : VSq.multiply(Z2);
-                ECFieldElement Y3 = VSqZ2.multiply(U.multiply(X1).add(Y1.multiply(V))).add(A.multiply(U.add(V)));
-                ECFieldElement Z3 = VSq.multiply(V).multiply(W);
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement Y3 = U.multiply(X1).add(Y1.multiply(V)).multiply(VSqZ2).add(A.multiply(uv));
+                ECFieldElement Z3 = VCu.multiply(W);
 
                 return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
             }
@@ -1464,6 +1468,7 @@ public abstract class ECPoint
                         ABZ2 = ABZ2.multiply(Z2);
                     }
 
+                    // TODO Delayed modular reduction for sum of products
                     L3 = AU2.add(B).square().add(ABZ2.multiply(L1.add(Z1)));
 
                     Z3 = ABZ2;
@@ -1571,6 +1576,7 @@ public abstract class ECPoint
                 ECFieldElement L1 = Y1.divide(X1).add(X1);
 
                 ECFieldElement X3 = L1.square().add(L1).add(curve.getA());
+                // TODO Delayed modular reduction for sum of products
                 ECFieldElement Y3 = X1.square().add(X3.multiply(L1.addOne()));
 
                 return new ECPoint.F2m(curve, X3, Y3, this.withCompression);
@@ -1587,10 +1593,13 @@ public abstract class ECPoint
                 ECFieldElement S = X1Sq.add(Y1Z1);
                 ECFieldElement V = X1Z1;
                 ECFieldElement vSquared = V.square();
-                ECFieldElement h = S.square().add(S.multiply(V)).add(curve.getA().multiply(vSquared));
+                ECFieldElement sv = S.add(V);
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement h = sv.multiply(S).add(curve.getA().multiply(vSquared));
 
                 ECFieldElement X3 = V.multiply(h);
-                ECFieldElement Y3 = h.multiply(S.add(V)).add(X1Sq.square().multiply(V));
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement Y3 = h.multiply(sv).add(X1Sq.square().multiply(V));
                 ECFieldElement Z3 = V.multiply(vSquared);    
 
                 return new ECPoint.F2m(curve, X3, Y3, new ECFieldElement[]{ Z3 }, this.withCompression);
@@ -1605,13 +1614,12 @@ public abstract class ECPoint
                 ECFieldElement a = curve.getA();
                 ECFieldElement aZ1Sq = Z1IsOne ? a : a.multiply(Z1Sq);
                 ECFieldElement T = L1.square().add(L1Z1).add(aZ1Sq);
-
-                ECFieldElement X3 = T.square();
-                if (X3.isZero())
+                if (T.isZero())
                 {
-                    return new ECPoint.F2m(curve, X3, curve.getB().sqrt(), withCompression);
+                    return new ECPoint.F2m(curve, T, curve.getB().sqrt(), withCompression);
                 }
 
+                ECFieldElement X3 = T.square();
                 ECFieldElement Z3 = Z1IsOne ? T : T.multiply(Z1Sq);
 
                 ECFieldElement b = curve.getB();
@@ -1644,7 +1652,8 @@ public abstract class ECPoint
                 else
                 {
                     ECFieldElement X1Z1 = Z1IsOne ? X1 : X1.multiply(Z1);
-                    L3 = X1Z1.square().add(X3).add(T.multiply(L1Z1)).add(Z3);
+                    // TODO Delayed modular reduction for sum of products
+                    L3 = X1Z1.square().add(T.multiply(L1Z1)).add(X3).add(Z3);
                 }
 
                 return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
@@ -1656,75 +1665,82 @@ public abstract class ECPoint
             }
         }
 
-//        public ECPoint twicePlus(ECPoint b)
-//        {
-//            if (this.isInfinity()) 
-//            {
-//                return b;
-//            }
-//            if (b.isInfinity())
-//            {
-//                return twice();
-//            }
-//
-//            ECCurve curve = this.getCurve();
-//
-//            ECFieldElement X1 = this.x;
-//            if (X1.isZero()) 
-//            {
-//                // A point with X == 0 is it's own additive inverse
-//                return b;
-//            }
-//
-//            int coord = curve.getCoordinateSystem();
-//
-//            switch (coord)
-//            {
-//            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-//            {
-//                // NOTE: twicePlus() only optimized for lambda-affine argument
-//                ECFieldElement X2 = b.x, Z2 = b.zs[0];
-//                if (X2.isZero() || !Z2.isOne())
-//                {
-//                    return twice().add(b);
-//                }
-//
-//                ECFieldElement L1 = this.y, Z1 = this.zs[0];
-//                ECFieldElement L2 = b.y;
-//
-//                ECFieldElement X1Sq = X1.square();
-//                ECFieldElement L1Sq = L1.square();
-//                ECFieldElement Z1Sq = Z1.square();
-//                ECFieldElement L1Z1 = L1.multiply(Z1);
-//
-//                ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
-//                ECFieldElement L2plus1 = L2.addOne();
-//                ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiply(T).add(X1Sq.multiply(Z1Sq));
-//                ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
-//
-//                ECFieldElement X3 = A.square().multiply(X2Z1Sq);
-//                if (X3.isZero())
-//                {
-//                    return new ECPoint.F2m(curve, X3, curve.getB().sqrt(), withCompression);
-//                }
-//
-//                ECFieldElement B = X2Z1Sq.add(T).square();
-//                if (B.isZero())
-//                {
-//                    return curve.getInfinity();
-//                }
-//
-//                ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
-//                ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
-//
-//                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
-//            }
-//            default:
-//            {
-//                return twice().add(b);
-//            }
-//            }
-//        }
+        public ECPoint twicePlus(ECPoint b)
+        {
+            if (this.isInfinity()) 
+            {
+                return b;
+            }
+            if (b.isInfinity())
+            {
+                return twice();
+            }
+
+            ECCurve curve = this.getCurve();
+
+            ECFieldElement X1 = this.x;
+            if (X1.isZero()) 
+            {
+                // A point with X == 0 is it's own additive inverse
+                return b;
+            }
+
+            int coord = curve.getCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // NOTE: twicePlus() only optimized for lambda-affine argument
+                ECFieldElement X2 = b.x, Z2 = b.zs[0];
+                if (X2.isZero() || !Z2.isOne())
+                {
+                    return twice().add(b);
+                }
+
+                ECFieldElement L1 = this.y, Z1 = this.zs[0];
+                ECFieldElement L2 = b.y;
+
+                ECFieldElement X1Sq = X1.square();
+                ECFieldElement L1Sq = L1.square();
+                ECFieldElement Z1Sq = Z1.square();
+                ECFieldElement L1Z1 = L1.multiply(Z1);
+
+                ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
+                ECFieldElement L2plus1 = L2.addOne();
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiply(T).add(X1Sq.multiply(Z1Sq));
+                ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
+                ECFieldElement B = X2Z1Sq.add(T).square();
+
+                if (B.isZero())
+                {
+                    if (A.isZero())
+                    {
+                        return b.twice();
+                    }
+
+                    return curve.getInfinity();
+                }
+
+                if (A.isZero())
+                {
+                    return new ECPoint.F2m(curve, A, curve.getB().sqrt(), withCompression);
+                }
+
+                ECFieldElement X3 = A.square().multiply(X2Z1Sq);
+                ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
+                // TODO Delayed modular reduction for sum of products
+                ECFieldElement L3 = A.add(B).square().multiply(T).add(L2plus1.multiply(Z3));
+
+                return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
+            }
+            default:
+            {
+                return twice().add(b);
+            }
+            }
+        }
 
         protected void checkCurveEquation()
         {
@@ -1751,12 +1767,17 @@ public abstract class ECPoint
                 throw new IllegalStateException();
             }
 
+            ECCurve curve = this.getCurve();
+
+            boolean ZIsOne = Z.isOne();
+            ECFieldElement ZSq = ZIsOne ? Z : Z.square();
+
             ECFieldElement X = this.x;
             if (X.isZero())
             {
                 // NOTE: For x == 0, we expect the affine-y instead of the lambda-y 
                 ECFieldElement Y = this.y;
-                if (!Y.square().equals(curve.getB().multiply(Z)))
+                if (!Y.square().equals(curve.getB().multiply(ZSq)))
                 {
                     throw new IllegalStateException();
                 }
@@ -1764,12 +1785,23 @@ public abstract class ECPoint
                 return;
             }
 
+            ECFieldElement A = curve.getA(), B = curve.getB();
             ECFieldElement L = this.y;
             ECFieldElement XSq = X.square();
-            ECFieldElement ZSq = Z.square();
 
-            ECFieldElement lhs = L.square().add(L.multiply(Z)).add(this.getCurve().getA().multiply(ZSq)).multiply(XSq);
-            ECFieldElement rhs = ZSq.square().multiply(this.getCurve().getB()).add(XSq.square());
+            ECFieldElement lhs, rhs;
+            if (ZIsOne)
+            {
+                lhs = L.square().add(L).add(A).multiply(XSq);
+                rhs = XSq.square().add(B);
+            }
+            else
+            {
+                // TODO Delayed modular reduction for sum of products
+                lhs = L.add(Z).multiply(L).add(A.multiply(ZSq)).multiply(XSq);
+                // TODO If sqrt(b) is precomputed this can be simplified to a single square
+                rhs = ZSq.square().multiply(B).add(XSq.square());
+            }
             
             if (!lhs.equals(rhs))
             {
