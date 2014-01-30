@@ -2,7 +2,6 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
@@ -13,7 +12,6 @@ public class SecP256R1Curve extends ECCurve
 {
     public static final BigInteger q = new BigInteger(1,
         Hex.decode("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"));
-    public static final BigInteger r = ECConstants.ONE.shiftLeft(256).subtract(q);
 
     private static final int SecP256R1_DEFAULT_COORDS = COORD_JACOBIAN;
 
