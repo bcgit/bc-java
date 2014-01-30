@@ -113,6 +113,21 @@ public class SecP256K1Field
         reduce(tt, z);
     }
 
+    public static void squareN(int[] x, int n, int[] z)
+    {
+//        assert n > 0;
+
+        int[] tt = Nat256.createExt();
+        Nat256.square(x, tt);
+        reduce(tt, z);
+
+        while (--n > 0)
+        {
+            Nat256.square(z, tt);
+            reduce(tt, z);
+        }
+    }
+
     public static void subtract(int[] x, int[] y, int[] z)
     {
         int c = Nat256.sub(x, y, z);
