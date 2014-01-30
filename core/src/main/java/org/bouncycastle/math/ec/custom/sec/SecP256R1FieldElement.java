@@ -129,8 +129,42 @@ public class SecP256R1FieldElement extends ECFieldElement
      */
     public ECFieldElement sqrt()
     {
-        ECFieldElement root = new ECFieldElement.Fp(Q, toBigInteger()).sqrt();
-        return root == null ? null : new SecP256R1FieldElement(root.toBigInteger());
+        // Raise this element to the exponent 2^254 - 2^222 + 2^190 + 2^94
+
+        int[] x1 = this.x;
+        if (Nat256.isZero(x1) || Nat256.isOne(x1))
+        {
+            return this;
+        }
+
+        int[] t1 = Nat256.create();
+        int[] t2 = Nat256.create();
+
+        SecP256R1Field.square(x1, t1);
+        SecP256R1Field.multiply(t1, x1, t1);
+
+        SecP256R1Field.squareN(t1, 2, t2);
+        SecP256R1Field.multiply(t2, t1, t2);
+
+        SecP256R1Field.squareN(t2, 4, t1);
+        SecP256R1Field.multiply(t1, t2, t1);
+
+        SecP256R1Field.squareN(t1, 8, t2);
+        SecP256R1Field.multiply(t2, t1, t2);
+
+        SecP256R1Field.squareN(t2, 16, t1);
+        SecP256R1Field.multiply(t1, t2, t1);
+
+        SecP256R1Field.squareN(t1, 32, t1);
+        SecP256R1Field.multiply(t1, x1, t1);
+
+        SecP256R1Field.squareN(t1, 96, t1);
+        SecP256R1Field.multiply(t1, x1, t1);
+
+        SecP256R1Field.squareN(t1, 94, t1);
+        SecP256R1Field.square(t1, t2);
+
+        return Arrays.areEqual(x1, t2) ? new SecP256R1FieldElement(t1) : null;
     }
 
     public boolean equals(Object other)
