@@ -130,7 +130,7 @@ public abstract class Nat
             return x[0] & 1;
         }
         int w = bit >> 5;
-        if ((w - Integer.MIN_VALUE) > x.length)
+        if (w < 0 || w >= x.length)
         {
             return 0;
         }
