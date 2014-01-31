@@ -361,14 +361,30 @@ public abstract class Nat256
         // assert yyOff <= 8;
         // assert zzOff <= 8;
         long c = 0, xVal = x & M;
-        int i = 0;
-        do
-        {
-            c += xVal * (yy[yyOff + i] & M) + (zz[zzOff + i] & M);
-            zz[zzOff + i] = (int)c;
-            c >>>= 32;
-        }
-        while (++i < 8);
+        c += xVal * (yy[yyOff + 0] & M) + (zz[zzOff + 0] & M);
+        zz[zzOff + 0] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 1] & M) + (zz[zzOff + 1] & M);
+        zz[zzOff + 1] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 2] & M) + (zz[zzOff + 2] & M);
+        zz[zzOff + 2] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 3] & M) + (zz[zzOff + 3] & M);
+        zz[zzOff + 3] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 4] & M) + (zz[zzOff + 4] & M);
+        zz[zzOff + 4] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 5] & M) + (zz[zzOff + 5] & M);
+        zz[zzOff + 5] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 6] & M) + (zz[zzOff + 6] & M);
+        zz[zzOff + 6] = (int)c;
+        c >>>= 32;
+        c += xVal * (yy[yyOff + 7] & M) + (zz[zzOff + 7] & M);
+        zz[zzOff + 7] = (int)c;
+        c >>>= 32;
         return (int)c;
     }
 
