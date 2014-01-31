@@ -9,7 +9,6 @@ import org.bouncycastle.util.Arrays;
 public class SecP256R1FieldElement extends ECFieldElement
 {
     public static final BigInteger Q = SecP256R1Curve.q;
-    public static final BigInteger Qr = SecP256R1Curve.r;
 
     protected int[] x;
 
