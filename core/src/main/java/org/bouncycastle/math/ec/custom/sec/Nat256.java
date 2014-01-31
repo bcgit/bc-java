@@ -71,7 +71,7 @@ public abstract class Nat256
     // TODO Re-write to allow full range for x?
     public static int addDWord(long x, int[] z, int zOff)
     {
-        // assert zOff < 6;
+        // assert zOff <= 6;
         long c = x;
         c += (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -127,7 +127,7 @@ public abstract class Nat256
 
     public static int addWordExt(int x, int[] zz, int zzOff)
     {
-        // assert zzOff < 15;
+        // assert zzOff <= 15;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -146,16 +146,14 @@ public abstract class Nat256
 
     public static int dec(int[] z, int zOff)
     {
-        // assert zOff < 8;
-        int i = zOff;
-        do
+        // assert zOff <= 8;
+        for (int i = zOff; i < 8; ++i)
         {
             if (--z[i] != -1)
             {
                 return 0;
             }
         }
-        while (++i < 8);
         return -1;
     }
 
@@ -221,7 +219,7 @@ public abstract class Nat256
 
     public static int inc(int[] z, int zOff)
     {
-        // assert zOff < 8;
+        // assert zOff <= 8;
         for (int i = zOff; i < 8; ++i)
         {
             if (++z[i] != 0)
@@ -234,7 +232,7 @@ public abstract class Nat256
 
     public static int incExt(int[] zz, int zzOff)
     {
-        // assert zzOff < 16;
+        // assert zzOff <= 16;
         for (int i = zzOff; i < 16; ++i)
         {
             if (++zz[i] != 0)
@@ -435,7 +433,7 @@ public abstract class Nat256
     public static int mul33DWordAdd(int x, long y, int[] z, int zOff)
     {
         // assert x >>> 31 == 0;
-        // assert zOff < 4;
+        // assert zOff <= 4;
 
         long c = 0, xVal = x & M;
         long y00 = y & M;
@@ -457,7 +455,7 @@ public abstract class Nat256
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
-        // assert zOff < 5;
+        // assert zOff <= 5;
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
