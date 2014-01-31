@@ -324,38 +324,39 @@ public abstract class Nat192
         }
     }
 
-    public static long mul33AddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
+    public static long mul33AddExt(int w, int[] xx, int xxOff, int[] yy, int yyOff, int[] zz, int zzOff)
     {
         // assert x >>> 31 == 0;
+        // assert xxOff <= 6;
         // assert yyOff <= 6;
         // assert zzOff <= 6;
 
-        long c = 0, xVal = x & M;
-        long yy00 = yy[yyOff + 0] & M;
-        c += xVal * yy00 + (zz[zzOff + 0] & M);
+        long c = 0, wVal = w & M;
+        long xx00 = xx[xxOff + 0] & M;
+        c += wVal * xx00 + (yy[yyOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
-        long yy01 = yy[yyOff + 1] & M;
-        c += xVal * yy01 + yy00 + (zz[zzOff + 1] & M);
+        long xx01 = xx[xxOff + 1] & M;
+        c += wVal * xx01 + xx00 + (yy[yyOff + 1] & M);
         zz[zzOff + 1] = (int)c;
         c >>>= 32;
-        long yy02 = yy[yyOff + 2] & M;
-        c += xVal * yy02 + yy01 + (zz[zzOff + 2] & M);
+        long xx02 = xx[xxOff + 2] & M;
+        c += wVal * xx02 + xx01 + (yy[yyOff + 2] & M);
         zz[zzOff + 2] = (int)c;
         c >>>= 32;
-        long yy03 = yy[yyOff + 3] & M;
-        c += xVal * yy03 + yy02 + (zz[zzOff + 3] & M);
+        long xx03 = xx[xxOff + 3] & M;
+        c += wVal * xx03 + xx02 + (yy[yyOff + 3] & M);
         zz[zzOff + 3] = (int)c;
         c >>>= 32;
-        long yy04 = yy[yyOff + 4] & M;
-        c += xVal * yy04 + yy03 + (zz[zzOff + 4] & M);
+        long xx04 = xx[xxOff + 4] & M;
+        c += wVal * xx04 + xx03 + (yy[yyOff + 4] & M);
         zz[zzOff + 4] = (int)c;
         c >>>= 32;
-        long yy05 = yy[yyOff + 5] & M;
-        c += xVal * yy05 + yy04 + (zz[zzOff + 5] & M);
+        long xx05 = xx[xxOff + 5] & M;
+        c += wVal * xx05 + xx04 + (yy[yyOff + 5] & M);
         zz[zzOff + 5] = (int)c;
         c >>>= 32;
-        c += yy05;
+        c += xx05;
         return c;
     }
 
