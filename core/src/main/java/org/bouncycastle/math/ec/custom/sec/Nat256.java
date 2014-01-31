@@ -356,6 +356,49 @@ public abstract class Nat256
         }
     }
 
+    public static long mul33AddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
+    {
+        // assert x >>> 31 == 0;
+        // assert yyOff <= 8;
+        // assert zzOff <= 8;
+
+        long c = 0, xVal = x & M;
+        long yy00 = yy[yyOff + 0] & M;
+        c += xVal * yy00 + (zz[zzOff + 0] & M);
+        zz[zzOff + 0] = (int)c;
+        c >>>= 32;
+        long yy01 = yy[yyOff + 1] & M;
+        c += xVal * yy01 + yy00 + (zz[zzOff + 1] & M);
+        zz[zzOff + 1] = (int)c;
+        c >>>= 32;
+        long yy02 = yy[yyOff + 2] & M;
+        c += xVal * yy02 + yy01 + (zz[zzOff + 2] & M);
+        zz[zzOff + 2] = (int)c;
+        c >>>= 32;
+        long yy03 = yy[yyOff + 3] & M;
+        c += xVal * yy03 + yy02 + (zz[zzOff + 3] & M);
+        zz[zzOff + 3] = (int)c;
+        c >>>= 32;
+        long yy04 = yy[yyOff + 4] & M;
+        c += xVal * yy04 + yy03 + (zz[zzOff + 4] & M);
+        zz[zzOff + 4] = (int)c;
+        c >>>= 32;
+        long yy05 = yy[yyOff + 5] & M;
+        c += xVal * yy05 + yy04 + (zz[zzOff + 5] & M);
+        zz[zzOff + 5] = (int)c;
+        c >>>= 32;
+        long yy06 = yy[yyOff + 6] & M;
+        c += xVal * yy06 + yy05 + (zz[zzOff + 6] & M);
+        zz[zzOff + 6] = (int)c;
+        c >>>= 32;
+        long yy07 = yy[yyOff + 7] & M;
+        c += xVal * yy07 + yy06 + (zz[zzOff + 7] & M);
+        zz[zzOff + 7] = (int)c;
+        c >>>= 32;
+        c += yy07;
+        return c;
+    }
+
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
     {
         // assert yyOff <= 8;
@@ -386,6 +429,29 @@ public abstract class Nat256
         zz[zzOff + 7] = (int)c;
         c >>>= 32;
         return (int)c;
+    }
+
+    public static int mul33DWordAdd(int x, long y, int[] z, int zOff)
+    {
+        // assert x >>> 31 == 0;
+        // assert zOff < 4;
+
+        long c = 0, xVal = x & M;
+        long y00 = y & M;
+        c += xVal * y00 + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        long y01 = y >>> 32;
+        c += xVal * y01 + y00 + (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        c += y01 + (z[zOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(z, zOff + 4);
     }
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
