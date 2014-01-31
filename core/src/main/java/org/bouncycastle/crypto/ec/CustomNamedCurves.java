@@ -9,6 +9,8 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP192R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Strings;
@@ -20,6 +22,38 @@ public class CustomNamedCurves
     {
         return curve;
     }
+
+    /*
+     * secp192k1
+     */
+    static X9ECParametersHolder secp192k1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = configureCurve(new SecP192K1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "DB4FF10EC057E9AE26B07D0280B7F4341DA5D1B1EAE06C7D"
+                + "9B2F2F6D9C5628A7844163D015BE86344082AA88D95E2F9D"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
+    /*
+     * secp192r1
+     */
+    static X9ECParametersHolder secp192r1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = Hex.decode("3045AE6FC8422F64ED579528D38120EAE12196D5");
+            ECCurve curve = configureCurve(new SecP192R1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"
+                + "07192B95FFC8DA78631011ED6B24CDD573F977A11E794811"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
 
     /*
      * secp256k1
@@ -66,9 +100,12 @@ public class CustomNamedCurves
 
     static
     {
+        defineCurve("secp192k1", SECObjectIdentifiers.secp192k1, secp192k1);
+        defineCurve("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
         defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
         defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
 
+        objIds.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
         objIds.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
     }
 
