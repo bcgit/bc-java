@@ -149,7 +149,7 @@ public abstract class Nat
             if (x_i > y_i)
                 return true;
         }
-        return false;
+        return true;
     }
 
     public static boolean gteExt(int len, int[] xx, int[] yy)
@@ -164,7 +164,7 @@ public abstract class Nat
             if (xx_i > yy_i)
                 return true;
         }
-        return false;
+        return true;
     }
 
     public static int inc(int len, int[] z, int zOff)
