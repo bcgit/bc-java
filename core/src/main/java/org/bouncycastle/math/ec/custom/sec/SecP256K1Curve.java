@@ -70,7 +70,7 @@ public class SecP256K1Curve extends ECCurve
     protected ECPoint decompressPoint(int yTilde, BigInteger X1)
     {
         ECFieldElement x = fromBigInteger(X1);
-        ECFieldElement alpha = x.square().add(a).multiply(x).add(b);
+        ECFieldElement alpha = x.square().multiply(x).add(getB());
         ECFieldElement beta = alpha.sqrt();
 
         //

@@ -4,8 +4,6 @@ import java.math.BigInteger;
 
 public class SecP256K1Field
 {
-    private static final long M = 0xFFFFFFFFL;
-
     // 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
     static final int[] P = new int[]{ 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
@@ -15,6 +13,7 @@ public class SecP256K1Field
         0xFFFFFFFF, 0xFFFFFFFF };
     private static final int PExt15 = 0xFFFFFFFF;
     private static final long PInv = 0x00000001000003D1L;
+    private static final int PInv33 = 0x3D1;
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -86,24 +85,17 @@ public class SecP256K1Field
         }
     }
 
-    public static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] xx, int[] z)
     {
-        long extra = -(tt[8] & M);
-        extra += Nat256.mulWordAddExt((int)PInv, tt, 8, tt, 0) & M;
-        extra += (Nat256.addToExt(tt, 8, tt, 1) & M) << 32;
-        extra += (tt[8] & M);
-
-        long c = Nat256.mulWordDwordAdd((int)PInv, extra, tt, 0) & M;
-        c += Nat256.addDWord(extra, tt, 1);
+        long c = Nat256.mul33AddExt(PInv33, xx, 8, xx, 0, z, 0);
+        c = Nat256.mul33DWordAdd(PInv33, c, z, 0);
 
         // assert c == 0L || c == 1L;
 
-        if (c != 0 || (tt[7] == P7 && Nat256.gte(tt, P)))
+        if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, tt, 0);
+            Nat256.addDWord(PInv, z, 0);
         }
-
-        System.arraycopy(tt, 0, z, 0, 8);
     }
 
     public static void square(int[] x, int[] z)

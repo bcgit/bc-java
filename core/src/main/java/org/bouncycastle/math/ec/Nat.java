@@ -32,18 +32,19 @@ public abstract class Nat
         return (int)c;
     }
 
-//    public static int addDWord(int len, long x, int[] z, int zOff)
-//    {
-//        // assert zOff < (len - 2);
-//        long c = x;
-//        c += (z[zOff + 0] & M);
-//        z[zOff + 0] = (int)c;
-//        c >>>= 32;
-//        c += (z[zOff + 1] & M);
-//        z[zOff + 1] = (int)c;
-//        c >>>= 32;
-//        return c == 0 ? 0 : inc(len, z, zOff + 2);
-//    }
+    // TODO Re-write to allow full range for x?
+    public static int addDWord(int len, long x, int[] z, int zOff)
+    {
+        // assert zOff <= (len - 2);
+        long c = x;
+        c += (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(len, z, zOff + 2);
+    }
 
     public static int addExt(int len, int[] xx, int[] yy, int[] zz)
     {
@@ -73,7 +74,8 @@ public abstract class Nat
 
     public static int addWordExt(int len, int x, int[] zz, int zzOff)
     {
-        // assert zzOff < ((len << 1) - 1);
+        // int extLen = len << 1;
+        // assert zzOff <= (extLen - 1);
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -93,16 +95,14 @@ public abstract class Nat
 
     public static int dec(int len, int[] z, int zOff)
     {
-        // assert zOff < len;
-        int i = zOff;
-        do
+        // assert zOff <= len;
+        for (int i = zOff; i < len; ++i)
         {
             if (--z[i] != -1)
             {
                 return 0;
             }
         }
-        while (++i < len);
         return -1;
     }
 
@@ -169,7 +169,7 @@ public abstract class Nat
 
     public static int inc(int len, int[] z, int zOff)
     {
-        // assert zOff < len;
+        // assert zOff <= len;
         for (int i = zOff; i < len; ++i)
         {
             if (++z[i] != 0)
@@ -183,7 +183,7 @@ public abstract class Nat
     public static int incExt(int len, int[] zz, int zzOff)
     {
         int extLen = len;
-        // assert zzOff < extLen;
+        // assert zzOff <= extLen;
         for (int i = zzOff; i < extLen; ++i)
         {
             if (++zz[i] != 0)
@@ -263,7 +263,7 @@ public abstract class Nat
 
     public static int mulWordDwordAdd(int len, int x, long y, int[] z, int zOff)
     {
-        // assert zOff < (len - 3);
+        // assert zOff <= (len - 3);
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -426,17 +426,19 @@ public abstract class Nat
         return (int)c;
     }
 
-//    public static int subDWord(int len, long x, int[] z)
-//    {
-//        long c = -x;
-//        c += (z[0] & M);
-//        z[0] = (int)c;
-//        c >>= 32;
-//        c += (z[1] & M);
-//        z[1] = (int)c;
-//        c >>= 32;
-//        return c == 0 ? 0 : dec(len, z, 2);
-//    }
+    // TODO Re-write to allow full range for x?
+    public static int subDWord(int len, long x, int[] z)
+    {
+        // assert 0 <= (len - 2);
+        long c = -x;
+        c += (z[0] & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M);
+        z[1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : dec(len, z, 2);
+    }
 
     public static int subExt(int len, int[] xx, int[] yy, int[] zz)
     {
