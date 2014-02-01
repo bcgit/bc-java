@@ -37,6 +37,26 @@ public abstract class ECFieldElement
         return 0 == toBigInteger().signum();
     }
 
+    public ECFieldElement multiplyMinusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+    {
+        return multiply(b).subtract(x.multiply(y));
+    }
+
+    public ECFieldElement multiplyPlusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+    {
+        return multiply(b).add(x.multiply(y));
+    }
+
+    public ECFieldElement squareMinusProduct(ECFieldElement x, ECFieldElement y)
+    {
+        return square().subtract(x.multiply(y));
+    }
+
+    public ECFieldElement squarePlusProduct(ECFieldElement x, ECFieldElement y)
+    {
+        return square().add(x.multiply(y));
+    }
+
     public boolean testBitZero()
     {
         return toBigInteger().testBit(0);
@@ -172,6 +192,22 @@ public abstract class ECFieldElement
             return new Fp(q, r, modMult(x, b.toBigInteger()));
         }
 
+        public ECFieldElement multiplyMinusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+        {
+            BigInteger ax = this.x, bx = b.toBigInteger(), xx = x.toBigInteger(), yx = y.toBigInteger();
+            BigInteger ab = ax.multiply(bx);
+            BigInteger xy = xx.multiply(yx);
+            return new Fp(q, r, modReduce(ab.subtract(xy)));
+        }
+
+        public ECFieldElement multiplyPlusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+        {
+            BigInteger ax = this.x, bx = b.toBigInteger(), xx = x.toBigInteger(), yx = y.toBigInteger();
+            BigInteger ab = ax.multiply(bx);
+            BigInteger xy = xx.multiply(yx);
+            return new Fp(q, r, modReduce(ab.add(xy)));
+        }
+
         public ECFieldElement divide(ECFieldElement b)
         {
             return new Fp(q, r, modMult(x, modInverse(b.toBigInteger())));
@@ -185,6 +221,22 @@ public abstract class ECFieldElement
         public ECFieldElement square()
         {
             return new Fp(q, r, modMult(x, x));
+        }
+
+        public ECFieldElement squareMinusProduct(ECFieldElement x, ECFieldElement y)
+        {
+            BigInteger ax = this.x, xx = x.toBigInteger(), yx = y.toBigInteger();
+            BigInteger aa = ax.multiply(ax);
+            BigInteger xy = xx.multiply(yx);
+            return new Fp(q, r, modReduce(aa.subtract(xy)));
+        }
+
+        public ECFieldElement squarePlusProduct(ECFieldElement x, ECFieldElement y)
+        {
+            BigInteger ax = this.x, xx = x.toBigInteger(), yx = y.toBigInteger();
+            BigInteger aa = ax.multiply(ax);
+            BigInteger xy = xx.multiply(yx);
+            return new Fp(q, r, modReduce(aa.add(xy)));
         }
 
         public ECFieldElement invert()
@@ -1164,6 +1216,29 @@ public abstract class ECFieldElement
             return new F2m(m, ks, x.modMultiply(((F2m)b).x, m, ks));
         }
 
+        public ECFieldElement multiplyMinusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+        {
+            return multiplyPlusProduct(b, x, y);
+        }
+
+        public ECFieldElement multiplyPlusProduct(ECFieldElement b, ECFieldElement x, ECFieldElement y)
+        {
+            LongArray ax = this.x, bx = ((F2m)b).x, xx = ((F2m)x).x, yx = ((F2m)y).x;
+
+            LongArray ab = ax.multiply(bx, m, ks);
+            LongArray xy = xx.multiply(yx, m, ks);
+
+            if (ab == ax || ab == bx)
+            {
+                ab = (LongArray)ab.clone();
+            }
+
+            ab.addShiftedByWords(xy, 0);
+            ab.reduce(m, ks);
+
+            return new F2m(m, ks, ab);
+        }
+
         public ECFieldElement divide(final ECFieldElement b)
         {
             // There may be more efficient implementations
@@ -1180,6 +1255,29 @@ public abstract class ECFieldElement
         public ECFieldElement square()
         {
             return new F2m(m, ks, x.modSquare(m, ks));
+        }
+
+        public ECFieldElement squareMinusProduct(ECFieldElement x, ECFieldElement y)
+        {
+            return squarePlusProduct(x, y);
+        }
+
+        public ECFieldElement squarePlusProduct(ECFieldElement x, ECFieldElement y)
+        {
+            LongArray ax = this.x, xx = ((F2m)x).x, yx = ((F2m)y).x;
+
+            LongArray aa = ax.square(m, ks);
+            LongArray xy = xx.multiply(yx, m, ks);
+
+            if (aa == ax)
+            {
+                aa = (LongArray)aa.clone();
+            }
+
+            aa.addShiftedByWords(xy, 0);
+            aa.reduce(m, ks);
+
+            return new F2m(m, ks, aa);
         }
 
         public ECFieldElement invert()
