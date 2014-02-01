@@ -84,42 +84,42 @@ public class SecP256R1Field
         }
     }
 
-    public static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] xx, int[] z)
     {
-        long t08 = tt[8] & M, t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
-        long t12 = tt[12] & M, t13 = tt[13] & M, t14 = tt[14] & M, t15 = tt[15] & M;
+        long xx08 = xx[8] & M, xx09 = xx[9] & M, xx10 = xx[10] & M, xx11 = xx[11] & M;
+        long xx12 = xx[12] & M, xx13 = xx[13] & M, xx14 = xx[14] & M, xx15 = xx[15] & M;
 
-        long s0 = t08 + t09;
-        long s1 = t09 + t10;
-        long s2 = t10 + t11;
-        long s3 = t11 + t12;
-        long s4 = t12 + t13;
-        long s5 = t13 + t14;
-        long s6 = t14 + t15;
+        long t0 = xx08 + xx09;
+        long t1 = xx09 + xx10;
+        long t2 = xx10 + xx11;
+        long t3 = xx11 + xx12;
+        long t4 = xx12 + xx13;
+        long t5 = xx13 + xx14;
+        long t6 = xx14 + xx15;
 
         long cc = 0;
-        cc += (tt[0] & M) + s0 - s3 - s5;
+        cc += (xx[0] & M) + t0 - t3 - t5;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (tt[1] & M) + s1 - s4 - s6;
+        cc += (xx[1] & M) + t1 - t4 - t6;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (tt[2] & M) + s2 - s5 - t15;
+        cc += (xx[2] & M) + t2 - t5 - xx15;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (tt[3] & M) + (s3 << 1) + t13 - t15 - s0;
+        cc += (xx[3] & M) + (t3 << 1) + xx13 - xx15 - t0;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (tt[4] & M) + (s4 << 1) + t14 - s1;
+        cc += (xx[4] & M) + (t4 << 1) + xx14 - t1;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (tt[5] & M) + (s5 << 1) + t15 - s2;
+        cc += (xx[5] & M) + (t5 << 1) + xx15 - t2;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (tt[6] & M) + (s6 << 1) + s5 - s0;
+        cc += (xx[6] & M) + (t6 << 1) + t5 - t0;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (tt[7] & M) + (t15 << 1) + t15 + t08 - s2 - s4;
+        cc += (xx[7] & M) + (xx15 << 1) + xx15 + xx08 - t2 - t4;
         z[7] = (int)cc;
         cc >>= 32;
 
