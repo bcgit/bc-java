@@ -4,8 +4,6 @@ import java.math.BigInteger;
 
 public class SecP192K1Field
 {
-    private static final long M = 0xFFFFFFFFL;
-
     // 2^192 - 2^32 - 2^12 - 2^8 - 2^7 - 2^6 - 2^3 - 1
     static final int[] P = new int[]{ 0xFFFFEE37, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
     private static final int P5 = 0xFFFFFFFF;
@@ -13,6 +11,7 @@ public class SecP192K1Field
         0x00000000, 0xFFFFDC6E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
     private static final int PExt11 = 0xFFFFFFFF;
     private static final long PInv = 0x00000001000011C9L;
+    private static final int PInv33 = 0x11C9;
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -86,22 +85,15 @@ public class SecP192K1Field
 
     public static void reduce(int[] tt, int[] z)
     {
-        long extra = -(tt[6] & M);
-        extra += Nat192.mulWordAddExt((int)PInv, tt, 6, tt, 0) & M;
-        extra += (Nat192.addToExt(tt, 6, tt, 1) & M) << 32;
-        extra += (tt[6] & M);
-
-        long c = Nat192.mulWordDwordAdd((int)PInv, extra, tt, 0) & M;
-        c += Nat192.addDWord(extra, tt, 1);
+        long c = Nat192.mul33AddExt(PInv33, tt, 6, tt, 0, z, 0);
+        c = Nat192.mul33DWordAdd(PInv33, c, z, 0);
 
         // assert c == 0L || c == 1L;
 
-        if (c != 0 || (tt[5] == P5 && Nat192.gte(tt, P)))
+        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, tt, 0);
+            Nat192.addDWord(PInv, z, 0);
         }
-
-        System.arraycopy(tt, 0, z, 0, 6);
     }
 
     public static void square(int[] x, int[] z)

@@ -59,7 +59,7 @@ public abstract class Nat192
     // TODO Re-write to allow full range for x?
     public static int addDWord(long x, int[] z, int zOff)
     {
-        // assert zOff < 4;
+        // assert zOff <= 4;
         long c = x;
         c += (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -109,7 +109,7 @@ public abstract class Nat192
 
     public static int addWordExt(int x, int[] zz, int zzOff)
     {
-        // assert zzOff < 11;
+        // assert zzOff <= 11;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -128,16 +128,14 @@ public abstract class Nat192
 
     public static int dec(int[] z, int zOff)
     {
-        // assert zOff < 6;
-        int i = zOff;
-        do
+        // assert zOff <= 6;
+        for (int i = zOff; i < 6; ++i)
         {
             if (--z[i] != -1)
             {
                 return 0;
             }
         }
-        while (++i < 6);
         return -1;
     }
 
@@ -203,7 +201,7 @@ public abstract class Nat192
 
     public static int inc(int[] z, int zOff)
     {
-        // assert zOff < 6;
+        // assert zOff <= 6;
         for (int i = zOff; i < 6; ++i)
         {
             if (++z[i] != 0)
@@ -216,7 +214,7 @@ public abstract class Nat192
 
     public static int incExt(int[] zz, int zzOff)
     {
-        // assert zzOff < 12;
+        // assert zzOff <= 12;
         for (int i = zzOff; i < 12; ++i)
         {
             if (++zz[i] != 0)
@@ -324,6 +322,42 @@ public abstract class Nat192
         }
     }
 
+    public static long mul33AddExt(int w, int[] xx, int xxOff, int[] yy, int yyOff, int[] zz, int zzOff)
+    {
+        // assert x >>> 31 == 0;
+        // assert xxOff <= 6;
+        // assert yyOff <= 6;
+        // assert zzOff <= 6;
+
+        long c = 0, wVal = w & M;
+        long xx00 = xx[xxOff + 0] & M;
+        c += wVal * xx00 + (yy[yyOff + 0] & M);
+        zz[zzOff + 0] = (int)c;
+        c >>>= 32;
+        long xx01 = xx[xxOff + 1] & M;
+        c += wVal * xx01 + xx00 + (yy[yyOff + 1] & M);
+        zz[zzOff + 1] = (int)c;
+        c >>>= 32;
+        long xx02 = xx[xxOff + 2] & M;
+        c += wVal * xx02 + xx01 + (yy[yyOff + 2] & M);
+        zz[zzOff + 2] = (int)c;
+        c >>>= 32;
+        long xx03 = xx[xxOff + 3] & M;
+        c += wVal * xx03 + xx02 + (yy[yyOff + 3] & M);
+        zz[zzOff + 3] = (int)c;
+        c >>>= 32;
+        long xx04 = xx[xxOff + 4] & M;
+        c += wVal * xx04 + xx03 + (yy[yyOff + 4] & M);
+        zz[zzOff + 4] = (int)c;
+        c >>>= 32;
+        long xx05 = xx[xxOff + 5] & M;
+        c += wVal * xx05 + xx04 + (yy[yyOff + 5] & M);
+        zz[zzOff + 5] = (int)c;
+        c >>>= 32;
+        c += xx05;
+        return c;
+    }
+
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
     {
         // assert yyOff <= 6;
@@ -350,9 +384,32 @@ public abstract class Nat192
         return (int)c;
     }
 
+    public static int mul33DWordAdd(int x, long y, int[] z, int zOff)
+    {
+        // assert x >>> 31 == 0;
+        // assert zOff <= 2;
+
+        long c = 0, xVal = x & M;
+        long y00 = y & M;
+        c += xVal * y00 + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        long y01 = y >>> 32;
+        c += xVal * y01 + y00 + (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        c += y01 + (z[zOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(z, zOff + 4);
+    }
+
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
-        // assert zOff < 3;
+        // assert zOff <= 3;
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
