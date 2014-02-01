@@ -88,23 +88,34 @@ public class SecP192R1Field
         long t06 = tt[6] & M, t07 = tt[7] & M, t08 = tt[8] & M;
         long t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
 
+        long s0 = t06 + t10;
+        long s1 = t07 + t11;
+
         long cc = 0;
-        cc += (tt[0] & M) + t06 + t10;
+        cc += (tt[0] & M) + s0;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (tt[1] & M) + t07 + t11;
+        cc += (tt[1] & M) + s1;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (tt[2] & M) + t06 + t08 + t10;
+
+        s0 += t08;
+        s1 += t09;
+
+        cc += (tt[2] & M) + s0;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (tt[3] & M) + t07 + t09 + t11;
+        cc += (tt[3] & M) + s1;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (tt[4] & M) + t08 + t10;
+
+        s0 -= t06;
+        s1 -= t07;
+
+        cc += (tt[4] & M) + s0;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (tt[5] & M) + t09 + t11;
+        cc += (tt[5] & M) + s1;
         z[5] = (int)cc;
         cc >>= 32;
 
