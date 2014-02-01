@@ -89,29 +89,37 @@ public class SecP256R1Field
         long t08 = tt[8] & M, t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
         long t12 = tt[12] & M, t13 = tt[13] & M, t14 = tt[14] & M, t15 = tt[15] & M;
 
+        long s0 = t08 + t09;
+        long s1 = t09 + t10;
+        long s2 = t10 + t11;
+        long s3 = t11 + t12;
+        long s4 = t12 + t13;
+        long s5 = t13 + t14;
+        long s6 = t14 + t15;
+
         long cc = 0;
-        cc += (tt[0] & M) + t08 + t09 - t11 - t12 - t13 - t14;
+        cc += (tt[0] & M) + s0 - s3 - s5;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (tt[1] & M) + t09 + t10 - t12 - t13 - t14 - t15;
+        cc += (tt[1] & M) + s1 - s4 - s6;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (tt[2] & M) + t10 + t11 - t13 - t14 - t15;
+        cc += (tt[2] & M) + s2 - s5 - t15;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (tt[3] & M) + ((t11 + t12) << 1) + t13 - t15 - t08 - t09;
+        cc += (tt[3] & M) + (s3 << 1) + t13 - t15 - s0;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (tt[4] & M) + ((t12 + t13) << 1) + t14 - t09 - t10;
+        cc += (tt[4] & M) + (s4 << 1) + t14 - s1;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (tt[5] & M) + ((t13 + t14) << 1) + t15 - t10 - t11;
+        cc += (tt[5] & M) + (s5 << 1) + t15 - s2;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (tt[6] & M) + ((t14 + t15) << 1) + t14 + t13 - t08 - t09;
+        cc += (tt[6] & M) + (s6 << 1) + s5 - s0;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (tt[7] & M) + (t15 << 1) + t15 + t08 - t10 - t11 - t12 - t13;
+        cc += (tt[7] & M) + (t15 << 1) + t15 + t08 - s2 - s4;
         z[7] = (int)cc;
         cc >>= 32;
 
