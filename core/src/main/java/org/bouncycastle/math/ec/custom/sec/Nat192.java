@@ -182,7 +182,7 @@ public abstract class Nat192
             if (x_i > y_i)
                 return true;
         }
-        return false;
+        return true;
     }
 
     public static boolean gteExt(int[] xx, int[] yy)
@@ -196,7 +196,7 @@ public abstract class Nat192
             if (xx_i > yy_i)
                 return true;
         }
-        return false;
+        return true;
     }
 
     public static int inc(int[] z, int zOff)
