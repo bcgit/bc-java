@@ -1,7 +1,5 @@
 package org.bouncycastle.math.ec;
 
-import org.bouncycastle.util.Arrays;
-
 public abstract class Mod
 {
     public static void invert(int[] p, int[] x, int[] z)
@@ -17,7 +15,7 @@ public abstract class Mod
             return;
         }
 
-        int[] u = Arrays.clone(x);
+        int[] u = Nat.copy(len, x);
         int[] a = Nat.create(len);
         a[0] = 1;
         int ac = 0;
@@ -32,7 +30,7 @@ public abstract class Mod
             return;
         }
 
-        int[] v = Arrays.clone(p);
+        int[] v = Nat.copy(len, p);
         int[] b = Nat.create(len);
         int bc = 0;
 
@@ -100,7 +98,7 @@ public abstract class Mod
         int count = 0;
         while (u[0] == 0)
         {
-            Nat.shiftDownWord(u, uLen, 0);
+            Nat.shiftDownWord(uLen, u, 0);
             count += 32;
         }
 
@@ -108,7 +106,7 @@ public abstract class Mod
             int zeroes = getTrailingZeroes(u[0]);
             if (zeroes > 0)
             {
-                Nat.shiftDownBits(u, uLen, zeroes, 0);
+                Nat.shiftDownBits(uLen, u, zeroes, 0);
                 count += zeroes;
             }
         }
@@ -128,7 +126,7 @@ public abstract class Mod
             }
 
 //            assert xc == 0 || xc == 1;
-            Nat.shiftDownBit(x, len, xc);
+            Nat.shiftDownBit(len, x, xc);
         }
         
         return xc;

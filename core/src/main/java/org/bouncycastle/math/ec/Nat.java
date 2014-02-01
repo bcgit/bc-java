@@ -46,19 +46,6 @@ public abstract class Nat
         return c == 0 ? 0 : inc(len, z, zOff + 2);
     }
 
-    public static int addExt(int len, int[] xx, int[] yy, int[] zz)
-    {
-        int extLen = len << 1;
-        long c = 0;
-        for (int i = 0; i < extLen; ++i)
-        {
-            c += (xx[i] & M) + (yy[i] & M);
-            zz[i] = (int)c;
-            c >>>= 32;
-        }
-        return (int)c;
-    }
-
     public static int addToExt(int len, int[] x, int xOff, int[] zz, int zzOff)
     {
         // assert zzOff <= len;
@@ -74,23 +61,24 @@ public abstract class Nat
 
     public static int addWordExt(int len, int x, int[] zz, int zzOff)
     {
-        // int extLen = len << 1;
+        int extLen = len << 1;
         // assert zzOff <= (extLen - 1);
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : incExt(len, zz, zzOff + 1);
+        return c == 0 ? 0 : inc(extLen, zz, zzOff + 1);
+    }
+
+    public static int[] copy(int len, int[] x)
+    {
+        int[] z = new int[len];
+        System.arraycopy(x, 0, z, 0, len);
+        return z;
     }
 
     public static int[] create(int len)
     {
         return new int[len];
-    }
-
-    public static int[] createExt(int len)
-    {
-        int extLen = len << 1;
-        return new int[extLen];
     }
 
     public static int dec(int len, int[] z, int zOff)
@@ -106,13 +94,26 @@ public abstract class Nat
         return -1;
     }
 
-    public static int[] fromBigInteger(int len, BigInteger x)
+    public static boolean eq(int len, int[] x, int[] y)
     {
-        if (x.signum() < 0 || x.bitLength() > (len << 5))
+        for (int i = len - 1; i >= 0; --i)
+        {
+            if (x[i] != y[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int[] fromBigInteger(int bits, BigInteger x)
+    {
+        if (x.signum() < 0 || x.bitLength() > bits)
         {
             throw new IllegalArgumentException();
         }
 
+        int len = (bits + 31) >> 5;
         int[] z = create(len);
         int i = 0;
         while (x.signum() != 0)
@@ -152,41 +153,12 @@ public abstract class Nat
         return true;
     }
 
-    public static boolean gteExt(int len, int[] xx, int[] yy)
-    {
-        int extLen = len << 1;
-        for (int i = extLen - 1; i >= 0; --i)
-        {
-            int xx_i = xx[i] ^ Integer.MIN_VALUE;
-            int yy_i = yy[i] ^ Integer.MIN_VALUE;
-            if (xx_i < yy_i)
-                return false;
-            if (xx_i > yy_i)
-                return true;
-        }
-        return true;
-    }
-
     public static int inc(int len, int[] z, int zOff)
     {
         // assert zOff <= len;
         for (int i = zOff; i < len; ++i)
         {
             if (++z[i] != 0)
-            {
-                return 0;
-            }
-        }
-        return 1;
-    }
-
-    public static int incExt(int len, int[] zz, int zzOff)
-    {
-        int extLen = len;
-        // assert zzOff <= extLen;
-        for (int i = zzOff; i < extLen; ++i)
-        {
-            if (++zz[i] != 0)
             {
                 return 0;
             }
@@ -222,38 +194,24 @@ public abstract class Nat
         return true;
     }
 
-    public static boolean isZeroExt(int len, int[] xx)
-    {
-        int extLen = len << 1;
-        for (int i = 0; i < extLen; ++i)
-        {
-            if (xx[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public static void mul(int len, int[] x, int[] y, int[] zz)
     {
         zz[len] = mulWordExt(len, x[0], y, zz, 0);
 
         for (int i = 1; i < len; ++i)
         {
-            zz[i + len] = mulWordAddExt(len, x[i], y, 0, zz, i);
+            zz[i + len] = mulWordAddExt(len, x[i], y, zz, i);
         }
     }
 
-    public static int mulWordAddExt(int len, int x, int[] yy, int yyOff, int[] zz, int zzOff)
+    public static int mulWordAddExt(int len, int x, int[] y, int[] zz, int zzOff)
     {
-        // assert yyOff <= len;
         // assert zzOff <= len;
         long c = 0, xVal = x & M;
         int i = 0;
         do
         {
-            c += xVal * (yy[yyOff + i] & M) + (zz[zzOff + i] & M);
+            c += xVal * (y[i] & M) + (zz[zzOff + i] & M);
             zz[zzOff + i] = (int)c;
             c >>>= 32;
         }
@@ -292,13 +250,13 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int shiftDownBit(int[] x, int xLen, int c)
+    public static int shiftDownBit(int len, int[] z, int c)
     {
-        int i = xLen;
+        int i = len;
         while (--i >= 0)
         {
-            int next = x[i];
-            x[i] = (next >>> 1) | (c << 31);
+            int next = z[i];
+            z[i] = (next >>> 1) | (c << 31);
             c = next;
         }
         return c << 31;
@@ -316,37 +274,50 @@ public abstract class Nat
         return c << 31;
     }
 
-    public static int shiftDownBits(int[] x, int xLen, int bits, int c)
+    public static int shiftDownBits(int len, int[] z, int bits, int c)
     {
 //        assert bits > 0 && bits < 32;
-        int i = xLen;
+        int i = len;
         while (--i >= 0)
         {
-            int next = x[i];
-            x[i] = (next >>> bits) | (c << -bits);
+            int next = z[i];
+            z[i] = (next >>> bits) | (c << -bits);
             c = next;
         }
         return c << -bits;
     }
 
-    public static int shiftDownWord(int[] x, int xLen, int c)
+    public static int shiftDownBitsExt(int len, int[] xx, int xxOff, int bits, int c, int[] z)
     {
-        int i = xLen;
+//        assert bits > 0 && bits < 32;
+        int i = len;
         while (--i >= 0)
         {
-            int next = x[i];
-            x[i] = c;
+            int next = xx[xxOff + i];
+            z[i] = (next >>> bits) | (c << -bits);
+            c = next;
+        }
+        return c << -bits;
+    }
+
+    public static int shiftDownWord(int len, int[] z, int c)
+    {
+        int i = len;
+        while (--i >= 0)
+        {
+            int next = z[i];
+            z[i] = c;
             c = next;
         }
         return c;
     }
 
-    public static int shiftUpBit(int[] x, int xLen, int c)
+    public static int shiftUpBit(int len, int[] z, int c)
     {
-        for (int i = 0; i < xLen; ++i)
+        for (int i = 0; i < len; ++i)
         {
-            int next = x[i];
-            x[i] = (next << 1) | (c >>> 31);
+            int next = z[i];
+            z[i] = (next << 1) | (c >>> 31);
             c = next;
         }
         return c >>> 31;
@@ -384,7 +355,7 @@ public abstract class Nat
             addWordExt(len, c, zz, i << 1);
         }
 
-        shiftUpBit(zz, extLen, x[0] << 31);
+        shiftUpBit(extLen, zz, x[0] << 31);
     }
 
     public static int squareWordAddExt(int len, int[] x, int xPos, int[] zz)
@@ -438,19 +409,6 @@ public abstract class Nat
         z[1] = (int)c;
         c >>= 32;
         return c == 0 ? 0 : dec(len, z, 2);
-    }
-
-    public static int subExt(int len, int[] xx, int[] yy, int[] zz)
-    {
-        int extLen = len << 1;
-        long c = 0;
-        for (int i = 0; i < extLen; ++i)
-        {
-            c += (xx[i] & M) - (yy[i] & M);
-            zz[i] = (int)c;
-            c >>= 32;
-        }
-        return (int)c;
     }
 
     public static int subFromExt(int len, int[] x, int xOff, int[] zz, int zzOff)
