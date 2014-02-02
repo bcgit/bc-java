@@ -67,7 +67,6 @@ public class SecP256R1Point extends ECPoint
         return this.getAffineYCoord().testBitZero();
     }
 
-    // B.3 pg 62
     public ECPoint add(ECPoint b)
     {
         if (this.isInfinity())
@@ -191,7 +190,6 @@ public class SecP256R1Point extends ECPoint
         return new SecP256R1Point(curve, X3, Y3, zs, this.withCompression);
     }
 
-    // B.3 pg 62
     public ECPoint twice()
     {
         if (this.isInfinity())
@@ -299,7 +297,6 @@ public class SecP256R1Point extends ECPoint
         return twice().add(this);
     }
 
-    // D.3.2 pg 102 (see Note:)
     public ECPoint subtract(ECPoint b)
     {
         if (b.isInfinity())

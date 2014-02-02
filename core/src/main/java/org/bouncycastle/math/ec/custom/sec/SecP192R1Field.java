@@ -83,28 +83,39 @@ public class SecP192R1Field
         }
     }
 
-    public static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] xx, int[] z)
     {
-        long t06 = tt[6] & M, t07 = tt[7] & M, t08 = tt[8] & M;
-        long t09 = tt[9] & M, t10 = tt[10] & M, t11 = tt[11] & M;
+        long xx06 = xx[6] & M, xx07 = xx[7] & M, xx08 = xx[8] & M;
+        long xx09 = xx[9] & M, xx10 = xx[10] & M, xx11 = xx[11] & M;
+
+        long t0 = xx06 + xx10;
+        long t1 = xx07 + xx11;
 
         long cc = 0;
-        cc += (tt[0] & M) + t06 + t10;
+        cc += (xx[0] & M) + t0;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (tt[1] & M) + t07 + t11;
+        cc += (xx[1] & M) + t1;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (tt[2] & M) + t06 + t08 + t10;
+
+        t0 += xx08;
+        t1 += xx09;
+
+        cc += (xx[2] & M) + t0;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (tt[3] & M) + t07 + t09 + t11;
+        cc += (xx[3] & M) + t1;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (tt[4] & M) + t08 + t10;
+
+        t0 -= xx06;
+        t1 -= xx07;
+
+        cc += (xx[4] & M) + t0;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (tt[5] & M) + t09 + t11;
+        cc += (xx[5] & M) + t1;
         z[5] = (int)cc;
         cc >>= 32;
 

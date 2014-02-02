@@ -13,6 +13,7 @@ import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP192R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -87,6 +88,22 @@ public class CustomNamedCurves
         }
     };
 
+    /*
+     * secp521r1
+     */
+    static X9ECParametersHolder secp521r1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = Hex.decode("D09E8800291CB85396CC6717393284AAA0DA64BA");
+            ECCurve curve = configureCurve(new SecP521R1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "00C6858E06B70404E9CD9E3ECB662395B4429C648139053FB521F828AF606B4D3DBAA14B5E77EFE75928FE1DC127A2FFA8DE3348B3C1856A429BF97E7E31C2E5BD66"
+                + "011839296A789A3BC0045C8A5FB42C7D1BD998F54449579B446817AFBD17273E662C97EE72995EF42640C550B9013FAD0761353C7086A272C24088BE94769FD16650"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
     static final Hashtable objIds = new Hashtable();
     static final Hashtable curves = new Hashtable();
     static final Hashtable names = new Hashtable();
@@ -104,9 +121,11 @@ public class CustomNamedCurves
         defineCurve("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
         defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
         defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
+        defineCurve("secp521r1", SECObjectIdentifiers.secp521r1, secp521r1);
 
         objIds.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
         objIds.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
+        objIds.put(Strings.toLowerCase("P-521"), SECObjectIdentifiers.secp521r1);
     }
 
     public static X9ECParameters getByName(String name)
