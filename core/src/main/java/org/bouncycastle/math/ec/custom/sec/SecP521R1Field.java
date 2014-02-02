@@ -87,6 +87,18 @@ public class SecP521R1Field
         z[16] = c;
     }
 
+    public static void reduce23(int[] z)
+    {
+        int z16 = z[16];
+        int c = Nat.addWord(16, z16 >>> 9, z) + (z16 & P16);
+        if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
+        {
+            c += Nat.inc(16, z, 0);
+            c &= P16;
+        }
+        z[16] = c;
+    }
+
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat.create(34);

@@ -59,6 +59,14 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int addWord(int len, int x, int[] z)
+    {
+        long c = (x & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(len, z, 1);
+    }
+
     public static int addWordExt(int len, int x, int[] zz, int zzOff)
     {
         int extLen = len << 1;
@@ -332,6 +340,30 @@ public abstract class Nat
             c = next;
         }
         return c >>> 31;
+    }
+
+    public static int shiftUpBits(int len, int[] z, int bits, int c)
+    {
+//        assert bits > 0 && bits < 32;
+        for (int i = 0; i < len; ++i)
+        {
+            int next = z[i];
+            z[i] = (next << bits) | (c >>> -bits);
+            c = next;
+        }
+        return c >>> -bits;
+    }
+
+    public static int shiftUpBits(int len, int[] x, int bits, int c, int[] z)
+    {
+//        assert bits > 0 && bits < 32;
+        for (int i = 0; i < len; ++i)
+        {
+            int next = x[i];
+            z[i] = (next << bits) | (c >>> -bits);
+            c = next;
+        }
+        return c >>> -bits;
     }
 
     public static void square(int len, int[] x, int[] zz)
