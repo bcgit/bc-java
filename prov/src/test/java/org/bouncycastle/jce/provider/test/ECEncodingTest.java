@@ -120,8 +120,8 @@ public class ECEncodingTest
             {
                 ((ECPointEncoder)pubKey).setPointFormat("UNCOMPRESSED");
             }
-            byte[] x = pubKey.getQ().getX().toBigInteger().toByteArray();
-            byte[] y = pubKey.getQ().getY().toBigInteger().toByteArray();
+            byte[] x = pubKey.getQ().getAffineXCoord().toBigInteger().toByteArray();
+            byte[] y = pubKey.getQ().getAffineYCoord().toBigInteger().toByteArray();
             if (x.length == y.length)
             {
                 success = true;

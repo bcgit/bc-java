@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.params;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.security.spec.AlgorithmParameterSpec;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,6 +13,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SkeinDigest;
 import org.bouncycastle.crypto.digests.SkeinEngine;
 import org.bouncycastle.crypto.macs.SkeinMac;
+import org.bouncycastle.util.Integers;
 
 /**
  * Parameters for the Skein hash function - a series of byte[] strings identified by integer tags.
@@ -36,7 +36,7 @@ import org.bouncycastle.crypto.macs.SkeinMac;
  * @see SkeinMac
  */
 public class SkeinParameters
-    implements CipherParameters, AlgorithmParameterSpec
+    implements CipherParameters
 {
     /**
      * The parameter type for a secret key, supporting MAC or KDF functions: {@value
@@ -105,7 +105,7 @@ public class SkeinParameters
      */
     public byte[] getKey()
     {
-        return (byte[])parameters.get(Integer.valueOf(PARAM_TYPE_KEY));
+        return (byte[])parameters.get(Integers.valueOf(PARAM_TYPE_KEY));
     }
 
     /**
@@ -114,7 +114,7 @@ public class SkeinParameters
      */
     public byte[] getPersonalisation()
     {
-        return (byte[])parameters.get(Integer.valueOf(PARAM_TYPE_PERSONALISATION));
+        return (byte[])parameters.get(Integers.valueOf(PARAM_TYPE_PERSONALISATION));
     }
 
     /**
@@ -123,7 +123,7 @@ public class SkeinParameters
      */
     public byte[] getPublicKey()
     {
-        return (byte[])parameters.get(Integer.valueOf(PARAM_TYPE_PUBLIC_KEY));
+        return (byte[])parameters.get(Integers.valueOf(PARAM_TYPE_PUBLIC_KEY));
     }
 
     /**
@@ -132,7 +132,7 @@ public class SkeinParameters
      */
     public byte[] getKeyIdentifier()
     {
-        return (byte[])parameters.get(Integer.valueOf(PARAM_TYPE_KEY_IDENTIFIER));
+        return (byte[])parameters.get(Integers.valueOf(PARAM_TYPE_KEY_IDENTIFIER));
     }
 
     /**
@@ -141,7 +141,7 @@ public class SkeinParameters
      */
     public byte[] getNonce()
     {
-        return (byte[])parameters.get(Integer.valueOf(PARAM_TYPE_NONCE));
+        return (byte[])parameters.get(Integers.valueOf(PARAM_TYPE_NONCE));
     }
 
     /**
@@ -153,6 +153,16 @@ public class SkeinParameters
 
         public Builder()
         {
+        }
+
+        public Builder(Hashtable paramsMap)
+        {
+            Enumeration keys = paramsMap.keys();
+            while (keys.hasMoreElements())
+            {
+                Integer key = (Integer)keys.nextElement();
+                parameters.put(key, paramsMap.get(key));
+            }
         }
 
         public Builder(SkeinParameters params)
@@ -194,7 +204,7 @@ public class SkeinParameters
                 throw new IllegalArgumentException("Parameter type " + PARAM_TYPE_CONFIG
                     + " is reserved for internal use.");
             }
-            this.parameters.put(Integer.valueOf(type), value);
+            this.parameters.put(Integers.valueOf(type), value);
             return this;
         }
 
@@ -243,7 +253,7 @@ public class SkeinParameters
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Byte I/O failed.", e);
+                throw new IllegalStateException("Byte I/O failed: " + e);
             }
         }
 

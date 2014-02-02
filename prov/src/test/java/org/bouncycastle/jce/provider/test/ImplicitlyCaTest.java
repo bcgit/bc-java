@@ -122,12 +122,12 @@ public class ImplicitlyCaTest
 
         testEncoding(sKey, vKey);
 
-        ECPublicKey vKey2 = (ECPublicKey)fact.generatePublic(new ECPublicKeySpec(vKey.getQ(), ecSpec));
-        ECPrivateKey sKey2 = (ECPrivateKey)fact.generatePrivate(new ECPrivateKeySpec(sKey.getD(), ecSpec));
+        ECPublicKey vKey2 = (ECPublicKey)fact.generatePublic(new ECPublicKeySpec(vKey.getQ(), null));
+        ECPrivateKey sKey2 = (ECPrivateKey)fact.generatePrivate(new ECPrivateKeySpec(sKey.getD(), null));
 
         if (!vKey.equals(vKey2) || vKey.hashCode() != vKey2.hashCode())
         {
-            fail("private equals/hashCode failed");
+            fail("public equals/hashCode failed");
         }
 
         if (!sKey.equals(sKey2) || sKey.hashCode() != sKey2.hashCode())

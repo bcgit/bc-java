@@ -2,12 +2,9 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
-import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.generators.PKCS5S1ParametersGenerator;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.util.encoders.Hex;
 
 public class GOST3411DigestTest
     extends DigestTest
@@ -62,8 +59,6 @@ public class GOST3411DigestTest
         byte[] mac = new byte[gMac.getMacSize()];
 
         gMac.doFinal(mac, 0);
-        System.err.println("e080de3bde792327a6cccfa5dfd51e72b6829baa88d8130ed1a48822873fc7f6");
-        System.err.println(new String(Hex.encode(mac)));
     }
 
     protected Digest cloneDigest(Digest digest)
@@ -74,34 +69,6 @@ public class GOST3411DigestTest
     public static void main(
         String[]    args)
     {
-        HMac gMac = new HMac(new GOST3411Digest(GOST28147Engine.getSBox("D-Test")));
-
-        gMac.init(new KeyParameter(PKCS5S1ParametersGenerator.PKCS5PasswordToUTF8Bytes("Boss".toCharArray())));
-        byte[] iBuf = new byte[4];
-        byte[] data = Hex.decode("b5d78fa546ba645c");
-
-        gMac.update(data, 0, data.length);
-        byte[] mac = new byte[gMac.getMacSize()];
-
-        int pos = 3;
-        while (++iBuf[pos] == 0)
-        {
-            --pos;
-        }
-        gMac.update(iBuf, 0, iBuf.length);
-
-        gMac.doFinal(mac, 0);
-
-        System.err.println(mac.length + " " + new String(Hex.encode(mac)));
-
-        PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new GOST3411Digest());
-
-        pGen.init(PKCS5S1ParametersGenerator.PKCS5PasswordToUTF8Bytes("1".toCharArray()), data, 2048);
-
-        KeyParameter kp = (KeyParameter)pGen.generateDerivedMacParameters(256);
-
-        System.err.println(kp.getKey().length + " " + new String(Hex.encode(kp.getKey())));
-
         runTest(new GOST3411DigestTest());
     }
 }

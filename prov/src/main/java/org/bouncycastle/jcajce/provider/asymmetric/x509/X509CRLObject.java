@@ -54,13 +54,15 @@ import org.bouncycastle.util.encoders.Hex;
  * Delta CRL Indicator (critical)
  * Issuing Distribution Point (critical)
  */
-class X509CRLObject
+public class X509CRLObject
     extends X509CRL
 {
     private CertificateList c;
     private String sigAlgName;
     private byte[] sigAlgParams;
     private boolean isIndirect;
+    private boolean isHashCodeSet = false;
+    private int     hashCodeValue;
 
     static boolean isIndirectCRL(X509CRL crl)
         throws CRLException
@@ -78,7 +80,7 @@ class X509CRLObject
         }
     }
 
-    public X509CRLObject(
+    protected X509CRLObject(
         CertificateList c)
         throws CRLException
     {
@@ -522,19 +524,21 @@ class X509CRLObject
             throw new RuntimeException("X.509 CRL used with non X.509 Cert");
         }
 
-        TBSCertList.CRLEntry[] certs = c.getRevokedCertificates();
+        Enumeration certs = c.getRevokedCertificateEnumeration();
 
         X500Name caName = c.getIssuer();
 
-        if (certs != null)
+        if (certs.hasMoreElements())
         {
             BigInteger serial = ((X509Certificate)cert).getSerialNumber();
 
-            for (int i = 0; i < certs.length; i++)
+            while (certs.hasMoreElements())
             {
-                if (isIndirect && certs[i].hasExtensions())
+                TBSCertList.CRLEntry entry = TBSCertList.CRLEntry.getInstance(certs.nextElement());
+
+                if (isIndirect && entry.hasExtensions())
                 {
-                    Extension currentCaName = certs[i].getExtensions().getExtension(Extension.certificateIssuer);
+                    Extension currentCaName = entry.getExtensions().getExtension(Extension.certificateIssuer);
 
                     if (currentCaName != null)
                     {
@@ -542,7 +546,7 @@ class X509CRLObject
                     }
                 }
 
-                if (certs[i].getUserCertificate().getValue().equals(serial))
+                if (entry.getUserCertificate().getValue().equals(serial))
                 {
                     X500Name issuer;
 
@@ -573,6 +577,51 @@ class X509CRLObject
         }
 
         return false;
+    }
+
+    public boolean equals(Object other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+
+        if (!(other instanceof X509CRL))
+        {
+            return false;
+        }
+
+        if (other instanceof X509CRLObject)
+        {
+            X509CRLObject crlObject = (X509CRLObject)other;
+
+            if (isHashCodeSet)
+            {
+                boolean otherIsHashCodeSet = crlObject.isHashCodeSet;
+                if (otherIsHashCodeSet)
+                {
+                    if (crlObject.hashCodeValue != hashCodeValue)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return this.c.equals(crlObject.c);
+        }
+
+        return super.equals(other);
+    }
+
+    public int hashCode()
+    {
+        if (!isHashCodeSet)
+        {
+            isHashCodeSet = true;
+            hashCodeValue = super.hashCode();
+        }
+
+        return hashCodeValue;
     }
 }
 

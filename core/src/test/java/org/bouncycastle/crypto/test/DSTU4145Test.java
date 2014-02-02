@@ -20,10 +20,7 @@ public class DSTU4145Test
 {
     private static final BigInteger ZERO = BigInteger.valueOf(0);
     private static final BigInteger ONE = BigInteger.valueOf(1);
-    
-    /**
-     * @param args
-     */
+
     public static void main(String[] args)
     {
         runTest(new DSTU4145Test());
@@ -34,7 +31,7 @@ public class DSTU4145Test
         return "DSTU4145";
     }
 
-    private void Test163()
+    private void test163()
         throws Exception
     {
         SecureRandom random = new FixedSecureRandom(Hex.decode("01025e40bd97db012b7a1d79de8e12932d247f61c6"));
@@ -82,7 +79,7 @@ public class DSTU4145Test
         }
     }
 
-    private void Test173()
+    private void test173()
         throws Exception
     {
         SecureRandom random = new FixedSecureRandom(Hex.decode("0000137449348C1249971759D99C252FFE1E14D8B31F"));
@@ -130,7 +127,7 @@ public class DSTU4145Test
         }
     }
 
-    private void Test283()
+    private void test283()
         throws Exception
     {
         SecureRandom random = new FixedSecureRandom(Hex.decode("00000000245383CB3AD41BF30F5F7E8FBA858509B2D5558C92D539A6D994BFA98BC6940E"));
@@ -178,7 +175,7 @@ public class DSTU4145Test
         }
     }
 
-    private void Test431()
+    private void test431()
         throws Exception
     {
         SecureRandom random = new FixedSecureRandom(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
@@ -226,13 +223,56 @@ public class DSTU4145Test
         }
     }
 
+    private void testTruncation()
+    {
+        SecureRandom random = new FixedSecureRandom(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
+
+        // use extra long "hash" with set bits...
+        byte[] hash = Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
+        ECCurve.F2m curve = new ECCurve.F2m(173, 1, 2, 10, ZERO, new BigInteger("108576C80499DB2FC16EDDF6853BBB278F6B6FB437D9", 16));
+        ECPoint P = curve.createPoint(new BigInteger("BE6628EC3E67A91A4E470894FBA72B52C515F8AEE9", 16), new BigInteger("D9DEEDF655CF5412313C11CA566CDC71F4DA57DB45C", 16));
+        BigInteger n = new BigInteger("800000000000000000000189B4E67606E3825BB2831", 16);
+
+        BigInteger d = new BigInteger("955CD7E344303D1034E66933DC21C8044D42ADB8", 16);
+        ECPoint Q = P.multiply(d).negate();
+
+        ECDomainParameters domain = new ECDomainParameters(curve, P, n);
+        CipherParameters privKey = new ParametersWithRandom(new ECPrivateKeyParameters(d, domain), random);
+        ECPublicKeyParameters pubKey = new ECPublicKeyParameters(Q, domain);
+
+        DSTU4145Signer dstuSigner = new DSTU4145Signer();
+        dstuSigner.init(true, privKey);
+        BigInteger[] rs = dstuSigner.generateSignature(hash);
+
+        BigInteger r = new BigInteger("6bb5c0cb82e5067485458ebfe81025f03b687c63a27", 16);
+        BigInteger s = new BigInteger("34d6b1868969b86ecf934167c8fe352c63d1074bd", 16);
+
+        if (rs[0].compareTo(r) != 0)
+        {
+            fail("r component wrong");
+        }
+
+        if (rs[1].compareTo(s) != 0)
+        {
+            fail("s component wrong");
+        }
+
+        dstuSigner.init(false, pubKey);
+        if (!dstuSigner.verifySignature(hash, rs[0], rs[1]))
+        {
+            fail("verification fails");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
-        Test163();
-        Test173();
-        Test283();
-        Test431();
+        test163();
+        test173();
+        test283();
+        test431();
+        testTruncation();
     }
 
 }

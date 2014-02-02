@@ -94,6 +94,12 @@ class PGPUtil
             return "AES";
         case SymmetricKeyAlgorithmTags.AES_256:
             return "AES";
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            return "Camellia";
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            return "Camellia";
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            return "Camellia";
         case SymmetricKeyAlgorithmTags.TWOFISH:
             return "Twofish";
         default:
@@ -106,44 +112,49 @@ class PGPUtil
         byte[]          keyBytes)
         throws PGPException
     {
-        String    algName;
-        
-        switch (algorithm)
+        String    algName = getSymmetricCipherName(algorithm);
+
+        if (algName == null)
         {
-        case SymmetricKeyAlgorithmTags.TRIPLE_DES:
-            algName = "DES_EDE";
-            break;
-        case SymmetricKeyAlgorithmTags.IDEA:
-            algName = "IDEA";
-            break;
-        case SymmetricKeyAlgorithmTags.CAST5:
-            algName = "CAST5";
-            break;
-        case SymmetricKeyAlgorithmTags.BLOWFISH:
-            algName = "Blowfish";
-            break;
-        case SymmetricKeyAlgorithmTags.SAFER:
-            algName = "SAFER";
-            break;
-        case SymmetricKeyAlgorithmTags.DES:
-            algName = "DES";
-            break;
-        case SymmetricKeyAlgorithmTags.AES_128:
-            algName = "AES";
-            break;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            algName = "AES";
-            break;
-        case SymmetricKeyAlgorithmTags.AES_256:
-            algName = "AES";
-            break;
-        case SymmetricKeyAlgorithmTags.TWOFISH:
-            algName = "Twofish";
-            break;
-        default:
             throw new PGPException("unknown symmetric algorithm: " + algorithm);
         }
 
         return new SecretKeySpec(keyBytes, algName);
+    }
+
+    public static byte[] padSessionData(byte[] sessionInfo)
+    {
+        byte[] result = new byte[40];
+
+        System.arraycopy(sessionInfo, 0, result, 0, sessionInfo.length);
+
+        byte padValue = (byte)(result.length -sessionInfo.length);
+
+        for (int i =  sessionInfo.length; i != result.length; i++)
+        {
+            result[i] = padValue;
+        }
+
+        return result;
+    }
+
+    public static byte[] unpadSessionData(byte[] encoded)
+        throws PGPException
+    {
+        byte padValue = encoded[encoded.length - 1];
+
+        for (int i = encoded.length - padValue; i != encoded.length; i++)
+        {
+            if (encoded[i] != padValue)
+            {
+                throw new PGPException("bad padding found in session data");
+            }
+        }
+
+        byte[] taggedKey = new byte[encoded.length - padValue];
+
+        System.arraycopy(encoded, 0, taggedKey, 0, taggedKey.length);
+
+        return taggedKey;
     }
 }

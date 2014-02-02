@@ -5,6 +5,8 @@ import java.util.Date;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
+import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -15,6 +17,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
@@ -61,6 +64,19 @@ public class BcPGPKeyConverter
             ElGamalParameters eS = eK.getParameters();
 
             bcpgKey = new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
+        }
+        else if (pubKey instanceof ECPublicKeyParameters)
+        {
+            ECPublicKeyParameters eK = (ECPublicKeyParameters)pubKey;
+
+            if (algorithm == PGPPublicKey.EC)
+            {                                                   // TODO: KDF parameters
+                bcpgKey = new ECDHPublicBCPGKey(null, eK.getQ(), 0, 0);
+            }
+            else
+            {
+                bcpgKey = new ECDSAPublicBCPGKey(null, eK.getQ());
+            }
         }
         else
         {

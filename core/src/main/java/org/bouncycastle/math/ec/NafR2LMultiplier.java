@@ -5,26 +5,15 @@ import java.math.BigInteger;
 /**
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (right-to-left).
  */
-public class NafR2LMultiplier implements ECMultiplier
+public class NafR2LMultiplier extends AbstractECMultiplier
 {
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        if (k.signum() < 0)
-        {
-            throw new IllegalArgumentException("'k' cannot be negative");
-        }
-        if (k.signum() == 0)
-        {
-            return p.getCurve().getInfinity();
-        }
-
-        p = p.normalize();
+        int[] naf = WNafUtil.generateCompactNaf(k);
 
         ECPoint R0 = p.getCurve().getInfinity(), R1 = p;
 
-        int[] naf = WNafUtil.generateCompactNaf(k);
         int zeroes = 0;
-
         for (int i = 0; i < naf.length; ++i)
         {
             int ni = naf[i];

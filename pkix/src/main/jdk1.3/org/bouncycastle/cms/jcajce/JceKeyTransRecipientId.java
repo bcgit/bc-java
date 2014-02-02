@@ -13,7 +13,7 @@ public class JceKeyTransRecipientId
 {
     public JceKeyTransRecipientId(X509Certificate certificate)
     {
-        super(X500Name.getInstance(extractIssuer(certificate)), certificate.getSerialNumber());
+        super(X500Name.getInstance(extractIssuer(certificate)), certificate.getSerialNumber(), CMSUtils.getSubjectKeyId(certificate));
     }
 
     private static X509Principal extractIssuer(X509Certificate certificate)

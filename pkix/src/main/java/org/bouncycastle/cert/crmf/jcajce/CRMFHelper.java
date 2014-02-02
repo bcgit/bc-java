@@ -42,6 +42,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.jcajce.JcaJceHelper;
+import org.bouncycastle.jcajce.JcaJceUtils;
 
 class CRMFHelper
 {
@@ -157,7 +158,9 @@ class CRMFHelper
             throw new CRMFException("cannot create key generator: " + e.getMessage(), e);
         }
     }
-    
+
+
+
     Cipher createContentCipher(final Key sKey, final AlgorithmIdentifier encryptionAlgID)
         throws CRMFException
     {
@@ -180,7 +183,7 @@ class CRMFHelper
 
                         try
                         {
-                            params.init(sParams.getEncoded(), "ASN.1");
+                            JcaJceUtils.loadParameters(params, sParams);
                         }
                         catch (IOException e)
                         {
@@ -389,7 +392,7 @@ class CRMFHelper
         {
             try
             {
-                asn1Params = ASN1Primitive.fromByteArray(params.getEncoded("ASN.1"));
+                asn1Params = JcaJceUtils.extractParameters(params);
             }
             catch (IOException e)
             {

@@ -30,14 +30,33 @@ class CombinedHash
         this.context = context;
     }
 
-    public TlsHandshakeHash commit()
+    public TlsHandshakeHash notifyPRFDetermined()
     {
         return this;
     }
 
-    public TlsHandshakeHash fork()
+    public void trackHashAlgorithm(short hashAlgorithm)
+    {
+        throw new IllegalStateException("CombinedHash only supports calculating the legacy PRF for handshake hash");
+    }
+
+    public void sealHashAlgorithms()
+    {
+    }
+
+    public TlsHandshakeHash stopTracking()
     {
         return new CombinedHash(this);
+    }
+
+    public Digest forkPRFHash()
+    {
+        return new CombinedHash(this);
+    }
+
+    public byte[] getFinalHash(short hashAlgorithm)
+    {
+        throw new IllegalStateException("CombinedHash doesn't support multiple hashes");
     }
 
     /**

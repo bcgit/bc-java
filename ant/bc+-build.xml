@@ -146,6 +146,7 @@
                     </classpath>
                 </javac>
                 <copy todir="${build.dir}/@{target}/classes">
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.asc" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pem" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.p7m" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.message" />
@@ -160,6 +161,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
                 </copy>
                 <packJar jarbase="${artifacts.jars.dir}/@{target}">
                     <manifest-element>
@@ -170,6 +172,7 @@
                     <fileset-element>
                         <fileset dir="${build.dir}/@{target}/classes">
                             <include name="**/*.class" />
+                            <include name="**/*.asc" />
                             <include name="**/*.pem" />
                             <include name="**/*.p7m" />
                             <include name="**/*.crl" />
@@ -184,6 +187,7 @@
                             <include name="**/*.der" />
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
+                            <include name="**/*.rsp" />
                             <include name="**/*.properties" />
                         </fileset>
                     </fileset-element>
@@ -312,7 +316,6 @@
         <compile target="${provider}">
             <jarFileSet>
                 <include name="**/*.class"/>
-                <exclude name="**/IDEA*.class"/>
                 <exclude name="**/javax/crypto/**/*.class"/>
                 <exclude name="**/NTRU*.class" />
                 <exclude name="**/ntru/**/*.class" />
@@ -326,9 +329,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle Provider" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -342,9 +348,12 @@
                     <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                     <attribute name="Implementation-Version" value="${release.name}.0" />
+                    <attribute name="Application-Name" value="Bouncy Castle Provider" />
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
                     <attribute name="Codebase" value="*" />
+                    <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                    <attribute name="Caller-Allowable-Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -413,7 +422,6 @@
         <compile target="${jce}">
             <jarFileSet>
                 <include name="**/*.class"/>
-                <exclude name="**/IDEA*.class"/>
                 <exclude name="**/NTRU*.class" />
                 <exclude name="**/ntru/**/*.class" />
                 <include name="**/*.properties"/>
@@ -426,9 +434,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
-                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Application-Name" value="Bouncy Castle JCE and Provider" />
+                <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -442,9 +453,12 @@
                     <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                     <attribute name="Implementation-Version" value="${release.name}.0" />
+                    <attribute name="Application-Name" value="Bouncy Castle JCE and Provider" />
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
                     <attribute name="Codebase" value="*" />
+                    <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                    <attribute name="Caller-Allowable-Codebase" value="*" />
                 </manifest>
             </manifest-element>
             <fileset-element>
@@ -489,9 +503,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle S/MIME API" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -534,9 +551,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle PKIX API" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -581,9 +601,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
-                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Application-Name" value="Bouncy Castle OpenPGP API" />
+                <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile>
 
@@ -612,6 +635,7 @@
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
              <fileset dir="${src.dir}" includes="**/test/*.java" />
              <fileset dir="${src.dir}" includes="**/test/*/*.java" />
+             <fileset dir="${src.dir}" includes="**/*.asc" />
              <fileset dir="${src.dir}" includes="**/*.pem" />
              <fileset dir="${src.dir}" includes="**/*.p7m" />
              <fileset dir="${src.dir}" includes="**/*.eml" />
@@ -623,6 +647,7 @@
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
              <fileset dir="${src.dir}" includes="**/*.txt" />
+             <fileset dir="${src.dir}" includes="**/*.rsp" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
              <fileset dir="${src.dir}" includes="**/*.properties" />
              <fileset dir="${src.dir}" includes="**/*.message" />
@@ -637,9 +662,12 @@
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle Test Classes" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
             </manifestElements>
         </compile-test>
     </target>
@@ -931,7 +959,6 @@
 
     <target name="zip-src-jce" if="jce.present">
         <zip basedir="${jce.target.src.dir}" destfile="${jce.target.src.zip}">
-            <exclude name="**/IDEA*.java"/>
             <exclude name="**/NTRU*.java" />
             <exclude name="**/ntru/**/*.java" />
         </zip>
@@ -939,7 +966,6 @@
 
     <target name="zip-src-provider" if="provider.present">
         <zip basedir="${provider.target.src.dir}" destfile="${provider.target.src.zip}">
-            <exclude name="**/IDEA*.java"/>
             <exclude name="**/javax/crypto/**/*.java"/>
             <exclude name="**/NTRU*.java" />
             <exclude name="**/ntru/**/*.java" />

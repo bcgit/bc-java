@@ -9,9 +9,9 @@
 //import org.bouncycastle.asn1.x9.X9ECParameters;
 //import org.bouncycastle.math.ec.ECCurve;
 //import org.bouncycastle.math.ec.ECPoint;
-//import org.bouncycastle.math.ec.FpNafMultiplier;
+//import org.bouncycastle.math.ec.NafL2RMultiplier;
 //import org.bouncycastle.math.ec.ReferenceMultiplier;
-//import org.bouncycastle.math.ec.WNafMultiplier;
+//import org.bouncycastle.math.ec.WNafL2RMultiplier;
 //import org.bouncycastle.math.ec.WTauNafMultiplier;
 //
 //public class TnafTest extends TestCase
@@ -53,10 +53,10 @@
 //        p.setECMultiplier(new WTauNafMultiplier());
 //        ECPoint refRWTnaf = repeatedMultiply(p, k);
 //        long now2 = System.currentTimeMillis();
-//        p.setECMultiplier(new WNafMultiplier());
+//        p.setECMultiplier(new WNafL2RMultiplier());
 //        ECPoint refWnaf = repeatedMultiply(p, k);
 //        long now3 = System.currentTimeMillis();
-//        p.setECMultiplier(new FpNafMultiplier());
+//        p.setECMultiplier(new NafL2RMultiplier());
 //        ECPoint refFpNaf = repeatedMultiply(p, k);
 //        long now4 = System.currentTimeMillis();
 //        p.setECMultiplier(new ReferenceMultiplier());
@@ -101,10 +101,10 @@
 //
 //        BigInteger k = new BigInteger(r.bitLength(), m_rand);
 //        long now1 = System.currentTimeMillis();
-//        p.setECMultiplier(new WNafMultiplier());
+//        p.setECMultiplier(new WNafL2RMultiplier());
 //        ECPoint refWnaf = repeatedMultiply(p, k);
 //        long now2 = System.currentTimeMillis();
-//        p.setECMultiplier(new FpNafMultiplier());
+//        p.setECMultiplier(new NafL2RMultiplier());
 //        ECPoint refFpNaf = repeatedMultiply(p, k);
 //        long now3 = System.currentTimeMillis();
 //        p.setECMultiplier(new ReferenceMultiplier());

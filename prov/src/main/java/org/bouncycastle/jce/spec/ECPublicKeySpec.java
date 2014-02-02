@@ -22,7 +22,14 @@ public class ECPublicKeySpec
     {
         super(spec);
 
-        this.q = q;
+        if (q.getCurve() != null)
+        {
+            this.q = q.normalize();
+        }
+        else
+        {
+            this.q = q;
+        }
     }
 
     /**

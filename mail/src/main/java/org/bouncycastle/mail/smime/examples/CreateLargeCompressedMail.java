@@ -13,6 +13,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
+import org.bouncycastle.cms.jcajce.ZlibCompressor;
 import org.bouncycastle.mail.smime.SMIMECompressedGenerator;
 
 /**
@@ -39,7 +40,7 @@ public class CreateLargeCompressedMail
         msg.setHeader("Content-Type", "application/octet-stream");
         msg.setHeader("Content-Transfer-Encoding", "binary");
 
-        MimeBodyPart mp = gen.generate(msg, SMIMECompressedGenerator.ZLIB);
+        MimeBodyPart mp = gen.generate(msg, new ZlibCompressor());
 
         //
         // Get a Session object and create the mail message

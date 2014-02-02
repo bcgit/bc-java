@@ -16,10 +16,8 @@ public class AllTests
     {
         TestSuite suite= new TestSuite("SMIME tests");
 
-        suite.addTest(SMIMESignedTest.suite());
         suite.addTest(NewSMIMESignedTest.suite());
         suite.addTest(SignedMailValidatorTest.suite());
-        suite.addTest(SMIMEEnvelopedTest.suite());
         suite.addTest(NewSMIMEEnvelopedTest.suite());
         suite.addTest(SMIMECompressedTest.suite());
         suite.addTest(SMIMEMiscTest.suite());

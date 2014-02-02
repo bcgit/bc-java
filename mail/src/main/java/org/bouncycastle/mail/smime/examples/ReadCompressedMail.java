@@ -7,6 +7,7 @@ import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
+import org.bouncycastle.cms.jcajce.ZlibExpanderProvider;
 import org.bouncycastle.mail.smime.SMIMECompressed;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 
@@ -31,7 +32,7 @@ public class ReadCompressedMail
 
         SMIMECompressed     m = new SMIMECompressed(msg);
 
-        MimeBodyPart        res = SMIMEUtil.toMimeBodyPart(m.getContent());
+        MimeBodyPart        res = SMIMEUtil.toMimeBodyPart(m.getContent(new ZlibExpanderProvider()));
 
         System.out.println("Message Contents");
         System.out.println("----------------");

@@ -6,7 +6,7 @@ import java.math.BigInteger;
  * Class implementing the NAF (Non-Adjacent Form) multiplication algorithm (right-to-left) using
  * mixed coordinates.
  */
-public class MixedNafR2LMultiplier implements ECMultiplier
+public class MixedNafR2LMultiplier extends AbstractECMultiplier
 {
     protected int additionCoord, doublingCoord;
 
@@ -25,26 +25,19 @@ public class MixedNafR2LMultiplier implements ECMultiplier
         this.doublingCoord = doublingCoord;
     }
 
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
-        if (k.signum() < 0)
-        {
-            throw new IllegalArgumentException("'k' cannot be negative");
-        }
-        if (k.signum() == 0)
-        {
-            return p.getCurve().getInfinity();
-        }
+        ECCurve curveOrig = p.getCurve();
 
-        ECCurve curveAdd = configureCurve(p.getCurve(), additionCoord);
-        ECCurve curveDouble = configureCurve(p.getCurve(), doublingCoord);
+        ECCurve curveAdd = configureCurve(curveOrig, additionCoord);
+        ECCurve curveDouble = configureCurve(curveOrig, doublingCoord);
+
+        int[] naf = WNafUtil.generateCompactNaf(k);
 
         ECPoint Ra = curveAdd.getInfinity();
         ECPoint Td = curveDouble.importPoint(p);
 
-        int[] naf = WNafUtil.generateCompactNaf(k);
         int zeroes = 0;
-
         for (int i = 0; i < naf.length; ++i)
         {
             int ni = naf[i];
@@ -64,7 +57,7 @@ public class MixedNafR2LMultiplier implements ECMultiplier
             zeroes = 1;
         }
 
-        return p.getCurve().importPoint(Ra);
+        return curveOrig.importPoint(Ra);
     }
 
     protected ECCurve configureCurve(ECCurve c, int coord)

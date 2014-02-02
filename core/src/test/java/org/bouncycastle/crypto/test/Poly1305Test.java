@@ -1,8 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
@@ -384,16 +381,8 @@ public class Poly1305Test
     }
 
     public static void main(String[] args)
-        throws FileNotFoundException
+        throws Exception
     {
-        PrintStream fu2 = new PrintStream(new FileOutputStream("/Users/timw/projects/poly1305-donna/fu2"));
-        try
-        {
-            // System.setOut(fu2);
-            runTest(new Poly1305Test());
-        } finally
-        {
-            fu2.close();
-        }
+        runTest(new Poly1305Test());
     }
 }

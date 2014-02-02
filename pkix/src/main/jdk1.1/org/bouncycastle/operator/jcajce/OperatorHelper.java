@@ -2,14 +2,20 @@ package org.bouncycastle.operator.jcajce;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+//import java.security.spec.PSSParameterSpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,12 +33,12 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jcajce.JcaJceHelper;
+import org.bouncycastle.jcajce.JcaJceUtils;
 import org.bouncycastle.operator.OperatorCreationException;
-
-//import java.security.spec.PSSParameterSpec;
 
 class OperatorHelper
 {
@@ -67,7 +73,16 @@ class OperatorHelper
         oids.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
 
-        asymmetricWrapperAlgNames.put(new ASN1ObjectIdentifier(PKCSObjectIdentifiers.rsaEncryption.getId()), "RSA/ECB/PKCS1Padding");
+        oids.put(OIWObjectIdentifiers.idSHA1, "SHA-1");
+        oids.put(NISTObjectIdentifiers.id_sha224, "SHA-224");
+        oids.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
+        oids.put(NISTObjectIdentifiers.id_sha384, "SHA-384");
+        oids.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD-128");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD-160");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-256");
+
+        asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
 
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, "DESEDEWrap");
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMSRC2wrap, "RC2Wrap");
@@ -95,13 +110,11 @@ class OperatorHelper
         this.helper = helper;
     }
 
-Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
+    Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
         throws OperatorCreationException
     {
         try
         {
-try
-{
             String cipherName = null;
 
             if (!extraAlgNames.isEmpty())
@@ -140,17 +153,8 @@ try
             }
 
             return helper.createCipher(algorithm.getId());
-}
-catch (NoSuchAlgorithmException e)
-{
-            throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
-}
-catch (NoSuchProviderException e)
-{
-            throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
-}
         }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
         }
@@ -177,65 +181,86 @@ catch (NoSuchProviderException e)
             }
             return helper.createCipher(algorithm.getId());
         }
-        catch (NoSuchAlgorithmException e)
+        catch (Exception e)
         {
             throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
+        }
+    }
+
+    AlgorithmParameters createAlgorithmParameters(AlgorithmIdentifier cipherAlgId)
+        throws OperatorCreationException
+    {
+        AlgorithmParameters parameters;
+
+        if (cipherAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption))
+        {
+            return null;
+        }
+
+        try
+        {
+            parameters = helper.createAlgorithmParameters(cipherAlgId.getAlgorithm().getId());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            return null;   // There's a good chance there aren't any!
         }
         catch (NoSuchProviderException e)
         {
-            throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
+            throw new OperatorCreationException("cannot create algorithm parameters: " + e.getMessage(), e);
         }
-        catch (GeneralSecurityException e)
+
+        try
         {
-            throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
+            parameters.init(cipherAlgId.getParameters().toASN1Primitive().getEncoded());
         }
+        catch (IOException e)
+        {
+            throw new OperatorCreationException("cannot initialise algorithm parameters: " + e.getMessage(), e);
+        }
+
+        return parameters;
     }
 
     MessageDigest createDigest(AlgorithmIdentifier digAlgId)
         throws GeneralSecurityException
     {
-try
-{
         MessageDigest dig;
 
         try
         {
-            dig = helper.createDigest(getDigestAlgName(digAlgId.getAlgorithm()));
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            //
-            // try an alternate
-            //
-            if (oids.get(digAlgId.getAlgorithm()) != null)
-            {
-                String  digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
+		try
+		{
+		    dig = helper.createDigest(getDigestAlgName(digAlgId.getAlgorithm()));
+		}
+		catch (NoSuchAlgorithmException e)
+		{
+		    //
+		    // try an alternate
+		    //
+		    if (oids.get(digAlgId.getAlgorithm()) != null)
+		    {
+			String  digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
 
-                dig = helper.createDigest(digestAlgorithm);
-            }
-            else
-            {
-                throw e;
-            }
+			dig = helper.createDigest(digestAlgorithm);
+		    }
+		    else
+		    {
+			throw e;
+		    }
+		}
+        }
+        catch (Exception ex)
+        {
+            throw new GeneralSecurityException(ex.toString());
         }
 
         return dig;
-}
-catch (NoSuchProviderException e)
-{
-    throw new GeneralSecurityException(e.toString());
-}
-catch (NoSuchAlgorithmException e)
-{
-    throw new GeneralSecurityException(e.toString());
-}
     }
 
     Signature createSignature(AlgorithmIdentifier sigAlgId)
-        throws GeneralSecurityException
+        throws Exception
     {
-try
-{
         Signature   sig;
 
         try
@@ -260,15 +285,6 @@ try
         }
 
         return sig;
-}
-catch (NoSuchProviderException e)
-{
-    throw new GeneralSecurityException(e.toString());
-}
-catch (NoSuchAlgorithmException e)
-{
-    throw new GeneralSecurityException(e.toString());
-}
     }
 
     public Signature createRawSignature(AlgorithmIdentifier algorithm)
@@ -287,12 +303,11 @@ catch (NoSuchAlgorithmException e)
             // When the id-RSASSA-PSS algorithm identifier is used for a signature,
             // the AlgorithmIdentifier parameters field MUST contain RSASSA-PSS-params.
 /*
-Can;t do this pre-jdk1.4
             if (algorithm.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 AlgorithmParameters params = helper.createAlgorithmParameters(algName);
 
-                params.init(algorithm.getParameters().toASN1Primitive().getEncoded(), "ASN.1");
+                JcaJceUtils.loadParameters(params, algorithm.getParameters());
 
                 PSSParameterSpec spec = (PSSParameterSpec)params.getParameterSpec(PSSParameterSpec.class);
                 sig.setParameter(spec);
@@ -399,6 +414,33 @@ Can;t do this pre-jdk1.4
         catch (NoSuchProviderException e)
         {
             throw new OpCertificateException("cannot find factory provider: " + e.getMessage(), e);
+        }
+    }
+
+    public PublicKey convertPublicKey(SubjectPublicKeyInfo publicKeyInfo)
+        throws OperatorCreationException
+    {
+        try
+        {
+            KeyFactory keyFact = helper.createKeyFactory(publicKeyInfo.getAlgorithm().getAlgorithm().getId());
+
+            return keyFact.generatePublic(new X509EncodedKeySpec(publicKeyInfo.getEncoded()));
+        }
+        catch (IOException e)
+        {
+            throw new OperatorCreationException("cannot get encoded form of key: " + e.getMessage(), e);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new OperatorCreationException("cannot create key factory: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new OperatorCreationException("cannot find factory provider: " + e.getMessage(), e);
+        }
+        catch (InvalidKeySpecException e)
+        {
+            throw new OperatorCreationException("cannot create key factory: " + e.getMessage(), e);
         }
     }
 

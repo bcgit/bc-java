@@ -132,7 +132,7 @@ public class ExtendedKeyUsage
 
         while (e.hasMoreElements())
         {
-            ASN1Primitive  o = (ASN1Primitive)e.nextElement();
+            KeyPurposeId  o = KeyPurposeId.getInstance(e.nextElement());
 
             v.add(o);
             this.usageTable.put(o, o);

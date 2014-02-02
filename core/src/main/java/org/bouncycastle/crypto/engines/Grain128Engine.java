@@ -89,8 +89,7 @@ public class Grain128Engine
         System.arraycopy(iv, 0, workingIV, 0, iv.length);
         System.arraycopy(key.getKey(), 0, workingKey, 0, key.getKey().length);
 
-        setKey(workingKey, workingIV);
-        initGrain();
+        reset();
     }
 
     /**

@@ -88,6 +88,6 @@ public class UnreliableDatagramTransport
 
     private boolean lostPacket(int percentPacketLoss)
     {
-        return random.nextInt(100) < percentPacketLoss;
+        return percentPacketLoss > 0 && random.nextInt(100) < percentPacketLoss;
     }
 }

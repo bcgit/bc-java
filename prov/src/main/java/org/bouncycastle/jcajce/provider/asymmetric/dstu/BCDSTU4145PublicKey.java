@@ -36,6 +36,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Point;
 
 public class BCDSTU4145PublicKey
     implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
@@ -83,7 +85,7 @@ public class BCDSTU4145PublicKey
             {
                 org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getX().toBigInteger(), q.getY().toBigInteger(), false);
+                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
             }
             this.ecSpec = null;
         }
@@ -152,8 +154,8 @@ public class BCDSTU4145PublicKey
         return new ECParameterSpec(
             ellipticCurve,
             new ECPoint(
-                dp.getG().getX().toBigInteger(),
-                dp.getG().getY().toBigInteger()),
+                dp.getG().getAffineXCoord().toBigInteger(),
+                dp.getG().getAffineYCoord().toBigInteger()),
             dp.getN(),
             dp.getH().intValue());
     }
@@ -247,8 +249,8 @@ public class BCDSTU4145PublicKey
                 dstuParams.getNamedCurve().getId(),
                 ellipticCurve,
                 new ECPoint(
-                    spec.getG().getX().toBigInteger(),
-                    spec.getG().getY().toBigInteger()),
+                    spec.getG().getAffineXCoord().toBigInteger(),
+                    spec.getG().getAffineYCoord().toBigInteger()),
                 spec.getN(), spec.getH());
         }
         else
@@ -256,8 +258,8 @@ public class BCDSTU4145PublicKey
             ecSpec = new ECParameterSpec(
                 ellipticCurve,
                 new ECPoint(
-                    spec.getG().getX().toBigInteger(),
-                    spec.getG().getY().toBigInteger()),
+                    spec.getG().getAffineXCoord().toBigInteger(),
+                    spec.getG().getAffineYCoord().toBigInteger()),
                 spec.getN(), spec.getH().intValue());
         }
     }
@@ -345,21 +347,14 @@ public class BCDSTU4145PublicKey
 
     public ECPoint getW()
     {
-        return new ECPoint(q.getX().toBigInteger(), q.getY().toBigInteger());
+        return new ECPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()
     {
         if (ecSpec == null)
         {
-            if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
-            {
-                return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getX(), q.getY());
-            }
-            else
-            {
-                return new org.bouncycastle.math.ec.ECPoint.F2m(null, q.getX(), q.getY());
-            }
+            return q.getDetachedPoint();
         }
 
         return q;
@@ -386,8 +381,8 @@ public class BCDSTU4145PublicKey
         String nl = System.getProperty("line.separator");
 
         buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(this.q.getX().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(this.q.getY().toBigInteger().toString(16)).append(nl);
+        buf.append("            X: ").append(this.q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(this.q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
 
         return buf.toString();
     }

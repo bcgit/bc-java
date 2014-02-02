@@ -8,8 +8,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * base class for an EC Public Key.
@@ -36,7 +37,7 @@ public abstract class ECPublicBCPGKey
         ASN1ObjectIdentifier oid,
         ECPoint point)
     {
-        this.point = point;
+        this.point = point.normalize();
         this.oid = oid;
     }
 
@@ -136,11 +137,11 @@ public abstract class ECPublicBCPGKey
         {
             throw new IOException(oid.getId() + " does not match any known curve.");
         }
-        if (!(curve.getCurve() instanceof ECCurve.Fp))
+        if (!ECAlgorithms.isFpCurve(curve.getCurve()))
         {
-            throw new IOException("Only FPCurves are supported.");
+            throw new IOException("Only prime field curves are supported.");
         }
 
-        return curve.getCurve().decodePoint(encodedPoint.toByteArray());
+        return curve.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
     }
 }

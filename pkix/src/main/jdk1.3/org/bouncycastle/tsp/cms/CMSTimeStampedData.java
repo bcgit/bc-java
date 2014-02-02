@@ -90,7 +90,7 @@ public class CMSTimeStampedData
 
         System.arraycopy(timeStamps, 0, newTimeStamps, 0, timeStamps.length);
 
-        newTimeStamps[timeStamps.length] = new TimeStampAndCRL(token.toCMSSignedData().getContentInfo());
+        newTimeStamps[timeStamps.length] = new TimeStampAndCRL(token.toCMSSignedData().toASN1Structure());
 
         return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(timeStampedData.getDataUri(), timeStampedData.getMetaData(), timeStampedData.getContent(), new Evidence(new TimeStampTokenEvidence(newTimeStamps)))));
     }

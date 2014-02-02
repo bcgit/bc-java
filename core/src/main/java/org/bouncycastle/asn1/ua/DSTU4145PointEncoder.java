@@ -3,38 +3,32 @@ package org.bouncycastle.asn1.ua;
 import java.math.BigInteger;
 import java.util.Random;
 
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.Arrays;
 
 /**
  * DSTU4145 encodes points somewhat differently than X9.62
  * It compresses the point to the size of the field element
  */
-
 public abstract class DSTU4145PointEncoder
 {
-
-    private static X9IntegerConverter converter = new X9IntegerConverter();
-
-    private static BigInteger trace(ECFieldElement fe)
+    private static ECFieldElement trace(ECFieldElement fe)
     {
         ECFieldElement t = fe;
-        for (int i = 0; i < fe.getFieldSize() - 1; i++)
+        for (int i = 1; i < fe.getFieldSize(); ++i)
         {
             t = t.square().add(fe);
         }
-        return t.toBigInteger();
+        return t;
     }
 
     /**
      * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
      * D.1.6) The other solution is <code>z + 1</code>.
      *
-     * @param beta The value to solve the qradratic equation for.
+     * @param beta The value to solve the quadratic equation for.
      * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
      *         <code>null</code> if no solution exists.
      */
@@ -89,15 +83,15 @@ public abstract class DSTU4145PointEncoder
           return Arrays.copyOfRange(bytes, 1, bytes.length);*/
 
         Q = Q.normalize();
+
         ECFieldElement x = Q.getAffineXCoord();
 
-        int byteCount = converter.getByteLength(x);
-        byte[] bytes = converter.integerToBytes(x.toBigInteger(), byteCount);
+        byte[] bytes = x.getEncoded();
 
         if (!x.isZero())
         {
-            ECFieldElement y = Q.getAffineYCoord().multiply(x.invert());
-            if (trace(y).equals(ECConstants.ONE))
+            ECFieldElement z = Q.getAffineYCoord().divide(x);
+            if (trace(z).isOne())
             {
                 bytes[bytes.length - 1] |= 0x01;
             }
@@ -123,26 +117,22 @@ public abstract class DSTU4145PointEncoder
 
           return curve.decodePoint(bp_enc);*/
 
-        BigInteger k = BigInteger.valueOf(bytes[bytes.length - 1] & 0x1);
-        if (!trace(curve.fromBigInteger(new BigInteger(1, bytes))).equals(curve.getA().toBigInteger()))
-        {
-            bytes = Arrays.clone(bytes);
-            bytes[bytes.length - 1] ^= 0x01;
-        }
+        ECFieldElement k = curve.fromBigInteger(BigInteger.valueOf(bytes[bytes.length - 1] & 0x1));
+
         ECFieldElement xp = curve.fromBigInteger(new BigInteger(1, bytes));
-        ECFieldElement yp = null;
+        if (!trace(xp).equals(curve.getA()))
+        {
+            xp = xp.addOne();
+        }
+
+        ECFieldElement yp;
         if (xp.isZero())
         {
-            yp = (ECFieldElement.F2m)curve.getB();
-            for (int i = 0; i < curve.getFieldSize() - 1; i++)
-            {
-                yp = yp.square();
-            }
+            yp = curve.getB().sqrt();
         }
         else
         {
-            ECFieldElement beta = xp.add(curve.getA()).add(
-                curve.getB().multiply(xp.square().invert()));
+            ECFieldElement beta = xp.square().invert().multiply(curve.getB()).add(curve.getA()).add(xp);
             ECFieldElement z = solveQuadraticEquation(curve, beta);
             if (z == null)
             {
@@ -150,12 +140,11 @@ public abstract class DSTU4145PointEncoder
             }
             if (!trace(z).equals(k))
             {
-                z = z.add(curve.fromBigInteger(ECConstants.ONE));
+                z = z.addOne();
             }
             yp = xp.multiply(z);
         }
 
-        return new ECPoint.F2m(curve, xp, yp);
+        return curve.createPoint(xp.toBigInteger(), yp.toBigInteger());
     }
-
 }

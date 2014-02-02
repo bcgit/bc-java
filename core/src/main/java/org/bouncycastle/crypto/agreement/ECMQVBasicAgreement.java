@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 public class ECMQVBasicAgreement
@@ -39,6 +40,11 @@ public class ECMQVBasicAgreement
             privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
             pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey()).normalize();
 
+        if (agreement.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid agreement value for MQV");
+        }
+
         return agreement.getAffineXCoord().toBigInteger();
     }
 
@@ -55,41 +61,31 @@ public class ECMQVBasicAgreement
         int e = (n.bitLength() + 1) / 2;
         BigInteger powE = ECConstants.ONE.shiftLeft(e);
 
-        // The Q2U public key is optional
-        ECPoint qU;
-        if (Q2U == null)
-        {
-            qU = parameters.getG().multiply(d2U.getD());
-        }
-        else
-        {
-            qU = Q2U.getQ();
-        }
+        ECCurve curve = parameters.getCurve();
 
-        qU = qU.normalize();
+        ECPoint[] points = new ECPoint[]{
+            // The Q2U public key is optional
+            ECAlgorithms.importPoint(curve, Q2U == null ? parameters.getG().multiply(d2U.getD()) : Q2U.getQ()),
+            ECAlgorithms.importPoint(curve, Q1V.getQ()),
+            ECAlgorithms.importPoint(curve, Q2V.getQ())
+        };
 
-        BigInteger x = qU.getAffineXCoord().toBigInteger();
+        curve.normalizeAll(points);
+
+        ECPoint q2u = points[0], q1v = points[1], q2v = points[2];
+
+        BigInteger x = q2u.getAffineXCoord().toBigInteger();
         BigInteger xBar = x.mod(powE);
         BigInteger Q2UBar = xBar.setBit(e);
-        BigInteger s = d1U.getD().multiply(Q2UBar).mod(n).add(d2U.getD()).mod(n);
+        BigInteger s = d1U.getD().multiply(Q2UBar).add(d2U.getD()).mod(n);
 
-        ECPoint qV = Q2V.getQ().normalize();
-
-        BigInteger xPrime = qV.getAffineXCoord().toBigInteger();
+        BigInteger xPrime = q2v.getAffineXCoord().toBigInteger();
         BigInteger xPrimeBar = xPrime.mod(powE);
         BigInteger Q2VBar = xPrimeBar.setBit(e);
 
         BigInteger hs = parameters.getH().multiply(s).mod(n);
 
-//        ECPoint p = Q1V.getQ().multiply(Q2VBar).add(Q2V.getQ()).multiply(hs);
-        ECPoint p = ECAlgorithms.sumOfTwoMultiplies(
-            Q1V.getQ(), Q2VBar.multiply(hs).mod(n), Q2V.getQ(), hs).normalize();
-
-        if (p.isInfinity())
-        {
-            throw new IllegalStateException("Infinity is not a valid agreement value for MQV");
-        }
-
-        return p;
+        return ECAlgorithms.sumOfTwoMultiplies(
+            q1v, Q2VBar.multiply(hs).mod(n), q2v, hs);
     }
 }

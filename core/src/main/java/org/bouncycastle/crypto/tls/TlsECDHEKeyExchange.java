@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -56,7 +57,7 @@ public class TlsECDHEKeyExchange
             for (int i = 0; i < namedCurves.length; ++i)
             {
                 int entry = namedCurves[i];
-                if (TlsECCUtils.isSupportedNamedCurve(entry))
+                if (NamedCurve.isValid(entry) && TlsECCUtils.isSupportedNamedCurve(entry))
                 {
                     namedCurve = entry;
                     break;
@@ -74,11 +75,11 @@ public class TlsECDHEKeyExchange
             /*
              * If no named curves are suitable, check if the client supports explicit curves.
              */
-            if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
+            if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
             {
                 curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
             }
-            else if (TlsProtocol.arrayContains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
+            else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
             {
                 curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
             }
@@ -110,7 +111,28 @@ public class TlsECDHEKeyExchange
         ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
         TlsECCUtils.writeECPoint(clientECPointFormats, ecPublicKey.getQ(), buf);
 
-        Digest d = new CombinedHash();
+        /*
+         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+         */
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+        Digest d;
+
+        if (TlsUtils.isTLSv12(context))
+        {
+            signatureAndHashAlgorithm = serverCredentials.getSignatureAndHashAlgorithm();
+            if (signatureAndHashAlgorithm == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            d = TlsUtils.createHash(signatureAndHashAlgorithm.getHash());
+        }
+        else
+        {
+            signatureAndHashAlgorithm = null;
+            d = new CombinedHash();
+        }
+
         SecurityParameters securityParameters = context.getSecurityParameters();
         d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
@@ -121,10 +143,7 @@ public class TlsECDHEKeyExchange
 
         byte[] signature = serverCredentials.generateCertificateSignature(hash);
 
-        /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-         */
-        DigitallySigned signed_params = new DigitallySigned(null, signature);
+        DigitallySigned signed_params = new DigitallySigned(signatureAndHashAlgorithm, signature);
         signed_params.encode(buf);
 
         return buf.toByteArray();

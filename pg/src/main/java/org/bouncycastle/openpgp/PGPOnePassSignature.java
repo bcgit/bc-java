@@ -59,12 +59,11 @@ public class PGPOnePassSignature
         initVerify(pubKey, PGPUtil.getProvider(provider));
     }
 
-        /**
+    /**
      * Initialise the signature object for verification.
      *
      * @param pubKey
      * @param provider
-     * @throws NoSuchProviderException
      * @throws PGPException
      * @deprecated use init() method.
      */

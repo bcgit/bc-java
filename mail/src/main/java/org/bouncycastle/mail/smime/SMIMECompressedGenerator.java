@@ -11,6 +11,7 @@ import javax.mail.internet.MimeMessage;
 
 import org.bouncycastle.cms.CMSCompressedDataGenerator;
 import org.bouncycastle.cms.CMSCompressedDataStreamGenerator;
+import org.bouncycastle.operator.OutputCompressor;
 
 /**
  * General class for generating a pkcs7-mime compressed message.
@@ -49,14 +50,14 @@ public class SMIMECompressedGenerator
      */
     private MimeBodyPart make(
         MimeBodyPart    content,
-        String          compressionOID)
+        OutputCompressor compressor)
         throws SMIMEException
     {
         try
         {  
             MimeBodyPart data = new MimeBodyPart();
         
-            data.setContent(new ContentCompressor(content, compressionOID), COMPRESSED_CONTENT_TYPE);
+            data.setContent(new ContentCompressor(content, compressor), COMPRESSED_CONTENT_TYPE);
             data.addHeader("Content-Type", COMPRESSED_CONTENT_TYPE);
             data.addHeader("Content-Disposition", "attachment; filename=\"smime.p7z\"");
             data.addHeader("Content-Description", "S/MIME Compressed Message");
@@ -77,10 +78,10 @@ public class SMIMECompressedGenerator
      */
     public MimeBodyPart generate(
         MimeBodyPart    content,
-        String          compressionOID)
+        OutputCompressor compressor)
         throws SMIMEException
     {
-        return make(makeContentBodyPart(content), compressionOID);
+        return make(makeContentBodyPart(content), compressor);
     }
 
     /**
@@ -90,7 +91,7 @@ public class SMIMECompressedGenerator
      */
     public MimeBodyPart generate(
         MimeMessage     message,
-        String          compressionOID)
+        OutputCompressor compressor)
         throws SMIMEException
     {
         try
@@ -102,21 +103,21 @@ public class SMIMECompressedGenerator
             throw new SMIMEException("unable to save message", e);
         }
                         
-        return make(makeContentBodyPart(message), compressionOID);
+        return make(makeContentBodyPart(message), compressor);
     }
     
     private class ContentCompressor
         implements SMIMEStreamingProcessor
     {
-        private final MimeBodyPart _content;
-        private final String _compressionOid;
+        private final MimeBodyPart content;
+        private final OutputCompressor compressor;
         
         ContentCompressor(
             MimeBodyPart content,
-            String       compressionOid)
+            OutputCompressor compressor)
         {
-            _content = content;
-            _compressionOid = compressionOid;
+            this.content = content;
+            this.compressor = compressor;
         }
 
         public void write(OutputStream out)
@@ -124,11 +125,11 @@ public class SMIMECompressedGenerator
         {
             CMSCompressedDataStreamGenerator cGen = new CMSCompressedDataStreamGenerator();
             
-            OutputStream compressed = cGen.open(out, _compressionOid);
+            OutputStream compressed = cGen.open(out, compressor);
             
             try
             {
-                _content.writeTo(compressed);
+                content.writeTo(compressed);
                 
                 compressed.close();
             }

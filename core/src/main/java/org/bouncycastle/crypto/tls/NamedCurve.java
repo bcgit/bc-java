@@ -36,6 +36,13 @@ public class NamedCurve
     public static final int secp256r1 = 23;
     public static final int secp384r1 = 24;
     public static final int secp521r1 = 25;
+    
+    /*
+     * RFC 7027
+     */
+    public static final int brainpoolP256r1 = 26;
+    public static final int brainpoolP384r1 = 27;
+    public static final int brainpoolP512r1 = 28;
 
     /*
      * reserved (0xFE00..0xFEFF)
@@ -43,6 +50,12 @@ public class NamedCurve
 
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
+
+    public static boolean isValid(int namedCurve)
+    {
+        return (namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1)
+            || (namedCurve >= arbitrary_explicit_prime_curves && namedCurve <= arbitrary_explicit_char2_curves);
+    }
 
     public static boolean refersToASpecificNamedCurve(int namedCurve)
     {
@@ -55,5 +68,4 @@ public class NamedCurve
             return true;
         }
     }
-
 }

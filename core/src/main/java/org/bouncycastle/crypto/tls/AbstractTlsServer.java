@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Arrays;
+
 public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer
@@ -17,6 +19,7 @@ public abstract class AbstractTlsServer
     protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
+    protected boolean encryptThenMACOffered;
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
     protected Vector supportedSignatureAlgorithms;
@@ -37,6 +40,11 @@ public abstract class AbstractTlsServer
     public AbstractTlsServer(TlsCipherFactory cipherFactory)
     {
         this.cipherFactory = cipherFactory;
+    }
+
+    protected boolean allowEncryptThenMAC()
+    {
+        return true;
     }
 
     protected boolean allowTruncatedHMac()
@@ -83,7 +91,8 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < namedCurves.length; ++i)
         {
             int namedCurve = namedCurves[i];
-            if (!NamedCurve.refersToASpecificNamedCurve(namedCurve) || TlsECCUtils.isSupportedNamedCurve(namedCurve))
+            if (NamedCurve.isValid(namedCurve)
+                && (!NamedCurve.refersToASpecificNamedCurve(namedCurve) || TlsECCUtils.isSupportedNamedCurve(namedCurve)))
             {
                 return true;
             }
@@ -123,6 +132,7 @@ public abstract class AbstractTlsServer
 
         if (clientExtensions != null)
         {
+            this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
             this.maxFragmentLengthOffered = TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions);
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
 
@@ -194,8 +204,10 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < cipherSuites.length; ++i)
         {
             int cipherSuite = cipherSuites[i];
-            if (TlsProtocol.arrayContains(this.offeredCipherSuites, cipherSuite)
-                && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite)))
+
+            if (Arrays.contains(this.offeredCipherSuites, cipherSuite)
+                && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite))
+                && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion))
             {
                 return this.selectedCipherSuite = cipherSuite;
             }
@@ -209,7 +221,7 @@ public abstract class AbstractTlsServer
         short[] compressionMethods = getCompressionMethods();
         for (int i = 0; i < compressionMethods.length; ++i)
         {
-            if (TlsProtocol.arrayContains(offeredCompressionMethods, compressionMethods[i]))
+            if (Arrays.contains(offeredCompressionMethods, compressionMethods[i]))
             {
                 return this.selectedCompressionMethod = compressionMethods[i];
             }
@@ -221,6 +233,11 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
+        if (this.encryptThenMACOffered && allowEncryptThenMAC())
+        {
+            TlsExtensionsUtils.addEncryptThenMACExtension(checkServerExtensions());
+        }
+
         if (this.maxFragmentLengthOffered >= 0)
         {
             TlsExtensionsUtils.addMaxFragmentLengthExtension(checkServerExtensions(), this.maxFragmentLengthOffered);
@@ -238,8 +255,8 @@ public abstract class AbstractTlsServer
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
-            this.serverECPointFormats = new short[]{ ECPointFormat.ansiX962_compressed_char2,
-                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.uncompressed };
+            this.serverECPointFormats = new short[]{ ECPointFormat.uncompressed,
+                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
             TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), serverECPointFormats);
         }

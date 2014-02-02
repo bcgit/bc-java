@@ -18,6 +18,7 @@ public abstract class JceKEKRecipient
 
     protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     protected EnvelopedDataHelper contentHelper = helper;
+    protected boolean validateKeySize = false;
 
     public JceKEKRecipient(SecretKey recipientKey)
     {
@@ -78,14 +79,37 @@ public abstract class JceKEKRecipient
         return this;
     }
 
-    protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)
+    /**
+     * Set validation of retrieved key sizes against the algorithm parameters for the encrypted key where possible - default is off.
+     * <p>
+     * This setting will not have any affect if the encryption algorithm in the recipient does not specify a particular key size, or
+     * if the unwrapper is a HSM and the byte encoding of the unwrapped secret key is not available.
+     * </p>
+     * @param doValidate true if unwrapped key's should be validated against the content encryption algorithm, false otherwise.
+     * @return this recipient.
+     */
+    public JceKEKRecipient setKeySizeValidation(boolean doValidate)
+    {
+        this.validateKeySize = doValidate;
+
+        return this;
+    }
+
+    protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedContentEncryptionKey)
         throws CMSException
     {
         SymmetricKeyUnwrapper unwrapper = helper.createSymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey);
 
         try
         {
-            return helper.getJceKey(contentEncryptionAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(contentEncryptionAlgorithm, encryptedContentEncryptionKey));
+            Key key =  helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedContentEncryptionKey));
+
+            if (validateKeySize)
+            {
+                helper.keySizeCheck(encryptedKeyAlgorithm, key);
+            }
+
+            return key;
         }
         catch (OperatorException e)
         {

@@ -4,21 +4,21 @@ import org.bouncycastle.util.Arrays;
 
 public class BasicGCMExponentiator implements GCMExponentiator
 {
-    private byte[] x;
+    private int[] x;
 
     public void init(byte[] x)
     {
-        this.x = Arrays.clone(x);
+        this.x = GCMUtil.asInts(x);
     }
 
     public void exponentiateX(long pow, byte[] output)
     {
         // Initial value is little-endian 1
-        byte[] y = GCMUtil.oneAsBytes();
+        int[] y = GCMUtil.oneAsInts();
 
         if (pow > 0)
         {
-            byte[] powX = Arrays.clone(x);
+            int[] powX = Arrays.clone(x);
             do
             {
                 if ((pow & 1L) != 0)
@@ -31,6 +31,6 @@ public class BasicGCMExponentiator implements GCMExponentiator
             while (pow > 0);
         }
 
-        System.arraycopy(y, 0, output, 0, 16);
+        GCMUtil.asBytes(y, output);
     }
 }

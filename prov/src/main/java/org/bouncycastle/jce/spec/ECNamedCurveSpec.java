@@ -6,6 +6,7 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 
 /**
@@ -21,9 +22,9 @@ public class ECNamedCurveSpec
         ECCurve  curve,
         byte[]   seed)
     {
-        if (curve instanceof ECCurve.Fp)
+        if (ECAlgorithms.isFpCurve(curve))
         {
-            return new EllipticCurve(new ECFieldFp(((ECCurve.Fp)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), seed);
+            return new EllipticCurve(new ECFieldFp(curve.getField().getCharacteristic()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), seed);
         }
         else
         {
@@ -49,7 +50,8 @@ public class ECNamedCurveSpec
     private static ECPoint convertPoint(
         org.bouncycastle.math.ec.ECPoint  g)
     {
-        return new ECPoint(g.getX().toBigInteger(), g.getY().toBigInteger());
+        g = g.normalize();
+        return new ECPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger());
     }
     
     public ECNamedCurveSpec(

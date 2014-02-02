@@ -29,11 +29,6 @@ public class CertificateRequest
     protected Vector supportedSignatureAlgorithms;
     protected Vector certificateAuthorities;
 
-    /*
-     * TODO RFC 5264 7.4.4 A list of the hash/signature algorithm pairs that the server is able to
-     * verify, listed in descending order of preference.
-     */
-
     /**
      * @param certificateTypes       see {@link ClientCertificateType} for valid constants.
      * @param certificateAuthorities a {@link Vector} of {@link X500Name}.

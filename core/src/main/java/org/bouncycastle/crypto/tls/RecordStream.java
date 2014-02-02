@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.crypto.Digest;
-
 /**
  * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
  */
@@ -23,7 +21,7 @@ class RecordStream
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsContext context = null;
-    private TlsHandshakeHash hash = null;
+    private TlsHandshakeHash handshakeHash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
@@ -46,8 +44,8 @@ class RecordStream
     void init(TlsContext context)
     {
         this.context = context;
-        this.hash = new DeferredHash();
-        this.hash.init(context);
+        this.handshakeHash = new DeferredHash();
+        this.handshakeHash.init(context);
     }
 
     int getPlaintextLimit()
@@ -87,11 +85,6 @@ class RecordStream
     void setRestrictReadVersion(boolean enabled)
     {
         this.restrictReadVersion = enabled;
-    }
-
-    void notifyHelloComplete()
-    {
-        this.hash = this.hash.commit();
     }
 
     void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher)
@@ -224,6 +217,12 @@ class RecordStream
     protected void writeRecord(short type, byte[] plaintext, int plaintextOffset, int plaintextLength)
         throws IOException
     {
+        // Never send anything until a valid ClientHello has been received
+        if (writeVersion == null)
+        {
+            return;
+        }
+
         /*
          * RFC 5264 6. Implementations MUST NOT send record types not defined in this document
          * unless negotiated by some extension.
@@ -285,27 +284,26 @@ class RecordStream
         output.flush();
     }
 
-    void updateHandshakeData(byte[] message, int offset, int len)
+    void notifyHelloComplete()
     {
-        hash.update(message, offset, len);
+        this.handshakeHash = handshakeHash.notifyPRFDetermined();
     }
 
-    /**
-     * 'sender' only relevant to SSLv3
-     */
-    byte[] getCurrentHash(byte[] sender)
+    TlsHandshakeHash getHandshakeHash()
     {
-        TlsHandshakeHash d = hash.fork();
+        return handshakeHash;
+    }
 
-        if (TlsUtils.isSSL(context))
-        {
-            if (sender != null)
-            {
-                d.update(sender, 0, sender.length);
-            }
-        }
+    TlsHandshakeHash prepareToFinish()
+    {
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = handshakeHash.stopTracking();
+        return result;
+    }
 
-        return doFinal(d);
+    void updateHandshakeData(byte[] message, int offset, int len)
+    {
+        handshakeHash.update(message, offset, len);
     }
 
     protected void safeClose()
@@ -338,13 +336,6 @@ class RecordStream
         byte[] contents = buffer.toByteArray();
         buffer.reset();
         return contents;
-    }
-
-    private static byte[] doFinal(Digest d)
-    {
-        byte[] bs = new byte[d.getDigestSize()];
-        d.doFinal(bs, 0);
-        return bs;
     }
 
     private static void checkType(short type, short alertDescription)

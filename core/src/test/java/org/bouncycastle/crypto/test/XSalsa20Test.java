@@ -129,13 +129,11 @@ public class XSalsa20Test extends SimpleTest
                     "f85471b75f6ec81abac2799ec09e98e280b2ffd64ca285e5a0109cfb31ffab2d617b2c2952a2a8a788fc0da2af7f530758f74f1ab56391ab5ff2adbcc5be2d6c7f49fbe8118104c6ff9a23c6dfe52f57954e6a69dcee5db06f514f4a0a572a9a8525d961dae72269b987189d465df6107119c7fa790853e063cba0fab7800ca932e258880fd74c33c784675bedad0e7c09e9cc4d63dd5e9713d5d4a0196e6b562226ac31b4f57c04f90a181973737ddc7e80f364112a9fbb435ebdbcabf7d490ce52",
                     "b2b795fe6c1d4c83c1327e015a67d4465fd8e32813575cbab263e20ef05864d2dc17e0e4eb81436adfe9f638dcc1c8d78f6b0306baf938e5d2ab0b3e05e735cc6fff2d6e02e3d60484bea7c7a8e13e23197fea7b04d47d48f4a4e5944174539492800d3ef51e2ee5e4c8a0bdf050c2dd3dd74fce5e7e5c37364f7547a11480a3063b9a0a157b15b10a5a954de2731ced055aa2e2767f0891d4329c426f3808ee867bed0dc75b5922b7cfb895700fda016105a4c7b7f0bb90f029f6bbcb04ac36ac16") };
 
-    @Override
     public String getName()
     {
         return "XSalsa20";
     }
 
-    @Override
     public void performTest() throws Exception
     {
         for (int i = 0; i < TEST_CASES.length; i++)

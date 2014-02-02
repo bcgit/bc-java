@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls.test;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
 import org.bouncycastle.crypto.tls.DTLSTransport;
@@ -32,6 +33,7 @@ public class DTLSProtocolTest
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
         MockDTLSClient client = new MockDTLSClient(null);
+
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
         for (int i = 1; i <= 10; ++i)

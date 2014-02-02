@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -241,11 +242,15 @@ public class ECUtil
     public static X9ECParameters getNamedCurveByOid(
         ASN1ObjectIdentifier oid)
     {
-        X9ECParameters params = X962NamedCurves.getByOID(oid);
-        
+        X9ECParameters params = CustomNamedCurves.getByOID(oid);
+
         if (params == null)
         {
-            params = SECNamedCurves.getByOID(oid);
+            params = X962NamedCurves.getByOID(oid);
+            if (params == null)
+            {
+                params = SECNamedCurves.getByOID(oid);
+            }
             if (params == null)
             {
                 params = NISTNamedCurves.getByOID(oid);
