@@ -83,9 +83,9 @@ public class SecP192K1Field
         }
     }
 
-    public static void reduce(int[] tt, int[] z)
+    public static void reduce(int[] xx, int[] z)
     {
-        long c = Nat192.mul33AddExt(PInv33, tt, 6, tt, 0, z, 0);
+        long c = Nat192.mul33AddExt(PInv33, xx, 6, xx, 0, z, 0);
         c = Nat192.mul33DWordAdd(PInv33, c, z, 0);
 
         // assert c == 0L || c == 1L;
