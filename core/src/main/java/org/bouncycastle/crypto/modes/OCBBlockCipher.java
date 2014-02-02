@@ -13,7 +13,7 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-05">The OCB Authenticated-Encryption
+ * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-06">The OCB Authenticated-Encryption
  * Algorithm</a>, licensed per:
  * <p/>
  * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
@@ -168,6 +168,10 @@ public class OCBBlockCipher
         if (keyParameter == null)
         {
             // TODO If 'keyParameter' is null we're re-using the last key.
+        }
+        else
+        {
+            KtopInput = null;
         }
 
         // hashCipher always used in forward mode

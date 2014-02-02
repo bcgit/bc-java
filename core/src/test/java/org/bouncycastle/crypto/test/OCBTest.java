@@ -1,8 +1,8 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
@@ -14,60 +14,91 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * Test vectors from the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-05">The OCB Authenticated-Encryption
+ * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-06">The OCB Authenticated-Encryption
  * Algorithm</a>
  */
 public class OCBTest
     extends SimpleTest
 {
-    private static final String K = "000102030405060708090A0B0C0D0E0F";
-    private static final String N = "000102030405060708090A0B";
+    private static final String KEY_128 = "000102030405060708090A0B0C0D0E0F";
+    private static final String KEY_96 = "0F0E0D0C0B0A09080706050403020100";
 
     /*
-     * Test vectors contain the strings A, P, C in order
+     * Test vectors from Appendix A of the specification, containing the strings N, A, P, C in order
      */
 
-    // Sample data for 96 bit tag, taken from a CFRG post
-    private static final String[][] TEST_VECTORS_96 = new String[][]{ {
-        "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
-        "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
-        "09A4FD29DE949D9A9AA9924248422097AD4883B4713E6C214FF6567ADA08A96766FC4E2EE3E3A5A11B6C44F34E3ABB3CBF8976E7" } };
-
-    // Test vectors from Appendix A of the specification
     private static final String[][] TEST_VECTORS_128 = new String[][]{
-        { "", "", "197B9C3C441D3C83EAFB2BEF633B9182" },
-        { "0001020304050607", "0001020304050607", "92B657130A74B85A16DC76A46D47E1EAD537209E8A96D14E" },
-        { "0001020304050607", "", "98B91552C8C009185044E30A6EB2FE21" },
-        { "", "0001020304050607", "92B657130A74B85A971EFFCAE19AD4716F88E87B871FBEED" },
-        { "000102030405060708090A0B0C0D0E0F", "000102030405060708090A0B0C0D0E0F",
-            "BEA5E8798DBE7110031C144DA0B26122776C9924D6723A1F" + "C4524532AC3E5BEB" },
-        { "000102030405060708090A0B0C0D0E0F", "", "7DDB8E6CEA6814866212509619B19CC6" },
-        { "", "000102030405060708090A0B0C0D0E0F",
-            "BEA5E8798DBE7110031C144DA0B2612213CC8B747807121A" + "4CBB3E4BD6B456AF" },
-        { "000102030405060708090A0B0C0D0E0F1011121314151617", "000102030405060708090A0B0C0D0E0F1011121314151617",
-            "BEA5E8798DBE7110031C144DA0B26122FCFCEE7A2A8D4D48" + "5FA94FC3F38820F1DC3F3D1FD4E55E1C" },
-        { "000102030405060708090A0B0C0D0E0F1011121314151617", "", "282026DA3068BC9FA118681D559F10F6" },
-        { "", "000102030405060708090A0B0C0D0E0F1011121314151617",
-            "BEA5E8798DBE7110031C144DA0B26122FCFCEE7A2A8D4D48" + "6EF2F52587FDA0ED97DC7EEDE241DF68" },
-        { "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F",
-            "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F",
-            "BEA5E8798DBE7110031C144DA0B26122CEAAB9B05DF771A6" + "57149D53773463CBB2A040DD3BD5164372D76D7BB6824240" },
-        { "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F", "",
-            "E1E072633BADE51A60E85951D9C42A1B" },
-        { "", "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F",
-            "BEA5E8798DBE7110031C144DA0B26122CEAAB9B05DF771A6" + "57149D53773463CB4A3BAE824465CFDAF8C41FC50C7DF9D9" },
-        {
-            "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F2021222324252627",
-            "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F2021222324252627",
-            "BEA5E8798DBE7110031C144DA0B26122CEAAB9B05DF771A6" + "57149D53773463CB68C65778B058A635659C623211DEEA0D"
-                + "E30D2C381879F4C8" },
-        { "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F2021222324252627", "",
-            "7AEB7A69A1687DD082CA27B0D9A37096" },
-        {
-            "",
-            "000102030405060708090A0B0C0D0E0F1011121314151617" + "18191A1B1C1D1E1F2021222324252627",
-            "BEA5E8798DBE7110031C144DA0B26122CEAAB9B05DF771A6" + "57149D53773463CB68C65778B058A635060C8467F4ABAB5E"
-                + "8B3C2067A2E115DC" },
+        { "BBAA99887766554433221100",
+          "",
+          "",
+          "785407BFFFC8AD9EDCC5520AC9111EE6" },
+        { "BBAA99887766554433221101",
+          "0001020304050607",
+          "0001020304050607",
+          "6820B3657B6F615A5725BDA0D3B4EB3A257C9AF1F8F03009" },
+        { "BBAA99887766554433221102",
+          "0001020304050607",
+          "",
+          "81017F8203F081277152FADE694A0A00" },
+        { "BBAA99887766554433221103",
+          "",
+          "0001020304050607",
+          "45DD69F8F5AAE72414054CD1F35D82760B2CD00D2F99BFA9" },
+        { "BBAA99887766554433221104",
+          "000102030405060708090A0B0C0D0E0F",
+          "000102030405060708090A0B0C0D0E0F",
+          "571D535B60B277188BE5147170A9A22C3AD7A4FF3835B8C5701C1CCEC8FC3358" },
+        { "BBAA99887766554433221105",
+          "000102030405060708090A0B0C0D0E0F",
+          "",
+          "8CF761B6902EF764462AD86498CA6B97" },
+        { "BBAA99887766554433221106",
+          "",
+          "000102030405060708090A0B0C0D0E0F",
+          "5CE88EC2E0692706A915C00AEB8B2396F40E1C743F52436BDF06D8FA1ECA343D" },
+        { "BBAA99887766554433221107",
+          "000102030405060708090A0B0C0D0E0F1011121314151617",
+          "000102030405060708090A0B0C0D0E0F1011121314151617",
+          "1CA2207308C87C010756104D8840CE1952F09673A448A122C92C62241051F57356D7F3C90BB0E07F" },
+        { "BBAA99887766554433221108",
+          "000102030405060708090A0B0C0D0E0F1011121314151617",
+          "",
+          "6DC225A071FC1B9F7C69F93B0F1E10DE" },
+        { "BBAA99887766554433221109",
+          "",
+          "000102030405060708090A0B0C0D0E0F1011121314151617",
+          "221BD0DE7FA6FE993ECCD769460A0AF2D6CDED0C395B1C3CE725F32494B9F914D85C0B1EB38357FF" },
+        { "BBAA9988776655443322110A",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F",
+          "BD6F6C496201C69296C11EFD138A467ABD3C707924B964DEAFFC40319AF5A48540FBBA186C5553C68AD9F592A79A4240" },
+        { "BBAA9988776655443322110B",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F",
+          "",
+          "FE80690BEE8A485D11F32965BC9D2A32" },
+        { "BBAA9988776655443322110C",
+          "",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F",
+          "2942BFC773BDA23CABC6ACFD9BFD5835BD300F0973792EF46040C53F1432BCDFB5E1DDE3BC18A5F840B52E653444D5DF" },
+        { "BBAA9988776655443322110D",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "D5CA91748410C1751FF8A2F618255B68A0A12E093FF454606E59F9C1D0DDC54B65E8628E568BAD7AED07BA06A4A69483A7035490C5769E60" },
+        { "BBAA9988776655443322110E",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "",
+          "C5CD9D1850C141E358649994EE701B68" },
+        { "BBAA9988776655443322110F",
+          "",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "4412923493C57D5DE0D700F753CCE0D1D2D95060122E9F15A5DDBFC5787E50B5CC55EE507BCB084E479AD363AC366B95A98CA5F3000B1479" },
+    };
+
+    private static final String[][] TEST_VECTORS_96 = new String[][]{
+        { "BBAA9988776655443322110D",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627",
+          "1792A4E31E0755FB03E31B22116E6C2DDF9EFD6E33D536F1A0124B0A55BAE884ED93481529C76B6AD0C515F4D1CDD4FDAC4F02AA" },
     };
 
     public String getName()
@@ -78,31 +109,34 @@ public class OCBTest
     public void performTest()
         throws Exception
     {
-        for (int i = 0; i < TEST_VECTORS_96.length; ++i)
-        {
-            runTestCase("Test Case " + i, TEST_VECTORS_96[i], 96);
-        }
+        byte[] K128 = Hex.decode(KEY_128);
         for (int i = 0; i < TEST_VECTORS_128.length; ++i)
         {
-            runTestCase("Test Case " + i, TEST_VECTORS_128[i], 128);
+            runTestCase("Test Case " + i, TEST_VECTORS_128[i], 128, K128);
         }
 
-        runLongerTestCase(128, 128, Hex.decode("B2B41CBF9B05037DA7F16C24A35C1C94"));
-        runLongerTestCase(192, 128, Hex.decode("1529F894659D2B51B776740211E7D083"));
-        runLongerTestCase(256, 128, Hex.decode("42B83106E473C0EEE086C8D631FD4C7B"));
-        runLongerTestCase(128, 96, Hex.decode("1A4F0654277709A5BDA0D380"));
-        runLongerTestCase(192, 96, Hex.decode("AD819483E01DD648978F4522"));
-        runLongerTestCase(256, 96, Hex.decode("CD2E41379C7E7C4458CCFB4A"));
-        runLongerTestCase(128, 64, Hex.decode("B7ECE9D381FE437F"));
-        runLongerTestCase(192, 64, Hex.decode("DE0574C87FF06DF9"));
-        runLongerTestCase(256, 64, Hex.decode("833E45FF7D332F7E"));
+        byte[] K96 = Hex.decode(KEY_96);
+        for (int i = 0; i < TEST_VECTORS_96.length; ++i)
+        {
+            runTestCase("Test Case " + i, TEST_VECTORS_96[i], 96, K96);
+        }
+
+        runLongerTestCase(128, 128, Hex.decode("67E944D23256C5E0B6C61FA22FDF1EA2"));
+        runLongerTestCase(192, 128, Hex.decode("F673F2C3E7174AAE7BAE986CA9F29E17"));
+        runLongerTestCase(256, 128, Hex.decode("D90EB8E9C977C88B79DD793D7FFA161C"));
+        runLongerTestCase(128, 96, Hex.decode("77A3D8E73589158D25D01209"));
+        runLongerTestCase(192, 96, Hex.decode("05D56EAD2752C86BE6932C5E"));
+        runLongerTestCase(256, 96, Hex.decode("5458359AC23B0CBA9E6330DD"));
+        runLongerTestCase(128, 64, Hex.decode("192C9B7BD90BA06A"));
+        runLongerTestCase(192, 64, Hex.decode("0066BC6E0EF34E24"));
+        runLongerTestCase(256, 64, Hex.decode("7D4EA5D445501CBE"));
 
         testExceptions();
     }
 
     private void testExceptions() throws InvalidCipherTextException
     {
-        OCBBlockCipher ocb = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+        AEADBlockCipher ocb = createOCBCipher();
 
         try
         {
@@ -126,17 +160,15 @@ public class OCBTest
             // expected
         }
         
-        AEADTestUtil.testReset(this, new OCBBlockCipher(new AESEngine(), new AESEngine()), new OCBBlockCipher(new AESEngine(), new AESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
+        AEADTestUtil.testReset(this, createOCBCipher(), createOCBCipher(), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
         AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
     }
 
-    private void runTestCase(String testName, String[] testVector, int macLengthBits)
+    private void runTestCase(String testName, String[] testVector, int macLengthBits, byte[] K)
         throws InvalidCipherTextException
     {
-        byte[] key = Hex.decode(K);
-        byte[] nonce = Hex.decode(N);
-
         int pos = 0;
+        byte[] N = Hex.decode(testVector[pos++]);
         byte[] A = Hex.decode(testVector[pos++]);
         byte[] P = Hex.decode(testVector[pos++]);
         byte[] C = Hex.decode(testVector[pos++]);
@@ -145,11 +177,11 @@ public class OCBTest
 
         // TODO Variations processing AAD and cipher bytes incrementally
 
-        KeyParameter keyParameter = new KeyParameter(key);
-        AEADParameters aeadParameters = new AEADParameters(keyParameter, macLengthBits, nonce, A);
+        KeyParameter keyParameter = new KeyParameter(K);
+        AEADParameters aeadParameters = new AEADParameters(keyParameter, macLengthBits, N, A);
 
-        OCBBlockCipher encCipher = initCipher(true, aeadParameters);
-        OCBBlockCipher decCipher = initCipher(false, aeadParameters);
+        AEADBlockCipher encCipher = initOCBCipher(true, aeadParameters);
+        AEADBlockCipher decCipher = initOCBCipher(false, aeadParameters);
 
         checkTestCase(encCipher, decCipher, testName, macLengthBytes, P, C);
         checkTestCase(encCipher, decCipher, testName + " (reused)", macLengthBytes, P, C);
@@ -157,14 +189,24 @@ public class OCBTest
         // TODO Key reuse
     }
 
-    private OCBBlockCipher initCipher(boolean forEncryption, AEADParameters parameters)
+    private BlockCipher createUnderlyingCipher()
     {
-        OCBBlockCipher c = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+        return new AESEngine();
+    }
+
+    private AEADBlockCipher createOCBCipher()
+    {
+        return new OCBBlockCipher(createUnderlyingCipher(), createUnderlyingCipher());
+    }
+
+    private AEADBlockCipher initOCBCipher(boolean forEncryption, AEADParameters parameters)
+    {
+        AEADBlockCipher c = createOCBCipher();
         c.init(forEncryption, parameters);
         return c;
     }
 
-    private void checkTestCase(OCBBlockCipher encCipher, OCBBlockCipher decCipher, String testName,
+    private void checkTestCase(AEADBlockCipher encCipher, AEADBlockCipher decCipher, String testName,
         int macLengthBytes, byte[] P, byte[] C)
         throws InvalidCipherTextException
     {
@@ -213,29 +255,29 @@ public class OCBTest
         }
     }
 
-    private void runLongerTestCase(int aesKeySize, int tagLen, byte[] expectedOutput)
+    private void runLongerTestCase(int keyLen, int tagLen, byte[] expectedOutput)
         throws InvalidCipherTextException
     {
-        KeyParameter key = new KeyParameter(new byte[aesKeySize / 8]);
-        byte[] N = new byte[12];
+        byte[] keyBytes = new byte[keyLen / 8];
+        keyBytes[keyBytes.length - 1] = (byte)tagLen;
+        KeyParameter key = new KeyParameter(keyBytes);
 
-        AEADBlockCipher c1 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
-        c1.init(true, new AEADParameters(key, tagLen, N));
+        AEADBlockCipher c1 = initOCBCipher(true, new AEADParameters(key, tagLen, createNonce(385)));
 
-        AEADBlockCipher c2 = new OCBBlockCipher(new AESFastEngine(), new AESFastEngine());
+        AEADBlockCipher c2 = createOCBCipher();
 
         long total = 0;
 
         byte[] S = new byte[128];
 
+        int n = 0;
         for (int i = 0; i < 128; ++i)
         {
-            N[11] = (byte)i;
-
-            c2.init(true, new AEADParameters(key, tagLen, N));
-
+            c2.init(true, new AEADParameters(key, tagLen, createNonce(++n)));
             total += updateCiphers(c1, c2, S, i, true, true);
+            c2.init(true, new AEADParameters(key, tagLen, createNonce(++n)));
             total += updateCiphers(c1, c2, S, i, false, true);
+            c2.init(true, new AEADParameters(key, tagLen, createNonce(++n)));
             total += updateCiphers(c1, c2, S, i, true, false);
         }
 
@@ -253,6 +295,11 @@ public class OCBTest
         {
             fail("incorrect encrypt in long-form test");
         }
+    }
+
+    private byte[] createNonce(int n)
+    {
+        return new byte[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (byte)(n >>> 8), (byte)n };
     }
 
     private int updateCiphers(AEADBlockCipher c1, AEADBlockCipher c2, byte[] S, int i,
