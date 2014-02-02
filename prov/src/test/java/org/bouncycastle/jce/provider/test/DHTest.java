@@ -33,9 +33,11 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -567,6 +569,53 @@ public class DHTest
             fail(size + " bit 3-way test failed (c and b differ)");
         }
     }
+
+    private void testECDH(String algorithm, String cipher, int keyLen)
+        throws Exception
+    {
+        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec("secp521r1");
+        KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        g.initialize(parameterSpec);
+
+        //
+        // a side
+        //
+        KeyPair aKeyPair = g.generateKeyPair();
+
+        KeyAgreement aKeyAgree = KeyAgreement.getInstance(algorithm, "BC");
+
+        aKeyAgree.init(aKeyPair.getPrivate());
+
+        //
+        // b side
+        //
+        KeyPair bKeyPair = g.generateKeyPair();
+
+        KeyAgreement bKeyAgree = KeyAgreement.getInstance(algorithm, "BC");
+
+        bKeyAgree.init(bKeyPair.getPrivate());
+
+        //
+        // agreement
+        //
+        aKeyAgree.doPhase(bKeyPair.getPublic(), true);
+        bKeyAgree.doPhase(aKeyPair.getPublic(), true);
+
+        SecretKey k1 = aKeyAgree.generateSecret(cipher);
+        SecretKey k2 = bKeyAgree.generateSecret(cipher);
+
+        if (!k1.equals(k2))
+        {
+            fail(algorithm + " 2-way test failed");
+        }
+
+        if (k1.getEncoded().length != keyLen / 8)
+        {
+            fail("key for " + cipher + " the wrong size expected " + keyLen / 8 + " got " + k1.getEncoded().length);
+        }
+    }
+
     private void testECDH(String algorithm)
         throws Exception
     {
@@ -915,8 +964,15 @@ public class DHTest
         testGP("DIFFIEHELLMAN", 1024, 256, g1024, p1024);
         testExplicitWrapping(512, 0, g512, p512);
         testRandom(256);
+
         testECDH("ECDH");
         testECDH("ECDHC");
+        testECDH("ECDH", "AES", 256);
+        testECDH("ECDH", "DESEDE", 192);
+        testECDH("ECDH", "DES", 64);
+        testECDH("ECDHwithSHA1KDF", "AES", 256);
+        testECDH("ECDHwithSHA1KDF", "DESEDE", 192);
+
         testExceptions();
         testDESAndDESede(g768, p768);
         testInitialise();

@@ -45,7 +45,28 @@ public class TlsDHEKeyExchange
         this.dhAgreeServerPrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
             this.dhParameters, buf);
 
-        Digest d = new CombinedHash();
+        /*
+         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+         */
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+        Digest d;
+
+        if (TlsUtils.isTLSv12(context))
+        {
+            signatureAndHashAlgorithm = serverCredentials.getSignatureAndHashAlgorithm();
+            if (signatureAndHashAlgorithm == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            d = TlsUtils.createHash(signatureAndHashAlgorithm.getHash());
+        }
+        else
+        {
+            signatureAndHashAlgorithm = null;
+            d = new CombinedHash();
+        }
+
         SecurityParameters securityParameters = context.getSecurityParameters();
         d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
@@ -56,10 +77,7 @@ public class TlsDHEKeyExchange
 
         byte[] signature = serverCredentials.generateCertificateSignature(hash);
 
-        /*
-         * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-         */
-        DigitallySigned signed_params = new DigitallySigned(null, signature);
+        DigitallySigned signed_params = new DigitallySigned(signatureAndHashAlgorithm, signature);
         signed_params.encode(buf);
 
         return buf.toByteArray();

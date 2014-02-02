@@ -75,7 +75,7 @@ public class ECNewRandomnessTransform
 
         lastK = k;
 
-        return new ECPair(cipherText.getX().add(gamma), phi);
+        return new ECPair(cipherText.getX().add(gamma).normalize(), phi.normalize());
     }
 
     /**

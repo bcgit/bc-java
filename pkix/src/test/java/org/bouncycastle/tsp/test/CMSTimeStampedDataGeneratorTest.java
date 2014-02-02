@@ -81,7 +81,7 @@ public class CMSTimeStampedDataGeneratorTest
         throws Exception
     {
         BcDigestCalculatorProvider calculatorProvider = new BcDigestCalculatorProvider();
-        String algOID = "2.16.840.1.101.3.4.2.1"; // SHA-256
+        ASN1ObjectIdentifier algOID = new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"); // SHA-256
         DigestCalculator hashCalculator = calculatorProvider.get(new AlgorithmIdentifier(algOID));
 
         cmsTimeStampedDataGenerator.initialiseMessageImprintDigestCalculator(hashCalculator);
@@ -125,7 +125,7 @@ public class CMSTimeStampedDataGeneratorTest
         cmsTimeStampedDataGenerator.setMetaData(true, fileInput, "TXT");
 
         BcDigestCalculatorProvider calculatorProvider = new BcDigestCalculatorProvider();
-        String algOID = "2.16.840.1.101.3.4.2.1"; // SHA-256
+        ASN1ObjectIdentifier algOID = new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"); // SHA-256
         DigestCalculator hashCalculator = calculatorProvider.get(new AlgorithmIdentifier(algOID));
 
         cmsTimeStampedDataGenerator.initialiseMessageImprintDigestCalculator(hashCalculator);
@@ -136,7 +136,7 @@ public class CMSTimeStampedDataGeneratorTest
         TimeStampToken timeStampToken = createTimeStampToken(hashCalculator.getDigest(), NISTObjectIdentifiers.id_sha256);
         CMSTimeStampedData cmsTimeStampedData = cmsTimeStampedDataGenerator.generate(timeStampToken, baseData);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i <= 3; i++)
         {
             byte[] newRequestData = cmsTimeStampedData.calculateNextHash(hashCalculator);
             TimeStampToken newTimeStampToken = createTimeStampToken(newRequestData, NISTObjectIdentifiers.id_sha256);
@@ -167,7 +167,7 @@ public class CMSTimeStampedDataGeneratorTest
 
         CMSTimeStampedData cmsTimeStampedData = cmsTimeStampedDataGenerator.generate(timeStampToken, baseData);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i <= 3; i++) {
             switch (i) {
             case 0:
                 algIdentifier =    NISTObjectIdentifiers.id_sha224;
@@ -213,7 +213,7 @@ public class CMSTimeStampedDataGeneratorTest
         byte[] digest = imprintCalculator.getDigest();
 
         TimeStampToken[] tokens = cmsTspData.getTimeStampTokens();
-        assertEquals("TimeStampToken expected and verified are different", 4, tokens.length);
+        assertEquals("TimeStampToken expected and verified are different", 5, tokens.length);
         for (int i = 0; i < tokens.length; i++)
         {
             cmsTspData.validate(newCalculatorProvider, digest, tokens[i]);
@@ -243,7 +243,7 @@ public class CMSTimeStampedDataGeneratorTest
         byte[] digest = imprintCalculator.getDigest();
 
         TimeStampToken[] tokens = cmsTspData.getTimeStampTokens();
-        assertEquals("TimeStampToken expected and verified are different", 4, tokens.length);
+        assertEquals("TimeStampToken expected and verified are different", 5, tokens.length);
         for (int i = 0; i < tokens.length; i++)
         {
             cmsTspData.validate(newCalculatorProvider, digest, tokens[i]);
@@ -291,7 +291,7 @@ public class CMSTimeStampedDataGeneratorTest
 
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
-            new JcaSimpleSignerInfoGeneratorBuilder().build(algorithmName, privateKey, cert), new ASN1ObjectIdentifier("1.2"));
+            new JcaSimpleSignerInfoGeneratorBuilder().build(algorithmName, privateKey, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
 
         tsTokenGen.addCertificates(certs);
 

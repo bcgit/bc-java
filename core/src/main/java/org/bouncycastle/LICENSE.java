@@ -24,7 +24,7 @@ package org.bouncycastle;
 public class LICENSE
 {
     public static String licenseText =
-      "Copyright (c) 2000-2013 The Legion Of The Bouncy Castle (http://www.bouncycastle.org) "
+      "Copyright (c) 2000-2013 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org) "
       + System.getProperty("line.separator")
       + System.getProperty("line.separator")
       + "Permission is hereby granted, free of charge, to any person obtaining a copy of this software "

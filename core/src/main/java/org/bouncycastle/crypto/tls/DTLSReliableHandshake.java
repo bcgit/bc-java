@@ -14,7 +14,7 @@ class DTLSReliableHandshake
 
     private final DTLSRecordLayer recordLayer;
 
-    private TlsHandshakeHash hash = new DeferredHash();
+    private TlsHandshakeHash handshakeHash;
 
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
@@ -26,19 +26,24 @@ class DTLSReliableHandshake
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport)
     {
         this.recordLayer = transport;
-        this.hash.init(context);
+        this.handshakeHash = new DeferredHash();
+        this.handshakeHash.init(context);
     }
 
     void notifyHelloComplete()
     {
-        this.hash = this.hash.commit();
+        this.handshakeHash = handshakeHash.notifyPRFDetermined();
     }
 
-    byte[] getCurrentHash()
+    TlsHandshakeHash getHandshakeHash()
     {
-        TlsHandshakeHash copyOfHash = hash.fork();
-        byte[] result = new byte[copyOfHash.getDigestSize()];
-        copyOfHash.doFinal(result, 0);
+        return handshakeHash;
+    }
+
+    TlsHandshakeHash prepareToFinish()
+    {
+        TlsHandshakeHash result = handshakeHash;
+        this.handshakeHash = handshakeHash.stopTracking();
         return result;
     }
 
@@ -102,7 +107,7 @@ class DTLSReliableHandshake
         // TODO Check the conditions under which we should reset this
         int readTimeoutMillis = 1000;
 
-        for (; ; )
+        for (;;)
         {
             int receiveLimit = recordLayer.getReceiveLimit();
             if (buf == null || buf.length < receiveLimit)
@@ -155,13 +160,11 @@ class DTLSReliableHandshake
                                 .valueOf(seq));
                             if (reassembler != null)
                             {
-
                                 reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset,
                                     fragment_length);
 
                                 if (checkAll(previousInboundFlight))
                                 {
-
                                     resendOutboundFlight();
 
                                     /*
@@ -177,7 +180,6 @@ class DTLSReliableHandshake
                     }
                     else
                     {
-
                         DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(seq));
                         if (reassembler == null)
                         {
@@ -290,7 +292,7 @@ class DTLSReliableHandshake
 
     void resetHandshakeMessagesDigest()
     {
-        hash.reset();
+        handshakeHash.reset();
     }
 
     /**
@@ -338,8 +340,8 @@ class DTLSReliableHandshake
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
             TlsUtils.writeUint24(0, buf, 6);
             TlsUtils.writeUint24(body.length, buf, 9);
-            hash.update(buf, 0, buf.length);
-            hash.update(body, 0, body.length);
+            handshakeHash.update(buf, 0, buf.length);
+            handshakeHash.update(body, 0, body.length);
         }
         return message;
     }

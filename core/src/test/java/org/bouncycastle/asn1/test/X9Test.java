@@ -1,14 +1,10 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -46,8 +42,6 @@ public class X9Test
     private void encodePublicKey()
         throws Exception
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
         X9ECParameters          ecP = X962NamedCurves.getByOID(X9ObjectIdentifiers.prime239v3);
 
         X9IntegerConverter conv = new X9IntegerConverter();
@@ -71,22 +65,19 @@ public class X9Test
         ASN1OctetString         p = new DEROctetString(point.getEncoded(true));
 
         SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
-        byte[] infoEncoded = info.getEncoded();
-
-        if (!areEqual(infoEncoded, namedPub))
+        if (!areEqual(info.getEncoded(), namedPub))
         {
             fail("failed public named generation");
         }
 
         X9ECPoint               x9P = new X9ECPoint(ecP.getCurve(), p);
 
-        if (!Arrays.areEqual(point.getEncoded(true), x9P.getPoint().getEncoded()))
+        if (!Arrays.areEqual(p.getOctets(), x9P.getPoint().getEncoded()))
         {
             fail("point encoding not preserved");
         }
 
-        ASN1InputStream         aIn = new ASN1InputStream(new ByteArrayInputStream(namedPub));
-        ASN1Primitive           o = aIn.readObject();
+        ASN1Primitive           o = ASN1Primitive.fromByteArray(namedPub);
         
         if (!info.equals(o))
         {
@@ -104,9 +95,8 @@ public class X9Test
         {
             fail("failed public explicit generation");
         }
-        
-        aIn = new ASN1InputStream(new ByteArrayInputStream(expPub));
-        o = aIn.readObject();
+
+        o = ASN1Primitive.fromByteArray(expPub);
         
         if (!info.equals(o))
         {
@@ -117,8 +107,6 @@ public class X9Test
     private void encodePrivateKey()
         throws Exception
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
         X9ECParameters          ecP = X962NamedCurves.getByOID(X9ObjectIdentifiers.prime239v3);
 
         //
@@ -132,10 +120,9 @@ public class X9Test
         {
             fail("failed private named generation");
         }
-        
-        ASN1InputStream         aIn = new ASN1InputStream(new ByteArrayInputStream(namedPriv));
-        ASN1Primitive               o = aIn.readObject();
-        
+
+        ASN1Primitive           o = ASN1Primitive.fromByteArray(namedPriv);
+
         if (!info.equals(o))
         {
             fail("failed private named equality");
@@ -152,9 +139,8 @@ public class X9Test
         {
             fail("failed private explicit generation");
         }
-        
-        aIn = new ASN1InputStream(new ByteArrayInputStream(expPriv));
-        o = aIn.readObject();
+
+        o = ASN1Primitive.fromByteArray(expPriv);
         
         if (!info.equals(o))
         {

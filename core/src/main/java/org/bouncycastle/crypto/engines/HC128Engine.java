@@ -118,6 +118,7 @@ public class HC128Engine
                 "The key must be 128 bits long");
         }
 
+        idx = 0;
         cnt = 0;
 
         int[] w = new int[1280];
@@ -246,7 +247,6 @@ public class HC128Engine
 
     public void reset()
     {
-        idx = 0;
         init();
     }
 

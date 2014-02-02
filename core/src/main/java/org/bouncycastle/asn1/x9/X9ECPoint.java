@@ -18,7 +18,7 @@ public class X9ECPoint
     public X9ECPoint(
         ECPoint p)
     {
-        this.p = p;
+        this.p = p.normalize();
     }
 
     public X9ECPoint(

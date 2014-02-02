@@ -11,16 +11,15 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0-1.1 / SSLv3 block cipher. This can be used for AES or 3DES for example.
+ * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
  */
 public class TlsBlockCipher
     implements TlsCipher
 {
-    private static boolean encryptThenMAC = false;
-
     protected TlsContext context;
     protected byte[] randomData;
     protected boolean useExplicitIV;
+    private boolean encryptThenMAC;
 
     protected BlockCipher encryptCipher;
     protected BlockCipher decryptCipher;
@@ -47,6 +46,7 @@ public class TlsBlockCipher
         context.getSecureRandom().nextBytes(randomData);
 
         this.useExplicitIV = TlsUtils.isTLSv11(context);
+        this.encryptThenMAC = context.getSecurityParameters().encryptThenMAC;
 
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();

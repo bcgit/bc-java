@@ -2,10 +2,10 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.Signature;
 
 import javax.crypto.Cipher;
@@ -15,6 +15,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.JcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -33,22 +34,22 @@ class OperatorHelper
     MessageDigest createDigest(int algorithm)
         throws GeneralSecurityException, PGPException
     {
-        try
-        {
         MessageDigest dig;
 
-        dig = helper.createDigest(PGPUtil.getDigestName(algorithm));
-
-        return dig;
-        }
-        catch (NoSuchProviderException e)
+        try
         {
-            throw new GeneralSecurityException(e.toString());
+            dig = helper.createDigest(PGPUtil.getDigestName(algorithm));
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new GeneralSecurityException(e.toString());
+            throw new PGPException("cannot find provider: " + e.getMessage(), e);
         }
+        catch (NoSuchProviderException e)
+        {
+            throw new PGPException("cannot find provider: " + e.getMessage(), e);
+        }
+
+        return dig;
     }
 
     KeyFactory createKeyFactory(String algorithm)
@@ -56,15 +57,15 @@ class OperatorHelper
     {
         try
         {
-        return helper.createKeyFactory(algorithm);
-        }
-        catch (NoSuchProviderException e)
-        {
-            throw new GeneralSecurityException(e.toString());
+            return helper.createKeyFactory(algorithm);
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new GeneralSecurityException(e.toString());
+            throw new PGPException("cannot find provider: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new PGPException("cannot find provider: " + e.getMessage(), e);
         }
     }
 
@@ -129,15 +130,7 @@ class OperatorHelper
         {
             return helper.createCipher(cipherName);
         }
-        catch (NoSuchProviderException e)
-        {
-            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
-        }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new PGPException("cannot create cipher: " + e.getMessage(), e);
         }
@@ -163,6 +156,27 @@ class OperatorHelper
         }
     }
 
+    Cipher createKeyWrapper(int encAlgorithm)
+        throws PGPException
+    {
+        try
+        {
+            switch (encAlgorithm)
+            {
+            case SymmetricKeyAlgorithmTags.AES_128:
+            case SymmetricKeyAlgorithmTags.AES_192:
+            case SymmetricKeyAlgorithmTags.AES_256:
+                return helper.createCipher("AESWrap");
+            default:
+                throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+        }
+    }
+
     private Signature createSignature(String cipherName)
         throws PGPException
     {
@@ -170,13 +184,9 @@ class OperatorHelper
         {
             return helper.createSignature(cipherName);
         }
-        catch (NoSuchProviderException e)
+        catch (Exception e)
         {
-            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+            throw new PGPException("cannot create signature: " + e.getMessage(), e);
         }
     }
 
@@ -197,6 +207,9 @@ class OperatorHelper
         case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT: // in some malformed cases.
         case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
             encAlg = "ElGamal";
+            break;
+        case PublicKeyAlgorithmTags.ECDSA:
+            encAlg = "ECDSA";
             break;
         default:
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);

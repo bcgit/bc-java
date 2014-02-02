@@ -18,13 +18,18 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.List;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMEncryptedKeyPair;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class WriterTest
@@ -154,23 +159,23 @@ public class WriterTest
         throws IOException
     {
         StringWriter sw = new StringWriter();
-        PEMWriter pw = new PEMWriter(sw, provider);
+        PEMWriter pw = new PEMWriter(sw);
 
         pw.writeObject(akp);
         pw.close();
 
         String data = sw.toString();
 
-        PEMReader pr = new PEMReader(new StringReader(data));
+        PEMParser pr = new PEMParser(new StringReader(data));
 
         Object o = pr.readObject();
 
-        if (o == null || !(o instanceof KeyPair))
+        if (o == null || !(o instanceof PEMKeyPair))
         {
             fail("Didn't find OpenSSL key");
         }
 
-        KeyPair kp = (KeyPair) o;
+        KeyPair kp = new JcaPEMKeyConverter().setProvider("BC").getKeyPair((PEMKeyPair)o);
         PrivateKey privKey = kp.getPrivate();
 
         if (!akp.equals(privKey))
@@ -186,14 +191,14 @@ public class WriterTest
         throws IOException
     {
         StringWriter sw = new StringWriter();
-        PEMWriter pw = new PEMWriter(sw, provider);
+        PEMWriter pw = new PEMWriter(sw);
 
-        pw.writeObject(akp, algorithm, testPassword, random);
+        pw.writeObject(new JcaMiscPEMGenerator(akp, new JcePEMEncryptorBuilder(algorithm).setSecureRandom(random).build(testPassword)));
         pw.close();
 
         String data = sw.toString();
 
-        PemReader pRaw = new PemReader(new StringReader(data));
+        PEMParser pRaw = new PEMParser(new StringReader(data));
         PemObject pemObject = pRaw.readPemObject();
 
         List headers = pemObject.getHeaders();
@@ -215,16 +220,16 @@ public class WriterTest
             }
         }
 
-        PEMReader pr = new PEMReader(new StringReader(data), new Password(testPassword), provider);
+        PEMParser pr = new PEMParser(new StringReader(data));
 
         Object o = pr.readObject();
 
-        if (o == null || !(o instanceof KeyPair))
+        if (o == null || !(o instanceof PEMEncryptedKeyPair))
         {
             fail("Didn't find OpenSSL key");
         }
 
-        KeyPair kp = (KeyPair) o;
+        KeyPair kp = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(((PEMEncryptedKeyPair)o).decryptKeyPair(new JcePEMDecryptorProviderBuilder().setProvider("BC").build(testPassword)));
         PrivateKey privKey = kp.getPrivate();
 
         if (!akp.equals(privKey))

@@ -39,13 +39,11 @@ public class BlockCipherResetTest
     extends SimpleTest
 {
 
-    @Override
     public String getName()
     {
         return "Block Cipher Reset";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {
@@ -117,7 +115,7 @@ public class BlockCipherResetTest
         cipher1.init(true, params);
 
         byte[] plaintext = new byte[cipher1.getBlockSize()];
-        byte[] ciphertext = new byte[cipher1.getAlgorithmName().contains("PGPCFBwithIV") ? 2 * cipher1.getBlockSize() + 2
+        byte[] ciphertext = new byte[(cipher1.getAlgorithmName().indexOf("PGPCFBwithIV")) > -1 ? 2 * cipher1.getBlockSize() + 2
             : cipher1.getBlockSize()];
 
         // Establish baseline answer
@@ -193,7 +191,7 @@ public class BlockCipherResetTest
         throws InvalidCipherTextException
     {
         cipher1.processBlock(plaintext, 0, output, 0);
-        if (cipher1.getAlgorithmName().contains("PGPCFBwithIV") && !encrypt)
+        if ((cipher1.getAlgorithmName().indexOf("PGPCFBwithIV") > -1) && !encrypt)
         {
             // Process past IV in first block
             cipher1.processBlock(plaintext, cipher1.getBlockSize(), output, 0);

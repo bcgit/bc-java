@@ -1,7 +1,5 @@
 package org.bouncycastle.openpgp.operator.bc;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
@@ -28,7 +26,7 @@ public class BcPublicKeyDataDecryptorFactory
         this.privKey = privKey;
     }
 
-    public byte[] recoverSessionData(int keyAlgorithm, BigInteger[] secKeyData)
+    public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
         throws PGPException
     {
         try
@@ -44,16 +42,9 @@ public class BcPublicKeyDataDecryptorFactory
             if (keyAlgorithm == PGPPublicKey.RSA_ENCRYPT
                 || keyAlgorithm == PGPPublicKey.RSA_GENERAL)
             {
-                byte[] bi = secKeyData[0].toByteArray();
+                byte[] bi = secKeyData[0];
 
-                if (bi[0] == 0)
-                {
-                    c1.processBytes(bi, 1, bi.length - 1);
-                }
-                else
-                {
-                    c1.processBytes(bi, 0, bi.length);
-                }
+                c1.processBytes(bi, 2, bi.length - 2);
             }
             else
             {
@@ -62,30 +53,30 @@ public class BcPublicKeyDataDecryptorFactory
                 int size = (parms.getParameters().getP().bitLength() + 7) / 8;
                 byte[] tmp = new byte[size];
 
-                byte[] bi = secKeyData[0].toByteArray();
-                if (bi.length > size)
+                byte[] bi = secKeyData[0]; // encoded MPI
+                if (bi.length - 2 > size)  // leading Zero? Shouldn't happen but...
                 {
-                    c1.processBytes(bi, 1, bi.length - 1);
+                    c1.processBytes(bi, 3, bi.length - 3);
                 }
                 else
                 {
-                    System.arraycopy(bi, 0, tmp, tmp.length - bi.length, bi.length);
+                    System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
                     c1.processBytes(tmp, 0, tmp.length);
                 }
 
-                bi = secKeyData[1].toByteArray();
+                bi = secKeyData[1];  // encoded MPI
                 for (int i = 0; i != tmp.length; i++)
                 {
                     tmp[i] = 0;
                 }
 
-                if (bi.length > size)
+                if (bi.length - 2 > size) // leading Zero? Shouldn't happen but...
                 {
-                    c1.processBytes(bi, 1, bi.length - 1);
+                    c1.processBytes(bi, 3, bi.length - 3);
                 }
                 else
                 {
-                    System.arraycopy(bi, 0, tmp, tmp.length - bi.length, bi.length);
+                    System.arraycopy(bi, 2, tmp, tmp.length - (bi.length - 2), bi.length - 2);
                     c1.processBytes(tmp, 0, tmp.length);
                 }
             }

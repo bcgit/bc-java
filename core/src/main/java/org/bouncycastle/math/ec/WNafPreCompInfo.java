@@ -4,52 +4,53 @@ package org.bouncycastle.math.ec;
  * Class holding precomputation data for the WNAF (Window Non-Adjacent Form)
  * algorithm.
  */
-class WNafPreCompInfo implements PreCompInfo
+public class WNafPreCompInfo implements PreCompInfo
 {
     /**
-     * Array holding the precomputed <code>ECPoint</code>s used for the Window
-     * NAF multiplication in <code>
-     * {@link org.bouncycastle.math.ec.multiplier.WNafMultiplier.multiply()
-     * WNafMultiplier.multiply()}</code>.
+     * Array holding the precomputed <code>ECPoint</code>s used for a Window
+     * NAF multiplication.
      */
-    private ECPoint[] preComp = null;
-    private ECPoint[] preCompNeg = null;
+    protected ECPoint[] preComp = null;
+
+    /**
+     * Array holding the negations of the precomputed <code>ECPoint</code>s used
+     * for a Window NAF multiplication.
+     */
+    protected ECPoint[] preCompNeg = null;
 
     /**
      * Holds an <code>ECPoint</code> representing twice(this). Used for the
-     * Window NAF multiplication in <code>
-     * {@link org.bouncycastle.math.ec.multiplier.WNafMultiplier.multiply()
-     * WNafMultiplier.multiply()}</code>.
+     * Window NAF multiplication to create or extend the precomputed values.
      */
-    private ECPoint twiceP = null;
+    protected ECPoint twice = null;
 
-    protected ECPoint[] getPreComp()
+    public ECPoint[] getPreComp()
     {
         return preComp;
     }
 
-    protected ECPoint[] getPreCompNeg()
-    {
-        return preCompNeg;
-    }
-
-    protected void setPreComp(ECPoint[] preComp)
+    public void setPreComp(ECPoint[] preComp)
     {
         this.preComp = preComp;
     }
 
-    protected void setPreCompNeg(ECPoint[] preCompNeg)
+    public ECPoint[] getPreCompNeg()
+    {
+        return preCompNeg;
+    }
+
+    public void setPreCompNeg(ECPoint[] preCompNeg)
     {
         this.preCompNeg = preCompNeg;
     }
 
-    protected ECPoint getTwiceP()
+    public ECPoint getTwice()
     {
-        return twiceP;
+        return twice;
     }
 
-    protected void setTwiceP(ECPoint twiceThis)
+    public void setTwice(ECPoint twice)
     {
-        this.twiceP = twiceThis;
+        this.twice = twice;
     }
 }

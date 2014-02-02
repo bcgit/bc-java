@@ -50,7 +50,7 @@ public class ECPointUtil
         }
         
         org.bouncycastle.math.ec.ECPoint p = c.decodePoint(encoded);
-        
-        return new ECPoint(p.getX().toBigInteger(), p.getY().toBigInteger());
+
+        return new ECPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger());
     }
 }

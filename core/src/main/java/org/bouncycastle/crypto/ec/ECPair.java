@@ -23,16 +23,14 @@ public class ECPair
         return y;
     }
 
-    public boolean equals(Object obj)
+    public boolean equals(ECPair other)
     {
-        if (obj instanceof ECPair)
-        {
-            ECPair other = (ECPair)obj;
+        return other.getX().equals(getX()) && other.getY().equals(getY());
+    }
 
-            return other.getX().equals(getX()) && other.getY().equals(getY());
-        }
-
-        return false;
+    public boolean equals(Object other)
+    {
+        return other instanceof ECPair ? equals((ECPair)other) : false;
     }
 
     public int hashCode()

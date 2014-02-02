@@ -48,22 +48,33 @@ public class AttributeCertificateInfo
     private AttributeCertificateInfo(
         ASN1Sequence   seq)
     {
-        if (seq.size() < 7 || seq.size() > 9)
+        if (seq.size() < 6 || seq.size() > 9)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
-        this.version = ASN1Integer.getInstance(seq.getObjectAt(0));
-        this.holder = Holder.getInstance(seq.getObjectAt(1));
-        this.issuer = AttCertIssuer.getInstance(seq.getObjectAt(2));
-        this.signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(3));
-        this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(4));
-        this.attrCertValidityPeriod = AttCertValidityPeriod.getInstance(seq.getObjectAt(5));
-        this.attributes = ASN1Sequence.getInstance(seq.getObjectAt(6));
-        
-        for (int i = 7; i < seq.size(); i++)
+        int start;
+        if (seq.getObjectAt(0) instanceof ASN1Integer)   // in version 1 certs version is DEFAULT  v1(0)
         {
-            ASN1Encodable    obj = (ASN1Encodable)seq.getObjectAt(i);
+            this.version = ASN1Integer.getInstance(seq.getObjectAt(0));
+            start = 1;
+        }
+        else
+        {
+            this.version = new ASN1Integer(0);
+            start = 0;
+        }
+
+        this.holder = Holder.getInstance(seq.getObjectAt(start));
+        this.issuer = AttCertIssuer.getInstance(seq.getObjectAt(start + 1));
+        this.signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(start + 2));
+        this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(start + 3));
+        this.attrCertValidityPeriod = AttCertValidityPeriod.getInstance(seq.getObjectAt(start + 4));
+        this.attributes = ASN1Sequence.getInstance(seq.getObjectAt(start + 5));
+        
+        for (int i = start + 6; i < seq.size(); i++)
+        {
+            ASN1Encodable    obj = seq.getObjectAt(i);
 
             if (obj instanceof DERBitString)
             {
@@ -143,7 +154,10 @@ public class AttributeCertificateInfo
     {
         ASN1EncodableVector  v = new ASN1EncodableVector();
 
-        v.add(version);
+        if (version.getValue().intValue() != 0)
+        {
+            v.add(version);
+        }
         v.add(holder);
         v.add(issuer);
         v.add(signature);

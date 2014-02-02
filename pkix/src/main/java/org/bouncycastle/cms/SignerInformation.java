@@ -2,13 +2,6 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -33,13 +26,10 @@ import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cms.jcajce.JcaSignerInfoVerifierBuilder;
-import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RawContentVerifier;
-import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
 
@@ -172,7 +162,7 @@ public class SignerInformation
             throw new IllegalStateException("method can only be called after verify.");
         }
         
-        return (byte[])resultDigest.clone();
+        return Arrays.clone(resultDigest);
     }
     
     /**
@@ -232,7 +222,7 @@ public class SignerInformation
      */
     public byte[] getSignature()
     {
-        return (byte[])signature.clone();
+        return Arrays.clone(signature);
     }
 
     /**
@@ -316,42 +306,6 @@ public class SignerInformation
         }
 
         return null;
-    }
-
-    /**
-     * @deprecated
-     */
-    private boolean doVerify(
-        PublicKey       key,
-        Provider        sigProvider)
-        throws CMSException, NoSuchAlgorithmException
-    {
-        try
-        {
-            SignerInformationVerifier verifier;
-
-            if (sigProvider != null)
-            {
-                if (!sigProvider.getName().equalsIgnoreCase("BC"))
-                {
-                    verifier = new JcaSignerInfoVerifierBuilder(new JcaDigestCalculatorProviderBuilder().build()).setProvider(sigProvider).build(key);
-                }
-                else
-                {
-                    verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(sigProvider).build(key);
-                }
-            }
-            else
-            {
-                verifier = new JcaSimpleSignerInfoVerifierBuilder().build(key);
-            }
-
-            return doVerify(verifier);
-        }
-        catch (OperatorCreationException e)
-        {
-            throw new CMSException("unable to create verifier: " + e.getMessage(), e);
-        }
     }
 
     private boolean doVerify(
@@ -555,75 +509,6 @@ public class SignerInformation
     }
 
     /**
-     * verify that the given public key successfully handles and confirms the
-     * signature associated with this signer.
-     * @deprecated use verify(ContentVerifierProvider)
-     */
-    public boolean verify(
-        PublicKey   key,
-        String      sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
-    {
-        return verify(key, CMSUtils.getProvider(sigProvider));
-    }
-
-    /**
-     * verify that the given public key successfully handles and confirms the
-     * signature associated with this signer
-     * @deprecated use verify(ContentVerifierProvider)
-     */
-    public boolean verify(
-        PublicKey   key,
-        Provider    sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
-    {
-        // Optional, but still need to validate if present
-        getSigningTime();
-
-        return doVerify(key, sigProvider);
-    }
-
-    /**
-     * verify that the given certificate successfully handles and confirms
-     * the signature associated with this signer and, if a signingTime
-     * attribute is available, that the certificate was valid at the time the
-     * signature was generated.
-     * @deprecated use verify(ContentVerifierProvider)
-     */
-    public boolean verify(
-        X509Certificate cert,
-        String          sigProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException,
-            CertificateExpiredException, CertificateNotYetValidException,
-            CMSException
-    {
-        return verify(cert, CMSUtils.getProvider(sigProvider));
-    }
-
-    /**
-     * verify that the given certificate successfully handles and confirms
-     * the signature associated with this signer and, if a signingTime
-     * attribute is available, that the certificate was valid at the time the
-     * signature was generated.
-     * @deprecated use verify(ContentVerifierProvider)
-     */
-    public boolean verify(
-        X509Certificate cert,
-        Provider        sigProvider)
-        throws NoSuchAlgorithmException,
-            CertificateExpiredException, CertificateNotYetValidException,
-            CMSException
-    {
-        Time signingTime = getSigningTime();
-        if (signingTime != null)
-        {
-            cert.checkValidity(signingTime.getDate());
-        }
-
-        return doVerify(cert.getPublicKey(), sigProvider); 
-    }
-
-    /**
      * Verify that the given verifier can successfully verify the signature on
      * this SignerInformation object.
      *
@@ -651,17 +536,6 @@ public class SignerInformation
         }
 
         return doVerify(verifier);
-    }
-
-    /**
-     * Return the base ASN.1 CMS structure that this object contains.
-     * 
-     * @return an object containing a CMS SignerInfo structure.
-     * @deprecated use toASN1Structure()
-     */
-    public SignerInfo toSignerInfo()
-    {
-        return info;
     }
 
     /**

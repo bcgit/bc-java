@@ -2,15 +2,21 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
+import org.bouncycastle.crypto.tls.MaxFragmentLength;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.crypto.tls.SignatureAlgorithm;
+import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsCredentials;
+import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
 import org.bouncycastle.crypto.tls.TlsSession;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -54,12 +60,41 @@ public class MockDTLSClient
 
     public ProtocolVersion getClientVersion()
     {
-        return ProtocolVersion.DTLSv10;
+        return ProtocolVersion.DTLSv12;
     }
 
     public ProtocolVersion getMinimumVersion()
     {
         return ProtocolVersion.DTLSv10;
+    }
+
+//    public int[] getCipherSuites()
+//    {
+//        return Arrays.concatenate(super.getCipherSuites(),
+//            new int[]
+//            {
+//                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+//                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
+//                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
+//                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
+//                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
+//            });
+//    }
+
+    public Hashtable getClientExtensions() throws IOException
+    {
+        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+        TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
+        TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+        TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+        return clientExtensions;
+    }
+
+    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
+    {
+        super.notifyServerVersion(serverVersion);
+
+        System.out.println("Negotiated " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication()
@@ -85,19 +120,34 @@ public class MockDTLSClient
                 throws IOException
             {
                 short[] certificateTypes = certificateRequest.getCertificateTypes();
-                if (certificateTypes != null)
+                if (certificateTypes == null || !Arrays.contains(certificateTypes, ClientCertificateType.rsa_sign))
                 {
-                    for (int i = 0; i < certificateTypes.length; ++i)
+                    return null;
+                }
+
+                SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
+                Vector sigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+                if (sigAlgs != null)
+                {
+                    for (int i = 0; i < sigAlgs.size(); ++i)
                     {
-                        if (certificateTypes[i] == ClientCertificateType.rsa_sign)
+                        SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
+                            sigAlgs.elementAt(i);
+                        if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
                         {
-                            // TODO Create a distinct client certificate for use here
-                            return TlsTestUtils.loadSignerCredentials(context, new String[]{"x509-server.pem",
-                                "x509-ca.pem"}, "x509-server-key.pem");
+                            signatureAndHashAlgorithm = sigAlg;
+                            break;
                         }
                     }
+
+                    if (signatureAndHashAlgorithm == null)
+                    {
+                        return null;
+                    }
                 }
-                return null;
+
+                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-client.pem", "x509-ca.pem" },
+                    "x509-client-key.pem", signatureAndHashAlgorithm);
             }
         };
     }

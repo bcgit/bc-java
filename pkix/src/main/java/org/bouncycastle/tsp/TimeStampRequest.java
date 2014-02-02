@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.security.NoSuchProviderException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -58,9 +57,15 @@ public class TimeStampRequest
     public TimeStampRequest(InputStream in) 
         throws IOException
     {
+        this(loadRequest(in));
+    }
+
+    private static TimeStampReq loadRequest(InputStream in)
+        throws IOException
+    {
         try
         {
-            this.req = TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
+            return TimeStampReq.getInstance(new ASN1InputStream(in).readObject());
         }
         catch (ClassCastException e)
         {
@@ -121,27 +126,6 @@ public class TimeStampRequest
         {
             return false;
         }
-    }
-
-    /**
-     * Validate the timestamp request, checking the digest to see if it is of an
-     * accepted type and whether it is of the correct length for the algorithm specified.
-     * 
-     * @param algorithms a set of String OIDS giving accepted algorithms.
-     * @param policies if non-null a set of policies we are willing to sign under.
-     * @param extensions if non-null a set of extensions we are willing to accept.
-     * @param provider the provider to confirm the digest size against.
-     * @throws TSPException if the request is invalid, or processing fails.
-     * @deprecated use validate method without provider argument.
-     */
-    public void validate(
-        Set     algorithms,
-        Set     policies,
-        Set     extensions,
-        String  provider)
-        throws TSPException, NoSuchProviderException
-    {
-        validate(algorithms, policies, extensions);
     }
 
     /**
@@ -226,34 +210,6 @@ public class TimeStampRequest
     public List getExtensionOIDs()
     {
         return TSPUtil.getExtensionOIDs(extensions);
-    }
-
-    /* (non-Javadoc)
-     * @see java.security.cert.X509Extension#getExtensionValue(java.lang.String)
-     * @deprecated use getExtension(ASN1ObjectIdentifier)
-     */
-    public byte[] getExtensionValue(String oid)
-    {
-        Extensions exts = req.getExtensions();
-
-        if (exts != null)
-        {
-            Extension   ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-
-            if (ext != null)
-            {
-                try
-                {
-                    return ext.getExtnValue().getEncoded();
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("error encoding " + e.toString());
-                }
-            }
-        }
-
-        return null;
     }
 
     /**

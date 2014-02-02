@@ -85,32 +85,32 @@ public class ThreefishEngine
     /**
      * Block size in bytes
      */
-    private final int blocksizeBytes;
+    private int blocksizeBytes;
 
     /**
      * Block size in 64 bit words
      */
-    private final int blocksizeWords;
+    private int blocksizeWords;
 
     /**
      * Buffer for byte oriented processBytes to call internal word API
      */
-    private final long[] currentBlock;
+    private long[] currentBlock;
 
     /**
      * Tweak bytes (2 byte t1,t2, calculated t3 and repeat of t1,t2 for modulo free lookup
      */
-    private final long[] t = new long[5];
+    private long[] t = new long[5];
 
     /**
      * Key schedule words
      */
-    private final long[] kw;
+    private long[] kw;
 
     /**
      * The internal cipher implementation (varies by blocksize)
      */
-    private final ThreefishCipher cipher;
+    private ThreefishCipher cipher;
 
     private boolean forEncryption;
 

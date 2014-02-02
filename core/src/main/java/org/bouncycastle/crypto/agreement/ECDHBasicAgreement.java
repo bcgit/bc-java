@@ -44,7 +44,10 @@ public class ECDHBasicAgreement
         ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
         ECPoint P = pub.getQ().multiply(key.getD()).normalize();
 
-        // if (p.isInfinity()) throw new RuntimeException("d*Q == infinity");
+        if (P.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid agreement value for ECDH");
+        }
 
         return P.getAffineXCoord().toBigInteger();
     }

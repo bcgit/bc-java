@@ -74,7 +74,7 @@ public class TlsClientProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
-        this.securityParameters.clientRandom = createRandomBlock(secureRandom);
+        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), secureRandom);
 
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
         this.tlsClient.init(tlsClientContext);
@@ -215,6 +215,19 @@ public class TlsClientProtocol
             {
             case CS_CLIENT_FINISHED:
             {
+                if (this.expectSessionTicket)
+                {
+                    /*
+                     * RFC 5077 3.3. This message MUST be sent if the server included a
+                     * SessionTicket extension in the ServerHello.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+
+                // NB: Fall through to next case label
+            }
+            case CS_SERVER_SESSION_TICKET:
+            {
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
@@ -322,6 +335,8 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
+                this.recordStream.getHandshakeHash().sealHashAlgorithms();
+
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)
                 {
@@ -370,16 +385,36 @@ public class TlsClientProtocol
                 establishMasterSecret(getContext(), keyExchange);
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
+                TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
+
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
-                    TlsSignerCredentials signerCreds = (TlsSignerCredentials)clientCreds;
+                    TlsSignerCredentials signerCredentials = (TlsSignerCredentials)clientCreds;
+
                     /*
-                     * TODO RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+                     * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
-                    SignatureAndHashAlgorithm algorithm = null;
-                    byte[] hash = recordStream.getCurrentHash(null);
-                    byte[] signature = signerCreds.generateCertificateSignature(hash);
-                    DigitallySigned certificateVerify = new DigitallySigned(algorithm, signature);
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+                    byte[] hash;
+
+                    if (TlsUtils.isTLSv12(getContext()))
+                    {
+                        signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+                        if (signatureAndHashAlgorithm == null)
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+
+                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                    }
+                    else
+                    {
+                        signatureAndHashAlgorithm = null;
+                        hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                    }
+
+                    byte[] signature = signerCredentials.generateCertificateSignature(hash);
+                    DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 
                     this.connection_state = CS_CERTIFICATE_VERIFY;
@@ -455,6 +490,13 @@ public class TlsClientProtocol
                 assertEmpty(buf);
 
                 this.keyExchange.validateCertificateRequest(this.certificateRequest);
+
+                /*
+                 * TODO Give the client a chance to immediately select the CertificateVerify hash
+                 * algorithm here to avoid tracking the other hash algorithms unnecessarily?
+                 */
+                TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
+                    this.certificateRequest.getSupportedSignatureAlgorithms());
 
                 break;
             }
@@ -592,12 +634,13 @@ public class TlsClientProtocol
 
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
-         * ones.
+         * ones, and is a valid selection for the negotiated version.
          */
         int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
+        if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -609,7 +652,7 @@ public class TlsClientProtocol
          * offered ones.
          */
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
+        if (!Arrays.contains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -661,6 +704,7 @@ public class TlsClientProtocol
                 {
                     // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
+                    // TODO[compat-polarssl] PolarSSL test server sends server extensions e.g. ec_point_formats
 //                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
@@ -725,6 +769,8 @@ public class TlsClientProtocol
 
         if (sessionServerExtensions != null)
         {
+            this.securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
+
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
                 sessionServerExtensions, AlertDescription.illegal_parameter);
 
@@ -792,8 +838,8 @@ public class TlsClientProtocol
 
         if (session_id.length > 0 && this.sessionParameters != null)
         {
-            if (!arrayContains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
-                || !arrayContains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
+            if (!Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
+                || !Arrays.contains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
             {
                 session_id = TlsUtils.EMPTY_BYTES;
             }
@@ -819,12 +865,14 @@ public class TlsClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !TlsProtocol.arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noSCSV)
             {
                 // TODO Consider whether to default to a client extension instead
-                offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+//                this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.clientExtensions);
+//                this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
+                this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
             TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);

@@ -17,12 +17,13 @@ public class SECNamedCurves
 {
     private static ECCurve configureCurve(ECCurve curve)
     {
-//        if (curve instanceof ECCurve.Fp && curve.getCoordinateSystem() != ECCurve.COORD_JACOBIAN
-//            && curve.supportsCoordinateSystem(ECCurve.COORD_JACOBIAN))
+//        int coord = ECCurve.COORD_JACOBIAN_MODIFIED;
+//
+//        if (curve.getCoordinateSystem() != coord && curve.supportsCoordinateSystem(coord))
 //        {
 //            return curve.configure()
-//                .setCoordinateSystem(ECCurve.COORD_JACOBIAN)
-//                .setMultiplier(new WNafMultiplier())
+//                .setCoordinateSystem(coord)
+////                .setMultiplier(new WNafL2RMultiplier())
 //                .create();
 //        }
 
@@ -50,7 +51,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("DB7C2ABF62E35E7628DFAC6561C5");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "09487239995A5EE76B55F9C2F098"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -76,7 +77,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("36DF0AAFD8B8D7597CA10520D04B");
             BigInteger h = BigInteger.valueOf(4);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "4BA30AB5E892B4E1649DD0928643"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -102,7 +103,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFE0000000075A30D1B9038A115");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "161FF7528B899B2D0C28607CA52C5B86"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -128,7 +129,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("3FFFFFFF7FFFFFFFBE0024720613B5A3");
             BigInteger h = BigInteger.valueOf(4);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "7B6AA5D85E572983E6FB32A7CDEBC140"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -154,7 +155,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000001B8FA16DFAB9ACA16B6B3");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
 //            ECPoint G = curve.decodePoint(Hex.decode("02"
 //                + "3B4C382CE37AA192A4019E763036F4F5DD4D7EBB"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -180,7 +181,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000001F4C8F927AED3CA752257");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
                 //+ "4A96B5688EF573284664698968C38BB913CBFC82"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -206,7 +207,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000000351EE786A818F3A1A16B");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "52DCB034293A117E1F4FF11B30F7199D3144CE6D"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -232,7 +233,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFE26F2FC170F69466A74DEFD8D");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "DB4FF10EC057E9AE26B07D0280B7F4341DA5D1B1EAE06C7D"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -258,7 +259,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -284,7 +285,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("010000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "A1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -310,7 +311,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFF16A2E0B8F03E13DD29455C5C2A3D");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "B70E0CBD6BB4BF7F321390B94A03C1D356C21122343280D6115C1D21"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -336,7 +337,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -362,7 +363,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -388,7 +389,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "AA87CA22BE8B05378EB1C71EF320AD746E1D3B628BA79B9859F741E082542A385502F25DBF55296C3A545E3872760AB7"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -414,7 +415,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA51868783BF2F966B7FCC0148F709A5D03BB5C9B8899C47AEBB6FB71E91386409");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b));
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
 
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "00C6858E06B70404E9CD9E3ECB662395B4429C648139053FB521F828AF606B4D3DBAA14B5E77EFE75928FE1DC127A2FFA8DE3348B3C1856A429BF97E7E31C2E5BD66"));

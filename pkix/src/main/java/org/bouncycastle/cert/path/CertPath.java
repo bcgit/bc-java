@@ -72,4 +72,9 @@ public class CertPath
 
         return rv;
     }
+
+    public int length()
+    {
+        return certificates.length;
+    }
 }

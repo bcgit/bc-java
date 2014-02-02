@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -24,7 +23,7 @@ public class TlsServerProtocol
     protected CertificateRequest certificateRequest = null;
 
     protected short clientCertificateType = -1;
-    protected byte[] certificateVerifyHash = null;
+    protected TlsHandshakeHash prepareFinishHash = null;
 
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
@@ -53,7 +52,7 @@ public class TlsServerProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.server;
-        this.securityParameters.serverRandom = createRandomBlock(secureRandom);
+        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), secureRandom);
 
         this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
         this.tlsServer.init(tlsServerContext);
@@ -71,7 +70,7 @@ public class TlsServerProtocol
         this.keyExchange = null;
         this.serverCredentials = null;
         this.certificateRequest = null;
-        this.certificateVerifyHash = null;
+        this.prepareFinishHash = null;
     }
 
     protected AbstractTlsContext getContext()
@@ -160,13 +159,19 @@ public class TlsServerProtocol
                     if (this.certificateRequest != null)
                     {
                         this.keyExchange.validateCertificateRequest(certificateRequest);
+
                         sendCertificateRequestMessage(certificateRequest);
+
+                        TlsUtils.trackHashAlgorithms(this.recordStream.getHandshakeHash(),
+                            this.certificateRequest.getSupportedSignatureAlgorithms());
                     }
                 }
                 this.connection_state = CS_CERTIFICATE_REQUEST;
 
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
+
+                this.recordStream.getHandshakeHash().sealHashAlgorithms();
 
                 break;
             }
@@ -277,12 +282,14 @@ public class TlsServerProtocol
                  * signing capability (i.e., all certificates except those containing fixed
                  * Diffie-Hellman parameters).
                  */
-                if (this.certificateVerifyHash == null)
+                if (!expectCertificateVerifyMessage())
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
+
                 receiveCertificateVerifyMessage(buf);
                 this.connection_state = CS_CERTIFICATE_VERIFY;
+
                 break;
             }
             default:
@@ -296,7 +303,7 @@ public class TlsServerProtocol
             {
             case CS_CLIENT_KEY_EXCHANGE:
             {
-                if (this.certificateVerifyHash != null)
+                if (expectCertificateVerifyMessage())
                 {
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
                 }
@@ -425,6 +432,9 @@ public class TlsServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
+            // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
+            byte[] certificateVerifyHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+
             org.bouncycastle.asn1.x509.Certificate x509Cert = this.peerCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
@@ -432,7 +442,7 @@ public class TlsServerProtocol
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(this.clientCertificateType);
             tlsSigner.init(getContext());
             tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, this.certificateVerifyHash);
+                clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
         }
         catch (Exception e)
         {
@@ -515,7 +525,7 @@ public class TlsServerProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (arrayContains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
+            if (Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
                 this.secure_renegotiation = true;
             }
@@ -559,14 +569,11 @@ public class TlsServerProtocol
         establishMasterSecret(getContext(), keyExchange);
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
+        this.prepareFinishHash = recordStream.prepareToFinish();
+
         if (!expectSessionTicket)
         {
             sendChangeCipherSpecMessage();
-        }
-
-        if (expectCertificateVerifyMessage())
-        {
-            this.certificateVerifyHash = recordStream.getCurrentHash(null);
         }
     }
 
@@ -632,16 +639,17 @@ public class TlsServerProtocol
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
 
         int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
-        if (!arrayContains(this.offeredCipherSuites, selectedCipherSuite)
+        if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         securityParameters.cipherSuite = selectedCipherSuite;
 
         short selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
-        if (!arrayContains(this.offeredCompressionMethods, selectedCompressionMethod))
+        if (!Arrays.contains(this.offeredCompressionMethods, selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -687,6 +695,8 @@ public class TlsServerProtocol
 
         if (this.serverExtensions != null)
         {
+            this.securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(this.serverExtensions);
+
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientExtensions,
                 this.serverExtensions, AlertDescription.internal_error);
 
@@ -723,7 +733,7 @@ public class TlsServerProtocol
 
         message.writeToRecordStream();
 
-        recordStream.notifyHelloComplete();
+        this.recordStream.notifyHelloComplete();
     }
 
     protected void sendServerHelloDoneMessage()

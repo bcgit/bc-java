@@ -43,7 +43,7 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
-    public static byte[] EMPTY_BYTES = new byte[0];
+    public static final byte[] EMPTY_BYTES = new byte[0];
 
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
 
@@ -178,91 +178,91 @@ public class TlsUtils
     public static void writeUint16(int i, OutputStream output)
         throws IOException
     {
-        output.write(i >> 8);
+        output.write(i >>> 8);
         output.write(i);
     }
 
     public static void writeUint16(int i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 8);
         buf[offset + 1] = (byte)i;
     }
 
     public static void writeUint24(int i, OutputStream output)
         throws IOException
     {
-        output.write(i >> 16);
-        output.write(i >> 8);
+        output.write(i >>> 16);
+        output.write(i >>> 8);
         output.write(i);
     }
 
     public static void writeUint24(int i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 16);
-        buf[offset + 1] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 16);
+        buf[offset + 1] = (byte)(i >>> 8);
         buf[offset + 2] = (byte)(i);
     }
 
     public static void writeUint32(long i, OutputStream output)
         throws IOException
     {
-        output.write((int)(i >> 24));
-        output.write((int)(i >> 16));
-        output.write((int)(i >> 8));
+        output.write((int)(i >>> 24));
+        output.write((int)(i >>> 16));
+        output.write((int)(i >>> 8));
         output.write((int)(i));
     }
 
     public static void writeUint32(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 24);
-        buf[offset + 1] = (byte)(i >> 16);
-        buf[offset + 2] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 24);
+        buf[offset + 1] = (byte)(i >>> 16);
+        buf[offset + 2] = (byte)(i >>> 8);
         buf[offset + 3] = (byte)(i);
     }
 
     public static void writeUint48(long i, OutputStream output)
         throws IOException
     {
-        output.write((byte)(i >> 40));
-        output.write((byte)(i >> 32));
-        output.write((byte)(i >> 24));
-        output.write((byte)(i >> 16));
-        output.write((byte)(i >> 8));
+        output.write((byte)(i >>> 40));
+        output.write((byte)(i >>> 32));
+        output.write((byte)(i >>> 24));
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
         output.write((byte)(i));
     }
 
     public static void writeUint48(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 40);
-        buf[offset + 1] = (byte)(i >> 32);
-        buf[offset + 2] = (byte)(i >> 24);
-        buf[offset + 3] = (byte)(i >> 16);
-        buf[offset + 4] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 40);
+        buf[offset + 1] = (byte)(i >>> 32);
+        buf[offset + 2] = (byte)(i >>> 24);
+        buf[offset + 3] = (byte)(i >>> 16);
+        buf[offset + 4] = (byte)(i >>> 8);
         buf[offset + 5] = (byte)(i);
     }
 
     public static void writeUint64(long i, OutputStream output)
         throws IOException
     {
-        output.write((byte)(i >> 56));
-        output.write((byte)(i >> 48));
-        output.write((byte)(i >> 40));
-        output.write((byte)(i >> 32));
-        output.write((byte)(i >> 24));
-        output.write((byte)(i >> 16));
-        output.write((byte)(i >> 8));
+        output.write((byte)(i >>> 56));
+        output.write((byte)(i >>> 48));
+        output.write((byte)(i >>> 40));
+        output.write((byte)(i >>> 32));
+        output.write((byte)(i >>> 24));
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
         output.write((byte)(i));
     }
 
     public static void writeUint64(long i, byte[] buf, int offset)
     {
-        buf[offset] = (byte)(i >> 56);
-        buf[offset + 1] = (byte)(i >> 48);
-        buf[offset + 2] = (byte)(i >> 40);
-        buf[offset + 3] = (byte)(i >> 32);
-        buf[offset + 4] = (byte)(i >> 24);
-        buf[offset + 5] = (byte)(i >> 16);
-        buf[offset + 6] = (byte)(i >> 8);
+        buf[offset] = (byte)(i >>> 56);
+        buf[offset + 1] = (byte)(i >>> 48);
+        buf[offset + 2] = (byte)(i >>> 40);
+        buf[offset + 3] = (byte)(i >>> 32);
+        buf[offset + 4] = (byte)(i >>> 24);
+        buf[offset + 5] = (byte)(i >>> 16);
+        buf[offset + 6] = (byte)(i >>> 8);
         buf[offset + 7] = (byte)(i);
     }
 
@@ -634,9 +634,9 @@ public class TlsUtils
     public static void writeGMTUnixTime(byte[] buf, int offset)
     {
         int t = (int)(System.currentTimeMillis() / 1000L);
-        buf[offset] = (byte)(t >> 24);
-        buf[offset + 1] = (byte)(t >> 16);
-        buf[offset + 2] = (byte)(t >> 8);
+        buf[offset] = (byte)(t >>> 24);
+        buf[offset + 1] = (byte)(t >>> 16);
+        buf[offset + 2] = (byte)(t >>> 8);
         buf[offset + 3] = (byte)t;
     }
 
@@ -1020,7 +1020,7 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length);
     }
 
-    public static final Digest createHash(int hashAlgorithm)
+    public static final Digest createHash(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
@@ -1041,7 +1041,7 @@ public class TlsUtils
         }
     }
 
-    public static final Digest cloneHash(int hashAlgorithm, Digest hash)
+    public static final Digest cloneHash(short hashAlgorithm, Digest hash)
     {
         switch (hashAlgorithm)
         {
@@ -1099,7 +1099,7 @@ public class TlsUtils
         }
     }
 
-    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(int hashAlgorithm)
+    public static ASN1ObjectIdentifier getOIDForHashAlgorithm(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
@@ -1191,6 +1191,20 @@ public class TlsUtils
         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
+    static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)
+    {
+        if (supportedSignatureAlgorithms != null)
+        {
+            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            {
+                SignatureAndHashAlgorithm signatureAndHashAlgorithm = (SignatureAndHashAlgorithm)
+                    supportedSignatureAlgorithms.elementAt(i);
+                short hashAlgorithm = signatureAndHashAlgorithm.getHash();
+                handshakeHash.trackHashAlgorithm(hashAlgorithm);
+            }
+        }
+    }
+
     public static boolean hasSigningCapability(short clientCertificateType)
     {
         switch (clientCertificateType)
@@ -1243,5 +1257,129 @@ public class TlsUtils
         Vector v = new Vector(1);
         v.addElement(obj);
         return v;
+    }
+
+    public static ProtocolVersion getMinimumVersion(int ciphersuite)
+    {
+        switch (ciphersuite)
+        {
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CCM:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CCM:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM:
+        case CipherSuite.TLS_RSA_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
+            return ProtocolVersion.TLSv12;
+
+        default:
+            return ProtocolVersion.SSLv3;
+        }
+    }
+
+    public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
+    {
+        return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
     }
 }

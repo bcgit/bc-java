@@ -46,7 +46,7 @@ public class DTLSServerProtocol
 
         SecurityParameters securityParameters = new SecurityParameters();
         securityParameters.entity = ConnectionEnd.server;
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(secureRandom);
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), secureRandom);
 
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
@@ -185,10 +185,15 @@ public class DTLSServerProtocol
 
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
+
+                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(),
+                    state.certificateRequest.getSupportedSignatureAlgorithms());
             }
         }
 
         handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
+
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         clientMessage = handshake.receiveMessage();
 
@@ -242,6 +247,8 @@ public class DTLSServerProtocol
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
 
+        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
+
         /*
          * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
          * capability (i.e., all certificates except those containing fixed Diffie-Hellman
@@ -249,14 +256,13 @@ public class DTLSServerProtocol
          */
         if (expectCertificateVerifyMessage(state))
         {
-            byte[] certificateVerifyHash = handshake.getCurrentHash();
             byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
-            processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
+            processCertificateVerify(state, certificateVerifyBody, prepareFinishHash);
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext,
-            ExporterLabel.client_finished, handshake.getCurrentHash());
+        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.client_finished,
+            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -268,7 +274,7 @@ public class DTLSServerProtocol
 
         // NOTE: Calculated exclusive of the Finished message itself
         byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
-            handshake.getCurrentHash());
+            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 
         handshake.finish();
@@ -332,9 +338,10 @@ public class DTLSServerProtocol
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         state.selectedCipherSuite = state.server.getSelectedCipherSuite();
-        if (!TlsProtocol.arrayContains(state.offeredCipherSuites, state.selectedCipherSuite)
+        if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
+            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || !TlsUtils.isValidCipherSuiteForVersion(state.selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -342,7 +349,7 @@ public class DTLSServerProtocol
         validateSelectedCipherSuite(state.selectedCipherSuite, AlertDescription.internal_error);
 
         state.selectedCompressionMethod = state.server.getSelectedCompressionMethod();
-        if (!TlsProtocol.arrayContains(state.offeredCompressionMethods, state.selectedCompressionMethod))
+        if (!Arrays.contains(state.offeredCompressionMethods, state.selectedCompressionMethod))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -382,6 +389,8 @@ public class DTLSServerProtocol
 
         if (state.serverExtensions != null)
         {
+            securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
+
             state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, state.serverExtensions,
                 AlertDescription.internal_error);
 
@@ -456,7 +465,7 @@ public class DTLSServerProtocol
         notifyClientCertificate(state, clientCertificate);
     }
 
-    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, byte[] certificateVerifyHash)
+    protected void processCertificateVerify(ServerHandshakeState state, byte[] body, TlsHandshakeHash prepareFinishHash)
         throws IOException
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
@@ -468,6 +477,9 @@ public class DTLSServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
+            // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
+            byte[] certificateVerifyHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+
             org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
@@ -560,7 +572,7 @@ public class DTLSServerProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. If it does, set the secure_renegotiation flag
              * to TRUE.
              */
-            if (TlsProtocol.arrayContains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
+            if (Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
                 state.secure_renegotiation = true;
             }

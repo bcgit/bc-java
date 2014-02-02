@@ -13,6 +13,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.JcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -128,6 +129,31 @@ class OperatorHelper
             throw new PGPException("Can't use ECDSA for encryption.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
+        }
+    }
+
+    Cipher createKeyWrapper(int encAlgorithm)
+        throws PGPException
+    {
+        try
+        {
+            switch (encAlgorithm)
+            {
+            case SymmetricKeyAlgorithmTags.AES_128:
+            case SymmetricKeyAlgorithmTags.AES_192:
+            case SymmetricKeyAlgorithmTags.AES_256:
+                return helper.createCipher("AESWrap");
+            case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+                return helper.createCipher("CamelliaWrap");
+            default:
+                throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
         }
     }
 

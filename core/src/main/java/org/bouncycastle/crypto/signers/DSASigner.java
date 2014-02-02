@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.signers;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.params.DSAKeyParameters;
@@ -8,9 +11,6 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
 /**
  * The Digital Signature Algorithm - as described in "Handbook of Applied
  * Cryptography", pages 452 - 453.
@@ -18,9 +18,28 @@ import java.security.SecureRandom;
 public class DSASigner
     implements DSA
 {
-    DSAKeyParameters key;
+    private final DSAKCalculator kCalculator;
 
-    SecureRandom    random;
+    private DSAKeyParameters key;
+    private SecureRandom    random;
+
+    /**
+     * Default configuration, random K values.
+     */
+    public DSASigner()
+    {
+        this.kCalculator = new RandomDSAKCalculator();
+    }
+
+    /**
+     * Configuration with an alternate, possibly deterministic calculator of K.
+     *
+     * @param kCalculator a K value calculator.
+     */
+    public DSASigner(DSAKCalculator kCalculator)
+    {
+        this.kCalculator = kCalculator;
+    }
 
     public void init(
         boolean                 forSigning,
@@ -59,14 +78,17 @@ public class DSASigner
     {
         DSAParameters   params = key.getParameters();
         BigInteger      m = calculateE(params.getQ(), message);
-        BigInteger      k;
-        int                  qBitLength = params.getQ().bitLength();
 
-        do 
+        if (kCalculator.isDeterministic())
         {
-            k = new BigInteger(qBitLength, random);
+            kCalculator.init(params.getQ(), ((DSAPrivateKeyParameters)key).getX(), message);
         }
-        while (k.compareTo(params.getQ()) >= 0);
+        else
+        {
+            kCalculator.init(params.getQ(), random);
+        }
+
+        BigInteger  k = kCalculator.nextK();
 
         BigInteger  r = params.getG().modPow(k, params.getP()).mod(params.getQ());
 

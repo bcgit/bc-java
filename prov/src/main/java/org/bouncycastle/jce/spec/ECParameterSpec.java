@@ -24,7 +24,7 @@ public class ECParameterSpec
         BigInteger  n)
     {
         this.curve = curve;
-        this.G = G;
+        this.G = G.normalize();
         this.n = n;
         this.h = BigInteger.valueOf(1);
         this.seed = null;
@@ -37,7 +37,7 @@ public class ECParameterSpec
         BigInteger  h)
     {
         this.curve = curve;
-        this.G = G;
+        this.G = G.normalize();
         this.n = n;
         this.h = h;
         this.seed = null;
@@ -51,7 +51,7 @@ public class ECParameterSpec
         byte[]      seed)
     {
         this.curve = curve;
-        this.G = G;
+        this.G = G.normalize();
         this.n = n;
         this.h = h;
         this.seed = seed;

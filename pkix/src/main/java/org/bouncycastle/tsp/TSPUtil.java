@@ -1,26 +1,17 @@
 package org.bouncycastle.tsp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -35,7 +26,6 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.operator.DigestCalculator;
@@ -46,7 +36,6 @@ import org.bouncycastle.util.Integers;
 
 public class TSPUtil
 {
-    private static Set EMPTY_SET = Collections.unmodifiableSet(new HashSet());
     private static List EMPTY_LIST = Collections.unmodifiableList(new ArrayList());
 
     private static final Map digestLengths = new HashMap();
@@ -80,64 +69,6 @@ public class TSPUtil
         digestNames.put(TeleTrusTObjectIdentifiers.ripemd160.getId(), "RIPEMD160");
         digestNames.put(TeleTrusTObjectIdentifiers.ripemd256.getId(), "RIPEMD256");
         digestNames.put(CryptoProObjectIdentifiers.gostR3411.getId(), "GOST3411");
-    }
-
-    /**
-     * Fetches the signature time-stamp attributes from a SignerInformation object.
-     * Checks that the MessageImprint for each time-stamp matches the signature field.
-     * (see RFC 3161 Appendix A).
-     * 
-     * @param signerInfo a SignerInformation to search for time-stamps
-     * @param provider an optional provider to use to create MessageDigest instances
-     * @return a collection of TimeStampToken objects
-     * @throws TSPValidationException
-     * @deprecated use getSignatureTimestamps(SignerInformation, DigestCalculatorProvider)
-     */
-    public static Collection getSignatureTimestamps(SignerInformation signerInfo, Provider provider)
-        throws TSPValidationException
-    {
-        List timestamps = new ArrayList();
-
-        AttributeTable unsignedAttrs = signerInfo.getUnsignedAttributes();
-        if (unsignedAttrs != null)
-        {
-            ASN1EncodableVector allTSAttrs = unsignedAttrs.getAll(
-                PKCSObjectIdentifiers.id_aa_signatureTimeStampToken);
-            for (int i = 0; i < allTSAttrs.size(); ++i)
-            {
-                Attribute tsAttr = (Attribute)allTSAttrs.get(i);            
-                ASN1Set tsAttrValues = tsAttr.getAttrValues();
-                for (int j = 0; j < tsAttrValues.size(); ++j)
-                {
-                    try
-                    {
-                        ContentInfo contentInfo = ContentInfo.getInstance(tsAttrValues.getObjectAt(j));
-                        TimeStampToken timeStampToken = new TimeStampToken(contentInfo);
-                        TimeStampTokenInfo tstInfo = timeStampToken.getTimeStampInfo();
-
-                        MessageDigest digest = createDigestInstance(tstInfo.getMessageImprintAlgOID().getId(), provider);
-                        byte[] expectedDigest = digest.digest(signerInfo.getSignature());
-
-                        if (!Arrays.constantTimeAreEqual(expectedDigest, tstInfo.getMessageImprintDigest()))
-                        {
-                            throw new TSPValidationException("Incorrect digest in message imprint");
-                        }
-
-                        timestamps.add(timeStampToken);
-                    }
-                    catch (NoSuchAlgorithmException e)
-                    {
-                        throw new TSPValidationException("Unknown hash algorithm specified in timestamp");
-                    }
-                    catch (Exception e)
-                    {
-                        throw new TSPValidationException("Timestamp could not be parsed");
-                    }
-                }
-            }
-        }
-
-        return timestamps;
     }
 
      /**
@@ -207,56 +138,9 @@ public class TSPUtil
      * Validate the passed in certificate as being of the correct type to be used
      * for time stamping. To be valid it must have an ExtendedKeyUsage extension
      * which has a key purpose identifier of id-kp-timeStamping.
-     * 
-     * @param cert the certificate of interest.
-     * @throws TSPValidationException if the certicate fails on one of the check points.
-     */
-    public static void validateCertificate(
-        X509Certificate cert)
-        throws TSPValidationException
-    {
-        if (cert.getVersion() != 3)
-        {
-            throw new IllegalArgumentException("Certificate must have an ExtendedKeyUsage extension.");
-        }
-        
-        byte[]  ext = cert.getExtensionValue(X509Extensions.ExtendedKeyUsage.getId());
-        if (ext == null)
-        {
-            throw new TSPValidationException("Certificate must have an ExtendedKeyUsage extension.");
-        }
-        
-        if (!cert.getCriticalExtensionOIDs().contains(X509Extensions.ExtendedKeyUsage.getId()))
-        {
-            throw new TSPValidationException("Certificate must have an ExtendedKeyUsage extension marked as critical.");
-        }
-
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(ext));
-
-        try
-        {
-            aIn = new ASN1InputStream(new ByteArrayInputStream(((ASN1OctetString)aIn.readObject()).getOctets()));
-            
-            ExtendedKeyUsage    extKey = ExtendedKeyUsage.getInstance(aIn.readObject());
-            
-            if (!extKey.hasKeyPurposeId(KeyPurposeId.id_kp_timeStamping) || extKey.size() != 1)
-            {
-                throw new TSPValidationException("ExtendedKeyUsage not solely time stamping.");
-            }
-        }
-        catch (IOException e)
-        {
-            throw new TSPValidationException("cannot process ExtendedKeyUsage extension");
-        }
-    }
-
-    /**
-     * Validate the passed in certificate as being of the correct type to be used
-     * for time stamping. To be valid it must have an ExtendedKeyUsage extension
-     * which has a key purpose identifier of id-kp-timeStamping.
      *
      * @param cert the certificate of interest.
-     * @throws TSPValidationException if the certicate fails on one of the check points.
+     * @throws TSPValidationException if the certificate fails on one of the check points.
      */
     public static void validateCertificate(
         X509CertificateHolder cert)
@@ -286,23 +170,6 @@ public class TSPUtil
         }
     }
 
-    /*
-     * Return the digest algorithm using one of the standard JCA string
-     * representations rather than the algorithm identifier (if possible).
-     */
-    static String getDigestAlgName(
-        String digestAlgOID)
-    {
-        String digestName = (String)digestNames.get(digestAlgOID);
-
-        if (digestName != null)
-        {
-            return digestName;
-        }
-
-        return digestAlgOID;
-    }
-
     static int getDigestLength(
         String digestAlgOID)
         throws TSPException
@@ -315,47 +182,6 @@ public class TSPUtil
         }
 
         throw new TSPException("digest algorithm cannot be found.");
-    }
-
-    static MessageDigest createDigestInstance(String digestAlgOID, Provider provider)
-        throws NoSuchAlgorithmException
-    {
-        String digestName = TSPUtil.getDigestAlgName(digestAlgOID);
-
-        if (provider != null)
-        {
-            try
-            {
-                return MessageDigest.getInstance(digestName, provider);
-            }
-            catch (NoSuchAlgorithmException e)
-            {
-                // Ignore
-            }
-        }
-
-        return MessageDigest.getInstance(digestName);
-    }
-
-        static Set getCriticalExtensionOIDs(X509Extensions extensions)
-    {
-        if (extensions == null)
-        {
-            return EMPTY_SET;
-        }
-
-        return Collections.unmodifiableSet(new HashSet(java.util.Arrays.asList(extensions.getCriticalExtensionOIDs())));
-    }
-
-    static Set getNonCriticalExtensionOIDs(X509Extensions extensions)
-    {
-        if (extensions == null)
-        {
-            return EMPTY_SET;
-        }
-
-        // TODO: should probably produce a set that imposes correct ordering
-        return Collections.unmodifiableSet(new HashSet(java.util.Arrays.asList(extensions.getNonCriticalExtensionOIDs())));
     }
 
     static List getExtensionOIDs(Extensions extensions)

@@ -31,7 +31,7 @@ import org.bouncycastle.asn1.x509.X509Extension;
  * ReasonCode Hode Instruction Code Invalidity Date Certificate Issuer
  * (critical)
  */
-class X509CRLEntryObject extends X509CRLEntry
+public class X509CRLEntryObject extends X509CRLEntry
 {
     private TBSCertList.CRLEntry c;
 
@@ -39,7 +39,7 @@ class X509CRLEntryObject extends X509CRLEntry
     private int           hashValue;
     private boolean       isHashValueSet;
 
-    public X509CRLEntryObject(TBSCertList.CRLEntry c)
+    protected X509CRLEntryObject(TBSCertList.CRLEntry c)
     {
         this.c = c;
         this.certificateIssuer = null;
@@ -62,7 +62,7 @@ class X509CRLEntryObject extends X509CRLEntry
      * @param previousCertificateIssuer
      *            Certificate issuer of the previous CRLEntry.
      */
-    public X509CRLEntryObject(
+    protected X509CRLEntryObject(
         TBSCertList.CRLEntry c,
         boolean isIndirect,
         X500Name previousCertificateIssuer)
@@ -209,6 +209,23 @@ class X509CRLEntryObject extends X509CRLEntry
         }
 
         return hashValue;
+    }
+
+    public boolean equals(Object o)
+    {
+        if (o == this)
+        {
+            return true;
+        }
+
+        if (o instanceof X509CRLEntryObject)
+        {
+            X509CRLEntryObject other = (X509CRLEntryObject)o;
+
+            return this.c.equals(other.c);
+        }
+
+        return super.equals(this);
     }
 
     public byte[] getEncoded()

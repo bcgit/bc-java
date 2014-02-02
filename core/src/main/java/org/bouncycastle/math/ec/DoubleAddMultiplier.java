@@ -2,12 +2,12 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
-public class DoubleAddMultiplier implements ECMultiplier
+public class DoubleAddMultiplier extends AbstractECMultiplier
 {
     /**
      * Joye's double-add algorithm.
      */
-    public ECPoint multiply(ECPoint p, BigInteger k, PreCompInfo preCompInfo)
+    protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
     {
         ECPoint[] R = new ECPoint[]{ p.getCurve().getInfinity(), p };
 
@@ -18,6 +18,7 @@ public class DoubleAddMultiplier implements ECMultiplier
             int bp = 1 - b;
             R[bp] = R[bp].twicePlus(R[b]);
         }
+
         return R[0];
     }
 }

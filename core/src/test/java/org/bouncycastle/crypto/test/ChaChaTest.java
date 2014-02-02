@@ -9,7 +9,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * ChaChat Test
+ * ChaCha Test
  * <p>
  * Test cases generated using ref version of ChaCha20 in estreambench-20080905.
  */
@@ -160,14 +160,14 @@ public class ChaChaTest
 
     private void chachaTest1(int rounds, CipherParameters params, String v0, String v192, String v256, String v448)
     {
-        StreamCipher salsa = new ChaChaEngine(rounds);
+        StreamCipher chaCha = new ChaChaEngine(rounds);
         byte[]       buf = new byte[64];
 
-        salsa.init(true, params);
+        chaCha.init(true, params);
 
         for (int i = 0; i != 7; i++)
         {
-            salsa.processBytes(zeroes, 0, 64, buf, 0);
+            chaCha.processBytes(zeroes, 0, 64, buf, 0);
             switch (i)
             {
             case 0:
@@ -195,7 +195,7 @@ public class ChaChaTest
 
         for (int i = 0; i != 64; i++)
         {
-            buf[i] = salsa.returnByte(zeroes[i]);
+            buf[i] = chaCha.returnByte(zeroes[i]);
         }
 
         if (!areEqual(buf, Hex.decode(v448)))
@@ -206,14 +206,14 @@ public class ChaChaTest
 
     private void chachaTest2(CipherParameters params, String v0, String v65472, String v65536)
     {
-        StreamCipher salsa = new ChaChaEngine();
+        StreamCipher chaCha = new ChaChaEngine();
         byte[]       buf = new byte[64];
 
-        salsa.init(true, params);
+        chaCha.init(true, params);
 
         for (int i = 0; i != 1025; i++)
         {
-            salsa.processBytes(zeroes, 0, 64, buf, 0);
+            chaCha.processBytes(zeroes, 0, 64, buf, 0);
             switch (i)
             {
             case 0:

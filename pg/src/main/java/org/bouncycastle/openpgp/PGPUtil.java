@@ -172,6 +172,15 @@ public class PGPUtil
         case SymmetricKeyAlgorithmTags.AES_256:
             keySize = 256;
             break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            keySize = 128;
+            break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            keySize = 192;
+            break;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            keySize = 256;
+            break;
         case SymmetricKeyAlgorithmTags.TWOFISH:
             keySize = 256;
             break;

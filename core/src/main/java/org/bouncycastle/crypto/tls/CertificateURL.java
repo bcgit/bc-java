@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Primitive;
-
 /*
  * RFC 3546 3.3
  */
@@ -107,7 +105,7 @@ public class CertificateURL
         while (buf.available() > 0)
         {
             URLAndHash url_and_hash = URLAndHash.parse(context, buf);
-            url_and_hash_list.add(url_and_hash);
+            url_and_hash_list.addElement(url_and_hash);
         }
 
         return new CertificateURL(type, url_and_hash_list);

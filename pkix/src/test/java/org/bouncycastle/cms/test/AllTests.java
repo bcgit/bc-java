@@ -18,21 +18,13 @@ public class AllTests
     {   
         TestSuite suite = new TestSuite("CMS tests");
 
-        suite.addTest(AuthenticatedDataTest.suite());
-        suite.addTest(AuthenticatedDataStreamTest.suite());
-        suite.addTest(CompressedDataTest.suite());
         suite.addTest(NewCompressedDataTest.suite());
-        suite.addTest(SignedDataTest.suite());
         suite.addTest(NewSignedDataTest.suite());
-        suite.addTest(EnvelopedDataTest.suite());
         suite.addTest(NewEnvelopedDataTest.suite());
         suite.addTest(NewAuthenticatedDataTest.suite());
         suite.addTest(NewAuthenticatedDataStreamTest.suite());
-        suite.addTest(CompressedDataStreamTest.suite());
         suite.addTest(NewCompressedDataStreamTest.suite());
-        suite.addTest(SignedDataStreamTest.suite());
         suite.addTest(NewSignedDataStreamTest.suite());
-        suite.addTest(EnvelopedDataStreamTest.suite());
         suite.addTest(NewEnvelopedDataStreamTest.suite());
 
         suite.addTest(MiscDataStreamTest.suite());

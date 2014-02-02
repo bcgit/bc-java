@@ -8,6 +8,11 @@ public abstract class WNafUtil
 
     public static int[] generateCompactNaf(BigInteger k)
     {
+        if ((k.bitLength() >>> 16) != 0)
+        {
+            throw new IllegalArgumentException("'k' must have bitlength < 2^16");
+        }
+
         BigInteger _3k = k.shiftLeft(1).add(k);
 
         int digits = _3k.bitLength() - 1;
@@ -46,9 +51,13 @@ public abstract class WNafUtil
             return generateCompactNaf(k);
         }
 
-        if (width < 2 || width > 8)
+        if (width < 2 || width > 16)
         {
-            throw new IllegalArgumentException("'width' must be in the range [2, 8]");
+            throw new IllegalArgumentException("'width' must be in the range [2, 16]");
+        }
+        if ((k.bitLength() >>> 16) != 0)
+        {
+            throw new IllegalArgumentException("'k' must have bitlength < 2^16");
         }
 
         int[] wnaf = new int[k.bitLength() / width + 1];
@@ -95,6 +104,67 @@ public abstract class WNafUtil
         }
 
         return wnaf;
+    }
+
+    public static byte[] generateJSF(BigInteger g, BigInteger h)
+    {
+        int digits = Math.max(g.bitLength(), h.bitLength()) + 1;
+        byte[] jsf = new byte[digits];
+
+        BigInteger k0 = g, k1 = h;
+        int j = 0, d0 = 0, d1 = 0;
+
+        int offset = 0;
+        while ((d0 | d1) != 0 || k0.bitLength() > offset || k1.bitLength() > offset)
+        {
+            int n0 = ((k0.intValue() >>> offset) + d0) & 7, n1 = ((k1.intValue() >>> offset) + d1) & 7;
+
+            int u0 = n0 & 1;
+            if (u0 != 0)
+            {
+                u0 -= (n0 & 2);
+                if ((n0 + u0) == 4 && (n1 & 3) == 2)
+                {
+                    u0 = -u0;
+                }
+            }
+
+            int u1 = n1 & 1;
+            if (u1 != 0)
+            {
+                u1 -= (n1 & 2);
+                if ((n1 + u1) == 4 && (n0 & 3) == 2)
+                {
+                    u1 = -u1;
+                }
+            }
+
+            if ((d0 << 1) == 1 + u0)
+            {
+                d0 ^= 1;
+            }
+            if ((d1 << 1) == 1 + u1)
+            {
+                d1 ^= 1;
+            }
+
+            if (++offset == 30)
+            {
+                offset = 0;
+                k0 = k0.shiftRight(30);
+                k1 = k1.shiftRight(30);
+            }
+
+            jsf[j++] = (byte)((u0 << 4) | (u1 & 0xF));
+        }
+
+        // Reduce the JSF array to its actual length
+        if (jsf.length > j)
+        {
+            jsf = trim(jsf, j);
+        }
+
+        return jsf;
     }
 
     public static byte[] generateNaf(BigInteger k)
@@ -226,14 +296,15 @@ public abstract class WNafUtil
         return w + 2;
     }
 
-    public static WNafPreCompInfo precompute(ECPoint p, PreCompInfo preCompInfo, int width, boolean includeNegated)
+    public static WNafPreCompInfo precompute(ECPoint p, int width, boolean includeNegated)
     {
-        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(preCompInfo);
+        ECCurve c = p.getCurve();
+        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p));
 
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         if (preComp == null)
         {
-            preComp = new ECPoint[]{ p.normalize() };
+            preComp = new ECPoint[]{ p };
         }
 
         int preCompLen = preComp.length;
@@ -241,11 +312,11 @@ public abstract class WNafUtil
 
         if (preCompLen < reqPreCompLen)
         {
-            ECPoint twiceP = wnafPreCompInfo.getTwiceP();
+            ECPoint twiceP = wnafPreCompInfo.getTwice();
             if (twiceP == null)
             {
-                twiceP = p.twice().normalize();
-                wnafPreCompInfo.setTwiceP(twiceP);
+                twiceP = preComp[0].twice().normalize();
+                wnafPreCompInfo.setTwice(twiceP);
             }
 
             preComp = resizeTable(preComp, reqPreCompLen);
@@ -260,8 +331,13 @@ public abstract class WNafUtil
                  * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
                  * 2^(width-1)-1 times p are computed
                  */
-                preComp[i] = twiceP.add(preComp[i - 1]).normalize();
-            }            
+                preComp[i] = twiceP.add(preComp[i - 1]);
+            }
+
+            /*
+             * Having oft-used operands in affine form makes operations faster.
+             */
+            c.normalizeAll(preComp);
         }
 
         wnafPreCompInfo.setPreComp(preComp);
@@ -294,29 +370,29 @@ public abstract class WNafUtil
             wnafPreCompInfo.setPreCompNeg(preCompNeg);
         }
 
-        p.setPreCompInfo(wnafPreCompInfo);
+        c.setPreCompInfo(p, wnafPreCompInfo);
 
         return wnafPreCompInfo;
     }
 
-    private static byte[] trim(byte[] bs, int length)
+    private static byte[] trim(byte[] a, int length)
     {
         byte[] result = new byte[length];
-        System.arraycopy(bs, 0, result, 0, result.length);
+        System.arraycopy(a, 0, result, 0, result.length);
         return result;
     }
 
-    private static int[] trim(int[] bs, int length)
+    private static int[] trim(int[] a, int length)
     {
         int[] result = new int[length];
-        System.arraycopy(bs, 0, result, 0, result.length);
+        System.arraycopy(a, 0, result, 0, result.length);
         return result;
     }
 
-    private static ECPoint[] resizeTable(ECPoint[] ps, int length)
+    private static ECPoint[] resizeTable(ECPoint[] a, int length)
     {
         ECPoint[] result = new ECPoint[length];
-        System.arraycopy(ps, 0, result, 0, ps.length);
+        System.arraycopy(a, 0, result, 0, a.length);
         return result;
     }
 }

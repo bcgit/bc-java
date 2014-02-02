@@ -160,7 +160,7 @@ public class DERBoolean
     {
         if (value.length != 1)
         {
-            throw new IllegalArgumentException("byte value should have 1 byte in it");
+            throw new IllegalArgumentException("BOOLEAN value should have 1 byte in it");
         }
 
         if (value[0] == 0)

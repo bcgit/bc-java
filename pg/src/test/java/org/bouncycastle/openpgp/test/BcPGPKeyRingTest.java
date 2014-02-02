@@ -15,6 +15,7 @@ import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -23,6 +24,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
@@ -668,33 +670,30 @@ public class BcPGPKeyRingTest
     // revoked sub key
     //
     byte[] pub7 = Base64.decode(
-        "mQGiBEFOsIwRBADcjRx7nAs4RaWsQU6p8/ECLZD9sSeYc6CN6UDI96RKj0/hCzMs"
-      + "qlA0+9fzGZ7ZEJ34nuvDKlhKGC7co5eOiE0a9EijxgcrZU/LClZWa4YfyNg/ri6I"
-      + "yTyfOfrPQ33GNQt2iImDf3FKp7XKuY9nIxicGQEaW0kkuAmbV3oh0+9q8QCg/+fS"
-      + "epDEqEE/+nKONULGizKUjMED/RtL6RThRftZ9DOSdBytGYd48z35pca/qZ6HA36K"
-      + "PVQwi7V77VKQyKFLTOXPLnVyO85hyYB/Nv4DFHN+vcC7/49lfoyYMZlN+LarckHi"
-      + "NL154wmmzygB/KKysvWBLgkErEBCD0xBDd89iTQNlDtVQAWGORVffl6WWjOAkliG"
-      + "3dL6A/9A288HfFRnywqi3xddriV6wCPmStC3dkCS4vHk2ofS8uw4ZNoRlp1iEPna"
-      + "ai2Xa9DX1tkhaGk2k96MqqbBdGpbW8sMA9otJ9xdMjWEm/CgJUFUFQf3zaVy3mkM"
-      + "S2Lvb6P4Wc2l/diEEIyK8+PqJItSh0OVU3K9oM7ngHwVcalKILQVUkV2b2tlZCA8"
-      + "UmV2b2tlZEB0ZWQ+iQBOBBARAgAOBQJBTrCMBAsDAgECGQEACgkQvglkcFA/c63+"
-      + "QgCguh8rsJbPTtbhZcrqBi5Mo1bntLEAoPZQ0Kjmu2knRUpHBeUemHDB6zQeuQIN"
-      + "BEFOsIwQCAD2Qle3CH8IF3KiutapQvMF6PlTETlPtvFuuUs4INoBp1ajFOmPQFXz"
-      + "0AfGy0OplK33TGSGSfgMg71l6RfUodNQ+PVZX9x2Uk89PY3bzpnhV5JZzf24rnRP"
-      + "xfx2vIPFRzBhznzJZv8V+bv9kV7HAarTW56NoKVyOtQa8L9GAFgr5fSI/VhOSdvN"
-      + "ILSd5JEHNmszbDgNRR0PfIizHHxbLY7288kjwEPwpVsYjY67VYy4XTjTNP18F1dD"
-      + "ox0YbN4zISy1Kv884bEpQBgRjXyEpwpy1obEAxnIByl6ypUM2Zafq9AKUJsCRtMI"
-      + "PWakXUGfnHy9iUsiGSa6q6Jew1XpMgs7AAICB/93zriSvSHqsi1FeEmUBo431Jkh"
-      + "VerIzb6Plb1j6FIq+s3vyvx9K+dMvjotZqylWZj4GXpH+2xLJTjWkrGSfUZVI2Nk"
-      + "nyOFxUCKLLqaqVBFAQIjULfvQfGEWiGQKk9aRLkdG+D+8Y2N9zYoBXoQ9arvvS/t"
-      + "4mlOsiuaTe+BZ4x+BXTpF4b9sKZl7V8QP/TkoJWUdydkvxciHdWp7ssqyiKOFRhG"
-      + "818knDfFQ3cn2w/RnOb+7AF9wDncXDPYLfpPv9b2qZoLrXcyvlLffGDUdWs553ut"
-      + "1F5AprMURs8BGmY9BnjggfVubHdhTUoA4gVvrdaf+D9NwZAl0xK/5Y/oPuMZiQBG"
-      + "BBgRAgAGBQJBTrCMAAoJEL4JZHBQP3Ot09gAoMmLKloVDP+WhDXnsM5VikxysZ4+"
-      + "AKCrJAUO+lYAyPYwEwgK+bKmUGeKrIkARgQoEQIABgUCQU6wpQAKCRC+CWRwUD9z"
-      + "rQK4AJ98kKFxGU6yhHPr6jYBJPWemTNOXgCfeGB3ox4PXeS4DJDuLy9yllytOjo=");
+        "mQGiBFKQDEMRBACtcEzu15gGDrZKLuO2zgDJ9qFkweOxKyeO45LKIfUGBful"
+      + "lheoFHbsJIeNGjWbSOfWWtphTaSu9//BJt4xxg2pqVLYqzR+hEPpDy9kXxnZ"
+      + "LwwxjAP2TcOvuZKWe+JzoYQxDunOH4Zu9CPJhZhF3RNPw+tbv0jHfTV/chtb"
+      + "23Dj5wCg7eoM8bL9NYXacsAfkS//m+AB1MkD/jEZJqJSQHW8WVP7wKRrAZse"
+      + "N4l9b8+yY4RwLIodhD8wGsMYjkCF4yb/SQ5QlmLlvrHDLBofRzG+8oxldX4o"
+      + "GLZWvqPmW+BlS4QNSr+ZBu+OwnpClXG2pR+ExumXNoeArREyylrmOgD+0cUa"
+      + "8K2UbOxbJ8EioyOKxa7wjUVxmHmhBACAGQGLT/lpHA5zcU0g8AlSk8fsd+bB"
+      + "nwa/+9xdLqVsCTZdOWULtPOw9hbAdjjAy0L4M/MDAJYYtCEl9rB7aOc9PVdT"
+      + "h7CT9Ma6ltiSMKDlqWbDmogNEGx9Gz3GjiSGxAy/SN6JR1On4c60TAiTv6eE"
+      + "uEHszE6CH4qceK5W8HLLB7QncmV2b2tlIChSZXZva2UgVGVzdCkgPHJldm9r"
+      + "ZUB0ZXN0LnRlc3Q+iGIEExECACIFAlKQDEMCGwMGCwkIBwMCBhUIAgkKCwQW"
+      + "AgMBAh4BAheAAAoJEBCIvJhXZzdIrDQAn2S5/G+eitU6/pr5Yz4j9s0/6aMt"
+      + "AKC08q7BPJ5lTaRJ5zV8llSywMvWEbACAAO5AQ0EUpAMQxAEAKu4nnga6FRp"
+      + "eCobO78ewKuAZACfzo9lbWo8JfbwT2xrISZU6DNIMD85PlzTk/Q9UuEw0SC5"
+      + "KdQYLbj0yll88r/0tUoxcBNkvMQHqUVfVgl1+utv0qtDmR0OE5wVebUYgYHA"
+      + "vONSZdhFU8f5OxPhAW8Ol8gA1Bl8orhRXkEnMlXnAAMFA/97Dvl3LXHnwpak"
+      + "+p94fU5WWf9SLp4QPLIhKJzXjv4Uh9UO4u1ajEwUTRk+Djv6sRCuFYL3qLNp"
+      + "Io9b3vLluRbPk8YIwKGctyD7cz3XH9AIbM2HNUyJWljlWEEMU/7uKI5ophGI"
+      + "3/Huhqx/bjzY3LzWiLKQ5lSbwUJRCdGYnMiVuIhJBBgRAgAJBQJSkAxDAhsM"
+      + "AAoJEBCIvJhXZzdIvTgAn1Vx4PUO1wQNpY8PMU+Cl7dl+JeJAJ97lrNiXbom"
+      + "kdIm80plEuLQjweyELACAAM=");
 
-    byte[] pub7check = Base64.decode("f/YQ");
+    byte[] pub7revoke = Base64.decode("iEkEIBECAAkFAlKQDQ4CHQIACgkQEIi8mFdnN0hfzACfSpQ/+OoC48Rf2DZcKvmM" +
+                                      "3dEq8qMAoOnHg0/s/X/Is3bJwUiDEpnWmUoI");
     
     byte[] pub8 = Base64.decode(
               "mQGiBEEcraYRBADFYj+uFOhHz5SdECvJ3Z03P47gzmWLQ5HH8fPYC9rrv7AgqFFX"
@@ -1703,7 +1702,7 @@ public class BcPGPKeyRingTest
         byte[]    encRing = pubRings.getEncoded();
     }
 
-    public void test7()
+    public void revocationTest()
         throws Exception
     {
         PGPPublicKeyRing    pgpPub = new PGPPublicKeyRing(pub7, new BcKeyFingerprintCalculator());
@@ -1719,28 +1718,15 @@ public class BcPGPKeyRingTest
                 masterKey = k;
                 continue;
             }
-            
-            int             count = 0;
-            PGPSignature    sig = null;
-            Iterator        sIt = k.getSignaturesOfType(PGPSignature.SUBKEY_REVOCATION);
+        }
 
-            while (sIt.hasNext())
-            {
-                sig = (PGPSignature)sIt.next();
-                count++;
-            }
-                
-            if (count != 1)
-            {
-                fail("wrong number of revocations in test7.");
-            }
+        PGPSignature    sig =((PGPSignatureList)new PGPObjectFactory(pub7revoke).nextObject()).get(0);
 
-            sig.init(new BcPGPContentVerifierBuilderProvider(), masterKey);
-                                                                            
-            if (!sig.verifyCertification(k))
-            {
-                fail("failed to verify revocation certification");
-            }
+        sig.init(new BcPGPContentVerifierBuilderProvider(), masterKey);
+
+        if (!sig.verifyCertification(masterKey))
+        {
+            fail("failed to verify revocation certification");
         }
     }
 
@@ -2320,7 +2306,7 @@ public class BcPGPKeyRingTest
             test4();
             test5();
             test6();
-    //      test7();
+            revocationTest();
             test8();
             test9();
             test10();

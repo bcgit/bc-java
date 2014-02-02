@@ -6,6 +6,7 @@ import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
+import org.bouncycastle.cms.jcajce.ZlibExpanderProvider;
 import org.bouncycastle.mail.smime.SMIMECompressedParser;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.bouncycastle.mail.smime.util.SharedFileInputStream;
@@ -30,7 +31,7 @@ public class ReadLargeCompressedMail
         MimeMessage msg = new MimeMessage(session, new SharedFileInputStream("compressed.message"));
 
         SMIMECompressedParser     m = new SMIMECompressedParser(msg);
-        MimeBodyPart              res = SMIMEUtil.toMimeBodyPart(m.getContent());
+        MimeBodyPart              res = SMIMEUtil.toMimeBodyPart(m.getContent(new ZlibExpanderProvider()));
 
         ExampleUtils.dumpContent(res, args[0]);
     }
