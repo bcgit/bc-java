@@ -32,6 +32,18 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int addBothTo(int len, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[xOff + i] & M) + (y[yOff + i] & M) + (z[zOff + i] & M);
+            z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     // TODO Re-write to allow full range for x?
     public static int addDWord(int len, long x, int[] z, int zOff)
     {
@@ -46,14 +58,13 @@ public abstract class Nat
         return c == 0 ? 0 : inc(len, z, zOff + 2);
     }
 
-    public static int addToExt(int len, int[] x, int xOff, int[] zz, int zzOff)
+    public static int addTo(int len, int[] x, int xOff, int[] z, int zOff)
     {
-        // assert zzOff <= len;
         long c = 0;
         for (int i = 0; i < len; ++i)
         {
-            c += (x[xOff + i] & M) + (zz[zzOff + i] & M);
-            zz[zzOff + i] = (int)c;
+            c += (x[xOff + i] & M) + (z[zOff + i] & M);
+            z[zOff + i] = (int)c;
             c >>>= 32;
         }
         return (int)c;
@@ -204,23 +215,50 @@ public abstract class Nat
 
     public static void mul(int len, int[] x, int[] y, int[] zz)
     {
-        zz[len] = mulWordExt(len, x[0], y, zz, 0);
+        zz[len] = mulWord(len, x[0], y, zz, 0);
 
         for (int i = 1; i < len; ++i)
         {
-            zz[i + len] = mulWordAddExt(len, x[i], y, zz, i);
+            zz[i + len] = mulWordAdd(len, x[i], y, zz, i);
         }
     }
 
-    public static int mulWordAddExt(int len, int x, int[] y, int[] zz, int zzOff)
+    public static int mul31BothAdd(int len, int a, int[] x, int b, int[] y, int[] z, int zOff)
     {
-        // assert zzOff <= len;
+        long c = 0, aVal = a & M, bVal = b & M;
+        int i = 0;
+        do
+        {
+            c += aVal * (x[i] & M) + bVal * (y[i] & M) + (z[zOff + i] & M);
+            z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < len);
+        return (int)c;
+    }
+
+    public static int mulWord(int len, int x, int[] y, int[] z, int zOff)
+    {
         long c = 0, xVal = x & M;
         int i = 0;
         do
         {
-            c += xVal * (y[i] & M) + (zz[zzOff + i] & M);
-            zz[zzOff + i] = (int)c;
+            c += xVal * (y[i] & M);
+            z[zOff + i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < len);
+        return (int)c;
+    }
+
+    public static int mulWordAdd(int len, int x, int[] y, int[] z, int zOff)
+    {
+        long c = 0, xVal = x & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (y[i] & M) + (z[zOff + i] & M);
+            z[zOff + i] = (int)c;
             c >>>= 32;
         }
         while (++i < len);
@@ -241,21 +279,6 @@ public abstract class Nat
         z[zOff + 2] = (int)c;
         c >>>= 32;
         return c == 0 ? 0 : inc(len, z, zOff + 3);
-    }
-
-    public static int mulWordExt(int len, int x, int[] y, int[] zz, int zzOff)
-    {
-        // assert zzOff <= len;
-        long c = 0, xVal = x & M;
-        int i = 0;
-        do
-        {
-            c += xVal * (y[i] & M);
-            zz[zzOff + i] = (int)c;
-            c >>>= 32;
-        }
-        while (++i < len);
-        return (int)c;
     }
 
     public static int shiftDownBit(int len, int[] z, int c)
@@ -429,6 +452,18 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int subBothFrom(int len, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
+    {
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (z[zOff + i] & M) - (x[xOff + i] & M) - (y[yOff + i] & M);
+            z[zOff + i] = (int)c;
+            c >>= 32;
+        }
+        return (int)c;
+    }
+
     // TODO Re-write to allow full range for x?
     public static int subDWord(int len, long x, int[] z)
     {
@@ -443,14 +478,13 @@ public abstract class Nat
         return c == 0 ? 0 : dec(len, z, 2);
     }
 
-    public static int subFromExt(int len, int[] x, int xOff, int[] zz, int zzOff)
+    public static int subFrom(int len, int[] x, int xOff, int[] z, int zOff)
     {
-        // assert zzOff <= len;
         long c = 0;
         for (int i = 0; i < len; ++i)
         {
-            c += (zz[zzOff + i] & M) - (x[xOff + i] & M);
-            zz[zzOff + i] = (int)c;
+            c += (z[zOff + i] & M) - (x[xOff + i] & M);
+            z[zOff + i] = (int)c;
             c >>= 32;
         }
         return (int)c;
