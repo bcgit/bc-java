@@ -53,8 +53,8 @@ public class SecP521R1Field
 
     public static void multiply(int[] x, int[] y, int[] z)
     {
-        int[] tt = Nat.create(34);
-        Nat.mul(17, x, y, tt);
+        int[] tt = Nat.create(33);
+        implMultiply(x, y, tt);
         reduce(tt, z);
     }
 
@@ -101,8 +101,8 @@ public class SecP521R1Field
 
     public static void square(int[] x, int[] z)
     {
-        int[] tt = Nat.create(34);
-        Nat.square(17, x, tt);
+        int[] tt = Nat.create(33);
+        implSquare(x, tt);
         reduce(tt, z);
     }
 
@@ -110,13 +110,13 @@ public class SecP521R1Field
     {
 //        assert n > 0;
 
-        int[] tt = Nat.create(34);
-        Nat.square(17, x, tt);
+        int[] tt = Nat.create(33);
+        implSquare(x, tt);
         reduce(tt, z);
 
         while (--n > 0)
         {
-            Nat.square(17, z, tt);
+            implSquare(z, tt);
             reduce(tt, z);
         }
     }
@@ -141,5 +141,21 @@ public class SecP521R1Field
             c &= P16;
         }
         z[16] = c;
+    }
+
+    protected static void implMultiply(int[] x, int[] y, int[] zz)
+    {
+        Nat512.mul(x, y, zz);
+
+        int x16 = x[16], y16 = y[16];
+        zz[32] = Nat.mul31BothAdd(16, x16, y, y16, x, zz, 16) + (x16 * y16);
+    }
+
+    protected static void implSquare(int[] x, int[] zz)
+    {
+        Nat512.square(x, zz);
+
+        int x16 = x[16];
+        zz[32] = Nat.mulWordAdd(16, x16 << 1, x, zz, 16) + (x16 * x16);
     }
 }
