@@ -40,10 +40,10 @@ public abstract class Nat512
         int[] dx = Nat256.create();
         Nat256.diff(x, 8, x, 0, dx, 0);
 
-        int[] m = Nat256.createExt();
-        Nat256.square(dx, m);
+        int[] tt = Nat256.createExt();
+        Nat256.square(dx, tt);
 
-        c24 += Nat.subFrom(16, m, 0, zz, 8);
+        c24 += Nat.subFrom(16, tt, 0, zz, 8);
         Nat.addWordExt(16, c24, zz, 24); 
     }
 }
