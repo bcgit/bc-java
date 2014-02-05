@@ -365,6 +365,17 @@ public abstract class Nat
         return c >>> 31;
     }
 
+    public static int shiftUpBit(int len, int[] x, int xOff, int c, int[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int next = x[xOff + i];
+            z[i] = (next << 1) | (c >>> 31);
+            c = next;
+        }
+        return c >>> 31;
+    }
+
     public static int shiftUpBits(int len, int[] z, int bits, int c)
     {
 //        assert bits > 0 && bits < 32;

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECPoint;
@@ -61,13 +62,16 @@ public class ECElGamalEncryptor
             throw new IllegalStateException("ECElGamalEncryptor not initialised");
         }
 
-        BigInteger             n = key.getParameters().getN();
-        BigInteger             k = ECUtil.generateK(n, random);
+        ECDomainParameters ec = key.getParameters();
+        BigInteger k = ECUtil.generateK(ec.getN(), random);
 
-        ECPoint  g = key.getParameters().getG();
-        ECPoint  gamma = g.multiply(k);
-        ECPoint  phi = key.getQ().multiply(k).add(point);
+        ECPoint[] gamma_phi = new ECPoint[]{
+            ec.getG().multiply(k),
+            key.getQ().multiply(k).add(point)
+        };
 
-        return new ECPair(gamma.normalize(), phi.normalize());
+        ec.getCurve().normalizeAll(gamma_phi);
+
+        return new ECPair(gamma_phi[0], gamma_phi[1]);
     }
 }
