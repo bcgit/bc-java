@@ -318,13 +318,13 @@ public abstract class Nat
         return c << -bits;
     }
 
-    public static int shiftDownBitsExt(int len, int[] xx, int xxOff, int bits, int c, int[] z)
+    public static int shiftDownBits(int len, int[] x, int xOff, int bits, int c, int[] z)
     {
 //        assert bits > 0 && bits < 32;
         int i = len;
         while (--i >= 0)
         {
-            int next = xx[xxOff + i];
+            int next = x[xOff + i];
             z[i] = (next >>> bits) | (c << -bits);
             c = next;
         }

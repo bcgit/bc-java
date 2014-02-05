@@ -13,18 +13,13 @@ public abstract class Nat512
         int c16 = c24 + Nat256.addTo(zz, 0, zz, 8, 0);
         c24 += Nat256.addTo(zz, 24, zz, 16, c16);
 
-        int[] dx = Nat256.create();
-        boolean px = Nat256.diff(x, 8, x, 0, dx, 0);
-
-        int[] dy = Nat256.create();
-        boolean py = Nat256.diff(y, 8, y, 0, dy, 0);
+        int[] dx = Nat256.create(), dy = Nat256.create();
+        boolean neg = Nat256.diff(x, 8, x, 0, dx, 0) != Nat256.diff(y, 8, y, 0, dy, 0);
 
         int[] tt = Nat256.createExt();
         Nat256.mul(dx, dy, tt);
 
-        c24 += (px != py)
-            ?   Nat.addTo(16, tt, 0, zz, 8)
-            :   Nat.subFrom(16, tt, 0, zz, 8);
+        c24 += neg ? Nat.addTo(16, tt, 0, zz, 8) : Nat.subFrom(16, tt, 0, zz, 8);
         Nat.addWordExt(16, c24, zz, 24); 
     }
     

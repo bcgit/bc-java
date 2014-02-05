@@ -25,7 +25,7 @@ public class SecP521R1Field
     public static void addOne(int[] x, int[] z)
     {
         System.arraycopy(x, 0, z, 0, 16);
-        int c = Nat.inc(16, z, 0) + z[16];
+        int c = Nat.inc(16, z, 0) + x[16];
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
             c += Nat.inc(16, z, 0);
@@ -46,9 +46,9 @@ public class SecP521R1Field
 
     public static void half(int[] x, int[] z)
     {
-        int c0 = x[0] & 1, x16 = x[16], c512 = x16 & 1;
-        Nat.shiftDownBit(16, x, c512, z);
-        z[16] = (x16 >>> 1) | (c0 << 8);
+        int x16 = x[16];
+        int c = Nat.shiftDownBit(16, x, x16, z);
+        z[16] = (x16 >>> 1) | (c >>> 23);
     }
 
     public static void multiply(int[] x, int[] y, int[] z)
@@ -72,11 +72,10 @@ public class SecP521R1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-//        assert xx[33] == 0;
 //        assert xx[32] >>> 18 == 0;
 
         int xx32 = xx[32];
-        int c = Nat.shiftDownBitsExt(16, xx, 16, 9, xx32, z) >>> 23;
+        int c = Nat.shiftDownBits(16, xx, 16, 9, xx32, z) >>> 23;
         c += xx32 >>> 9;
         c += Nat.add(16, z, xx, z);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
