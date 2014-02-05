@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.ec;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -52,11 +53,16 @@ public class ECFixedTransform
             throw new IllegalStateException("ECFixedTransform not initialised");
         }
 
-        ECPoint  g = key.getParameters().getG();
-        ECPoint  gamma = g.multiply(k);
-        ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
+        ECDomainParameters ec = key.getParameters();
 
-        return new ECPair(cipherText.getX().add(gamma).normalize(), phi.normalize());
+        ECPoint[] gamma_phi = new ECPoint[]{
+            ec.getG().multiply(k).add(cipherText.getX()),
+            key.getQ().multiply(k).add(cipherText.getY())
+        };
+
+        ec.getCurve().normalizeAll(gamma_phi);
+
+        return new ECPair(gamma_phi[0], gamma_phi[1]);
     }
 
     /**
