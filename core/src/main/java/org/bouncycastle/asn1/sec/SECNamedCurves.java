@@ -17,16 +17,6 @@ public class SECNamedCurves
 {
     private static ECCurve configureCurve(ECCurve curve)
     {
-//        int coord = ECCurve.COORD_JACOBIAN_MODIFIED;
-//
-//        if (curve.getCoordinateSystem() != coord && curve.supportsCoordinateSystem(coord))
-//        {
-//            return curve.configure()
-//                .setCoordinateSystem(coord)
-////                .setMultiplier(new WNafL2RMultiplier())
-//                .create();
-//        }
-
         return curve;
     }
 

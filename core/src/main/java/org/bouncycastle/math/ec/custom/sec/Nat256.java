@@ -551,6 +551,53 @@ public abstract class Nat256
         }
     }
 
+    public static int mulAdd(int[] x, int xOff, int[] y, int yOff, int[] zz, int zzOff)
+    {
+        long y_0 = y[yOff + 0] & M;
+        long y_1 = y[yOff + 1] & M;
+        long y_2 = y[yOff + 2] & M;
+        long y_3 = y[yOff + 3] & M;
+        long y_4 = y[yOff + 4] & M;
+        long y_5 = y[yOff + 5] & M;
+        long y_6 = y[yOff + 6] & M;
+        long y_7 = y[yOff + 7] & M;
+
+        long zc = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            long c = 0, x_i = x[xOff + i] & M;
+            c += x_i * y_0 + (zz[zzOff + 0] & M);
+            zz[zzOff + 0] = (int)c;
+            c >>>= 32;
+            c += x_i * y_1 + (zz[zzOff + 1] & M);
+            zz[zzOff + 1] = (int)c;
+            c >>>= 32;
+            c += x_i * y_2 + (zz[zzOff + 2] & M);
+            zz[zzOff + 2] = (int)c;
+            c >>>= 32;
+            c += x_i * y_3 + (zz[zzOff + 3] & M);
+            zz[zzOff + 3] = (int)c;
+            c >>>= 32;
+            c += x_i * y_4 + (zz[zzOff + 4] & M);
+            zz[zzOff + 4] = (int)c;
+            c >>>= 32;
+            c += x_i * y_5 + (zz[zzOff + 5] & M);
+            zz[zzOff + 5] = (int)c;
+            c >>>= 32;
+            c += x_i * y_6 + (zz[zzOff + 6] & M);
+            zz[zzOff + 6] = (int)c;
+            c >>>= 32;
+            c += x_i * y_7 + (zz[zzOff + 7] & M);
+            zz[zzOff + 7] = (int)c;
+            c >>>= 32;
+            c += zc + (zz[zzOff + 8] & M);
+            zz[zzOff + 8] = (int)c;
+            zc = c >>> 32;
+            ++zzOff;
+        }
+        return (int)zc;
+    }
+
     public static long mul33AddExt(int w, int[] xx, int xxOff, int[] yy, int yyOff, int[] zz, int zzOff)
     {
         // assert x >>> 31 == 0;

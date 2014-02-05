@@ -1024,6 +1024,98 @@ public abstract class ECPoint
             }
         }
 
+        public ECPoint timesPow2(int e)
+        {
+            if (e < 0)
+            {
+                throw new IllegalArgumentException("'e' cannot be negative");
+            }
+            if (e == 0 || this.isInfinity())
+            {
+                return this;
+            }
+            if (e == 1)
+            {
+                return twice();
+            }
+
+            ECCurve curve = this.getCurve();
+
+            ECFieldElement Y1 = this.y;
+            if (Y1.isZero()) 
+            {
+                return curve.getInfinity();
+            }
+
+            int coord = curve.getCoordinateSystem();
+
+            ECFieldElement W1 = curve.getA();
+            ECFieldElement X1 = this.x;
+            ECFieldElement Z1 = this.zs.length < 1 ? curve.fromBigInteger(ECConstants.ONE) : this.zs[0];
+
+            if (!Z1.isOne())
+            {
+                switch (coord)
+                {
+                case ECCurve.COORD_HOMOGENEOUS:
+                    ECFieldElement Z1Sq = Z1.square();
+                    X1 = X1.multiply(Z1);
+                    Y1 = Y1.multiply(Z1Sq);
+                    W1 = calculateJacobianModifiedW(Z1, Z1Sq);
+                    break;
+                case ECCurve.COORD_JACOBIAN:
+                    W1 = calculateJacobianModifiedW(Z1, null);
+                    break;
+                case ECCurve.COORD_JACOBIAN_MODIFIED:
+                    W1 = getJacobianModifiedW();
+                    break;
+                }
+            }
+
+            for (int i = 0; i < e; ++i)
+            {
+                if (Y1.isZero()) 
+                {
+                    return curve.getInfinity();
+                }
+
+                ECFieldElement X1Squared = X1.square();
+                ECFieldElement M = three(X1Squared);
+                ECFieldElement _2Y1 = two(Y1);
+                ECFieldElement _2Y1Squared = _2Y1.multiply(Y1);
+                ECFieldElement S = two(X1.multiply(_2Y1Squared));
+                ECFieldElement _4T = _2Y1Squared.square();
+                ECFieldElement _8T = two(_4T);
+
+                if (!W1.isZero())
+                {
+                    M = M.add(W1);
+                    W1 = two(_8T.multiply(W1));
+                }
+
+                X1 = M.square().subtract(two(S));
+                Y1 = M.multiply(S.subtract(X1)).subtract(_8T);
+                Z1 = Z1.isOne() ? _2Y1 : _2Y1.multiply(Z1);
+            }
+
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+                ECFieldElement zInv = Z1.invert(), zInv2 = zInv.square(), zInv3 = zInv2.multiply(zInv);
+                return new Fp(curve, X1.multiply(zInv2), Y1.multiply(zInv3), this.withCompression);
+            case ECCurve.COORD_HOMOGENEOUS:
+                X1 = X1.multiply(Z1);
+                Z1 = Z1.multiply(Z1.square());
+                return new Fp(curve, X1, Y1, new ECFieldElement[]{ Z1 }, this.withCompression);
+            case ECCurve.COORD_JACOBIAN:
+                return new Fp(curve, X1, Y1, new ECFieldElement[]{ Z1 }, this.withCompression);
+            case ECCurve.COORD_JACOBIAN_MODIFIED:
+                return new Fp(curve, X1, Y1, new ECFieldElement[]{ Z1, W1 }, this.withCompression);
+            default:
+                throw new IllegalStateException("unsupported coordinate system");
+            }
+        }
+
         protected ECFieldElement two(ECFieldElement x)
         {
             return x.add(x);
