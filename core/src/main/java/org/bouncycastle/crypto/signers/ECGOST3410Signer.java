@@ -2,13 +2,16 @@ package org.bouncycastle.crypto.signers;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -63,17 +66,20 @@ public class ECGOST3410Signer
         {
             mRev[i] = message[mRev.length - 1 - i];
         }
-        
-        BigInteger e = new BigInteger(1, mRev);
-        BigInteger n = key.getParameters().getN();
 
-        BigInteger r = null;
-        BigInteger s = null;
+        BigInteger e = new BigInteger(1, mRev);
+
+        ECDomainParameters ec = key.getParameters();
+        BigInteger n = ec.getN();
+        BigInteger d = ((ECPrivateKeyParameters)key).getD();
+
+        BigInteger r, s;
+
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
 
         do // generate s
         {
-            BigInteger k = null;
-
+            BigInteger k;
             do // generate r
             {
                 do
@@ -82,26 +88,17 @@ public class ECGOST3410Signer
                 }
                 while (k.equals(ECConstants.ZERO));
 
-                ECPoint p = key.getParameters().getG().multiply(k).normalize();
+                ECPoint p = basePointMultiplier.multiply(ec.getG(), k).normalize();
 
-                BigInteger x = p.getAffineXCoord().toBigInteger();
-
-                r = x.mod(n);
+                r = p.getAffineXCoord().toBigInteger().mod(n);
             }
             while (r.equals(ECConstants.ZERO));
-
-            BigInteger d = ((ECPrivateKeyParameters)key).getD();
 
             s = (k.multiply(e)).add(d.multiply(r)).mod(n);
         }
         while (s.equals(ECConstants.ZERO));
 
-        BigInteger[]  res = new BigInteger[2];
-
-        res[0] = r;
-        res[1] = s;
-
-        return res;
+        return new BigInteger[]{ r, s };
     }
 
     /**

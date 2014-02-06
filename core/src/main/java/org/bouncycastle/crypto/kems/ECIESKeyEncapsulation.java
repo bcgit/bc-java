@@ -13,7 +13,9 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
@@ -121,8 +123,10 @@ public class ECIESKeyEncapsulation
         // Compute the static-ephemeral key agreement
         BigInteger rPrime = CofactorMode ? r.multiply(h).mod(n) : r;
 
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+
         ECPoint[] ghTilde = new ECPoint[]{ 
-            ecParams.getG().multiply(r),
+            basePointMultiplier.multiply(ecParams.getG(), r),
             ecPubKey.getQ().multiply(rPrime)
         };
 

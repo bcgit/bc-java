@@ -4,9 +4,12 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 /**
  * this transforms the original randomness used for an ElGamal encryption.
@@ -66,16 +69,23 @@ public class ECNewRandomnessTransform
             throw new IllegalStateException("ECNewRandomnessTransform not initialised");
         }
 
-        BigInteger             n = key.getParameters().getN();
-        BigInteger             k = ECUtil.generateK(n, random);
 
-        ECPoint  g = key.getParameters().getG();
-        ECPoint  gamma = g.multiply(k);
-        ECPoint  phi = key.getQ().multiply(k).add(cipherText.getY());
+        ECDomainParameters ec = key.getParameters();
+        BigInteger n = ec.getN();
+
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        BigInteger k = ECUtil.generateK(n, random);
+
+        ECPoint[] gamma_phi = new ECPoint[]{
+            basePointMultiplier.multiply(ec.getG(), k).add(cipherText.getX()),
+            key.getQ().multiply(k).add(cipherText.getY())
+        };
+
+        ec.getCurve().normalizeAll(gamma_phi);
 
         lastK = k;
 
-        return new ECPair(cipherText.getX().add(gamma).normalize(), phi.normalize());
+        return new ECPair(gamma_phi[0], gamma_phi[1]);
     }
 
     /**
