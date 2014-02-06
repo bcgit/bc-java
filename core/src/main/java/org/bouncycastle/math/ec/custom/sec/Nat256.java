@@ -222,6 +222,15 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int addWord(int x, int[] z, int zOff)
+    {
+        // assert zzOff <= 7;
+        long c = (x & M) + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(z, zOff + 1);
+    }
+
     public static int addWordExt(int x, int[] zz, int zzOff)
     {
         // assert zzOff <= 15;
@@ -229,6 +238,18 @@ public abstract class Nat256
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
         return c == 0 ? 0 : incExt(zz, zzOff + 1);
+    }
+
+    public static void copy(int[] x, int[] z)
+    {
+        z[0] = x[0];
+        z[1] = x[1];
+        z[2] = x[2];
+        z[3] = x[3];
+        z[4] = x[4];
+        z[5] = x[5];
+        z[6] = x[6];
+        z[7] = x[7];
     }
 
     public static int[] create()
@@ -247,6 +268,19 @@ public abstract class Nat256
         for (int i = zOff; i < 8; ++i)
         {
             if (--z[i] != -1)
+            {
+                return 0;
+            }
+        }
+        return -1;
+    }
+
+    public static int decExt(int[] zz, int zzOff)
+    {
+        // assert zOff <= 16;
+        for (int i = zzOff; i < 16; ++i)
+        {
+            if (--zz[i] != -1)
             {
                 return 0;
             }
@@ -642,34 +676,92 @@ public abstract class Nat256
         return c;
     }
 
-    public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
+    public static int mulByWord(int x, int[] z)
     {
-        // assert yyOff <= 8;
-        // assert zzOff <= 8;
         long c = 0, xVal = x & M;
-        c += xVal * (yy[yyOff + 0] & M) + (zz[zzOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
+        c += xVal * (z[0] & M);
+        z[0] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 1] & M) + (zz[zzOff + 1] & M);
-        zz[zzOff + 1] = (int)c;
+        c += xVal * (z[1] & M);
+        z[1] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 2] & M) + (zz[zzOff + 2] & M);
-        zz[zzOff + 2] = (int)c;
+        c += xVal * (z[2] & M);
+        z[2] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 3] & M) + (zz[zzOff + 3] & M);
-        zz[zzOff + 3] = (int)c;
+        c += xVal * (z[3] & M);
+        z[3] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 4] & M) + (zz[zzOff + 4] & M);
-        zz[zzOff + 4] = (int)c;
+        c += xVal * (z[4] & M);
+        z[4] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 5] & M) + (zz[zzOff + 5] & M);
-        zz[zzOff + 5] = (int)c;
+        c += xVal * (z[5] & M);
+        z[5] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 6] & M) + (zz[zzOff + 6] & M);
-        zz[zzOff + 6] = (int)c;
+        c += xVal * (z[6] & M);
+        z[6] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 7] & M) + (zz[zzOff + 7] & M);
-        zz[zzOff + 7] = (int)c;
+        c += xVal * (z[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
+    public static int mulByWordAddTo(int x, int[] y, int[] z)
+    {
+        long c = 0, xVal = x & M;
+        c += xVal * (z[0] & M) + (y[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[1] & M) + (y[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[2] & M) + (y[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[3] & M) + (y[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[4] & M) + (y[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[5] & M) + (y[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[6] & M) + (y[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        c += xVal * (z[7] & M) + (y[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
+    public static int mulWordAddTo(int x, int[] y, int yOff, int[] z, int zOff)
+    {
+        long c = 0, xVal = x & M;
+        c += xVal * (y[yOff + 0] & M) + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 1] & M) + (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 2] & M) + (z[zOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 3] & M) + (z[zOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 4] & M) + (z[zOff + 4] & M);
+        z[zOff + 4] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 5] & M) + (z[zOff + 5] & M);
+        z[zOff + 5] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 6] & M) + (z[zOff + 6] & M);
+        z[zOff + 6] = (int)c;
+        c >>>= 32;
+        c += xVal * (y[yOff + 7] & M) + (z[zOff + 7] & M);
+        z[zOff + 7] = (int)c;
         c >>>= 32;
         return (int)c;
     }
@@ -1239,6 +1331,24 @@ public abstract class Nat256
         zz[zzOff + 7] = (int)c;
         c >>= 32;
         return (int)c;
+    }
+
+    public static int subWord(int x, int[] z, int zOff)
+    {
+        // assert zOff <= 7;
+        long c = (z[zOff + 0] & M) - (x & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : dec(z, zOff + 1);
+    }
+
+    public static int subWordExt(int x, int[] zz, int zzOff)
+    {
+        // assert zzOff <= 15;
+        long c = (zz[zzOff + 0] & M) - (x & M);
+        zz[zzOff + 0] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decExt(zz, zzOff + 1);
     }
 
     public static BigInteger toBigInteger(int[] x)
