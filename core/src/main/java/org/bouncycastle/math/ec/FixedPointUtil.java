@@ -4,6 +4,14 @@ import java.math.BigInteger;
 
 public class FixedPointUtil
 {
+    public static final String PRECOMP_NAME = "bc_fixed_point";
+
+    public static int getCombSize(ECCurve c)
+    {
+        BigInteger order = c.getOrder();
+        return order == null ? c.getFieldSize() + 1 : order.bitLength(); 
+    }
+
     public static FixedPointPreCompInfo getFixedPointPreCompInfo(PreCompInfo preCompInfo)
     {
         if ((preCompInfo != null) && (preCompInfo instanceof FixedPointPreCompInfo))
@@ -19,18 +27,12 @@ public class FixedPointUtil
         ECCurve c = p.getCurve();
 
         int n = 1 << width;
-        FixedPointPreCompInfo info = getFixedPointPreCompInfo(c.getPreCompInfo(p));
+        FixedPointPreCompInfo info = getFixedPointPreCompInfo(c.getPreCompInfo(p, PRECOMP_NAME));
         ECPoint[] lookupTable = info.getPreComp();
 
         if (lookupTable == null || lookupTable.length != n)
         {
-            BigInteger order = c.getOrder();
-            if (order == null)
-            {
-                throw new IllegalStateException("fixed-point precomputation needs the curve order");
-            }
-
-            int bits = order.bitLength();
+            int bits = getCombSize(c);
             int d = (bits + width - 1) / width;
 
             ECPoint[] pow2Table = new ECPoint[width];
@@ -60,7 +62,7 @@ public class FixedPointUtil
 
             info.setPreComp(lookupTable);
 
-            c.setPreCompInfo(p, info);
+            c.setPreCompInfo(p, PRECOMP_NAME, info);
         }
 
         return info;

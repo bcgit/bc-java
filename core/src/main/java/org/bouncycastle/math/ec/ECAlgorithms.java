@@ -35,7 +35,7 @@ public class ECAlgorithms
             }
         }
 
-        return implShamirsTrick(P, a, Q, b);
+        return implShamirsTrickWNaf(P, a, Q, b);
     }
 
     /*
@@ -63,7 +63,7 @@ public class ECAlgorithms
         ECCurve cp = P.getCurve();
         Q = importPoint(cp, Q);
 
-        return implShamirsTrick(P, k, Q, l);
+        return implShamirsTrickJsf(P, k, Q, l);
     }
 
     public static ECPoint importPoint(ECCurve c, ECPoint p)
@@ -107,7 +107,7 @@ public class ECAlgorithms
         zs[off] = u;
     }
 
-    static ECPoint implShamirsTrick(ECPoint P, BigInteger k,
+    static ECPoint implShamirsTrickJsf(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
         ECCurve curve = P.getCurve();
@@ -139,6 +139,73 @@ public class ECAlgorithms
 
             int index = 4 + (kDigit * 3) + lDigit;
             R = R.twicePlus(table[index]);
+        }
+
+        return R;
+    }
+
+    static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k,
+        ECPoint Q, BigInteger l)
+    {
+        int widthP = Math.max(2, Math.min(16, WNafUtil.getWindowSize(k.bitLength())));
+        int widthQ = Math.max(2, Math.min(16, WNafUtil.getWindowSize(l.bitLength())));
+
+        WNafPreCompInfo infoP = WNafUtil.precompute(P, widthP, true);
+        WNafPreCompInfo infoQ = WNafUtil.precompute(Q, widthQ, true);
+
+        ECPoint[] preCompP = infoP.getPreComp();
+        ECPoint[] preCompQ = infoQ.getPreComp();
+        ECPoint[] preCompNegP = infoP.getPreCompNeg();
+        ECPoint[] preCompNegQ = infoQ.getPreCompNeg();
+
+        byte[] wnafP = WNafUtil.generateWindowNaf(widthP, k);
+        byte[] wnafQ = WNafUtil.generateWindowNaf(widthQ, l);
+
+        int len = Math.max(wnafP.length, wnafQ.length);
+
+        ECCurve curve = P.getCurve();
+        ECPoint infinity = curve.getInfinity();
+
+        ECPoint R = infinity;
+        int zeroes = 0;
+
+        for (int i = len - 1; i >= 0; --i)
+        {
+            int wiP = i < wnafP.length ? wnafP[i] : 0;
+            int wiQ = i < wnafQ.length ? wnafQ[i] : 0;
+
+            if ((wiP | wiQ) == 0)
+            {
+                ++zeroes;
+                continue;
+            }
+
+            ECPoint r = infinity;
+            if (wiP != 0)
+            {
+                int nP = Math.abs(wiP);
+                ECPoint[] tableP = wiP < 0 ? preCompNegP : preCompP;
+                r = r.add(tableP[nP >>> 1]);
+            }
+            if (wiQ != 0)
+            {
+                int nQ = Math.abs(wiQ);
+                ECPoint[] tableQ = wiQ < 0 ? preCompNegQ : preCompQ;
+                r = r.add(tableQ[nQ >>> 1]);
+            }
+
+            if (zeroes > 0)
+            {
+                R = R.timesPow2(zeroes);
+                zeroes = 0;
+            }
+
+            R = R.twicePlus(r);
+        }
+
+        if (zeroes > 0)
+        {
+            R = R.timesPow2(zeroes);
         }
 
         return R;

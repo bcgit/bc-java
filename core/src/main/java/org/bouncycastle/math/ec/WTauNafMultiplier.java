@@ -8,6 +8,9 @@ import java.math.BigInteger;
  */
 public class WTauNafMultiplier extends AbstractECMultiplier
 {
+    // TODO Create WTauNafUtil class and move various functionality into it
+    static final String PRECOMP_NAME = "bc_wtnaf";
+
     /**
      * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}
      * by <code>k</code> using the reduced <code>&tau;</code>-adic NAF (RTNAF)
@@ -33,7 +36,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
 
         ZTauElement rho = Tnaf.partModReduction(k, m, a, s, mu, (byte)10);
 
-        return multiplyWTnaf(p, rho, curve.getPreCompInfo(p), a, mu);
+        return multiplyWTnaf(p, rho, curve.getPreCompInfo(p, PRECOMP_NAME), a, mu);
     }
 
     /**
@@ -80,7 +83,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
 
             WTauNafPreCompInfo pre = new WTauNafPreCompInfo();
             pre.setPreComp(pu);
-            curve.setPreCompInfo(p, pre);
+            curve.setPreCompInfo(p, PRECOMP_NAME, pre);
         }
         else
         {

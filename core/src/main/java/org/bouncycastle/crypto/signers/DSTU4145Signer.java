@@ -13,7 +13,9 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -57,9 +59,9 @@ public class DSTU4145Signer
 
     public BigInteger[] generateSignature(byte[] message)
     {
-        ECDomainParameters parameters = key.getParameters();
+        ECDomainParameters ec = key.getParameters();
 
-        ECCurve curve = parameters.getCurve();
+        ECCurve curve = ec.getCurve();
 
         ECFieldElement h = hash2FieldElement(curve, message);
         if (h.isZero())
@@ -67,9 +69,13 @@ public class DSTU4145Signer
             h = curve.fromBigInteger(ONE);
         }
 
-        BigInteger n = parameters.getN();
+        BigInteger n = ec.getN();
         BigInteger e, r, s;
         ECFieldElement Fe, y;
+
+        BigInteger d = ((ECPrivateKeyParameters)key).getD();
+
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
 
         do
         {
@@ -78,7 +84,7 @@ public class DSTU4145Signer
                 do
                 {
                     e = generateRandomInteger(n, random);
-                    Fe = parameters.getG().multiply(e).normalize().getAffineXCoord();
+                    Fe = basePointMultiplier.multiply(ec.getG(), e).normalize().getAffineXCoord();
                 }
                 while (Fe.isZero());
 
@@ -87,7 +93,7 @@ public class DSTU4145Signer
             }
             while (r.signum() == 0);
 
-            s = r.multiply(((ECPrivateKeyParameters)key).getD()).add(e).mod(n);
+            s = r.multiply(d).add(e).mod(n);
         }
         while (s.signum() == 0);
 
