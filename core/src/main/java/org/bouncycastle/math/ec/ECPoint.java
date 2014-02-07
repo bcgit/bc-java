@@ -1,6 +1,7 @@
 package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
+import java.util.Hashtable;
 
 /**
  * base class for points on elliptic curves.
@@ -47,7 +48,8 @@ public abstract class ECPoint
 
     protected boolean withCompression;
 
-    protected PreCompInfo preCompInfo = null;
+    // Hashtable is (String -> PreCompInfo)
+    protected Hashtable preCompTable = null;
 
     protected ECPoint(ECCurve curve, ECFieldElement x, ECFieldElement y)
     {

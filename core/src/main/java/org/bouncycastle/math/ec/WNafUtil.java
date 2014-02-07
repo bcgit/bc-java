@@ -4,6 +4,8 @@ import java.math.BigInteger;
 
 public abstract class WNafUtil
 {
+    public static final String PRECOMP_NAME = "bc_wnaf";
+
     private static int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
 
     public static int[] generateCompactNaf(BigInteger k)
@@ -299,7 +301,7 @@ public abstract class WNafUtil
     public static WNafPreCompInfo precompute(ECPoint p, int width, boolean includeNegated)
     {
         ECCurve c = p.getCurve();
-        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p));
+        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p, PRECOMP_NAME));
 
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         if (preComp == null)
@@ -370,7 +372,7 @@ public abstract class WNafUtil
             wnafPreCompInfo.setPreCompNeg(preCompNeg);
         }
 
-        c.setPreCompInfo(p, wnafPreCompInfo);
+        c.setPreCompInfo(p, PRECOMP_NAME, wnafPreCompInfo);
 
         return wnafPreCompInfo;
     }
