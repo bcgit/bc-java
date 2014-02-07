@@ -314,26 +314,28 @@ public abstract class WNafUtil
 
         if (preCompLen < reqPreCompLen)
         {
-            ECPoint twiceP = wnafPreCompInfo.getTwice();
-            if (twiceP == null)
-            {
-                twiceP = preComp[0].twice().normalize();
-                wnafPreCompInfo.setTwice(twiceP);
-            }
-
             preComp = resizeTable(preComp, reqPreCompLen);
-
-            /*
-             * TODO Okeya/Sakurai paper has precomputation trick and  "Montgomery's Trick" to speed this up.
-             * Also, co-Z arithmetic could avoid the subsequent normalization too.
-             */
-            for (int i = preCompLen; i < reqPreCompLen; i++)
+            if (reqPreCompLen == 2)
             {
-                /*
-                 * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
-                 * 2^(width-1)-1 times p are computed
-                 */
-                preComp[i] = twiceP.add(preComp[i - 1]);
+                preComp[1] = preComp[0].threeTimes();
+            }
+            else
+            {
+                ECPoint twiceP = wnafPreCompInfo.getTwice();
+                if (twiceP == null)
+                {
+                    twiceP = preComp[0].twice().normalize();
+                    wnafPreCompInfo.setTwice(twiceP);
+                }
+
+                for (int i = preCompLen; i < reqPreCompLen; i++)
+                {
+                    /*
+                     * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
+                     * 2^(width-1)-1 times p are computed
+                     */
+                    preComp[i] = twiceP.add(preComp[i - 1]);
+                }
             }
 
             /*
