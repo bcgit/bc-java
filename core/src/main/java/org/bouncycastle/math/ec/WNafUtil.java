@@ -4,6 +4,8 @@ import java.math.BigInteger;
 
 public abstract class WNafUtil
 {
+    public static final String PRECOMP_NAME = "bc_wnaf";
+
     private static int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
 
     public static int[] generateCompactNaf(BigInteger k)
@@ -299,7 +301,7 @@ public abstract class WNafUtil
     public static WNafPreCompInfo precompute(ECPoint p, int width, boolean includeNegated)
     {
         ECCurve c = p.getCurve();
-        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p));
+        WNafPreCompInfo wnafPreCompInfo = getWNafPreCompInfo(c.getPreCompInfo(p, PRECOMP_NAME));
 
         ECPoint[] preComp = wnafPreCompInfo.getPreComp();
         if (preComp == null)
@@ -312,26 +314,28 @@ public abstract class WNafUtil
 
         if (preCompLen < reqPreCompLen)
         {
-            ECPoint twiceP = wnafPreCompInfo.getTwice();
-            if (twiceP == null)
-            {
-                twiceP = preComp[0].twice().normalize();
-                wnafPreCompInfo.setTwice(twiceP);
-            }
-
             preComp = resizeTable(preComp, reqPreCompLen);
-
-            /*
-             * TODO Okeya/Sakurai paper has precomputation trick and  "Montgomery's Trick" to speed this up.
-             * Also, co-Z arithmetic could avoid the subsequent normalization too.
-             */
-            for (int i = preCompLen; i < reqPreCompLen; i++)
+            if (reqPreCompLen == 2)
             {
-                /*
-                 * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
-                 * 2^(width-1)-1 times p are computed
-                 */
-                preComp[i] = twiceP.add(preComp[i - 1]);
+                preComp[1] = preComp[0].threeTimes();
+            }
+            else
+            {
+                ECPoint twiceP = wnafPreCompInfo.getTwice();
+                if (twiceP == null)
+                {
+                    twiceP = preComp[0].twice().normalize();
+                    wnafPreCompInfo.setTwice(twiceP);
+                }
+
+                for (int i = preCompLen; i < reqPreCompLen; i++)
+                {
+                    /*
+                     * Compute the new ECPoints for the precomputation array. The values 1, 3, 5, ...,
+                     * 2^(width-1)-1 times p are computed
+                     */
+                    preComp[i] = twiceP.add(preComp[i - 1]);
+                }
             }
 
             /*
@@ -370,7 +374,7 @@ public abstract class WNafUtil
             wnafPreCompInfo.setPreCompNeg(preCompNeg);
         }
 
-        c.setPreCompInfo(p, wnafPreCompInfo);
+        c.setPreCompInfo(p, PRECOMP_NAME, wnafPreCompInfo);
 
         return wnafPreCompInfo;
     }

@@ -6,7 +6,9 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
@@ -70,6 +72,7 @@ public class DualECSP800DRBG
     private ECPoint                _Q;
     private byte[]                 _s;
     private int                    _sLength;
+    private ECMultiplier           _fixedPointMultiplier = new FixedPointCombMultiplier();
 
     /**
      * Construct a SP800-90A Dual EC DRBG.
@@ -199,7 +202,7 @@ public class DualECSP800DRBG
 
             //System.err.println("S: " + new String(Hex.encode(_s)));
 
-            byte[] r = _Q.multiply(s).normalize().getAffineXCoord().toBigInteger().toByteArray();
+            byte[] r = getScalarMultipleXCoord(_Q, s).toByteArray();
 
             if (r.length > _outlen)
             {
@@ -220,7 +223,7 @@ public class DualECSP800DRBG
         {
             s = getScalarMultipleXCoord(_P, s);
 
-            byte[] r = _Q.multiply(s).normalize().getAffineXCoord().toBigInteger().toByteArray();
+            byte[] r = getScalarMultipleXCoord(_Q, s).toByteArray();
 
             int required = output.length - outOffset;
 
@@ -237,7 +240,7 @@ public class DualECSP800DRBG
         }
 
         // Need to preserve length of S as unsigned int.
-        _s = BigIntegers.asUnsignedByteArray(_sLength, _P.multiply(s).normalize().getAffineXCoord().toBigInteger());
+        _s = BigIntegers.asUnsignedByteArray(_sLength, getScalarMultipleXCoord(_P, s));
 
         return numberOfBits;
     }
@@ -302,6 +305,6 @@ public class DualECSP800DRBG
 
     private BigInteger getScalarMultipleXCoord(ECPoint p, BigInteger s)
     {
-        return p.multiply(s).normalize().getAffineXCoord().toBigInteger();
+        return _fixedPointMultiplier.multiply(p, s).normalize().getAffineXCoord().toBigInteger();
     }
 }

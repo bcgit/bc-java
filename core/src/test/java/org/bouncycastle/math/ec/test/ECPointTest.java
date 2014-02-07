@@ -42,7 +42,11 @@ public class ECPointTest extends TestCase
 
         private final BigInteger b = new BigInteger("20");
 
-        private final ECCurve curve = new ECCurve.Fp(q, a, b);
+        private final BigInteger n = new BigInteger("38");
+
+        private final BigInteger h = new BigInteger("1");
+
+        private final ECCurve curve = new ECCurve.Fp(q, a, b, n, h);
 
         private final ECPoint infinity = curve.getInfinity();
 
@@ -80,7 +84,11 @@ public class ECPointTest extends TestCase
         // b = z^3 + 1
         private final BigInteger bTpb = new BigInteger("1001", 2);
 
-        private final ECCurve.F2m curve = new ECCurve.F2m(m, k1, aTpb, bTpb);
+        private final BigInteger n = new BigInteger("23");
+
+        private final BigInteger h = new BigInteger("1");
+
+        private final ECCurve.F2m curve = new ECCurve.F2m(m, k1, aTpb, bTpb, n, h);
 
         private final ECPoint.F2m infinity = (ECPoint.F2m) curve.getInfinity();
 
@@ -372,22 +380,22 @@ public class ECPointTest extends TestCase
      */
     public void testAddSubtractMultiplySimple()
     {
+        int fpBits = fp.curve.getOrder().bitLength();
         for (int iFp = 0; iFp < fp.pointSource.length / 2; iFp++)
         {
             implTestAddSubtract(fp.p[iFp], fp.infinity);
 
-            // Could be any numBits, 6 is chosen at will
-            implTestMultiplyAll(fp.p[iFp], 6);
-            implTestMultiplyAll(fp.infinity, 6);
+            implTestMultiplyAll(fp.p[iFp], fpBits);
+            implTestMultiplyAll(fp.infinity, fpBits);
         }
 
+        int f2mBits = f2m.curve.getOrder().bitLength();
         for (int iF2m = 0; iF2m < f2m.pointSource.length / 2; iF2m++)
         {
             implTestAddSubtract(f2m.p[iF2m], f2m.infinity);
 
-            // Could be any numBits, 6 is chosen at will
-            implTestMultiplyAll(f2m.p[iF2m], 6);
-            implTestMultiplyAll(f2m.infinity, 6);
+            implTestMultiplyAll(f2m.p[iF2m], f2mBits);
+            implTestMultiplyAll(f2m.infinity, f2mBits);
         }
     }
 

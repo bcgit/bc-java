@@ -5,7 +5,9 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 /**
  * this transforms the original randomness used for an ElGamal encryption by a fixed value.
@@ -39,7 +41,7 @@ public class ECFixedTransform
     }
 
     /**
-     * Transform an existing cipher test pair using the ElGamal algorithm. Note: it is assumed this
+     * Transform an existing cipher text pair using the ElGamal algorithm. Note: it is assumed this
      * transform has been initialised with the same public key that was used to create the original
      * cipher text.
      *
@@ -54,9 +56,13 @@ public class ECFixedTransform
         }
 
         ECDomainParameters ec = key.getParameters();
+        BigInteger n = ec.getN();
+
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        BigInteger k = this.k.mod(n);
 
         ECPoint[] gamma_phi = new ECPoint[]{
-            ec.getG().multiply(k).add(cipherText.getX()),
+            basePointMultiplier.multiply(ec.getG(), k).add(cipherText.getX()),
             key.getQ().multiply(k).add(cipherText.getY())
         };
 

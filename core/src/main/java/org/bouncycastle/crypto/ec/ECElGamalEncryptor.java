@@ -7,7 +7,9 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 
 /**
  * this does your basic ElGamal encryption algorithm using EC
@@ -65,8 +67,10 @@ public class ECElGamalEncryptor
         ECDomainParameters ec = key.getParameters();
         BigInteger k = ECUtil.generateK(ec.getN(), random);
 
+        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+
         ECPoint[] gamma_phi = new ECPoint[]{
-            ec.getG().multiply(k),
+            basePointMultiplier.multiply(ec.getG(), k),
             key.getQ().multiply(k).add(point)
         };
 
