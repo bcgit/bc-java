@@ -1,6 +1,7 @@
 package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
+import java.util.Hashtable;
 import java.util.Random;
 
 import org.bouncycastle.math.field.FiniteField;
@@ -120,26 +121,40 @@ public abstract class ECCurve
         return coord == COORD_AFFINE;
     }
 
-    public PreCompInfo getPreCompInfo(ECPoint p)
+    public PreCompInfo getPreCompInfo(ECPoint point, String name)
     {
-        checkPoint(p);
-        return p.preCompInfo;
+        checkPoint(point);
+        synchronized (point)
+        {
+            Hashtable table = point.preCompTable;
+            return table == null ? null : (PreCompInfo)table.get(name);
+        }
     }
 
     /**
-     * Sets the <code>PreCompInfo</code> for a point on this curve. Used by
+     * Adds <code>PreCompInfo</code> for a point on this curve, under a given name. Used by
      * <code>ECMultiplier</code>s to save the precomputation for this <code>ECPoint</code> for use
      * by subsequent multiplication.
      * 
      * @param point
      *            The <code>ECPoint</code> to store precomputations for.
+     * @param name
+     *            A <code>String</code> used to index precomputations of different types.
      * @param preCompInfo
      *            The values precomputed by the <code>ECMultiplier</code>.
      */
-    public void setPreCompInfo(ECPoint point, PreCompInfo preCompInfo)
+    public void setPreCompInfo(ECPoint point, String name, PreCompInfo preCompInfo)
     {
         checkPoint(point);
-        point.preCompInfo = preCompInfo;
+        synchronized (point)
+        {
+            Hashtable table = point.preCompTable;
+            if (null == table)
+            {
+                point.preCompTable = table = new Hashtable(4);
+            }
+            table.put(name, preCompInfo);
+        }
     }
 
     public ECPoint importPoint(ECPoint p)
