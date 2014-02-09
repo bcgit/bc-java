@@ -408,16 +408,12 @@ public class ECPointTest extends TestCase
     private void implTestEncoding(ECPoint p)
     {
         // Not Point Compression
-        ECPoint unCompP = p.getCurve().createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), false);
-
-        // Point compression
-        ECPoint compP = p.getCurve().createPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger(), true);
-
-        byte[] unCompBarr = unCompP.getEncoded();
+        byte[] unCompBarr = p.getEncoded(false);
         ECPoint decUnComp = p.getCurve().decodePoint(unCompBarr);
         assertPointsEqual("Error decoding uncompressed point", p, decUnComp);
 
-        byte[] compBarr = compP.getEncoded();
+        // Point compression
+        byte[] compBarr = p.getEncoded(true);
         ECPoint decComp = p.getCurve().decodePoint(compBarr);
         assertPointsEqual("Error decoding compressed point", p, decComp);
     }
