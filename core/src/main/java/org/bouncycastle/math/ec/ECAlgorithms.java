@@ -19,6 +19,37 @@ public class ECAlgorithms
         return c.getField().getDimension() == 1;
     }
 
+    public static ECPoint sumOfMultiplies(ECPoint[] ps, BigInteger[] ks)
+    {
+        if (ps == null || ks == null || ps.length != ks.length || ps.length < 1)
+        {
+            throw new IllegalArgumentException("point and scalar arrays should be non-null, and of equal, non-zero, length");
+        }
+
+        int count = ps.length;
+        switch (count)
+        {
+        case 1:
+            return ps[0].multiply(ks[0]);
+        case 2:
+            return sumOfTwoMultiplies(ps[0], ks[0], ps[1], ks[1]);
+        default:
+            break;
+        }
+
+        ECPoint p = ps[0];
+        ECCurve c = p.getCurve();
+
+        ECPoint[] imported = new ECPoint[count];
+        imported[0] = p;
+        for (int i = 1; i < count; ++i)
+        {
+            imported[i] = importPoint(c, ps[i]);
+        }
+
+        return implSumOfMultiplies(imported, ks);
+    }
+
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
         ECPoint Q, BigInteger b)
     {
@@ -192,6 +223,68 @@ public class ECAlgorithms
                 int nQ = Math.abs(wiQ);
                 ECPoint[] tableQ = wiQ < 0 ? preCompNegQ : preCompQ;
                 r = r.add(tableQ[nQ >>> 1]);
+            }
+
+            if (zeroes > 0)
+            {
+                R = R.timesPow2(zeroes);
+                zeroes = 0;
+            }
+
+            R = R.twicePlus(r);
+        }
+
+        if (zeroes > 0)
+        {
+            R = R.timesPow2(zeroes);
+        }
+
+        return R;
+    }
+
+    static ECPoint implSumOfMultiplies(ECPoint[] ps, BigInteger[] ks)
+    {
+        int count = ps.length;
+        int[] widths = new int[count];
+        WNafPreCompInfo[] infos = new WNafPreCompInfo[count];
+        byte[][] wnafs = new byte[count][];
+
+        int len = 0;
+        for (int i = 0; i < count; ++i)
+        {
+            widths[i] = Math.max(2, Math.min(16, WNafUtil.getWindowSize(ks[i].bitLength())));
+            infos[i] = WNafUtil.precompute(ps[i], widths[i], true);
+            wnafs[i] = WNafUtil.generateWindowNaf(widths[i], ks[i]);
+            len = Math.max(len, wnafs[i].length);
+        }
+
+        ECCurve curve = ps[0].getCurve();
+        ECPoint infinity = curve.getInfinity();
+
+        ECPoint R = infinity;
+        int zeroes = 0;
+
+        for (int i = len - 1; i >= 0; --i)
+        {
+            ECPoint r = infinity;
+
+            for (int j = 0; j < count; ++j)
+            {
+                byte[] wnaf = wnafs[j];
+                int wi = i < wnaf.length ? wnaf[i] : 0;
+                if (wi != 0)
+                {
+                    int n = Math.abs(wi);
+                    WNafPreCompInfo info = infos[j];
+                    ECPoint[] table = wi < 0 ? info.getPreCompNeg() : info.getPreComp();
+                    r = r.add(table[n >>> 1]);
+                }
+            }
+
+            if (r == infinity)
+            {
+                ++zeroes;
+                continue;
             }
 
             if (zeroes > 0)
