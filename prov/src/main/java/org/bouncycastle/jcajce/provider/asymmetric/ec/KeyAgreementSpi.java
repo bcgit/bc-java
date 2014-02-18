@@ -94,7 +94,7 @@ public class KeyAgreementSpi
     private byte[] bigIntToBytes(
         BigInteger    r)
     {
-        return converter.integerToBytes(r, converter.getByteLength(parameters.getG().getAffineXCoord()));
+        return converter.integerToBytes(r, converter.getByteLength(parameters.getCurve()));
     }
 
     protected KeyAgreementSpi(
