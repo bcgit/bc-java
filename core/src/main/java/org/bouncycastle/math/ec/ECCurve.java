@@ -357,8 +357,8 @@ public abstract class ECCurve
     {
         return this == other
             || (getField().equals(other.getField())
-                && getA().equals(other.getA())
-                && getB().equals(other.getB()));
+                && getA().toBigInteger().equals(other.getA().toBigInteger())
+                && getB().toBigInteger().equals(other.getB().toBigInteger()));
     }
 
     public boolean equals(Object obj) 
