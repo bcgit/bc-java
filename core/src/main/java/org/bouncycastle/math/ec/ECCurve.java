@@ -356,7 +356,8 @@ public abstract class ECCurve
     public boolean equals(ECCurve other)
     {
         return this == other
-            || (getField().equals(other.getField())
+            || (null != other
+                && getField().equals(other.getField())
                 && getA().toBigInteger().equals(other.getA().toBigInteger())
                 && getB().toBigInteger().equals(other.getB().toBigInteger()));
     }
@@ -369,8 +370,8 @@ public abstract class ECCurve
     public int hashCode() 
     {
         return getField().hashCode()
-            ^ Integers.rotateLeft(getA().hashCode(), 8)
-            ^ Integers.rotateLeft(getB().hashCode(), 16);
+            ^ Integers.rotateLeft(getA().toBigInteger().hashCode(), 8)
+            ^ Integers.rotateLeft(getB().toBigInteger().hashCode(), 16);
     }
 
     /**
