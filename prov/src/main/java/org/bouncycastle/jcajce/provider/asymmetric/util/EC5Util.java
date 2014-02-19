@@ -7,10 +7,11 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -23,8 +24,12 @@ public class EC5Util
 
     static
     {
-        customCurves.put(SECNamedCurves.getByName("secp256k1").getCurve(), CustomNamedCurves.getByName("secp256k1").getCurve());
-        customCurves.put(SECNamedCurves.getByName("secp256r1").getCurve(), CustomNamedCurves.getByName("secp256r1").getCurve());
+        Enumeration e = CustomNamedCurves.getNames();
+        while (e.hasMoreElements())
+        {
+            String name = (String)e.nextElement();
+            customCurves.put(ECNamedCurveTable.getByName(name).getCurve(), CustomNamedCurves.getByName(name).getCurve());
+        }
     }
 
     public static EllipticCurve convertCurve(
