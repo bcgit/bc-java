@@ -14,7 +14,6 @@ import org.bouncycastle.pqc.crypto.rainbow.util.RainbowUtil;
 /**
  * This class implements an ASN.1 encoded Rainbow public key. The ASN.1 definition
  * of this structure is:
- * <p/>
  * <pre>
  *       RainbowPublicKey ::= SEQUENCE {
  *         CHOICE

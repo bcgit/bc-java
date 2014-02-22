@@ -58,14 +58,14 @@ public class CMac implements Mac
     /**
      * create a standard MAC based on a block cipher with the size of the
      * MAC been given in bits.
-     * <p/>
+     * <p>
      * Note: the size of the MAC must be at least 24 bits (FIPS Publication 81),
      * or 16 bits if being used as a data authenticator (FIPS Publication 113),
      * and in general should be less than the size of the block cipher as it reduces
      * the chance of an exhaustive attack (see Handbook of Applied Cryptography).
      *
      * @param cipher        the cipher to be used as the basis of the MAC generation.
-     * @param macSizeInBits the size of the MAC in bits, must be a multiple of 8 and <= 128.
+     * @param macSizeInBits the size of the MAC in bits, must be a multiple of 8 and &lt;= 128.
      */
     public CMac(BlockCipher cipher, int macSizeInBits)
     {
