@@ -173,9 +173,9 @@ public class NamingAuthority
         return namingAuthorityUrl;
     }
 
-        /**
+    /**
      * Constructor from given details.
-     * <p/>
+     * <p>
      * All parameters can be combined.
      *
      * @param namingAuthorityId   ObjectIdentifier for naming authority.
@@ -193,7 +193,7 @@ public class NamingAuthority
 
     /**
      * Constructor from given details.
-     * <p/>
+     * <p>
      * All parameters can be combined.
      *
      * @param namingAuthorityId   ObjectIdentifier for naming authority.
@@ -210,9 +210,8 @@ public class NamingAuthority
 
     /**
      * Produce an object suitable for an ASN1OutputStream.
-     * <p/>
+     * <p>
      * Returns:
-     * <p/>
      * <pre>
      *             NamingAuthority ::= SEQUENCE
      *             {

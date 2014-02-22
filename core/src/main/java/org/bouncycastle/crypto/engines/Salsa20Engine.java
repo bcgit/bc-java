@@ -268,8 +268,6 @@ public class Salsa20Engine
      * Salsa20 function
      *
      * @param   input   input data
-     *
-     * @return  keystream
      */    
     public static void salsaCore(int rounds, int[] input, int[] x)
     {

@@ -10,7 +10,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * Implementation of SipHash as specified in "SipHash: a fast short-input PRF", by Jean-Philippe
  * Aumasson and Daniel J. Bernstein (https://131002.net/siphash/siphash.pdf).
- * <p/>
+ * <p>
  * "SipHash is a family of PRFs SipHash-c-d where the integer parameters c and d are the number of
  * compression rounds and the number of finalization rounds. A compression round is identical to a
  * finalization round and this round function is called SipRound. Given a 128-bit key k and a

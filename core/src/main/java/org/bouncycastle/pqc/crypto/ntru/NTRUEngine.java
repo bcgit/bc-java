@@ -17,7 +17,7 @@ import org.bouncycastle.pqc.math.ntru.polynomial.TernaryPolynomial;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Encrypts, decrypts data and generates key pairs.<br/>
+ * Encrypts, decrypts data and generates key pairs.<br>
  * The parameter p is hardcoded to 3.
  */
 public class NTRUEngine

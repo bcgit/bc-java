@@ -96,8 +96,6 @@ public class ChaChaEngine extends Salsa20Engine
      * ChacCha function
      *
      * @param   input   input data
-     *
-     * @return  keystream
      */    
     public static void chachaCore(int rounds, int[] input, int[] x)
     {
