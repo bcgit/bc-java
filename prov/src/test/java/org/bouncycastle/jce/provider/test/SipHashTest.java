@@ -1,8 +1,13 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
 
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -15,6 +20,42 @@ public class SipHashTest
 {
     public void performTest()
         throws Exception
+    {
+        testMac();
+        testKeyGenerator();
+    }
+
+    private void testKeyGenerator()
+        throws NoSuchAlgorithmException,
+        NoSuchProviderException
+    {
+        testKeyGen("SipHash");
+        testKeyGen("SipHash-2-4");
+        testKeyGen("SipHash-4-8");
+    }
+
+    private void testKeyGen(String algorithm)
+        throws NoSuchAlgorithmException,
+        NoSuchProviderException
+    {
+        KeyGenerator kg = KeyGenerator.getInstance(algorithm, "BC");
+
+        SecretKey key = kg.generateKey();
+
+        if (!key.getAlgorithm().equalsIgnoreCase("SipHash"))
+        {
+            fail("Unexpected algorithm name in key", "SipHash", key.getAlgorithm());
+        }
+        if (key.getEncoded().length != 16)
+        {
+            fail("Expected 128 bit key");
+        }
+    }
+
+    private void testMac()
+        throws NoSuchAlgorithmException,
+        NoSuchProviderException,
+        InvalidKeyException
     {
         byte[] key = Hex.decode("000102030405060708090a0b0c0d0e0f");
         byte[] input = Hex.decode("000102030405060708090a0b0c0d0e");
