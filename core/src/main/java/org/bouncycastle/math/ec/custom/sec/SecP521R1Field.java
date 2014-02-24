@@ -155,6 +155,6 @@ public class SecP521R1Field
         Nat512.square(x, zz);
 
         int x16 = x[16];
-        zz[32] = Nat.mulWordAdd(16, x16 << 1, x, zz, 16) + (x16 * x16);
+        zz[32] = Nat.mulWordAddTo(16, x16 << 1, x, 0, zz, 16) + (x16 * x16);
     }
 }

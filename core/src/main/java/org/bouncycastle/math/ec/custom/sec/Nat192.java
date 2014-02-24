@@ -322,39 +322,36 @@ public abstract class Nat192
         }
     }
 
-    public static long mul33AddExt(int w, int[] xx, int xxOff, int[] yy, int yyOff, int[] zz, int zzOff)
+    public static long mul33Add(int w, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
     {
-        // assert x >>> 31 == 0;
-        // assert xxOff <= 6;
-        // assert yyOff <= 6;
-        // assert zzOff <= 6;
+        // assert w >>> 31 == 0;
 
         long c = 0, wVal = w & M;
-        long xx00 = xx[xxOff + 0] & M;
-        c += wVal * xx00 + (yy[yyOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
+        long x0 = x[xOff + 0] & M;
+        c += wVal * x0 + (y[yOff + 0] & M);
+        z[zOff + 0] = (int)c;
         c >>>= 32;
-        long xx01 = xx[xxOff + 1] & M;
-        c += wVal * xx01 + xx00 + (yy[yyOff + 1] & M);
-        zz[zzOff + 1] = (int)c;
+        long x1 = x[xOff + 1] & M;
+        c += wVal * x1 + x0 + (y[yOff + 1] & M);
+        z[zOff + 1] = (int)c;
         c >>>= 32;
-        long xx02 = xx[xxOff + 2] & M;
-        c += wVal * xx02 + xx01 + (yy[yyOff + 2] & M);
-        zz[zzOff + 2] = (int)c;
+        long x2 = x[xOff + 2] & M;
+        c += wVal * x2 + x1 + (y[yOff + 2] & M);
+        z[zOff + 2] = (int)c;
         c >>>= 32;
-        long xx03 = xx[xxOff + 3] & M;
-        c += wVal * xx03 + xx02 + (yy[yyOff + 3] & M);
-        zz[zzOff + 3] = (int)c;
+        long x3 = x[xOff + 3] & M;
+        c += wVal * x3 + x2 + (y[yOff + 3] & M);
+        z[zOff + 3] = (int)c;
         c >>>= 32;
-        long xx04 = xx[xxOff + 4] & M;
-        c += wVal * xx04 + xx03 + (yy[yyOff + 4] & M);
-        zz[zzOff + 4] = (int)c;
+        long x4 = x[xOff + 4] & M;
+        c += wVal * x4 + x3 + (y[yOff + 4] & M);
+        z[zOff + 4] = (int)c;
         c >>>= 32;
-        long xx05 = xx[xxOff + 5] & M;
-        c += wVal * xx05 + xx04 + (yy[yyOff + 5] & M);
-        zz[zzOff + 5] = (int)c;
+        long x5 = x[xOff + 5] & M;
+        c += wVal * x5 + x4 + (y[yOff + 5] & M);
+        z[zOff + 5] = (int)c;
         c >>>= 32;
-        c += xx05;
+        c += x5;
         return c;
     }
 
@@ -423,15 +420,14 @@ public abstract class Nat192
         return c == 0 ? 0 : inc(z, zOff + 3);
     }
 
-    public static int mulWordExt(int x, int[] y, int[] zz, int zzOff)
+    public static int mulWord(int x, int[] y, int[] z, int zOff)
     {
-        // assert zzOff <= 6;
         long c = 0, xVal = x & M;
         int i = 0;
         do
         {
             c += xVal * (y[i] & M);
-            zz[zzOff + i] = (int)c;
+            z[zOff + i] = (int)c;
             c >>>= 32;
         }
         while (++i < 6);
@@ -602,21 +598,6 @@ public abstract class Nat192
         zz[11] += (int)(zz_10 >>> 32);
 
         shiftUpBit(zz, 12, (int)x_0 << 31);
-    }
-
-    public static int squareWordAddExt(int[] x, int xPos, int[] zz)
-    {
-        // assert xPos > 0 && xPos < 6;
-        long c = 0, xVal = x[xPos] & M;
-        int i = 0;
-        do
-        {
-            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
-            zz[xPos + i] = (int)c;
-            c >>>= 32;
-        }
-        while (++i < xPos);
-        return (int)c;
     }
 
     public static int sub(int[] x, int[] y, int[] z)
