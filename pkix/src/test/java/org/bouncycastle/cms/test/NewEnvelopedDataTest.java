@@ -1,13 +1,7 @@
 package org.bouncycastle.cms.test;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.MGF1ParameterSpec;
@@ -228,6 +222,7 @@ public class NewEnvelopedDataTest
         if (!_initialised)
         {
             _initialised = true;
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
             _signDN   = "O=Bouncy Castle, C=AU";
             _signKP   = CMSTestUtil.makeKeyPair();
