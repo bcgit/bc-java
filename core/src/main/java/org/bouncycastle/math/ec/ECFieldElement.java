@@ -260,7 +260,7 @@ public abstract class ECFieldElement
 
                 BigInteger y = modMult(t2, t4);
 
-                return checkSqrt(new Fp(q, r, modHalf(y)));
+                return checkSqrt(new Fp(q, r, modHalfAbs(y)));
             }
 
             // q == 8m + 1
@@ -289,7 +289,7 @@ public abstract class ECFieldElement
                     P = new BigInteger(q.bitLength(), rand);
                 }
                 while (P.compareTo(q) >= 0
-                    || !(modMult(P, P).subtract(fourX).modPow(legendreExponent, q).equals(qMinusOne)));
+                    || !modReduce(P.multiply(P).subtract(fourX)).modPow(legendreExponent, q).equals(qMinusOne));
 
                 BigInteger[] result = lucasSequence(P, X, k);
                 U = result[0];
@@ -297,17 +297,7 @@ public abstract class ECFieldElement
 
                 if (modMult(V, V).equals(fourX))
                 {
-                    // Integer division by 2, mod q
-                    if (V.testBit(0))
-                    {
-                        V = V.add(q);
-                    }
-
-                    V = V.shiftRight(1);
-
-                    //assert modMult(V, V).equals(X);
-
-                    return new ECFieldElement.Fp(q, r, V);
+                    return new ECFieldElement.Fp(q, r, modHalfAbs(V));
                 }
             }
             while (U.equals(ECConstants.ONE) || U.equals(qMinusOne));
@@ -395,6 +385,15 @@ public abstract class ECFieldElement
         }
 
         protected BigInteger modHalf(BigInteger x)
+        {
+            if (x.testBit(0))
+            {
+                x = q.add(x);
+            }
+            return x.shiftRight(1);
+        }
+
+        protected BigInteger modHalfAbs(BigInteger x)
         {
             if (x.testBit(0))
             {
