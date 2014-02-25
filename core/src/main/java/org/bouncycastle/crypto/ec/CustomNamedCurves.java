@@ -11,6 +11,7 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP192R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP224R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
@@ -52,6 +53,22 @@ public class CustomNamedCurves
             ECPoint G = curve.decodePoint(Hex.decode("04"
                 + "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"
                 + "07192B95FFC8DA78631011ED6B24CDD573F977A11E794811"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
+    /*
+     * secp224r1
+     */
+    static X9ECParametersHolder secp224r1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = Hex.decode("BD71344799D5C7FCDC45B59FA3B9AB8F6A948BC5");
+            ECCurve curve = configureCurve(new SecP224R1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "B70E0CBD6BB4BF7F321390B94A03C1D356C21122343280D6115C1D21"
+                + "BD376388B5F723FB4C22DFE6CD4375A05A07476444D5819985007E34"));
             return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
         }
     };
@@ -119,11 +136,13 @@ public class CustomNamedCurves
     {
         defineCurve("secp192k1", SECObjectIdentifiers.secp192k1, secp192k1);
         defineCurve("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
+        defineCurve("secp224r1", SECObjectIdentifiers.secp224r1, secp224r1);
         defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
         defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
         defineCurve("secp521r1", SECObjectIdentifiers.secp521r1, secp521r1);
 
         objIds.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
+        objIds.put(Strings.toLowerCase("P-224"), SECObjectIdentifiers.secp224r1);
         objIds.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
         objIds.put(Strings.toLowerCase("P-521"), SECObjectIdentifiers.secp521r1);
     }
