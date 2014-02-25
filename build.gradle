@@ -24,10 +24,9 @@ subprojects {
 
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
-    version = '1.50-b01'
+    version = '1.51-b08'
 
-test {
-  systemProperty 'bc.test.data.home', bcTestDataHome
+    test {
+        systemProperty 'bc.test.data.home', bcTestDataHome
+    }
 }
-}
-
