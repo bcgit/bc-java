@@ -3,6 +3,7 @@ package org.bouncycastle.cms.test;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,6 +76,7 @@ public class NewAuthenticatedDataTest
         if (!_initialised)
         {
             _initialised = true;
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
             _signDN   = "O=Bouncy Castle, C=AU";
             _signKP   = CMSTestUtil.makeKeyPair();
