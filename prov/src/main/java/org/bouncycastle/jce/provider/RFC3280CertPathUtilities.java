@@ -14,6 +14,7 @@ import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -24,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
@@ -2004,7 +2006,9 @@ public class RFC3280CertPathUtilities
         }
         if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
         {
-            String message = "Certificate revocation after " + certStatus.getRevocationDate();
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+            df.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
             message += ", reason: " + crlReasons[certStatus.getCertStatus()];
             throw new AnnotatedException(message);
         }
