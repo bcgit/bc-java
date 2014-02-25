@@ -87,7 +87,7 @@ public class SecP256K1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long c = Nat256.mul33AddExt(PInv33, xx, 8, xx, 0, z, 0);
+        long c = Nat256.mul33Add(PInv33, xx, 8, xx, 0, z, 0);
         c = Nat256.mul33DWordAdd(PInv33, c, z, 0);
 
         // assert c == 0L || c == 1L;
