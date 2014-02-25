@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.PrincipalUtil;
@@ -1898,8 +1899,10 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                             reason = crlReasons[reasonCode.getValue().intValue()];
                         }
                     }
-                    
-                    String message = "Certificate revocation after " + crl_entry.getRevocationDate();
+
+                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+                    df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    String message = "Certificate revocation after " + df.format(crl_entry.getRevocationDate());
                     
                     if (reason != null)
                     {
