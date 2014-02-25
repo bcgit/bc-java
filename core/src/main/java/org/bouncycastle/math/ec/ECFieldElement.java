@@ -220,6 +220,11 @@ public abstract class ECFieldElement
          */
         public ECFieldElement sqrt()
         {
+            if (isZero() || isOne())
+            {
+                return this;
+            }
+
             if (!q.testBit(0))
             {
                 throw new RuntimeException("not done yet");
@@ -227,16 +232,39 @@ public abstract class ECFieldElement
 
             // note: even though this class implements ECConstants don't be tempted to
             // remove the explicit declaration, some J2ME environments don't cope.
-            // p mod 4 == 3
-            if (q.testBit(1))
-            {
-                // z = g^(u+1) + p, p = 4u + 3
-                ECFieldElement z = new Fp(q, r, x.modPow(q.shiftRight(2).add(ECConstants.ONE), q));
 
-                return z.square().equals(this) ? z : null;
+            if (q.testBit(1)) // q == 4m + 3
+            {
+                BigInteger e = q.shiftRight(2).add(ECConstants.ONE);
+                return checkSqrt(new Fp(q, r, x.modPow(e, q)));
             }
 
-            // p mod 4 == 1
+            if (q.testBit(2)) // q == 8m + 5
+            {
+                BigInteger m = q.shiftRight(3);
+
+                BigInteger t1 = x.modPow(m, q);
+                BigInteger t2 = modMult(t1, x);
+                BigInteger t3 = modMult(t2, t1);
+
+                if (t3.equals(ECConstants.ONE))
+                {
+                    return checkSqrt(new Fp(q, r, t2));
+                }
+
+                BigInteger e = m.add(ECConstants.ONE);
+
+                // TODO This is constant and could be precomputed
+                BigInteger t4 = ECConstants.FOUR.modPow(e, q);
+//                BigInteger t4 = ECConstants.TWO.modPow(e.shiftLeft(1), q);
+
+                BigInteger y = modMult(t2, t4);
+
+                return checkSqrt(new Fp(q, r, modHalf(y)));
+            }
+
+            // q == 8m + 1
+
             BigInteger qMinusOne = q.subtract(ECConstants.ONE);
 
             BigInteger legendreExponent = qMinusOne.shiftRight(1);
@@ -285,6 +313,11 @@ public abstract class ECFieldElement
             while (U.equals(ECConstants.ONE) || U.equals(qMinusOne));
 
             return null;
+        }
+
+        private ECFieldElement checkSqrt(ECFieldElement z)
+        {
+            return z.square().equals(this) ? z : null;
         }
 
         private BigInteger[] lucasSequence(
@@ -359,6 +392,15 @@ public abstract class ECFieldElement
                 _2x = _2x.subtract(q);
             }
             return _2x;
+        }
+
+        protected BigInteger modHalf(BigInteger x)
+        {
+            if (x.testBit(0))
+            {
+                x = q.subtract(x);
+            }
+            return x.shiftRight(1);
         }
 
         protected BigInteger modInverse(BigInteger x)
