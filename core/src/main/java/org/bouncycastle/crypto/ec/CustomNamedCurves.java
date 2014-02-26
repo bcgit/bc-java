@@ -11,6 +11,7 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP192R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP224K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP224R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
@@ -53,6 +54,22 @@ public class CustomNamedCurves
             ECPoint G = curve.decodePoint(Hex.decode("04"
                 + "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"
                 + "07192B95FFC8DA78631011ED6B24CDD573F977A11E794811"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
+    /*
+     * secp224k1
+     */
+    static X9ECParametersHolder secp224k1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = configureCurve(new SecP224K1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "A1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C"
+                + "7E089FED7FBA344282CAFBD6F7E319F7C0B0BD59E2CA4BDB556D61A5"));
             return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
         }
     };
@@ -136,6 +153,7 @@ public class CustomNamedCurves
     {
         defineCurve("secp192k1", SECObjectIdentifiers.secp192k1, secp192k1);
         defineCurve("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
+        defineCurve("secp224k1", SECObjectIdentifiers.secp224k1, secp224k1);
         defineCurve("secp224r1", SECObjectIdentifiers.secp224r1, secp224r1);
         defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
         defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
