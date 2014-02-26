@@ -22,7 +22,7 @@ public abstract class Nat512
         c24 += neg ? Nat.addTo(16, tt, 0, zz, 8) : Nat.subFrom(16, tt, 0, zz, 8);
         Nat.addWordExt(16, c24, zz, 24); 
     }
-    
+
     public static void square(int[] x, int[] zz)
     {
         Nat256.square(x, zz);
