@@ -70,18 +70,19 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int addWord(int len, int x, int[] z)
+    public static int addWord(int len, int x, int[] z, int zOff)
     {
-        long c = (x & M) + (z[0] & M);
-        z[0] = (int)c;
+        // assert zOff < len;
+        long c = (x & M) + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(len, z, 1);
+        return c == 0 ? 0 : inc(len, z, zOff + 1);
     }
 
     public static int addWordExt(int len, int x, int[] zz, int zzOff)
     {
         int extLen = len << 1;
-        // assert zzOff <= (extLen - 1);
+        // assert zzOff < extLen;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -93,6 +94,11 @@ public abstract class Nat
         int[] z = new int[len];
         System.arraycopy(x, 0, z, 0, len);
         return z;
+    }
+
+    public static void copy(int len, int[] x, int[] z)
+    {
+        System.arraycopy(x, 0, z, 0, len);
     }
 
     public static int[] create(int len)
