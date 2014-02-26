@@ -24,7 +24,7 @@ public class SecP521R1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 16);
+        Nat.copy(16, x, z);
         int c = Nat.inc(16, z, 0) + x[16];
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
@@ -89,7 +89,7 @@ public class SecP521R1Field
     public static void reduce23(int[] z)
     {
         int z16 = z[16];
-        int c = Nat.addWord(16, z16 >>> 9, z) + (z16 & P16);
+        int c = Nat.addWord(16, z16 >>> 9, z, 0) + (z16 & P16);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
             c += Nat.inc(16, z, 0);
