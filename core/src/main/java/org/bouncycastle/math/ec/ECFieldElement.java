@@ -241,9 +241,7 @@ public abstract class ECFieldElement
 
             if (q.testBit(2)) // q == 8m + 5
             {
-                BigInteger m = q.shiftRight(3);
-
-                BigInteger t1 = x.modPow(m, q);
+                BigInteger t1 = x.modPow(q.shiftRight(3), q);
                 BigInteger t2 = modMult(t1, x);
                 BigInteger t3 = modMult(t2, t1);
 
@@ -252,32 +250,26 @@ public abstract class ECFieldElement
                     return checkSqrt(new Fp(q, r, t2));
                 }
 
-                BigInteger e = m.add(ECConstants.ONE);
-
                 // TODO This is constant and could be precomputed
-                BigInteger t4 = ECConstants.FOUR.modPow(e, q);
-//                BigInteger t4 = ECConstants.TWO.modPow(e.shiftLeft(1), q);
+                BigInteger t4 = ECConstants.TWO.modPow(q.shiftRight(2), q);
 
                 BigInteger y = modMult(t2, t4);
 
-                return checkSqrt(new Fp(q, r, modHalfAbs(y)));
+                return checkSqrt(new Fp(q, r, y));
             }
 
             // q == 8m + 1
 
-            BigInteger qMinusOne = q.subtract(ECConstants.ONE);
-
-            BigInteger legendreExponent = qMinusOne.shiftRight(1);
+            BigInteger legendreExponent = q.shiftRight(1);
             if (!(x.modPow(legendreExponent, q).equals(ECConstants.ONE)))
             {
                 return null;
             }
 
-            BigInteger u = qMinusOne.shiftRight(2);
-            BigInteger k = u.shiftLeft(1).add(ECConstants.ONE);
-
             BigInteger X = this.x;
             BigInteger fourX = modDouble(modDouble(X));
+
+            BigInteger k = legendreExponent.add(ECConstants.ONE), qMinusOne = q.subtract(ECConstants.ONE);
 
             BigInteger U, V;
             Random rand = new Random();
