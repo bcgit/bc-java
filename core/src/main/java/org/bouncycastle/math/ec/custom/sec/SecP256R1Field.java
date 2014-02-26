@@ -34,7 +34,7 @@ public class SecP256R1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 8);
+        Nat256.copy(x, z);
         int c = Nat256.inc(z, 0);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
