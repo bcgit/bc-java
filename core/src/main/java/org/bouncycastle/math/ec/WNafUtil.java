@@ -6,7 +6,10 @@ public abstract class WNafUtil
 {
     public static final String PRECOMP_NAME = "bc_wnaf";
 
-    private static int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
+    private static final int[] DEFAULT_WINDOW_SIZE_CUTOFFS = new int[]{ 13, 41, 121, 337, 897, 2305 };
+
+    private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final int[] EMPTY_INTS = new int[0];
 
     public static int[] generateCompactNaf(BigInteger k)
     {
@@ -14,29 +17,34 @@ public abstract class WNafUtil
         {
             throw new IllegalArgumentException("'k' must have bitlength < 2^16");
         }
+        if (k.signum() == 0)
+        {
+            return EMPTY_INTS;
+        }
 
         BigInteger _3k = k.shiftLeft(1).add(k);
 
-        int digits = _3k.bitLength() - 1;
-        int[] naf = new int[(digits + 1) >> 1];
+        int bits = _3k.bitLength();
+        int[] naf = new int[bits >> 1];
 
-        int length = 0, zeroes = 0;
-        for (int i = 1; i <= digits; ++i)
+        BigInteger diff = _3k.xor(k);
+
+        int highBit = bits - 1, length = 0, zeroes = 0;
+        for (int i = 1; i < highBit; ++i)
         {
-            boolean _3kBit = _3k.testBit(i);
-            boolean kBit = k.testBit(i);
-
-            if (_3kBit == kBit)
+            if (!diff.testBit(i))
             {
                 ++zeroes;
+                continue;
             }
-            else
-            {
-                int digit  = kBit ? -1 : 1;
-                naf[length++] = (digit << 16) | zeroes;
-                zeroes = 0;
-            }
+
+            int digit  = k.testBit(i) ? -1 : 1;
+            naf[length++] = (digit << 16) | zeroes;
+            zeroes = 1;
+            ++i;
         }
+
+        naf[length++] = (1 << 16) | zeroes;
 
         if (naf.length > length)
         {
@@ -60,6 +68,10 @@ public abstract class WNafUtil
         if ((k.bitLength() >>> 16) != 0)
         {
             throw new IllegalArgumentException("'k' must have bitlength < 2^16");
+        }
+        if (k.signum() == 0)
+        {
+            return EMPTY_INTS;
         }
 
         int[] wnaf = new int[k.bitLength() / width + 1];
@@ -171,18 +183,28 @@ public abstract class WNafUtil
 
     public static byte[] generateNaf(BigInteger k)
     {
+        if (k.signum() == 0)
+        {
+            return EMPTY_BYTES;
+        }
+
         BigInteger _3k = k.shiftLeft(1).add(k);
 
         int digits = _3k.bitLength() - 1;
         byte[] naf = new byte[digits];
 
-        for (int i = 1; i <= digits; ++i)
-        {
-            boolean _3kBit = _3k.testBit(i);
-            boolean kBit = k.testBit(i);
+        BigInteger diff = _3k.xor(k);
 
-            naf[i - 1] = (byte)(_3kBit == kBit ? 0 : kBit ? -1 : 1);
+        for (int i = 1; i < digits; ++i)
+        {
+            if (diff.testBit(i))
+            {
+                naf[i - 1] = (byte)(k.testBit(i) ? -1 : 1);
+                ++i;
+            }
         }
+
+        naf[digits - 1] = 1;
 
         return naf;
     }
@@ -209,6 +231,10 @@ public abstract class WNafUtil
         if (width < 2 || width > 8)
         {
             throw new IllegalArgumentException("'width' must be in the range [2, 8]");
+        }
+        if (k.signum() == 0)
+        {
+            return EMPTY_BYTES;
         }
 
         byte[] wnaf = new byte[k.bitLength() + 1];
