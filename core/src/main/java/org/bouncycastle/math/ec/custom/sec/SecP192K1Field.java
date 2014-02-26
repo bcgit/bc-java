@@ -33,7 +33,7 @@ public class SecP192K1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 6);
+        Nat192.copy(x, z);
         int c = Nat192.inc(z, 0);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {

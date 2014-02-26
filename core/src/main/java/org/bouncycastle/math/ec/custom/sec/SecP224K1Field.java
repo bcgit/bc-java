@@ -34,7 +34,7 @@ public class SecP224K1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 8);
+        Nat224.copy(x, z);
         int c = Nat224.inc(z, 0);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
