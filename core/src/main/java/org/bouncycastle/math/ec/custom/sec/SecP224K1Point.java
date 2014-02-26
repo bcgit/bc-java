@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.Nat;
 
 public class SecP224K1Point extends ECPoint
 {
@@ -225,12 +226,11 @@ public class SecP224K1Point extends ECPoint
 
         int[] S = Y1Squared;
         SecP224K1Field.multiply(Y1Squared, X1.x, S);
-        SecP224K1Field.twice(S, S);
-        SecP224K1Field.twice(S, S);
+        int c = Nat.shiftUpBits(7, S, 2, 0);
+        SecP224K1Field.reduce32(c, S);
 
-        SecP224K1Field.twice(T, t1);
-        SecP224K1Field.twice(t1, t1);
-        SecP224K1Field.twice(t1, t1);
+        c = Nat.shiftUpBits(7, T, 3, 0, t1);
+        SecP224K1Field.reduce32(c, t1);
 
         SecP224K1FieldElement X3 = new SecP224K1FieldElement(T);
         SecP224K1Field.square(M, X3.x);

@@ -131,6 +131,15 @@ public class SecP192R1Field
         }
     }
 
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat192.addWord(x, z, 0) + Nat192.addWord(x, z, 2);
+        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
+        {
+            Nat192.sub(z, P, z);
+        }
+    }
+
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat192.createExt();

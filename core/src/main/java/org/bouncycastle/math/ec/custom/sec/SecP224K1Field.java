@@ -97,6 +97,18 @@ public class SecP224K1Field
         }
     }
 
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat224.mul33WordAdd(PInv33, x, z, 0);
+
+        // assert c == 0L || c == 1L;
+
+        if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
+        {
+            Nat224.addDWord(PInv, z, 0);
+        }
+    }
+
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat224.createExt();
