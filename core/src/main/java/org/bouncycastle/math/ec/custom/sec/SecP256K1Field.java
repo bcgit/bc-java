@@ -98,6 +98,18 @@ public class SecP256K1Field
         }
     }
 
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat256.mul33WordAdd(PInv33, x, z, 0);
+
+        // assert c == 0L || c == 1L;
+
+        if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
+        {
+            Nat256.addDWord(PInv, z, 0);
+        }
+    }
+
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat256.createExt();

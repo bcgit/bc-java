@@ -786,6 +786,24 @@ public abstract class Nat256
         return c == 0 ? 0 : inc(z, zOff + 4);
     }
 
+    public static int mul33WordAdd(int x, int y, int[] z, int zOff)
+    {
+        // assert x >>> 31 == 0;
+        // assert zOff <= 5;
+
+        long c = 0, xVal = x & M, yVal = y & M;
+        c += yVal * xVal + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += yVal + (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(z, zOff + 3);
+    }
+
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
         // assert zOff <= 5;

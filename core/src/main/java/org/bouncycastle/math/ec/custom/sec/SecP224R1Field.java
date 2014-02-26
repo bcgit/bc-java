@@ -138,6 +138,15 @@ public class SecP224R1Field
         }
     }
 
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat224.subWord(x, z, 0) + Nat224.addWord(x, z, 3);
+        if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
+        {
+            Nat224.sub(z, P, z);
+        }
+    }
+
     public static void square(int[] x, int[] z)
     {
         int[] tt = Nat224.createExt();
