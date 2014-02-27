@@ -133,13 +133,9 @@ public class SecP521R1Field
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat.shiftUpBit(16, x, 0, z) | (x[16] << 1);
-        if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
-        {
-            c += Nat.inc(16, z, 0);
-            c &= P16;
-        }
-        z[16] = c;
+        int x16 = x[16];
+        int c = Nat.shiftUpBit(16, x, x16 << 23, z) | (x16 << 1);
+        z[16] = c & P16;
     }
 
     protected static void implMultiply(int[] x, int[] y, int[] zz)
