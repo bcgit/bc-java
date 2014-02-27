@@ -3,7 +3,6 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.Nat;
-import org.bouncycastle.util.Arrays;
 
 public class SecP384R1Field
 {
