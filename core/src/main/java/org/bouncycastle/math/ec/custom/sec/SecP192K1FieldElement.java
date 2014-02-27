@@ -186,7 +186,7 @@ public class SecP192K1FieldElement extends ECFieldElement
         int[] t2 = x3;
         SecP192K1Field.square(t1, t2);
 
-        return Arrays.areEqual(x1, t2) ? new SecP192K1FieldElement(t1) : null;        
+        return Nat192.eq(x1, t2) ? new SecP192K1FieldElement(t1) : null;        
     }
 
     public boolean equals(Object other)
@@ -202,11 +202,11 @@ public class SecP192K1FieldElement extends ECFieldElement
         }
 
         SecP192K1FieldElement o = (SecP192K1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat192.eq(x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 6);
     }
 }

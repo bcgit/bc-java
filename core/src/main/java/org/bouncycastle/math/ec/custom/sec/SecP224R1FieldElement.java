@@ -144,11 +144,11 @@ public class SecP224R1FieldElement extends ECFieldElement
         }
 
         SecP224R1FieldElement o = (SecP224R1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat224.eq(x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 7);
     }
 }

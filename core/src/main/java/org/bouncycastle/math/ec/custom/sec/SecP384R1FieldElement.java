@@ -201,11 +201,11 @@ public class SecP384R1FieldElement extends ECFieldElement
         }
 
         SecP384R1FieldElement o = (SecP384R1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat.eq(12, x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 12);
     }
 }

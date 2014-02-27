@@ -282,6 +282,18 @@ public abstract class Nat224
         return pos;
     }
 
+    public static boolean eq(int[] x, int[] y)
+    {
+        for (int i = 6; i >= 0; --i)
+        {
+            if (x[i] != y[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static int[] fromBigInteger(BigInteger x)
     {
         if (x.signum() < 0 || x.bitLength() > 224)
