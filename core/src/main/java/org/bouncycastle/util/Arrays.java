@@ -323,6 +323,25 @@ public final class Arrays
 
         return hc;
     }
+    
+    public static int hashCode(byte[] data, int off, int len)
+    {
+        if (data == null)
+        {
+            return 0;
+        }
+
+        int i = len;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            hc *= 257;
+            hc ^= data[off + i];
+        }
+
+        return hc;
+    }
 
     public static int hashCode(char[] data)
     {
@@ -369,6 +388,25 @@ public final class Arrays
         {
             hc *= 257;
             hc ^= data[i];
+        }
+
+        return hc;
+    }
+
+    public static int hashCode(int[] data, int off, int len)
+    {
+        if (data == null)
+        {
+            return 0;
+        }
+
+        int i = len;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            hc *= 257;
+            hc ^= data[off + i];
         }
 
         return hc;

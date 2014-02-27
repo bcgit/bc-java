@@ -35,7 +35,7 @@ public class SecP256K1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 8);
+        Nat256.copy(x, z);
         int c = Nat256.inc(z, 0);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
@@ -89,6 +89,18 @@ public class SecP256K1Field
     {
         long c = Nat256.mul33Add(PInv33, xx, 8, xx, 0, z, 0);
         c = Nat256.mul33DWordAdd(PInv33, c, z, 0);
+
+        // assert c == 0L || c == 1L;
+
+        if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
+        {
+            Nat256.addDWord(PInv, z, 0);
+        }
+    }
+
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat256.mul33WordAdd(PInv33, x, z, 0);
 
         // assert c == 0L || c == 1L;
 

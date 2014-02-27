@@ -188,7 +188,7 @@ public class SecP256K1FieldElement extends ECFieldElement
         int[] t2 = x2;
         SecP256K1Field.square(t1, t2);
 
-        return Arrays.areEqual(x1, t2) ? new SecP256K1FieldElement(t1) : null;        
+        return Nat256.eq(x1, t2) ? new SecP256K1FieldElement(t1) : null;        
     }
 
     public boolean equals(Object other)
@@ -204,11 +204,11 @@ public class SecP256K1FieldElement extends ECFieldElement
         }
 
         SecP256K1FieldElement o = (SecP256K1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat256.eq(x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 8);
     }
 }
