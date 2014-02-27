@@ -116,24 +116,15 @@ public class SecP224R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c < 0)
+        if (c > 0)
         {
-            do
-            {
-                c += Nat224.add(z, P, z);
-            }
-            while (c < 0);
+            reduce32(c, z);
         }
         else
         {
-            while (c > 0)
+            while (c < 0)
             {
-                c += Nat224.sub(z, P, z);
-            }
-
-            if (z[6] == P6 && Nat224.gte(z, P))
-            {
-                Nat224.sub(z, P, z);
+                c += Nat224.add(z, P, z);
             }
         }
     }
