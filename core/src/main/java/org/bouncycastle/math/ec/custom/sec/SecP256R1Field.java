@@ -9,6 +9,8 @@ public class SecP256R1Field
     // 2^256 - 2^224 + 2^192 + 2^96 - 1
     static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
+    private static final int[] _2P = new int[]{ 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000000, 0x00000000,
+        0x00000002, 0xFFFFFFFE, 0x00000001 };
     private static final int P7 = 0xFFFFFFFF;
     private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
@@ -124,24 +126,19 @@ public class SecP256R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c < 0)
+        if (c > 0)
         {
-            do
-            {
-                c += Nat256.add(z, P, z);
-            }
-            while (c < 0);
+            reduce32(c, z);
         }
         else
         {
-            while (c > 0)
+            while (c < -1)
             {
-                c += Nat256.sub(z, P, z);
+                c += Nat256.add(z, _2P, z) + 1;
             }
-
-            if (z[7] == P7 && Nat256.gte(z, P))
+            while (c < 0)
             {
-                Nat256.sub(z, P, z);
+                c += Nat256.add(z, P, z);
             }
         }
     }
