@@ -143,7 +143,7 @@ public class SecP521R1FieldElement extends ECFieldElement
         SecP521R1Field.squareN(x1, 519, t1);
         SecP521R1Field.square(t1, t2);
 
-        return Arrays.areEqual(x1, t2) ? new SecP521R1FieldElement(t1) : null;
+        return Nat.eq(17, x1, t2) ? new SecP521R1FieldElement(t1) : null;
     }
 
     public boolean equals(Object other)
@@ -159,11 +159,11 @@ public class SecP521R1FieldElement extends ECFieldElement
         }
 
         SecP521R1FieldElement o = (SecP521R1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat.eq(17, x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 17);
     }
 }

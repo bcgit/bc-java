@@ -33,7 +33,7 @@ public class SecP192K1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 6);
+        Nat192.copy(x, z);
         int c = Nat192.inc(z, 0);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
@@ -87,6 +87,18 @@ public class SecP192K1Field
     {
         long c = Nat192.mul33Add(PInv33, xx, 6, xx, 0, z, 0);
         c = Nat192.mul33DWordAdd(PInv33, c, z, 0);
+
+        // assert c == 0L || c == 1L;
+
+        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
+        {
+            Nat192.addDWord(PInv, z, 0);
+        }
+    }
+
+    public static void reduce32(int x, int[] z)
+    {
+        int c = Nat192.mul33WordAdd(PInv33, x, z, 0);
 
         // assert c == 0L || c == 1L;
 
