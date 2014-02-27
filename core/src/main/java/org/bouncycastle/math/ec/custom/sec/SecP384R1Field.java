@@ -132,24 +132,15 @@ public class SecP384R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c < 0)
+        if (c > 0)
         {
-            do
-            {
-                c += Nat.add(12, z, P, z);
-            }
-            while (c < 0);
+            reduce32(c, z);
         }
         else
         {
-            while (c > 0)
+            while (c < 0)
             {
-                c += Nat.sub(12, z, P, z);
-            }
-
-            if (z[11] == P11 && Nat.gte(12, z, P))
-            {
-                Nat.sub(12, z, P, z);
+                c += Nat256.add(z, P, z);
             }
         }
     }
@@ -175,10 +166,15 @@ public class SecP384R1Field
         z[4] = (int)cc;
         cc >>= 32;
 
-        int c = Nat.addWord(12, (int)cc, z, 5);
-        if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
+//        assert cc >= 0;
+
+        if (cc > 0)
         {
-            Nat.sub(12, z, P, z);
+            int c = Nat.addWord(12, (int)cc, z, 5);
+            if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
+            {
+                Nat.sub(12, z, P, z);
+            }
         }
     }
 
