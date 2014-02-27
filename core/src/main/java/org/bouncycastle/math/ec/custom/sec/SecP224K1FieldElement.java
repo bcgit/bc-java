@@ -198,7 +198,7 @@ public class SecP224K1FieldElement extends ECFieldElement
         int[] t2 = x84;
         SecP224K1Field.square(t1, t2);
 
-        if (Arrays.areEqual(x1, t2))
+        if (Nat224.eq(x1, t2))
         {
             return new SecP224K1FieldElement(t1);
         }
@@ -211,7 +211,7 @@ public class SecP224K1FieldElement extends ECFieldElement
 
         SecP224K1Field.square(t1, t2);
 
-        if (Arrays.areEqual(x1, t2))
+        if (Nat224.eq(x1, t2))
         {
             return new SecP224K1FieldElement(t1);
         }
@@ -232,11 +232,11 @@ public class SecP224K1FieldElement extends ECFieldElement
         }
 
         SecP224K1FieldElement o = (SecP224K1FieldElement)other;
-        return Arrays.areEqual(x, o.x);
+        return Nat224.eq(x, o.x);
     }
 
     public int hashCode()
     {
-        return Q.hashCode() ^ Arrays.hashCode(x);
+        return Q.hashCode() ^ Arrays.hashCode(x, 0, 7);
     }
 }
