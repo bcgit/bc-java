@@ -187,12 +187,11 @@ public class SecP224R1FieldElement extends ECFieldElement
         return Q.hashCode() ^ Arrays.hashCode(x, 0, 7);
     }
 
-    private static void RM(int[] c, int[] d0, int[] e0, int[] d1, int[] e1, int[] f)
+    private static void RM(int[] nc, int[] d0, int[] e0, int[] d1, int[] e1, int[] f)
     {
         int[] t = Nat224.create();
         SecP224R1Field.multiply(e1, e0, t);
-        SecP224R1Field.multiply(t, c, t);
-        SecP224R1Field.negate(t, t);
+        SecP224R1Field.multiply(t, nc, t);
         SecP224R1Field.multiply(d1, d0, f);
         SecP224R1Field.add(f, t, f);
         SecP224R1Field.multiply(d1, e0, t);
@@ -200,13 +199,15 @@ public class SecP224R1FieldElement extends ECFieldElement
         SecP224R1Field.multiply(e1, d0, e1);
         SecP224R1Field.add(e1, t, e1);
         SecP224R1Field.square(e1, f);
-        SecP224R1Field.multiply(f, c, f);
-        SecP224R1Field.negate(f, f);
+        SecP224R1Field.multiply(f, nc, f);
     }
 
     private static void RP(int[] c, int[] d1, int[] e1, int[] f)
     {
-        SecP224R1Field.negate(c, f);
+        int[] nc = Nat224.create();
+        SecP224R1Field.negate(c, nc);
+
+        Nat224.copy(nc, f);
 
         int[] d0 = Nat224.create();
         int[] e0 = Nat224.create();
@@ -222,7 +223,7 @@ public class SecP224R1FieldElement extends ECFieldElement
                 RS(d1, e1, f);
             }
 
-            RM(c, d0, e0, d1, e1, f);
+            RM(nc, d0, e0, d1, e1, f);
         }
     }
 
