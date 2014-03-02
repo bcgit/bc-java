@@ -46,7 +46,9 @@ public class CipherInputStream
 
         this.bufferedBlockCipher = cipher;
 
-        buf = new byte[cipher.getOutputSize(INPUT_BUF_SIZE)];
+        int outSize = cipher.getOutputSize(INPUT_BUF_SIZE);
+
+        buf = new byte[(outSize > INPUT_BUF_SIZE) ? outSize : INPUT_BUF_SIZE];
         inBuf = new byte[INPUT_BUF_SIZE];
     }
 
@@ -71,7 +73,9 @@ public class CipherInputStream
 
         this.aeadBlockCipher = cipher;
 
-        buf = new byte[cipher.getOutputSize(INPUT_BUF_SIZE)];
+        int outSize = cipher.getOutputSize(INPUT_BUF_SIZE);
+
+        buf = new byte[(outSize > INPUT_BUF_SIZE) ? outSize : INPUT_BUF_SIZE];
         inBuf = new byte[INPUT_BUF_SIZE];
     }
 

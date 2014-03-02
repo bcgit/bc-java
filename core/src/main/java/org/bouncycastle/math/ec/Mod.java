@@ -1,5 +1,9 @@
 package org.bouncycastle.math.ec;
 
+import java.util.Random;
+
+import org.bouncycastle.crypto.util.Pack;
+
 public abstract class Mod
 {
     public static void invert(int[] p, int[] x, int[] z)
@@ -68,6 +72,31 @@ public abstract class Mod
                 }
             }
         }
+    }
+
+    public static int[] random(int[] p)
+    {
+        int len = p.length;
+        Random rand = new Random();
+        int[] s = Nat.create(len);
+
+        int m = p[len - 1];
+        m |= m >>> 1;
+        m |= m >>> 2;
+        m |= m >>> 4;
+        m |= m >>> 8;
+        m |= m >>> 16;
+
+        do
+        {
+            byte[] bytes = new byte[len << 2];
+            rand. nextBytes(bytes);
+            Pack.bigEndianToInt(bytes, 0, s);
+            s[len - 1] &= m;
+        }
+        while (Nat.gte(len, s, p));
+
+        return s;
     }
 
     public static void subtract(int[] p, int[] x, int[] y, int[] z)
