@@ -206,7 +206,7 @@ public class NistCertPathTest
                 new String[] { "NegativeSerialNumberCACert", "InvalidNegativeSerialNumberTest15EE" }, 
                 new String[] { TRUST_ANCHOR_ROOT_CRL, "NegativeSerialNumberCACRL" },
                 0,
-                "Certificate revocation after Fri Apr 20 00:57:20", "reason: keyCompromise");
+                "Certificate revocation after 2001-04-19 14:57:20 +0000", "reason: keyCompromise");
     }
     
     //

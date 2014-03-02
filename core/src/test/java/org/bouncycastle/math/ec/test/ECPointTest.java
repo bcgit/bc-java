@@ -426,7 +426,13 @@ public class ECPointTest extends TestCase
         implTestAddSubtract(q, infinity);
         implTestMultiply(q, n.bitLength());
         implTestMultiply(infinity, n.bitLength());
-        implTestEncoding(q);
+
+        ECPoint p = q;
+        for (int i = 0; i < 10; ++i)
+        {
+            implTestEncoding(p);
+            p = p.twice();
+        }
     }
 
     private void implAddSubtractMultiplyTwiceEncodingTestAllCoords(X9ECParameters x9ECParameters)

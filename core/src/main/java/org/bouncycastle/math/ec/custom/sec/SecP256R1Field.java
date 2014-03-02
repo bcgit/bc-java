@@ -9,6 +9,8 @@ public class SecP256R1Field
     // 2^256 - 2^224 + 2^192 + 2^96 - 1
     static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000,
         0x00000001, 0xFFFFFFFF };
+    private static final int[] _2P = new int[]{ 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000000, 0x00000000,
+        0x00000002, 0xFFFFFFFE, 0x00000001 };
     private static final int P7 = 0xFFFFFFFF;
     private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
@@ -34,7 +36,7 @@ public class SecP256R1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 8);
+        Nat256.copy(x, z);
         int c = Nat256.inc(z, 0);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
@@ -124,25 +126,56 @@ public class SecP256R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c < 0)
+        if (c > 0)
         {
-            do
-            {
-                c += Nat256.add(z, P, z);
-            }
-            while (c < 0);
+            reduce32(c, z);
         }
         else
         {
-            while (c > 0)
+            while (c < -1)
             {
-                c += Nat256.sub(z, P, z);
+                c += Nat256.add(z, _2P, z) + 1;
             }
+            while (c < 0)
+            {
+                c += Nat256.add(z, P, z);
+            }
+        }
+    }
 
-            if (z[7] == P7 && Nat256.gte(z, P))
-            {
-                Nat256.sub(z, P, z);
-            }
+    public static void reduce32(int x, int[] z)
+    {
+        long xx08 = x & M;
+
+        long cc = 0;
+        cc += (z[0] & M) + xx08;
+        z[0] = (int)cc;
+        cc >>= 32;
+        cc += (z[1] & M);
+        z[1] = (int)cc;
+        cc >>= 32;
+        cc += (z[2] & M);
+        z[2] = (int)cc;
+        cc >>= 32;
+        cc += (z[3] & M) - xx08;
+        z[3] = (int)cc;
+        cc >>= 32;
+        cc += (z[4] & M);
+        z[4] = (int)cc;
+        cc >>= 32;
+        cc += (z[5] & M);
+        z[5] = (int)cc;
+        cc >>= 32;
+        cc += (z[6] & M) - xx08;
+        z[6] = (int)cc;
+        cc >>= 32;
+        cc += (z[7] & M) + xx08;
+        z[7] = (int)cc;
+        cc >>= 32;
+
+        if (cc != 0 || (z[7] == P7 && Nat256.gte(z, P)))
+        {
+            Nat256.sub(z, P, z);
         }
     }
 

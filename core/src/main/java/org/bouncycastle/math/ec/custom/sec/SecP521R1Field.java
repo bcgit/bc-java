@@ -24,7 +24,7 @@ public class SecP521R1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        System.arraycopy(x, 0, z, 0, 16);
+        Nat.copy(16, x, z);
         int c = Nat.inc(16, z, 0) + x[16];
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
@@ -89,7 +89,7 @@ public class SecP521R1Field
     public static void reduce23(int[] z)
     {
         int z16 = z[16];
-        int c = Nat.addWord(16, z16 >>> 9, z) + (z16 & P16);
+        int c = Nat.addWord(16, z16 >>> 9, z, 0) + (z16 & P16);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
             c += Nat.inc(16, z, 0);
@@ -133,13 +133,9 @@ public class SecP521R1Field
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat.shiftUpBit(16, x, 0, z) | (x[16] << 1);
-        if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
-        {
-            c += Nat.inc(16, z, 0);
-            c &= P16;
-        }
-        z[16] = c;
+        int x16 = x[16];
+        int c = Nat.shiftUpBit(16, x, x16 << 23, z) | (x16 << 1);
+        z[16] = c & P16;
     }
 
     protected static void implMultiply(int[] x, int[] y, int[] zz)
@@ -155,6 +151,6 @@ public class SecP521R1Field
         Nat512.square(x, zz);
 
         int x16 = x[16];
-        zz[32] = Nat.mulWordAdd(16, x16 << 1, x, zz, 16) + (x16 * x16);
+        zz[32] = Nat.mulWordAddTo(16, x16 << 1, x, 0, zz, 16) + (x16 * x16);
     }
 }

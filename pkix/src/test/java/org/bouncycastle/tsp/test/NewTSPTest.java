@@ -4,6 +4,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +57,11 @@ public class NewTSPTest
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
+
+    public void setUp()
+    {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     public void testGeneral()
         throws Exception
