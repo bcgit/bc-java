@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.Mod;
+import org.bouncycastle.math.ec.Nat;
 import org.bouncycastle.util.Arrays;
 
 public class SecP224R1FieldElement extends ECFieldElement
@@ -127,8 +128,50 @@ public class SecP224R1FieldElement extends ECFieldElement
      */
     public ECFieldElement sqrt()
     {
-        ECFieldElement root = new ECFieldElement.Fp(Q, toBigInteger()).sqrt();
-        return root == null ? null : new SecP224R1FieldElement(root.toBigInteger());
+        int[] c = this.x;
+        if (Nat224.isZero(c) || Nat224.isOne(c))
+        {
+            return this;
+        }
+
+        int[] nc = Nat224.create();
+        SecP224R1Field.negate(c, nc);
+
+        int[] r = Mod.random(SecP224R1Field.P);
+
+        for (;;)
+        {
+            int[] d1 = Nat224.create();
+            Nat224.copy(r, d1);
+            int[] e1 = Nat224.create();
+            e1[0] = 1;
+            int[] f1 = Nat224.create();
+            RP(nc, d1, e1, f1);
+
+            int[] d0 = Nat224.create();
+            int[] e0 = Nat224.create();
+
+            for (int k = 1; k < 96; ++k)
+            {
+                Nat224.copy(d1, d0);
+                Nat224.copy(e1, e0);
+
+                RS(d1, e1, f1);
+
+                if (Nat224.isZero(d1))
+                {
+                    Mod.invert(SecP224R1Field.P, e0, f1);
+                    SecP224R1Field.multiply(f1, d0, f1);
+
+                    SecP224R1Field.square(f1, d1);
+
+                    return Nat224.eq(c, d1) ? new SecP224R1FieldElement(f1) : null;
+                }
+            }
+
+            // Avoid any possible infinite loop due to a bad random number generator
+            SecP224R1Field.addOne(r, r);
+        }
     }
 
     public boolean equals(Object other)
@@ -150,5 +193,54 @@ public class SecP224R1FieldElement extends ECFieldElement
     public int hashCode()
     {
         return Q.hashCode() ^ Arrays.hashCode(x, 0, 7);
+    }
+
+    private static void RM(int[] nc, int[] d0, int[] e0, int[] d1, int[] e1, int[] f1)
+    {
+        int[] t = Nat224.create();
+        SecP224R1Field.multiply(e1, e0, t);
+        SecP224R1Field.multiply(t, nc, t);
+        SecP224R1Field.multiply(d1, d0, f1);
+        SecP224R1Field.add(f1, t, f1);
+        SecP224R1Field.multiply(d1, e0, t);
+        Nat224.copy(f1, d1);
+        SecP224R1Field.multiply(e1, d0, e1);
+        SecP224R1Field.add(e1, t, e1);
+        SecP224R1Field.square(e1, f1);
+        SecP224R1Field.multiply(f1, nc, f1);
+    }
+
+    private static void RP(int[] nc, int[] d1, int[] e1, int[] f1)
+    {
+        Nat224.copy(nc, f1);
+
+        int[] d0 = Nat224.create();
+        int[] e0 = Nat224.create();
+
+        for (int i = 0; i < 7; ++i)
+        {
+            Nat224.copy(d1, d0);
+            Nat224.copy(e1, e0);
+
+            int j = 1 << i;
+            while (--j >= 0)
+            {
+                RS(d1, e1, f1);
+            }
+
+            RM(nc, d0, e0, d1, e1, f1);
+        }
+    }
+
+    private static void RS(int[] d, int[] e, int[] f)
+    {
+        SecP224R1Field.multiply(e, d, e);
+        int[] t = Nat224.create();
+        SecP224R1Field.square(d, t);
+        SecP224R1Field.add(f, t, d);
+        SecP224R1Field.twice(e, e);
+        SecP224R1Field.multiply(f, t, f);
+        int c = Nat.shiftUpBits(7, f, 2, 0);
+        SecP224R1Field.reduce32(c, f);
     }
 }
