@@ -2,6 +2,7 @@ package org.bouncycastle.tsp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -11,6 +12,7 @@ import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tsp.TSPAlgorithms;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampResponse;
@@ -357,6 +359,11 @@ public class ParseTest
         {
             fail("request not rejected.");
         }
+    }
+
+    public void setUp()
+    {
+        Security.addProvider(new BouncyCastleProvider());
     }
     
     public void testParsing()

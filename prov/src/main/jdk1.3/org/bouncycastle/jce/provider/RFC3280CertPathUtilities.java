@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -2017,7 +2018,9 @@ public class RFC3280CertPathUtilities
         }
         if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
         {
-            String message = "Certificate revocation after " + certStatus.getRevocationDate();
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+            df.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
             message += ", reason: " + crlReasons[certStatus.getCertStatus()];
             throw new AnnotatedException(message);
         }

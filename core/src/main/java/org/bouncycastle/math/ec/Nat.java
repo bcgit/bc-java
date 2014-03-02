@@ -70,18 +70,19 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int addWord(int len, int x, int[] z)
+    public static int addWord(int len, int x, int[] z, int zOff)
     {
-        long c = (x & M) + (z[0] & M);
-        z[0] = (int)c;
+        // assert zOff < len;
+        long c = (x & M) + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(len, z, 1);
+        return c == 0 ? 0 : inc(len, z, zOff + 1);
     }
 
     public static int addWordExt(int len, int x, int[] zz, int zzOff)
     {
         int extLen = len << 1;
-        // assert zzOff <= (extLen - 1);
+        // assert zzOff < extLen;
         long c = (x & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
         c >>>= 32;
@@ -93,6 +94,11 @@ public abstract class Nat
         int[] z = new int[len];
         System.arraycopy(x, 0, z, 0, len);
         return z;
+    }
+
+    public static void copy(int len, int[] x, int[] z)
+    {
+        System.arraycopy(x, 0, z, 0, len);
     }
 
     public static int[] create(int len)
@@ -215,11 +221,21 @@ public abstract class Nat
 
     public static void mul(int len, int[] x, int[] y, int[] zz)
     {
-        zz[len] = mulWord(len, x[0], y, zz, 0);
+        zz[len] = mulWord(len, x[0], y, zz);
 
         for (int i = 1; i < len; ++i)
         {
-            zz[i + len] = mulWordAdd(len, x[i], y, zz, i);
+            zz[i + len] = mulWordAddTo(len, x[i], y, 0, zz, i);
+        }
+    }
+
+    public static void mul(int len, int[] x, int xOff, int[] y, int yOff, int[] zz, int zzOff)
+    {
+        zz[zzOff + len] = mulWord(len, x[xOff + 0], y, yOff, zz, zzOff);
+
+        for (int i = 1; i < len; ++i)
+        {
+            zz[zzOff + i + len] = mulWordAddTo(len, x[xOff + i], y, yOff, zz, zzOff + i);
         }
     }
 
@@ -237,13 +253,27 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int mulWord(int len, int x, int[] y, int[] z, int zOff)
+    public static int mulWord(int len, int x, int[] y, int[] z)
     {
         long c = 0, xVal = x & M;
         int i = 0;
         do
         {
             c += xVal * (y[i] & M);
+            z[i] = (int)c;
+            c >>>= 32;
+        }
+        while (++i < len);
+        return (int)c;
+    }
+
+    public static int mulWord(int len, int x, int[] y, int yOff, int[] z, int zOff)
+    {
+        long c = 0, xVal = x & M;
+        int i = 0;
+        do
+        {
+            c += xVal * (y[yOff + i] & M);
             z[zOff + i] = (int)c;
             c >>>= 32;
         }
@@ -251,13 +281,13 @@ public abstract class Nat
         return (int)c;
     }
 
-    public static int mulWordAdd(int len, int x, int[] y, int[] z, int zOff)
+    public static int mulWordAddTo(int len, int x, int[] y, int yOff, int[] z, int zOff)
     {
         long c = 0, xVal = x & M;
         int i = 0;
         do
         {
-            c += xVal * (y[i] & M) + (z[zOff + i] & M);
+            c += xVal * (y[yOff + i] & M) + (z[zOff + i] & M);
             z[zOff + i] = (int)c;
             c >>>= 32;
         }
@@ -354,6 +384,17 @@ public abstract class Nat
         return c >>> 31;
     }
 
+    public static int shiftUpBit(int len, int[] z, int zOff, int c)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            int next = z[zOff + i];
+            z[zOff + i] = (next << 1) | (c >>> 31);
+            c = next;
+        }
+        return c >>> 31;
+    }
+
     public static int shiftUpBit(int len, int[] x, int c, int[] z)
     {
         for (int i = 0; i < len; ++i)
@@ -417,22 +458,21 @@ public abstract class Nat
 
         for (int i = 1; i < len; ++i)
         {
-            c = squareWordAddExt(len, x, i, zz);
+            c = squareWordAdd(x, i, zz);
             addWordExt(len, c, zz, i << 1);
         }
 
         shiftUpBit(extLen, zz, x[0] << 31);
     }
 
-    public static int squareWordAddExt(int len, int[] x, int xPos, int[] zz)
+    public static int squareWordAdd(int[] x, int xPos, int[] z)
     {
-        // assert xPos > 0 && xPos < len;
         long c = 0, xVal = x[xPos] & M;
         int i = 0;
         do
         {
-            c += xVal * (x[i] & M) + (zz[xPos + i] & M);
-            zz[xPos + i] = (int)c;
+            c += xVal * (x[i] & M) + (z[xPos + i] & M);
+            z[xPos + i] = (int)c;
             c >>>= 32;
         }
         while (++i < xPos);
