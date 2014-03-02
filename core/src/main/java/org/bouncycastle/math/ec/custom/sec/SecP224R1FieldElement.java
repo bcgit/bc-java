@@ -134,36 +134,44 @@ public class SecP224R1FieldElement extends ECFieldElement
             return this;
         }
 
-        int[] d1 = Mod.random(SecP224R1Field.P);
-        int[] e1 = Nat224.create();
-        e1[0] = 1;
+        int[] nc = Nat224.create();
+        SecP224R1Field.negate(c, nc);
 
-        int[] f = Nat224.create();
-        RP(c, d1, e1, f);
-        RS(d1, e1, f);
+        int[] r = Mod.random(SecP224R1Field.P);
 
-        int[] d0 = Nat224.create();
-        int[] e0 = Nat224.create();
-
-        for (int i = 0; i < 95; ++i)
+        for (;;)
         {
-            Nat224.copy(d1, d0);
-            Nat224.copy(e1, e0);
+            int[] d1 = Nat224.create();
+            Nat224.copy(r, d1);
+            int[] e1 = Nat224.create();
+            e1[0] = 1;
+            int[] f1 = Nat224.create();
+            RP(nc, d1, e1, f1);
 
-            RS(d1, e1, f);
+            int[] d0 = Nat224.create();
+            int[] e0 = Nat224.create();
 
-            if (Nat224.isZero(d1))
+            for (int k = 1; k < 96; ++k)
             {
-                break;
+                Nat224.copy(d1, d0);
+                Nat224.copy(e1, e0);
+
+                RS(d1, e1, f1);
+
+                if (Nat224.isZero(d1))
+                {
+                    Mod.invert(SecP224R1Field.P, e0, f1);
+                    SecP224R1Field.multiply(f1, d0, f1);
+
+                    SecP224R1Field.square(f1, d1);
+
+                    return Nat224.eq(c, d1) ? new SecP224R1FieldElement(f1) : null;
+                }
             }
+
+            // Avoid any possible infinite loop due to a bad random number generator
+            SecP224R1Field.addOne(r, r);
         }
-
-        Mod.invert(SecP224R1Field.P, e0, f);
-        SecP224R1Field.multiply(f, d0, f);
-
-        SecP224R1Field.square(f, d1);
-
-        return Nat224.eq(c, d1) ? new SecP224R1FieldElement(f) : null;
     }
 
     public boolean equals(Object other)
@@ -187,27 +195,24 @@ public class SecP224R1FieldElement extends ECFieldElement
         return Q.hashCode() ^ Arrays.hashCode(x, 0, 7);
     }
 
-    private static void RM(int[] nc, int[] d0, int[] e0, int[] d1, int[] e1, int[] f)
+    private static void RM(int[] nc, int[] d0, int[] e0, int[] d1, int[] e1, int[] f1)
     {
         int[] t = Nat224.create();
         SecP224R1Field.multiply(e1, e0, t);
         SecP224R1Field.multiply(t, nc, t);
-        SecP224R1Field.multiply(d1, d0, f);
-        SecP224R1Field.add(f, t, f);
+        SecP224R1Field.multiply(d1, d0, f1);
+        SecP224R1Field.add(f1, t, f1);
         SecP224R1Field.multiply(d1, e0, t);
-        Nat224.copy(f, d1);
+        Nat224.copy(f1, d1);
         SecP224R1Field.multiply(e1, d0, e1);
         SecP224R1Field.add(e1, t, e1);
-        SecP224R1Field.square(e1, f);
-        SecP224R1Field.multiply(f, nc, f);
+        SecP224R1Field.square(e1, f1);
+        SecP224R1Field.multiply(f1, nc, f1);
     }
 
-    private static void RP(int[] c, int[] d1, int[] e1, int[] f)
+    private static void RP(int[] nc, int[] d1, int[] e1, int[] f1)
     {
-        int[] nc = Nat224.create();
-        SecP224R1Field.negate(c, nc);
-
-        Nat224.copy(nc, f);
+        Nat224.copy(nc, f1);
 
         int[] d0 = Nat224.create();
         int[] e0 = Nat224.create();
@@ -220,10 +225,10 @@ public class SecP224R1FieldElement extends ECFieldElement
             int j = 1 << i;
             while (--j >= 0)
             {
-                RS(d1, e1, f);
+                RS(d1, e1, f1);
             }
 
-            RM(nc, d0, e0, d1, e1, f);
+            RM(nc, d0, e0, d1, e1, f1);
         }
     }
 
