@@ -6,9 +6,9 @@ public class SecP192K1Field
 {
     // 2^192 - 2^32 - 2^12 - 2^8 - 2^7 - 2^6 - 2^3 - 1
     static final int[] P = new int[]{ 0xFFFFEE37, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P5 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x013C4FD1, 0x00002392, 0x00000001, 0x00000000, 0x00000000,
+    static final int[] PExt = new int[]{ 0x013C4FD1, 0x00002392, 0x00000001, 0x00000000, 0x00000000,
         0x00000000, 0xFFFFDC6E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int P5 = 0xFFFFFFFF;
     private static final int PExt11 = 0xFFFFFFFF;
     private static final long PInv = 0x00000001000011C9L;
     private static final int PInv33 = 0x11C9;
@@ -85,8 +85,8 @@ public class SecP192K1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long c = Nat192.mul33Add(PInv33, xx, 6, xx, 0, z, 0);
-        c = Nat192.mul33DWordAdd(PInv33, c, z, 0);
+        long cc = Nat192.mul33Add(PInv33, xx, 6, xx, 0, z, 0);
+        int c = Nat192.mul33DWordAdd(PInv33, cc, z, 0);
 
         // assert c == 0L || c == 1L;
 
@@ -98,11 +98,8 @@ public class SecP192K1Field
 
     public static void reduce32(int x, int[] z)
     {
-        int c = Nat192.mul33WordAdd(PInv33, x, z, 0);
-
-        // assert c == 0L || c == 1L;
-
-        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
+        if ((x != 0 && Nat192.mul33WordAdd(PInv33, x, z, 0) != 0)
+            || (z[5] == P5 && Nat192.gte(z, P)))
         {
             Nat192.addDWord(PInv, z, 0);
         }

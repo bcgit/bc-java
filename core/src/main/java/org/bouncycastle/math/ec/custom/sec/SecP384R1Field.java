@@ -11,10 +11,10 @@ public class SecP384R1Field
     // 2^384 - 2^128 - 2^96 + 2^32 - 1
     static final int[] P = new int[]{ 0xFFFFFFFF, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P11 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x00000001, 0xFFFFFFFE, 0x00000000, 0x00000002, 0x00000000, 0xFFFFFFFE,
+    static final int[] PExt = new int[]{ 0x00000001, 0xFFFFFFFE, 0x00000000, 0x00000002, 0x00000000, 0xFFFFFFFE,
         0x00000000, 0x00000002, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFE, 0x00000001, 0x00000000,
         0xFFFFFFFE, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int P11 = 0xFFFFFFFF;
     private static final int PExt23 = 0xFFFFFFFF;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -132,7 +132,7 @@ public class SecP384R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c > 0)
+        if (c >= 0)
         {
             reduce32(c, z);
         }
@@ -147,34 +147,35 @@ public class SecP384R1Field
 
     public static void reduce32(int x, int[] z)
     {
-        long xx12 = x & M;
-
         long cc = 0;
-        cc += (z[0] & M) + xx12;
-        z[0] = (int)cc;
-        cc >>= 32;
-        cc += (z[1] & M) - xx12;
-        z[1] = (int)cc;
-        cc >>= 32;
-        cc += (z[2] & M);
-        z[2] = (int)cc;
-        cc >>= 32;
-        cc += (z[3] & M) + xx12;
-        z[3] = (int)cc;
-        cc >>= 32;
-        cc += (z[4] & M) + xx12;
-        z[4] = (int)cc;
-        cc >>= 32;
-
-//        assert cc >= 0;
-
-        if (cc > 0)
+        
+        if (x != 0)
         {
-            int c = Nat.addWord(12, (int)cc, z, 5);
-            if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
-            {
-                Nat.sub(12, z, P, z);
-            }
+            long xx12 = x & M;
+    
+            cc += (z[0] & M) + xx12;
+            z[0] = (int)cc;
+            cc >>= 32;
+            cc += (z[1] & M) - xx12;
+            z[1] = (int)cc;
+            cc >>= 32;
+            cc += (z[2] & M);
+            z[2] = (int)cc;
+            cc >>= 32;
+            cc += (z[3] & M) + xx12;
+            z[3] = (int)cc;
+            cc >>= 32;
+            cc += (z[4] & M) + xx12;
+            z[4] = (int)cc;
+            cc >>= 32;
+
+//            assert cc == 0 || cc == 1;
+        }
+
+        if ((cc != 0 && Nat.inc(12, z, 5) != 0)
+            || (z[11] == P11 && Nat.gte(12, z, P)))
+        {
+            Nat.sub(12, z, P, z);
         }
     }
 

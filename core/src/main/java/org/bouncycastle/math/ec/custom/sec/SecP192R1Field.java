@@ -8,9 +8,9 @@ public class SecP192R1Field
 
     // 2^192 - 2^64 - 1
     static final int[] P = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P5 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000002, 0x00000000, 0x00000001,
+    static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000002, 0x00000000, 0x00000001,
         0x00000000, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int P5 = 0xFFFFFFFF;
     private static final int PExt11 = 0xFFFFFFFF;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -119,22 +119,13 @@ public class SecP192R1Field
         z[5] = (int)cc;
         cc >>= 32;
 
-        int c = (int)cc;
-        while (c > 0)
-        {
-            c += Nat192.sub(z, P, z);
-        }
-
-        if (z[5] == P5 && Nat192.gte(z, P))
-        {
-            Nat192.sub(z, P, z);
-        }
+        reduce32((int)cc, z);
     }
 
     public static void reduce32(int x, int[] z)
     {
-        int c = Nat192.addWord(x, z, 0) + Nat192.addWord(x, z, 2);
-        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
+        if ((x != 0 && (Nat192.addWord(x, z, 0) + Nat192.addWord(x, z, 2) != 0))
+            || (z[5] == P5 && Nat192.gte(z, P)))
         {
             Nat192.sub(z, P, z);
         }

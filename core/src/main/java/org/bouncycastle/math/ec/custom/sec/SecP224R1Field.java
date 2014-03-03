@@ -8,9 +8,9 @@ public class SecP224R1Field
 
     // 2^224 - 2^96 + 1
     static final int[] P = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P6 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
+    static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int P6 = 0xFFFFFFFF;
     private static final int PExt13 = 0xFFFFFFFF;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -116,7 +116,7 @@ public class SecP224R1Field
         cc >>= 32;
 
         int c = (int)cc;
-        if (c > 0)
+        if (c >= 0)
         {
             reduce32(c, z);
         }
@@ -131,8 +131,8 @@ public class SecP224R1Field
 
     public static void reduce32(int x, int[] z)
     {
-        int c = Nat224.subWord(x, z, 0) + Nat224.addWord(x, z, 3);
-        if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
+        if ((x != 0 && (Nat224.subWord(x, z, 0) + Nat224.addWord(x, z, 3) != 0))
+            || (z[6] == P6 && Nat224.gte(z, P)))
         {
             Nat224.sub(z, P, z);
         }
