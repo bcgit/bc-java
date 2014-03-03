@@ -481,6 +481,83 @@ public abstract class Nat192
         }
     }
 
+    public static int mulAddTo(int[] x, int[] y, int[] zz)
+    {
+        long y_0 = y[0] & M;
+        long y_1 = y[1] & M;
+        long y_2 = y[2] & M;
+        long y_3 = y[3] & M;
+        long y_4 = y[4] & M;
+        long y_5 = y[5] & M;
+
+        long zc = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            long c = 0, x_i = x[i] & M;
+            c += x_i * y_0 + (zz[i + 0] & M);
+            zz[i + 0] = (int)c;
+            c >>>= 32;
+            c += x_i * y_1 + (zz[i + 1] & M);
+            zz[i + 1] = (int)c;
+            c >>>= 32;
+            c += x_i * y_2 + (zz[i + 2] & M);
+            zz[i + 2] = (int)c;
+            c >>>= 32;
+            c += x_i * y_3 + (zz[i + 3] & M);
+            zz[i + 3] = (int)c;
+            c >>>= 32;
+            c += x_i * y_4 + (zz[i + 4] & M);
+            zz[i + 4] = (int)c;
+            c >>>= 32;
+            c += x_i * y_5 + (zz[i + 5] & M);
+            zz[i + 5] = (int)c;
+            c >>>= 32;
+            c += zc + (zz[i + 6] & M);
+            zz[i + 6] = (int)c;
+            zc = c >>> 32;
+        }
+        return (int)zc;
+    }
+
+    public static int mulAddTo(int[] x, int xOff, int[] y, int yOff, int[] zz, int zzOff)
+    {
+        long y_0 = y[yOff + 0] & M;
+        long y_1 = y[yOff + 1] & M;
+        long y_2 = y[yOff + 2] & M;
+        long y_3 = y[yOff + 3] & M;
+        long y_4 = y[yOff + 4] & M;
+        long y_5 = y[yOff + 5] & M;
+
+        long zc = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            long c = 0, x_i = x[xOff + i] & M;
+            c += x_i * y_0 + (zz[zzOff + 0] & M);
+            zz[zzOff + 0] = (int)c;
+            c >>>= 32;
+            c += x_i * y_1 + (zz[zzOff + 1] & M);
+            zz[zzOff + 1] = (int)c;
+            c >>>= 32;
+            c += x_i * y_2 + (zz[zzOff + 2] & M);
+            zz[zzOff + 2] = (int)c;
+            c >>>= 32;
+            c += x_i * y_3 + (zz[zzOff + 3] & M);
+            zz[zzOff + 3] = (int)c;
+            c >>>= 32;
+            c += x_i * y_4 + (zz[zzOff + 4] & M);
+            zz[zzOff + 4] = (int)c;
+            c >>>= 32;
+            c += x_i * y_5 + (zz[zzOff + 5] & M);
+            zz[zzOff + 5] = (int)c;
+            c >>>= 32;
+            c += zc + (zz[zzOff + 6] & M);
+            zz[zzOff + 6] = (int)c;
+            zc = c >>> 32;
+            ++zzOff;
+        }
+        return (int)zc;
+    }
+
     public static long mul33Add(int w, int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
     {
         // assert w >>> 31 == 0;
