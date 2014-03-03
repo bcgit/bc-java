@@ -46,7 +46,7 @@ public class SecP192K1Field
         int[] z = Nat192.fromBigInteger(x);
         if (z[5] == P5 && Nat192.gte(z, P))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat192.subFrom(P, z);
         }
         return z;
     }

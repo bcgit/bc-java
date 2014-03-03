@@ -82,6 +82,30 @@ public abstract class Nat192
         return (int)c;
     }
 
+    public static int addTo(int[] x, int[] z)
+    {
+        long c = 0;
+        c += (x[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
     public static int addTo(int[] x, int xOff, int[] z, int zOff, int cIn)
     {
         long c = cIn & M;
@@ -1057,27 +1081,50 @@ public abstract class Nat192
         return (int)c;
     }
 
-    public static int subFromExt(int[] x, int xOff, int[] zz, int zzOff)
+    public static int subFrom(int[] x, int[] z)
     {
-        // assert zzOff <= 6;
         long c = 0;
-        c += (zz[zzOff + 0] & M) - (x[xOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
+        c += (z[0] & M) - (x[0] & M);
+        z[0] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 1] & M) - (x[xOff + 1] & M);
-        zz[zzOff + 1] = (int)c;
+        c += (z[1] & M) - (x[1] & M);
+        z[1] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 2] & M) - (x[xOff + 2] & M);
-        zz[zzOff + 2] = (int)c;
+        c += (z[2] & M) - (x[2] & M);
+        z[2] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 3] & M) - (x[xOff + 3] & M);
-        zz[zzOff + 3] = (int)c;
+        c += (z[3] & M) - (x[3] & M);
+        z[3] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 4] & M) - (x[xOff + 4] & M);
-        zz[zzOff + 4] = (int)c;
+        c += (z[4] & M) - (x[4] & M);
+        z[4] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 5] & M) - (x[xOff + 5] & M);
-        zz[zzOff + 5] = (int)c;
+        c += (z[5] & M) - (x[5] & M);
+        z[5] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    public static int subFrom(int[] x, int xOff, int[] z, int zOff)
+    {
+        long c = 0;
+        c += (z[zOff + 0] & M) - (x[xOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 1] & M) - (x[xOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 2] & M) - (x[xOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 3] & M) - (x[xOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 4] & M) - (x[xOff + 4] & M);
+        z[zOff + 4] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 5] & M) - (x[xOff + 5] & M);
+        z[zOff + 5] = (int)c;
         c >>= 32;
         return (int)c;
     }

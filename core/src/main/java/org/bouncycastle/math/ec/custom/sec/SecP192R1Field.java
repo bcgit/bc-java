@@ -18,7 +18,7 @@ public class SecP192R1Field
         int c = Nat192.add(x, y, z);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.sub(z, P, z);
+            Nat192.subFrom(P, z);
         }
     }
 
@@ -37,7 +37,7 @@ public class SecP192R1Field
         int c = Nat192.inc(z, 0);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.sub(z, P, z);
+            Nat192.subFrom(P, z);
         }
     }
 
@@ -46,7 +46,7 @@ public class SecP192R1Field
         int[] z = Nat192.fromBigInteger(x);
         if (z[5] == P5 && Nat192.gte(z, P))
         {
-            Nat192.sub(z, P, z);
+            Nat192.subFrom(P, z);
         }
         return z;
     }
@@ -127,7 +127,7 @@ public class SecP192R1Field
         if ((x != 0 && (Nat192.addWord(x, z, 0) + Nat192.addWord(x, z, 2) != 0))
             || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.sub(z, P, z);
+            Nat192.subFrom(P, z);
         }
     }
 
@@ -158,7 +158,7 @@ public class SecP192R1Field
         int c = Nat192.sub(x, y, z);
         if (c != 0)
         {
-            Nat192.add(z, P, z);
+            Nat192.addTo(P, z);
         }
     }
 
@@ -176,7 +176,7 @@ public class SecP192R1Field
         int c = Nat192.shiftUpBit(x, 0, z);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.sub(z, P, z);
+            Nat192.subFrom(P, z);
         }
     }
 }

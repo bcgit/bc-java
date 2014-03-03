@@ -21,7 +21,7 @@ public class SecP256R1Field
         int c = Nat256.add(x, y, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.sub(z, P, z);
+            Nat256.subFrom(P, z);
         }
     }
 
@@ -40,7 +40,7 @@ public class SecP256R1Field
         int c = Nat256.inc(z, 0);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.sub(z, P, z);
+            Nat256.subFrom(P, z);
         }
     }
 
@@ -49,7 +49,7 @@ public class SecP256R1Field
         int[] z = Nat256.fromBigInteger(x);
         if (z[7] == P7 && Nat256.gte(z, P))
         {
-            Nat256.sub(z, P, z);
+            Nat256.subFrom(P, z);
         }
         return z;
     }
@@ -134,11 +134,11 @@ public class SecP256R1Field
         {
             while (c < -1)
             {
-                c += Nat256.add(z, _2P, z) + 1;
+                c += Nat256.addTo(_2P, z) + 1;
             }
             while (c < 0)
             {
-                c += Nat256.add(z, P, z);
+                c += Nat256.addTo(P, z);
             }
         }
     }
@@ -181,7 +181,7 @@ public class SecP256R1Field
 
         if (cc != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.sub(z, P, z);
+            Nat256.subFrom(P, z);
         }
     }
 
@@ -212,7 +212,7 @@ public class SecP256R1Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            Nat256.add(z, P, z);
+            Nat256.addTo(P, z);
         }
     }
 
@@ -230,7 +230,7 @@ public class SecP256R1Field
         int c = Nat256.shiftUpBit(x, 0, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.sub(z, P, z);
+            Nat256.subFrom(P, z);
         }
     }
 }

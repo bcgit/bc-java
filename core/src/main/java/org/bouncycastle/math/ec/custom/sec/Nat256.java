@@ -68,6 +68,17 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int add33To(int x, int[] z)
+    {
+        long c = (z[0] & M) + (x & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (z[1] & M) + 1L;
+        z[1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : inc(z, 2);
+    }
+
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -128,18 +139,16 @@ public abstract class Nat256
         return (int)c;
     }
 
-    // TODO Re-write to allow full range for x?
-    public static int addDWord(long x, int[] z, int zOff)
+    public static int addDWordAt(long x, int[] z, int zPos)
     {
-        // assert zOff <= 6;
-        long c = x;
-        c += (z[zOff + 0] & M);
-        z[zOff + 0] = (int)c;
+        // assert zPos <= 6;
+        long c = (z[zPos + 0] & M) + (x & M);
+        z[zPos + 0] = (int)c;
         c >>>= 32;
-        c += (z[zOff + 1] & M);
-        z[zOff + 1] = (int)c;
+        c += (z[zPos + 1] & M) + (x >>> 32);
+        z[zPos + 1] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 2);
+        return c == 0 ? 0 : inc(z, zPos + 2);
     }
 
     public static int addExt(int[] xx, int[] yy, int[] zz)
@@ -151,6 +160,36 @@ public abstract class Nat256
             zz[i] = (int)c;
             c >>>= 32;
         }
+        return (int)c;
+    }
+
+    public static int addTo(int[] x, int[] z)
+    {
+        long c = 0;
+        c += (x[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += (x[6] & M) + (z[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        c += (x[7] & M) + (z[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
         return (int)c;
     }
 
@@ -1304,6 +1343,17 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int sub33From(int x, int[] z)
+    {
+        long c = (z[0] & M) - (x & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - 1;
+        z[1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : dec(z, 2);
+    }
+
     public static int subBothFrom(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -1334,17 +1384,16 @@ public abstract class Nat256
         return (int)c;
     }
 
-    // TODO Re-write to allow full range for x?
-    public static int subDWord(long x, int[] z)
+    public static int subDWordAt(long x, int[] z, int zPos)
     {
-        long c = -x;
-        c += (z[0] & M);
-        z[0] = (int)c;
+        // assert zPos <= 6;
+        long c = (z[zPos + 0] & M) - (x & M);
+        z[zPos + 0] = (int)c;
         c >>= 32;
-        c += (z[1] & M);
-        z[1] = (int)c;
+        c += (z[zPos + 1] & M) - (x >>> 32);
+        z[zPos + 1] = (int)c;
         c >>= 32;
-        return c == 0 ? 0 : dec(z, 2);
+        return c == 0 ? 0 : dec(z, zPos + 2);
     }
 
     public static int subExt(int[] xx, int[] yy, int[] zz)
@@ -1359,33 +1408,62 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int subFromExt(int[] x, int xOff, int[] zz, int zzOff)
+    public static int subFrom(int[] x, int[] z)
     {
-        // assert zzOff <= 8;
         long c = 0;
-        c += (zz[zzOff + 0] & M) - (x[xOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
+        c += (z[0] & M) - (x[0] & M);
+        z[0] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 1] & M) - (x[xOff + 1] & M);
-        zz[zzOff + 1] = (int)c;
+        c += (z[1] & M) - (x[1] & M);
+        z[1] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 2] & M) - (x[xOff + 2] & M);
-        zz[zzOff + 2] = (int)c;
+        c += (z[2] & M) - (x[2] & M);
+        z[2] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 3] & M) - (x[xOff + 3] & M);
-        zz[zzOff + 3] = (int)c;
+        c += (z[3] & M) - (x[3] & M);
+        z[3] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 4] & M) - (x[xOff + 4] & M);
-        zz[zzOff + 4] = (int)c;
+        c += (z[4] & M) - (x[4] & M);
+        z[4] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 5] & M) - (x[xOff + 5] & M);
-        zz[zzOff + 5] = (int)c;
+        c += (z[5] & M) - (x[5] & M);
+        z[5] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 6] & M) - (x[xOff + 6] & M);
-        zz[zzOff + 6] = (int)c;
+        c += (z[6] & M) - (x[6] & M);
+        z[6] = (int)c;
         c >>= 32;
-        c += (zz[zzOff + 7] & M) - (x[xOff + 7] & M);
-        zz[zzOff + 7] = (int)c;
+        c += (z[7] & M) - (x[7] & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    public static int subFrom(int[] x, int xOff, int[] z, int zOff)
+    {
+        long c = 0;
+        c += (z[zOff + 0] & M) - (x[xOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 1] & M) - (x[xOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 2] & M) - (x[xOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 3] & M) - (x[xOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 4] & M) - (x[xOff + 4] & M);
+        z[zOff + 4] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 5] & M) - (x[xOff + 5] & M);
+        z[zOff + 5] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 6] & M) - (x[xOff + 6] & M);
+        z[zOff + 6] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 7] & M) - (x[xOff + 7] & M);
+        z[zOff + 7] = (int)c;
         c >>= 32;
         return (int)c;
     }
