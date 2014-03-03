@@ -14,6 +14,10 @@ public class SecP384R1Field
     static final int[] PExt = new int[]{ 0x00000001, 0xFFFFFFFE, 0x00000000, 0x00000002, 0x00000000, 0xFFFFFFFE,
         0x00000000, 0x00000002, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFE, 0x00000001, 0x00000000,
         0xFFFFFFFE, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] PInv = new int[]{ 0x00000001, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000001 };
+    private static final int[] PExtInv = new int[]{ 0xFFFFFFFF, 0x00000001, 0xFFFFFFFF, 0xFFFFFFFD, 0xFFFFFFFF, 0x00000001,
+        0xFFFFFFFF, 0xFFFFFFFD, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0xFFFFFFFE, 0xFFFFFFFF,
+        0x00000001, 0x00000002 };
     private static final int P11 = 0xFFFFFFFF;
     private static final int PExt23 = 0xFFFFFFFF;
 
@@ -22,7 +26,10 @@ public class SecP384R1Field
         int c = Nat.add(12, x, y, z);
         if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
         {
-            Nat.sub(12, z, P, z);
+            if (Nat.addTo(PInv.length, PInv, z) != 0)
+            {
+                Nat.incAt(12, z, PInv.length);
+            }
         }
     }
 
@@ -31,17 +38,22 @@ public class SecP384R1Field
         int c = Nat.add(24, xx, yy, zz);
         if (c != 0 || (zz[23] == PExt23 && Nat.gte(24, zz, PExt)))
         {
-            Nat.sub(24, zz, PExt, zz);
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(24, zz, PExtInv.length);
+            }
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat.copy(12, x, z);
-        int c = Nat.inc(12, z, 0);
+        int c = Nat.inc(12, x, z);
         if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
         {
-            Nat.sub(12, z, P, z);
+            if (Nat.addTo(PInv.length, PInv, z) != 0)
+            {
+                Nat.incAt(12, z, PInv.length);
+            }
         }
     }
 
@@ -50,7 +62,7 @@ public class SecP384R1Field
         int[] z = Nat.fromBigInteger(384, x);
         if (z[11] == P11 && Nat.gte(12, z, P))
         {
-            Nat.sub(12, z, P, z);
+            Nat.subFrom(12, P, z);
         }
         return z;
     }
@@ -136,12 +148,9 @@ public class SecP384R1Field
         {
             reduce32(c, z);
         }
-        else
+        else if (Nat.subFrom(PInv.length, PInv, z) != 0)
         {
-            while (c < 0)
-            {
-                c += Nat256.add(z, P, z);
-            }
+            Nat.decAt(12, z, PInv.length);
         }
     }
 
@@ -172,10 +181,13 @@ public class SecP384R1Field
 //            assert cc == 0 || cc == 1;
         }
 
-        if ((cc != 0 && Nat.inc(12, z, 5) != 0)
+        if ((cc != 0 && Nat.incAt(12, z, 5) != 0)
             || (z[11] == P11 && Nat.gte(12, z, P)))
         {
-            Nat.sub(12, z, P, z);
+            if (Nat.addTo(PInv.length, PInv, z) != 0)
+            {
+                Nat.incAt(12, z, PInv.length);
+            }
         }
     }
 
@@ -206,7 +218,10 @@ public class SecP384R1Field
         int c = Nat.sub(12, x, y, z);
         if (c != 0)
         {
-            Nat.add(12, z, P, z);
+            if (Nat.subFrom(PInv.length, PInv, z) != 0)
+            {
+                Nat.decAt(12, z, PInv.length);
+            }
         }
     }
 
@@ -215,7 +230,10 @@ public class SecP384R1Field
         int c = Nat.sub(24, xx, yy, zz);
         if (c != 0)
         {
-            Nat.add(24, zz, PExt, zz);
+            if (Nat.subFrom(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.decAt(24, zz, PExtInv.length);
+            }
         }
     }
 
@@ -224,7 +242,10 @@ public class SecP384R1Field
         int c = Nat.shiftUpBit(12, x, 0, z);
         if (c != 0 || (z[11] == P11 && Nat.gte(12, z, P)))
         {
-            Nat.sub(12, z, P, z);
+            if (Nat.addTo(PInv.length, PInv, z) != 0)
+            {
+                Nat.incAt(12, z, PInv.length);
+            }
         }
     }
 }

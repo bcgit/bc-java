@@ -2,17 +2,20 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.Nat;
+
 public class SecP256K1Field
 {
     // 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
     static final int[] P = new int[]{ 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P7 = 0xFFFFFFFF;
     static final int[] PExt = new int[]{ 0x000E90A1, 0x000007A2, 0x00000001, 0x00000000, 0x00000000,
         0x00000000, 0x00000000, 0x00000000, 0xFFFFF85E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] PExtInv = new int[]{ 0xFFF16F5F, 0xFFFFF85D, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x000007A1, 0x00000002 };
+    private static final int P7 = 0xFFFFFFFF;
     private static final int PExt15 = 0xFFFFFFFF;
-    private static final long PInv = 0x00000001000003D1L;
     private static final int PInv33 = 0x3D1;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -20,7 +23,7 @@ public class SecP256K1Field
         int c = Nat256.add(x, y, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.add33To(PInv33, z);
         }
     }
 
@@ -29,7 +32,10 @@ public class SecP256K1Field
         int c = Nat256.addExt(xx, yy, zz);
         if (c != 0 || (zz[15] == PExt15 && Nat256.gteExt(zz, PExt)))
         {
-            Nat256.subExt(zz, PExt, zz);
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat256.incExt(zz, PExtInv.length);
+            }
         }
     }
 
@@ -39,7 +45,7 @@ public class SecP256K1Field
         int c = Nat256.inc(z, 0);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.add33To(PInv33, z);
         }
     }
 
@@ -48,7 +54,7 @@ public class SecP256K1Field
         int[] z = Nat256.fromBigInteger(x);
         if (z[7] == P7 && Nat256.gte(z, P))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.subFrom(P, z);
         }
         return z;
     }
@@ -94,7 +100,7 @@ public class SecP256K1Field
 
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.add33To(PInv33, z);
         }
     }
 
@@ -103,7 +109,7 @@ public class SecP256K1Field
         if ((x != 0 && Nat256.mul33WordAdd(PInv33, x, z, 0) != 0)
             || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.add33To(PInv33, z);
         }
     }
 
@@ -134,7 +140,7 @@ public class SecP256K1Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            Nat256.subDWord(PInv, z);
+            Nat256.sub33From(PInv33, z);
         }
     }
 
@@ -143,7 +149,10 @@ public class SecP256K1Field
         int c = Nat256.subExt(xx, yy, zz);
         if (c != 0)
         {
-            Nat256.addExt(zz, PExt, zz);
+            if (Nat.subFrom(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat256.decExt(zz, PExtInv.length);
+            }
         }
     }
 
@@ -152,7 +161,7 @@ public class SecP256K1Field
         int c = Nat256.shiftUpBit(x, 0, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.addDWord(PInv, z, 0);
+            Nat256.add33To(PInv33, z);
         }
     }
 }

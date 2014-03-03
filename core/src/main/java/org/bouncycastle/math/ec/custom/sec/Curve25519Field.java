@@ -48,10 +48,9 @@ public class Curve25519Field
     public static int[] fromBigInteger(BigInteger x)
     {
         int[] z = Nat256.fromBigInteger(x);
-        if (Nat256.gte(z, P))
+        while (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            Nat256.subFrom(P, z);
         }
         return z;
     }
@@ -93,7 +92,7 @@ public class Curve25519Field
 //        assert xx[15] >>> 30 == 0;
 
         int xx07 = xx[7];
-        Nat.shiftUpBit(8, xx, 8, xx07, z);
+        Nat.shiftUpBit(8, xx, 8, xx07, z, 0);
         int c = Nat256.mulByWordAddTo(PInv, xx, z) << 1;
         int z07 = z[7];
         z[7] = z07 & P7;

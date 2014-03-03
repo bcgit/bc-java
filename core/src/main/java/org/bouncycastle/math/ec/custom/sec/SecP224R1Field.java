@@ -18,7 +18,7 @@ public class SecP224R1Field
         int c = Nat224.add(x, y, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.sub(z, P, z);
+            Nat224.subFrom(P, z);
         }
     }
 
@@ -37,7 +37,7 @@ public class SecP224R1Field
         int c = Nat224.inc(z, 0);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.sub(z, P, z);
+            Nat224.subFrom(P, z);
         }
     }
 
@@ -46,7 +46,7 @@ public class SecP224R1Field
         int[] z = Nat224.fromBigInteger(x);
         if (z[6] == P6 && Nat224.gte(z, P))
         {
-            Nat224.sub(z, P, z);
+            Nat224.subFrom(P, z);
         }
         return z;
     }
@@ -122,10 +122,7 @@ public class SecP224R1Field
         }
         else
         {
-            while (c < 0)
-            {
-                c += Nat224.add(z, P, z);
-            }
+            Nat224.addTo(P, z);
         }
     }
 
@@ -134,7 +131,7 @@ public class SecP224R1Field
         if ((x != 0 && (Nat224.subWord(x, z, 0) + Nat224.addWord(x, z, 3) != 0))
             || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.sub(z, P, z);
+            Nat224.subFrom(P, z);
         }
     }
 
@@ -165,7 +162,7 @@ public class SecP224R1Field
         int c = Nat224.sub(x, y, z);
         if (c != 0)
         {
-            Nat224.add(z, P, z);
+            Nat224.addTo(P, z);
         }
     }
 
@@ -183,7 +180,7 @@ public class SecP224R1Field
         int c = Nat224.shiftUpBit(x, 0, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.sub(z, P, z);
+            Nat224.subFrom(P, z);
         }
     }
 }
