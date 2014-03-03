@@ -8,7 +8,7 @@ public class SecP256K1Field
     static final int[] P = new int[]{ 0xFFFFFC2F, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
     private static final int P7 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x000E90A1, 0x000007A2, 0x00000001, 0x00000000, 0x00000000,
+    static final int[] PExt = new int[]{ 0x000E90A1, 0x000007A2, 0x00000001, 0x00000000, 0x00000000,
         0x00000000, 0x00000000, 0x00000000, 0xFFFFF85E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF };
     private static final int PExt15 = 0xFFFFFFFF;
@@ -87,8 +87,8 @@ public class SecP256K1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long c = Nat256.mul33Add(PInv33, xx, 8, xx, 0, z, 0);
-        c = Nat256.mul33DWordAdd(PInv33, c, z, 0);
+        long cc = Nat256.mul33Add(PInv33, xx, 8, xx, 0, z, 0);
+        int c = Nat256.mul33DWordAdd(PInv33, cc, z, 0);
 
         // assert c == 0L || c == 1L;
 
@@ -100,11 +100,8 @@ public class SecP256K1Field
 
     public static void reduce32(int x, int[] z)
     {
-        int c = Nat256.mul33WordAdd(PInv33, x, z, 0);
-
-        // assert c == 0L || c == 1L;
-
-        if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
+        if ((x != 0 && Nat256.mul33WordAdd(PInv33, x, z, 0) != 0)
+            || (z[7] == P7 && Nat256.gte(z, P)))
         {
             Nat256.addDWord(PInv, z, 0);
         }
