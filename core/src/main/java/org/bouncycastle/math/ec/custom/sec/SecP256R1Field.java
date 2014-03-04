@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.Nat;
+
 public class SecP256R1Field
 {
     private static final long M = 0xFFFFFFFFL;
@@ -58,12 +60,12 @@ public class SecP256R1Field
     {
         if ((x[0] & 1) == 0)
         {
-            Nat256.shiftDownBit(x, 0, z);
+            Nat.shiftDownBit(8, x, 0, z);
         }
         else
         {
             int c = Nat256.add(x, P, z);
-            Nat256.shiftDownBit(z, c, z);
+            Nat.shiftDownBit(8, z, c);
         }
     }
 
@@ -227,7 +229,7 @@ public class SecP256R1Field
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat256.shiftUpBit(x, 0, z);
+        int c = Nat.shiftUpBit(8, x, 0, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
             Nat256.subFrom(P, z);

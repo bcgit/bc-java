@@ -148,7 +148,7 @@ public class Curve25519Field
 
     public static void twice(int[] x, int[] z)
     {
-        Nat256.shiftUpBit(x, 0, z);
+        Nat.shiftUpBit(8, x, 0, z);
         if (Nat256.gte(z, P))
         {
             Nat256.addWord(PInv, z, 0);
