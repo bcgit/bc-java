@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.Nat;
+
 public class SecP224R1Field
 {
     private static final long M = 0xFFFFFFFFL;
@@ -55,12 +57,12 @@ public class SecP224R1Field
     {
         if ((x[0] & 1) == 0)
         {
-            Nat224.shiftDownBit(x, 0, z);
+            Nat.shiftDownBit(7, x, 0, z);
         }
         else
         {
             int c = Nat224.add(x, P, z);
-            Nat224.shiftDownBit(z, c, z);
+            Nat.shiftDownBit(7, z, c);
         }
     }
 
@@ -177,7 +179,7 @@ public class SecP224R1Field
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat224.shiftUpBit(x, 0, z);
+        int c = Nat.shiftUpBit(7, x, 0, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
             Nat224.subFrom(P, z);

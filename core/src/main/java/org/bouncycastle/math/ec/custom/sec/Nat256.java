@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.math.ec.Nat;
 
 public abstract class Nat256
 {
@@ -931,88 +932,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int shiftDownBit(int[] x, int xLen, int c)
-    {
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = (next >>> 1) | (c << 31);
-            c = next;
-        }
-        return c << 31;
-    }
-
-    public static int shiftDownBit(int[] x, int c, int[] z)
-    {
-        int i = 8;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            z[i] = (next >>> 1) | (c << 31);
-            c = next;
-        }
-        return c << 31;
-    }
-
-    public static int shiftDownBits(int[] x, int xLen, int bits, int c)
-    {
-//        assert bits > 0 && bits < 32;
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = (next >>> bits) | (c << -bits);
-            c = next;
-        }
-        return c << -bits;
-    }
-
-    public static int shiftDownWord(int[] x, int xLen, int c)
-    {
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = c;
-            c = next;
-        }
-        return c;
-    }
-
-    public static int shiftUpBit(int[] x, int xLen, int c)
-    {
-        for (int i = 0; i < xLen; ++i)
-        {
-            int next = x[i];
-            x[i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
-    }
-
-    public static int shiftUpBit(int[] x, int xOff, int xLen, int c)
-    {
-        for (int i = 0; i < xLen; ++i)
-        {
-            int next = x[xOff + i];
-            x[xOff + i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
-    }
-
-    public static int shiftUpBit(int[] x, int c, int[] z)
-    {
-        for (int i = 0; i < 8; ++i)
-        {
-            int next = x[i];
-            z[i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
-    }
-
     public static void square(int[] x, int[] zz)
     {
         long x_0 = x[0] & M;
@@ -1145,7 +1064,7 @@ public abstract class Nat256
         zz[14] = (int)zz_14;
         zz[15] += (int)(zz_14 >>> 32);
 
-        shiftUpBit(zz, 16, (int)x_0 << 31);
+        Nat.shiftUpBit(16, zz, (int)x_0 << 31);
     }
 
     public static void square(int[] x, int xOff, int[] zz, int zzOff)
@@ -1280,7 +1199,7 @@ public abstract class Nat256
         zz[zzOff + 14] = (int)zz_14;
         zz[zzOff + 15] += (int)(zz_14 >>> 32);
 
-        shiftUpBit(zz, zzOff, 16, (int)x_0 << 31);
+        Nat.shiftUpBit(16, zz, zzOff, (int)x_0 << 31);
     }
 
     public static int sub(int[] x, int[] y, int[] z)
