@@ -11,8 +11,12 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Test class for {@link org.bouncycastle.math.ec.ECPoint ECPoint}. All
@@ -435,6 +439,28 @@ public class ECPointTest extends TestCase
         }
     }
 
+    private void implSqrtTest(ECCurve c)
+    {
+        if (ECAlgorithms.isFpCurve(c))
+        {
+            BigInteger p = c.getField().getCharacteristic();
+            BigInteger pMinusOne = p.subtract(ECConstants.ONE);
+            BigInteger legendreExponent = p.shiftRight(1);
+
+            int count = 0;
+            while (count < 10)
+            {
+                BigInteger nonSquare = BigIntegers.createRandomInRange(ECConstants.TWO, pMinusOne, secRand);
+                if (!nonSquare.modPow(legendreExponent, p).equals(ECConstants.ONE))
+                {
+                    ECFieldElement root = c.fromBigInteger(nonSquare).sqrt();
+                    assertNull(root);
+                    ++count;
+                }
+            }
+        }
+    }
+
     private void implAddSubtractMultiplyTwiceEncodingTestAllCoords(X9ECParameters x9ECParameters)
     {
         BigInteger n = x9ECParameters.getN();
@@ -461,6 +487,8 @@ public class ECPointTest extends TestCase
                 ECPoint q = g.multiply(b).normalize();
 
                 implAddSubtractMultiplyTwiceEncodingTest(c, q, n);
+
+                implSqrtTest(c);
             }
         }
     }
