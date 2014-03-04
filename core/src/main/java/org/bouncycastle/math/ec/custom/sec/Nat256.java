@@ -69,17 +69,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int add33To(int x, int[] z)
-    {
-        long c = (z[0] & M) + (x & M);
-        z[0] = (int)c;
-        c >>>= 32;
-        c += (z[1] & M) + 1L;
-        z[1] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(z, 2);
-    }
-
     public static int addBothTo(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -137,30 +126,6 @@ public abstract class Nat256
         c += (x[xOff + 7] & M) + (y[yOff + 7] & M) + (z[zOff + 7] & M);
         z[zOff + 7] = (int)c;
         c >>>= 32;
-        return (int)c;
-    }
-
-    public static int addDWordAt(long x, int[] z, int zPos)
-    {
-        // assert zPos <= 6;
-        long c = (z[zPos + 0] & M) + (x & M);
-        z[zPos + 0] = (int)c;
-        c >>>= 32;
-        c += (z[zPos + 1] & M) + (x >>> 32);
-        z[zPos + 1] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(z, zPos + 2);
-    }
-
-    public static int addExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 16; ++i)
-        {
-            c += (xx[i] & M) + (yy[i] & M);
-            zz[i] = (int)c;
-            c >>>= 32;
-        }
         return (int)c;
     }
 
@@ -262,24 +227,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int addWord(int x, int[] z, int zOff)
-    {
-        // assert zzOff <= 7;
-        long c = (x & M) + (z[zOff + 0] & M);
-        z[zOff + 0] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 1);
-    }
-
-    public static int addWordExt(int x, int[] zz, int zzOff)
-    {
-        // assert zzOff <= 15;
-        long c = (x & M) + (zz[zzOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : incExt(zz, zzOff + 1);
-    }
-
     public static void copy(int[] x, int[] z)
     {
         z[0] = x[0];
@@ -300,32 +247,6 @@ public abstract class Nat256
     public static int[] createExt()
     {
         return new int[16];
-    }
-
-    public static int dec(int[] z, int zOff)
-    {
-        // assert zOff <= 8;
-        for (int i = zOff; i < 8; ++i)
-        {
-            if (--z[i] != -1)
-            {
-                return 0;
-            }
-        }
-        return -1;
-    }
-
-    public static int decExt(int[] zz, int zzOff)
-    {
-        // assert zOff <= 16;
-        for (int i = zzOff; i < 16; ++i)
-        {
-            if (--zz[i] != -1)
-            {
-                return 0;
-            }
-        }
-        return -1;
     }
 
     public static boolean diff(int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
@@ -426,32 +347,6 @@ public abstract class Nat256
                 return true;
         }
         return true;
-    }
-
-    public static int inc(int[] z, int zOff)
-    {
-        // assert zOff <= 8;
-        for (int i = zOff; i < 8; ++i)
-        {
-            if (++z[i] != 0)
-            {
-                return 0;
-            }
-        }
-        return 1;
-    }
-
-    public static int incExt(int[] zz, int zzOff)
-    {
-        // assert zzOff <= 16;
-        for (int i = zzOff; i < 16; ++i)
-        {
-            if (++zz[i] != 0)
-            {
-                return 0;
-            }
-        }
-        return 1;
     }
 
     public static boolean isOne(int[] x)
@@ -881,7 +776,7 @@ public abstract class Nat256
         c += (z[zOff + 3] & M);
         z[zOff + 3] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 4);
+        return c == 0 ? 0 : Nat.incAt(8, z, zOff, 4);
     }
 
     public static int mul33WordAdd(int x, int y, int[] z, int zOff)
@@ -899,7 +794,7 @@ public abstract class Nat256
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 3);
+        return c == 0 ? 0 : Nat.incAt(8, z, zOff, 3);
     }
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
@@ -915,7 +810,7 @@ public abstract class Nat256
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 3);
+        return c == 0 ? 0 : Nat.incAt(8, z, zOff, 3);
     }
 
     public static int mulWord(int x, int[] y, int[] z, int zOff)
@@ -1262,17 +1157,6 @@ public abstract class Nat256
         return (int)c;
     }
 
-    public static int sub33From(int x, int[] z)
-    {
-        long c = (z[0] & M) - (x & M);
-        z[0] = (int)c;
-        c >>= 32;
-        c += (z[1] & M) - 1;
-        z[1] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(z, 2);
-    }
-
     public static int subBothFrom(int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -1300,30 +1184,6 @@ public abstract class Nat256
         c += (z[7] & M) - (x[7] & M) - (y[7] & M);
         z[7] = (int)c;
         c >>= 32;
-        return (int)c;
-    }
-
-    public static int subDWordAt(long x, int[] z, int zPos)
-    {
-        // assert zPos <= 6;
-        long c = (z[zPos + 0] & M) - (x & M);
-        z[zPos + 0] = (int)c;
-        c >>= 32;
-        c += (z[zPos + 1] & M) - (x >>> 32);
-        z[zPos + 1] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(z, zPos + 2);
-    }
-
-    public static int subExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 16; ++i)
-        {
-            c += (xx[i] & M) - (yy[i] & M);
-            zz[i] = (int)c;
-            c >>= 32;
-        }
         return (int)c;
     }
 
@@ -1385,24 +1245,6 @@ public abstract class Nat256
         z[zOff + 7] = (int)c;
         c >>= 32;
         return (int)c;
-    }
-
-    public static int subWord(int x, int[] z, int zOff)
-    {
-        // assert zOff <= 7;
-        long c = (z[zOff + 0] & M) - (x & M);
-        z[zOff + 0] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(z, zOff + 1);
-    }
-
-    public static int subWordExt(int x, int[] zz, int zzOff)
-    {
-        // assert zzOff <= 15;
-        long c = (zz[zzOff + 0] & M) - (x & M);
-        zz[zzOff + 0] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : decExt(zz, zzOff + 1);
     }
 
     public static BigInteger toBigInteger(int[] x)

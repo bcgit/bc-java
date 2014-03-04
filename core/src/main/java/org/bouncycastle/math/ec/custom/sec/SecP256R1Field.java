@@ -29,17 +29,16 @@ public class SecP256R1Field
 
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat256.addExt(xx, yy, zz);
+        int c = Nat.add(16, xx, yy, zz);
         if (c != 0 || Nat256.gteExt(zz, PExt))
         {
-            Nat256.subExt(zz, PExt, zz);
+            Nat.subFrom(16, PExt, zz);
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat256.copy(x, z);
-        int c = Nat256.inc(z, 0);
+        int c = Nat.inc(8, x, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
             Nat256.subFrom(P, z);
@@ -220,10 +219,10 @@ public class SecP256R1Field
 
     public static void subtractExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat256.subExt(xx, yy, zz);
+        int c = Nat.sub(16, xx, yy, zz);
         if (c != 0)
         {
-            Nat256.addExt(zz, PExt, zz);
+            Nat.addTo(16, PExt, zz);
         }
     }
 

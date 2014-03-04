@@ -12,6 +12,8 @@ public class SecP224R1Field
     static final int[] P = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
     static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] PExtInv = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000000,
+        0x00000000, 0xFFFFFFFF, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001 };
     private static final int P6 = 0xFFFFFFFF;
     private static final int PExt13 = 0xFFFFFFFF;
 
@@ -20,26 +22,28 @@ public class SecP224R1Field
         int c = Nat224.add(x, y, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat224.addExt(xx, yy, zz);
+        int c = Nat.add(14, xx, yy, zz);
         if (c != 0 || (zz[13] == PExt13 && Nat224.gteExt(zz, PExt)))
         {
-            Nat224.subExt(zz, PExt, zz);
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(14, zz, PExtInv.length);
+            }
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat224.copy(x, z);
-        int c = Nat224.inc(z, 0);
+        int c = Nat.inc(7, x, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
@@ -124,16 +128,16 @@ public class SecP224R1Field
         }
         else
         {
-            Nat224.addTo(P, z);
+            subPInvFrom(z);
         }
     }
 
     public static void reduce32(int x, int[] z)
     {
-        if ((x != 0 && (Nat224.subWord(x, z, 0) + Nat224.addWord(x, z, 3) != 0))
+        if ((x != 0 && (Nat.subWordFrom(7, x, z) + Nat.addWordAt(7, x, z, 3) != 0))
             || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
@@ -164,16 +168,19 @@ public class SecP224R1Field
         int c = Nat224.sub(x, y, z);
         if (c != 0)
         {
-            Nat224.addTo(P, z);
+            subPInvFrom(z);
         }
     }
 
     public static void subtractExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat224.subExt(xx, yy, zz);
+        int c = Nat.sub(14, xx, yy, zz);
         if (c != 0)
         {
-            Nat224.addExt(zz, PExt, zz);
+            if (Nat.subFrom(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.decAt(14, zz, PExtInv.length);
+            }
         }
     }
 
@@ -182,7 +189,53 @@ public class SecP224R1Field
         int c = Nat.shiftUpBit(7, x, 0, z);
         if (c != 0 || (z[6] == P6 && Nat224.gte(z, P)))
         {
-            Nat224.subFrom(P, z);
+            addPInvTo(z);
+        }
+    }
+
+    private static void addPInvTo(int[] z)
+    {
+        long c = (z[0] & M) - 1;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[1] & M);
+            z[1] = (int)c;
+            c >>= 32;
+            c += (z[2] & M);
+            z[2] = (int)c;
+            c >>= 32;
+        }
+        c += (z[3] & M) + 1;
+        z[3] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            Nat.incAt(7, z, 4);
+        }
+    }
+
+    private static void subPInvFrom(int[] z)
+    {
+        long c = (z[0] & M) + 1;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[1] & M);
+            z[1] = (int)c;
+            c >>= 32;
+            c += (z[2] & M);
+            z[2] = (int)c;
+            c >>= 32;
+        }
+        c += (z[3] & M) - 1;
+        z[3] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            Nat.decAt(7, z, 4);
         }
     }
 }

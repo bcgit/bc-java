@@ -20,6 +20,52 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int add33At(int len, int x, int[] z, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zPos + 0] & M) + (x & M);
+        z[zPos + 0] = (int)c;
+        c >>>= 32;
+        c += (z[zPos + 1] & M) + 1L;
+        z[zPos + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zPos + 2);
+    }
+
+    public static int add33At(int len, int x, int[] z, int zOff, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zOff + zPos] & M) + (x & M);
+        z[zOff + zPos] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + zPos + 1] & M) + 1L;
+        z[zOff + zPos + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zOff, zPos + 2);
+    }
+
+    public static int add33To(int len, int x, int[] z)
+    {
+        long c = (z[0] & M) + (x & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (z[1] & M) + 1L;
+        z[1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, 2);
+    }
+
+    public static int add33To(int len, int x, int[] z, int zOff)
+    {
+        long c = (z[zOff + 0] & M) + (x & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 1] & M) + 1L;
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zOff, 2);
+    }
+
     public static int addBothTo(int len, int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -54,6 +100,40 @@ public abstract class Nat
         z[zPos + 1] = (int)c;
         c >>>= 32;
         return c == 0 ? 0 : incAt(len, z, zPos + 2);
+    }
+
+    public static int addDWordAt(int len, long x, int[] z, int zOff, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zOff + zPos] & M) + (x & M);
+        z[zOff + zPos] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + zPos + 1] & M) + (x >>> 32);
+        z[zOff + zPos + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zOff, zPos + 2);
+    }
+
+    public static int addDWordTo(int len, long x, int[] z)
+    {
+        long c = (z[0] & M) + (x & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (z[1] & M) + (x >>> 32);
+        z[1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, 2);
+    }
+
+    public static int addDWordTo(int len, long x, int[] z, int zOff)
+    {
+        long c = (z[zOff + 0] & M) + (x & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 1] & M) + (x >>> 32);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zOff, 2);
     }
 
     public static int addTo(int len, int[] x, int[] z)
@@ -98,6 +178,22 @@ public abstract class Nat
         return c == 0 ? 0 : incAt(len, z, zOff, zPos + 1);
     }
 
+    public static int addWordTo(int len, int x, int[] z)
+    {
+        long c = (x & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, 1);
+    }
+
+    public static int addWordTo(int len, int x, int[] z, int zOff)
+    {
+        long c = (x & M) + (z[zOff] & M);
+        z[zOff] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : incAt(len, z, zOff, 1);
+    }
+
     public static int[] copy(int len, int[] x)
     {
         int[] z = new int[len];
@@ -133,10 +229,15 @@ public abstract class Nat
         while (i < len)
         {
             int c = x[i] - 1;
-            z[i++] = c;
+            z[i] = c;
+            ++i;
             if (c != -1)
             {
-                System.arraycopy(x, i, z, i, len - i);
+                while (i < len)
+                {
+                    z[i] = x[i];
+                    ++i;
+                }
                 return 0;
             }
         }
@@ -246,10 +347,15 @@ public abstract class Nat
         while (i < len)
         {
             int c = x[i] + 1;
-            z[i++] = c;
+            z[i] = c;
+            ++i;
             if (c != 0)
             {
-                System.arraycopy(x, i, z, i, len - i);
+                while (i < len)
+                {
+                    z[i] = x[i];
+                    ++i;
+                }
                 return 0;
             }
         }
@@ -707,6 +813,52 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int sub33At(int len, int x, int[] z, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zPos + 0] & M) - (x & M);
+        z[zPos + 0] = (int)c;
+        c >>= 32;
+        c += (z[zPos + 1] & M) - 1;
+        z[zPos + 1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, zPos + 2);
+    }
+
+    public static int sub33At(int len, int x, int[] z, int zOff, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zOff + zPos] & M) - (x & M);
+        z[zOff + zPos] = (int)c;
+        c >>= 32;
+        c += (z[zOff + zPos + 1] & M) - 1;
+        z[zOff + zPos + 1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, zOff, zPos + 2);
+    }
+
+    public static int sub33From(int len, int x, int[] z)
+    {
+        long c = (z[0] & M) - (x & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - 1;
+        z[1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, 2);
+    }
+
+    public static int sub33From(int len, int x, int[] z, int zOff)
+    {
+        long c = (z[zOff + 0] & M) - (x & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 1] & M) - 1;
+        z[zOff + 1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, zOff, 2);
+    }
+
     public static int subBothFrom(int len, int[] x, int[] y, int[] z)
     {
         long c = 0;
@@ -741,6 +893,40 @@ public abstract class Nat
         z[zPos + 1] = (int)c;
         c >>= 32;
         return c == 0 ? 0 : decAt(len, z, zPos + 2);
+    }
+
+    public static int subDWordAt(int len, long x, int[] z, int zOff, int zPos)
+    {
+        // assert zPos <= (len - 2);
+        long c = (z[zOff + zPos] & M) - (x & M);
+        z[zOff + zPos] = (int)c;
+        c >>= 32;
+        c += (z[zOff + zPos + 1] & M) - (x >>> 32);
+        z[zOff + zPos + 1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z,  zOff, zPos + 2);
+    }
+
+    public static int subDWordFrom(int len, long x, int[] z)
+    {
+        long c = (z[0] & M) - (x & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - (x >>> 32);
+        z[1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, 2);
+    }
+
+    public static int subDWordFrom(int len, long x, int[] z, int zOff)
+    {
+        long c = (z[zOff + 0] & M) - (x & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 1] & M) - (x >>> 32);
+        z[zOff + 1] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, zOff, 2);
     }
 
     public static int subFrom(int len, int[] x, int[] z)
@@ -783,6 +969,22 @@ public abstract class Nat
         z[zOff + zPos] = (int)c;
         c >>= 32;
         return c == 0 ? 0 : decAt(len, z, zOff, zPos + 1);
+    }
+
+    public static int subWordFrom(int len, int x, int[] z)
+    {
+        long c = (z[0] & M) - (x & M);
+        z[0] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, 1);
+    }
+
+    public static int subWordFrom(int len, int x, int[] z, int zOff)
+    {
+        long c = (z[zOff + 0] & M) - (x & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        return c == 0 ? 0 : decAt(len, z, zOff, 1);
     }
 
     public static BigInteger toBigInteger(int len, int[] x)
