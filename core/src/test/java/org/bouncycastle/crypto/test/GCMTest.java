@@ -304,7 +304,7 @@ public class GCMTest
         randomTests();
         outputSizeTests();
         testExceptions();
-    }    
+    }
 
     protected BlockCipher createAESEngine()
     {
@@ -318,7 +318,7 @@ public class GCMTest
         try
         {
             gcm = new GCMBlockCipher(new DESEngine());
-            
+
             fail("incorrect block size not picked up");
         }
         catch (IllegalArgumentException e)
@@ -336,9 +336,11 @@ public class GCMTest
         {
             // expected
         }
-        
+
         AEADTestUtil.testReset(this, new GCMBlockCipher(createAESEngine()), new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
         AEADTestUtil.testTampering(this, gcm, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
+        AEADTestUtil.testOutputSizes(this, new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(
+                new byte[16]), 128, new byte[16]));
     }
 
     private void runTestCase(String[] testVector)
@@ -373,7 +375,7 @@ public class GCMTest
         runTestCase(new Tables8kGCMMultiplier(), new Tables8kGCMMultiplier(), testName, K, IV, A, P, C, T);
         runTestCase(new Tables64kGCMMultiplier(), new Tables64kGCMMultiplier(), testName, K, IV, A, P, C, T);
     }
-    
+
     private void runTestCase(
         GCMMultiplier   encM,
         GCMMultiplier   decM,
@@ -500,10 +502,10 @@ public class GCMTest
         SecureRandom srng = new SecureRandom();
         for (int i = 0; i < 10; ++i)
         {
-            randomTest(srng, null); 
-            randomTest(srng, new BasicGCMMultiplier()); 
-            randomTest(srng, new Tables8kGCMMultiplier()); 
-            randomTest(srng, new Tables64kGCMMultiplier()); 
+            randomTest(srng, null);
+            randomTest(srng, new BasicGCMMultiplier());
+            randomTest(srng, new Tables8kGCMMultiplier());
+            randomTest(srng, new Tables64kGCMMultiplier());
         }
     }
 
@@ -545,7 +547,7 @@ public class GCMTest
         {
             fail("encryption reported incorrect update length in randomised test");
         }
-        
+
         len += cipher.doFinal(C, len);
 
         if (C.length != len)
@@ -565,7 +567,7 @@ public class GCMTest
         cipher.init(false, parameters);
         byte[] decP = new byte[cipher.getOutputSize(C.length)];
         predicted = cipher.getUpdateOutputSize(C.length);
-        
+
         split = nextInt(srng, SA.length + 1);
         cipher.processAADBytes(SA, 0, split);
         len = cipher.processBytes(C, 0, C.length, decP, 0);

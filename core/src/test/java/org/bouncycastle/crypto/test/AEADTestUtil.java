@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
@@ -187,6 +188,94 @@ public class AEADTestUtil
     {
         int len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
         cipher.doFinal(output, len);
+    }
+
+    public static void testOutputSizes(Test test, AEADBlockCipher cipher, AEADParameters params)
+        throws IllegalStateException,
+        InvalidCipherTextException
+    {
+        int maxPlaintext = cipher.getUnderlyingCipher().getBlockSize() * 10;
+        byte[] plaintext = new byte[maxPlaintext];
+        byte[] ciphertext = new byte[maxPlaintext * 2];
+
+        // Check output size calculations for truncated ciphertext lengths
+        cipher.init(true, params);
+        cipher.doFinal(ciphertext, 0);
+        int macLength = cipher.getMac().length;
+
+        cipher.init(false, params);
+        for (int i = 0; i < macLength; i++)
+        {
+            cipher.reset();
+            if (cipher.getUpdateOutputSize(i) != 0)
+            {
+                fail(test, "AE cipher should not produce update output with ciphertext length <= macSize");
+            }
+            if (cipher.getOutputSize(i) != 0)
+            {
+                fail(test, "AE cipher should not produce output with ciphertext length <= macSize");
+            }
+        }
+
+        for (int i = 0; i < plaintext.length; i++)
+        {
+            cipher.init(true, params);
+            int expectedCTUpdateSize = cipher.getUpdateOutputSize(i);
+            int expectedCTOutputSize = cipher.getOutputSize(i);
+
+            if (expectedCTUpdateSize < 0)
+            {
+                fail(test, "Encryption update output size should not be < 0 for size " + i);
+            }
+
+            if (expectedCTOutputSize < 0)
+            {
+                fail(test, "Encryption update output size should not be < 0 for size " + i);
+            }
+
+            int actualCTSize = cipher.processBytes(plaintext, 0, i, ciphertext, 0);
+
+            if (expectedCTUpdateSize != actualCTSize)
+            {
+                fail(test, "Encryption update output size did not match calculated for plaintext length " + i,
+                        String.valueOf(expectedCTUpdateSize), String.valueOf(actualCTSize));
+            }
+
+            actualCTSize += cipher.doFinal(ciphertext, actualCTSize);
+
+            if (expectedCTOutputSize != actualCTSize)
+            {
+                fail(test, "Encryption actual final output size did not match calculated for plaintext length " + i,
+                        String.valueOf(expectedCTOutputSize), String.valueOf(actualCTSize));
+            }
+
+            cipher.init(false, params);
+            int expectedPTUpdateSize = cipher.getUpdateOutputSize(actualCTSize);
+            int expectedPTOutputSize = cipher.getOutputSize(actualCTSize);
+
+            if (expectedPTOutputSize != i)
+            {
+                fail(test, "Decryption update output size did not original plaintext length " + i,
+                        String.valueOf(expectedPTUpdateSize), String.valueOf(i));
+            }
+
+            int actualPTSize = cipher.processBytes(ciphertext, 0, actualCTSize, plaintext, 0);
+
+            if (expectedPTUpdateSize != actualPTSize)
+            {
+                fail(test, "Decryption update output size did not match calculated for plaintext length " + i,
+                        String.valueOf(expectedPTUpdateSize), String.valueOf(actualPTSize));
+            }
+
+            actualPTSize += cipher.doFinal(plaintext, actualPTSize);
+
+            if (expectedPTOutputSize != actualPTSize)
+            {
+                fail(test, "Decryption update output size did not match calculated for plaintext length " + i,
+                        String.valueOf(expectedPTOutputSize), String.valueOf(actualPTSize));
+            }
+
+        }
     }
 
 }

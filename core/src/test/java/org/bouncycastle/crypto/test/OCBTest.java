@@ -141,7 +141,7 @@ public class OCBTest
         try
         {
             ocb = new OCBBlockCipher(new DESEngine(), new DESEngine());
-            
+
             fail("incorrect block size not picked up");
         }
         catch (IllegalArgumentException e)
@@ -159,9 +159,11 @@ public class OCBTest
         {
             // expected
         }
-        
+
         AEADTestUtil.testReset(this, createOCBCipher(), createOCBCipher(), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
         AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
+        AEADTestUtil.testOutputSizes(this, createOCBCipher(), new AEADParameters(new KeyParameter(new byte[16]), 128,
+                new byte[15]));
     }
 
     private void runTestCase(String testName, String[] testVector, int macLengthBits, byte[] K)
