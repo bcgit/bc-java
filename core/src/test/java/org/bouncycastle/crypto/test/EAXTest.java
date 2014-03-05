@@ -157,6 +157,8 @@ public class EAXTest
         AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
+                new KeyParameter(K1), 32, N2));
     }
 
     private void checkVectors(

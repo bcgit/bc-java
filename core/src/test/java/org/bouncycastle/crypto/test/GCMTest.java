@@ -341,6 +341,8 @@ public class GCMTest
         AEADTestUtil.testTampering(this, gcm, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
         AEADTestUtil.testOutputSizes(this, new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(
                 new byte[16]), 128, new byte[16]));
+        AEADTestUtil.testBufferSizeChecks(this, new GCMBlockCipher(createAESEngine()), new AEADParameters(
+                new KeyParameter(new byte[16]), 128, new byte[16]));
     }
 
     private void runTestCase(String[] testVector)

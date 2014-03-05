@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -219,6 +220,11 @@ public class EAXBlockCipher
     {
         initCipher();
 
+        if (in.length < (inOff + len))
+        {
+            throw new DataLengthException("Input buffer too short");
+        }
+
         int resultLen = 0;
 
         for (int i = 0; i != len; i++)
@@ -241,9 +247,9 @@ public class EAXBlockCipher
 
         if (forEncryption)
         {
-            if (out.length < (outOff + extra))
+            if (out.length < (outOff + extra + macSize))
             {
-                throw new DataLengthException("Output buffer too short");
+                throw new OutputLengthException("Output buffer too short");
             }
             cipher.processBlock(bufBlock, 0, tmp, 0);
 
@@ -261,6 +267,10 @@ public class EAXBlockCipher
         }
         else
         {
+            if (out.length < (outOff + extra - macSize))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
             if (extra < macSize)
             {
                 throw new InvalidCipherTextException("data too short");
@@ -328,6 +338,10 @@ public class EAXBlockCipher
 
         if (bufOff == bufBlock.length)
         {
+            if (out.length < (outOff + blockSize))
+            {
+                throw new OutputLengthException("Output buffer is too short");
+            }
             // TODO Could move the processByte(s) calls to here
 //            initCipher();
 

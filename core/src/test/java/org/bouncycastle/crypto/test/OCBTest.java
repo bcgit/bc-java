@@ -164,6 +164,8 @@ public class OCBTest
         AEADTestUtil.testTampering(this, ocb, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[15]));
         AEADTestUtil.testOutputSizes(this, createOCBCipher(), new AEADParameters(new KeyParameter(new byte[16]), 128,
                 new byte[15]));
+        AEADTestUtil.testBufferSizeChecks(this, createOCBCipher(), new AEADParameters(new KeyParameter(new byte[16]),
+                128, new byte[15]));
     }
 
     private void runTestCase(String testName, String[] testVector, int macLengthBits, byte[] K)
