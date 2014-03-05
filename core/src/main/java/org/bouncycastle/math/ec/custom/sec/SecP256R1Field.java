@@ -24,7 +24,7 @@ public class SecP256R1Field
         int c = Nat256.add(x, y, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
@@ -42,7 +42,7 @@ public class SecP256R1Field
         int c = Nat.inc(8, x, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
@@ -183,7 +183,7 @@ public class SecP256R1Field
 
         if (cc != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.subFrom(P, z);
+            addPInvTo(z);
         }
     }
 
@@ -214,7 +214,7 @@ public class SecP256R1Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            Nat256.addTo(P, z);
+            subPInvFrom(z);
         }
     }
 
@@ -232,7 +232,75 @@ public class SecP256R1Field
         int c = Nat.shiftUpBit(8, x, 0, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.subFrom(P, z);
+            addPInvTo(z);
         }
+    }
+
+    private static void addPInvTo(int[] z)
+    {
+        long c = (z[0] & M) + 1;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[1] & M);
+            z[1] = (int)c;
+            c >>= 32;
+            c += (z[2] & M);
+            z[2] = (int)c;
+            c >>= 32;
+        }
+        c += (z[3] & M) - 1;
+        z[3] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[4] & M);
+            z[4] = (int)c;
+            c >>= 32;
+            c += (z[5] & M);
+            z[5] = (int)c;
+            c >>= 32;
+        }
+        c += (z[6] & M) - 1;
+        z[6] = (int)c;
+        c >>= 32;
+        c += (z[7] & M) + 1;
+        z[7] = (int)c;
+//        c >>= 32;
+    }
+
+    private static void subPInvFrom(int[] z)
+    {
+        long c = (z[0] & M) - 1;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[1] & M);
+            z[1] = (int)c;
+            c >>= 32;
+            c += (z[2] & M);
+            z[2] = (int)c;
+            c >>= 32;
+        }
+        c += (z[3] & M) + 1;
+        z[3] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c += (z[4] & M);
+            z[4] = (int)c;
+            c >>= 32;
+            c += (z[5] & M);
+            z[5] = (int)c;
+            c >>= 32;
+        }
+        c += (z[6] & M) + 1;
+        z[6] = (int)c;
+        c >>= 32;
+        c += (z[7] & M) - 1;
+        z[7] = (int)c;
+//        c >>= 32;
     }
 }
