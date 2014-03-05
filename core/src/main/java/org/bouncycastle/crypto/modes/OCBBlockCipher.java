@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -317,6 +318,10 @@ public class OCBBlockCipher
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
+        if (input.length < (inOff + len))
+        {
+            throw new DataLengthException("Input buffer too short");
+        }
         int resultLen = 0;
 
         for (int i = 0; i < len; ++i)
@@ -378,6 +383,10 @@ public class OCBBlockCipher
 
             xor(mainBlock, Pad);
 
+            if (output.length < (outOff + mainBlockPos))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
             System.arraycopy(mainBlock, 0, output, outOff, mainBlockPos);
 
             if (!forEncryption)
@@ -405,6 +414,10 @@ public class OCBBlockCipher
 
         if (forEncryption)
         {
+            if (output.length < (outOff + resultLen + macSize))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
             // Append tag to the message
             System.arraycopy(macBlock, 0, output, outOff + resultLen, macSize);
             resultLen += macSize;
@@ -456,6 +469,11 @@ public class OCBBlockCipher
 
     protected void processMainBlock(byte[] output, int outOff)
     {
+        if (output.length < (outOff + BLOCK_SIZE))
+        {
+            throw new OutputLengthException("Output buffer too short");
+        }
+
         /*
          * OCB-ENCRYPT/OCB-DECRYPT: Process any whole blocks
          */

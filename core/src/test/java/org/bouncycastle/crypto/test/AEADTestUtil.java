@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.util.Arrays;
@@ -275,6 +276,195 @@ public class AEADTestUtil
                         String.valueOf(expectedPTOutputSize), String.valueOf(actualPTSize));
             }
 
+        }
+    }
+
+    public static void testBufferSizeChecks(Test test, AEADBlockCipher cipher, AEADParameters params)
+        throws IllegalStateException,
+        InvalidCipherTextException
+    {
+        int blockSize = cipher.getUnderlyingCipher().getBlockSize();
+        int maxPlaintext = (blockSize * 10);
+        byte[] plaintext = new byte[maxPlaintext];
+
+
+        cipher.init(true, params);
+
+        int expectedUpdateOutputSize = cipher.getUpdateOutputSize(plaintext.length);
+        byte[] ciphertext = new byte[cipher.getOutputSize(plaintext.length)];
+
+        try
+        {
+            cipher.processBytes(new byte[maxPlaintext - 1], 0, maxPlaintext, new byte[expectedUpdateOutputSize], 0);
+            fail(test, "processBytes should validate input buffer length");
+        }
+        catch (DataLengthException e)
+        {
+            // Expected
+        }
+        cipher.reset();
+
+        if (expectedUpdateOutputSize > 0)
+        {
+            int outputTrigger = 0;
+            // Process bytes until output would be produced
+            for(int i = 0; i < plaintext.length; i++) {
+                if (cipher.getUpdateOutputSize(1) != 0)
+                {
+                    outputTrigger = i + 1;
+                    break;
+                }
+                cipher.processByte(plaintext[i], ciphertext, 0);
+            }
+            if (outputTrigger == 0)
+            {
+                fail(test, "Failed to find output trigger size");
+            }
+            try
+            {
+                cipher.processByte(plaintext[0], new byte[cipher.getUpdateOutputSize(1) - 1], 0);
+                fail(test, "Encrypt processByte should validate output buffer length");
+            }
+            catch (OutputLengthException e)
+            {
+                // Expected
+            }
+            cipher.reset();
+
+            // Repeat checking with entire input at once
+            try
+            {
+                cipher.processBytes(plaintext, 0, outputTrigger,
+                        new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
+                fail(test, "Encrypt processBytes should validate output buffer length");
+            }
+            catch (OutputLengthException e)
+            {
+                // Expected
+            }
+            cipher.reset();
+
+        }
+
+        // Remember the actual ciphertext for later
+        int actualOutputSize = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext, 0);
+        actualOutputSize += cipher.doFinal(ciphertext, actualOutputSize);
+        int macSize = cipher.getMac().length;
+
+        cipher.reset();
+        try
+        {
+            cipher.processBytes(plaintext, 0, plaintext.length, ciphertext, 0);
+            cipher.doFinal(new byte[cipher.getOutputSize(0) - 1], 0);
+            fail(test, "Encrypt doFinal should validate output buffer length");
+        }
+        catch (OutputLengthException e)
+        {
+            // Expected
+        }
+
+        // Decryption tests
+
+        cipher.init(false, params);
+        expectedUpdateOutputSize = cipher.getUpdateOutputSize(actualOutputSize);
+
+        if (expectedUpdateOutputSize > 0)
+        {
+            // Process bytes until output would be produced
+            int outputTrigger = 0;
+            for (int i = 0; i < plaintext.length; i++)
+            {
+                if (cipher.getUpdateOutputSize(1) != 0)
+                {
+                    outputTrigger = i + 1;
+                    break;
+                }
+                cipher.processByte(ciphertext[i], plaintext, 0);
+            }
+            if (outputTrigger == 0)
+            {
+                fail(test, "Failed to find output trigger size");
+            }
+
+            try
+            {
+                cipher.processByte(ciphertext[0], new byte[cipher.getUpdateOutputSize(1) - 1], 0);
+                fail(test, "Decrypt processByte should validate output buffer length");
+            }
+            catch (OutputLengthException e)
+            {
+                // Expected
+            }
+            cipher.reset();
+
+            // Repeat test with processBytes
+            try
+            {
+                cipher.processBytes(ciphertext, 0, outputTrigger,
+                        new byte[cipher.getUpdateOutputSize(outputTrigger) - 1], 0);
+                fail(test, "Decrypt processBytes should validate output buffer length");
+            }
+            catch (OutputLengthException e)
+            {
+                // Expected
+            }
+        }
+
+        cipher.reset();
+        // Data less than mac length should fail before output length check
+        try
+        {
+            // Assumes AE cipher on decrypt can't return any data until macSize bytes are received
+            if (cipher.processBytes(ciphertext, 0, macSize - 1, plaintext, 0) != 0)
+            {
+                fail(test, "AE cipher unexpectedly produced output");
+            }
+            cipher.doFinal(new byte[0], 0);
+            fail(test, "Decrypt doFinal should check ciphertext length");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // Expected
+        }
+
+        try
+        {
+            // Search through plaintext lengths until one is found that creates >= 1 buffered byte
+            // during decryption of ciphertext for doFinal to handle
+            for (int i = 2; i < plaintext.length; i++)
+            {
+                cipher.init(true, params);
+                int encrypted = cipher.processBytes(plaintext, 0, i, ciphertext, 0);
+                encrypted += cipher.doFinal(ciphertext, encrypted);
+
+                cipher.init(false, params);
+                cipher.processBytes(ciphertext, 0, encrypted - 1, plaintext, 0);
+                if (cipher.processByte(ciphertext[encrypted - 1], plaintext, 0) == 0)
+                {
+                    cipher.doFinal(new byte[cipher.getOutputSize(0) - 1], 0);
+                    fail(test, "Decrypt doFinal should check output length");
+                    cipher.reset();
+
+                    // Truncated Mac should be reported in preference to inability to output
+                    // buffered plaintext byte
+                    try
+                    {
+                        cipher.processBytes(ciphertext, 0, actualOutputSize - 1, plaintext, 0);
+                        cipher.doFinal(new byte[cipher.getOutputSize(0) - 1], 0);
+                        fail(test, "Decrypt doFinal should check ciphertext length");
+                    }
+                    catch (InvalidCipherTextException e)
+                    {
+                        // Expected
+                    }
+                    cipher.reset();
+                }
+            }
+            fail(test, "Decrypt doFinal test couldn't find a ciphertext length that buffered for doFinal");
+        }
+        catch (OutputLengthException e)
+        {
+            // Expected
         }
     }
 

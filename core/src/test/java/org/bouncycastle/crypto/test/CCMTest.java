@@ -154,6 +154,8 @@ public class CCMTest
         AEADTestUtil.testTampering(this, ccm, new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testOutputSizes(this, new CCMBlockCipher(new AESEngine()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testBufferSizeChecks(this, new CCMBlockCipher(new AESEngine()), new AEADParameters(
+                new KeyParameter(K1), 32, N2));
     }
 
     private boolean isEqual(byte[] exp, byte[] other, int off)

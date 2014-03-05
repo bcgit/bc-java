@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables1kGCMExponentiator;
@@ -23,7 +24,7 @@ public class GCMBlockCipher
 {
     private static final int BLOCK_SIZE = 16;
 
-    // not final due to a compiler bug 
+    // not final due to a compiler bug
     private BlockCipher   cipher;
     private GCMMultiplier multiplier;
     private GCMExponentiator exp;
@@ -102,7 +103,7 @@ public class GCMBlockCipher
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
 
-            macSize = macSizeBits / 8; 
+            macSize = macSizeBits / 8;
             keyParam = param.getKey();
         }
         else if (params instanceof ParametersWithIV)
@@ -119,7 +120,7 @@ public class GCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to GCM");
         }
 
-        int bufLength = forEncryption ? BLOCK_SIZE : (BLOCK_SIZE + macSize); 
+        int bufLength = forEncryption ? BLOCK_SIZE : (BLOCK_SIZE + macSize);
         this.bufBlock = new byte[bufLength];
 
         if (nonce == null || nonce.length < 1)
@@ -271,6 +272,10 @@ public class GCMBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
+        if (in.length < (inOff + len))
+        {
+            throw new DataLengthException("Input buffer too short");
+        }
         int resultLen = 0;
 
         for (int i = 0; i < len; ++i)
@@ -288,6 +293,10 @@ public class GCMBlockCipher
 
     private void outputBlock(byte[] output, int offset)
     {
+        if (output.length < (offset + BLOCK_SIZE))
+        {
+            throw new OutputLengthException("Output buffer too short");
+        }
         if (totalLength == 0)
         {
             initCipher();
@@ -324,6 +333,10 @@ public class GCMBlockCipher
 
         if (extra > 0)
         {
+            if (out.length < (outOff + extra))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
             gCTRPartial(bufBlock, 0, extra, out, outOff);
         }
 
@@ -390,6 +403,10 @@ public class GCMBlockCipher
 
         if (forEncryption)
         {
+            if (out.length < (outOff + extra + macSize))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
             // Append T to the message
             System.arraycopy(macBlock, 0, out, outOff + bufOff, macSize);
             resultLen += macSize;
