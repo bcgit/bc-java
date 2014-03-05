@@ -29,7 +29,7 @@ public class SecP224K1Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         int c = Nat.add(14, xx, yy, zz);
-        if (c != 0 || (zz[13] == PExt13 && Nat224.gteExt(zz, PExt)))
+        if (c != 0 || (zz[13] == PExt13 && Nat.gte(14, zz, PExt)))
         {
             if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
             {

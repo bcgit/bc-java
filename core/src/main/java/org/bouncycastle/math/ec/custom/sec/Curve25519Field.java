@@ -29,9 +29,9 @@ public class Curve25519Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         Nat.add(16, xx, yy, zz);
-        if (Nat256.gteExt(zz, PExt))
+        if (Nat.gte(16, zz, PExt))
         {
-            Nat.subFrom(16, PExt, zz);
+            subPExtFrom(zz);
         }
     }
 
@@ -139,7 +139,7 @@ public class Curve25519Field
         int c = Nat.sub(16, xx, yy, zz);
         if (c != 0)
         {
-            Nat.addTo(16, PExt, zz);
+            addPExtTo(zz);
         }
     }
 
@@ -149,6 +149,40 @@ public class Curve25519Field
         if (Nat256.gte(z, P))
         {
             addPInvTo(z);
+        }
+    }
+
+    private static void addPExtTo(int[] zz)
+    {
+        long c = (zz[0] & M) + (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+
+        int i = 1 - (int)c;
+        i = (i << 3) - i;
+
+        while (++i < 16)
+        {
+            c += (zz[i] & M) + (PExt[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
+        }
+    }
+
+    private static void subPExtFrom(int[] zz)
+    {
+        long c = (zz[0] & M) - (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+
+        int i = 1 + (int)c;
+        i = (i << 3) - i;
+
+        while (++i < 16)
+        {
+            c += (zz[i] & M) - (PExt[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
         }
     }
 
