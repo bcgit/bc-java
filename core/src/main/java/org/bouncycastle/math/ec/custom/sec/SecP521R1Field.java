@@ -16,7 +16,7 @@ public class SecP521R1Field
         int c = Nat.add(16, x, y, z) + x[16] + y[16];
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
-            c += Nat.inc(16, z, 0);
+            c += Nat.inc(16, z);
             c &= P16;
         }
         z[16] = c;
@@ -24,11 +24,10 @@ public class SecP521R1Field
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat.copy(16, x, z);
-        int c = Nat.inc(16, z, 0) + x[16];
+        int c = Nat.inc(16, x, z) + x[16];
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
-            c += Nat.inc(16, z, 0);
+            c += Nat.inc(16, z);
             c &= P16;
         }
         z[16] = c;
@@ -75,12 +74,12 @@ public class SecP521R1Field
 //        assert xx[32] >>> 18 == 0;
 
         int xx32 = xx[32];
-        int c = Nat.shiftDownBits(16, xx, 16, 9, xx32, z) >>> 23;
+        int c = Nat.shiftDownBits(16, xx, 16, 9, xx32, z, 0) >>> 23;
         c += xx32 >>> 9;
         c += Nat.add(16, z, xx, z);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
-            c += Nat.inc(16, z, 0);
+            c += Nat.inc(16, z);
             c &= P16;
         }
         z[16] = c;
@@ -89,10 +88,10 @@ public class SecP521R1Field
     public static void reduce23(int[] z)
     {
         int z16 = z[16];
-        int c = Nat.addWord(16, z16 >>> 9, z, 0) + (z16 & P16);
+        int c = Nat.addWordAt(16, z16 >>> 9, z, 0) + (z16 & P16);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
-            c += Nat.inc(16, z, 0);
+            c += Nat.inc(16, z);
             c &= P16;
         }
         z[16] = c;
@@ -125,7 +124,7 @@ public class SecP521R1Field
         int c = Nat.sub(16, x, y, z) + x[16] - y[16];
         if (c < 0)
         {
-            c += Nat.dec(16, z, 0);
+            c += Nat.dec(16, z);
             c &= P16;
         }
         z[16] = c;

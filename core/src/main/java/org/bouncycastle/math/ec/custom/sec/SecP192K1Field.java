@@ -2,15 +2,18 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.Nat;
+
 public class SecP192K1Field
 {
     // 2^192 - 2^32 - 2^12 - 2^8 - 2^7 - 2^6 - 2^3 - 1
     static final int[] P = new int[]{ 0xFFFFEE37, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
-    private static final int P5 = 0xFFFFFFFF;
-    private static final int[] PExt = new int[]{ 0x013C4FD1, 0x00002392, 0x00000001, 0x00000000, 0x00000000,
+    static final int[] PExt = new int[]{ 0x013C4FD1, 0x00002392, 0x00000001, 0x00000000, 0x00000000,
         0x00000000, 0xFFFFDC6E, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] PExtInv = new int[]{ 0xFEC3B02F, 0xFFFFDC6D, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0x00002391, 0x00000002 };
+    private static final int P5 = 0xFFFFFFFF;
     private static final int PExt11 = 0xFFFFFFFF;
-    private static final long PInv = 0x00000001000011C9L;
     private static final int PInv33 = 0x11C9;
 
     public static void add(int[] x, int[] y, int[] z)
@@ -18,26 +21,28 @@ public class SecP192K1Field
         int c = Nat192.add(x, y, z);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat.add33To(6, PInv33, z);
         }
     }
 
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat192.addExt(xx, yy, zz);
-        if (c != 0 || (zz[11] == PExt11 && Nat192.gteExt(zz, PExt)))
+        int c = Nat.add(12, xx, yy, zz);
+        if (c != 0 || (zz[11] == PExt11 && Nat.gte(12, zz, PExt)))
         {
-            Nat192.subExt(zz, PExt, zz);
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(12, zz, PExtInv.length);
+            }
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat192.copy(x, z);
-        int c = Nat192.inc(z, 0);
+        int c = Nat.inc(6, x, z);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat.add33To(6, PInv33, z);
         }
     }
 
@@ -46,7 +51,7 @@ public class SecP192K1Field
         int[] z = Nat192.fromBigInteger(x);
         if (z[5] == P5 && Nat192.gte(z, P))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat192.subFrom(P, z);
         }
         return z;
     }
@@ -55,12 +60,12 @@ public class SecP192K1Field
     {
         if ((x[0] & 1) == 0)
         {
-            Nat192.shiftDownBit(x, 0, z);
+            Nat.shiftDownBit(6, x, 0, z);
         }
         else
         {
             int c = Nat192.add(x, P, z);
-            Nat192.shiftDownBit(z, c, z);
+            Nat.shiftDownBit(6, z, c);
         }
     }
 
@@ -85,26 +90,23 @@ public class SecP192K1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long c = Nat192.mul33Add(PInv33, xx, 6, xx, 0, z, 0);
-        c = Nat192.mul33DWordAdd(PInv33, c, z, 0);
+        long cc = Nat192.mul33Add(PInv33, xx, 6, xx, 0, z, 0);
+        int c = Nat192.mul33DWordAdd(PInv33, cc, z, 0);
 
         // assert c == 0L || c == 1L;
 
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat.add33To(6, PInv33, z);
         }
     }
 
     public static void reduce32(int x, int[] z)
     {
-        int c = Nat192.mul33WordAdd(PInv33, x, z, 0);
-
-        // assert c == 0L || c == 1L;
-
-        if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
+        if ((x != 0 && Nat192.mul33WordAdd(PInv33, x, z, 0) != 0)
+            || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat.add33To(6, PInv33, z);
         }
     }
 
@@ -135,25 +137,28 @@ public class SecP192K1Field
         int c = Nat192.sub(x, y, z);
         if (c != 0)
         {
-            Nat192.subDWord(PInv, z);
+            Nat.sub33From(6, PInv33, z);
         }
     }
 
     public static void subtractExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat192.subExt(xx, yy, zz);
+        int c = Nat.sub(12, xx, yy, zz);
         if (c != 0)
         {
-            Nat192.addExt(zz, PExt, zz);
+            if (Nat.subFrom(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.decAt(12, zz, PExtInv.length);
+            }
         }
     }
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat192.shiftUpBit(x, 0, z);
+        int c = Nat.shiftUpBit(6, x, 0, z);
         if (c != 0 || (z[5] == P5 && Nat192.gte(z, P)))
         {
-            Nat192.addDWord(PInv, z, 0);
+            Nat.add33To(6, PInv33, z);
         }
     }
 }

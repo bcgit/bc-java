@@ -6,6 +6,8 @@ import org.bouncycastle.math.ec.Nat;
 
 public class Curve25519Field
 {
+    private static final long M = 0xFFFFFFFFL;
+
     // 2^255 - 2^4 - 2^1 - 1
     static final int[] P = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0x7FFFFFFF };
@@ -20,38 +22,34 @@ public class Curve25519Field
         Nat256.add(x, y, z);
         if (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            addPInvTo(z);
         }
     }
 
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
-        Nat256.addExt(xx, yy, zz);
-        if (Nat256.gteExt(zz, PExt))
+        Nat.add(16, xx, yy, zz);
+        if (Nat.gte(16, zz, PExt))
         {
-            Nat256.subExt(zz, PExt, zz);
+            subPExtFrom(zz);
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat256.copy(x, z);
-        Nat256.inc(z, 0);
+        Nat.inc(8, x, z);
         if (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            addPInvTo(z);
         }
     }
 
     public static int[] fromBigInteger(BigInteger x)
     {
         int[] z = Nat256.fromBigInteger(x);
-        if (Nat256.gte(z, P))
+        while (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            Nat256.subFrom(P, z);
         }
         return z;
     }
@@ -93,16 +91,15 @@ public class Curve25519Field
 //        assert xx[15] >>> 30 == 0;
 
         int xx07 = xx[7];
-        Nat.shiftUpBit(8, xx, 8, xx07, z);
+        Nat.shiftUpBit(8, xx, 8, xx07, z, 0);
         int c = Nat256.mulByWordAddTo(PInv, xx, z) << 1;
         int z07 = z[7];
         z[7] = z07 & P7;
         c += (z07 >>> 31) - (xx07 >>> 31);
-        Nat256.addWord(c * PInv, z, 0);
+        Nat.addWordTo(8, c * PInv, z);
         if (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            addPInvTo(z);
         }
     }
 
@@ -133,27 +130,83 @@ public class Curve25519Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            Nat256.subWord(PInv, z, 0);
-            z[7] &= P7;
+            subPInvFrom(z);
         }
     }
 
     public static void subtractExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat256.subExt(xx, yy, zz);
+        int c = Nat.sub(16, xx, yy, zz);
         if (c != 0)
         {
-            Nat256.addExt(zz, PExt, zz);
+            addPExtTo(zz);
         }
     }
 
     public static void twice(int[] x, int[] z)
     {
-        Nat256.shiftUpBit(x, 0, z);
+        Nat.shiftUpBit(8, x, 0, z);
         if (Nat256.gte(z, P))
         {
-            Nat256.addWord(PInv, z, 0);
-            z[7] &= P7;
+            addPInvTo(z);
         }
+    }
+
+    private static void addPExtTo(int[] zz)
+    {
+        long c = (zz[0] & M) + (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+
+        int i = 1 - (int)c;
+        i = (i << 3) - i;
+
+        while (++i < 16)
+        {
+            c += (zz[i] & M) + (PExt[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
+        }
+    }
+
+    private static void subPExtFrom(int[] zz)
+    {
+        long c = (zz[0] & M) - (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+
+        int i = 1 + (int)c;
+        i = (i << 3) - i;
+
+        while (++i < 16)
+        {
+            c += (zz[i] & M) - (PExt[i] & M);
+            zz[i] = (int)c;
+            c >>= 32;
+        }
+    }
+
+    private static void addPInvTo(int[] z)
+    {
+        long c = (z[0] & M) + PInv;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            Nat.incAt(8, z, 1);
+        }
+        z[7] &= P7;
+    }
+
+    private static void subPInvFrom(int[] z)
+    {
+        long c = (z[0] & M) - PInv;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            Nat.decAt(8, z, 1);
+        }
+        z[7] &= P7;
     }
 }
