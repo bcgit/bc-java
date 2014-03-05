@@ -17,6 +17,7 @@ public class SecP256R1Field
     private static final int[] _2P = new int[]{ 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000000, 0x00000000,
         0x00000002, 0xFFFFFFFE, 0x00000001 };
     private static final int P7 = 0xFFFFFFFF;
+    private static final int PExt15 = 0xFFFFFFFF;
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -30,7 +31,7 @@ public class SecP256R1Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         int c = Nat.add(16, xx, yy, zz);
-        if (c != 0 || Nat256.gteExt(zz, PExt))
+        if (c != 0 || ((zz[15] & PExt15) == PExt15 && Nat.gte(16, zz, PExt)))
         {
             Nat.subFrom(16, PExt, zz);
         }

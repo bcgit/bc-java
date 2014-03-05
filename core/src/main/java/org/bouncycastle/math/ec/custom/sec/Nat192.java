@@ -241,20 +241,6 @@ public abstract class Nat192
         return true;
     }
 
-    public static boolean gteExt(int[] xx, int[] yy)
-    {
-        for (int i = 11; i >= 0; --i)
-        {
-            int xx_i = xx[i] ^ Integer.MIN_VALUE;
-            int yy_i = yy[i] ^ Integer.MIN_VALUE;
-            if (xx_i < yy_i)
-                return false;
-            if (xx_i > yy_i)
-                return true;
-        }
-        return true;
-    }
-
     public static boolean isOne(int[] x)
     {
         if (x[0] != 1)
@@ -276,18 +262,6 @@ public abstract class Nat192
         for (int i = 0; i < 6; ++i)
         {
             if (x[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isZeroExt(int[] xx)
-    {
-        for (int i = 0; i < 12; ++i)
-        {
-            if (xx[i] != 0)
             {
                 return false;
             }
