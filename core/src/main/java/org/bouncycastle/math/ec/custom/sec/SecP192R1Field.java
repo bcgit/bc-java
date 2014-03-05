@@ -130,7 +130,29 @@ public class SecP192R1Field
 
     public static void reduce32(int x, int[] z)
     {
-        if ((x != 0 && (Nat.addWordTo(6, x, z) + Nat.addWordAt(6, x, z, 2) != 0))
+        long cc = 0;
+
+        if (x != 0)
+        {
+            long xx06 = x & M;
+    
+            cc += (z[0] & M) + xx06;
+            z[0] = (int)cc;
+            cc >>= 32;
+            if (cc != 0)
+            {
+                cc += (z[1] & M);
+                z[1] = (int)cc;
+                cc >>= 32;
+            }
+            cc += (z[2] & M) + xx06;
+            z[2] = (int)cc;
+            cc >>= 32;
+
+//            assert cc == 0 || cc == 1;
+        }
+
+        if ((cc != 0 && Nat.incAt(6, z, 3) != 0)
             || (z[5] == P5 && Nat192.gte(z, P)))
         {
             addPInvTo(z);

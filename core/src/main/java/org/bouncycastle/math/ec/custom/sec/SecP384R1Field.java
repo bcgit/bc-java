@@ -98,20 +98,22 @@ public class SecP384R1Field
         long xx16 = xx[16] & M, xx17 = xx[17] & M, xx18 = xx[18] & M, xx19 = xx[19] & M;
         long xx20 = xx[20] & M, xx21 = xx[21] & M, xx22 = xx[22] & M, xx23 = xx[23] & M;
 
+        final long n = 1;
+
         long cc = 0;
-        cc += (xx[0] & M) + xx12 + xx20 + xx21 - xx23;
+        cc += (xx[0] & M) + xx12 + xx20 + xx21 - xx23 - n;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (xx[1] & M) + xx13 + xx22 + xx23 - xx12 - xx20;
+        cc += (xx[1] & M) + xx13 + xx22 + xx23 - xx12 - xx20 + n;
         z[1] = (int)cc;
         cc >>= 32;
         cc += (xx[2] & M) + xx14 + xx23 - xx13 - xx21;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + xx12 + xx15 + xx20 + xx21 - xx14 - xx22 - xx23;
+        cc += (xx[3] & M) + xx12 + xx15 + xx20 + xx21 - xx14 - xx22 - xx23 - n;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (xx[4] & M) + xx12 + xx13 + xx16 + xx20 + ((xx21 - xx23) << 1) + xx22 - xx15;
+        cc += (xx[4] & M) + xx12 + xx13 + xx16 + xx20 + ((xx21 - xx23) << 1) + xx22 - xx15 - n;
         z[4] = (int)cc;
         cc >>= 32;
         cc += (xx[5] & M) + xx13 + xx14 + xx17 + xx21 + (xx22 << 1) + xx23 - xx16;
@@ -135,16 +137,11 @@ public class SecP384R1Field
         cc += (xx[11] & M) + xx19 + xx20 + xx23 - xx22;
         z[11] = (int)cc;
         cc >>= 32;
+        cc += n;
 
-        int c = (int)cc;
-        if (c >= 0)
-        {
-            reduce32(c, z);
-        }
-        else
-        {
-            subPInvFrom(z);
-        }
+//        assert cc >= 0;
+
+        reduce32((int)cc, z);
     }
 
     public static void reduce32(int x, int[] z)
@@ -161,9 +158,12 @@ public class SecP384R1Field
             cc += (z[1] & M) - xx12;
             z[1] = (int)cc;
             cc >>= 32;
-            cc += (z[2] & M);
-            z[2] = (int)cc;
-            cc >>= 32;
+            if (cc != 0)
+            {
+                cc += (z[2] & M);
+                z[2] = (int)cc;
+                cc >>= 32;
+            }
             cc += (z[3] & M) + xx12;
             z[3] = (int)cc;
             cc >>= 32;

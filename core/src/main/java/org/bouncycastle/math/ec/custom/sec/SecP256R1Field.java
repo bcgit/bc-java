@@ -14,8 +14,6 @@ public class SecP256R1Field
     static final int[] PExt = new int[]{ 0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
         0x00000002, 0xFFFFFFFE };
-    private static final int[] _2P = new int[]{ 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000000, 0x00000000,
-        0x00000002, 0xFFFFFFFE, 0x00000001 };
     private static final int P7 = 0xFFFFFFFF;
     private static final int PExt15 = 0xFFFFFFFF;
 
@@ -101,8 +99,10 @@ public class SecP256R1Field
         long t5 = xx13 + xx14;
         long t6 = xx14 + xx15;
 
+        final long n = 6;
+
         long cc = 0;
-        cc += (xx[0] & M) + t0 - t3 - t5;
+        cc += (xx[0] & M) + t0 - t3 - t5 - n;
         z[0] = (int)cc;
         cc >>= 32;
         cc += (xx[1] & M) + t1 - t4 - t6;
@@ -111,7 +111,7 @@ public class SecP256R1Field
         cc += (xx[2] & M) + t2 - t5 - xx15;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + (t3 << 1) + xx13 - xx15 - t0;
+        cc += (xx[3] & M) + (t3 << 1) + xx13 - xx15 - t0 + n;
         z[3] = (int)cc;
         cc >>= 32;
         cc += (xx[4] & M) + (t4 << 1) + xx14 - t1;
@@ -120,29 +120,16 @@ public class SecP256R1Field
         cc += (xx[5] & M) + (t5 << 1) + xx15 - t2;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (xx[6] & M) + (t6 << 1) + t5 - t0;
+        cc += (xx[6] & M) + (t6 << 1) + t5 - t0 + n;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (xx[7] & M) + (xx15 << 1) + xx15 + xx08 - t2 - t4;
+        cc += (xx[7] & M) + (xx15 << 1) + xx15 + xx08 - t2 - t4 - n;
         z[7] = (int)cc;
         cc >>= 32;
+        cc += n;
 
-        int c = (int)cc;
-        if (c >= 0)
-        {
-            reduce32(c, z);
-        }
-        else
-        {
-            while (c < -1)
-            {
-                c += Nat256.addTo(_2P, z) + 1;
-            }
-            while (c < 0)
-            {
-                c += Nat256.addTo(P, z);
-            }
-        }
+//        assert cc >= 0;
+        reduce32((int)cc, z);
     }
 
     public static void reduce32(int x, int[] z)
@@ -156,21 +143,27 @@ public class SecP256R1Field
             cc += (z[0] & M) + xx08;
             z[0] = (int)cc;
             cc >>= 32;
-            cc += (z[1] & M);
-            z[1] = (int)cc;
-            cc >>= 32;
-            cc += (z[2] & M);
-            z[2] = (int)cc;
-            cc >>= 32;
+            if (cc != 0)
+            {
+                cc += (z[1] & M);
+                z[1] = (int)cc;
+                cc >>= 32;
+                cc += (z[2] & M);
+                z[2] = (int)cc;
+                cc >>= 32;
+            }
             cc += (z[3] & M) - xx08;
             z[3] = (int)cc;
             cc >>= 32;
-            cc += (z[4] & M);
-            z[4] = (int)cc;
-            cc >>= 32;
-            cc += (z[5] & M);
-            z[5] = (int)cc;
-            cc >>= 32;
+            if (cc != 0)
+            {
+                cc += (z[4] & M);
+                z[4] = (int)cc;
+                cc >>= 32;
+                cc += (z[5] & M);
+                z[5] = (int)cc;
+                cc >>= 32;
+            }
             cc += (z[6] & M) - xx08;
             z[6] = (int)cc;
             cc >>= 32;
