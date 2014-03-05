@@ -98,8 +98,10 @@ public class SecP224R1Field
         long t1 = xx08 + xx12;
         long t2 = xx09 + xx13;
 
+        final long n = 1;
+
         long cc = 0;
-        cc += (xx[0] & M) - t0;
+        cc += (xx[0] & M) - t0 + n;
         z[0] = (int)cc;
         cc >>= 32;
         cc += (xx[1] & M) - t1;
@@ -108,7 +110,7 @@ public class SecP224R1Field
         cc += (xx[2] & M) - t2;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + t0 - xx10;
+        cc += (xx[3] & M) + t0 - xx10 - n;
         z[3] = (int)cc;
         cc >>= 32;
         cc += (xx[4] & M) + t1 - xx11;
@@ -120,21 +122,41 @@ public class SecP224R1Field
         cc += (xx[6] & M) + xx10 - xx13;
         z[6] = (int)cc;
         cc >>= 32;
+        cc += n;
 
-        int c = (int)cc;
-        if (c >= 0)
-        {
-            reduce32(c, z);
-        }
-        else
-        {
-            subPInvFrom(z);
-        }
+//        assert cc >= 0;
+
+        reduce32((int)cc, z);
     }
 
     public static void reduce32(int x, int[] z)
     {
-        if ((x != 0 && (Nat.subWordFrom(7, x, z) + Nat.addWordAt(7, x, z, 3) != 0))
+        long cc = 0;
+
+        if (x != 0)
+        {
+            long xx07 = x & M;
+    
+            cc += (z[0] & M) - xx07;
+            z[0] = (int)cc;
+            cc >>= 32;
+            if (cc != 0)
+            {
+                cc += (z[1] & M);
+                z[1] = (int)cc;
+                cc >>= 32;
+                cc += (z[2] & M);
+                z[2] = (int)cc;
+                cc >>= 32;
+            }
+            cc += (z[3] & M) + xx07;
+            z[3] = (int)cc;
+            cc >>= 32;
+
+//            assert cc == 0 || cc == 1;
+        }
+
+        if ((cc != 0 && Nat.incAt(7, z, 4) != 0)
             || (z[6] == P6 && Nat224.gte(z, P)))
         {
             addPInvTo(z);
