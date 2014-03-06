@@ -23,29 +23,28 @@ public class SecP256K1Field
         int c = Nat256.add(x, y, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.add33To(PInv33, z);
+            Nat.add33To(8, PInv33, z);
         }
     }
 
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat256.addExt(xx, yy, zz);
-        if (c != 0 || (zz[15] == PExt15 && Nat256.gteExt(zz, PExt)))
+        int c = Nat.add(16, xx, yy, zz);
+        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
         {
             if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
             {
-                Nat256.incExt(zz, PExtInv.length);
+                Nat.incAt(16, zz, PExtInv.length);
             }
         }
     }
 
     public static void addOne(int[] x, int[] z)
     {
-        Nat256.copy(x, z);
-        int c = Nat256.inc(z, 0);
+        int c = Nat.inc(8, x, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.add33To(PInv33, z);
+            Nat.add33To(8, PInv33, z);
         }
     }
 
@@ -63,12 +62,12 @@ public class SecP256K1Field
     {
         if ((x[0] & 1) == 0)
         {
-            Nat256.shiftDownBit(x, 0, z);
+            Nat.shiftDownBit(8, x, 0, z);
         }
         else
         {
             int c = Nat256.add(x, P, z);
-            Nat256.shiftDownBit(z, c, z);
+            Nat.shiftDownBit(8, z, c);
         }
     }
 
@@ -100,7 +99,7 @@ public class SecP256K1Field
 
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.add33To(PInv33, z);
+            Nat.add33To(8, PInv33, z);
         }
     }
 
@@ -109,7 +108,7 @@ public class SecP256K1Field
         if ((x != 0 && Nat256.mul33WordAdd(PInv33, x, z, 0) != 0)
             || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.add33To(PInv33, z);
+            Nat.add33To(8, PInv33, z);
         }
     }
 
@@ -140,28 +139,28 @@ public class SecP256K1Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            Nat256.sub33From(PInv33, z);
+            Nat.sub33From(8, PInv33, z);
         }
     }
 
     public static void subtractExt(int[] xx, int[] yy, int[] zz)
     {
-        int c = Nat256.subExt(xx, yy, zz);
+        int c = Nat.sub(16, xx, yy, zz);
         if (c != 0)
         {
             if (Nat.subFrom(PExtInv.length, PExtInv, zz) != 0)
             {
-                Nat256.decExt(zz, PExtInv.length);
+                Nat.decAt(16, zz, PExtInv.length);
             }
         }
     }
 
     public static void twice(int[] x, int[] z)
     {
-        int c = Nat256.shiftUpBit(x, 0, z);
+        int c = Nat.shiftUpBit(8, x, 0, z);
         if (c != 0 || (z[7] == P7 && Nat256.gte(z, P)))
         {
-            Nat256.add33To(PInv33, z);
+            Nat.add33To(8, PInv33, z);
         }
     }
 }

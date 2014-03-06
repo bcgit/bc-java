@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.math.ec.Nat;
 
 public abstract class Nat224
 {
@@ -116,32 +117,6 @@ public abstract class Nat224
         return (int)c;
     }
 
-    // TODO Re-write to allow full range for x?
-    public static int addDWord(long x, int[] z, int zOff)
-    {
-        // assert zOff <= 5;
-        long c = x;
-        c += (z[zOff + 0] & M);
-        z[zOff + 0] = (int)c;
-        c >>>= 32;
-        c += (z[zOff + 1] & M);
-        z[zOff + 1] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 2);
-    }
-
-    public static int addExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 14; ++i)
-        {
-            c += (xx[i] & M) + (yy[i] & M);
-            zz[i] = (int)c;
-            c >>>= 32;
-        }
-        return (int)c;
-    }
-
     public static int addTo(int[] x, int[] z)
     {
         long c = 0;
@@ -230,24 +205,6 @@ public abstract class Nat224
         return (int)c;
     }
 
-    public static int addWord(int x, int[] z, int zOff)
-    {
-        // assert zzOff <= 6;
-        long c = (x & M) + (z[zOff + 0] & M);
-        z[zOff + 0] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 1);
-    }
-
-    public static int addWordExt(int x, int[] zz, int zzOff)
-    {
-        // assert zzOff <= 13;
-        long c = (x & M) + (zz[zzOff + 0] & M);
-        zz[zzOff + 0] = (int)c;
-        c >>>= 32;
-        return c == 0 ? 0 : incExt(zz, zzOff + 1);
-    }
-
     public static void copy(int[] x, int[] z)
     {
         z[0] = x[0];
@@ -267,32 +224,6 @@ public abstract class Nat224
     public static int[] createExt()
     {
         return new int[14];
-    }
-
-    public static int dec(int[] z, int zOff)
-    {
-        // assert zOff <= 7;
-        for (int i = zOff; i < 7; ++i)
-        {
-            if (--z[i] != -1)
-            {
-                return 0;
-            }
-        }
-        return -1;
-    }
-
-    public static int decExt(int[] zz, int zzOff)
-    {
-        // assert zOff <= 14;
-        for (int i = zzOff; i < 14; ++i)
-        {
-            if (--zz[i] != -1)
-            {
-                return 0;
-            }
-        }
-        return -1;
     }
 
     public static boolean diff(int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
@@ -381,46 +312,6 @@ public abstract class Nat224
         return true;
     }
 
-    public static boolean gteExt(int[] xx, int[] yy)
-    {
-        for (int i = 13; i >= 0; --i)
-        {
-            int xx_i = xx[i] ^ Integer.MIN_VALUE;
-            int yy_i = yy[i] ^ Integer.MIN_VALUE;
-            if (xx_i < yy_i)
-                return false;
-            if (xx_i > yy_i)
-                return true;
-        }
-        return true;
-    }
-
-    public static int inc(int[] z, int zOff)
-    {
-        // assert zOff <= 7;
-        for (int i = zOff; i < 7; ++i)
-        {
-            if (++z[i] != 0)
-            {
-                return 0;
-            }
-        }
-        return 1;
-    }
-
-    public static int incExt(int[] zz, int zzOff)
-    {
-        // assert zzOff <= 14;
-        for (int i = zzOff; i < 14; ++i)
-        {
-            if (++zz[i] != 0)
-            {
-                return 0;
-            }
-        }
-        return 1;
-    }
-
     public static boolean isOne(int[] x)
     {
         if (x[0] != 1)
@@ -442,18 +333,6 @@ public abstract class Nat224
         for (int i = 0; i < 7; ++i)
         {
             if (x[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isZeroExt(int[] xx)
-    {
-        for (int i = 0; i < 14; ++i)
-        {
-            if (xx[i] != 0)
             {
                 return false;
             }
@@ -813,7 +692,7 @@ public abstract class Nat224
         c += (z[zOff + 3] & M);
         z[zOff + 3] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 4);
+        return c == 0 ? 0 : Nat.incAt(7, z, zOff, 4);
     }
 
     public static int mul33WordAdd(int x, int y, int[] z, int zOff)
@@ -831,7 +710,7 @@ public abstract class Nat224
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 3);
+        return c == 0 ? 0 : Nat.incAt(7, z, zOff, 3);
     }
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
@@ -847,7 +726,7 @@ public abstract class Nat224
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : inc(z, zOff + 3);
+        return c == 0 ? 0 : Nat.incAt(7, z, zOff, 3);
     }
 
     public static int mulWord(int x, int[] y, int[] z, int zOff)
@@ -862,88 +741,6 @@ public abstract class Nat224
         }
         while (++i < 7);
         return (int)c;
-    }
-
-    public static int shiftDownBit(int[] x, int xLen, int c)
-    {
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = (next >>> 1) | (c << 31);
-            c = next;
-        }
-        return c << 31;
-    }
-
-    public static int shiftDownBit(int[] x, int c, int[] z)
-    {
-        int i = 7;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            z[i] = (next >>> 1) | (c << 31);
-            c = next;
-        }
-        return c << 31;
-    }
-
-    public static int shiftDownBits(int[] x, int xLen, int bits, int c)
-    {
-//        assert bits > 0 && bits < 32;
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = (next >>> bits) | (c << -bits);
-            c = next;
-        }
-        return c << -bits;
-    }
-
-    public static int shiftDownWord(int[] x, int xLen, int c)
-    {
-        int i = xLen;
-        while (--i >= 0)
-        {
-            int next = x[i];
-            x[i] = c;
-            c = next;
-        }
-        return c;
-    }
-
-    public static int shiftUpBit(int[] x, int xLen, int c)
-    {
-        for (int i = 0; i < xLen; ++i)
-        {
-            int next = x[i];
-            x[i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
-    }
-
-    public static int shiftUpBit(int[] x, int xOff, int xLen, int c)
-    {
-        for (int i = 0; i < xLen; ++i)
-        {
-            int next = x[xOff + i];
-            x[xOff + i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
-    }
-
-    public static int shiftUpBit(int[] x, int c, int[] z)
-    {
-        for (int i = 0; i < 7; ++i)
-        {
-            int next = x[i];
-            z[i] = (next << 1) | (c >>> 31);
-            c = next;
-        }
-        return c >>> 31;
     }
 
     public static void square(int[] x, int[] zz)
@@ -1057,7 +854,7 @@ public abstract class Nat224
         zz[12] = (int)zz_12;
         zz[13] += (int)(zz_12 >>> 32);
 
-        shiftUpBit(zz, 14, (int)x_0 << 31);
+        Nat.shiftUpBit(14, zz, (int)x_0 << 31);
     }
 
     public static void square(int[] x, int xOff, int[] zz, int zzOff)
@@ -1171,7 +968,7 @@ public abstract class Nat224
         zz[zzOff + 12] = (int)zz_12;
         zz[zzOff + 13] += (int)(zz_12 >>> 32);
 
-        shiftUpBit(zz, zzOff, 14, (int)x_0 << 31);
+        Nat.shiftUpBit(14, zz, zzOff, (int)x_0 << 31);
     }
 
     public static int sub(int[] x, int[] y, int[] z)
@@ -1255,31 +1052,6 @@ public abstract class Nat224
         return (int)c;
     }
 
-    // TODO Re-write to allow full range for x?
-    public static int subDWord(long x, int[] z)
-    {
-        long c = -x;
-        c += (z[0] & M);
-        z[0] = (int)c;
-        c >>= 32;
-        c += (z[1] & M);
-        z[1] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(z, 2);
-    }
-
-    public static int subExt(int[] xx, int[] yy, int[] zz)
-    {
-        long c = 0;
-        for (int i = 0; i < 14; ++i)
-        {
-            c += (xx[i] & M) - (yy[i] & M);
-            zz[i] = (int)c;
-            c >>= 32;
-        }
-        return (int)c;
-    }
-
     public static int subFrom(int[] x, int[] z)
     {
         long c = 0;
@@ -1332,24 +1104,6 @@ public abstract class Nat224
         z[zOff + 6] = (int)c;
         c >>= 32;
         return (int)c;
-    }
-
-    public static int subWord(int x, int[] z, int zOff)
-    {
-        // assert zOff <= 6;
-        long c = (z[zOff + 0] & M) - (x & M);
-        z[zOff + 0] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : dec(z, zOff + 1);
-    }
-
-    public static int subWordExt(int x, int[] zz, int zzOff)
-    {
-        // assert zzOff <= 13;
-        long c = (zz[zzOff + 0] & M) - (x & M);
-        zz[zzOff + 0] = (int)c;
-        c >>= 32;
-        return c == 0 ? 0 : decExt(zz, zzOff + 1);
     }
 
     public static BigInteger toBigInteger(int[] x)
