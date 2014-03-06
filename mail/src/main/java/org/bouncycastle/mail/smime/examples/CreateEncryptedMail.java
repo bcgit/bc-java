@@ -3,6 +3,7 @@ package org.bouncycastle.mail.smime.examples;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.KeyStore;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -18,6 +19,7 @@ import javax.mail.internet.MimeMessage;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
 
 /**
@@ -42,6 +44,11 @@ public class CreateEncryptedMail
         {
             System.err.println("usage: CreateEncryptedMail pkcs12Keystore password");
             System.exit(0);
+        }
+
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
         }
 
         //
