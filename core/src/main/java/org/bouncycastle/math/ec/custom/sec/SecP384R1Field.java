@@ -100,20 +100,22 @@ public class SecP384R1Field
 
         final long n = 1;
 
+        xx12 -= n;
+
         long cc = 0;
-        cc += (xx[0] & M) + xx12 + xx20 + xx21 - xx23 - n;
+        cc += (xx[0] & M) + xx12 + xx20 + xx21 - xx23;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (xx[1] & M) + xx13 + xx22 + xx23 - xx12 - xx20 + n;
+        cc += (xx[1] & M) + xx13 + xx22 + xx23 - xx12 - xx20;
         z[1] = (int)cc;
         cc >>= 32;
         cc += (xx[2] & M) + xx14 + xx23 - xx13 - xx21;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + xx12 + xx15 + xx20 + xx21 - xx14 - xx22 - xx23 - n;
+        cc += (xx[3] & M) + xx12 + xx15 + xx20 + xx21 - xx14 - xx22 - xx23;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (xx[4] & M) + xx12 + xx13 + xx16 + xx20 + ((xx21 - xx23) << 1) + xx22 - xx15 - n;
+        cc += (xx[4] & M) + xx12 + xx13 + xx16 + xx20 + ((xx21 - xx23) << 1) + xx22 - xx15;
         z[4] = (int)cc;
         cc >>= 32;
         cc += (xx[5] & M) + xx13 + xx14 + xx17 + xx21 + (xx22 << 1) + xx23 - xx16;
