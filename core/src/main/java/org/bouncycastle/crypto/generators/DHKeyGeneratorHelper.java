@@ -19,7 +19,6 @@ class DHKeyGeneratorHelper
 
     BigInteger calculatePrivate(DHParameters dhParams, SecureRandom random)
     {
-        BigInteger p = dhParams.getP();
         int limit = dhParams.getL();
 
         if (limit != 0)
@@ -34,12 +33,12 @@ class DHKeyGeneratorHelper
             min = ONE.shiftLeft(m - 1);
         }
 
-        BigInteger max = p.subtract(TWO);
         BigInteger q = dhParams.getQ();
-        if (q != null)
+        if (q == null)
         {
-            max = q.subtract(TWO);
+            q = dhParams.getP();
         }
+        BigInteger max = q.subtract(TWO);
 
         return BigIntegers.createRandomInRange(min, max, random);
     }

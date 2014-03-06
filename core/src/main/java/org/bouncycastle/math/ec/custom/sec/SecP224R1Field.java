@@ -100,8 +100,10 @@ public class SecP224R1Field
 
         final long n = 1;
 
+        t0 -= n;
+
         long cc = 0;
-        cc += (xx[0] & M) - t0 + n;
+        cc += (xx[0] & M) - t0;
         z[0] = (int)cc;
         cc >>= 32;
         cc += (xx[1] & M) - t1;
@@ -110,7 +112,7 @@ public class SecP224R1Field
         cc += (xx[2] & M) - t2;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + t0 - xx10 - n;
+        cc += (xx[3] & M) + t0 - xx10;
         z[3] = (int)cc;
         cc >>= 32;
         cc += (xx[4] & M) + t1 - xx11;
