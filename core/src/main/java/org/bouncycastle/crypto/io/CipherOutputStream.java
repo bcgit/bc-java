@@ -118,7 +118,7 @@ public class CipherOutputStream
         int len)
         throws IOException
     {
-        ensureCapacity(len);
+        ensureCapacity(len, false);
 
         if (bufferedBlockCipher != null)
         {
@@ -149,24 +149,35 @@ public class CipherOutputStream
     /**
      * Ensure the ciphertext buffer has space sufficient to accept an upcoming output.
      *
-     * @param outputSize the size of the pending update.
+     * @param updateSize the size of the pending update.
+     * @param <code>true</code> iff this the cipher is to be finalised.
      */
-    private void ensureCapacity(int outputSize)
+    private void ensureCapacity(int updateSize, boolean finalOutput)
     {
-        // This overestimates buffer on updates for AEAD/padded, but keeps it simple.
-        int bufLen;
-        if (bufferedBlockCipher != null)
+        int bufLen = updateSize;
+        if (finalOutput)
         {
-            bufLen = bufferedBlockCipher.getOutputSize(outputSize);
-        }
-        else if (aeadBlockCipher != null)
-        {
-            bufLen = aeadBlockCipher.getOutputSize(outputSize);
+            if (bufferedBlockCipher != null)
+            {
+                bufLen = bufferedBlockCipher.getOutputSize(updateSize);
+            }
+            else if (aeadBlockCipher != null)
+            {
+                bufLen = aeadBlockCipher.getOutputSize(updateSize);
+            }
         }
         else
         {
-            bufLen = outputSize;
+            if (bufferedBlockCipher != null)
+            {
+                bufLen = bufferedBlockCipher.getUpdateOutputSize(updateSize);
+            }
+            else if (aeadBlockCipher != null)
+            {
+                bufLen = aeadBlockCipher.getUpdateOutputSize(updateSize);
+            }
         }
+
         if ((buf == null) || (buf.length < bufLen))
         {
             buf = new byte[bufLen];
@@ -213,7 +224,7 @@ public class CipherOutputStream
     public void close()
         throws IOException
     {
-        ensureCapacity(0);
+        ensureCapacity(0, true);
         IOException error = null;
         try
         {
@@ -242,7 +253,7 @@ public class CipherOutputStream
         }
         catch (Exception e)
         {
-            error = new IOException("Error closing stream: " + e);
+            error = new CipherIOException("Error closing stream: ", e);
         }
 
         try
