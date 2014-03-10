@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
+import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
@@ -102,6 +103,9 @@ class BcImplProvider
             break;
         case SymmetricKeyAlgorithmTags.DES:
             engine = new DESEngine();
+            break;
+        case SymmetricKeyAlgorithmTags.IDEA:
+            engine = new IDEAEngine();
             break;
         case SymmetricKeyAlgorithmTags.TWOFISH:
             engine = new TwofishEngine();
