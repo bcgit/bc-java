@@ -91,16 +91,13 @@ public class SecP224R1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long xx07 = xx[7] & M, xx08 = xx[8] & M, xx09 = xx[9] & M, xx10 = xx[10] & M;
-        long xx11 = xx[11] & M, xx12 = xx[12] & M, xx13 = xx[13] & M;
-
-        long t0 = xx07 + xx11;
-        long t1 = xx08 + xx12;
-        long t2 = xx09 + xx13;
+        long xx10 = xx[10] & M, xx11 = xx[11] & M, xx12 = xx[12] & M, xx13 = xx[13] & M;
 
         final long n = 1;
 
-        t0 -= n;
+        long t0 = (xx[7] & M) + xx11 - n;
+        long t1 = (xx[8] & M) + xx12;
+        long t2 = (xx[9] & M) + xx13;
 
         long cc = 0;
         cc += (xx[0] & M) - t0;
