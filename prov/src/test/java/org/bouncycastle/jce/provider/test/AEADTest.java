@@ -48,19 +48,62 @@ public class AEADTest extends SimpleTest
 
     public void performTest() throws Exception
     {
+        boolean aeadAvailable = false;
         try
         {
             this.getClass().getClassLoader().loadClass("javax.crypto.spec.GCMParameterSpec");
-
+            aeadAvailable = true;
+        }
+        catch (ClassNotFoundException e)
+        {
+        }
+        if (aeadAvailable)
+        {
             checkCipherWithAD(K2, N2, A2, P2, C2_short);
             testGCMParameterSpec(K2, N2, A2, P2, C2);
             testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
             testGCMGeneric(KGCM, NGCM, new byte[0], new byte[0], CGCM);
             testGCMParameterSpecWithMultipleUpdates(K2, N2, A2, P2, C2);
         }
-        catch (ClassNotFoundException e)
+        else
         {
-            System.err.println("AEADTest disabled due to JDK");
+            System.err.println("GCM AEADTests disabled due to JDK");
+        }
+        testTampering(aeadAvailable);
+    }
+
+    private void testTampering(boolean aeadAvailable)
+        throws InvalidKeyException,
+        InvalidAlgorithmParameterException,
+        NoSuchAlgorithmException,
+        NoSuchProviderException,
+        NoSuchPaddingException,
+        IllegalBlockSizeException,
+        BadPaddingException
+    {
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
+        final SecretKeySpec key = new SecretKeySpec(new byte[eax.getBlockSize()], eax.getAlgorithm());
+        final IvParameterSpec iv = new IvParameterSpec(new byte[eax.getBlockSize()]);
+
+        eax.init(Cipher.ENCRYPT_MODE, key, iv);
+        byte[] ciphertext = eax.doFinal(new byte[100]);
+        ciphertext[0] = (byte)(ciphertext[0] + 1);  // Tamper
+
+        try
+        {
+            eax.init(Cipher.DECRYPT_MODE, key, iv);
+            eax.doFinal(ciphertext);
+            fail("Tampered ciphertext should be invalid");
+        }
+        catch (BadPaddingException e)
+        {
+            if (aeadAvailable)
+            {
+                if (!e.getClass().getName().equals("javax.crypto.AEADBadTagException"))
+                {
+                    fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available.");
+                }
+            }
         }
     }
 
