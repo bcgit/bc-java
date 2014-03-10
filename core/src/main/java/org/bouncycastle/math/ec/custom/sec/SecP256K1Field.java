@@ -78,6 +78,18 @@ public class SecP256K1Field
         reduce(tt, z);
     }
 
+    public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
+    {
+        int c = Nat256.mulAddTo(x, y, zz);
+        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
+        {
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(16, zz, PExtInv.length);
+            }
+        }
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (Nat256.isZero(x))
