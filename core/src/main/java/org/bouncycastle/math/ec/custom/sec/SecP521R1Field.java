@@ -76,7 +76,7 @@ public class SecP521R1Field
         int xx32 = xx[32];
         int c = Nat.shiftDownBits(16, xx, 16, 9, xx32, z, 0) >>> 23;
         c += xx32 >>> 9;
-        c += Nat.add(16, z, xx, z);
+        c += Nat.addTo(16, xx, z);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
             c += Nat.inc(16, z);
@@ -88,7 +88,7 @@ public class SecP521R1Field
     public static void reduce23(int[] z)
     {
         int z16 = z[16];
-        int c = Nat.addWordAt(16, z16 >>> 9, z, 0) + (z16 & P16);
+        int c = Nat.addWordTo(16, z16 >>> 9, z) + (z16 & P16);
         if (c > P16 || (c == P16 && Nat.eq(16, z, P)))
         {
             c += Nat.inc(16, z);
