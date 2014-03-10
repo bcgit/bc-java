@@ -91,6 +91,7 @@ public class SecP384R1Point extends ECPoint
         SecP384R1FieldElement Z1 = (SecP384R1FieldElement)this.zs[0];
         SecP384R1FieldElement Z2 = (SecP384R1FieldElement)b.getZCoord(0);
 
+        int c;
         int[] tt1 = Nat.create(24);
         int[] tt2 = Nat.create(24);
         int[] t3 = Nat.create(12);
@@ -137,7 +138,7 @@ public class SecP384R1Point extends ECPoint
         int[] H = Nat.create(12);
         SecP384R1Field.subtract(U1, U2, H);
 
-        int[] R = Nat.create(12);// tt2;
+        int[] R = Nat.create(12);
         SecP384R1Field.subtract(S1, S2, R);
 
         // Check if b == this or b == -this
@@ -162,19 +163,21 @@ public class SecP384R1Point extends ECPoint
         int[] V = t3;
         SecP384R1Field.multiply(HSquared, U1, V);
 
+        SecP384R1Field.negate(G, G);
         Nat384.mul(S1, G, tt1);
+
+        c = Nat.addBothTo(12, V, V, G);
+        SecP384R1Field.reduce32(c, G);
 
         SecP384R1FieldElement X3 = new SecP384R1FieldElement(t4);
         SecP384R1Field.square(R, X3.x);
-        SecP384R1Field.add(X3.x, G, X3.x);
-        SecP384R1Field.subtract(X3.x, V, X3.x);
-        SecP384R1Field.subtract(X3.x, V, X3.x);
+        SecP384R1Field.subtract(X3.x, G, X3.x);
 
         SecP384R1FieldElement Y3 = new SecP384R1FieldElement(G);
         SecP384R1Field.subtract(V, X3.x, Y3.x);
         Nat384.mul(Y3.x, R, tt2);
-        SecP384R1Field.subtractExt(tt2, tt1, tt2);
-        SecP384R1Field.reduce(tt2, Y3.x);
+        SecP384R1Field.addExt(tt1, tt2, tt1);
+        SecP384R1Field.reduce(tt1, Y3.x);
 
         SecP384R1FieldElement Z3 = new SecP384R1FieldElement(H);
         if (!Z1IsOne)
@@ -208,6 +211,7 @@ public class SecP384R1Point extends ECPoint
 
         SecP384R1FieldElement X1 = (SecP384R1FieldElement)this.x, Z1 = (SecP384R1FieldElement)this.zs[0];
 
+        int c;
         int[] t1 = Nat.create(12);
         int[] t2 = Nat.create(12);
 
@@ -231,12 +235,12 @@ public class SecP384R1Point extends ECPoint
         int[] M = t2;
         SecP384R1Field.add(X1.x, Z1Squared, M);
         SecP384R1Field.multiply(M, t1, M);
-        SecP384R1Field.twice(M, t1);
-        SecP384R1Field.add(M, t1, M);
+        c = Nat.addBothTo(12, M, M, M);
+        SecP384R1Field.reduce32(c, M);
 
         int[] S = Y1Squared;
         SecP384R1Field.multiply(Y1Squared, X1.x, S);
-        int c = Nat.shiftUpBits(12, S, 2, 0);
+        c = Nat.shiftUpBits(12, S, 2, 0);
         SecP384R1Field.reduce32(c, S);
 
         c = Nat.shiftUpBits(12, T, 3, 0, t1);
