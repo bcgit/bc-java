@@ -76,6 +76,18 @@ public class SecP192K1Field
         reduce(tt, z);
     }
 
+    public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
+    {
+        int c = Nat192.mulAddTo(x, y, zz);
+        if (c != 0 || (zz[11] == PExt11 && Nat.gte(12, zz, PExt)))
+        {
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(12, zz, PExtInv.length);
+            }
+        }
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (Nat192.isZero(x))
