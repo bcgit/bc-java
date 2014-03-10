@@ -77,6 +77,18 @@ public class SecP224R1Field
         reduce(tt, z);
     }
 
+    public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
+    {
+        int c = Nat224.mulAddTo(x, y, zz);
+        if (c != 0 || (zz[13] == PExt13 && Nat.gte(14, zz, PExt)))
+        {
+            if (Nat.addTo(PExtInv.length, PExtInv, zz) != 0)
+            {
+                Nat.incAt(14, zz, PExtInv.length);
+            }
+        }
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (Nat224.isZero(x))
@@ -91,20 +103,17 @@ public class SecP224R1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long xx07 = xx[7] & M, xx08 = xx[8] & M, xx09 = xx[9] & M, xx10 = xx[10] & M;
-        long xx11 = xx[11] & M, xx12 = xx[12] & M, xx13 = xx[13] & M;
-
-        long t0 = xx07 + xx11;
-        long t1 = xx08 + xx12;
-        long t2 = xx09 + xx13;
+        long xx10 = xx[10] & M, xx11 = xx[11] & M, xx12 = xx[12] & M, xx13 = xx[13] & M;
 
         final long n = 1;
 
-        t0 -= n;
+        long t0 = (xx[7] & M) + xx11 - n;
+        long t1 = (xx[8] & M) + xx12;
+        long t2 = (xx[9] & M) + xx13;
 
         long cc = 0;
         cc += (xx[0] & M) - t0;
-        z[0] = (int)cc;
+        long z0 = cc & M;
         cc >>= 32;
         cc += (xx[1] & M) - t1;
         z[1] = (int)cc;
@@ -113,7 +122,7 @@ public class SecP224R1Field
         z[2] = (int)cc;
         cc >>= 32;
         cc += (xx[3] & M) + t0 - xx10;
-        z[3] = (int)cc;
+        long z3 = cc & M;
         cc >>= 32;
         cc += (xx[4] & M) + t1 - xx11;
         z[4] = (int)cc;
@@ -128,7 +137,30 @@ public class SecP224R1Field
 
 //        assert cc >= 0;
 
-        reduce32((int)cc, z);
+        z3 += cc;
+
+        z0 -= cc;
+        z[0] = (int)z0;
+        cc = z0 >> 32;
+        if (cc != 0)
+        {
+            cc += (z[1] & M);
+            z[1] = (int)cc;
+            cc >>= 32;
+            cc += (z[2] & M);
+            z[2] = (int)cc;
+            z3 += cc >> 32;
+        }
+        z[3] = (int)z3;
+        cc = z3 >> 32;
+
+//        assert cc == 0 || cc == 1;
+
+        if ((cc != 0 && Nat.incAt(7, z, 4) != 0)
+            || (z[6] == P6 && Nat224.gte(z, P)))
+        {
+            addPInvTo(z);
+        }
     }
 
     public static void reduce32(int x, int[] z)

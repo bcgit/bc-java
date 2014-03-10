@@ -92,8 +92,9 @@ public class SecP192R1Point extends ECPoint
         SecP192R1FieldElement Z1 = (SecP192R1FieldElement)this.zs[0];
         SecP192R1FieldElement Z2 = (SecP192R1FieldElement)b.getZCoord(0);
 
+        int c;
         int[] tt1 = Nat192.createExt();
-        int[] tt2 = Nat192.createExt();
+        int[] t2 = Nat192.create();
         int[] t3 = Nat192.create();
         int[] t4 = Nat192.create();
 
@@ -109,7 +110,7 @@ public class SecP192R1Point extends ECPoint
             S2 = t3;
             SecP192R1Field.square(Z1.x, S2);
 
-            U2 = tt2;
+            U2 = t2;
             SecP192R1Field.multiply(S2, X2.x, U2);
 
             SecP192R1Field.multiply(S2, Z1.x, S2);
@@ -138,7 +139,7 @@ public class SecP192R1Point extends ECPoint
         int[] H = Nat192.create();
         SecP192R1Field.subtract(U1, U2, H);
 
-        int[] R = tt2;
+        int[] R = t2;
         SecP192R1Field.subtract(S1, S2, R);
 
         // Check if b == this or b == -this
@@ -163,19 +164,20 @@ public class SecP192R1Point extends ECPoint
         int[] V = t3;
         SecP192R1Field.multiply(HSquared, U1, V);
 
+        SecP192R1Field.negate(G, G);
         Nat192.mul(S1, G, tt1);
+
+        c = Nat192.addBothTo(V, V, G);
+        SecP192R1Field.reduce32(c, G);
 
         SecP192R1FieldElement X3 = new SecP192R1FieldElement(t4);
         SecP192R1Field.square(R, X3.x);
-        SecP192R1Field.add(X3.x, G, X3.x);
-        SecP192R1Field.subtract(X3.x, V, X3.x);
-        SecP192R1Field.subtract(X3.x, V, X3.x);
+        SecP192R1Field.subtract(X3.x, G, X3.x);
 
         SecP192R1FieldElement Y3 = new SecP192R1FieldElement(G);
         SecP192R1Field.subtract(V, X3.x, Y3.x);
-        Nat192.mul(Y3.x, R, tt2);
-        SecP192R1Field.subtractExt(tt2, tt1, tt2);
-        SecP192R1Field.reduce(tt2, Y3.x);
+        SecP192R1Field.multiplyAddToExt(Y3.x, R, tt1);
+        SecP192R1Field.reduce(tt1, Y3.x);
 
         SecP192R1FieldElement Z3 = new SecP192R1FieldElement(H);
         if (!Z1IsOne)
@@ -210,6 +212,7 @@ public class SecP192R1Point extends ECPoint
 
         SecP192R1FieldElement X1 = (SecP192R1FieldElement)this.x, Z1 = (SecP192R1FieldElement)this.zs[0];
 
+        int c;
         int[] t1 = Nat192.create();
         int[] t2 = Nat192.create();
 
@@ -233,12 +236,12 @@ public class SecP192R1Point extends ECPoint
         int[] M = t2;
         SecP192R1Field.add(X1.x, Z1Squared, M);
         SecP192R1Field.multiply(M, t1, M);
-        SecP192R1Field.twice(M, t1);
-        SecP192R1Field.add(M, t1, M);
+        c = Nat192.addBothTo(M, M, M);
+        SecP192R1Field.reduce32(c, M);
 
         int[] S = Y1Squared;
         SecP192R1Field.multiply(Y1Squared, X1.x, S);
-        int c = Nat.shiftUpBits(6, S, 2, 0);
+        c = Nat.shiftUpBits(6, S, 2, 0);
         SecP192R1Field.reduce32(c, S);
 
         c = Nat.shiftUpBits(6, T, 3, 0, t1);

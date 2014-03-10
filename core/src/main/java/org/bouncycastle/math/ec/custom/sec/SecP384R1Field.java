@@ -94,49 +94,54 @@ public class SecP384R1Field
 
     public static void reduce(int[] xx, int[] z)
     {
-        long xx12 = xx[12] & M, xx13 = xx[13] & M, xx14 = xx[14] & M, xx15 = xx[15] & M;
         long xx16 = xx[16] & M, xx17 = xx[17] & M, xx18 = xx[18] & M, xx19 = xx[19] & M;
         long xx20 = xx[20] & M, xx21 = xx[21] & M, xx22 = xx[22] & M, xx23 = xx[23] & M;
 
         final long n = 1;
 
-        xx12 -= n;
+        long t0 = (xx[12] & M) + xx20 - n;
+        long t1 = (xx[13] & M) + xx22;
+        long t2 = (xx[14] & M) + xx22 + xx23;
+        long t3 = (xx[15] & M) + xx23;
+        long t4 = xx17 + xx21;
+        long t5 = xx21 - xx23;
+        long t6 = xx22 - xx23;
 
         long cc = 0;
-        cc += (xx[0] & M) + xx12 + xx20 + xx21 - xx23;
+        cc += (xx[0] & M) + t0 + t5;
         z[0] = (int)cc;
         cc >>= 32;
-        cc += (xx[1] & M) + xx13 + xx22 + xx23 - xx12 - xx20;
+        cc += (xx[1] & M) + xx23 - t0 + t1;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (xx[2] & M) + xx14 + xx23 - xx13 - xx21;
+        cc += (xx[2] & M) - xx21 - t1 + t2;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + xx12 + xx15 + xx20 + xx21 - xx14 - xx22 - xx23;
+        cc += (xx[3] & M) + t0 - t2 + t3 + t5;
         z[3] = (int)cc;
         cc >>= 32;
-        cc += (xx[4] & M) + xx12 + xx13 + xx16 + xx20 + ((xx21 - xx23) << 1) + xx22 - xx15;
+        cc += (xx[4] & M) + xx16 + xx21 + t0 + t1 - t3 + t5;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (xx[5] & M) + xx13 + xx14 + xx17 + xx21 + (xx22 << 1) + xx23 - xx16;
+        cc += (xx[5] & M) - xx16 + t1 + t2 + t4;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (xx[6] & M) + xx14 + xx15 + xx18 + xx22 + (xx23 << 1) - xx17;
+        cc += (xx[6] & M) + xx18 - xx17 + t2 + t3;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (xx[7] & M) + xx15 + xx16 + xx19 + xx23 - xx18;
+        cc += (xx[7] & M) + xx16 + xx19 - xx18 + t3;
         z[7] = (int)cc;
         cc >>= 32;
         cc += (xx[8] & M) + xx16 + xx17 + xx20 - xx19;
         z[8] = (int)cc;
         cc >>= 32;
-        cc += (xx[9] & M) + xx17 + xx18 + xx21 - xx20;
+        cc += (xx[9] & M) + xx18 - xx20 + t4;
         z[9] = (int)cc;
         cc >>= 32;
-        cc += (xx[10] & M) + xx18 + xx19 + xx22 - xx21;
+        cc += (xx[10] & M) + xx18 + xx19 - t5 + t6;
         z[10] = (int)cc;
         cc >>= 32;
-        cc += (xx[11] & M) + xx19 + xx20 + xx23 - xx22;
+        cc += (xx[11] & M) + xx19 + xx20 - t6;
         z[11] = (int)cc;
         cc >>= 32;
         cc += n;

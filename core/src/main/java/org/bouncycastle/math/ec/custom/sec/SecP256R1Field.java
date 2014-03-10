@@ -74,6 +74,15 @@ public class SecP256R1Field
         reduce(tt, z);
     }
 
+    public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
+    {
+        int c = Nat256.mulAddTo(x, y, zz);
+        if (c != 0 || ((zz[15] & PExt15) == PExt15 && Nat.gte(16, zz, PExt)))
+        {
+            Nat.subFrom(16, PExt, zz);
+        }
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (Nat256.isZero(x))
@@ -91,17 +100,17 @@ public class SecP256R1Field
         long xx08 = xx[8] & M, xx09 = xx[9] & M, xx10 = xx[10] & M, xx11 = xx[11] & M;
         long xx12 = xx[12] & M, xx13 = xx[13] & M, xx14 = xx[14] & M, xx15 = xx[15] & M;
 
+        final long n = 6;
+
+        xx08 -= n;
+
         long t0 = xx08 + xx09;
         long t1 = xx09 + xx10;
-        long t2 = xx10 + xx11;
+        long t2 = xx10 + xx11 - xx15;
         long t3 = xx11 + xx12;
         long t4 = xx12 + xx13;
         long t5 = xx13 + xx14;
         long t6 = xx14 + xx15;
-
-        final long n = 6;
-
-        t0 -= n;
 
         long cc = 0;
         cc += (xx[0] & M) + t0 - t3 - t5;
@@ -110,7 +119,7 @@ public class SecP256R1Field
         cc += (xx[1] & M) + t1 - t4 - t6;
         z[1] = (int)cc;
         cc >>= 32;
-        cc += (xx[2] & M) + t2 - t5 - xx15;
+        cc += (xx[2] & M) + t2 - t5;
         z[2] = (int)cc;
         cc >>= 32;
         cc += (xx[3] & M) + (t3 << 1) + xx13 - xx15 - t0;
@@ -119,13 +128,13 @@ public class SecP256R1Field
         cc += (xx[4] & M) + (t4 << 1) + xx14 - t1;
         z[4] = (int)cc;
         cc >>= 32;
-        cc += (xx[5] & M) + (t5 << 1) + xx15 - t2;
+        cc += (xx[5] & M) + (t5 << 1) - t2;
         z[5] = (int)cc;
         cc >>= 32;
         cc += (xx[6] & M) + (t6 << 1) + t5 - t0;
         z[6] = (int)cc;
         cc >>= 32;
-        cc += (xx[7] & M) + (xx15 << 1) + xx15 + xx08 - t2 - t4 - n;
+        cc += (xx[7] & M) + (xx15 << 1) + xx08 - t2 - t4;
         z[7] = (int)cc;
         cc >>= 32;
         cc += n;
