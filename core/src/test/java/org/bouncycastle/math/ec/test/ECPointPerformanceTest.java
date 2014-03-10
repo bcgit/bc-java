@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Times;
 
 /**
  * Compares the performance of the the window NAF point multiplication against conventional point
@@ -24,8 +25,9 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class ECPointPerformanceTest extends TestCase
 {
-    public static final int PRE_ROUNDS = 100;
-    public static final int NUM_ROUNDS = 1000;
+    static final int MULTS_PER_ROUND = 100;
+    static final int PRE_ROUNDS = 1;
+    static final int NUM_ROUNDS = 10;
 
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
         "JACOBIAN-MODIFIED", "LAMBDA-AFFINE", "LAMBDA-PROJECTIVE", "SKEWED" };
@@ -102,28 +104,44 @@ public class ECPointPerformanceTest extends TestCase
         ECPoint p = g;
         for (int i = 1; i <= PRE_ROUNDS; i++)
         {
-            BigInteger k = ks[ki];
-            p = g.multiply(k);
-            if (++ki == ks.length)
+            for (int j = 0; j < MULTS_PER_ROUND; ++j)
             {
-                ki = 0;
-                g = p;
+                BigInteger k = ks[ki];
+                p = g.multiply(k);
+                if (++ki == ks.length)
+                {
+                    ki = 0;
+                    g = p;
+                }
             }
         }
-        long startTime = System.currentTimeMillis();
+
+        double minElapsed = Double.MAX_VALUE, maxElapsed = Double.MIN_VALUE, totalElapsed = 0.0;
+
         for (int i = 1; i <= NUM_ROUNDS; i++)
         {
-            BigInteger k = ks[ki];
-            p = g.multiply(k);
-            if (++ki == ks.length)
-            {
-                ki = 0;
-                g = p;
-            }
-        }
-        long endTime = System.currentTimeMillis();
+            long startTime = Times.nanoTime();
 
-        return (double)(endTime - startTime) / NUM_ROUNDS;
+            for (int j = 0; j < MULTS_PER_ROUND; ++j)
+            {
+                BigInteger k = ks[ki];
+                p = g.multiply(k);
+                if (++ki == ks.length)
+                {
+                    ki = 0;
+                    g = p;
+                }
+            }
+
+            long endTime = Times.nanoTime();
+
+            double roundElapsed = (double)(endTime - startTime);
+            minElapsed = Math.min(minElapsed, roundElapsed);
+            maxElapsed = Math.max(maxElapsed, roundElapsed);
+            totalElapsed += roundElapsed;
+        }
+
+        return (totalElapsed  - minElapsed  - maxElapsed ) / (NUM_ROUNDS - 2) / MULTS_PER_ROUND / 1000000;
     }
 
     public void testMultiply() throws Exception
