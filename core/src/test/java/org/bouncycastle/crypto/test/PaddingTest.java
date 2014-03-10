@@ -108,6 +108,36 @@ public class PaddingTest
         }
     }
     
+    private void testOutputSizes()
+    {
+        PaddedBufferedBlockCipher bc = new PaddedBufferedBlockCipher(new DESEngine(), new PKCS7Padding());
+        KeyParameter key = new KeyParameter(Hex.decode("0011223344556677"));
+
+        for (int i = 0; i < bc.getBlockSize() * 2; i++)
+        {
+            bc.init(true, key);
+            if (bc.getUpdateOutputSize(i) < 0)
+            {
+                fail("Padded cipher encrypt negative update output size for input size " + i);
+            }
+            if (bc.getOutputSize(i) < 0)
+            {
+                fail("Padded cipher encrypt negative output size for input size " + i);
+            }
+
+            bc.init(false, key);
+            if (bc.getUpdateOutputSize(i) < 0)
+            {
+                fail("Padded cipher decrypt negative update output size for input size " + i);
+            }
+            if (bc.getOutputSize(i) < 0)
+            {
+                fail("Padded cipher decrypt negative output size for input size " + i);
+            }
+
+        }
+    }
+
     public void performTest()
     {
         SecureRandom    rand = new SecureRandom(new byte[20]);
@@ -152,6 +182,9 @@ public class PaddingTest
         testPadding(new ISO7816d4Padding(), rand,
                                     Hex.decode("ffffff8000000000"),
                                     Hex.decode("0000000080000000"));
+
+        testOutputSizes();
+
     }
 
     public String getName()

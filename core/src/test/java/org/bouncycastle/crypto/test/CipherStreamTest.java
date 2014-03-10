@@ -56,6 +56,8 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CipherStreamTest
     extends SimpleTest
 {
+    private int streamSize;
+
     public String getName()
     {
         return "CipherStreamTest";
@@ -124,8 +126,8 @@ public class CipherStreamTest
     {
         cipher.init(true, params);
 
-        byte[] ciphertext = new byte[cipher.getOutputSize(1000)];
-        cipher.doFinal(ciphertext, cipher.processBytes(new byte[1000], 0, 1000, ciphertext, 0));
+        byte[] ciphertext = new byte[cipher.getOutputSize(streamSize)];
+        cipher.doFinal(ciphertext, cipher.processBytes(new byte[streamSize], 0, streamSize, ciphertext, 0));
 
         // Tamper
         ciphertext[0] += 1;
@@ -162,11 +164,11 @@ public class CipherStreamTest
     {
         cipher.init(true, params);
 
-        byte[] ciphertext = new byte[cipher.getOutputSize(1000)];
-        cipher.doFinal(ciphertext, cipher.processBytes(new byte[1000], 0, 1000, ciphertext, 0));
+        byte[] ciphertext = new byte[cipher.getOutputSize(streamSize)];
+        cipher.doFinal(ciphertext, cipher.processBytes(new byte[streamSize], 0, streamSize, ciphertext, 0));
 
         // Truncate to just smaller than complete tag
-        byte[] truncated = new byte[ciphertext.length - 1000 - 1];
+        byte[] truncated = new byte[ciphertext.length - streamSize - 1];
         System.arraycopy(ciphertext, 0, truncated, 0, truncated.length);
 
         cipher.init(false, params);
@@ -212,8 +214,8 @@ public class CipherStreamTest
     {
         cipher.init(true, params);
 
-        byte[] ciphertext = new byte[cipher.getOutputSize(1000)];
-        cipher.doFinal(ciphertext, cipher.processBytes(new byte[1000], 0, 1000, ciphertext, 0));
+        byte[] ciphertext = new byte[cipher.getOutputSize(streamSize)];
+        cipher.doFinal(ciphertext, cipher.processBytes(new byte[streamSize], 0, streamSize, ciphertext, 0));
 
         // Tamper
         ciphertext[0] += 1;
@@ -243,7 +245,7 @@ public class CipherStreamTest
     private void testWriteRead(Object cipher, CipherParameters params, boolean blocks)
         throws Exception
     {
-        byte[] data = new byte[1000];
+        byte[] data = new byte[streamSize];
         for (int i = 0; i < data.length; i++)
         {
             data[i] = (byte)(i % 255);
@@ -274,10 +276,10 @@ public class CipherStreamTest
             OutputStream cOut = createCipherOutputStream(bOut, cipher);
             if (blocks)
             {
-                int chunkSize = data.length / 8;
+                int chunkSize = Math.max(1, data.length / 8);
                 for (int i = 0; i < data.length; i += chunkSize)
                 {
-                    cOut.write(data, i, chunkSize);
+                    cOut.write(data, i, Math.min(chunkSize, data.length - i));
                 }
             }
             else
@@ -471,6 +473,17 @@ public class CipherStreamTest
     public void performTest()
         throws Exception
     {
+        int[] testSizes = new int[]{0, 1, 7, 8, 9, 15, 16, 17, 1023, 1024, 1025, 2047, 2048, 2049, 4095, 4096, 4097};
+        for (int i = 0; i < testSizes.length; i++)
+        {
+            this.streamSize = testSizes[i];
+            performTests();
+        }
+    }
+
+    private void performTests()
+        throws Exception
+    {
         testModes(new BlowfishEngine(), new BlowfishEngine(), 16);
         testModes(new DESEngine(), new DESEngine(), 8);
         testModes(new DESedeEngine(), new DESedeEngine(), 24);
@@ -498,7 +511,6 @@ public class CipherStreamTest
         testMode(new Grain128Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
         testMode(new HC128Engine(), new KeyParameter(new byte[16]));
         testMode(new HC256Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
-
     }
 
     private void testModes(BlockCipher cipher1, BlockCipher cipher2, int keySize)
@@ -518,7 +530,8 @@ public class CipherStreamTest
             testMode(new BufferedBlockCipher(new CFBBlockCipher(cipher1, blockSize)), withIv);
             testMode(new BufferedBlockCipher(new SICBlockCipher(cipher1)), withIv);
         }
-        if (blockSize <= 16)
+        // CTS requires at least one block
+        if (blockSize <= 16 && streamSize >= blockSize)
         {
             testMode(new CTSBlockCipher(cipher1), key);
         }

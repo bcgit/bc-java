@@ -21,6 +21,8 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CipherStreamTest2
     extends SimpleTest
 {
+    private int streamSize;
+
     public String getName()
     {
         return "CipherStreamTest";
@@ -33,32 +35,38 @@ public class CipherStreamTest2
         for (int i = 0; i != transforms.length; i++)
         {
             String transform = transforms[i];
+            String cipherName = algo + transform;
 
-            testWriteRead(algo + transform, key, authenticated, true, false);
-            testWriteRead(algo + transform, key, authenticated, true, true);
-            testWriteRead(algo + transform, key, authenticated, false, false);
-            testWriteRead(algo + transform, key, authenticated, false, true);
-            testReadWrite(algo + transform, key, authenticated, true, false);
-            testReadWrite(algo + transform, key, authenticated, true, true);
-            testReadWrite(algo + transform, key, authenticated, false, false);
-            testReadWrite(algo + transform, key, authenticated, false, true);
-
-            if (!(transform.indexOf("CTS") > -1))
+            boolean cts = transform.indexOf("CTS") > -1;
+            if (cts && streamSize < Cipher.getInstance(cipherName, "BC").getBlockSize())
             {
-                testWriteReadEmpty(algo + transform, key, authenticated, true, false);
-                testWriteReadEmpty(algo + transform, key, authenticated, true, true);
-                testWriteReadEmpty(algo + transform, key, authenticated, false, false);
-                testWriteReadEmpty(algo + transform, key, authenticated, false, true);
+                continue;
+            }
+            testWriteRead(cipherName, key, authenticated, true, false);
+            testWriteRead(cipherName, key, authenticated, true, true);
+            testWriteRead(cipherName, key, authenticated, false, false);
+            testWriteRead(cipherName, key, authenticated, false, true);
+            testReadWrite(cipherName, key, authenticated, true, false);
+            testReadWrite(cipherName, key, authenticated, true, true);
+            testReadWrite(cipherName, key, authenticated, false, false);
+            testReadWrite(cipherName, key, authenticated, false, true);
+
+            if (!cts)
+            {
+                testWriteReadEmpty(cipherName, key, authenticated, true, false);
+                testWriteReadEmpty(cipherName, key, authenticated, true, true);
+                testWriteReadEmpty(cipherName, key, authenticated, false, false);
+                testWriteReadEmpty(cipherName, key, authenticated, false, true);
             }
 
             if (authenticated)
             {
-                testTamperedRead(algo + transform, key, true, true);
-                testTamperedRead(algo + transform, key, true, false);
-                testTruncatedRead(algo + transform, key, true, true);
-                testTruncatedRead(algo + transform, key, true, false);
-                testTamperedWrite(algo + transform, key, true, true);
-                testTamperedWrite(algo + transform, key, true, false);
+                testTamperedRead(cipherName, key, true, true);
+                testTamperedRead(cipherName, key, true, false);
+                testTruncatedRead(cipherName, key, true, true);
+                testTruncatedRead(cipherName, key, true, false);
+                testTamperedWrite(cipherName, key, true, true);
+                testTamperedWrite(cipherName, key, true, false);
             }
         }
     }
@@ -94,7 +102,7 @@ public class CipherStreamTest2
             decrypt.init(Cipher.DECRYPT_MODE, key);
         }
 
-        byte[] ciphertext = encrypt.doFinal(new byte[1000]);
+        byte[] ciphertext = encrypt.doFinal(new byte[streamSize]);
 
         // Tamper
         ciphertext[0] += 1;
@@ -140,10 +148,10 @@ public class CipherStreamTest2
             decrypt.init(Cipher.DECRYPT_MODE, key);
         }
 
-        byte[] ciphertext = encrypt.doFinal(new byte[1000]);
+        byte[] ciphertext = encrypt.doFinal(new byte[streamSize]);
 
         // Truncate to just smaller than complete tag
-        byte[] truncated = new byte[ciphertext.length - 1000 - 1];
+        byte[] truncated = new byte[ciphertext.length - streamSize - 1];
         System.arraycopy(ciphertext, 0, truncated, 0, truncated.length);
 
         // Tamper
@@ -201,7 +209,7 @@ public class CipherStreamTest2
             decrypt.init(Cipher.DECRYPT_MODE, key);
         }
 
-        byte[] ciphertext = encrypt.doFinal(new byte[1000]);
+        byte[] ciphertext = encrypt.doFinal(new byte[streamSize]);
 
         // Tamper
         ciphertext[0] += 1;
@@ -230,7 +238,7 @@ public class CipherStreamTest2
     private void testWriteRead(String name, Key key, boolean authenticated, boolean useBc, boolean blocks)
         throws Exception
     {
-        byte[] data = new byte[1000];
+        byte[] data = new byte[streamSize];
         for (int i = 0; i < data.length; i++)
         {
             data[i] = (byte)(i % 255);
@@ -271,10 +279,10 @@ public class CipherStreamTest2
             OutputStream cOut = createOutputStream(bOut, encrypt, useBc);
             if (blocks)
             {
-                int chunkSize = data.length / 8;
+                int chunkSize = Math.max(1, data.length / 8);
                 for (int i = 0; i < data.length; i += chunkSize)
                 {
-                    cOut.write(data, i, chunkSize);
+                    cOut.write(data, i, Math.min(chunkSize, data.length - i));
                 }
             }
             else
@@ -432,6 +440,17 @@ public class CipherStreamTest2
     }
 
     public void performTest()
+        throws Exception
+    {
+        int[] testSizes = new int[]{0, 1, 7, 8, 9, 15, 16, 17, 1023, 1024, 1025, 2047, 2048, 2049, 4095, 4096, 4097};
+        for (int i = 0; i < testSizes.length; i++)
+        {
+            this.streamSize = testSizes[i];
+            performTests();
+        }
+    }
+
+    private void performTests()
         throws Exception
     {
         final String[] blockCiphers64 = new String[]{"BLOWFISH", "DES", "DESEDE", "TEA", "CAST5", "RC2", "XTEA"};
