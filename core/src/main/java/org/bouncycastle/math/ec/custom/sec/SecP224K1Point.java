@@ -93,8 +93,9 @@ public class SecP224K1Point extends ECPoint
         SecP224K1FieldElement Z1 = (SecP224K1FieldElement)this.zs[0];
         SecP224K1FieldElement Z2 = (SecP224K1FieldElement)b.getZCoord(0);
 
+        int c;
         int[] tt1 = Nat224.createExt();
-        int[] tt2 = Nat224.createExt();
+        int[] t2 = Nat224.create();
         int[] t3 = Nat224.create();
         int[] t4 = Nat224.create();
 
@@ -110,7 +111,7 @@ public class SecP224K1Point extends ECPoint
             S2 = t3;
             SecP224K1Field.square(Z1.x, S2);
 
-            U2 = tt2;
+            U2 = t2;
             SecP224K1Field.multiply(S2, X2.x, U2);
 
             SecP224K1Field.multiply(S2, Z1.x, S2);
@@ -139,7 +140,7 @@ public class SecP224K1Point extends ECPoint
         int[] H = Nat224.create();
         SecP224K1Field.subtract(U1, U2, H);
 
-        int[] R = tt2;
+        int[] R = t2;
         SecP224K1Field.subtract(S1, S2, R);
 
         // Check if b == this or b == -this
@@ -164,19 +165,20 @@ public class SecP224K1Point extends ECPoint
         int[] V = t3;
         SecP224K1Field.multiply(HSquared, U1, V);
 
+        SecP224K1Field.negate(G, G);
         Nat224.mul(S1, G, tt1);
+
+        c = Nat224.addBothTo(V, V, G);
+        SecP224K1Field.reduce32(c, G);
 
         SecP224K1FieldElement X3 = new SecP224K1FieldElement(t4);
         SecP224K1Field.square(R, X3.x);
-        SecP224K1Field.add(X3.x, G, X3.x);
-        SecP224K1Field.subtract(X3.x, V, X3.x);
-        SecP224K1Field.subtract(X3.x, V, X3.x);
+        SecP224K1Field.subtract(X3.x, G, X3.x);
 
         SecP224K1FieldElement Y3 = new SecP224K1FieldElement(G);
         SecP224K1Field.subtract(V, X3.x, Y3.x);
-        Nat224.mul(Y3.x, R, tt2);
-        SecP224K1Field.subtractExt(tt2, tt1, tt2);
-        SecP224K1Field.reduce(tt2, Y3.x);
+        SecP224K1Field.multiplyAddToExt(Y3.x, R, tt1);
+        SecP224K1Field.reduce(tt1, Y3.x);
 
         SecP224K1FieldElement Z3 = new SecP224K1FieldElement(H);
         if (!Z1IsOne)
@@ -211,24 +213,25 @@ public class SecP224K1Point extends ECPoint
 
         SecP224K1FieldElement X1 = (SecP224K1FieldElement)this.x, Z1 = (SecP224K1FieldElement)this.zs[0];
 
+        int c;
+        
         int[] Y1Squared = Nat224.create();
         SecP224K1Field.square(Y1.x, Y1Squared);
 
         int[] T = Nat224.create();
         SecP224K1Field.square(Y1Squared, T);
 
-        int[] t1 = Nat224.create();
-        SecP224K1Field.square(X1.x, t1);
-
         int[] M = Nat224.create();
-        SecP224K1Field.twice(t1, M);
-        SecP224K1Field.add(M, t1, M);
+        SecP224K1Field.square(X1.x, M);
+        c = Nat224.addBothTo(M, M, M);
+        SecP224K1Field.reduce32(c, M);
 
         int[] S = Y1Squared;
         SecP224K1Field.multiply(Y1Squared, X1.x, S);
-        int c = Nat.shiftUpBits(7, S, 2, 0);
+        c = Nat.shiftUpBits(7, S, 2, 0);
         SecP224K1Field.reduce32(c, S);
 
+        int[] t1 = Nat224.create();
         c = Nat.shiftUpBits(7, T, 3, 0, t1);
         SecP224K1Field.reduce32(c, t1);
 

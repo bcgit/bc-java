@@ -230,8 +230,8 @@ public class SecP521R1Point extends ECPoint
         int[] M = t2;
         SecP521R1Field.add(X1.x, Z1Squared, M);
         SecP521R1Field.multiply(M, t1, M);
-        SecP521R1Field.twice(M, t1);
-        SecP521R1Field.add(M, t1, M);
+        Nat.addBothTo(17, M, M, M);
+        SecP521R1Field.reduce23(M);
 
         int[] S = Y1Squared;
         SecP521R1Field.multiply(Y1Squared, X1.x, S);
