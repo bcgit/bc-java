@@ -104,7 +104,7 @@ public class SecP224R1Field
 
         long cc = 0;
         cc += (xx[0] & M) - t0;
-        z[0] = (int)cc;
+        long z0 = cc & M;
         cc >>= 32;
         cc += (xx[1] & M) - t1;
         z[1] = (int)cc;
@@ -113,7 +113,7 @@ public class SecP224R1Field
         z[2] = (int)cc;
         cc >>= 32;
         cc += (xx[3] & M) + t0 - xx10;
-        z[3] = (int)cc;
+        long z3 = cc & M;
         cc >>= 32;
         cc += (xx[4] & M) + t1 - xx11;
         z[4] = (int)cc;
@@ -128,7 +128,30 @@ public class SecP224R1Field
 
 //        assert cc >= 0;
 
-        reduce32((int)cc, z);
+        z3 += cc;
+
+        z0 -= cc;
+        z[0] = (int)z0;
+        cc = z0 >> 32;
+        if (cc != 0)
+        {
+            cc += (z[1] & M);
+            z[1] = (int)cc;
+            cc >>= 32;
+            cc += (z[2] & M);
+            z[2] = (int)cc;
+            z3 += cc >> 32;
+        }
+        z[3] = (int)z3;
+        cc = z3 >> 32;
+
+//        assert cc == 0 || cc == 1;
+
+        if ((cc != 0 && Nat.incAt(7, z, 4) != 0)
+            || (z[6] == P6 && Nat224.gte(z, P)))
+        {
+            addPInvTo(z);
+        }
     }
 
     public static void reduce32(int x, int[] z)

@@ -99,7 +99,7 @@ public class SecP192R1Field
 
         long cc = 0;
         cc += (xx[0] & M) + t0;
-        z[0] = (int)cc;
+        int z0 = (int)cc;
         cc >>= 32;
         cc += (xx[1] & M) + t1;
         z[1] = (int)cc;
@@ -109,7 +109,7 @@ public class SecP192R1Field
         t1 += xx09;
 
         cc += (xx[2] & M) + t0;
-        z[2] = (int)cc;
+        long z2 = cc & M;
         cc >>= 32;
         cc += (xx[3] & M) + t1;
         z[3] = (int)cc;
@@ -125,7 +125,27 @@ public class SecP192R1Field
         z[5] = (int)cc;
         cc >>= 32;
 
-        reduce32((int)cc, z);
+        z2 += cc;
+
+        cc += (z0 & M);
+        z[0] = (int)cc;
+        cc >>= 32;
+        if (cc != 0)
+        {
+            cc += (z[1] & M);
+            z[1] = (int)cc;
+            z2 += cc >> 32;
+        }
+        z[2] = (int)z2;
+        cc = z2 >> 32;
+
+//      assert cc == 0 || cc == 1;
+
+        if ((cc != 0 && Nat.incAt(6, z, 3) != 0)
+            || (z[5] == P5 && Nat192.gte(z, P)))
+        {
+            addPInvTo(z);
+        }
     }
 
     public static void reduce32(int x, int[] z)
