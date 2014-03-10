@@ -535,7 +535,9 @@ is not an exact multiple of the block size if NoPadding has been specified.
 <p>
 All <i>AEAD</i> (Authenticated Encryption Associated Data) modes support 
 Additional Authentication Data (AAD) using the <code>Cipher.updateAAD()</code>
-methods added in Java SE 7.
+methods added in Java SE 7. <br>
+On Java 7 and later, AEAD modes will throw <code>javax.crypto.AEADBadTagException</code> on an authentication failure.
+On earlier version of Java, <code>javax.crypto.BadPaddingException</code> is thrown.
 <p>
 
 
