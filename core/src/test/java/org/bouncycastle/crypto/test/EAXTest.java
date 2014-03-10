@@ -129,7 +129,7 @@ public class EAXTest
         {
             eax.init(false, new AEADParameters(new KeyParameter(K1), 32, N2, A2));
 
-            byte[] enc = new byte[C2.length]; 
+            byte[] enc = new byte[C2.length];
             int len = eax.processBytes(C2, 0, C2.length, enc, 0);
 
             len += eax.doFinal(enc, len);
@@ -155,6 +155,10 @@ public class EAXTest
         randomTests();
         AEADTestUtil.testReset(this, new EAXBlockCipher(new AESEngine()), new EAXBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
+                new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
+                new KeyParameter(K1), 32, N2));
     }
 
     private void checkVectors(
@@ -249,7 +253,7 @@ public class EAXTest
         len += decEax.doFinal(tmp, len);
 
         byte[] dec = new byte[len];
-        
+
         System.arraycopy(tmp, 0, dec, 0, len);
 
         if (!areEqual(p, dec))
@@ -304,7 +308,7 @@ public class EAXTest
         SecureRandom srng = new SecureRandom();
         for (int i = 0; i < 10; ++i)
         {
-            randomTest(srng); 
+            randomTest(srng);
         }
     }
 
