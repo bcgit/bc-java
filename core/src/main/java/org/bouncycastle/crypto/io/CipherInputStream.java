@@ -12,27 +12,27 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 /**
  * A CipherInputStream is composed of an InputStream and a cipher so that read() methods return data
  * that are read in from the underlying InputStream but have been additionally processed by the
- * Cipher. The cipher must be fully initialized before being used by a CipherInputStream.
+ * cipher. The cipher must be fully initialized before being used by a CipherInputStream.
  * <p/>
- * For example, if the Cipher is initialized for decryption, the
+ * For example, if the cipher is initialized for decryption, the
  * CipherInputStream will attempt to read in data and decrypt them,
  * before returning the decrypted data.
  */
 public class CipherInputStream
     extends FilterInputStream
 {
+    private static final int INPUT_BUF_SIZE = 2048;
+
     private BufferedBlockCipher bufferedBlockCipher;
     private StreamCipher streamCipher;
     private AEADBlockCipher aeadBlockCipher;
 
-    private final byte[] buf;
-    private final byte[] inBuf;
+    private byte[] buf;
+    private final byte[] inBuf = new byte[INPUT_BUF_SIZE];
 
     private int bufOff;
     private int maxBuf;
     private boolean finalized;
-
-    private static final int INPUT_BUF_SIZE = 2048;
 
     /**
      * Constructs a CipherInputStream from an InputStream and a
@@ -45,11 +45,6 @@ public class CipherInputStream
         super(is);
 
         this.bufferedBlockCipher = cipher;
-
-        int outSize = cipher.getOutputSize(INPUT_BUF_SIZE);
-
-        buf = new byte[(outSize > INPUT_BUF_SIZE) ? outSize : INPUT_BUF_SIZE];
-        inBuf = new byte[INPUT_BUF_SIZE];
     }
 
     public CipherInputStream(
@@ -59,9 +54,6 @@ public class CipherInputStream
         super(is);
 
         this.streamCipher = cipher;
-
-        buf = new byte[INPUT_BUF_SIZE];
-        inBuf = new byte[INPUT_BUF_SIZE];
     }
 
     /**
@@ -72,11 +64,6 @@ public class CipherInputStream
         super(is);
 
         this.aeadBlockCipher = cipher;
-
-        int outSize = cipher.getOutputSize(INPUT_BUF_SIZE);
-
-        buf = new byte[(outSize > INPUT_BUF_SIZE) ? outSize : INPUT_BUF_SIZE];
-        inBuf = new byte[INPUT_BUF_SIZE];
     }
 
     /**
@@ -112,6 +99,7 @@ public class CipherInputStream
 
             try
             {
+                ensureCapacity(read, false);
                 if (bufferedBlockCipher != null)
                 {
                     maxBuf = bufferedBlockCipher.processBytes(inBuf, 0, read, buf, 0);
@@ -128,7 +116,7 @@ public class CipherInputStream
             }
             catch (Exception e)
             {
-                throw new IOException("Error processing stream " + e);
+                throw new CipherIOException("Error processing stream ", e);
             }
         }
         return maxBuf;
@@ -140,6 +128,7 @@ public class CipherInputStream
         try
         {
             finalized = true;
+            ensureCapacity(0, true);
             if (bufferedBlockCipher != null)
             {
                 maxBuf = bufferedBlockCipher.doFinal(buf, 0);
@@ -159,7 +148,7 @@ public class CipherInputStream
         }
         catch (Exception e)
         {
-            throw new IOException("Error finalising cipher " + e);
+            throw new CipherIOException("Error finalising cipher ", e);
         }
     }
 
@@ -263,11 +252,49 @@ public class CipherInputStream
     }
 
     /**
+     * Ensure the ciphertext buffer has space sufficient to accept an upcoming output.
+     *
+     * @param updateSize the size of the pending update.
+     * @param <code>true</code> iff this the cipher is to be finalised.
+     */
+    private void ensureCapacity(int updateSize, boolean finalOutput)
+    {
+        int bufLen = updateSize;
+        if (finalOutput)
+        {
+            if (bufferedBlockCipher != null)
+            {
+                bufLen = bufferedBlockCipher.getOutputSize(updateSize);
+            }
+            else if (aeadBlockCipher != null)
+            {
+                bufLen = aeadBlockCipher.getOutputSize(updateSize);
+            }
+        }
+        else
+        {
+            if (bufferedBlockCipher != null)
+            {
+                bufLen = bufferedBlockCipher.getUpdateOutputSize(updateSize);
+            }
+            else if (aeadBlockCipher != null)
+            {
+                bufLen = aeadBlockCipher.getUpdateOutputSize(updateSize);
+            }
+        }
+
+        if ((buf == null) || (buf.length < bufLen))
+        {
+            buf = new byte[bufLen];
+        }
+    }
+
+    /**
      * Closes the underlying input stream and finalises the processing of the data by the cipher.
      *
      * @throws IOException if there was an error closing the input stream.
      * @throws InvalidCipherTextIOException if the data read from the stream was invalid ciphertext
-     * (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
+     *             (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).
      */
     public void close()
         throws IOException
