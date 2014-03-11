@@ -13,6 +13,9 @@ import org.bouncycastle.util.test.SimpleTest;
 public class SipHashTest
     extends SimpleTest
 {
+    private static final int UPDATE_BYTES = 0;
+    private static final int UPDATE_FULL = 1;
+    private static final int UPDATE_MIX = 2;
 
     public String getName()
     {
@@ -22,15 +25,23 @@ public class SipHashTest
     public void performTest()
         throws Exception
     {
-
         byte[] key = Hex.decode("000102030405060708090a0b0c0d0e0f");
         byte[] input = Hex.decode("000102030405060708090a0b0c0d0e");
 
+        runMAC(key, input, UPDATE_BYTES);
+        runMAC(key, input, UPDATE_FULL);
+        runMAC(key, input, UPDATE_MIX);
+    }
+
+    private void runMAC(byte[] key, byte[] input, int updateType)
+        throws Exception
+    {
         long expected = 0xa129ca6149be45e5L;
 
         SipHash mac = new SipHash();
         mac.init(new KeyParameter(key));
-        mac.update(input, 0, input.length);
+
+        updateMAC(mac, input, updateType);
 
         long result = mac.doFinal();
         if (expected != result)
@@ -41,7 +52,7 @@ public class SipHashTest
         byte[] expectedBytes = new byte[8];
         Pack.longToLittleEndian(expected, expectedBytes, 0);
 
-        mac.update(input, 0, input.length);
+        updateMAC(mac, input, updateType);
 
         byte[] output = new byte[mac.getMacSize()];
         int len = mac.doFinal(output, 0);
@@ -52,6 +63,41 @@ public class SipHashTest
         if (!areEqual(expectedBytes, output))
         {
             fail("Result does not match expected value for doFinal(byte[],int)");
+        }
+    }
+
+    private void updateMAC(SipHash mac, byte[] input, int updateType)
+    {
+        switch (updateType)
+        {
+        case UPDATE_BYTES:
+        {
+            for (int i = 0; i < input.length; ++i)
+            {
+                mac.update(input[i]);
+            }
+            break;
+        }
+        case UPDATE_FULL:
+        {
+            mac.update(input, 0, input.length);
+            break;
+        }
+        case UPDATE_MIX:
+        {
+            int step = Math.max(1, input.length / 3);
+            int pos = 0;
+            while (pos < input.length)
+            {
+                mac.update(input[pos++]);
+                int len = Math.min(input.length - pos, step);
+                mac.update(input, pos, len);
+                pos += len;
+            }
+            break;
+        }
+        default:
+            throw new IllegalStateException();
         }
     }
 
