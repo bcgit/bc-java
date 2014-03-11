@@ -59,7 +59,7 @@ public class DefaultTlsEncryptionCredentials
         throws IOException
     {
 
-        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
+        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), 48);
         encoding.init(false, new ParametersWithRandom(this.privateKey, context.getSecureRandom()));
 
         try
