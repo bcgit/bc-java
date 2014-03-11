@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.Pack;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Implementation of SipHash as specified in "SipHash: a fast short-input PRF", by Jean-Philippe
@@ -19,14 +18,13 @@ import org.bouncycastle.util.Arrays;
 public class SipHash
     implements Mac
 {
-
     protected final int c, d;
 
     protected long k0, k1;
     protected long v0, v1, v2, v3, v4;
 
-    protected byte[] buf = new byte[8];
-    protected int bufPos = 0;
+    protected long m = 0;
+    protected int wordPos = 0;
     protected int wordCount = 0;
 
     /**
@@ -34,7 +32,7 @@ public class SipHash
      */
     public SipHash()
     {
-        // use of this confuses flow analyser on earlier JDKs.
+        // use of 'this' confuses the flow analyser on earlier JDKs.
         this.c = 2;
         this.d = 4;
     }
@@ -84,12 +82,13 @@ public class SipHash
     public void update(byte input)
         throws IllegalStateException
     {
+        m >>>= 8;
+        m |= (input & 0xffL) << 56;
 
-        buf[bufPos] = input;
-        if (++bufPos == buf.length)
+        if (++wordPos == 8)
         {
             processMessageWord();
-            bufPos = 0;
+            wordPos = 0;
         }
     }
 
@@ -97,14 +96,42 @@ public class SipHash
         throws DataLengthException,
         IllegalStateException
     {
-
-        for (int i = 0; i < length; ++i)
+        int i = 0, fullWords = length & ~7;
+        if (wordPos == 0)
         {
-            buf[bufPos] = input[offset + i];
-            if (++bufPos == buf.length)
+            for (; i < fullWords; i += 8)
             {
+                m = Pack.littleEndianToLong(input, offset + i);
                 processMessageWord();
-                bufPos = 0;
+            }
+            for (; i < length; ++i)
+            {
+                m >>>= 8;
+                m |= (input[offset + i] & 0xffL) << 56;
+            }
+            wordPos = length - fullWords;
+        }
+        else
+        {
+            int bits = wordPos << 3;
+            for (; i < fullWords; i += 8)
+            {
+                long n = Pack.littleEndianToLong(input, offset + i);
+                m >>>= 64 - bits;
+                m |= n << bits;
+                processMessageWord();
+                m = n;
+            }
+            for (; i < length; ++i)
+            {
+                m >>>= 8;
+                m |= (input[offset + i] & 0xffL) << 56;
+
+                if (++wordPos == 8)
+                {
+                    processMessageWord();
+                    wordPos = 0;
+                }
             }
         }
     }
@@ -112,12 +139,8 @@ public class SipHash
     public long doFinal()
         throws DataLengthException, IllegalStateException
     {
-
-        buf[7] = (byte)(((wordCount << 3) + bufPos) & 0xff);
-        while (bufPos < 7)
-        {
-            buf[bufPos++] = 0;
-        }
+        m >>>= ((8 - wordPos) << 3);
+        m |= (((wordCount << 3) + wordPos) & 0xffL) << 56;
 
         processMessageWord();
 
@@ -135,7 +158,6 @@ public class SipHash
     public int doFinal(byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
-
         long result = doFinal();
         Pack.longToLittleEndian(result, out, outOff);
         return 8;
@@ -143,22 +165,19 @@ public class SipHash
 
     public void reset()
     {
-
         v0 = k0 ^ 0x736f6d6570736575L;
         v1 = k1 ^ 0x646f72616e646f6dL;
         v2 = k0 ^ 0x6c7967656e657261L;
         v3 = k1 ^ 0x7465646279746573L;
 
-        Arrays.fill(buf, (byte)0);
-        bufPos = 0;
+        m = 0;
+        wordPos = 0;
         wordCount = 0;
     }
 
     protected void processMessageWord()
     {
-
         ++wordCount;
-        long m = Pack.littleEndianToLong(buf, 0);
         v3 ^= m;
         applySipRounds(c);
         v0 ^= m;
