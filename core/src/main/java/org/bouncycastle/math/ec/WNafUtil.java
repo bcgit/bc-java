@@ -283,6 +283,11 @@ public abstract class WNafUtil
         return wnaf;
     }
 
+    public static WNafPreCompInfo getWNafPreCompInfo(ECPoint p)
+    {
+        return getWNafPreCompInfo(p.getCurve().getPreCompInfo(p, PRECOMP_NAME));
+    }
+
     public static WNafPreCompInfo getWNafPreCompInfo(PreCompInfo preCompInfo)
     {
         if ((preCompInfo != null) && (preCompInfo instanceof WNafPreCompInfo))
@@ -324,6 +329,44 @@ public abstract class WNafUtil
         return w + 2;
     }
 
+    public static ECPoint mapPointWithPrecomp(ECPoint p, int width, boolean includeNegated, ECPointMap map)
+    {
+        ECCurve c = p.getCurve();
+        WNafPreCompInfo wnafPreCompP = precompute(p, width, includeNegated);
+
+        ECPoint q = map.map(p);
+        WNafPreCompInfo wnafPreCompQ = getWNafPreCompInfo(c.getPreCompInfo(q, PRECOMP_NAME));
+
+        ECPoint twiceP = wnafPreCompP.getTwice();
+        if (twiceP != null)
+        {
+            ECPoint twiceQ = map.map(twiceP);
+            wnafPreCompQ.setTwice(twiceQ);
+        }
+
+        ECPoint[] preCompP = wnafPreCompP.getPreComp();
+        ECPoint[] preCompQ = new ECPoint[preCompP.length];
+        for (int i = 0; i < preCompP.length; ++i)
+        {
+            preCompQ[i] = map.map(preCompP[i]);
+        }
+        wnafPreCompQ.setPreComp(preCompQ);
+
+        if (includeNegated)
+        {
+            ECPoint[] preCompNegQ = new ECPoint[preCompQ.length];
+            for (int i = 0; i < preCompNegQ.length; ++i)
+            {
+                preCompNegQ[i] = preCompQ[i].negate();
+            }
+            wnafPreCompQ.setPreCompNeg(preCompNegQ);
+        }
+
+        c.setPreCompInfo(q, PRECOMP_NAME, wnafPreCompQ);
+
+        return q;
+    }
+
     public static WNafPreCompInfo precompute(ECPoint p, int width, boolean includeNegated)
     {
         ECCurve c = p.getCurve();
@@ -350,7 +393,7 @@ public abstract class WNafUtil
                 ECPoint twiceP = wnafPreCompInfo.getTwice();
                 if (twiceP == null)
                 {
-                    twiceP = preComp[0].twice().normalize();
+                    twiceP = preComp[0].twice();
                     wnafPreCompInfo.setTwice(twiceP);
                 }
 
