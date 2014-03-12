@@ -97,7 +97,7 @@ public class ECDSASigner
 
         BigInteger r, s;
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
         // 5.3.2
         do // generate s
@@ -169,7 +169,7 @@ public class ECDSASigner
         return v.equals(r);
     }
 
-    private BigInteger calculateE(BigInteger n, byte[] message)
+    protected BigInteger calculateE(BigInteger n, byte[] message)
     {
         int log2n = n.bitLength();
         int messageBitLength = message.length * 8;
@@ -180,5 +180,10 @@ public class ECDSASigner
             e = e.shiftRight(messageBitLength - log2n);
         }
         return e;
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }

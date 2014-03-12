@@ -123,7 +123,7 @@ public class ECIESKeyEncapsulation
         // Compute the static-ephemeral key agreement
         BigInteger rPrime = CofactorMode ? r.multiply(h).mod(n) : r;
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
         ECPoint[] ghTilde = new ECPoint[]{ 
             basePointMultiplier.multiply(ecParams.getG(), r),
@@ -235,5 +235,10 @@ public class ECIESKeyEncapsulation
     public CipherParameters decrypt(byte[] in, int keyLen)
     {
         return decrypt(in, 0, in.length, keyLen);
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }

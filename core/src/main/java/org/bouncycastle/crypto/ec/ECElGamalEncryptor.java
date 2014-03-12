@@ -67,7 +67,7 @@ public class ECElGamalEncryptor
         ECDomainParameters ec = key.getParameters();
         BigInteger k = ECUtil.generateK(ec.getN(), random);
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
@@ -77,5 +77,10 @@ public class ECElGamalEncryptor
         ec.getCurve().normalizeAll(gamma_phi);
 
         return new ECPair(gamma_phi[0], gamma_phi[1]);
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }
