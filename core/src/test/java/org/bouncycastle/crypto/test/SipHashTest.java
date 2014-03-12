@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.macs.SipHash;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.Pack;
@@ -31,6 +33,12 @@ public class SipHashTest
         runMAC(key, input, UPDATE_BYTES);
         runMAC(key, input, UPDATE_FULL);
         runMAC(key, input, UPDATE_MIX);
+        
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < 100; ++i)
+        {
+            randomTest(random);
+        }
     }
 
     private void runMAC(byte[] key, byte[] input, int updateType)
@@ -63,6 +71,33 @@ public class SipHashTest
         if (!areEqual(expectedBytes, output))
         {
             fail("Result does not match expected value for doFinal(byte[],int)");
+        }
+    }
+
+    private void randomTest(SecureRandom random)
+    {
+        byte[] key = new byte[16];
+        random.nextBytes(key);
+
+        int length = 1 + random.nextInt(1024);
+        byte[] input = new byte[length];
+        random.nextBytes(input);
+
+        SipHash mac = new SipHash();
+        mac.init(new KeyParameter(key));
+
+        updateMAC(mac, input, UPDATE_BYTES);
+        long result1 = mac.doFinal();
+
+        updateMAC(mac, input, UPDATE_FULL);
+        long result2 = mac.doFinal();
+
+        updateMAC(mac, input, UPDATE_MIX);
+        long result3 = mac.doFinal();
+
+        if (result1 != result2 || result1 != result3)
+        {
+            fail("Inconsistent results in random test");
         }
     }
 
