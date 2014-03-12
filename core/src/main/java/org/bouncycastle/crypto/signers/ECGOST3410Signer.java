@@ -75,7 +75,7 @@ public class ECGOST3410Signer
 
         BigInteger r, s;
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
         do // generate s
         {
@@ -151,5 +151,10 @@ public class ECGOST3410Signer
         BigInteger R = point.getAffineXCoord().toBigInteger().mod(n);
 
         return R.equals(r);
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }

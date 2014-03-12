@@ -75,7 +75,7 @@ public class DSTU4145Signer
 
         BigInteger d = ((ECPrivateKeyParameters)key).getD();
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
 
         do
         {
@@ -133,6 +133,11 @@ public class DSTU4145Signer
 
         ECFieldElement y = h.multiply(R.getAffineXCoord());
         return fieldElement2Integer(n, y).compareTo(r) == 0;
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 
     /**

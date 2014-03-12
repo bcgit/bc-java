@@ -73,7 +73,7 @@ public class ECNewRandomnessTransform
         ECDomainParameters ec = key.getParameters();
         BigInteger n = ec.getN();
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
         BigInteger k = ECUtil.generateK(n, random);
 
         ECPoint[] gamma_phi = new ECPoint[]{
@@ -96,5 +96,10 @@ public class ECNewRandomnessTransform
     public BigInteger getTransformValue()
     {
         return lastK;
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }

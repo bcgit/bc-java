@@ -58,7 +58,7 @@ public class ECFixedTransform
         ECDomainParameters ec = key.getParameters();
         BigInteger n = ec.getN();
 
-        ECMultiplier basePointMultiplier = new FixedPointCombMultiplier();
+        ECMultiplier basePointMultiplier = createBasePointMultiplier();
         BigInteger k = this.k.mod(n);
 
         ECPoint[] gamma_phi = new ECPoint[]{
@@ -79,5 +79,10 @@ public class ECFixedTransform
     public BigInteger getTransformValue()
     {
         return k;
+    }
+
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
     }
 }
