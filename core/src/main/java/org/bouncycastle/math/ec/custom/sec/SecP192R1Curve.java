@@ -69,6 +69,11 @@ public class SecP192R1Curve extends ECCurve
         return new SecP192R1Point(this, x, y, withCompression);
     }
 
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    {
+        return new SecP192R1Point(this, x, y, zs, withCompression);
+    }
+
     protected ECPoint decompressPoint(int yTilde, BigInteger X1)
     {
         ECFieldElement x = fromBigInteger(X1);
