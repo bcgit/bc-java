@@ -20,8 +20,7 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
             throw new IllegalStateException("fixed-point comb doesn't support scalars larger than the curve order");
         }
 
-        // TODO Call method to let subclasses select width
-        int width = size > 257 ? 6 : 5;
+        int width = getWidthForCombSize(size);
 
         FixedPointPreCompInfo info = FixedPointUtil.precompute(p, width);
         ECPoint[] lookupTable = info.getPreComp();
@@ -48,5 +47,10 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
         }
 
         return R;
+    }
+
+    protected int getWidthForCombSize(int combSize)
+    {
+        return combSize > 257 ? 6 : 5;
     }
 }
