@@ -111,6 +111,8 @@ public abstract class ECCurve
 
     protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression);
 
+    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression);
+
     protected ECMultiplier createDefaultMultiplier()
     {
         return new WNafL2RMultiplier();
@@ -461,6 +463,11 @@ public abstract class ECCurve
         protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
             return new ECPoint.Fp(this, x, y, withCompression);
+        }
+
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+        {
+            return new ECPoint.Fp(this, x, y, zs, withCompression);
         }
 
         public ECPoint importPoint(ECPoint p)
@@ -822,6 +829,11 @@ public abstract class ECCurve
         protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
             return new ECPoint.F2m(this, x, y, withCompression);
+        }
+
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+        {
+            return new ECPoint.F2m(this, x, y, zs, withCompression);
         }
 
         public ECPoint getInfinity()
