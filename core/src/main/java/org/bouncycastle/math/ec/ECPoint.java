@@ -284,6 +284,20 @@ public abstract class ECPoint
         return this.withCompression;
     }
 
+    public ECPoint scaleX(ECFieldElement scale)
+    {
+        return isInfinity()
+            ?   this
+            :   getCurve().createRawPoint(getRawXCoord().multiply(scale), getRawYCoord(), getRawZCoords(), this.withCompression);
+    }
+
+    public ECPoint scaleY(ECFieldElement scale)
+    {
+        return isInfinity()
+            ?   this
+            :   getCurve().createRawPoint(getRawXCoord(), getRawYCoord().multiply(scale), getRawZCoords(), this.withCompression);
+    }
+
     public boolean equals(ECPoint other)
     {
         if (null == other)
@@ -1331,6 +1345,74 @@ public abstract class ECPoint
             default:
             {
                 return y;
+            }
+            }
+        }
+
+        public ECPoint scaleX(ECFieldElement scale)
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            int coord = this.getCurveCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            {
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement X = getRawXCoord(), L = getRawYCoord();
+
+                ECFieldElement X2 = X.multiply(scale);
+                ECFieldElement L2 = L.add(X).divide(scale).add(X2);
+
+                return getCurve().createRawPoint(X, L2, getRawZCoords(), this.withCompression);
+            }
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement X = getRawXCoord(), L = getRawYCoord(), Z = getRawZCoords()[0];
+
+                // We scale the Z coordinate also, to avoid an inversion
+                ECFieldElement X2 = X.multiply(scale.square());
+                ECFieldElement L2 = L.add(X).add(X2);
+                ECFieldElement Z2 = Z.multiply(scale);
+
+                return getCurve().createRawPoint(X2, L2, new ECFieldElement[]{ Z2 }, this.withCompression);
+            }
+            default:
+            {
+                return super.scaleX(scale);
+            }
+            }
+        }
+
+        public ECPoint scaleY(ECFieldElement scale)
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            int coord = this.getCurveCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                ECFieldElement X = getRawXCoord(), L = getRawYCoord();
+
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement L2 = L.add(X).multiply(scale).add(X);
+
+                return getCurve().createRawPoint(X, L2, getRawZCoords(), this.withCompression);
+            }
+            default:
+            {
+                return super.scaleY(scale);
             }
             }
         }
