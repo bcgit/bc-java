@@ -26,7 +26,7 @@ import org.bouncycastle.util.Times;
 public class ECPointPerformanceTest extends TestCase
 {
     static final int MULTS_PER_ROUND = 100;
-    static final int PRE_ROUNDS = 1;
+    static final int PRE_ROUNDS = 2;
     static final int NUM_ROUNDS = 10;
 
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
@@ -108,10 +108,13 @@ public class ECPointPerformanceTest extends TestCase
             {
                 BigInteger k = ks[ki];
                 p = g.multiply(k);
+                if ((ki & 1) != 0)
+                {
+                    g = p;
+                }
                 if (++ki == ks.length)
                 {
                     ki = 0;
-                    g = p;
                 }
             }
         }
@@ -126,10 +129,13 @@ public class ECPointPerformanceTest extends TestCase
             {
                 BigInteger k = ks[ki];
                 p = g.multiply(k);
+                if ((ki & 1) != 0)
+                {
+                    g = p;
+                }
                 if (++ki == ks.length)
                 {
                     ki = 0;
-                    g = p;
                 }
             }
 
