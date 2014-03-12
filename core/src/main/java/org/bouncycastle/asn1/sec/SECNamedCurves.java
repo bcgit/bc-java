@@ -10,6 +10,8 @@ import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.endo.GLVTypeBEndomorphism;
+import org.bouncycastle.math.ec.endo.GLVTypeBParameters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -18,6 +20,11 @@ public class SECNamedCurves
     private static ECCurve configureCurve(ECCurve curve)
     {
         return curve;
+    }
+
+    private static ECCurve configureCurveGLV(ECCurve c, GLVTypeBParameters p)
+    {
+        return c.configure().setEndomorphism(new GLVTypeBEndomorphism(c, p)).create();
     }
 
     private static BigInteger fromHex(
@@ -145,7 +152,20 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000001B8FA16DFAB9ACA16B6B3");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            GLVTypeBParameters glv = new GLVTypeBParameters(
+                new BigInteger("9ba48cba5ebcb9b6bd33b92830b2a2e0e192f10a", 16),
+                new BigInteger("c39c6c3b3a36d7701b9c71a1f5804ae5d0003f4", 16),
+                new BigInteger[]{
+                    new BigInteger("9162fbe73984472a0a9e", 16),
+                    new BigInteger("-96341f1138933bc2f505", 16) },
+                new BigInteger[]{
+                    new BigInteger("127971af8721782ecffa3", 16),
+                    new BigInteger("9162fbe73984472a0a9e", 16) },
+                new BigInteger("48b17df39cc22395054e8", 16),
+                new BigInteger("4b1a0f889c499de17a820", 16),
+                163);
+
+            ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
 //            ECPoint G = curve.decodePoint(Hex.decode("02"
 //                + "3B4C382CE37AA192A4019E763036F4F5DD4D7EBB"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -223,7 +243,20 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFE26F2FC170F69466A74DEFD8D");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            GLVTypeBParameters glv = new GLVTypeBParameters(
+                new BigInteger("bb85691939b869c1d087f601554b96b80cb4f55b35f433c2", 16),
+                new BigInteger("3d84f26c12238d7b4f3d516613c1759033b1a5800175d0b1", 16),
+                new BigInteger[]{
+                    new BigInteger("71169be7330b3038edb025f1", 16),
+                    new BigInteger("-b3fb3400dec5c4adceb8655c", 16) },
+                new BigInteger[]{
+                    new BigInteger("12511cfe811d0f4e6bc688b4d", 16),
+                    new BigInteger("71169be7330b3038edb025f1", 16) },
+                new BigInteger("1c45a6f9ccc2cc0e3b6c097c7", 16),
+                new BigInteger("2cfecd0037b1712b73ae19575", 16),
+                194);
+
+            ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "DB4FF10EC057E9AE26B07D0280B7F4341DA5D1B1EAE06C7D"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -275,7 +308,20 @@ public class SECNamedCurves
             BigInteger n = fromHex("010000000000000000000000000001DCE8D2EC6184CAF0A971769FB1F7");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            GLVTypeBParameters glv = new GLVTypeBParameters(
+                new BigInteger("fe0e87005b4e83761908c5131d552a850b3f58b749c37cf5b84d6768", 16),
+                new BigInteger("60dcd2104c4cbc0be6eeefc2bdd610739ec34e317f9b33046c9e4788", 16),
+                new BigInteger[]{
+                    new BigInteger("6b8cf07d4ca75c88957d9d670591", 16),
+                    new BigInteger("-b8adf1378a6eb73409fa6c9c637d", 16) },
+                new BigInteger[]{
+                    new BigInteger("1243ae1b4d71613bc9f780a03690e", 16),
+                    new BigInteger("6b8cf07d4ca75c88957d9d670591", 16) },
+                new BigInteger("35c6783ea653ae444abeceb382c82", 16),
+                new BigInteger("5c56f89bc5375b9a04fd364e31bdd", 16),
+                227);
+
+            ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
             //ECPoint G = curve.decodePoint(Hex.decode("03"
             //+ "A1455B334DF099DF30FC28A169A467E9E47075A90F7E650EB6B7A45C"));
             ECPoint G = curve.decodePoint(Hex.decode("04"
@@ -327,7 +373,20 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            GLVTypeBParameters glv = new GLVTypeBParameters(
+                new BigInteger("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee", 16),
+                new BigInteger("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72", 16),
+                new BigInteger[]{
+                    new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16),
+                    new BigInteger("-e4437ed6010e88286f547fa90abfe4c3", 16) },
+                new BigInteger[]{
+                    new BigInteger("114ca50f7a8e2f3f657c1108d9d44cfd8", 16),
+                    new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16) },
+                new BigInteger("c21b48869f51af37a1b243924a13ac55", 16),
+                new BigInteger("3910dfb58043a20a1bd51fea42aff9311", 16),
+                258);
+
+            ECCurve curve = configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
             //ECPoint G = curve.decodePoint(Hex.decode("02"
             //+ "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"));
             ECPoint G = curve.decodePoint(Hex.decode("04"

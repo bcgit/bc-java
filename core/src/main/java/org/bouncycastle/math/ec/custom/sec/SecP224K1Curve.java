@@ -51,23 +51,6 @@ public class SecP224K1Curve extends ECCurve
         }
     }
 
-    protected ECMultiplier createDefaultMultiplier()
-    {
-        GLVTypeBParameters p = new GLVTypeBParameters(
-            fromBigInteger(new BigInteger("fe0e87005b4e83761908c5131d552a850b3f58b749c37cf5b84d6768", 16)),
-            new BigInteger("60dcd2104c4cbc0be6eeefc2bdd610739ec34e317f9b33046c9e4788", 16),
-            new BigInteger[]{
-                new BigInteger("6b8cf07d4ca75c88957d9d670591", 16),
-                new BigInteger("-b8adf1378a6eb73409fa6c9c637d", 16) },
-            new BigInteger[]{
-                new BigInteger("1243ae1b4d71613bc9f780a03690e", 16),
-                new BigInteger("6b8cf07d4ca75c88957d9d670591", 16) },
-            new BigInteger("35c6783ea653ae444abeceb382c82", 16),
-            new BigInteger("5c56f89bc5375b9a04fd364e31bdd", 16),
-            227);
-        return new GLVMultiplier(this, new GLVTypeBEndomorphism(p));
-    }
-
     public BigInteger getQ()
     {
         return q;

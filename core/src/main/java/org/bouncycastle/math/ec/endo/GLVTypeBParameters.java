@@ -2,17 +2,15 @@ package org.bouncycastle.math.ec.endo;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.ECFieldElement;
-
 public class GLVTypeBParameters
 {
-    protected final ECFieldElement beta;
+    protected final BigInteger beta;
     protected final BigInteger lambda;
     protected final BigInteger[] v1, v2;
     protected final BigInteger g1, g2;
     protected final int bits;
 
-    public GLVTypeBParameters(ECFieldElement beta, BigInteger lambda, BigInteger[] v1, BigInteger[] v2, BigInteger g1,
+    public GLVTypeBParameters(BigInteger beta, BigInteger lambda, BigInteger[] v1, BigInteger[] v2, BigInteger g1,
         BigInteger g2, int bits)
     {
         this.beta = beta;
@@ -24,7 +22,7 @@ public class GLVTypeBParameters
         this.bits = bits;
     }
 
-    public ECFieldElement getBeta()
+    public BigInteger getBeta()
     {
         return beta;
     }

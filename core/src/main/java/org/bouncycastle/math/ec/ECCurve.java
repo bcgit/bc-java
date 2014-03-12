@@ -32,17 +32,25 @@ public abstract class ECCurve
     public class Config
     {
         protected int coord;
+        protected ECEndomorphism endomorphism;
         protected ECMultiplier multiplier;
 
-        Config(int coord, ECMultiplier multiplier)
+        Config(int coord, ECEndomorphism endomorphism, ECMultiplier multiplier)
         {
             this.coord = coord;
+            this.endomorphism = endomorphism;
             this.multiplier = multiplier;
         }
 
         public Config setCoordinateSystem(int coord)
         {
             this.coord = coord;
+            return this;
+        }
+
+        public Config setEndomorphism(ECEndomorphism endomorphism)
+        {
+            this.endomorphism = endomorphism;
             return this;
         }
 
@@ -66,6 +74,7 @@ public abstract class ECCurve
             }
 
             c.coord = coord;
+            c.endomorphism = endomorphism;
             c.multiplier = multiplier;
 
             return c;
@@ -77,6 +86,7 @@ public abstract class ECCurve
     protected BigInteger order, cofactor;
 
     protected int coord = COORD_AFFINE;
+    protected ECEndomorphism endomorphism = null;
     protected ECMultiplier multiplier = null;
 
     protected ECCurve(FiniteField field)
@@ -90,7 +100,7 @@ public abstract class ECCurve
 
     public Config configure()
     {
-        return new Config(this.coord, this.multiplier);
+        return new Config(this.coord, this.endomorphism, this.multiplier);
     }
 
     public ECPoint createPoint(BigInteger x, BigInteger y)
@@ -115,6 +125,11 @@ public abstract class ECCurve
 
     protected ECMultiplier createDefaultMultiplier()
     {
+        if (endomorphism instanceof GLVEndomorphism)
+        {
+            return new GLVMultiplier(this, (GLVEndomorphism)endomorphism);
+        }
+
         return new WNafL2RMultiplier();
     }
 
@@ -258,6 +273,11 @@ public abstract class ECCurve
     }
 
     protected abstract ECPoint decompressPoint(int yTilde, BigInteger X1);
+
+    public synchronized ECEndomorphism getEndomorphism()
+    {
+        return endomorphism;
+    }
 
     /**
      * Sets the default <code>ECMultiplier</code>, unless already set. 

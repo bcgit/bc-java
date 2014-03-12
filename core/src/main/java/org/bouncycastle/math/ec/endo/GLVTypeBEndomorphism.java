@@ -3,19 +3,22 @@ package org.bouncycastle.math.ec.endo;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECConstants;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPointMap;
 import org.bouncycastle.math.ec.GLVEndomorphism;
 import org.bouncycastle.math.ec.ScaleXPointMap;
 
 public class GLVTypeBEndomorphism implements GLVEndomorphism
 {
-    private final GLVTypeBParameters parameters;
-    private final ECPointMap pointMap;
+    protected final ECCurve curve;
+    protected final GLVTypeBParameters parameters;
+    protected final ECPointMap pointMap;
 
-    public GLVTypeBEndomorphism(GLVTypeBParameters parameters)
+    public GLVTypeBEndomorphism(ECCurve curve, GLVTypeBParameters parameters)
     {
+        this.curve = curve;
         this.parameters = parameters;
-        this.pointMap = new ScaleXPointMap(parameters.getBeta());
+        this.pointMap = new ScaleXPointMap(curve.fromBigInteger(parameters.getBeta()));
     }
 
     public BigInteger[] decomposeScalar(BigInteger k)
