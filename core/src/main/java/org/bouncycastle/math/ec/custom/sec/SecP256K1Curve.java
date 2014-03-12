@@ -5,7 +5,11 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.GLVMultiplier;
+import org.bouncycastle.math.ec.endo.GLVTypeBEndomorphism;
+import org.bouncycastle.math.ec.endo.GLVTypeBParameters;
 import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -45,6 +49,23 @@ public class SecP256K1Curve extends ECCurve
         default:
             return false;
         }
+    }
+
+    protected ECMultiplier createDefaultMultiplier()
+    {
+        GLVTypeBParameters p = new GLVTypeBParameters(
+            fromBigInteger(new BigInteger("7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee", 16)),
+            new BigInteger("5363ad4cc05c30e0a5261c028812645a122e22ea20816678df02967c1b23bd72", 16),
+            new BigInteger[]{
+                new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16),
+                new BigInteger("-e4437ed6010e88286f547fa90abfe4c3", 16) },
+            new BigInteger[]{
+                new BigInteger("114ca50f7a8e2f3f657c1108d9d44cfd8", 16),
+                new BigInteger("3086d221a7d46bcde86c90e49284eb15", 16) },
+            new BigInteger("c21b48869f51af37a1b243924a13ac55", 16),
+            new BigInteger("3910dfb58043a20a1bd51fea42aff9311", 16),
+            258);
+        return new GLVMultiplier(this, new GLVTypeBEndomorphism(p));
     }
 
     public BigInteger getQ()
