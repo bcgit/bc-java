@@ -178,23 +178,58 @@ public class ECAlgorithms
     static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {
+        boolean negK = k.signum() < 0, negL = l.signum() < 0;
+
+        k = k.abs();
+        l = l.abs();
+
         int widthP = Math.max(2, Math.min(16, WNafUtil.getWindowSize(k.bitLength())));
         int widthQ = Math.max(2, Math.min(16, WNafUtil.getWindowSize(l.bitLength())));
 
         WNafPreCompInfo infoP = WNafUtil.precompute(P, widthP, true);
         WNafPreCompInfo infoQ = WNafUtil.precompute(Q, widthQ, true);
 
-        ECPoint[] preCompP = infoP.getPreComp();
-        ECPoint[] preCompQ = infoQ.getPreComp();
-        ECPoint[] preCompNegP = infoP.getPreCompNeg();
-        ECPoint[] preCompNegQ = infoQ.getPreCompNeg();
+        ECPoint[] preCompP = negK ? infoP.getPreCompNeg() : infoP.getPreComp();
+        ECPoint[] preCompQ = negL ? infoQ.getPreCompNeg() : infoQ.getPreComp();
+        ECPoint[] preCompNegP = negK ? infoP.getPreComp() : infoP.getPreCompNeg();
+        ECPoint[] preCompNegQ = negL ? infoQ.getPreComp() : infoQ.getPreCompNeg();
 
         byte[] wnafP = WNafUtil.generateWindowNaf(widthP, k);
         byte[] wnafQ = WNafUtil.generateWindowNaf(widthQ, l);
 
+        return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
+    }
+
+    static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k, ECPointMap mapQ, BigInteger l)
+    {
+        boolean negK = k.signum() < 0, negL = l.signum() < 0;
+
+        k = k.abs();
+        l = l.abs();
+
+        int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(Math.max(k.bitLength(), l.bitLength()))));
+
+        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, width, true, mapQ);
+        WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
+        WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
+
+        ECPoint[] preCompP = negK ? infoP.getPreCompNeg() : infoP.getPreComp();
+        ECPoint[] preCompQ = negL ? infoQ.getPreCompNeg() : infoQ.getPreComp();
+        ECPoint[] preCompNegP = negK ? infoP.getPreComp() : infoP.getPreCompNeg();
+        ECPoint[] preCompNegQ = negL ? infoQ.getPreComp() : infoQ.getPreCompNeg();
+
+        byte[] wnafP = WNafUtil.generateWindowNaf(width, k);
+        byte[] wnafQ = WNafUtil.generateWindowNaf(width, l);
+
+        return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
+    }
+
+    private static ECPoint implShamirsTrickWNaf(ECPoint[] preCompP, ECPoint[] preCompNegP, byte[] wnafP,
+        ECPoint[] preCompQ, ECPoint[] preCompNegQ, byte[] wnafQ)
+    {
         int len = Math.max(wnafP.length, wnafQ.length);
 
-        ECCurve curve = P.getCurve();
+        ECCurve curve = preCompP[0].getCurve();
         ECPoint infinity = curve.getInfinity();
 
         ECPoint R = infinity;
