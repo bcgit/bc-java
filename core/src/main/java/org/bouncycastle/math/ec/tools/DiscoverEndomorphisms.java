@@ -49,10 +49,6 @@ public class DiscoverEndomorphisms
                 System.out.println("Curve '" + curveName + "' has a 'GLV Type B' endomorphism with these parameters: ");
                 printGLVTypeBParameters(x9);
             }
-            else
-            {
-                System.out.println("No endomorphisms discovered for: " + curveName);
-            }
         }
     }
 
