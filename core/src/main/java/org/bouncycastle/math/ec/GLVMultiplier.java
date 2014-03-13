@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.endo.GLVEndomorphism;
+
 public class GLVMultiplier extends AbstractECMultiplier
 {
     protected final ECCurve curve;
