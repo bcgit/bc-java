@@ -200,7 +200,7 @@ public class ECAlgorithms
         return implShamirsTrickWNaf(preCompP, preCompNegP, wnafP, preCompQ, preCompNegQ, wnafQ);
     }
 
-    static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k, ECPointMap mapQ, BigInteger l)
+    static ECPoint implShamirsTrickWNaf(ECPoint P, BigInteger k, ECPointMap pointMapQ, BigInteger l)
     {
         boolean negK = k.signum() < 0, negL = l.signum() < 0;
 
@@ -209,7 +209,7 @@ public class ECAlgorithms
 
         int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(Math.max(k.bitLength(), l.bitLength()))));
 
-        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, width, true, mapQ);
+        ECPoint Q = WNafUtil.mapPointWithPrecomp(P, width, true, pointMapQ);
         WNafPreCompInfo infoP = WNafUtil.getWNafPreCompInfo(P);
         WNafPreCompInfo infoQ = WNafUtil.getWNafPreCompInfo(Q);
 
