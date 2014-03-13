@@ -21,7 +21,7 @@ public class SipHash
     protected final int c, d;
 
     protected long k0, k1;
-    protected long v0, v1, v2, v3, v4;
+    protected long v0, v1, v2, v3;
 
     protected long m = 0;
     protected int wordPos = 0;
@@ -117,8 +117,7 @@ public class SipHash
             for (; i < fullWords; i += 8)
             {
                 long n = Pack.littleEndianToLong(input, offset + i);
-                m >>>= 64 - bits;
-                m |= n << bits;
+                m = (n << bits) | (m >>> -bits);
                 processMessageWord();
                 m = n;
             }
@@ -139,7 +138,9 @@ public class SipHash
     public long doFinal()
         throws DataLengthException, IllegalStateException
     {
-        m >>>= ((8 - wordPos) << 3);
+        // NOTE: 2 distinct shifts to avoid "64-bit shift" when wordPos == 0
+        m >>>= ((7 - wordPos) << 3);
+        m >>>= 8;
         m |= (((wordCount << 3) + wordPos) & 0xffL) << 56;
 
         processMessageWord();
@@ -185,27 +186,31 @@ public class SipHash
 
     protected void applySipRounds(int n)
     {
+        long r0 = v0, r1 = v1, r2 = v2, r3 = v3;
+
         for (int r = 0; r < n; ++r)
         {
-            v0 += v1;
-            v2 += v3;
-            v1 = rotateLeft(v1, 13);
-            v3 = rotateLeft(v3, 16);
-            v1 ^= v0;
-            v3 ^= v2;
-            v0 = rotateLeft(v0, 32);
-            v2 += v1;
-            v0 += v3;
-            v1 = rotateLeft(v1, 17);
-            v3 = rotateLeft(v3, 21);
-            v1 ^= v2;
-            v3 ^= v0;
-            v2 = rotateLeft(v2, 32);
+            r0 += r1;
+            r2 += r3;
+            r1 = rotateLeft(r1, 13);
+            r3 = rotateLeft(r3, 16);
+            r1 ^= r0;
+            r3 ^= r2;
+            r0 = rotateLeft(r0, 32);
+            r2 += r1;
+            r0 += r3;
+            r1 = rotateLeft(r1, 17);
+            r3 = rotateLeft(r3, 21);
+            r1 ^= r2;
+            r3 ^= r0;
+            r2 = rotateLeft(r2, 32);
         }
+
+        v0 = r0; v1 = r1; v2 = r2; v3 = r3;
     }
 
     protected static long rotateLeft(long x, int n)
     {
-        return (x << n) | (x >>> (64 - n));
+        return (x << n) | (x >>> -n);
     }
 }
