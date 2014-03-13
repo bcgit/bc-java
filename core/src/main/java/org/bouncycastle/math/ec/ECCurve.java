@@ -276,7 +276,7 @@ public abstract class ECCurve
 
     protected abstract ECPoint decompressPoint(int yTilde, BigInteger X1);
 
-    public synchronized ECEndomorphism getEndomorphism()
+    public ECEndomorphism getEndomorphism()
     {
         return endomorphism;
     }
