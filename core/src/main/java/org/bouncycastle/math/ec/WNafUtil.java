@@ -329,18 +329,19 @@ public abstract class WNafUtil
         return w + 2;
     }
 
-    public static ECPoint mapPointWithPrecomp(ECPoint p, int width, boolean includeNegated, ECPointMap map)
+    public static ECPoint mapPointWithPrecomp(ECPoint p, int width, boolean includeNegated,
+        ECPointMap pointMap)
     {
         ECCurve c = p.getCurve();
         WNafPreCompInfo wnafPreCompP = precompute(p, width, includeNegated);
 
-        ECPoint q = map.map(p);
+        ECPoint q = pointMap.map(p);
         WNafPreCompInfo wnafPreCompQ = getWNafPreCompInfo(c.getPreCompInfo(q, PRECOMP_NAME));
 
         ECPoint twiceP = wnafPreCompP.getTwice();
         if (twiceP != null)
         {
-            ECPoint twiceQ = map.map(twiceP);
+            ECPoint twiceQ = pointMap.map(twiceP);
             wnafPreCompQ.setTwice(twiceQ);
         }
 
@@ -348,7 +349,7 @@ public abstract class WNafUtil
         ECPoint[] preCompQ = new ECPoint[preCompP.length];
         for (int i = 0; i < preCompP.length; ++i)
         {
-            preCompQ[i] = map.map(preCompP[i]);
+            preCompQ[i] = pointMap.map(preCompP[i]);
         }
         wnafPreCompQ.setPreComp(preCompQ);
 
