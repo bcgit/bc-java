@@ -4,6 +4,8 @@ import java.math.BigInteger;
 import java.util.Hashtable;
 import java.util.Random;
 
+import org.bouncycastle.math.ec.endo.ECEndomorphism;
+import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.BigIntegers;

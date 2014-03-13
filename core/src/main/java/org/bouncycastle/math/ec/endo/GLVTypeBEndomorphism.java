@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPointMap;
-import org.bouncycastle.math.ec.GLVEndomorphism;
 import org.bouncycastle.math.ec.ScaleXPointMap;
 
 public class GLVTypeBEndomorphism implements GLVEndomorphism
