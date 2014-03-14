@@ -748,8 +748,9 @@ public abstract class Nat224
         long x_0 = x[0] & M;
         long zz_1;
 
+        int c = 0, w;
         {
-            int c = 0, i = 6, j = 14;
+            int i = 6, j = 14;
             do
             {
                 long xVal = (x[i--] & M);
@@ -763,7 +764,8 @@ public abstract class Nat224
             {
                 long p = x_0 * x_0;
                 zz_1 = ((c << 31) & M) | (p >>> 33);
-                zz[0] = (int)(p >>> 1);
+                zz[0] = (int)p;
+                c = (int)(p >>> 32) & 1;
             }
         }
 
@@ -772,7 +774,9 @@ public abstract class Nat224
 
         {
             zz_1 += x_1 * x_0;
-            zz[1] = (int)zz_1;
+            w = (int)zz_1;
+            zz[1] = (w << 1) | c;
+            c = w >>> 31;
             zz_2 += zz_1 >>> 32;
         }
 
@@ -781,7 +785,9 @@ public abstract class Nat224
         long zz_4 = zz[4] & M;
         {
             zz_2 += x_2 * x_0;
-            zz[2] = (int)zz_2;
+            w = (int)zz_2;
+            zz[2] = (w << 1) | c;
+            c = w >>> 31;
             zz_3 += (zz_2 >>> 32) + x_2 * x_1;
             zz_4 += zz_3 >>> 32;
             zz_3 &= M;
@@ -792,7 +798,9 @@ public abstract class Nat224
         long zz_6 = zz[6] & M;
         {
             zz_3 += x_3 * x_0;
-            zz[3] = (int)zz_3;
+            w = (int)zz_3;
+            zz[3] = (w << 1) | c;
+            c = w >>> 31;
             zz_4 += (zz_3 >>> 32) + x_3 * x_1;
             zz_5 += (zz_4 >>> 32) + x_3 * x_2;
             zz_4 &= M;
@@ -805,7 +813,9 @@ public abstract class Nat224
         long zz_8 = zz[8] & M;
         {
             zz_4 += x_4 * x_0;
-            zz[4] = (int)zz_4;
+            w = (int)zz_4;
+            zz[4] = (w << 1) | c;
+            c = w >>> 31;
             zz_5 += (zz_4 >>> 32) + x_4 * x_1;
             zz_6 += (zz_5 >>> 32) + x_4 * x_2;
             zz_5 &= M;
@@ -820,7 +830,9 @@ public abstract class Nat224
         long zz_10 = zz[10] & M;
         {
             zz_5 += x_5 * x_0;
-            zz[5] = (int)zz_5;
+            w = (int)zz_5;
+            zz[5] = (w << 1) | c;
+            c = w >>> 31;
             zz_6 += (zz_5 >>> 32) + x_5 * x_1;
             zz_7 += (zz_6 >>> 32) + x_5 * x_2;
             zz_6 &= M;
@@ -837,7 +849,9 @@ public abstract class Nat224
         long zz_12 = zz[12] & M;
         {
             zz_6 += x_6 * x_0;
-            zz[6] = (int)zz_6;
+            w = (int)zz_6;
+            zz[6] = (w << 1) | c;
+            c = w >>> 31;
             zz_7 += (zz_6 >>> 32) + x_6 * x_1;
             zz_8 += (zz_7 >>> 32) + x_6 * x_2;
             zz_9 += (zz_8 >>> 32) + x_6 * x_3;
@@ -846,15 +860,26 @@ public abstract class Nat224
             zz_12 += zz_11 >>> 32;
         }
 
-        zz[7] = (int)zz_7;
-        zz[8] = (int)zz_8;
-        zz[9] = (int)zz_9;
-        zz[10] = (int)zz_10;
-        zz[11] = (int)zz_11;
-        zz[12] = (int)zz_12;
-        zz[13] += (int)(zz_12 >>> 32);
-
-        Nat.shiftUpBit(14, zz, (int)x_0 << 31);
+        w = (int)zz_7;
+        zz[7] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_8;
+        zz[8] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_9;
+        zz[9] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_10;
+        zz[10] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_11;
+        zz[11] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_12;
+        zz[12] = (w << 1) | c;
+        c = w >>> 31;
+        w = zz[13] + (int)(zz_12 >> 32);
+        zz[13] = (w << 1) | c;
     }
 
     public static void square(int[] x, int xOff, int[] zz, int zzOff)
@@ -862,8 +887,9 @@ public abstract class Nat224
         long x_0 = x[xOff + 0] & M;
         long zz_1;
 
+        int c = 0, w;
         {
-            int c = 0, i = 6, j = 14;
+            int i = 6, j = 14;
             do
             {
                 long xVal = (x[xOff + i--] & M);
@@ -877,7 +903,8 @@ public abstract class Nat224
             {
                 long p = x_0 * x_0;
                 zz_1 = ((c << 31) & M) | (p >>> 33);
-                zz[zzOff + 0] = (int)(p >>> 1);
+                zz[zzOff + 0] = (int)p;
+                c = (int)(p >>> 32) & 1;
             }
         }
 
@@ -886,7 +913,9 @@ public abstract class Nat224
 
         {
             zz_1 += x_1 * x_0;
-            zz[zzOff + 1] = (int)zz_1;
+            w = (int)zz_1;
+            zz[zzOff + 1] = (w << 1) | c;
+            c = w >>> 31;
             zz_2 += zz_1 >>> 32;
         }
 
@@ -895,7 +924,9 @@ public abstract class Nat224
         long zz_4 = zz[zzOff + 4] & M;
         {
             zz_2 += x_2 * x_0;
-            zz[zzOff + 2] = (int)zz_2;
+            w = (int)zz_2;
+            zz[zzOff + 2] = (w << 1) | c;
+            c = w >>> 31;
             zz_3 += (zz_2 >>> 32) + x_2 * x_1;
             zz_4 += zz_3 >>> 32;
             zz_3 &= M;
@@ -906,7 +937,9 @@ public abstract class Nat224
         long zz_6 = zz[zzOff + 6] & M;
         {
             zz_3 += x_3 * x_0;
-            zz[zzOff + 3] = (int)zz_3;
+            w = (int)zz_3;
+            zz[zzOff + 3] = (w << 1) | c;
+            c = w >>> 31;
             zz_4 += (zz_3 >>> 32) + x_3 * x_1;
             zz_5 += (zz_4 >>> 32) + x_3 * x_2;
             zz_4 &= M;
@@ -919,7 +952,9 @@ public abstract class Nat224
         long zz_8 = zz[zzOff + 8] & M;
         {
             zz_4 += x_4 * x_0;
-            zz[zzOff + 4] = (int)zz_4;
+            w = (int)zz_4;
+            zz[zzOff + 4] = (w << 1) | c;
+            c = w >>> 31;
             zz_5 += (zz_4 >>> 32) + x_4 * x_1;
             zz_6 += (zz_5 >>> 32) + x_4 * x_2;
             zz_5 &= M;
@@ -934,7 +969,9 @@ public abstract class Nat224
         long zz_10 = zz[zzOff + 10] & M;
         {
             zz_5 += x_5 * x_0;
-            zz[zzOff + 5] = (int)zz_5;
+            w = (int)zz_5;
+            zz[zzOff + 5] = (w << 1) | c;
+            c = w >>> 31;
             zz_6 += (zz_5 >>> 32) + x_5 * x_1;
             zz_7 += (zz_6 >>> 32) + x_5 * x_2;
             zz_6 &= M;
@@ -951,7 +988,9 @@ public abstract class Nat224
         long zz_12 = zz[zzOff + 12] & M;
         {
             zz_6 += x_6 * x_0;
-            zz[zzOff + 6] = (int)zz_6;
+            w = (int)zz_6;
+            zz[zzOff + 6] = (w << 1) | c;
+            c = w >>> 31;
             zz_7 += (zz_6 >>> 32) + x_6 * x_1;
             zz_8 += (zz_7 >>> 32) + x_6 * x_2;
             zz_9 += (zz_8 >>> 32) + x_6 * x_3;
@@ -960,15 +999,26 @@ public abstract class Nat224
             zz_12 += zz_11 >>> 32;
         }
 
-        zz[zzOff + 7] = (int)zz_7;
-        zz[zzOff + 8] = (int)zz_8;
-        zz[zzOff + 9] = (int)zz_9;
-        zz[zzOff + 10] = (int)zz_10;
-        zz[zzOff + 11] = (int)zz_11;
-        zz[zzOff + 12] = (int)zz_12;
-        zz[zzOff + 13] += (int)(zz_12 >>> 32);
-
-        Nat.shiftUpBit(14, zz, zzOff, (int)x_0 << 31);
+        w = (int)zz_7;
+        zz[zzOff + 7] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_8;
+        zz[zzOff + 8] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_9;
+        zz[zzOff + 9] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_10;
+        zz[zzOff + 10] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_11;
+        zz[zzOff + 11] = (w << 1) | c;
+        c = w >>> 31;
+        w = (int)zz_12;
+        zz[zzOff + 12] = (w << 1) | c;
+        c = w >>> 31;
+        w = zz[zzOff + 13] + (int)(zz_12 >> 32);
+        zz[zzOff + 13] = (w << 1) | c;
     }
 
     public static int sub(int[] x, int[] y, int[] z)
