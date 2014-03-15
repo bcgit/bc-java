@@ -173,8 +173,11 @@ public class ECPointPerformanceTest extends TestCase
 
     public void testMultiply() throws Exception
     {
-        Set oids = new HashSet();
         SortedSet names = new TreeSet(Collections.list(ECNamedCurveTable.getNames()));
+        names.addAll(Collections.list(CustomNamedCurves.getNames()));
+
+        Set oids = new HashSet();
+
         Iterator it = names.iterator();
         while (it.hasNext())
         {
