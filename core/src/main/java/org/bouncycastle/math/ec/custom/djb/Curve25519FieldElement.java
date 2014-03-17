@@ -141,7 +141,7 @@ public class Curve25519FieldElement extends ECFieldElement
          * { 251 1s } { 1 0s }
          * 
          * Therefore we need an addition chain containing 251 (the lengths of the repunits)
-         * We use: 1, 2, 3, 4, 7, 11, 15, 30, 60, 120, 131, 251
+         * We use: 1, 2, 3, 4, 7, 11, 15, 30, 60, 120, 131, [251]
          */
 
         int[] x1 = this.x;

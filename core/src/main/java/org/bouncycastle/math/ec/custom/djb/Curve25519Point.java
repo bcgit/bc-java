@@ -253,15 +253,7 @@ public class Curve25519Point extends ECPoint
             return this;
         }
 
-        ECCurve curve = this.getCurve();
-        int coord = curve.getCoordinateSystem();
-
-        if (ECCurve.COORD_AFFINE != coord)
-        {
-            return new Curve25519Point(curve, this.x, this.y.negate(), this.zs, this.withCompression);
-        }
-
-        return new Curve25519Point(curve, this.x, this.y.negate(), this.withCompression);
+        return new Curve25519Point(this.getCurve(), this.x, this.y.negate(), this.zs, this.withCompression);
     }
 
     protected ECFieldElement calculateJacobianModifiedW(ECFieldElement Z, ECFieldElement ZSquared)

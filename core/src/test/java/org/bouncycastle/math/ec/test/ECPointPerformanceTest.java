@@ -183,10 +183,16 @@ public class ECPointPerformanceTest extends TestCase
         {
             String name = (String)it.next();
             ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(name);
-            if (oids.add(oid))
+            if (oid == null)
             {
-                randMult(name);
+                oid = CustomNamedCurves.getOID(name);
             }
+            if (oid != null && !oids.add(oid))
+            {
+                continue;
+            }
+
+            randMult(name);
         }
     }
 }
