@@ -245,6 +245,13 @@ public class CustomNamedCurves
         oidToCurve.put(oid, holder);
     }
 
+    static void defineCurveAlias(String alias, ASN1ObjectIdentifier oid)
+    {
+        alias = Strings.toLowerCase(alias);
+        nameToOID.put(alias, oid);
+        nameToCurve.put(alias, oidToCurve.get(oid));
+    }
+
     static
     {
         defineCurve("curve25519", curve25519);
@@ -258,16 +265,16 @@ public class CustomNamedCurves
         defineCurveWithOID("secp384r1", SECObjectIdentifiers.secp384r1, secp384r1);
         defineCurveWithOID("secp521r1", SECObjectIdentifiers.secp521r1, secp521r1);
 
-        nameToOID.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
-        nameToOID.put(Strings.toLowerCase("P-224"), SECObjectIdentifiers.secp224r1);
-        nameToOID.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
-        nameToOID.put(Strings.toLowerCase("P-384"), SECObjectIdentifiers.secp384r1);
-        nameToOID.put(Strings.toLowerCase("P-521"), SECObjectIdentifiers.secp521r1);
+        defineCurveAlias("P-192", SECObjectIdentifiers.secp192r1);
+        defineCurveAlias("P-224", SECObjectIdentifiers.secp224r1);
+        defineCurveAlias("P-256", SECObjectIdentifiers.secp256r1);
+        defineCurveAlias("P-384", SECObjectIdentifiers.secp384r1);
+        defineCurveAlias("P-521", SECObjectIdentifiers.secp521r1);
     }
 
     public static X9ECParameters getByName(String name)
     {
-        X9ECParametersHolder holder = (X9ECParametersHolder)nameToCurve.get(name);
+        X9ECParametersHolder holder = (X9ECParametersHolder)nameToCurve.get(Strings.toLowerCase(name));
         return holder == null ? null : holder.getParameters();
     }
 
