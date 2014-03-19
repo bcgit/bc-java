@@ -28,7 +28,12 @@ public class EC5Util
         while (e.hasMoreElements())
         {
             String name = (String)e.nextElement();
-            customCurves.put(ECNamedCurveTable.getByName(name).getCurve(), CustomNamedCurves.getByName(name).getCurve());
+
+            ECCurve curve = ECNamedCurveTable.getByName(name).getCurve();
+            if (curve != null)  // there may not be a regular curve, may just be a custom curve.
+            {
+                customCurves.put(curve, CustomNamedCurves.getByName(name).getCurve());
+            }
         }
     }
 
