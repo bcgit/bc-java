@@ -1,8 +1,9 @@
-package org.bouncycastle.math.ec.custom.sec;
+package org.bouncycastle.math.ec.custom.djb;
 
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.Nat;
+import org.bouncycastle.math.ec.custom.sec.Nat256;
 
 public class Curve25519Field
 {

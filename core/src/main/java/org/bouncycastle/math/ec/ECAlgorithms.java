@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.endo.ECEndomorphism;
+import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.PolynomialExtensionField;
 
@@ -47,6 +49,12 @@ public class ECAlgorithms
             imported[i] = importPoint(c, ps[i]);
         }
 
+        ECEndomorphism endomorphism = c.getEndomorphism();
+        if (endomorphism instanceof GLVEndomorphism)
+        {
+            return implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism);
+        }
+
         return implSumOfMultiplies(imported, ks);
     }
 
@@ -64,6 +72,12 @@ public class ECAlgorithms
             {
                 return P.multiply(a).add(Q.multiply(b));
             }
+        }
+
+        ECEndomorphism endomorphism = cp.getEndomorphism();
+        if (endomorphism instanceof GLVEndomorphism)
+        {
+            return implSumOfMultipliesGLV(new ECPoint[]{ P, Q }, new BigInteger[]{ a, b }, (GLVEndomorphism)endomorphism);
         }
 
         return implShamirsTrickWNaf(P, a, Q, b);
@@ -280,20 +294,90 @@ public class ECAlgorithms
     static ECPoint implSumOfMultiplies(ECPoint[] ps, BigInteger[] ks)
     {
         int count = ps.length;
-        int[] widths = new int[count];
+        boolean[] negs = new boolean[count];
         WNafPreCompInfo[] infos = new WNafPreCompInfo[count];
         byte[][] wnafs = new byte[count][];
 
-        int len = 0;
         for (int i = 0; i < count; ++i)
         {
-            widths[i] = Math.max(2, Math.min(16, WNafUtil.getWindowSize(ks[i].bitLength())));
-            infos[i] = WNafUtil.precompute(ps[i], widths[i], true);
-            wnafs[i] = WNafUtil.generateWindowNaf(widths[i], ks[i]);
+            BigInteger ki = ks[i]; negs[i] = ki.signum() < 0; ki = ki.abs();
+
+            int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(ki.bitLength())));
+            infos[i] = WNafUtil.precompute(ps[i], width, true);
+            wnafs[i] = WNafUtil.generateWindowNaf(width, ki);
+        }
+
+        return implSumOfMultiplies(negs, infos, wnafs);
+    }
+
+    static ECPoint implSumOfMultipliesGLV(ECPoint[] ps, BigInteger[] ks, GLVEndomorphism glvEndomorphism)
+    {
+        BigInteger n = ps[0].getCurve().getOrder();
+
+        int len = ps.length;
+
+        BigInteger[] abs = new BigInteger[len << 1];
+        for (int i = 0, j = 0; i < len; ++i)
+        {
+            BigInteger[] ab = glvEndomorphism.decomposeScalar(ks[i].mod(n));
+            abs[j++] = ab[0];
+            abs[j++] = ab[1];
+        }
+
+        ECPointMap pointMap = glvEndomorphism.getPointMap();
+        if (glvEndomorphism.hasEfficientPointMap())
+        {
+            return ECAlgorithms.implSumOfMultiplies(ps, pointMap, abs);
+        }
+
+        ECPoint[] pqs = new ECPoint[len << 1];
+        for (int i = 0, j = 0; i < len; ++i)
+        {
+            ECPoint p = ps[i], q = pointMap.map(p);
+            pqs[j++] = p;
+            pqs[j++] = q;
+        }
+        
+        return ECAlgorithms.implSumOfMultiplies(pqs, abs);
+
+    }
+
+    static ECPoint implSumOfMultiplies(ECPoint[] ps, ECPointMap pointMap, BigInteger[] ks)
+    {
+        int halfCount = ps.length, fullCount = halfCount << 1;
+
+        boolean[] negs = new boolean[fullCount];
+        WNafPreCompInfo[] infos = new WNafPreCompInfo[fullCount];
+        byte[][] wnafs = new byte[fullCount][];
+
+        for (int i = 0; i < halfCount; ++i)
+        {
+            int j0 = i << 1, j1 = j0 + 1;
+
+            BigInteger kj0 = ks[j0]; negs[j0] = kj0.signum() < 0; kj0 = kj0.abs();
+            BigInteger kj1 = ks[j1]; negs[j1] = kj1.signum() < 0; kj1 = kj1.abs();
+
+            int width = Math.max(2, Math.min(16, WNafUtil.getWindowSize(Math.max(kj0.bitLength(), kj1.bitLength()))));
+
+            ECPoint P = ps[i], Q = WNafUtil.mapPointWithPrecomp(P, width, true, pointMap);
+            infos[j0] = WNafUtil.getWNafPreCompInfo(P);
+            infos[j1] = WNafUtil.getWNafPreCompInfo(Q);
+            wnafs[j0] = WNafUtil.generateWindowNaf(width, kj0);
+            wnafs[j1] = WNafUtil.generateWindowNaf(width, kj1);
+        }
+
+        return implSumOfMultiplies(negs, infos, wnafs);
+    }
+
+    private static ECPoint implSumOfMultiplies(boolean[] negs, WNafPreCompInfo[] infos, byte[][] wnafs)
+    {
+        int len = 0, count = wnafs.length;
+        for (int i = 0; i < count; ++i)
+        {
             len = Math.max(len, wnafs[i].length);
         }
 
-        ECCurve curve = ps[0].getCurve();
+        ECCurve curve = infos[0].getPreComp()[0].getCurve();
         ECPoint infinity = curve.getInfinity();
 
         ECPoint R = infinity;
@@ -311,7 +395,7 @@ public class ECAlgorithms
                 {
                     int n = Math.abs(wi);
                     WNafPreCompInfo info = infos[j];
-                    ECPoint[] table = wi < 0 ? info.getPreCompNeg() : info.getPreComp();
+                    ECPoint[] table = (wi < 0 == negs[j]) ? info.getPreComp() : info.getPreCompNeg();
                     r = r.add(table[n >>> 1]);
                 }
             }

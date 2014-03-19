@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.djb.Curve25519;
 import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP192R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP224K1Curve;
@@ -34,6 +35,33 @@ public class CustomNamedCurves
     {
         return c.configure().setEndomorphism(new GLVTypeBEndomorphism(c, p)).create();
     }
+
+    /*
+     * curve25519
+     */
+    static X9ECParametersHolder curve25519 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = configureCurve(new Curve25519());
+
+            /*
+             * NOTE: Curve25519 was specified in Montgomery form. Rewriting in Weierstrass form
+             * involves substitution of variables, so the base-point x coordinate is 9 + (486662 / 3).
+             * 
+             * The Curve25519 paper doesn't say which of the two possible y values the base
+             * point has. The choice here is guided by language in the Ed25519 paper.
+             * 
+             * (The other possible y value is 5F51E65E475F794B1FE122D388B72EB36DC2B28192839E4DD6163A5D81312C14) 
+             */
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD245A"
+                + "20AE19A1B8A086B4E01EDD2C7748D14C923D4D7E6D7C61B229E9C5A27ECED3D9"));
+
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
 
     /*
      * secp192k1
@@ -199,39 +227,48 @@ public class CustomNamedCurves
         }
     };
 
-    static final Hashtable objIds = new Hashtable();
-    static final Hashtable curves = new Hashtable();
-    static final Hashtable names = new Hashtable();
+    static final Hashtable nameToCurve = new Hashtable();
+    static final Hashtable nameToOID = new Hashtable();
+    static final Hashtable oidToCurve = new Hashtable();
+    static final Hashtable oidToName = new Hashtable();
 
-    static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
+    static void defineCurve(String name, X9ECParametersHolder holder)
     {
-        objIds.put(name, oid);
-        names.put(oid, name);
-        curves.put(oid, holder);
+        nameToCurve.put(name, holder);
+    }
+
+    static void defineCurveWithOID(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
+    {
+        nameToCurve.put(name, holder);
+        nameToOID.put(name, oid);
+        oidToName.put(oid, name);
+        oidToCurve.put(oid, holder);
     }
 
     static
     {
-        defineCurve("secp192k1", SECObjectIdentifiers.secp192k1, secp192k1);
-        defineCurve("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
-        defineCurve("secp224k1", SECObjectIdentifiers.secp224k1, secp224k1);
-        defineCurve("secp224r1", SECObjectIdentifiers.secp224r1, secp224r1);
-        defineCurve("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
-        defineCurve("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
-        defineCurve("secp384r1", SECObjectIdentifiers.secp384r1, secp384r1);
-        defineCurve("secp521r1", SECObjectIdentifiers.secp521r1, secp521r1);
+        defineCurve("curve25519", curve25519);
 
-        objIds.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
-        objIds.put(Strings.toLowerCase("P-224"), SECObjectIdentifiers.secp224r1);
-        objIds.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
-        objIds.put(Strings.toLowerCase("P-384"), SECObjectIdentifiers.secp384r1);
-        objIds.put(Strings.toLowerCase("P-521"), SECObjectIdentifiers.secp521r1);
+        defineCurveWithOID("secp192k1", SECObjectIdentifiers.secp192k1, secp192k1);
+        defineCurveWithOID("secp192r1", SECObjectIdentifiers.secp192r1, secp192r1);
+        defineCurveWithOID("secp224k1", SECObjectIdentifiers.secp224k1, secp224k1);
+        defineCurveWithOID("secp224r1", SECObjectIdentifiers.secp224r1, secp224r1);
+        defineCurveWithOID("secp256k1", SECObjectIdentifiers.secp256k1, secp256k1);
+        defineCurveWithOID("secp256r1", SECObjectIdentifiers.secp256r1, secp256r1);
+        defineCurveWithOID("secp384r1", SECObjectIdentifiers.secp384r1, secp384r1);
+        defineCurveWithOID("secp521r1", SECObjectIdentifiers.secp521r1, secp521r1);
+
+        nameToOID.put(Strings.toLowerCase("P-192"), SECObjectIdentifiers.secp192r1);
+        nameToOID.put(Strings.toLowerCase("P-224"), SECObjectIdentifiers.secp224r1);
+        nameToOID.put(Strings.toLowerCase("P-256"), SECObjectIdentifiers.secp256r1);
+        nameToOID.put(Strings.toLowerCase("P-384"), SECObjectIdentifiers.secp384r1);
+        nameToOID.put(Strings.toLowerCase("P-521"), SECObjectIdentifiers.secp521r1);
     }
 
     public static X9ECParameters getByName(String name)
     {
-        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
-        return oid == null ? null : getByOID(oid);
+        X9ECParametersHolder holder = (X9ECParametersHolder)nameToCurve.get(name);
+        return holder == null ? null : holder.getParameters();
     }
 
     /**
@@ -243,7 +280,7 @@ public class CustomNamedCurves
      */
     public static X9ECParameters getByOID(ASN1ObjectIdentifier oid)
     {
-        X9ECParametersHolder holder = (X9ECParametersHolder)curves.get(oid);
+        X9ECParametersHolder holder = (X9ECParametersHolder)oidToCurve.get(oid);
         return holder == null ? null : holder.getParameters();
     }
 
@@ -255,7 +292,7 @@ public class CustomNamedCurves
      */
     public static ASN1ObjectIdentifier getOID(String name)
     {
-        return (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+        return (ASN1ObjectIdentifier)nameToOID.get(Strings.toLowerCase(name));
     }
 
     /**
@@ -263,7 +300,7 @@ public class CustomNamedCurves
      */
     public static String getName(ASN1ObjectIdentifier oid)
     {
-        return (String)names.get(oid);
+        return (String)oidToName.get(oid);
     }
 
     /**
@@ -271,6 +308,6 @@ public class CustomNamedCurves
      */
     public static Enumeration getNames()
     {
-        return objIds.keys();
+        return nameToCurve.keys();
     }
 }
