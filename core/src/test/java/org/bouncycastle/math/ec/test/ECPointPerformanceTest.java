@@ -25,8 +25,10 @@ import org.bouncycastle.util.Times;
  */
 public class ECPointPerformanceTest extends TestCase
 {
-    static final int MULTS_PER_ROUND = 100;
-    static final int PRE_ROUNDS = 2;
+    static final int MILLIS_PER_ROUND = 200;
+    static final int MILLIS_WARMUP = 1000;
+
+    static final int MULTS_PER_CHECK = 16;
     static final int NUM_ROUNDS = 10;
 
     private static String[] COORD_NAMES = new String[]{ "AFFINE", "HOMOGENEOUS", "JACOBIAN", "JACOBIAN-CHUDNOVSKY",
@@ -73,23 +75,28 @@ public class ECPointPerformanceTest extends TestCase
                     g = c.importPoint(G);
                 }
 
-                double avgDuration = randMult(random, g, n);
+                double avgRate = randMult(random, g, n);
                 String coordName = COORD_NAMES[coord];
                 StringBuffer sb = new StringBuffer();
                 sb.append("  ");
                 sb.append(coordName);
-                for (int j = coordName.length(); j < 30; ++j)
+                for (int j = sb.length(); j < 28; ++j)
                 {
                     sb.append(' ');
                 }
                 sb.append(": ");
-                sb.append(avgDuration);
-                sb.append("ms");
+                sb.append(avgRate);
+                sb.append(" mults/sec");
+                for (int j = sb.length(); j < 64; ++j)
+                {
+                    sb.append(' ');
+                }
+                sb.append('(');
+                sb.append(1000.0 / avgRate);
+                sb.append(" millis/mult)");
                 System.out.println(sb.toString());
             }
         }
-
-        System.out.println();
     }
 
     private double randMult(SecureRandom random, ECPoint g, BigInteger n) throws Exception
@@ -102,9 +109,12 @@ public class ECPointPerformanceTest extends TestCase
 
         int ki = 0;
         ECPoint p = g;
-        for (int i = 1; i <= PRE_ROUNDS; i++)
+
         {
-            for (int j = 0; j < MULTS_PER_ROUND; ++j)
+            long startTime = Times.nanoTime();
+            long goalTime = startTime + 1000000L * MILLIS_WARMUP;
+
+            do
             {
                 BigInteger k = ks[ki];
                 p = g.multiply(k);
@@ -117,43 +127,57 @@ public class ECPointPerformanceTest extends TestCase
                     ki = 0;
                 }
             }
+            while (Times.nanoTime() < goalTime);
         }
 
-        double minElapsed = Double.MAX_VALUE, maxElapsed = Double.MIN_VALUE, totalElapsed = 0.0;
+        double minRate = Double.MAX_VALUE, maxRate = Double.MIN_VALUE, totalRate = 0.0;
 
         for (int i = 1; i <= NUM_ROUNDS; i++)
         {
             long startTime = Times.nanoTime();
+            long goalTime = startTime + 1000000L * MILLIS_PER_ROUND;
+            long count = 0, endTime;
 
-            for (int j = 0; j < MULTS_PER_ROUND; ++j)
+            do
             {
-                BigInteger k = ks[ki];
-                p = g.multiply(k);
-                if ((ki & 1) != 0)
-                {
-                    g = p;
-                }
-                if (++ki == ks.length)
-                {
-                    ki = 0;
-                }
-            }
+                ++count;
 
-            long endTime = Times.nanoTime();
+                for (int j = 0; j < MULTS_PER_CHECK; ++j)
+                {
+                    BigInteger k = ks[ki];
+                    p = g.multiply(k);
+                    if ((ki & 1) != 0)
+                    {
+                        g = p;
+                    }
+                    if (++ki == ks.length)
+                    {
+                        ki = 0;
+                    }
+                }
+
+                endTime = Times.nanoTime();
+            }
+            while (endTime < goalTime);
 
             double roundElapsed = (double)(endTime - startTime);
-            minElapsed = Math.min(minElapsed, roundElapsed);
-            maxElapsed = Math.max(maxElapsed, roundElapsed);
-            totalElapsed += roundElapsed;
+            double roundRate = count * MULTS_PER_CHECK * 1000000000L / roundElapsed;
+
+            minRate = Math.min(minRate, roundRate);
+            maxRate = Math.max(maxRate, roundRate);
+            totalRate += roundRate;
         }
 
-        return (totalElapsed  - minElapsed  - maxElapsed ) / (NUM_ROUNDS - 2) / MULTS_PER_ROUND / 1000000;
+        return (totalRate - minRate - maxRate) / (NUM_ROUNDS - 2);
     }
 
     public void testMultiply() throws Exception
     {
-        Set oids = new HashSet();
         SortedSet names = new TreeSet(Collections.list(ECNamedCurveTable.getNames()));
+        names.addAll(Collections.list(CustomNamedCurves.getNames()));
+
+        Set oids = new HashSet();
+
         Iterator it = names.iterator();
         while (it.hasNext())
         {
