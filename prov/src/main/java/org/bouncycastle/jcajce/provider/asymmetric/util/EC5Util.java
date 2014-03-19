@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -28,7 +29,12 @@ public class EC5Util
         while (e.hasMoreElements())
         {
             String name = (String)e.nextElement();
-            customCurves.put(ECNamedCurveTable.getByName(name).getCurve(), CustomNamedCurves.getByName(name).getCurve());
+
+            X9ECParameters curveParams = ECNamedCurveTable.getByName(name);
+            if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
+            {
+                customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
+            }
         }
     }
 
