@@ -12,11 +12,10 @@ import org.bouncycastle.asn1.x500.X500Name;
 
 /**
  * Parsing and encoding of a <i>CertificateRequest</i> struct from RFC 4346.
- * <p/>
  * <pre>
  * struct {
- *     ClientCertificateType certificate_types<1..2^8-1>;
- *     DistinguishedName certificate_authorities<3..2^16-1>;
+ *     ClientCertificateType certificate_types&lt;1..2^8-1&gt;;
+ *     DistinguishedName certificate_authorities&lt;3..2^16-1&gt;;
  * } CertificateRequest;
  * </pre>
  *
@@ -42,7 +41,7 @@ public class CertificateRequest
 
     /**
      * @return an array of certificate types
-     * @see {@link ClientCertificateType}
+     * @see ClientCertificateType
      */
     public short[] getCertificateTypes()
     {

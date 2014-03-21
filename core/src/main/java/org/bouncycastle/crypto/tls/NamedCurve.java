@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4492 5.1.1
- * <p/>
+ * <p>
  * The named curves defined here are those specified in SEC 2 [13]. Note that many of these curves
  * are also recommended in ANSI X9.62 [7] and FIPS 186-2 [11]. Values 0xFE00 through 0xFEFF are
  * reserved for private use. Values 0xFF01 and 0xFF02 indicate that the client supports arbitrary
