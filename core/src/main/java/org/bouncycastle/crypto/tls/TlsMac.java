@@ -26,7 +26,7 @@ public class TlsMac
      * @param digest  The digest to use.
      * @param key     A byte-array where the key for this MAC is located.
      * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
-     * @param len     The length of the key.
+     * @param keyLen  The length of the key.
      */
     public TlsMac(TlsContext context, Digest digest, byte[] key, int keyOff, int keyLen)
     {
