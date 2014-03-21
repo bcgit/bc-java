@@ -16,13 +16,13 @@ import org.bouncycastle.util.Arrays;
  * An implementation of the "work in progress" Internet-Draft <a
  * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-07">The OCB Authenticated-Encryption
  * Algorithm</a>, licensed per:
- * <p/>
+ * <p>
  * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
  * Open-Source Software Implementations of OCB</a> (Jan 9, 2013) &mdash; &ldquo;License 1&rdquo; <br>
  * Under this license, you are authorized to make, use, and distribute open-source software
  * implementations of OCB. This license terminates for you if you sue someone over their open-source
  * software implementation of OCB claiming that you have a patent covering their implementation.
- * <p/>
+ * <p>
  * This is a non-binding summary of a legal document (the link above). The parameters of the license
  * are specified in the license document and that document is controlling. </blockquote>
  */

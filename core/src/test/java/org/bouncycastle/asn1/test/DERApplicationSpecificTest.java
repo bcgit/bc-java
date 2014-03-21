@@ -1,10 +1,10 @@
 package org.bouncycastle.asn1.test;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -37,7 +37,7 @@ public class DERApplicationSpecificTest
     public void performTest()
         throws Exception
     {
-        DERInteger value = new DERInteger(9);
+        ASN1Integer value = new ASN1Integer(9);
 
         DERApplicationSpecific tagged = new DERApplicationSpecific(false, 3, value);
 
@@ -46,7 +46,7 @@ public class DERApplicationSpecificTest
             fail("implicit encoding failed");
         }
 
-        DERInteger recVal = (DERInteger)tagged.getObject(BERTags.INTEGER);
+        ASN1Integer recVal = (ASN1Integer)tagged.getObject(BERTags.INTEGER);
 
         if (!value.equals(recVal))
         {

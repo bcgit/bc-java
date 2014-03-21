@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
@@ -59,7 +58,7 @@ public class X509NameTest
         return X509Name.getInstance(new ASN1InputStream(new ByteArrayInputStream(bytes)).readObject());
     }
 
-    private ASN1Encodable createEntryValue(DERObjectIdentifier oid, String value)
+    private ASN1Encodable createEntryValue(ASN1ObjectIdentifier oid, String value)
     {
         Hashtable attrs = new Hashtable();
 
@@ -78,7 +77,7 @@ public class X509NameTest
         return seq.getObjectAt(1);
     }
 
-    private ASN1Encodable createEntryValueFromString(DERObjectIdentifier oid, String value)
+    private ASN1Encodable createEntryValueFromString(ASN1ObjectIdentifier oid, String value)
     {
         Hashtable attrs = new Hashtable();
 
@@ -97,7 +96,7 @@ public class X509NameTest
         return seq.getObjectAt(1);
     }
 
-    private void testEncodingPrintableString(DERObjectIdentifier oid, String value)
+    private void testEncodingPrintableString(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
         if (!(converted instanceof DERPrintableString))
@@ -106,7 +105,7 @@ public class X509NameTest
         }
     }
 
-    private void testEncodingIA5String(DERObjectIdentifier oid, String value)
+    private void testEncodingIA5String(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
         if (!(converted instanceof DERIA5String))
@@ -116,7 +115,7 @@ public class X509NameTest
     }
 
 
-    private void testEncodingUTF8String(DERObjectIdentifier oid, String value)
+    private void testEncodingUTF8String(ASN1ObjectIdentifier oid, String value)
         throws IOException
     {
         ASN1Encodable converted = createEntryValue(oid, value);
@@ -130,7 +129,7 @@ public class X509NameTest
         }
     }
 
-    private void testEncodingGeneralizedTime(DERObjectIdentifier oid, String value)
+    private void testEncodingGeneralizedTime(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
         if (!(converted instanceof DERGeneralizedTime))
@@ -431,8 +430,8 @@ public class X509NameTest
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERObjectIdentifier("1.1"));
-        v.add(new DERObjectIdentifier("1.1"));
+        v.add(new ASN1ObjectIdentifier("1.1"));
+        v.add(new ASN1ObjectIdentifier("1.1"));
         if (name1.equals(new DERSequence(new DERSet(new DERSet(v)))))
         {
             fail("inequality test with sequence and bad set");
@@ -455,7 +454,7 @@ public class X509NameTest
 
         v = new ASN1EncodableVector();
 
-        v.add(new DERObjectIdentifier("1.1"));
+        v.add(new ASN1ObjectIdentifier("1.1"));
         v.add(new DERSequence());
 
         if (name1.equals(new DERSequence(new DERSet(new DERSequence(v)))))

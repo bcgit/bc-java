@@ -4,7 +4,6 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.X509Name;
@@ -74,7 +73,7 @@ public class SemanticsInformationUnitTest
 
     private void checkConstruction(
         SemanticsInformation mv,
-        DERObjectIdentifier  semanticsIdentifier,
+        ASN1ObjectIdentifier  semanticsIdentifier,
         GeneralName[]        names)
         throws Exception
     {
@@ -95,7 +94,7 @@ public class SemanticsInformationUnitTest
 
     private void checkStatement(
         SemanticsInformation si,
-        DERObjectIdentifier  id,
+        ASN1ObjectIdentifier  id,
         GeneralName[]        names)
     {
         if (id != null)

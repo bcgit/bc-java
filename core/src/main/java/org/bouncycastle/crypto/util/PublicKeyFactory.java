@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -136,7 +135,7 @@ public class PublicKeyFactory
         }
         else if (algId.getAlgorithm().equals(OIWObjectIdentifiers.elGamalAlgorithm))
         {
-            ElGamalParameter params = new ElGamalParameter((ASN1Sequence)algId.getParameters());
+            ElGamalParameter params = ElGamalParameter.getInstance(algId.getParameters());
             ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
 
             return new ElGamalPublicKeyParameters(derY.getValue(), new ElGamalParameters(

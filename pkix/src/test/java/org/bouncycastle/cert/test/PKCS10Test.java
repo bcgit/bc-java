@@ -14,7 +14,7 @@ import java.security.spec.RSAPublicKeySpec;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
@@ -184,7 +184,7 @@ public class PKCS10Test
     /*
      * we generate a self signed certificate for the sake of testing - SHA224withECDSA
      */
-    private void createECRequest(String algorithm, DERObjectIdentifier algOid, DERObjectIdentifier curveOid)
+    private void createECRequest(String algorithm, ASN1ObjectIdentifier algOid, ASN1ObjectIdentifier curveOid)
         throws Exception
     {
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveOid.getId());
@@ -262,7 +262,7 @@ public class PKCS10Test
         }
     }
 
-    private void createECRequest(String algorithm, DERObjectIdentifier algOid)
+    private void createECRequest(String algorithm, ASN1ObjectIdentifier algOid)
         throws Exception
     {
         ECCurve.Fp curve = new ECCurve.Fp(
@@ -594,7 +594,7 @@ public class PKCS10Test
         createECRequest("SHA384withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA384);
         createECRequest("SHA512withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA512);
 
-        createECRequest("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1, new DERObjectIdentifier("1.3.132.0.34"));
+        createECRequest("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1, new ASN1ObjectIdentifier("1.3.132.0.34"));
 
         createECGOSTRequest();
 

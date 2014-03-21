@@ -7,7 +7,6 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,8 +35,8 @@ public class OIDTest
         ByteArrayInputStream     bIn = new ByteArrayInputStream(enc);
         ASN1InputStream          aIn = new ASN1InputStream(bIn);
 
-        DERObjectIdentifier      o = new DERObjectIdentifier(oid);
-        DERObjectIdentifier      encO = (DERObjectIdentifier)aIn.readObject();
+        ASN1ObjectIdentifier      o = new ASN1ObjectIdentifier(oid);
+        ASN1ObjectIdentifier      encO = (ASN1ObjectIdentifier)aIn.readObject();
         
         if (!o.equals(encO))
         {
@@ -69,7 +68,7 @@ public class OIDTest
         String  oid)
         throws IOException
     {
-        DERObjectIdentifier     o = new DERObjectIdentifier(oid);
+        ASN1ObjectIdentifier     o = new ASN1ObjectIdentifier(oid);
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
         ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
         
@@ -78,7 +77,7 @@ public class OIDTest
         ByteArrayInputStream    bIn = new ByteArrayInputStream(bOut.toByteArray());
         ASN1InputStream         aIn = new ASN1InputStream(bIn);
         
-        o = (DERObjectIdentifier)aIn.readObject();
+        o = (ASN1ObjectIdentifier)aIn.readObject();
         
         if (!o.getId().equals(oid))
         {
@@ -91,7 +90,7 @@ public class OIDTest
     {
         try
         {
-            new DERObjectIdentifier(oid);
+            new ASN1ObjectIdentifier(oid);
             fail("failed to catch bad oid: " + oid);
         }
         catch (IllegalArgumentException e)

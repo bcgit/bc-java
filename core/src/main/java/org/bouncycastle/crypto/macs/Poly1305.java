@@ -75,7 +75,7 @@ public class Poly1305
     /**
      * Initialises the Poly1305 MAC.
      * 
-     * @param if used with a block cipher, then a {@link ParametersWithIV} containing a 128 bit
+     * @param params if used with a block cipher, then a {@link ParametersWithIV} containing a 128 bit
      *        nonce and a {@link KeyParameter} with a 256 bit key complying to the
      *        {@link Poly1305KeyGenerator Poly1305 key format}, otherwise just the
      *        {@link KeyParameter}.

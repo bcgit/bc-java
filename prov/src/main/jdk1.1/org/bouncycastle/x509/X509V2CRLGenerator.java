@@ -24,7 +24,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CertificateList;
@@ -44,7 +44,7 @@ import org.bouncycastle.jce.provider.X509CRLObject;
 public class X509V2CRLGenerator
 {
     private V2TBSCertListGenerator      tbsGen;
-    private DERObjectIdentifier         sigOID;
+    private ASN1ObjectIdentifier         sigOID;
     private AlgorithmIdentifier         sigAlgId;
     private String                      signatureAlgorithm;
     private X509ExtensionsGenerator     extGenerator;
@@ -177,14 +177,14 @@ public class X509V2CRLGenerator
         boolean         critical,
         ASN1Encodable    value)
     {
-        this.addExtension(new DERObjectIdentifier(oid), critical, value);
+        this.addExtension(new ASN1ObjectIdentifier(oid), critical, value);
     }
 
     /**
      * add a given extension field for the standard extensions tag (tag 0)
      */
     public void addExtension(
-        DERObjectIdentifier oid,
+        ASN1ObjectIdentifier oid,
         boolean             critical,
         ASN1Encodable value)
     {
@@ -199,14 +199,14 @@ public class X509V2CRLGenerator
         boolean         critical,
         byte[]          value)
     {
-        this.addExtension(new DERObjectIdentifier(oid), critical, value);
+        this.addExtension(new ASN1ObjectIdentifier(oid), critical, value);
     }
 
     /**
      * add a given extension field for the standard extensions tag (tag 0)
      */
     public void addExtension(
-        DERObjectIdentifier oid,
+        ASN1ObjectIdentifier oid,
         boolean             critical,
         byte[]              value)
     {

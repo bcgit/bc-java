@@ -2,8 +2,8 @@ package org.bouncycastle.jce.provider.test;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DEREnumerated;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
@@ -1555,7 +1555,7 @@ public class CertTest
     /**
      * we generate a self signed certificate for the sake of testing - SHA224withECDSA
      */
-    private void createECCert(String algorithm, DERObjectIdentifier algOid)
+    private void createECCert(String algorithm, ASN1ObjectIdentifier algOid)
         throws Exception
     {
         ECCurve.Fp curve = new ECCurve.Fp(
@@ -1751,7 +1751,7 @@ public class CertTest
     
         if (ext != null)
         {
-            DEREnumerated   reasonCode = (DEREnumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
                                                                        
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -1836,7 +1836,7 @@ public class CertTest
 
         if (ext != null)
         {
-            DEREnumerated   reasonCode = (DEREnumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
                                                                        
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -1921,7 +1921,7 @@ public class CertTest
     
         if (ext != null)
         {
-            DEREnumerated   reasonCode = (DEREnumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
                                                                        
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -2171,7 +2171,7 @@ public class CertTest
         certGen.setPublicKey(pubKey);
         certGen.setSignatureAlgorithm("MD5WithRSAEncryption");
 
-        certGen.copyAndAddExtension(new DERObjectIdentifier("2.5.29.15"), true, baseCert);
+        certGen.copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert);
         certGen.copyAndAddExtension("2.5.29.37", false, baseCert);
         
         X509Certificate cert = certGen.generate(privKey, "BC");

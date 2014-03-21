@@ -245,6 +245,11 @@ public class KeyAgreementSpi
         SecureRandom            random) 
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
+        if (params != null)
+        {
+            throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
+        }
+
         initFromKey(key);
     }
 

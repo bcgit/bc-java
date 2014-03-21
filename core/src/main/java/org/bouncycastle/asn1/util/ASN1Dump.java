@@ -3,7 +3,9 @@ package org.bouncycastle.asn1.util;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -12,7 +14,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERApplicationSpecific;
-import org.bouncycastle.asn1.BERConstructedOctetString;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
@@ -21,8 +22,6 @@ import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERBoolean;
-import org.bouncycastle.asn1.DEREnumerated;
 import org.bouncycastle.asn1.DERExternal;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
@@ -193,9 +192,9 @@ public class ASN1Dump
         {
             buf.append(indent + "ObjectIdentifier(" + ((ASN1ObjectIdentifier)obj).getId() + ")" + nl);
         }
-        else if (obj instanceof DERBoolean)
+        else if (obj instanceof ASN1Boolean)
         {
-            buf.append(indent + "Boolean(" + ((DERBoolean)obj).isTrue() + ")" + nl);
+            buf.append(indent + "Boolean(" + ((ASN1Boolean)obj).isTrue() + ")" + nl);
         }
         else if (obj instanceof ASN1Integer)
         {
@@ -254,9 +253,9 @@ public class ASN1Dump
         {
             buf.append(outputApplicationSpecific("DER", indent, verbose, obj, nl));
         }
-        else if (obj instanceof DEREnumerated)
+        else if (obj instanceof ASN1Enumerated)
         {
-            DEREnumerated en = (DEREnumerated) obj;
+            ASN1Enumerated en = (ASN1Enumerated) obj;
             buf.append(indent + "DER Enumerated(" + en.getValue() + ")" + nl);
         }
         else if (obj instanceof DERExternal)

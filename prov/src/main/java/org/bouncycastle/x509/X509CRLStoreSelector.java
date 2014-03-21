@@ -1,16 +1,16 @@
 package org.bouncycastle.x509;
 
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Selector;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.CRL;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLSelector;
+
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Selector;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 /**
  * This class is a Selector implementation for X.509 certificate revocation
@@ -96,14 +96,14 @@ public class X509CRLStoreSelector
             return false;
         }
         X509CRL crl = (X509CRL)obj;
-        DERInteger dci = null;
+        ASN1Integer dci = null;
         try
         {
             byte[] bytes = crl
                 .getExtensionValue(X509Extensions.DeltaCRLIndicator.getId());
             if (bytes != null)
             {
-                dci = DERInteger.getInstance(X509ExtensionUtil
+                dci = ASN1Integer.getInstance(X509ExtensionUtil
                     .fromExtensionValue(bytes));
             }
         }

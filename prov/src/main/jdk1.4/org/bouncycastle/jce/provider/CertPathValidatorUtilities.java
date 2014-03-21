@@ -44,10 +44,10 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEREnumerated;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -456,7 +456,7 @@ public class CertPathValidatorUtilities
     protected static boolean processCertD1i(
         int index,
         List[] policyNodes,
-        DERObjectIdentifier pOid,
+        ASN1ObjectIdentifier pOid,
         Set pq)
     {
         List policyNodeVec = policyNodes[index - 1];
@@ -491,7 +491,7 @@ public class CertPathValidatorUtilities
     protected static void processCertD1ii(
         int index,
         List[] policyNodes,
-        DERObjectIdentifier _poid,
+        ASN1ObjectIdentifier _poid,
         Set _pq)
     {
         List policyNodeVec = policyNodes[index - 1];
@@ -1030,12 +1030,12 @@ public class CertPathValidatorUtilities
             }
         }
 
-        DEREnumerated reasonCode = null;
+        ASN1Enumerated reasonCode = null;
         if (crl_entry.hasExtensions())
         {
             try
             {
-                reasonCode = DEREnumerated
+                reasonCode = ASN1Enumerated
                     .getInstance(CertPathValidatorUtilities
                         .getExtensionValue(crl_entry,
                             X509Extension.reasonCode.getId()));

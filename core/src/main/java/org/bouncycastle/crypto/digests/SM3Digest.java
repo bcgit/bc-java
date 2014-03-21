@@ -7,7 +7,7 @@ import org.bouncycastle.util.Memoable;
  * Implementation of Chinese SM3 digest as described at
  * http://tools.ietf.org/html/draft-shen-sm3-hash-00
  * and at .... ( Chinese PDF )
- * <p/>
+ * <p>
  * The specification says "process a bit stream",
  * but this is written to process bytes in blocks of 4,
  * meaning this will process 32-bit word groups.

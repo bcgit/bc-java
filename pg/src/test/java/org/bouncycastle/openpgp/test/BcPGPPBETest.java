@@ -106,6 +106,60 @@ public class BcPGPPBETest
         return bOut.toByteArray();
     }
 
+    /**
+     * decrypt the passed in message stream, verifying the algorithm used.
+     */
+    private byte[] decryptMessageCheck(
+        int       algorithm,
+        byte[]    message,
+        Date      date)
+        throws Exception
+    {
+        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
+        PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
+
+        if (algorithm != pbe.getSymmetricAlgorithm(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider())))
+        {
+            fail("algorithm mismatch");
+        }
+
+        InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
+
+        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);
+        PGPCompressedData        cData = (PGPCompressedData)pgpFact.nextObject();
+
+        pgpFact = new PGPObjectFactory(cData.getDataStream());
+
+        PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
+
+        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+        if (!ld.getFileName().equals("test.txt")
+            && !ld.getFileName().equals("_CONSOLE"))
+        {
+            fail("wrong filename in packet");
+        }
+        if (!ld.getModificationTime().equals(date))
+        {
+            fail("wrong modification time in packet: " + ld.getModificationTime().getTime() + " " + date.getTime());
+        }
+
+        InputStream              unc = ld.getInputStream();
+        int                      ch;
+
+        while ((ch = unc.read()) >= 0)
+        {
+            bOut.write(ch);
+        }
+
+        if (pbe.isIntegrityProtected() && !pbe.verify())
+        {
+            fail("integrity check failed");
+        }
+
+        return bOut.toByteArray();
+    }
+
     private byte[] decryptMessageBuffered(
         byte[]    message,
         Date      date)
@@ -382,6 +436,52 @@ public class BcPGPPBETest
         if (!areEqual(out, msg))
         {
             fail("wrong plain text in buffer generated packet");
+        }
+
+        tryAlgorithm(PGPEncryptedData.AES_128, text);
+        //tryAlgorithm(PGPEncryptedData.CAMELLIA_128, text);
+    }
+
+    private void tryAlgorithm(int algorithm, byte[] text)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
+                                                                PGPCompressedData.ZIP);
+
+        Date                       cDate = new Date((System.currentTimeMillis() / 1000) * 1000);
+        PGPLiteralDataGenerator    lData = new PGPLiteralDataGenerator();
+        OutputStream               comOut = comData.open(new UncloseableOutputStream(bOut));
+        OutputStream               ldOut = lData.open(
+            new UncloseableOutputStream(comOut),
+            PGPLiteralData.BINARY,
+            PGPLiteralData.CONSOLE,
+            text.length,
+            cDate);
+
+        ldOut.write(text);
+
+        ldOut.close();
+
+        comOut.close();
+
+        ByteArrayOutputStream        cbOut = new ByteArrayOutputStream();
+        PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(algorithm).setSecureRandom(new SecureRandom()));
+
+        cPk.addMethod(new BcPBEKeyEncryptionMethodGenerator(pass));
+
+        OutputStream    cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+
+        cOut.write(bOut.toByteArray());
+
+        cOut.close();
+
+        byte[] out = decryptMessageCheck(algorithm, cbOut.toByteArray(), cDate);
+
+        if (!areEqual(out, text))
+        {
+            fail("wrong plain text in generated packet");
         }
     }
 
