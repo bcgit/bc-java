@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.DirectoryString;
@@ -171,24 +170,6 @@ public class NamingAuthority
     public String getNamingAuthorityUrl()
     {
         return namingAuthorityUrl;
-    }
-
-    /**
-     * Constructor from given details.
-     * <p>
-     * All parameters can be combined.
-     *
-     * @param namingAuthorityId   ObjectIdentifier for naming authority.
-     * @param namingAuthorityUrl  URL for naming authority.
-     * @param namingAuthorityText Textual representation of naming authority.
-         * @deprecated use ASN1ObjectIdentifier method
-     */
-    public NamingAuthority(DERObjectIdentifier namingAuthorityId,
-                           String namingAuthorityUrl, DirectoryString namingAuthorityText)
-    {
-        this.namingAuthorityId = new ASN1ObjectIdentifier(namingAuthorityId.getId());
-        this.namingAuthorityUrl = namingAuthorityUrl;
-        this.namingAuthorityText = namingAuthorityText;
     }
 
     /**
