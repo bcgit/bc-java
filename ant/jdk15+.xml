@@ -31,6 +31,7 @@
             <fileset dir="prov/src/main/java" includes="**/*.html" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/java" includes="**/*.html" />
