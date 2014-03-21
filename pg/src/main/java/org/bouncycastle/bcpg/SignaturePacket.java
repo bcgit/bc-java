@@ -520,4 +520,12 @@ public class SignaturePacket
             }
         }
     }
+
+    public static SignaturePacket fromByteArray(byte[] data)
+        throws IOException
+    {
+        BCPGInputStream in = new BCPGInputStream(new ByteArrayInputStream(data));
+
+        return new SignaturePacket(in);
+    }
 }
