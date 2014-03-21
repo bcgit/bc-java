@@ -11,8 +11,8 @@ import java.security.Security;
 import java.security.Signature;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -218,8 +218,8 @@ public class ECNRTest
 
         BigInteger[]            sig = new BigInteger[2];
 
-        sig[0] = ((DERInteger)s.getObjectAt(0)).getValue();
-        sig[1] = ((DERInteger)s.getObjectAt(1)).getValue();
+        sig[0] = ((ASN1Integer)s.getObjectAt(0)).getValue();
+        sig[1] = ((ASN1Integer)s.getObjectAt(1)).getValue();
 
         return sig;
     }

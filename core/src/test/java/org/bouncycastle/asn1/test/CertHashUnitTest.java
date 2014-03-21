@@ -1,12 +1,12 @@
 package org.bouncycastle.asn1.test;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.isismtt.ocsp.CertHash;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-
-import java.io.IOException;
 
 public class CertHashUnitTest
     extends ASN1UnitTest
@@ -19,7 +19,7 @@ public class CertHashUnitTest
     public void performTest()
         throws Exception
     {
-        AlgorithmIdentifier algId = new AlgorithmIdentifier(new DERObjectIdentifier("1.2.2.3"));
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.2.3"));
         byte[]              digest = new byte[20];
         
         CertHash certID = new CertHash(algId, digest);

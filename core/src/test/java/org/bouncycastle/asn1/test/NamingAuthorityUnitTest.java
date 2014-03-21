@@ -1,12 +1,12 @@
 package org.bouncycastle.asn1.test;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.isismtt.x509.NamingAuthority;
 import org.bouncycastle.asn1.x500.DirectoryString;
-
-import java.io.IOException;
 
 public class NamingAuthorityUnitTest
     extends ASN1UnitTest
@@ -19,7 +19,7 @@ public class NamingAuthorityUnitTest
     public void performTest()
         throws Exception
     {
-        DERObjectIdentifier namingAuthorityID = new DERObjectIdentifier("1.2.3");
+        ASN1ObjectIdentifier namingAuthorityID = new ASN1ObjectIdentifier("1.2.3");
         String              namingAuthorityURL = "url";
         DirectoryString     namingAuthorityText = new DirectoryString("text");
 
@@ -60,7 +60,7 @@ public class NamingAuthorityUnitTest
 
     private void checkConstruction(
         NamingAuthority auth,
-        DERObjectIdentifier namingAuthorityID,
+        ASN1ObjectIdentifier namingAuthorityID,
         String              namingAuthorityURL,
         DirectoryString     namingAuthorityText)
         throws IOException
@@ -82,7 +82,7 @@ public class NamingAuthorityUnitTest
 
     private void checkValues(
         NamingAuthority auth,
-        DERObjectIdentifier namingAuthorityId,
+        ASN1ObjectIdentifier namingAuthorityId,
         String              namingAuthorityURL,
         DirectoryString     namingAuthorityText)
     {

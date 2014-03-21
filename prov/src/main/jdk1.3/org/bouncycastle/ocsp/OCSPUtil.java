@@ -1,7 +1,7 @@
 package org.bouncycastle.ocsp;
 
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -102,21 +102,21 @@ class OCSPUtil
         noParams.add(NISTObjectIdentifiers.dsa_with_sha256);
     }
      
-    static DERObjectIdentifier getAlgorithmOID(
+    static ASN1ObjectIdentifier getAlgorithmOID(
         String algorithmName)
     {
         algorithmName = Strings.toUpperCase(algorithmName);
         
         if (algorithms.containsKey(algorithmName))
         {
-            return (DERObjectIdentifier)algorithms.get(algorithmName);
+            return (ASN1ObjectIdentifier)algorithms.get(algorithmName);
         }
         
-        return new DERObjectIdentifier(algorithmName);
+        return new ASN1ObjectIdentifier(algorithmName);
     }
 
     static String getAlgorithmName(
-        DERObjectIdentifier oid)
+        ASN1ObjectIdentifier oid)
     {
         if (oids.containsKey(oid))
         {
@@ -127,7 +127,7 @@ class OCSPUtil
     }
     
     static AlgorithmIdentifier getSigAlgID(
-        DERObjectIdentifier sigOid)
+        ASN1ObjectIdentifier sigOid)
     {
         if (noParams.contains(sigOid))
         {

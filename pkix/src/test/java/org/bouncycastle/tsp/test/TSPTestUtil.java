@@ -14,7 +14,7 @@ import java.util.Date;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -47,7 +47,7 @@ public class TSPTestUtil
 
     public static final boolean DEBUG = true;
 
-    public static DERObjectIdentifier EuroPKI_TSA_Test_Policy = new DERObjectIdentifier(
+    public static ASN1ObjectIdentifier EuroPKI_TSA_Test_Policy = new ASN1ObjectIdentifier(
             "1.3.6.1.4.1.5255.5.1");
 
     public static JcaX509ExtensionUtils extUtils;

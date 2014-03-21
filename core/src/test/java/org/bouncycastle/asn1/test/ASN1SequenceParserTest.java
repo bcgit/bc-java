@@ -1,21 +1,21 @@
 package org.bouncycastle.asn1.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.ASN1SequenceParser;
-import org.bouncycastle.asn1.ASN1StreamParser;
-import org.bouncycastle.asn1.BERSequenceGenerator;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequenceGenerator;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Null;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1SequenceParser;
+import org.bouncycastle.asn1.ASN1StreamParser;
+import org.bouncycastle.asn1.BERSequenceGenerator;
+import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.util.encoders.Hex;
 
 public class ASN1SequenceParserTest 
     extends TestCase 
@@ -40,9 +40,9 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator  seqGen = new DERSequenceGenerator(bOut);
        
-       seqGen.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen.addObject(new DERObjectIdentifier("1.1"));
+       seqGen.addObject(new ASN1ObjectIdentifier("1.1"));
        
        seqGen.close();
 
@@ -55,13 +55,13 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator seqGen1 = new DERSequenceGenerator(bOut);
        
-       seqGen1.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen1.addObject(new DERObjectIdentifier("1.1"));
+       seqGen1.addObject(new ASN1ObjectIdentifier("1.1"));
        
        DERSequenceGenerator seqGen2 = new DERSequenceGenerator(seqGen1.getRawOutputStream());
        
-       seqGen2.addObject(new DERInteger(BigInteger.valueOf(1)));
+       seqGen2.addObject(new ASN1Integer(BigInteger.valueOf(1)));
        
        seqGen2.close();
        
@@ -76,9 +76,9 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator  seqGen = new DERSequenceGenerator(bOut, 1, true);
        
-       seqGen.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen.addObject(new DERObjectIdentifier("1.1"));
+       seqGen.addObject(new ASN1ObjectIdentifier("1.1"));
        
        seqGen.close();
 
@@ -91,9 +91,9 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator  seqGen = new DERSequenceGenerator(bOut, 1, false);
        
-       seqGen.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen.addObject(new DERObjectIdentifier("1.1"));
+       seqGen.addObject(new ASN1ObjectIdentifier("1.1"));
        
        seqGen.close();
 
@@ -106,13 +106,13 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator  seqGen1 = new DERSequenceGenerator(bOut);
        
-       seqGen1.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen1.addObject(new DERObjectIdentifier("1.1"));
+       seqGen1.addObject(new ASN1ObjectIdentifier("1.1"));
        
        DERSequenceGenerator seqGen2 = new DERSequenceGenerator(seqGen1.getRawOutputStream(), 1, true);
        
-       seqGen2.addObject(new DERInteger(BigInteger.valueOf(1)));
+       seqGen2.addObject(new ASN1Integer(BigInteger.valueOf(1)));
        
        seqGen2.close();
        
@@ -127,13 +127,13 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        DERSequenceGenerator  seqGen1 = new DERSequenceGenerator(bOut);
        
-       seqGen1.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen1.addObject(new DERObjectIdentifier("1.1"));
+       seqGen1.addObject(new ASN1ObjectIdentifier("1.1"));
        
        DERSequenceGenerator seqGen2 = new DERSequenceGenerator(seqGen1.getRawOutputStream(), 1, false);
        
-       seqGen2.addObject(new DERInteger(BigInteger.valueOf(1)));
+       seqGen2.addObject(new ASN1Integer(BigInteger.valueOf(1)));
        
        seqGen2.close();
        
@@ -148,9 +148,9 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        BERSequenceGenerator  seqGen = new BERSequenceGenerator(bOut);
        
-       seqGen.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen.addObject(new DERObjectIdentifier("1.1"));
+       seqGen.addObject(new ASN1ObjectIdentifier("1.1"));
        
        seqGen.close();
        
@@ -163,13 +163,13 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        BERSequenceGenerator seqGen1 = new BERSequenceGenerator(bOut);
        
-       seqGen1.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen1.addObject(new DERObjectIdentifier("1.1"));
+       seqGen1.addObject(new ASN1ObjectIdentifier("1.1"));
        
        DERSequenceGenerator seqGen2 = new DERSequenceGenerator(seqGen1.getRawOutputStream());
        
-       seqGen2.addObject(new DERInteger(BigInteger.valueOf(1)));
+       seqGen2.addObject(new ASN1Integer(BigInteger.valueOf(1)));
        
        seqGen2.close();
        
@@ -184,13 +184,13 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        BERSequenceGenerator  seqGen1 = new BERSequenceGenerator(bOut);
        
-       seqGen1.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen1.addObject(new DERObjectIdentifier("1.1"));
+       seqGen1.addObject(new ASN1ObjectIdentifier("1.1"));
        
        BERSequenceGenerator seqGen2 = new BERSequenceGenerator(seqGen1.getRawOutputStream());
        
-       seqGen2.addObject(new DERInteger(BigInteger.valueOf(1)));
+       seqGen2.addObject(new ASN1Integer(BigInteger.valueOf(1)));
        
        seqGen2.close();
        
@@ -215,10 +215,10 @@ public class ASN1SequenceParserTest
             switch (count)
             {
             case 0:
-                assertTrue(o instanceof DERInteger);
+                assertTrue(o instanceof ASN1Integer);
                 break;
             case 1:
-                assertTrue(o instanceof DERObjectIdentifier);
+                assertTrue(o instanceof ASN1ObjectIdentifier);
                 break;
             }
             count++;
@@ -244,10 +244,10 @@ public class ASN1SequenceParserTest
             switch (count)
             {
             case 0:
-                assertTrue(o instanceof DERInteger);
+                assertTrue(o instanceof ASN1Integer);
                 break;
             case 1:
-                assertTrue(o instanceof DERObjectIdentifier);
+                assertTrue(o instanceof ASN1ObjectIdentifier);
                 break;
             case 2:
                 assertTrue(o instanceof ASN1SequenceParser);
@@ -290,10 +290,10 @@ public class ASN1SequenceParserTest
             switch (count)
             {
             case 0:
-                assertTrue(o instanceof DERInteger);
+                assertTrue(o instanceof ASN1Integer);
                 break;
             case 1:
-                assertTrue(o instanceof DERObjectIdentifier);
+                assertTrue(o instanceof ASN1ObjectIdentifier);
                 break;
             }
             count++;
@@ -320,9 +320,9 @@ public class ASN1SequenceParserTest
        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
        BERSequenceGenerator  seqGen = new BERSequenceGenerator(bOut, 1, true);
        
-       seqGen.addObject(new DERInteger(BigInteger.valueOf(0)));
+       seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
        
-       seqGen.addObject(new DERObjectIdentifier("1.1"));
+       seqGen.addObject(new ASN1ObjectIdentifier("1.1"));
        
        seqGen.close();
       
@@ -353,10 +353,10 @@ public class ASN1SequenceParserTest
                 assertTrue(o instanceof ASN1Null);
                 break;
             case 1:
-                assertTrue(o instanceof DERInteger);
+                assertTrue(o instanceof ASN1Integer);
                 break;
             case 2:
-                assertTrue(o instanceof DERObjectIdentifier);
+                assertTrue(o instanceof ASN1ObjectIdentifier);
                 break;
             }
             count++;

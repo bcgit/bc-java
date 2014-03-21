@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.esf.CommitmentTypeIdentifier;
 import org.bouncycastle.asn1.esf.CommitmentTypeQualifier;
 import org.bouncycastle.util.test.SimpleTest;
@@ -25,7 +25,7 @@ public class CommitmentTypeQualifierUnitTest
         
         checkConstruction(ctq, CommitmentTypeIdentifier.proofOfOrigin, null);
         
-        ASN1Encodable info = new DERObjectIdentifier("1.2");
+        ASN1Encodable info = new ASN1ObjectIdentifier("1.2");
         
         ctq = new CommitmentTypeQualifier(CommitmentTypeIdentifier.proofOfOrigin, info);
 
@@ -52,7 +52,7 @@ public class CommitmentTypeQualifierUnitTest
 
     private void checkConstruction(
          CommitmentTypeQualifier mv,
-         DERObjectIdentifier commitmenttTypeId,
+         ASN1ObjectIdentifier commitmenttTypeId,
          ASN1Encodable qualifier) 
          throws IOException
     {
@@ -73,7 +73,7 @@ public class CommitmentTypeQualifierUnitTest
 
     private void checkStatement(
         CommitmentTypeQualifier ctq,
-        DERObjectIdentifier     commitmentTypeId,
+        ASN1ObjectIdentifier     commitmentTypeId,
         ASN1Encodable           qualifier)
     {
         if (!ctq.getCommitmentTypeIdentifier().equals(commitmentTypeId))

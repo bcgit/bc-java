@@ -31,10 +31,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
@@ -819,8 +819,8 @@ public class ECDSA5Test
 
         BigInteger[]            sig = new BigInteger[2];
 
-        sig[0] = ((DERInteger)s.getObjectAt(0)).getValue();
-        sig[1] = ((DERInteger)s.getObjectAt(1)).getValue();
+        sig[0] = ((ASN1Integer)s.getObjectAt(0)).getValue();
+        sig[1] = ((ASN1Integer)s.getObjectAt(1)).getValue();
 
         return sig;
     }

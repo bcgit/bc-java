@@ -8,9 +8,9 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
@@ -119,7 +119,7 @@ public class TimeStampResponseGenerator
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
         
-        v.add(new DERInteger(status));
+        v.add(new ASN1Integer(status));
         
         if (statusStrings.size() > 0)
         {

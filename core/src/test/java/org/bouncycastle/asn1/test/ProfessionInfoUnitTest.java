@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.isismtt.x509.NamingAuthority;
 import org.bouncycastle.asn1.isismtt.x509.ProcurationSyntax;
@@ -23,7 +22,7 @@ public class ProfessionInfoUnitTest
     public void performTest()
         throws Exception
     {
-        NamingAuthority auth =  new NamingAuthority(new DERObjectIdentifier("1.2.3"), "url", new DirectoryString("fred"));
+        NamingAuthority auth =  new NamingAuthority(new ASN1ObjectIdentifier("1.2.3"), "url", new DirectoryString("fred"));
         DirectoryString[] professionItems = { new DirectoryString("substitution") };
         ASN1ObjectIdentifier[] professionOids = { new ASN1ObjectIdentifier("1.2.3") };
         String registrationNumber = "12345";
@@ -72,7 +71,7 @@ public class ProfessionInfoUnitTest
         ProfessionInfo profInfo,
         NamingAuthority auth,
         DirectoryString[] professionItems,
-        DERObjectIdentifier[] professionOids,
+        ASN1ObjectIdentifier[] professionOids,
         String registrationNumber,
         DEROctetString addProfInfo)
         throws IOException
@@ -96,7 +95,7 @@ public class ProfessionInfoUnitTest
         ProfessionInfo profInfo,
         NamingAuthority auth,
         DirectoryString[] professionItems,
-        DERObjectIdentifier[] professionOids,
+        ASN1ObjectIdentifier[] professionOids,
         String registrationNumber,
         DEROctetString addProfInfo)
     {

@@ -7,14 +7,14 @@ import java.io.OutputStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
 import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.CompressedDataParser;
@@ -135,18 +135,18 @@ public class OctetStringTest
         
         BERSequenceGenerator sGen = new BERSequenceGenerator(bOut);
         
-        sGen.addObject(new DERObjectIdentifier(CMSObjectIdentifiers.compressedData.getId()));
+        sGen.addObject(new ASN1ObjectIdentifier(CMSObjectIdentifiers.compressedData.getId()));
         
         BERSequenceGenerator cGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
         
-        cGen.addObject(new DERInteger(0));
+        cGen.addObject(new ASN1Integer(0));
         
         //
         // AlgorithmIdentifier
         //
         DERSequenceGenerator algGen = new DERSequenceGenerator(cGen.getRawOutputStream());
         
-        algGen.addObject(new DERObjectIdentifier("1.2"));
+        algGen.addObject(new ASN1ObjectIdentifier("1.2"));
 
         algGen.close();
         
@@ -155,7 +155,7 @@ public class OctetStringTest
         //
         BERSequenceGenerator eiGen = new BERSequenceGenerator(cGen.getRawOutputStream());
         
-        eiGen.addObject(new DERObjectIdentifier("1.1"));
+        eiGen.addObject(new ASN1ObjectIdentifier("1.1"));
         
         BEROctetStringGenerator octGen = new BEROctetStringGenerator(eiGen.getRawOutputStream(), 0, true);
         

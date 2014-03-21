@@ -7,9 +7,9 @@ import java.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -52,7 +52,7 @@ public class CertificateID
         throws OCSPException
     {
         AlgorithmIdentifier hashAlg = new AlgorithmIdentifier(
-            new DERObjectIdentifier(hashAlgorithm), DERNull.INSTANCE);
+            new ASN1ObjectIdentifier(hashAlgorithm), DERNull.INSTANCE);
 
         this.id = createCertID(hashAlg, issuerCert, new ASN1Integer(number), provider);
     }

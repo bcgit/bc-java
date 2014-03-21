@@ -9,11 +9,11 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.BERSet;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -161,7 +161,7 @@ public class CMSAuthenticatedDataStreamGenerator
             //
             BERSequenceGenerator authGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
 
-            authGen.addObject(new DERInteger(AuthenticatedData.calculateVersion(originatorInfo)));
+            authGen.addObject(new ASN1Integer(AuthenticatedData.calculateVersion(originatorInfo)));
 
             if (originatorInfo != null)
             {

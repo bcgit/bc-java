@@ -39,9 +39,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEREnumerated;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -1775,7 +1773,7 @@ public class CertTest
     /**
      * we generate a self signed certificate for the sake of testing - SHA224withECDSA
      */
-    private void createECCert(String algorithm, DERObjectIdentifier algOid)
+    private void createECCert(String algorithm, ASN1ObjectIdentifier algOid)
         throws Exception
     {
         ECCurve.Fp curve = new ECCurve.Fp(
@@ -2030,7 +2028,7 @@ public class CertTest
 
         if (ext != null)
         {
-            DEREnumerated   reasonCode = (DEREnumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -2113,7 +2111,7 @@ public class CertTest
 
         if (ext != null)
         {
-            DEREnumerated   reasonCode = (DEREnumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
