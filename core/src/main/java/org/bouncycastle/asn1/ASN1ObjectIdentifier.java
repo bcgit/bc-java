@@ -294,12 +294,12 @@ public class ASN1ObjectIdentifier
     boolean asn1Equals(
         ASN1Primitive o)
     {
-        if (!(o instanceof DERObjectIdentifier))
+        if (!(o instanceof ASN1ObjectIdentifier))
         {
             return false;
         }
 
-        return identifier.equals(((DERObjectIdentifier)o).identifier);
+        return identifier.equals(((ASN1ObjectIdentifier)o).identifier);
     }
 
     public String toString()
