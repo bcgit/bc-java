@@ -29,7 +29,7 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 /**
- * Example of how to set up a certificiate chain and a PKCS 12 store for
+ * Example of how to set up a certificate chain and a PKCS 12 store for
  * a private individual - obviously you'll need to generate your own keys,
  * and you may need to add a NetscapeCertType extension or add a key
  * usage extension depending on your application, but you should get the

@@ -17,12 +17,12 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.CertStatus;
@@ -211,7 +211,7 @@ public class BasicOCSPRespGenerator
         throws OCSPException, NoSuchProviderException
     {
         Iterator    it = list.iterator();
-        DERObjectIdentifier signingAlgorithm;
+        ASN1ObjectIdentifier signingAlgorithm;
 
         try
         {

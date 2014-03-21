@@ -1,6 +1,6 @@
 package org.bouncycastle.tsp;
 
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.tsp.Accuracy;
 
 public class GenTimeAccuracy
@@ -28,7 +28,7 @@ public class GenTimeAccuracy
     }
 
     private int getTimeComponent(
-        DERInteger time)
+        ASN1Integer time)
     {
         if (time != null)
         {

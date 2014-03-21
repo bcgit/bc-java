@@ -14,7 +14,7 @@ import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -201,7 +201,7 @@ public class PSSTest
         rawModeTest("SHA512withRSA/PSS", NISTObjectIdentifiers.id_sha512, priv2048Key, pub2048Key, random);
     }
 
-    private void rawModeTest(String sigName, DERObjectIdentifier digestOID,
+    private void rawModeTest(String sigName, ASN1ObjectIdentifier digestOID,
             PrivateKey privKey, PublicKey pubKey, SecureRandom random) throws Exception
     {
         byte[] sampleMessage = new byte[1000 + random.nextInt(100)];

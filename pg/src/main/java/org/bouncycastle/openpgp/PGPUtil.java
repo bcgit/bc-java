@@ -13,8 +13,8 @@ import java.security.Security;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
@@ -59,15 +59,15 @@ public class PGPUtil
     {
         ASN1InputStream aIn = new ASN1InputStream(encoding);
 
-        DERInteger i1;
-        DERInteger i2;
+        ASN1Integer i1;
+        ASN1Integer i2;
 
         try
         {
             ASN1Sequence s = (ASN1Sequence)aIn.readObject();
 
-            i1 = (DERInteger)s.getObjectAt(0);
-            i2 = (DERInteger)s.getObjectAt(1);
+            i1 = (ASN1Integer)s.getObjectAt(0);
+            i2 = (ASN1Integer)s.getObjectAt(1);
         }
         catch (IOException e)
         {

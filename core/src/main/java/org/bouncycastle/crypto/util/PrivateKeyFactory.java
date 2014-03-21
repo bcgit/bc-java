@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
@@ -101,7 +100,7 @@ public class PrivateKeyFactory
         }
         else if (algId.getAlgorithm().equals(OIWObjectIdentifiers.elGamalAlgorithm))
         {
-            ElGamalParameter params = new ElGamalParameter((ASN1Sequence)algId.getParameters());
+            ElGamalParameter params = ElGamalParameter.getInstance(algId.getParameters());
             ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
 
             return new ElGamalPrivateKeyParameters(derX.getValue(), new ElGamalParameters(

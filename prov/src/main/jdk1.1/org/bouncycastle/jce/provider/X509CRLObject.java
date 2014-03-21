@@ -26,7 +26,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
@@ -430,7 +430,7 @@ public class X509CRLObject
                         if (oid.equals(Extension.cRLNumber))
                         {
                             buf.append(
-                                new CRLNumber(DERInteger.getInstance(
+                                new CRLNumber(ASN1Integer.getInstance(
                                     dIn.readObject()).getPositiveValue()))
                                 .append(nl);
                         }
@@ -438,7 +438,7 @@ public class X509CRLObject
                         {
                             buf.append(
                                 "Base CRL: "
-                                    + new CRLNumber(DERInteger.getInstance(
+                                    + new CRLNumber(ASN1Integer.getInstance(
                                         dIn.readObject()).getPositiveValue()))
                                 .append(nl);
                         }

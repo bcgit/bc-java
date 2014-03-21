@@ -19,7 +19,6 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
@@ -36,7 +35,7 @@ import org.bouncycastle.asn1.x509.X509ExtensionsGenerator;
 public class X509V2AttributeCertificateGenerator
 {
     private V2AttributeCertificateInfoGenerator   acInfoGen;
-    private DERObjectIdentifier         sigOID;
+    private ASN1ObjectIdentifier         sigOID;
     private AlgorithmIdentifier         sigAlgId;
     private String                      signatureAlgorithm;
     private X509ExtensionsGenerator     extGenerator;
