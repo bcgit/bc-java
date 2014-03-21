@@ -3,7 +3,7 @@ package org.bouncycastle.asn1.test;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -12,9 +12,9 @@ import org.bouncycastle.util.test.SimpleTest;
 public class AttributeTableUnitTest 
     extends SimpleTest
 {
-    private static final DERObjectIdentifier type1 = new DERObjectIdentifier("1.1.1");
-    private static final DERObjectIdentifier type2 = new DERObjectIdentifier("1.1.2");
-    private static final DERObjectIdentifier type3 = new DERObjectIdentifier("1.1.3");
+    private static final ASN1ObjectIdentifier type1 = new ASN1ObjectIdentifier("1.1.1");
+    private static final ASN1ObjectIdentifier type2 = new ASN1ObjectIdentifier("1.1.2");
+    private static final ASN1ObjectIdentifier type3 = new ASN1ObjectIdentifier("1.1.3");
     
     public String getName()
     {

@@ -21,7 +21,7 @@ import java.util.Set;
 import org.bouncycastle.jce.X509Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
@@ -218,7 +218,7 @@ public class PKIXCertPathValidatorSpi
             throw new ExtCertPathValidatorException(
                     "Algorithm identifier of public key of trust anchor could not be read.", e, certPath, -1);
         }
-        DERObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getObjectId();
         ASN1Encodable workingPublicKeyParameters = workingAlgId.getParameters();
 
         //

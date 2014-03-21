@@ -8,7 +8,6 @@ import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -95,7 +94,7 @@ public class AlgorithmParametersSpi
     {
         try
         {
-            ElGamalParameter elP = new ElGamalParameter((ASN1Sequence)ASN1Primitive.fromByteArray(params));
+            ElGamalParameter elP = ElGamalParameter.getInstance(ASN1Primitive.fromByteArray(params));
 
             currentSpec = new ElGamalParameterSpec(elP.getP(), elP.getG());
         }

@@ -15,7 +15,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -141,13 +140,13 @@ public class NewAuthenticatedDataTest
     public void testKEKDESede()
         throws Exception
     {
-        tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new DERObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
+        tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
     }
 
     public void testKEKDESedeWithDigest()
         throws Exception
     {
-        tryKekAlgorithmWithDigest(CMSTestUtil.makeDesede192Key(), new DERObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
+        tryKekAlgorithmWithDigest(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
     }
 
     public void testPasswordAES256()
@@ -351,7 +350,7 @@ public class NewAuthenticatedDataTest
         }
     }
 
-    private void tryKekAlgorithm(SecretKey kek, DERObjectIdentifier algOid)
+    private void tryKekAlgorithm(SecretKey kek, ASN1ObjectIdentifier algOid)
         throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, OperatorCreationException
     {
         byte[]          data     = "Eric H. Echidna".getBytes();
@@ -390,7 +389,7 @@ public class NewAuthenticatedDataTest
         }
     }
 
-    private void tryKekAlgorithmWithDigest(SecretKey kek, DERObjectIdentifier algOid)
+    private void tryKekAlgorithmWithDigest(SecretKey kek, ASN1ObjectIdentifier algOid)
         throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, OperatorCreationException
     {
             byte[]          data     = "Eric H. Echidna".getBytes();

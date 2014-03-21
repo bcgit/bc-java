@@ -4,7 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Boolean;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERConstructedOctetString;
@@ -14,15 +18,11 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERBoolean;
-import org.bouncycastle.asn1.DEREnumerated;
 import org.bouncycastle.asn1.DERGeneralString;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERNumericString;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -52,16 +52,16 @@ public class EqualsAndHashCodeTest
                 new DERApplicationSpecific(0, data),
                 new DERBitString(data),
                 new DERBMPString("hello world"),
-                new DERBoolean(true),
-                new DERBoolean(false),
-                new DEREnumerated(100),
+                new ASN1Boolean(true),
+                new ASN1Boolean(false),
+                new ASN1Enumerated(100),
                 new DERGeneralizedTime("20070315173729Z"),
                 new DERGeneralString("hello world"),
                 new DERIA5String("hello"),
-                new DERInteger(1000),
+                new ASN1Integer(1000),
                 new DERNull(),
                 new DERNumericString("123456"),
-                new DERObjectIdentifier("1.1.1.10000.1"),
+                new ASN1ObjectIdentifier("1.1.1.10000.1"),
                 new DEROctetString(data),
                 new DERPrintableString("hello world"),
                 new DERSequence(new DERPrintableString("hello world")),

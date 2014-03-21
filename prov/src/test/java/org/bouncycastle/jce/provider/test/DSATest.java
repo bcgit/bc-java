@@ -25,10 +25,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -191,7 +191,7 @@ public class DSATest
 
         signer.init(false, keyParams);
 
-        if (!signer.verifySignature(dummySha1, DERInteger.getInstance(derSig.getObjectAt(0)).getValue(), DERInteger.getInstance(derSig.getObjectAt(1)).getValue()))
+        if (!signer.verifySignature(dummySha1, ASN1Integer.getInstance(derSig.getObjectAt(0)).getValue(), ASN1Integer.getInstance(derSig.getObjectAt(1)).getValue()))
         {
             fail("NONEwithDSA not really NONE!");
         }
@@ -474,7 +474,7 @@ public class DSATest
         }
     }
 
-    private void testECDSA239bitBinary(String algorithm, DERObjectIdentifier oid)
+    private void testECDSA239bitBinary(String algorithm, ASN1ObjectIdentifier oid)
         throws Exception
     {
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
@@ -971,8 +971,8 @@ public class DSATest
 
         BigInteger[]            sig = new BigInteger[2];
 
-        sig[0] = ((DERInteger)s.getObjectAt(0)).getValue();
-        sig[1] = ((DERInteger)s.getObjectAt(1)).getValue();
+        sig[0] = ((ASN1Integer)s.getObjectAt(0)).getValue();
+        sig[1] = ((ASN1Integer)s.getObjectAt(1)).getValue();
 
         return sig;
     }

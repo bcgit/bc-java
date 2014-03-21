@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.qualified.QCStatement;
 import org.bouncycastle.asn1.x509.qualified.RFC3739QCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.qualified.SemanticsInformation;
@@ -54,7 +53,7 @@ public class QCStatementUnitTest
 
     private void checkConstruction(
          QCStatement mv,
-         DERObjectIdentifier statementId,
+         ASN1ObjectIdentifier statementId,
          ASN1Encodable statementInfo) 
          throws IOException
     {
@@ -75,7 +74,7 @@ public class QCStatementUnitTest
 
     private void checkStatement(
         QCStatement         qcs,
-        DERObjectIdentifier statementId,
+        ASN1ObjectIdentifier statementId,
         ASN1Encodable       statementInfo)
         throws IOException
     {

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ocsp.CertStatus;
 import org.bouncycastle.asn1.ocsp.RevokedInfo;
 import org.bouncycastle.asn1.ocsp.SingleResponse;
@@ -115,7 +115,7 @@ public class SingleResp
     
             while (e.hasMoreElements())
             {
-                DERObjectIdentifier oid = (DERObjectIdentifier)e.nextElement();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
                 X509Extension       ext = extensions.getExtension(oid);
     
                 if (critical == ext.isCritical())
@@ -144,7 +144,7 @@ public class SingleResp
 
         if (exts != null)
         {
-            X509Extension   ext = exts.getExtension(new DERObjectIdentifier(oid));
+            X509Extension   ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
 
             if (ext != null)
             {
