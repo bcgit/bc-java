@@ -112,7 +112,7 @@ public class ASN1Boolean
 
     /**
      * @deprecated use getInstance(boolean) method.
-     * @param value
+     * @param value true or false.
      */
     public ASN1Boolean(
         boolean     value)
@@ -145,12 +145,12 @@ public class ASN1Boolean
     protected boolean asn1Equals(
         ASN1Primitive  o)
     {
-        if ((o == null) || !(o instanceof ASN1Boolean))
+        if (o instanceof ASN1Boolean)
         {
-            return false;
+            return (value[0] == ((ASN1Boolean)o).value[0]);
         }
 
-        return (value[0] == ((ASN1Boolean)o).value[0]);
+        return false;
     }
 
     public int hashCode()
