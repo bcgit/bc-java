@@ -3,6 +3,7 @@ package org.bouncycastle.math.ec.custom.djb;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.Nat256;
 
 public class Curve25519Point extends ECPoint
 {
@@ -69,7 +70,6 @@ public class Curve25519Point extends ECPoint
         return super.getZCoord(index);
     }
 
-    // B.3 pg 62
     public ECPoint add(ECPoint b)
     {
         if (this.isInfinity())
@@ -87,48 +87,65 @@ public class Curve25519Point extends ECPoint
 
         ECCurve curve = this.getCurve();
 
-        ECFieldElement X1 = this.x, Y1 = this.y;
-        ECFieldElement X2 = b.getXCoord(), Y2 = b.getYCoord();
+        Curve25519FieldElement X1 = (Curve25519FieldElement)this.x, Y1 = (Curve25519FieldElement)this.y,
+            Z1 = (Curve25519FieldElement)this.zs[0];
+        Curve25519FieldElement X2 = (Curve25519FieldElement)b.getXCoord(), Y2 = (Curve25519FieldElement)b.getYCoord(),
+            Z2 = (Curve25519FieldElement)b.getZCoord(0);
 
-        ECFieldElement Z1 = this.zs[0];
-        ECFieldElement Z2 = b.getZCoord(0);
+        int c;
+        int[] tt1 = Nat256.createExt();
+        int[] t2 = Nat256.create();
+        int[] t3 = Nat256.create();
+        int[] t4 = Nat256.create();
 
         boolean Z1IsOne = Z1.isOne();
-
-        ECFieldElement Z1Squared, U2, S2;
+        int[] U2, S2;
         if (Z1IsOne)
         {
-            Z1Squared = Z1; U2 = X2; S2 = Y2;
+            U2 = X2.x;
+            S2 = Y2.x;
         }
         else
         {
-            Z1Squared = Z1.square();
-            U2 = Z1Squared.multiply(X2);
-            ECFieldElement Z1Cubed = Z1Squared.multiply(Z1);
-            S2 = Z1Cubed.multiply(Y2);
+            S2 = t3;
+            Curve25519Field.square(Z1.x, S2);
+
+            U2 = t2;
+            Curve25519Field.multiply(S2, X2.x, U2);
+
+            Curve25519Field.multiply(S2, Z1.x, S2);
+            Curve25519Field.multiply(S2, Y2.x, S2);
         }
 
         boolean Z2IsOne = Z2.isOne();
-        ECFieldElement Z2Squared, U1, S1;
+        int[] U1, S1;
         if (Z2IsOne)
         {
-            Z2Squared = Z2; U1 = X1; S1 = Y1;
+            U1 = X1.x;
+            S1 = Y1.x;
         }
         else
         {
-            Z2Squared = Z2.square();
-            U1 = Z2Squared.multiply(X1); 
-            ECFieldElement Z2Cubed = Z2Squared.multiply(Z2);
-            S1 = Z2Cubed.multiply(Y1);
+            S1 = t4;
+            Curve25519Field.square(Z2.x, S1);
+
+            U1 = tt1;
+            Curve25519Field.multiply(S1, X1.x, U1);
+
+            Curve25519Field.multiply(S1, Z2.x, S1);
+            Curve25519Field.multiply(S1, Y1.x, S1);
         }
 
-        ECFieldElement H = U1.subtract(U2);
-        ECFieldElement R = S1.subtract(S2);
+        int[] H = Nat256.create();
+        Curve25519Field.subtract(U1, U2, H);
+
+        int[] R = t2;
+        Curve25519Field.subtract(S1, S2, R);
 
         // Check if b == this or b == -this
-        if (H.isZero())
+        if (Nat256.isZero(H))
         {
-            if (R.isZero())
+            if (Nat256.isZero(R))
             {
                 // this == b, i.e. this must be doubled
                 return this.twice();
@@ -138,34 +155,50 @@ public class Curve25519Point extends ECPoint
             return curve.getInfinity();
         }
 
-        ECFieldElement HSquared = H.square();
-        ECFieldElement G = HSquared.multiply(H);
-        ECFieldElement V = HSquared.multiply(U1);
+        int[] HSquared = Nat256.create();
+        Curve25519Field.square(H, HSquared);
 
-        ECFieldElement X3 = R.square().add(G).subtract(two(V));
-        ECFieldElement Y3 = V.subtract(X3).multiplyMinusProduct(R, G, S1);
+        int[] G = Nat256.create();
+        Curve25519Field.multiply(HSquared, H, G);
 
-        ECFieldElement Z3 = H;
+        int[] V = t3;
+        Curve25519Field.multiply(HSquared, U1, V);
+
+        Curve25519Field.negate(G, G);
+        Nat256.mul(S1, G, tt1);
+
+        c = Nat256.addBothTo(V, V, G);
+        Curve25519Field.reduce27(c, G);
+
+        Curve25519FieldElement X3 = new Curve25519FieldElement(t4);
+        Curve25519Field.square(R, X3.x);
+        Curve25519Field.subtract(X3.x, G, X3.x);
+
+        Curve25519FieldElement Y3 = new Curve25519FieldElement(G);
+        Curve25519Field.subtract(V, X3.x, Y3.x);
+        Curve25519Field.multiplyAddToExt(Y3.x, R, tt1);
+        Curve25519Field.reduce(tt1, Y3.x);
+
+        Curve25519FieldElement Z3 = new Curve25519FieldElement(H);
         if (!Z1IsOne)
         {
-            Z3 = Z3.multiply(Z1);
+            Curve25519Field.multiply(Z3.x, Z1.x, Z3.x);
         }
         if (!Z2IsOne)
         {
-            Z3 = Z3.multiply(Z2);
+            Curve25519Field.multiply(Z3.x, Z2.x, Z3.x);
         }
 
-        ECFieldElement Z3Squared = (Z3 == H) ? HSquared : null;
+        int[] Z3Squared = (Z1IsOne && Z2IsOne) ? HSquared : null;
 
         // TODO If the result will only be used in a subsequent addition, we don't need W3
-        ECFieldElement W3 = calculateJacobianModifiedW(Z3, Z3Squared);
+        Curve25519FieldElement W3 = calculateJacobianModifiedW((Curve25519FieldElement)Z3, Z3Squared);
 
         ECFieldElement[] zs = new ECFieldElement[]{ Z3, W3 };
 
         return new Curve25519Point(curve, X3, Y3, zs, this.withCompression);
     }
 
-    // B.3 pg 62
     public ECPoint twice()
     {
         if (this.isInfinity())
@@ -224,17 +257,6 @@ public class Curve25519Point extends ECPoint
         return twiceJacobianModified(false).add(this);
     }
 
-    protected ECFieldElement two(ECFieldElement x)
-    {
-        return x.add(x);
-    }
-
-    protected ECFieldElement three(ECFieldElement x)
-    {
-        return two(x).add(x);
-    }
-
-    // D.3.2 pg 102 (see Note:)
     public ECPoint subtract(ECPoint b)
     {
         if (b.isInfinity())
@@ -242,7 +264,6 @@ public class Curve25519Point extends ECPoint
             return this;
         }
 
-        // Add -b
         return add(b.negate());
     }
 
@@ -256,48 +277,86 @@ public class Curve25519Point extends ECPoint
         return new Curve25519Point(this.getCurve(), this.x, this.y.negate(), this.zs, this.withCompression);
     }
 
-    protected ECFieldElement calculateJacobianModifiedW(ECFieldElement Z, ECFieldElement ZSquared)
+    protected Curve25519FieldElement calculateJacobianModifiedW(Curve25519FieldElement Z, int[] ZSquared)
     {
-        ECFieldElement a4 = this.getCurve().getA();
+        Curve25519FieldElement a4 = (Curve25519FieldElement)this.getCurve().getA();
         if (Z.isOne())
         {
             return a4;
         }
 
+        Curve25519FieldElement W = new Curve25519FieldElement();
         if (ZSquared == null)
         {
-            ZSquared = Z.square();
+            ZSquared = W.x;
+            Curve25519Field.square(Z.x, ZSquared);
         }
-
-        return ZSquared.square().multiply(a4);
+        Curve25519Field.square(ZSquared, W.x);
+        Curve25519Field.multiply(W.x, a4.x, W.x);
+        return W;
     }
 
-    protected ECFieldElement getJacobianModifiedW()
+    protected Curve25519FieldElement getJacobianModifiedW()
     {
-        ECFieldElement W = this.zs[1];
+        Curve25519FieldElement W = (Curve25519FieldElement)this.zs[1];
         if (W == null)
         {
             // NOTE: Rarely, twicePlus will result in the need for a lazy W1 calculation here
-            this.zs[1] = W = calculateJacobianModifiedW(this.zs[0], null);
+            this.zs[1] = W = calculateJacobianModifiedW((Curve25519FieldElement)this.zs[0], null);
         }
         return W;
     }
 
     protected Curve25519Point twiceJacobianModified(boolean calculateW)
     {
-        ECFieldElement X1 = this.x, Y1 = this.y, Z1 = this.zs[0], W1 = getJacobianModifiedW();
+        Curve25519FieldElement X1 = (Curve25519FieldElement)this.x, Y1 = (Curve25519FieldElement)this.y,
+            Z1 = (Curve25519FieldElement)this.zs[0], W1 = getJacobianModifiedW();
 
-        ECFieldElement X1Squared = X1.square();
-        ECFieldElement M = three(X1Squared).add(W1);
-        ECFieldElement _2Y1 = two(Y1);
-        ECFieldElement _2Y1Squared = _2Y1.multiply(Y1);
-        ECFieldElement S = two(X1.multiply(_2Y1Squared));
-        ECFieldElement X3 = M.square().subtract(two(S));
-        ECFieldElement _4T = _2Y1Squared.square();
-        ECFieldElement _8T = two(_4T);
-        ECFieldElement Y3 = M.multiply(S.subtract(X3)).subtract(_8T);
-        ECFieldElement W3 = calculateW ? two(_8T.multiply(W1)) : null;
-        ECFieldElement Z3 = Z1.isOne() ? _2Y1 : _2Y1.multiply(Z1);
+        int c;
+
+        int[] M = Nat256.create();
+        Curve25519Field.square(X1.x, M);
+        c = Nat256.addBothTo(M, M, M);
+        c += Nat256.addTo(W1.x, M);
+        Curve25519Field.reduce27(c, M);
+
+        int[] _2Y1 = Nat256.create();
+        Curve25519Field.twice(Y1.x, _2Y1);
+
+        int[] _2Y1Squared = Nat256.create();
+        Curve25519Field.multiply(_2Y1, Y1.x, _2Y1Squared);
+
+        int[] S = Nat256.create();
+        Curve25519Field.multiply(_2Y1Squared, X1.x, S);
+        Curve25519Field.twice(S, S);
+
+        int[] _8T = Nat256.create();
+        Curve25519Field.square(_2Y1Squared, _8T);
+        Curve25519Field.twice(_8T, _8T);
+
+        Curve25519FieldElement X3 = new Curve25519FieldElement(_2Y1Squared);
+        Curve25519Field.square(M, X3.x);
+        Curve25519Field.subtract(X3.x, S, X3.x);
+        Curve25519Field.subtract(X3.x, S, X3.x);
+
+        Curve25519FieldElement Y3 = new Curve25519FieldElement(S);
+        Curve25519Field.subtract(S, X3.x, Y3.x);
+        Curve25519Field.multiply(Y3.x, M, Y3.x);
+        Curve25519Field.subtract(Y3.x, _8T, Y3.x);
+
+        Curve25519FieldElement Z3 = new Curve25519FieldElement(_2Y1);
+        if (!Nat256.isOne(Z1.x))
+        {
+            Curve25519Field.multiply(Z3.x, Z1.x, Z3.x);
+        }
+
+        Curve25519FieldElement W3 = null;
+        if (calculateW)
+        {
+            W3 = new Curve25519FieldElement(_8T);
+            Curve25519Field.multiply(W3.x, W1.x, W3.x);
+            Curve25519Field.twice(W3.x, W3.x);
+        }
 
         return new Curve25519Point(this.getCurve(), X3, Y3, new ECFieldElement[]{ Z3, W3 }, this.withCompression);
     }

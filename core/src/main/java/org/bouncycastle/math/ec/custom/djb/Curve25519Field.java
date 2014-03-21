@@ -23,7 +23,7 @@ public class Curve25519Field
         Nat256.add(x, y, z);
         if (Nat256.gte(z, P))
         {
-            addPInvTo(z);
+            subPFrom(z);
         }
     }
 
@@ -41,7 +41,7 @@ public class Curve25519Field
         Nat.inc(8, x, z);
         if (Nat256.gte(z, P))
         {
-            addPInvTo(z);
+            subPFrom(z);
         }
     }
 
@@ -75,6 +75,15 @@ public class Curve25519Field
         reduce(tt, z);
     }
 
+    public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
+    {
+        Nat256.mulAddTo(x, y, zz);
+        if (Nat.gte(16, zz, PExt))
+        {
+            subPExtFrom(zz);
+        }
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (Nat256.isZero(x))
@@ -94,13 +103,29 @@ public class Curve25519Field
         int xx07 = xx[7];
         Nat.shiftUpBit(8, xx, 8, xx07, z, 0);
         int c = Nat256.mulByWordAddTo(PInv, xx, z) << 1;
-        int z07 = z[7];
-        z[7] = z07 & P7;
-        c += (z07 >>> 31) - (xx07 >>> 31);
-        Nat.addWordTo(8, c * PInv, z);
+        int z7 = z[7];
+        c += (z7 >> 31) - (xx07 >> 31);
+        z7 &= P7;
+        z7 += Nat.addWordTo(7, c * PInv, z);
+        z[7] = z7;
         if (Nat256.gte(z, P))
         {
-            addPInvTo(z);
+            subPFrom(z);
+        }
+    }
+
+    public static void reduce27(int x, int[] z)
+    {
+//        assert x >>> 26 == 0;
+
+        int z7 = z[7];
+        int c = (x << 1 | z7 >>> 31);
+        z7 &= P7;
+        z7 += Nat.addWordTo(7, c * PInv, z);
+        z[7] = z7;
+        if (Nat256.gte(z, P))
+        {
+            subPFrom(z);
         }
     }
 
@@ -131,7 +156,7 @@ public class Curve25519Field
         int c = Nat256.sub(x, y, z);
         if (c != 0)
         {
-            subPInvFrom(z);
+            addPTo(z);
         }
     }
 
@@ -149,65 +174,81 @@ public class Curve25519Field
         Nat.shiftUpBit(8, x, 0, z);
         if (Nat256.gte(z, P))
         {
-            addPInvTo(z);
+            subPFrom(z);
         }
     }
 
-    private static void addPExtTo(int[] zz)
-    {
-        long c = (zz[0] & M) + (PExt[0] & M);
-        zz[0] = (int)c;
-        c >>= 32;
-
-        int i = 1 - (int)c;
-        i = (i << 3) - i;
-
-        while (++i < 16)
-        {
-            c += (zz[i] & M) + (PExt[i] & M);
-            zz[i] = (int)c;
-            c >>= 32;
-        }
-    }
-
-    private static void subPExtFrom(int[] zz)
-    {
-        long c = (zz[0] & M) - (PExt[0] & M);
-        zz[0] = (int)c;
-        c >>= 32;
-
-        int i = 1 + (int)c;
-        i = (i << 3) - i;
-
-        while (++i < 16)
-        {
-            c += (zz[i] & M) - (PExt[i] & M);
-            zz[i] = (int)c;
-            c >>= 32;
-        }
-    }
-
-    private static void addPInvTo(int[] z)
-    {
-        long c = (z[0] & M) + PInv;
-        z[0] = (int)c;
-        c >>= 32;
-        if (c != 0)
-        {
-            Nat.incAt(8, z, 1);
-        }
-        z[7] &= P7;
-    }
-
-    private static void subPInvFrom(int[] z)
+    private static int addPTo(int[] z)
     {
         long c = (z[0] & M) - PInv;
         z[0] = (int)c;
         c >>= 32;
         if (c != 0)
         {
-            Nat.decAt(8, z, 1);
+            c = Nat.decAt(7, z, 1);
         }
-        z[7] &= P7;
+        c += (z[7] & M) + ((P7 + 1) & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    private static int addPExtTo(int[] zz)
+    {
+        long c = (zz[0] & M) + (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c = Nat.incAt(8, zz, 1);
+        }
+        c += (zz[8] & M) - PInv;
+        zz[8] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c = Nat.decAt(15, zz, 9);
+        }
+        c += (zz[15] & M) + ((PExt[15] + 1) & M);
+        zz[15] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    private static int subPFrom(int[] z)
+    {
+        long c = (z[0] & M) + PInv;
+        z[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c = Nat.incAt(7, z, 1);
+        }
+        c += (z[7] & M) - ((P7 + 1) & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    private static int subPExtFrom(int[] zz)
+    {
+        long c = (zz[0] & M) - (PExt[0] & M);
+        zz[0] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c = Nat.decAt(8, zz, 1);
+        }
+        c += (zz[8] & M) + PInv;
+        zz[8] = (int)c;
+        c >>= 32;
+        if (c != 0)
+        {
+            c = Nat.incAt(15, zz, 9);
+        }
+        c += (zz[15] & M) - ((PExt[15] + 1) & M);
+        zz[15] = (int)c;
+        c >>= 32;
+        return (int)c;
     }
 }
