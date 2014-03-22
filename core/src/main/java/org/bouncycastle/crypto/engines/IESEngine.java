@@ -18,6 +18,8 @@ import org.bouncycastle.crypto.params.IESParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.crypto.util.Pack;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -33,6 +35,7 @@ public class IESEngine
     DerivationFunction kdf;
     Mac mac;
     BufferedBlockCipher cipher;
+    RandomGenerator nonceGenerator;
     byte[] macBuf;
 
     boolean forEncryption;
@@ -87,6 +90,31 @@ public class IESEngine
         this.cipher = cipher;
     }
 
+    /**
+     * set up for use in conjunction with a block cipher mode of operating using
+     * a nonce/IV to handle the message.
+     *
+     * @param agree  the key agreement used as the basis for the encryption
+     * @param kdf    the key derivation function used for byte generation
+     * @param mac    the message authentication code generator for the message
+     * @param cipher the cipher to used for encrypting the message
+     * @param nonceGenerator the random generator that produces IVs used by the 
+     * block cipher, must be initialized.
+     */
+    public IESEngine(
+        BasicAgreement agree,
+        DerivationFunction kdf,
+        Mac mac,
+        BufferedBlockCipher cipher,
+        RandomGenerator nonceGenerator)
+    {
+        this.agree = agree;
+        this.kdf = kdf;
+        this.mac = mac;
+        this.macBuf = new byte[mac.getMacSize()];
+        this.cipher = cipher;
+        this.nonceGenerator = nonceGenerator;
+    }
 
     /**
      * Initialise the encryptor.
@@ -198,7 +226,19 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            cipher.init(true, new KeyParameter(K1));
+            // If nonceGenerator provided get an IV and initialize the cipher
+            if (nonceGenerator != null)
+            {
+                byte[] IV = new byte[K1.length];
+                
+                nonceGenerator.nextBytes(IV);
+                cipher.init(true, new ParametersWithIV(new KeyParameter(K1), IV));
+            }
+            else
+            {
+                cipher.init(true, new KeyParameter(K1));    
+            }
+            
             C = new byte[cipher.getOutputSize(inLen)];
             len = cipher.processBytes(in, inOff, inLen, C, 0);
             len += cipher.doFinal(C, len);
@@ -247,6 +287,12 @@ public class IESEngine
         byte[] M = null, K = null, K1 = null, K2 = null;
         int len;
 
+        // Ensure that the length of the input is greater than the MAC in bytes
+        if (inLen <= (param.getMacKeySize() / 8))
+        {
+            throw new InvalidCipherTextException("Length of input must be greater than the MAC");
+        }
+
         if (cipher == null)
         {
             // Streaming mode.
@@ -287,7 +333,18 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            cipher.init(false, new KeyParameter(K1));
+            // If nonceGenerator provided get an IV and initialize the cipher
+            if (nonceGenerator != null)
+            {
+                byte[] IV = new byte[K1.length];
+                
+                nonceGenerator.nextBytes(IV);
+                cipher.init(false, new ParametersWithIV(new KeyParameter(K1), IV));
+            }
+            else
+            {
+                cipher.init(false, new KeyParameter(K1));    
+            }
 
             M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
             len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
