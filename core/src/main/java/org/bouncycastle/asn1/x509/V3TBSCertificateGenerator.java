@@ -2,10 +2,10 @@ package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.x500.X500Name;
 
 /**
@@ -74,7 +74,7 @@ public class V3TBSCertificateGenerator
     }
     
     public void setStartDate(
-        DERUTCTime startDate)
+        ASN1UTCTime startDate)
     {
         this.startDate = new Time(startDate);
     }
@@ -86,7 +86,7 @@ public class V3TBSCertificateGenerator
     }
 
     public void setEndDate(
-        DERUTCTime endDate)
+        ASN1UTCTime endDate)
     {
         this.endDate = new Time(endDate);
     }

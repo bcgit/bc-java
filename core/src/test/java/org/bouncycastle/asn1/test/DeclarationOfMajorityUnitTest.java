@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.isismtt.x509.DeclarationOfMajority;
 
@@ -50,7 +49,7 @@ public class DeclarationOfMajorityUnitTest
     private void checkConstruction(
         DeclarationOfMajority decl,
         int                   type,
-        DERGeneralizedTime    dateOfBirth,
+        ASN1GeneralizedTime   dateOfBirth,
         int                   notYoungerThan)
         throws IOException
     {
@@ -72,7 +71,7 @@ public class DeclarationOfMajorityUnitTest
     private void checkValues(
         DeclarationOfMajority decl,
         int                   type,
-        DERGeneralizedTime    dateOfBirth,
+        ASN1GeneralizedTime   dateOfBirth,
         int                   notYoungerThan)
     {
         checkMandatoryField("type", type, decl.getType());

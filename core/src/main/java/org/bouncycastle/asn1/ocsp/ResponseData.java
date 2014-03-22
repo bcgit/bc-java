@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -49,7 +48,7 @@ public class ResponseData
      */
     public ResponseData(
         ResponderID         responderID,
-        DERGeneralizedTime  producedAt,
+        ASN1GeneralizedTime  producedAt,
         ASN1Sequence        responses,
         X509Extensions responseExtensions)
     {

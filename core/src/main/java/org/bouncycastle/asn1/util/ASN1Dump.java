@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -13,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.BERApplicationSpecific;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
@@ -23,13 +25,11 @@ import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERExternal;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERT61String;
-import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.encoders.Hex;
@@ -237,13 +237,13 @@ public class ASN1Dump
         {
             buf.append(indent + "T61String(" + ((DERT61String)obj).getString() + ") " + nl);
         }
-        else if (obj instanceof DERUTCTime)
+        else if (obj instanceof ASN1UTCTime)
         {
-            buf.append(indent + "UTCTime(" + ((DERUTCTime)obj).getTime() + ") " + nl);
+            buf.append(indent + "UTCTime(" + ((ASN1UTCTime)obj).getTime() + ") " + nl);
         }
-        else if (obj instanceof DERGeneralizedTime)
+        else if (obj instanceof ASN1GeneralizedTime)
         {
-            buf.append(indent + "GeneralizedTime(" + ((DERGeneralizedTime)obj).getTime() + ") " + nl);
+            buf.append(indent + "GeneralizedTime(" + ((ASN1GeneralizedTime)obj).getTime() + ") " + nl);
         }
         else if (obj instanceof BERApplicationSpecific)
         {

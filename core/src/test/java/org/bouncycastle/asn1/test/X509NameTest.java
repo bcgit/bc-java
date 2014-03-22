@@ -8,13 +8,13 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -132,12 +132,12 @@ public class X509NameTest
     private void testEncodingGeneralizedTime(ASN1ObjectIdentifier oid, String value)
     {
         ASN1Encodable converted = createEntryValue(oid, value);
-        if (!(converted instanceof DERGeneralizedTime))
+        if (!(converted instanceof ASN1GeneralizedTime))
         {
             fail("encoding for " + oid + " not GeneralizedTime");
         }
         converted = createEntryValueFromString(oid, value);
-        if (!(converted instanceof DERGeneralizedTime))
+        if (!(converted instanceof ASN1GeneralizedTime))
         {
             fail("encoding for " + oid + " not GeneralizedTime");
         }
