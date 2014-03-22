@@ -19,7 +19,6 @@ import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.crypto.util.Pack;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -35,7 +34,6 @@ public class IESEngine
     DerivationFunction kdf;
     Mac mac;
     BufferedBlockCipher cipher;
-    RandomGenerator nonceGenerator;
     byte[] macBuf;
 
     boolean forEncryption;
@@ -45,7 +43,7 @@ public class IESEngine
     byte[] V;
     private EphemeralKeyPairGenerator keyPairGenerator;
     private KeyParser keyParser;
-
+    private byte[] IV;
 
     /**
      * set up for use with stream mode, where the key derivation function
@@ -91,50 +89,25 @@ public class IESEngine
     }
 
     /**
-     * set up for use in conjunction with a block cipher mode of operating using
-     * a nonce/IV to handle the message.
-     *
-     * @param agree  the key agreement used as the basis for the encryption
-     * @param kdf    the key derivation function used for byte generation
-     * @param mac    the message authentication code generator for the message
-     * @param cipher the cipher to used for encrypting the message
-     * @param nonceGenerator the random generator that produces IVs used by the 
-     * block cipher, must be initialized.
-     */
-    public IESEngine(
-        BasicAgreement agree,
-        DerivationFunction kdf,
-        Mac mac,
-        BufferedBlockCipher cipher,
-        RandomGenerator nonceGenerator)
-    {
-        this.agree = agree;
-        this.kdf = kdf;
-        this.mac = mac;
-        this.macBuf = new byte[mac.getMacSize()];
-        this.cipher = cipher;
-        this.nonceGenerator = nonceGenerator;
-    }
-
-    /**
      * Initialise the encryptor.
      *
      * @param forEncryption whether or not this is encryption/decryption.
      * @param privParam     our private key parameters
      * @param pubParam      the recipient's/sender's public key parameters
-     * @param param         encoding and derivation parameters.
+     * @param params        encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
      */
     public void init(
         boolean forEncryption,
         CipherParameters privParam,
         CipherParameters pubParam,
-        CipherParameters param)
+        CipherParameters params)
     {
         this.forEncryption = forEncryption;
         this.privParam = privParam;
         this.pubParam = pubParam;
-        this.param = (IESParameters)param;
         this.V = new byte[0];
+
+        extractParams(params);
     }
 
 
@@ -142,30 +115,46 @@ public class IESEngine
      * Initialise the encryptor.
      *
      * @param publicKey      the recipient's/sender's public key parameters
-     * @param params         encoding and derivation parameters.
+     * @param params         encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
      * @param ephemeralKeyPairGenerator             the ephemeral key pair generator to use.
      */
     public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator)
     {
         this.forEncryption = true;
         this.pubParam = publicKey;
-        this.param = (IESParameters)params;
         this.keyPairGenerator = ephemeralKeyPairGenerator;
+
+        extractParams(params);
     }
 
     /**
      * Initialise the encryptor.
      *
      * @param privateKey      the recipient's private key.
-     * @param params          encoding and derivation parameters.
+     * @param params          encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
      * @param publicKeyParser the parser for reading the ephemeral public key.
      */
     public void init(AsymmetricKeyParameter privateKey, CipherParameters params, KeyParser publicKeyParser)
     {
         this.forEncryption = false;
         this.privParam = privateKey;
-        this.param = (IESParameters)params;
         this.keyParser = publicKeyParser;
+
+        extractParams(params);
+    }
+
+    private void extractParams(CipherParameters params)
+    {
+        if (params instanceof ParametersWithIV)
+        {
+            this.IV = ((ParametersWithIV)params).getIV();
+            this.param = (IESParameters)((ParametersWithIV)params).getParameters();
+        }
+        else
+        {
+            this.IV = null;
+            this.param = (IESParameters)params;
+        }
     }
 
     public BufferedBlockCipher getCipher()
@@ -226,12 +215,9 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            // If nonceGenerator provided get an IV and initialize the cipher
-            if (nonceGenerator != null)
+            // If iv provided use it to initialise the cipher
+            if (IV != null)
             {
-                byte[] IV = new byte[K1.length];
-                
-                nonceGenerator.nextBytes(IV);
                 cipher.init(true, new ParametersWithIV(new KeyParameter(K1), IV));
             }
             else
@@ -333,12 +319,9 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
-            // If nonceGenerator provided get an IV and initialize the cipher
-            if (nonceGenerator != null)
+            // If IV provide use it to initialize the cipher
+            if (IV != null)
             {
-                byte[] IV = new byte[K1.length];
-                
-                nonceGenerator.nextBytes(IV);
                 cipher.init(false, new ParametersWithIV(new KeyParameter(K1), IV));
             }
             else
