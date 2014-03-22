@@ -36,11 +36,26 @@ public class X509v3CertificateBuilder
      */
     public X509v3CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
     {
+        this(issuer, serial, new Time(notBefore), new Time(notAfter), subject, publicKeyInfo);
+    }
+
+    /**
+     * Create a builder for a version 3 certificate.
+     *
+     * @param issuer the certificate issuer
+     * @param serial the certificate serial number
+     * @param notBefore the Time before which the certificate is not valid
+     * @param notAfter the Time after which the certificate is not valid
+     * @param subject the certificate subject
+     * @param publicKeyInfo the info structure for the public key to be associated with this certificate.
+     */
+    public X509v3CertificateBuilder(X500Name issuer, BigInteger serial, Time notBefore, Time notAfter, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
+    {
         tbsGen = new V3TBSCertificateGenerator();
         tbsGen.setSerialNumber(new ASN1Integer(serial));
         tbsGen.setIssuer(issuer);
-        tbsGen.setStartDate(new Time(notBefore));
-        tbsGen.setEndDate(new Time(notAfter));
+        tbsGen.setStartDate(notBefore);
+        tbsGen.setEndDate(notAfter);
         tbsGen.setSubject(subject);
         tbsGen.setSubjectPublicKeyInfo(publicKeyInfo);
 
