@@ -6,7 +6,6 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.x500.DirectoryString;
 import org.bouncycastle.asn1.x509.sigi.NameOrPseudonym;
 import org.bouncycastle.asn1.x509.sigi.PersonalData;
@@ -76,7 +75,7 @@ public class PersonalDataUnitTest
         PersonalData data,
         NameOrPseudonym nameOrPseudonym,
         BigInteger nameDistinguisher,
-        DERGeneralizedTime dateOfBirth,
+        ASN1GeneralizedTime dateOfBirth,
         DirectoryString placeOfBirth,
         String gender,
         DirectoryString postalAddress)
@@ -101,7 +100,7 @@ public class PersonalDataUnitTest
         PersonalData data,
         NameOrPseudonym nameOrPseudonym,
         BigInteger nameDistinguisher,
-        DERGeneralizedTime dateOfBirth,
+        ASN1GeneralizedTime dateOfBirth,
         DirectoryString placeOfBirth,
         String gender,
         DirectoryString postalAddress)

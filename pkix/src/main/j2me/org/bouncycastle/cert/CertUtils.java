@@ -199,7 +199,7 @@ class CertUtils
         return null;
     }
 
-    static Date recoverDate(DERGeneralizedTime time)
+    static Date recoverDate(ASN1GeneralizedTime time)
     {
         return time.getDate();
     }

@@ -6,9 +6,11 @@ import java.util.Date;
 import java.util.SimpleTimeZone;
 
 import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 
@@ -28,8 +30,8 @@ public class Time
     public Time(
         ASN1Primitive   time)
     {
-        if (!(time instanceof DERUTCTime)
-            && !(time instanceof DERGeneralizedTime))
+        if (!(time instanceof ASN1UTCTime)
+            && !(time instanceof ASN1GeneralizedTime))
         {
             throw new IllegalArgumentException("unknown object passed to Time");
         }
@@ -70,13 +72,13 @@ public class Time
         {
             return (Time)obj;
         }
-        else if (obj instanceof DERUTCTime)
+        else if (obj instanceof ASN1UTCTime)
         {
-            return new Time((DERUTCTime)obj);
+            return new Time((ASN1UTCTime)obj);
         }
-        else if (obj instanceof DERGeneralizedTime)
+        else if (obj instanceof ASN1GeneralizedTime)
         {
-            return new Time((DERGeneralizedTime)obj);
+            return new Time((ASN1GeneralizedTime)obj);
         }
 
         throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
@@ -84,13 +86,13 @@ public class Time
 
     public String getTime()
     {
-        if (time instanceof DERUTCTime)
+        if (time instanceof ASN1UTCTime)
         {
-            return ((DERUTCTime)time).getAdjustedTime();
+            return ((ASN1UTCTime)time).getAdjustedTime();
         }
         else
         {
-            return ((DERGeneralizedTime)time).getTime();
+            return ((ASN1GeneralizedTime)time).getTime();
         }
     }
 
@@ -98,13 +100,13 @@ public class Time
     {
         try
         {
-            if (time instanceof DERUTCTime)
+            if (time instanceof ASN1UTCTime)
             {
-                return ((DERUTCTime)time).getAdjustedDate();
+                return ((ASN1UTCTime)time).getAdjustedDate();
             }
             else
             {
-                return ((DERGeneralizedTime)time).getDate();
+                return ((ASN1GeneralizedTime)time).getDate();
             }
         }
         catch (ParseException e)

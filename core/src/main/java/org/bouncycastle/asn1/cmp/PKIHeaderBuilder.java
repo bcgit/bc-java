@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -44,16 +43,6 @@ public class PKIHeaderBuilder
         this.pvno = pvno;
         this.sender = sender;
         this.recipient = recipient;
-    }
-
-    /**
-     * @deprecated use ASN1GeneralizedTime
-     */
-    public PKIHeaderBuilder setMessageTime(DERGeneralizedTime time)
-    {
-        messageTime = ASN1GeneralizedTime.getInstance(time);
-
-        return this;
     }
 
     public PKIHeaderBuilder setMessageTime(ASN1GeneralizedTime time)
