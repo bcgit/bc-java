@@ -28,10 +28,12 @@ Release 1.51
 <ul>
 <li>The AEAD GCM AlgorithmParameters object was unable to return a GCMParameterSpec object. This has been fixed.</li>
 <li>Cipher.getIV() was returning null for AEAD mode ciphers. This has been fixed.</li>
+<li>CipherInputStream would fail for some AEAD mode ciphers if the message was over 4k in length. This has been fixed.
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>The range of key algorithm names that will be interpreted by KeyAgreement.generateSecret() has been expanded for ECDH derived algorithms in the provider. A KeyAgreement of ECDHwithSHA1KDF can now be explicitly created.</li>
+<li>ECIES now supports the use of IVs with the underlying block cipher and CBC mode in both the lightweight and the JCE APIs.</li>
 </ul>
 <h3>2.2.1 Version</h3>
 Release 1.50
