@@ -104,7 +104,7 @@ public class Curve25519Field
         Nat.shiftUpBit(8, xx, 8, xx07, z, 0);
         int c = Nat256.mulByWordAddTo(PInv, xx, z) << 1;
         int z7 = z[7];
-        c += (z7 >> 31) - (xx07 >> 31);
+        c += (z7 >>> 31) - (xx07 >>> 31);
         z7 &= P7;
         z7 += Nat.addWordTo(7, c * PInv, z);
         z[7] = z7;
