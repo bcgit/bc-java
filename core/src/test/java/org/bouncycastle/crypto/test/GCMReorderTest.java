@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables1kGCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.Tables64kGCMMultiplier;
-import org.bouncycastle.crypto.util.Pack;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class GCMReorderTest

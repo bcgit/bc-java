@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.macs.SipHash;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.util.Pack;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
