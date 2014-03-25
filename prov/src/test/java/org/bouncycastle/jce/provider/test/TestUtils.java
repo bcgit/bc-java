@@ -24,7 +24,10 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
@@ -81,7 +84,7 @@ class TestUtils
         certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
     
         certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
-        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false, new SubjectKeyIdentifierStructure(intKey));
+        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false, new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(intKey.getEncoded()))));
         certGen.addExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(0));
         certGen.addExtension(X509Extensions.KeyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
 
@@ -102,7 +105,7 @@ class TestUtils
         certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
         
         certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
-        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false, new SubjectKeyIdentifierStructure(entityKey));
+        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false, new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(entityKey.getEncoded()))));
         certGen.addExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(false));
         certGen.addExtension(X509Extensions.KeyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
 
@@ -282,5 +285,17 @@ class TestUtils
         {
             return new byte[0];
         }
+
+    }
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
     }
 }

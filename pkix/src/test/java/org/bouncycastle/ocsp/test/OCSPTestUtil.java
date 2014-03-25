@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class OCSPTestUtil
@@ -164,12 +165,7 @@ public class OCSPTestUtil
     private static SubjectKeyIdentifier createSubjectKeyId(PublicKey _pubKey)
             throws IOException
     {
-
-        ByteArrayInputStream _bais = new ByteArrayInputStream(_pubKey
-                .getEncoded());
-        SubjectPublicKeyInfo _info = new SubjectPublicKeyInfo(
-                (ASN1Sequence)new ASN1InputStream(_bais).readObject());
-        return new SubjectKeyIdentifier(_info);
+        return new BcX509ExtensionUtils().createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded()));
     }
 
     private static BigInteger allocateSerialNumber()

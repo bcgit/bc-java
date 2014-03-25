@@ -44,6 +44,8 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -178,7 +180,7 @@ public class GenerationTest
         order.addElement(X509Extension.keyUsage);
 
         extensions.put(X509Extension.authorityKeyIdentifier, new X509Extension(true, new DEROctetString(createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2))));
-        extensions.put(X509Extension.subjectKeyIdentifier, new X509Extension(true, new DEROctetString(new SubjectKeyIdentifier(new byte[20]))));
+        extensions.put(X509Extension.subjectKeyIdentifier, new X509Extension(true, new DEROctetString(new SubjectKeyIdentifier(getDigest(info)))));
         extensions.put(X509Extension.keyUsage, new X509Extension(false, new DEROctetString(new KeyUsage(KeyUsage.dataEncipherment))));
 
         X509Extensions  ex = new X509Extensions(order, extensions);
@@ -419,7 +421,18 @@ public class GenerationTest
     {
         return "Generation";
     }
-    
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
+    }
+
     public static void main(
         String[] args)
     {
