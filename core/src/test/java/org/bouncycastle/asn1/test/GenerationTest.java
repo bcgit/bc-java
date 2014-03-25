@@ -178,7 +178,7 @@ public class GenerationTest
         order.addElement(X509Extension.keyUsage);
 
         extensions.put(X509Extension.authorityKeyIdentifier, new X509Extension(true, new DEROctetString(createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2))));
-        extensions.put(X509Extension.subjectKeyIdentifier, new X509Extension(true, new DEROctetString(new SubjectKeyIdentifier(info))));
+        extensions.put(X509Extension.subjectKeyIdentifier, new X509Extension(true, new DEROctetString(new SubjectKeyIdentifier(new byte[20]))));
         extensions.put(X509Extension.keyUsage, new X509Extension(false, new DEROctetString(new KeyUsage(KeyUsage.dataEncipherment))));
 
         X509Extensions  ex = new X509Extensions(order, extensions);
