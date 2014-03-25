@@ -44,7 +44,6 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 /**
  **/
@@ -427,7 +426,7 @@ public class PKCS10CertRequestTest
         oids.add(X509Extensions.KeyUsage);
         values.add(new X509Extension(true, new DEROctetString(
             new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))));
-        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded())));
+        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifier(getDigest(SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded())));
         X509Extension ski = new X509Extension(false, new DEROctetString(subjectKeyIdentifier));
         oids.add(X509Extensions.SubjectKeyIdentifier);
         values.add(ski);
