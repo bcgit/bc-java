@@ -23,10 +23,13 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -424,7 +427,7 @@ public class PKCS10CertRequestTest
         oids.add(X509Extensions.KeyUsage);
         values.add(new X509Extension(true, new DEROctetString(
             new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))));
-        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(pair.getPublic());
+        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded())));
         X509Extension ski = new X509Extension(false, new DEROctetString(subjectKeyIdentifier));
         oids.add(X509Extensions.SubjectKeyIdentifier);
         values.add(ski);
@@ -531,6 +534,17 @@ public class PKCS10CertRequestTest
         createPSSTest("SHA384withRSAandMGF1");
 
         nullPointerTest();
+    }
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
     }
 
     public static void main(
