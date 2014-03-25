@@ -84,6 +84,8 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jcajce.provider.config.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
@@ -209,12 +211,23 @@ public class PKCS12KeyStoreSpi
             SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
                 (ASN1Sequence)ASN1Primitive.fromByteArray(pubKey.getEncoded()));
 
-            return new SubjectKeyIdentifier(info);
+            return new SubjectKeyIdentifier(getDigest(info));
         }
         catch (Exception e)
         {
             throw new RuntimeException("error creating key");
         }
+    }
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
     }
 
     public void setRandom(
