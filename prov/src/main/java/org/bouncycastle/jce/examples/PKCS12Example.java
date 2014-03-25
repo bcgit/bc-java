@@ -18,7 +18,10 @@ import java.util.Vector;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -135,7 +138,7 @@ public class PKCS12Example
         v3CertGen.addExtension(
             X509Extensions.SubjectKeyIdentifier,
             false,
-            new SubjectKeyIdentifierStructure(pubKey));
+            new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()))));
 
         v3CertGen.addExtension(
             X509Extensions.AuthorityKeyIdentifier,
@@ -228,7 +231,7 @@ public class PKCS12Example
         v3CertGen.addExtension(
             X509Extensions.SubjectKeyIdentifier,
             false,
-            new SubjectKeyIdentifierStructure(pubKey));
+            new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()))));
 
         v3CertGen.addExtension(
             X509Extensions.AuthorityKeyIdentifier,
@@ -255,7 +258,7 @@ public class PKCS12Example
             new DERBMPString("Eric's Key"));
         bagAttr.setBagAttribute(
             PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-            new SubjectKeyIdentifierStructure(pubKey));
+            new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()))));
 
         return cert;
     }
@@ -355,7 +358,7 @@ public class PKCS12Example
             new DERBMPString("Eric's Key"));
         bagAttr.setBagAttribute(
             PKCSObjectIdentifiers.pkcs_9_at_localKeyId,
-            new SubjectKeyIdentifierStructure(pubKey));
+            new SubjectKeyIdentifierStructure(getDigest(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()))));
 
         //
         // store the key and the certificate chain
@@ -375,5 +378,16 @@ public class PKCS12Example
         store.store(fOut, passwd);
         
         fOut.close();
+    }
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
     }
 }
