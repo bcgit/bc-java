@@ -25,16 +25,40 @@ public class TlsServerProtocol
     protected short clientCertificateType = -1;
     protected TlsHandshakeHash prepareFinishHash = null;
 
+    /**
+     * Constructor for non-blocking mode.<br>
+     * <br>
+     * To send data, use {@link #getOutputStream()}. Data that needs to be sent to the remote
+     * peer will be written to the OutputStream passed in to this constructor.<br>
+     * <br>
+     * To read data, use {@link #offerInput(java.nio.ByteBuffer)}. Decrypted application data
+     * will be passed to {@link TlsPeer#notifyApplicationDataReceived(byte[])}.
+     * @param output
+     * @param secureRandom
+     */
+    public TlsServerProtocol(OutputStream output, SecureRandom secureRandom)
+    {
+        super(output, secureRandom);
+    }
+    
+    /**
+     * Constructor for blocking mode.
+     * @param input
+     * @param output
+     * @param secureRandom
+     */
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
         super(input, output, secureRandom);
     }
 
     /**
-     * Receives a TLS handshake in the role of server
+     * Receives a TLS handshake in the role of server. In blocking mode, this will not return
+     * until the handshake is complete. In non-blocking mode, use {@link TlsPeer#notifyHandshakeComplete()}
+     * to receive a callback when the handshake is complete.
      *
      * @param tlsServer
-     * @throws IOException If handshake was not successful.
+     * @throws IOException If server is in blocking mode and handshake was not successful.
      */
     public void accept(TlsServer tlsServer)
         throws IOException
@@ -60,7 +84,10 @@ public class TlsServerProtocol
 
         this.recordStream.setRestrictReadVersion(false);
 
-        completeHandshake();
+        if (blocking)
+        {
+            handshakePump();
+        }
     }
 
     protected void cleanupHandshake()

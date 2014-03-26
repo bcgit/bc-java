@@ -6,6 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -59,6 +60,7 @@ public abstract class TlsProtocol
      */
     protected RecordStream recordStream;
     protected SecureRandom secureRandom;
+    protected boolean blocking;
 
     private TlsInputStream tlsInputStream = null;
     private TlsOutputStream tlsOutputStream = null;
@@ -86,10 +88,21 @@ public abstract class TlsProtocol
     protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
 
+    public TlsProtocol(OutputStream output, SecureRandom secureRandom)
+    {
+        this(null, output, secureRandom, false);
+    }
+    
     public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
+    {
+        this(input, output, secureRandom, true);
+    }
+    
+    private TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom, boolean blocking)
     {
         this.recordStream = new RecordStream(this, input, output);
         this.secureRandom = secureRandom;
+        this.blocking = blocking;
     }
 
     protected abstract AbstractTlsContext getContext();
@@ -131,8 +144,7 @@ public abstract class TlsProtocol
         this.expectSessionTicket = false;
     }
 
-    protected void completeHandshake()
-        throws IOException
+    protected void handshakePump() throws IOException
     {
         try
         {
@@ -148,7 +160,16 @@ public abstract class TlsProtocol
 
                 safeReadRecord();
             }
-
+        } finally {
+            cleanupHandshake();
+        }
+    }
+    
+    protected void completeHandshake()
+        throws IOException
+    {
+        try
+        {
             this.recordStream.finaliseHandshake();
 
             this.splitApplicationDataRecords = !TlsUtils.isTLSv11(getContext());
@@ -300,15 +321,19 @@ public abstract class TlsProtocol
             }
         }
         while (read);
+        
+        if (this.connection_state == CS_END) {
+            // finished handshake, trigger completion
+            completeHandshake();
+        }
     }
 
     private void processApplicationData()
     {
-        /*
-         * There is nothing we need to do here.
-         * 
-         * This function could be used for callbacks when application data arrives in the future.
-         */
+        if (!blocking)
+        {
+            getPeer().notifyApplicationDataReceived(applicationDataQueue.removeData(applicationDataQueue.size(), 0));
+        }
     }
 
     private void processAlert()
@@ -586,11 +611,41 @@ public abstract class TlsProtocol
     }
 
     /**
-     * @return An InputStream which can be used to read data.
+     * @return An InputStream which can be used to read data. Only allowed in blocking mode.
      */
     public InputStream getInputStream()
     {
+        if (!blocking)
+        {
+            throw new IllegalStateException("Cannot use InputStream in non-blocking mode! Use offerInput() instead.");
+        }
         return this.tlsInputStream;
+    }
+    
+    /**
+     * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
+     * <br>
+     * After this method returns, the ByteBuffer's position will have been moved to the end of the current record.
+     * In other words, calling this method will only read one record, even if the buffer contains multiple records.
+     * The caller should continue invoking this method until the buffer has zero bytes remaining or the buffer's
+     * position is unchanged.<br>
+     * <br>
+     * If the buffer's position is unchanged but the buffer still has bytes remaining, then the buffer contains a
+     * partial record. It is the caller's responsibility to hold on to the remaining bytes in the buffer until it
+     * receives more input.<br>
+     * <br>
+     * If the record contains application data, {@link TlsPeer#notifyApplicationDataReceived(byte[])} will be
+     * called with the decrypted data.
+     * @param input
+     * @throws IOException
+     */
+    public void offerInput(ByteBuffer input) throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use offerInput() in blocking mode! Use InputStream instead.");
+        }
+        recordStream.readRecord(input);
     }
 
     /**

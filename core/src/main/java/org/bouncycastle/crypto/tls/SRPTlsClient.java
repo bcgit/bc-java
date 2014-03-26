@@ -15,19 +15,71 @@ public abstract class SRPTlsClient
 
     protected byte[] identity;
     protected byte[] password;
+    protected SRPPrimeVerifier primeVerifier;
 
+    /**
+     * Create a client with the given identity and password, and a
+     * default cipher factory and prime verifier.
+     * See {@link #SRPTlsClient(TlsCipherFactory, byte[], byte[], SRPPrimeVerifier)}
+     * for notes on the parameters.
+     * @param identity 
+     * @param password
+     */
     public SRPTlsClient(byte[] identity, byte[] password)
     {
-        super();
-        this.identity = Arrays.clone(identity);
-        this.password = Arrays.clone(password);
+        this(null, identity, password, null);
+    }
+    
+    /**
+     * Create a client with the given identity, password, prime verififer,
+     * and a default cipher factory. See
+     * {@link #SRPTlsClient(TlsCipherFactory, byte[], byte[], SRPPrimeVerifier)}
+     * for notes on the parameters.
+     * @param identity
+     * @param password
+     * @param primeVerifier
+     */
+    public SRPTlsClient(byte[] identity, byte[] password, SRPPrimeVerifier primeVerifier)
+    {
+        this(null, identity, password, primeVerifier);
     }
 
+    /**
+     * Create a client with the given identity, password, cipher factory, and a
+     * default prime verifier. See
+     * {@link #SRPTlsClient(TlsCipherFactory, byte[], byte[], SRPPrimeVerifier)}
+     * for notes on the parameters.
+     * @param cipherFactory
+     * @param identity
+     * @param password
+     */
     public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
+    {
+        this(cipherFactory, identity, password, new DefaultSRPPrimeVerifier());
+    }
+    
+    /**
+     * Create a client with the given identity, password, cipher factory, and prime verifier.<br>
+     * <br>
+     * Per RFC 5054 section 2.3, the supplied username and password
+     * must be prepared with the RFC 4013 SASLprep profile (using e.g.
+     * ICU4J's com.ibm.icu.text.StringPrep) and encoded with UTF-8.
+     * @param cipherFactory
+     * @param identity
+     * @param password
+     * @param primeVerifier
+     */
+    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password,
+            SRPPrimeVerifier primeVerifier)
     {
         super(cipherFactory);
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
+        if (primeVerifier == null)
+        {
+            primeVerifier = new DefaultSRPPrimeVerifier();
+        }
+        this.primeVerifier = primeVerifier;
     }
 
     public int[] getCipherSuites()
@@ -113,9 +165,30 @@ public abstract class SRPTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
+    
+    public TlsAuthentication getAuthentication() throws IOException
+    {
+        // default implementation that does nothing
+        return new TlsAuthentication()
+        {
+            public void notifyServerCertificate(Certificate serverCertificate)
+                    throws IOException
+            {
+                
+            }
+            
+            public TlsCredentials getClientCredentials(
+                    CertificateRequest certificateRequest) throws IOException
+            {
+                return null;
+            }
+        };
+    }
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, primeVerifier,
+                identity, password);
     }
+
 }

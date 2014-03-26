@@ -43,4 +43,11 @@ public interface TlsPeer
      * Notifies the peer that the handshake has been successfully completed.
      */
     void notifyHandshakeComplete() throws IOException;
+    
+    /**
+     * In non-blocking mode, this method will be called when application data is received.
+     * In blocking mode, this method will not be called.
+     * @param data
+     */
+    void notifyApplicationDataReceived(byte[] data);
 }

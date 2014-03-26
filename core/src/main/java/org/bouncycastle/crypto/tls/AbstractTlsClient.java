@@ -21,11 +21,15 @@ public abstract class AbstractTlsClient
 
     public AbstractTlsClient()
     {
-        this(new DefaultTlsCipherFactory());
+        this(null);
     }
 
     public AbstractTlsClient(TlsCipherFactory cipherFactory)
     {
+        if (cipherFactory == null)
+        {
+            cipherFactory = new DefaultTlsCipherFactory();
+        }
         this.cipherFactory = cipherFactory;
     }
 

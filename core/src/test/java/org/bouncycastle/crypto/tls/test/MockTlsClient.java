@@ -23,8 +23,10 @@ import org.bouncycastle.util.encoders.Hex;
 
 class MockTlsClient
     extends DefaultTlsClient
+    implements ITestTlsClient
 {
     TlsSession session;
+    byte[] receivedAppData;
 
     MockTlsClient(TlsSession session)
     {
@@ -163,5 +165,15 @@ class MockTlsClient
 
             this.session = newSession;
         }
+    }
+
+    public void notifyApplicationDataReceived(byte[] data)
+    {
+        receivedAppData = Arrays.concatenate(receivedAppData, data);
+    }
+
+    public byte[] getReceivedAppData()
+    {
+        return receivedAppData;
     }
 }

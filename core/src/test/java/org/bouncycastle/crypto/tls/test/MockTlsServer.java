@@ -21,7 +21,10 @@ import org.bouncycastle.util.Arrays;
 
 class MockTlsServer
     extends DefaultTlsServer
+    implements ITestTlsServer
 {
+    byte[] receivedAppData;
+    
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
@@ -146,5 +149,16 @@ class MockTlsServer
 
         return TlsTestUtils.loadSignerCredentials(context, new String[]{"x509-server.pem", "x509-ca.pem"},
             "x509-server-key.pem", signatureAndHashAlgorithm);
+    }
+
+    @Override
+    public void notifyApplicationDataReceived(byte[] data)
+    {
+        receivedAppData = Arrays.concatenate(receivedAppData, data);
+    }
+
+    public byte[] getReceivedAppData()
+    {
+        return receivedAppData;
     }
 }
