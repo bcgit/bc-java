@@ -476,28 +476,14 @@ public abstract class TlsProtocol
                 throw new EOFException();
             }
         }
-        catch (TlsFatalAlert e)
-        {
-            if (!this.closed)
-            {
-                this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to read record", e);
-            }
-            throw e;
-        }
         catch (IOException e)
         {
-            if (!this.closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
-            }
+            handleReadRecordException(e);
             throw e;
         }
         catch (RuntimeException e)
         {
-            if (!this.closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
-            }
+            handleReadRecordException(e);
             throw e;
         }
     }
@@ -645,9 +631,40 @@ public abstract class TlsProtocol
         {
             throw new IllegalStateException("Cannot use offerInput() in blocking mode! Use InputStream instead.");
         }
-        recordStream.readRecord(input);
+        if (closed)
+        {
+            throw new IllegalStateException("TLS session is closed!");
+        }
+        
+        try
+        {
+            recordStream.readRecord(input);
+        }
+        catch (IOException e)
+        {
+            handleReadRecordException(e);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            handleReadRecordException(e);
+            throw e;
+        }
     }
 
+    private void handleReadRecordException(Exception e) throws IOException
+    {
+        if (!closed)
+        {
+            short alertDescription = AlertDescription.internal_error;
+            if (e instanceof TlsFatalAlert)
+            {
+                alertDescription = ((TlsFatalAlert) e).getAlertDescription();
+            }
+            failWithError(AlertLevel.fatal, alertDescription, "Failed to read record", e);
+        }
+    }
+    
     /**
      * Terminate this connection with an alert. Can be used for normal closure too.
      * 

@@ -99,6 +99,10 @@ public class TlsProtocolTest
         clientProtocol.getOutputStream().close();
         serverRead = ByteBuffer.wrap(clientWrite.toByteArray());
         pumpData(serverProtocol, serverRead, serverWrite);
+        
+        // attempting to send or receive any data on either side should throw an exception now
+        checkClosed(clientProtocol);
+        checkClosed(serverProtocol);
     }
     
     private static ByteBuffer pumpData(TlsProtocol protocol, ByteBuffer read, ByteArrayOutputStream write) throws IOException
@@ -118,6 +122,26 @@ public class TlsProtocolTest
         ByteBuffer written = ByteBuffer.wrap(write.toByteArray());
         write.reset();
         return written;
+    }
+    
+    private static void checkClosed(TlsProtocol protocol)
+    {
+        try
+        {
+            protocol.offerInput(ByteBuffer.allocate(1));
+            fail("Input was accepted after close");
+        }
+        catch (Exception e)
+        {
+        }
+        try
+        {
+            protocol.getOutputStream().write(1);
+            fail("Output was accepted after close");
+        }
+        catch (Exception e)
+        {
+        }
     }
     
     public void testClientServer()
