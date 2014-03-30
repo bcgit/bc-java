@@ -1,5 +1,17 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
+import java.security.Security;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -13,18 +25,6 @@ import org.bouncycastle.x509.X509CertificatePair;
 import org.bouncycastle.x509.X509CollectionStoreParameters;
 import org.bouncycastle.x509.X509Store;
 import org.bouncycastle.x509.X509V2AttributeCertificate;
-
-import java.io.ByteArrayInputStream;
-import java.math.BigInteger;
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 public class X509StoreTest
     extends SimpleTest
@@ -181,8 +181,8 @@ public class X509StoreTest
             fail("error using wrong selector (certs)");
         }
         // Searching for attribute certificates
-        X509V2AttributeCertificate attrCert = new X509V2AttributeCertificate(AttrCertTest.attrCert);
-        X509AttributeCertificate attrCert2 = new X509V2AttributeCertificate(AttrCertTest.certWithBaseCertificateID);
+        X509V2AttributeCertificate attrCert = new X509V2AttributeCertificate(AttrCertData.attrCert);
+        X509AttributeCertificate attrCert2 = new X509V2AttributeCertificate(AttrCertData.certWithBaseCertificateID);
 
         List attrList = new ArrayList();
         attrList.add(attrCert);
