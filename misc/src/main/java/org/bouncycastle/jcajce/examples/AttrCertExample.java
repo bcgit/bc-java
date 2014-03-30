@@ -1,4 +1,4 @@
-package org.bouncycastle.x509.examples;
+package org.bouncycastle.jcajce.examples;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -9,63 +9,65 @@ import java.security.cert.X509Certificate;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.misc.NetscapeCertType;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.Attribute;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.asn1.x509.RoleSyntax;
+import org.bouncycastle.asn1.x509.X509AttributeIdentifiers;
+import org.bouncycastle.cert.AttributeCertificateHolder;
+import org.bouncycastle.cert.AttributeCertificateIssuer;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
+import org.bouncycastle.cert.X509v2AttributeCertificateBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaAttributeCertificateIssuer;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.x509.AttributeCertificateHolder;
-import org.bouncycastle.x509.AttributeCertificateIssuer;
-import org.bouncycastle.x509.X509Attribute;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.bouncycastle.x509.X509V2AttributeCertificate;
-import org.bouncycastle.x509.X509V2AttributeCertificateGenerator;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 
 /**
  * A simple example that generates an attribute certificate.
  */
 public class AttrCertExample
 {
-    static X509V1CertificateGenerator  v1CertGen = new X509V1CertificateGenerator();
-    static X509V3CertificateGenerator  v3CertGen = new X509V3CertificateGenerator();
-    
     /**
      * we generate the AC issuer's certificate
      */
     public static X509Certificate createAcIssuerCert(
-        PublicKey       pubKey,
-        PrivateKey      privKey)
+        PublicKey pubKey,
+        PrivateKey privKey)
         throws Exception
     {
         //
         // signers name 
         //
-        String  issuer = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
+        String issuer = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
 
         //
         // subjects name - the same as we are self signed.
         //
-        String  subject = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
+        String subject = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
 
         //
         // create the certificate - version 1
         //
+        X509v1CertificateBuilder v1Bldr = new JcaX509v1CertificateBuilder(new X500Name(issuer), BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30), new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)),
+            new X500Name(subject), pubKey);
 
-        v1CertGen.setSerialNumber(BigInteger.valueOf(10));
-        v1CertGen.setIssuerDN(new X509Principal(issuer));
-        v1CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        v1CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        v1CertGen.setSubjectDN(new X509Principal(subject));
-        v1CertGen.setPublicKey(pubKey);
-        v1CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
+        X509CertificateHolder certHldr = v1Bldr.build(new JcaContentSignerBuilder("SHA1WithRSA").setProvider("BC").build(privKey));
 
-        X509Certificate cert = v1CertGen.generate(privKey);
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHldr);
 
         cert.checkValidity(new Date());
 
@@ -73,62 +75,51 @@ public class AttrCertExample
 
         return cert;
     }
-    
+
     /**
      * we generate a certificate signed by our CA's intermediate certficate
      */
     public static X509Certificate createClientCert(
-        PublicKey       pubKey,
-        PrivateKey      caPrivKey,
-        PublicKey       caPubKey)
+        PublicKey pubKey,
+        PrivateKey caPrivKey,
+        PublicKey caPubKey)
         throws Exception
     {
         //
         // issuer
         //
-        String  issuer = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
+        String issuer = "C=AU, O=The Legion of the Bouncy Castle, OU=Bouncy Primary Certificate";
 
         //
-        // subjects name table.
+        // subject name builder.
         //
-        Hashtable                   attrs = new Hashtable();
-        Vector                      order = new Vector();
+        X500NameBuilder nameBuilder = new X500NameBuilder();
 
-        attrs.put(X509Principal.C, "AU");
-        attrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        attrs.put(X509Principal.L, "Melbourne");
-        attrs.put(X509Principal.CN, "Eric H. Echidna");
-        attrs.put(X509Principal.EmailAddress, "feedback-crypto@bouncycastle.org");
-
-        order.addElement(X509Principal.C);
-        order.addElement(X509Principal.O);
-        order.addElement(X509Principal.L);
-        order.addElement(X509Principal.CN);
-        order.addElement(X509Principal.EmailAddress);
+        nameBuilder.addRDN(BCStyle.C, "AU");
+        nameBuilder.addRDN(BCStyle.O, "The Legion of the Bouncy Castle");
+        nameBuilder.addRDN(BCStyle.L, "Melbourne");
+        nameBuilder.addRDN(BCStyle.CN, "Eric H. Echidna");
+        nameBuilder.addRDN(BCStyle.EmailAddress, "feedback-crypto@bouncycastle.org");
 
         //
         // create the certificate - version 3
         //
-        v3CertGen.reset();
-
-        v3CertGen.setSerialNumber(BigInteger.valueOf(20));
-        v3CertGen.setIssuerDN(new X509Principal(issuer));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        v3CertGen.setSubjectDN(new X509Principal(order, attrs));
-        v3CertGen.setPublicKey(pubKey);
-        v3CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
+        X509v3CertificateBuilder v3Bldr = new JcaX509v3CertificateBuilder(new X500Name(issuer), BigInteger.valueOf(2),
+            new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30), new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)),
+            nameBuilder.build(), pubKey);
 
         //
         // add the extensions
         //
 
-        v3CertGen.addExtension(
+        v3Bldr.addExtension(
             MiscObjectIdentifiers.netscapeCertType,
             false,
             new NetscapeCertType(NetscapeCertType.objectSigning | NetscapeCertType.smime));
 
-        X509Certificate cert = v3CertGen.generate(caPrivKey);
+        X509CertificateHolder certHldr = v3Bldr.build(new JcaContentSignerBuilder("SHA1WithRSA").setProvider("BC").build(caPrivKey));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHldr);
 
         cert.checkValidity(new Date());
 
@@ -136,7 +127,7 @@ public class AttrCertExample
 
         return cert;
     }
-    
+
     public static void main(String args[])
         throws Exception
     {
@@ -166,7 +157,7 @@ public class AttrCertExample
             new BigInteger("b259d2d6e627a768c94be36164c2d9fc79d97aab9253140e5bf17751197731d6f7540d2509e7b9ffee0a70a6e26d56e92d2edd7f85aba85600b69089f35f6bdbf3c298e05842535d9f064e6b0391cb7d306e0a2d20c4dfb4e7b49a9640bdea26c10ad69c3f05007ce2513cee44cfe01998e62b6c3637d3fc0391079b26ee36d5", 16),
             new BigInteger("11", 16));
 
-        RSAPrivateCrtKeySpec   caPrivKeySpec = new RSAPrivateCrtKeySpec(
+        RSAPrivateCrtKeySpec caPrivKeySpec = new RSAPrivateCrtKeySpec(
             new BigInteger("b259d2d6e627a768c94be36164c2d9fc79d97aab9253140e5bf17751197731d6f7540d2509e7b9ffee0a70a6e26d56e92d2edd7f85aba85600b69089f35f6bdbf3c298e05842535d9f064e6b0391cb7d306e0a2d20c4dfb4e7b49a9640bdea26c10ad69c3f05007ce2513cee44cfe01998e62b6c3637d3fc0391079b26ee36d5", 16),
             new BigInteger("11", 16),
             new BigInteger("92e08f83cc9920746989ca5034dcb384a094fb9c5a6288fcc4304424ab8f56388f72652d8fafc65a4b9020896f2cde297080f2a540e7b7ce5af0b3446e1258d1dd7f245cf54124b4c6e17da21b90a0ebd22605e6f45c9f136d7a13eaac1c0f7487de8bd6d924972408ebb58af71e76fd7b012a8d0e165f3ae2e5077a8648e619", 16),
@@ -179,62 +170,35 @@ public class AttrCertExample
         //
         // set up the keys
         //
-        KeyFactory          fact = KeyFactory.getInstance("RSA", "BC");
-        PrivateKey          caPrivKey = fact.generatePrivate(caPrivKeySpec);
-        PublicKey           caPubKey = fact.generatePublic(caPubKeySpec);
-        PrivateKey          privKey = fact.generatePrivate(privKeySpec);
-        PublicKey           pubKey = fact.generatePublic(pubKeySpec);
+        KeyFactory fact = KeyFactory.getInstance("RSA", "BC");
+        PrivateKey caPrivKey = fact.generatePrivate(caPrivKeySpec);
+        PublicKey caPubKey = fact.generatePublic(caPubKeySpec);
+        PrivateKey privKey = fact.generatePrivate(privKeySpec);
+        PublicKey pubKey = fact.generatePublic(pubKeySpec);
 
         //
         // note in this case we are using the CA certificate for both the client cetificate
         // and the attribute certificate. This is to make the vcode simpler to read, in practice
         // the CA for the attribute certificate should be different to that of the client certificate
         //
-        X509Certificate     caCert = createAcIssuerCert(caPubKey, caPrivKey);
-        X509Certificate     clientCert = createClientCert(pubKey, caPrivKey, caPubKey);
+        X509Certificate caCert = createAcIssuerCert(caPubKey, caPrivKey);
+        X509Certificate clientCert = createClientCert(pubKey, caPrivKey, caPubKey);
 
         // Instantiate a new AC generator
-        X509V2AttributeCertificateGenerator acGen = new X509V2AttributeCertificateGenerator();
-
-        acGen.reset();
-
-        //
-        // Holder: here we use the IssuerSerial form
-        //
-        acGen.setHolder(new AttributeCertificateHolder(clientCert));
-
-        // set the Issuer
-        acGen.setIssuer(new AttributeCertificateIssuer(caCert.getSubjectX500Principal()));
-
-        //
-        // serial number (as it's an example we don't have to keep track of the
-        // serials anyway
-        //
-        acGen.setSerialNumber(new BigInteger("1"));
-
-        // not Before
-        acGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-
-        // not After
-        acGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-
-        // signature Algorithmus
-        acGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
+        X509v2AttributeCertificateBuilder acBldr = new X509v2AttributeCertificateBuilder(
+            new AttributeCertificateHolder(new JcaX509CertificateHolder(clientCert)),
+            new JcaAttributeCertificateIssuer(caCert),
+            new BigInteger("1"),
+            new Date(System.currentTimeMillis() - 50000),         // not before
+            new Date(System.currentTimeMillis() + 50000));        // not after
 
         // the actual attributes
-        GeneralName roleName = new GeneralName(GeneralName.rfc822Name, "DAU123456789");
-        ASN1EncodableVector roleSyntax = new ASN1EncodableVector();
-        roleSyntax.add(roleName);
+        GeneralName roleName = new GeneralName(GeneralName.uniformResourceIdentifier, "id://DAU123456789");
 
-        // roleSyntax OID: 2.5.24.72
-        X509Attribute attributes = new X509Attribute("2.5.24.72",
-                new DERSequence(roleSyntax));
-
-        acGen.addAttribute(attributes);
+        acBldr.addAttribute(X509AttributeIdentifiers.id_at_role, new RoleSyntax(roleName));
 
         //      finally create the AC
-        X509V2AttributeCertificate att = (X509V2AttributeCertificate)acGen
-                .generate(caPrivKey, "BC");
+        X509AttributeCertificateHolder att = acBldr.build(new JcaContentSignerBuilder("SHA1WithRSA").setProvider("BC").build(caPrivKey));
 
         //
         // starting here, we parse the newly generated AC
@@ -257,55 +221,47 @@ public class AttrCertExample
         }
 
         // Issuer
-        
+
         AttributeCertificateIssuer issuer = att.getIssuer();
         if (issuer.match(caCert))
         {
-            if (issuer.getPrincipals() != null)
+            if (issuer.getNames() != null)
             {
-                System.out.println(issuer.getPrincipals().length + " entity names found");
+                System.out.println(issuer.getNames().length + " entity names found");
             }
             System.out.println("Matches original ca x509 cert");
         }
-        
+
         // Dates
         System.out.println("valid not before: " + att.getNotBefore());
         System.out.println("valid not before: " + att.getNotAfter());
 
-        // check the dates, an exception is thrown in checkValidity()...
+        // check the dates
 
-        try
+        if (att.isValidOn(new Date()))
         {
-            att.checkValidity();
-            att.checkValidity(new Date());
+            System.out.println("valid now");
         }
-        catch (Exception e)
-        {
-            System.out.println(e);
-        }
+
 
         // verify
 
-        try
+        if (att.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(caPubKey)))
         {
-            att.verify(caPubKey, "BC");
-        }
-        catch (Exception e)
-        {
-            System.out.println(e);
+            System.out.println("signature valid now");
         }
 
         // Attribute
-        X509Attribute[] attribs = att.getAttributes();
+        Attribute[] attribs = att.getAttributes();
         System.out.println("cert has " + attribs.length + " attributes:");
         for (int i = 0; i < attribs.length; i++)
         {
-            X509Attribute a = attribs[i];
-            System.out.println("OID: " + a.getOID());
-            
+            Attribute a = attribs[i];
+            System.out.println("OID: " + a.getAttrType());
+
             // currently we only check for the presence of a 'RoleSyntax' attribute
 
-            if (a.getOID().equals("2.5.24.72"))
+            if (a.getAttrType().equals("2.5.24.72"))
             {
                 System.out.println("rolesyntax read from cert!");
             }
