@@ -43,6 +43,9 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -294,7 +297,7 @@ public class PGPDSAElGamalTest
         
             PGPPublicKeyEncryptedData    encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-            InputStream clear = encP.getDataStream(pgpPrivKey, "BC");
+            InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                      
             pgpFact = new PGPObjectFactory(clear);
 
@@ -332,7 +335,7 @@ public class PGPDSAElGamalTest
         
             encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-            clear = encP.getDataStream(pgpPrivKey, "BC");
+            clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                      
             pgpFact = new PGPObjectFactory(clear);
 
@@ -382,10 +385,10 @@ public class PGPDSAElGamalTest
             // encrypt
             //
             ByteArrayOutputStream        cbOut = new ByteArrayOutputStream();
-            PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.TRIPLE_DES, new SecureRandom(), "BC");            
+            PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.TRIPLE_DES).setSecureRandom(new SecureRandom()).setProvider("BC"));
             PGPPublicKey                        puK = sKey.getSecretKey(pgpKeyID).getPublicKey();
             
-            cPk.addMethod(puK);
+            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(puK).setProvider("BC"));
             
             OutputStream    cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
 
@@ -401,7 +404,7 @@ public class PGPDSAElGamalTest
             
             pgpPrivKey = sKey.getSecretKey(pgpKeyID).extractPrivateKey(pass, "BC");
 
-            clear = encP.getDataStream(pgpPrivKey, "BC");
+            clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
             
             bOut.reset();
             
@@ -460,11 +463,11 @@ public class PGPDSAElGamalTest
                 PGPKeyPair elGamalKeyPair = new PGPKeyPair(
                     PublicKeyAlgorithmTags.ELGAMAL_GENERAL, kp, new Date());
 
-                cPk = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.CAST5, random, "BC");
+                cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
 
                 puK = elGamalKeyPair.getPublicKey();
 
-                cPk.addMethod(puK);
+                cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(puK).setProvider("BC"));
 
                 cbOut = new ByteArrayOutputStream();
 
@@ -483,7 +486,7 @@ public class PGPDSAElGamalTest
                 pgpPrivKey = elGamalKeyPair.getPrivateKey();
 
                 // Note: This is where an exception would be expected if the P size causes problems
-                clear = encP.getDataStream(pgpPrivKey, "BC");
+                clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
 
                 ByteArrayOutputStream dec = new ByteArrayOutputStream();
 

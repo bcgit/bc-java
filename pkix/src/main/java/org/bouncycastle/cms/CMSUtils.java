@@ -27,6 +27,7 @@ import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeInputStream;
 import org.bouncycastle.util.io.TeeOutputStream;
@@ -198,7 +199,64 @@ class CMSUtils
             throw new CMSException("Malformed content.", e);
         }
     }
-    
+
+    static byte[] getPasswordBytes(int scheme, char[] password)
+    {
+        if (scheme == PasswordRecipient.PKCS5_SCHEME2)
+        {
+            return PKCS5PasswordToBytes(password);
+        }
+
+        return PKCS5PasswordToUTF8Bytes(password);
+    }
+
+    /**
+     * converts a password to a byte array according to the scheme in
+     * PKCS5 (ascii, no padding)
+     *
+     * @param password a character array representing the password.
+     * @return a byte array representing the password.
+     */
+    private static byte[] PKCS5PasswordToBytes(
+        char[]  password)
+    {
+        if (password != null)
+        {
+            byte[]  bytes = new byte[password.length];
+
+            for (int i = 0; i != bytes.length; i++)
+            {
+                bytes[i] = (byte)password[i];
+            }
+
+            return bytes;
+        }
+        else
+        {
+            return new byte[0];
+        }
+    }
+
+    /**
+     * converts a password to a byte array according to the scheme in
+     * PKCS5 (UTF-8, no padding)
+     *
+     * @param password a character array representing the password.
+     * @return a byte array representing the password.
+     */
+    private static byte[] PKCS5PasswordToUTF8Bytes(
+        char[]  password)
+    {
+        if (password != null)
+        {
+            return Strings.toUTF8ByteArray(password);
+        }
+        else
+        {
+            return new byte[0];
+        }
+    }
+
     public static byte[] streamToByteArray(
         InputStream in) 
         throws IOException

@@ -24,9 +24,11 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
@@ -296,7 +298,7 @@ public class PKCS10Test
         oids.addElement(X509Extension.keyUsage);
         values.addElement(new X509Extension(true, new DEROctetString(
             new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))));
-        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(pair.getPublic());
+        SubjectKeyIdentifier subjectKeyIdentifier = new BcX509ExtensionUtils().createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded()));
         X509Extension ski = new X509Extension(false, new DEROctetString(subjectKeyIdentifier));
         oids.addElement(X509Extension.subjectKeyIdentifier);
         values.addElement(ski);

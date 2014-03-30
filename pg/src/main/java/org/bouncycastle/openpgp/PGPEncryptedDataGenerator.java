@@ -2,8 +2,6 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,16 +10,11 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
@@ -66,130 +59,22 @@ public class PGPEncryptedDataGenerator
     private int             defAlgorithm;
     private SecureRandom    rand;
 
-    private static Provider        defProvider;
-    
-   /**
-       * Base constructor.
-       *
-       * @param encAlgorithm the symmetric algorithm to use.
-       * @param rand source of randomness
-       * @param provider the provider name to use for encryption algorithms.
-       * @deprecated  use constructor that takes a PGPDataEncryptor
-       */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        SecureRandom        rand,
-        String              provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setSecureRandom(rand).setProvider(provider));
-    }
-
-   /**
-       * Base constructor.
-       *
-       * @param encAlgorithm the symmetric algorithm to use.
-       * @param rand source of randomness
-       * @param provider the provider to use for encryption algorithms.
-       * @deprecated  use constructor that takes a PGPDataEncryptorBuilder
-       */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        SecureRandom        rand,
-        Provider            provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setSecureRandom(rand).setProvider(provider));
-    }
-
     /**
-        * Creates a cipher stream which will have an integrity packet
-        * associated with it.
-        *
-        * @param encAlgorithm
-        * @param withIntegrityPacket
-        * @param rand
-        * @param provider
-        * @deprecated  use constructor that takes a PGPDataEncryptorBuilder
-        */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        boolean             withIntegrityPacket,
-        SecureRandom        rand,
-        String              provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setWithIntegrityPacket(withIntegrityPacket).setSecureRandom(rand).setProvider(provider));
-    }
-
-    /**
-        * Creates a cipher stream which will have an integrity packet
-        * associated with it.
-        *
-        * @param encAlgorithm
-        * @param withIntegrityPacket
-        * @param rand
-        * @param provider
-        * @deprecated  use constructor that takes a PGPDataEncryptorBuilder
-        */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        boolean             withIntegrityPacket,
-        SecureRandom        rand,
-        Provider            provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setWithIntegrityPacket(withIntegrityPacket).setSecureRandom(rand).setProvider(provider));
-    }
-
-   /**
-       * Base constructor.
-       *
-       * @param encAlgorithm the symmetric algorithm to use.
-       * @param rand source of randomness
-       * @param oldFormat PGP 2.6.x compatibility required.
-       * @param provider the provider to use for encryption algorithms.
-       * @deprecated  use constructor that takes a PGPDataEncryptorBuilder
-       */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        SecureRandom        rand,
-        boolean             oldFormat,
-        String              provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setSecureRandom(rand).setProvider(provider), oldFormat);
-    }
-
-   /**
-       * Base constructor.
-       *
-       * @param encAlgorithm the symmetric algorithm to use.
-       * @param rand source of randomness
-       * @param oldFormat PGP 2.6.x compatibility required.
-       * @param provider the provider to use for encryption algorithms.
-       * @deprecated  use constructor that takes a PGPDataEncryptorBuilder
-       */
-    public PGPEncryptedDataGenerator(
-        int                 encAlgorithm,
-        SecureRandom        rand,
-        boolean             oldFormat,
-        Provider            provider)
-    {
-        this(new JcePGPDataEncryptorBuilder(encAlgorithm).setSecureRandom(rand).setProvider(provider), oldFormat);
-    }
-
-   /**
-       * Base constructor.
-       *
-       * @param encryptorBuilder builder to create actual data encryptor.
-       */
+     * Base constructor.
+     *
+     * @param encryptorBuilder builder to create actual data encryptor.
+     */
     public PGPEncryptedDataGenerator(PGPDataEncryptorBuilder encryptorBuilder)
     {
         this(encryptorBuilder, false);
     }
 
-   /**
-       * Base constructor with the option to turn on formatting for PGP 2.6.x compatibility.
-       *
-       * @param encryptorBuilder builder to create actual data encryptor.
-       * @param oldFormat PGP 2.6.x compatibility required.
-       */
+    /**
+     * Base constructor with the option to turn on formatting for PGP 2.6.x compatibility.
+     *
+     * @param encryptorBuilder builder to create actual data encryptor.
+     * @param oldFormat        PGP 2.6.x compatibility required.
+     */
     public PGPEncryptedDataGenerator(PGPDataEncryptorBuilder encryptorBuilder, boolean oldFormat)
     {
         this.dataEncryptorBuilder = encryptorBuilder;
@@ -197,68 +82,6 @@ public class PGPEncryptedDataGenerator
 
         this.defAlgorithm = dataEncryptorBuilder.getAlgorithm();
         this.rand = dataEncryptorBuilder.getSecureRandom();
-    }
-
-    /**
-     * Add a PBE encryption method to the encrypted object using the default algorithm (S2K_SHA1).
-     * 
-     * @param passPhrase
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated  use addMethod that takes  PGPKeyEncryptionMethodGenerator
-     */
-    public void addMethod(
-        char[]    passPhrase) 
-        throws NoSuchProviderException, PGPException
-    {
-        addMethod(passPhrase, HashAlgorithmTags.SHA1);
-    }
-
-    /**
-     * Add a PBE encryption method to the encrypted object.
-     *
-     * @param passPhrase passphrase to use to generate key.
-     * @param s2kDigest digest algorithm to use for S2K calculation
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated  use addMethod that takes  PGPKeyEncryptionMethodGenerator
-     */
-    public void addMethod(
-        char[]    passPhrase,
-        int       s2kDigest)
-        throws NoSuchProviderException, PGPException
-    {
-        if (defProvider == null)
-        {
-            defProvider = new BouncyCastleProvider();
-        }
-
-        addMethod(new JcePBEKeyEncryptionMethodGenerator(passPhrase, new JcaPGPDigestCalculatorProviderBuilder().setProvider(defProvider).build().get(s2kDigest)).setProvider(defProvider).setSecureRandom(rand));
-    }
-
-    /**
-     * Add a public key encrypted session key to the encrypted object.
-     * 
-     * @param key
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated  use addMethod that takes  PGPKeyEncryptionMethodGenerator
-     */
-    public void addMethod(
-        PGPPublicKey    key) 
-        throws NoSuchProviderException, PGPException
-    {   
-        if (!key.isEncryptionKey())
-        {
-            throw new IllegalArgumentException("passed in key not an encryption key!");
-        }
-
-        if (defProvider == null)
-        {
-            defProvider = new BouncyCastleProvider();
-        }
-
-        addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(key).setProvider(defProvider).setSecureRandom(rand));
     }
 
     /**
@@ -308,7 +131,7 @@ public class PGPEncryptedDataGenerator
      * @param out
      * @param length
      * @param buffer
-     * @return
+     * @return the generator's output stream.
      * @throws java.io.IOException
      * @throws PGPException
      * @throws IllegalStateException

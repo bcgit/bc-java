@@ -57,32 +57,6 @@ public class PGPPublicKeyEncryptedData
     }
 
     /**
-     * Return the algorithm code for the symmetric algorithm used to encrypt the data.
-     *
-     * @return integer algorithm code
-     * @deprecated use the method taking a PublicKeyDataDecryptorFactory
-     */
-    public int getSymmetricAlgorithm(
-        PGPPrivateKey  privKey,
-        String         provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return getSymmetricAlgorithm(privKey, PGPUtil.getProvider(provider));
-    }
-
-    /**
-     *
-     * @deprecated use the method taking a PublicKeyDataDecryptorFactory
-     */
-    public int getSymmetricAlgorithm(
-        PGPPrivateKey  privKey,
-        Provider       provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return getSymmetricAlgorithm(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(provider).setContentProvider(provider).build(privKey));
-    }
-
-    /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
      * @param dataDecryptorFactory   decryptor factory to use to recover the session data.
@@ -112,22 +86,6 @@ public class PGPPublicKeyEncryptedData
         PGPPrivateKey  privKey,
         String         provider)
         throws PGPException, NoSuchProviderException
-    {
-        return getDataStream(privKey, provider, provider);
-    }
-
-        /**
-     *
-     * @param privKey
-     * @param provider
-     * @return
-     * @throws PGPException
-     *  @deprecated use method that takes a PublicKeyDataDecryptorFactory
-     */
-    public InputStream getDataStream(
-        PGPPrivateKey  privKey,
-        Provider       provider)
-        throws PGPException
     {
         return getDataStream(privKey, provider, provider);
     }

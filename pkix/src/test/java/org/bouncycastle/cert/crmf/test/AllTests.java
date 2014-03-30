@@ -29,10 +29,10 @@ import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.crmf.EncryptedValueBuilder;
 import org.bouncycastle.cert.crmf.EncryptedValuePadder;
 import org.bouncycastle.cert.crmf.EncryptedValueParser;
-import org.bouncycastle.cert.crmf.FixedLengthMGF1Padder;
 import org.bouncycastle.cert.crmf.PKIArchiveControl;
 import org.bouncycastle.cert.crmf.PKMACBuilder;
 import org.bouncycastle.cert.crmf.ValueDecryptorGenerator;
+import org.bouncycastle.cert.crmf.bc.BcFixedLengthMGF1Padder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessage;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcaEncryptedValueBuilder;
@@ -313,7 +313,7 @@ public class AllTests
         KeyPair kp = kGen.generateKeyPair();
         X509Certificate cert = makeV1Certificate(kp, "CN=Test", kp, "CN=Test");
 
-        FixedLengthMGF1Padder mgf1Padder = new FixedLengthMGF1Padder(200, new SecureRandom());
+        BcFixedLengthMGF1Padder mgf1Padder = new BcFixedLengthMGF1Padder(200, new SecureRandom());
         EncryptedValueBuilder build = new EncryptedValueBuilder(new JceAsymmetricKeyWrapper(cert.getPublicKey()).setProvider(BC), new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build(), mgf1Padder);
         EncryptedValue value = build.build(passphrase);
         ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);

@@ -427,7 +427,7 @@ public class PKCS10Test
         oids.addElement(X509Extension.keyUsage);
         values.addElement(new X509Extension(true, new DEROctetString(
             new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))));
-        SubjectKeyIdentifier subjectKeyIdentifier = new SubjectKeyIdentifierStructure(pair.getPublic());
+        SubjectKeyIdentifier subjectKeyIdentifier = new BcX509ExtensionUtils().createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(pair.getPublic().getEncoded()));
         X509Extension ski = new X509Extension(false, new DEROctetString(subjectKeyIdentifier));
         oids.addElement(X509Extension.subjectKeyIdentifier);
         values.addElement(ski);

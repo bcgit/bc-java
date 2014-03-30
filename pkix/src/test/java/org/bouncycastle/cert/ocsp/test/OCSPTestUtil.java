@@ -1,4 +1,4 @@
-package org.bouncycastle.ocsp.test;
+package org.bouncycastle.cert.ocsp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
