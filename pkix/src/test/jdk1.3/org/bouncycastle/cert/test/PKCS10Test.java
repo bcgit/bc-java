@@ -48,7 +48,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 /**
  **/
