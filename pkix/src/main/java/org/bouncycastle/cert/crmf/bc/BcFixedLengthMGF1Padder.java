@@ -1,7 +1,8 @@
-package org.bouncycastle.cert.crmf;
+package org.bouncycastle.cert.crmf.bc;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.cert.crmf.EncryptedValuePadder;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.MGF1BytesGenerator;
@@ -10,7 +11,7 @@ import org.bouncycastle.crypto.params.MGFParameters;
 /**
  * An encrypted value padder that uses MGF1 as the basis of the padding.
  */
-public class FixedLengthMGF1Padder
+public class BcFixedLengthMGF1Padder
     implements EncryptedValuePadder
 {
     private int length;
@@ -23,7 +24,7 @@ public class FixedLengthMGF1Padder
      *
      * @param length fixed length for padded output.
      */
-    public FixedLengthMGF1Padder(int length)
+    public BcFixedLengthMGF1Padder(int length)
     {
         this(length, null);
     }
@@ -36,7 +37,7 @@ public class FixedLengthMGF1Padder
      * @param length fixed length for padded output.
      * @param random a source of randomness.
      */
-    public FixedLengthMGF1Padder(int length, SecureRandom random)
+    public BcFixedLengthMGF1Padder(int length, SecureRandom random)
     {
         this.length = length;
         this.random = random;

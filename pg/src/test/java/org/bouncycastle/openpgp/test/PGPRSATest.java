@@ -53,11 +53,17 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVectorGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -436,11 +442,11 @@ public class PGPRSATest
 
         ByteArrayOutputStream bcOut = new ByteArrayOutputStream();
 
-        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.AES_128, true, new SecureRandom(), "BC");
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128).setWithIntegrityPacket(true).setSecureRandom(new SecureRandom()).setProvider("BC"));
 
-        encGen.addMethod(pgpPubKey);
+        encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pgpPubKey).setProvider("BC"));
 
-        encGen.addMethod("password".toCharArray());
+        encGen.addMethod(new JcePBEKeyEncryptionMethodGenerator("password".toCharArray()).setProvider("BC"));
 
         OutputStream cOut = encGen.open(bcOut, bytes.length);
 
@@ -459,7 +465,7 @@ public class PGPRSATest
 
         PGPPublicKeyEncryptedData  encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-        InputStream clear = encP.getDataStream(pgpPrivKey, "BC");
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
 
         PGPObjectFactory pgpFact = new PGPObjectFactory(clear);
 
@@ -474,7 +480,7 @@ public class PGPRSATest
 
         PGPPBEEncryptedData encPbe = (PGPPBEEncryptedData)encList.get(1);
 
-        clear = encPbe.getDataStream("password".toCharArray(), "BC");
+        clear = encPbe.getDataStream(new JcePBEDataDecryptorFactoryBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build("password".toCharArray()));
 
         pgpF = new PGPObjectFactory(clear);
 
@@ -994,7 +1000,7 @@ public class PGPRSATest
         
         pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
 
-        InputStream clear = encP.getDataStream(pgpPrivKey, "BC");
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                  
         pgpFact = new PGPObjectFactory(clear);
 
@@ -1029,10 +1035,10 @@ public class PGPRSATest
         byte[]    shortText = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' };
     
         ByteArrayOutputStream        cbOut = new ByteArrayOutputStream();
-        PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.CAST5, new SecureRandom(), "BC");            
+        PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
         PGPPublicKey                 puK = pgpPriv.getSecretKey(encP.getKeyID()).getPublicKey();
         
-        cPk.addMethod(puK);
+        cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(puK).setProvider("BC"));
         
         OutputStream    cOut = cPk.open(new UncloseableOutputStream(cbOut), shortText.length);
 
@@ -1048,12 +1054,13 @@ public class PGPRSATest
         
         pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
 
-        if (encP.getSymmetricAlgorithm(pgpPrivKey, "BC") != SymmetricKeyAlgorithmTags.CAST5)
+        PublicKeyDataDecryptorFactory dataDecryptorFactory = new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey);
+        if (encP.getSymmetricAlgorithm(dataDecryptorFactory) != SymmetricKeyAlgorithmTags.CAST5)
         {
             fail("symmetric algorithm mismatch");
         }
 
-        clear = encP.getDataStream(pgpPrivKey, "BC");
+        clear = encP.getDataStream(dataDecryptorFactory);
         
         bOut.reset();
         
@@ -1073,10 +1080,10 @@ public class PGPRSATest
         // encrypt
         //
         cbOut = new ByteArrayOutputStream();
-        cPk = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.CAST5, new SecureRandom(), "BC");            
+        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
         puK = pgpPriv.getSecretKey(encP.getKeyID()).getPublicKey();
         
-        cPk.addMethod(puK);
+        cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(puK).setProvider("BC"));
 
         cOut = cPk.open(new UncloseableOutputStream(cbOut), text.length);
 
@@ -1092,7 +1099,7 @@ public class PGPRSATest
         
         pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
 
-        clear = encP.getDataStream(pgpPrivKey, "BC");
+        clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
         
         bOut.reset();
         

@@ -22,6 +22,7 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -294,7 +295,7 @@ public class PGPDSAElGamalTest implements Test
         
             PGPPublicKeyEncryptedData    encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-            InputStream clear = encP.getDataStream(pgpPrivKey, "BC");
+            InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                      
             pgpFact = new PGPObjectFactory(clear);
 
@@ -332,7 +333,7 @@ public class PGPDSAElGamalTest implements Test
         
             encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-            clear = encP.getDataStream(pgpPrivKey, "BC");
+            clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                      
             pgpFact = new PGPObjectFactory(clear);
 
@@ -382,10 +383,10 @@ public class PGPDSAElGamalTest implements Test
             // encrypt
             //
             ByteArrayOutputStream        cbOut = new ByteArrayOutputStream();
-            PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(SymmetricKeyAlgorithmTags.TRIPLE_DES, new SecureRandom(), "BC");            
+            PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.TRIPLE_DES).setSecureRandom(new SecureRandom()).setProvider("BC"));
             PGPPublicKey                        puK = sKey.getSecretKey(pgpKeyID).getPublicKey();
             
-            cPk.addMethod(puK);
+            cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(puK).setProvider("BC"));
             
             OutputStream    cOut = cPk.open(cbOut, bOut.toByteArray().length);
 
@@ -401,7 +402,7 @@ public class PGPDSAElGamalTest implements Test
             
             pgpPrivKey = sKey.getSecretKey(pgpKeyID).extractPrivateKey(pass, "BC");
 
-            clear = encP.getDataStream(pgpPrivKey, "BC");
+            clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
             
             bOut.reset();
             

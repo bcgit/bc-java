@@ -24,6 +24,10 @@ public class PEMWriter
         super(out);
     }
 
+    /**
+     * @deprecated use writeObject(new JcaMiscPEMGenerator(obj));
+     * @throws IOException
+     */
     public void writeObject(
         Object  obj)
         throws IOException
@@ -31,6 +35,12 @@ public class PEMWriter
         writeObject(obj, null);
     }
 
+    /**
+     * @deprecated use writeObject(new JcaMiscPEMGenerator(obj, encryptor));
+     * @param obj
+     * @param encryptor
+     * @throws IOException
+     */
     public void writeObject(
         Object  obj,
         PEMEncryptor encryptor)

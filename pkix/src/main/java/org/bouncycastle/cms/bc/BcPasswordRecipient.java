@@ -1,11 +1,13 @@
 package org.bouncycastle.cms.bc;
 
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -47,6 +49,18 @@ public abstract class BcPasswordRecipient
         {
             throw new CMSException("unable to unwrap key: " + e.getMessage(), e);
         }
+    }
+
+    public byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+        throws CMSException
+    {
+        PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
+
+        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator();
+
+        gen.init(encodedPassword, params.getSalt(), params.getIterationCount().intValue());
+
+        return ((KeyParameter)gen.generateDerivedParameters(keySize)).getKey();
     }
 
     public int getPasswordConversionScheme()

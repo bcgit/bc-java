@@ -2,8 +2,6 @@ package org.bouncycastle.openpgp;
 
 import java.io.EOFException;
 import java.io.InputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
@@ -11,8 +9,6 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -40,41 +36,6 @@ public class PGPPBEEncryptedData
     public InputStream getInputStream()
     {
         return encData.getInputStream();
-    }
-
-    /**
-     * Return the decrypted input stream, using the passed in passPhrase.
-     *
-     * @param passPhrase
-     * @param provider
-     * @return InputStream
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     *  @deprecated use PBEDataDecryptorFactory method
-     */
-    public InputStream getDataStream(
-        char[]                passPhrase,
-        String                provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return getDataStream(passPhrase, PGPUtil.getProvider(provider));
-    }
-
-    /**
-     * Return the decrypted input stream, using the passed in passPhrase.
-     * 
-     * @param passPhrase
-     * @param provider
-     * @return InputStream
-     * @throws PGPException
-     * @deprecated use PBEDataDecryptorFactory method
-     */
-    public InputStream getDataStream(
-        char[]                passPhrase,
-        Provider              provider)
-        throws PGPException
-    {
-        return getDataStream(new JcePBEDataDecryptorFactoryBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider(provider).build()).setProvider(provider).build(passPhrase));
     }
 
    /**
