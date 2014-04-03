@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.Times;
 
 /**
@@ -825,10 +826,21 @@ public abstract class TlsProtocol
 
     protected static byte[] createRandomBlock(boolean useGMTUnixTime, SecureRandom random)
     {
-        random.setSeed(Times.nanoTime());
-
+        /*
+         * We hash the SecureRandom output here to guard against RNGs where the raw output could be
+         * used to recover the internal state.
+         */
         byte[] result = new byte[32];
+        Digest d = TlsUtils.createHash(HashAlgorithm.sha256);
+
+        TlsUtils.writeUint64(Times.nanoTime(), result, 0);
+        Strings.toByteArray("BouncyCastle TlsProtocol", result, 8);
+        d.update(result, 0, 32);
+
         random.nextBytes(result);
+        d.update(result, 0, 32);
+
+        d.doFinal(result, 0);
 
         if (useGMTUnixTime)
         {
