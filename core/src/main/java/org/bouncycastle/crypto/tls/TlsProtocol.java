@@ -824,23 +824,19 @@ public abstract class TlsProtocol
         }
     }
 
-    protected static byte[] createRandomBlock(boolean useGMTUnixTime, SecureRandom random)
+    protected static byte[] createRandomBlock(boolean useGMTUnixTime, SecureRandom random, String asciiLabel)
     {
         /*
-         * We hash the SecureRandom output here to guard against RNGs where the raw output could be
-         * used to recover the internal state.
+         * We use the TLS 1.0 PRF on the SecureRandom output, to guard against RNGs where the raw
+         * output could be used to recover the internal state.
          */
-        byte[] result = new byte[32];
-        Digest d = TlsUtils.createHash(HashAlgorithm.sha256);
+        byte[] secret = new byte[32];
+        random.nextBytes(secret);
 
-        TlsUtils.writeUint64(Times.nanoTime(), result, 0);
-        Strings.toByteArray("BouncyCastle TlsProtocol", result, 8);
-        d.update(result, 0, 32);
+        byte[] seed = new byte[8];
+        TlsUtils.writeUint64(Times.nanoTime(), seed, 0);
 
-        random.nextBytes(result);
-        d.update(result, 0, 32);
-
-        d.doFinal(result, 0);
+        byte[] result = TlsUtils.PRF_legacy(secret, asciiLabel, seed, 32);
 
         if (useGMTUnixTime)
         {
