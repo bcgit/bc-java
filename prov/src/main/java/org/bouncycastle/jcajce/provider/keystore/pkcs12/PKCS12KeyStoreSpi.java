@@ -676,6 +676,7 @@ public class PKCS12KeyStoreSpi
         throws IOException
     {
         ASN1ObjectIdentifier algorithm = algId.getAlgorithm();
+        int mode = forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
 
         if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
         {
@@ -693,7 +694,7 @@ public class PKCS12KeyStoreSpi
                 key.setTryWrongPKCS12Zero(wrongPKCS12Zero);
 
                 Cipher cipher = Cipher.getInstance(algorithm.getId(), bcProvider);
-                int mode = forEncryption ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+
                 cipher.init(mode, key, defParams);
                 return cipher.doFinal(data);
             }
@@ -706,7 +707,7 @@ public class PKCS12KeyStoreSpi
         {
             try
             {
-                Cipher cipher = createCipher(Cipher.DECRYPT_MODE, password, algId);
+                Cipher cipher = createCipher(mode, password, algId);
 
                 return cipher.doFinal(data);
             }
