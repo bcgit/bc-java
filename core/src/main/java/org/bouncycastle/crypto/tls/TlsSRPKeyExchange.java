@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,6 +12,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
+import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -29,14 +31,40 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     protected AsymmetricKeyParameter serverPublicKey = null;
 
+    protected SRPPrimeVerifier Nverifier;
     protected byte[] s = null;
     protected BigInteger B = null;
-    protected SRP6Client srpClient = new SRP6Client();
+    protected BigInteger N = null;
+    protected BigInteger g = null;
+    protected BigInteger A = null;
+    protected BigInteger v = null;
+    protected SRP6Client srpClient = null;
+    protected SRP6Server srpServer = null;
 
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity, byte[] password)
+    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, SRPPrimeVerifier Nverifier,
+            byte[] identity, byte[] password)
     {
+        this(keyExchange, supportedSignatureAlgorithms);
+        this.Nverifier = Nverifier;
+        this.identity = identity;
+        this.password = password;
+        this.srpClient = new SRP6Client();
+    }
+    
+    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+            BigInteger v, byte[] s, BigInteger N, BigInteger g)
+    {
+        this(keyExchange, supportedSignatureAlgorithms);
+        this.v = v;
+        this.s = s;
+        this.N = N;
+        this.g = g;
+        this.srpServer = new SRP6Server();
+    }
+    
+    private TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms) {
         super(keyExchange, supportedSignatureAlgorithms);
-
+        
         switch (keyExchange)
         {
         case KeyExchangeAlgorithm.SRP:
@@ -51,10 +79,6 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         default:
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
-
-        this.keyExchange = keyExchange;
-        this.identity = identity;
-        this.password = password;
     }
 
     public void init(TlsContext context)
@@ -145,8 +169,15 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         BigInteger N = new BigInteger(1, NBytes);
         BigInteger g = new BigInteger(1, gBytes);
 
-        // TODO Validate group parameters (see RFC 5054)
-//        throw new TlsFatalAlert(AlertDescription.insufficient_security);
+        /*
+         * RFC 5054 3.2: clients SHOULD only accept group parameters that
+         * come from a trusted source, such as those listed in Appendix A,
+         * or parameters configured locally by a trusted administrator.
+         */
+        if (!Nverifier.accept(N))
+        {
+            throw new TlsFatalAlert(AlertDescription.insufficient_security);
+        }
 
         this.s = sBytes;
 
@@ -178,7 +209,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void generateClientKeyExchange(OutputStream output) throws IOException
     {
-        BigInteger A = srpClient.generateClientCredentials(s, this.identity, this.password);
+        A = srpClient.generateClientCredentials(s, this.identity, this.password);
         TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(A), output);
     }
 
@@ -187,7 +218,14 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         try
         {
             // TODO Check if this needs to be a fixed size
-            return BigIntegers.asUnsignedByteArray(srpClient.calculateSecret(B));
+            if (srpServer == null)
+            {
+                return BigIntegers.asUnsignedByteArray(srpClient.calculateSecret(B));
+            }
+            else
+            {
+                return BigIntegers.asUnsignedByteArray(srpServer.calculateSecret(A));
+            }
         }
         catch (CryptoException e)
         {
@@ -201,5 +239,34 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         return signer;
+    }
+
+    public byte[] generateServerKeyExchange() throws IOException
+    {
+        srpServer.init(N, g, v, new SHA1Digest(), context.getSecureRandom());
+        B = srpServer.generateServerCredentials();
+        
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(56);
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(N), buffer);
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(g), buffer);
+        TlsUtils.writeOpaque8(s, buffer);
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(B), buffer);
+        return buffer.toByteArray();
+    }
+
+    public void processClientKeyExchange(InputStream input) throws IOException
+    {
+        /*
+         * RFC 5054 2.5.4: The client MUST abort the handshake with an "illegal_parameter" alert if
+         * A % N = 0.
+         */
+        try
+        {
+            A = SRP6Util.validatePublicValue(N, new BigInteger(1, TlsUtils.readOpaque16(input)));
+        }
+        catch (CryptoException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
     }
 }

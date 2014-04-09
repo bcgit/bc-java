@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
@@ -129,8 +130,40 @@ class RecordStream
         pendingCipher = null;
     }
 
-    public boolean readRecord()
-        throws IOException
+    /**
+     * Use this in non-blocking mode only!
+     * @param buffer
+     * @throws IOException
+     */
+    void readRecord(ByteBuffer buffer) throws IOException
+    {
+        if (buffer.remaining() < 5) {
+            // don't have the whole header, nothing to do
+            return;
+        }
+        
+        byte[] recordHeader = new byte[5];
+        buffer.mark();
+        buffer.get(recordHeader);
+        TlsHeader header = readHeader(recordHeader);
+        if (buffer.remaining() < header.recordLength) {
+            // don't have the whole record, nothing to do
+            buffer.reset();
+            return;
+        }
+        
+        byte[] ciphertext = new byte[header.recordLength];
+        buffer.get(ciphertext);
+        byte[] plaintext = decodeAndVerify(header.recordType, ciphertext, header.recordLength);
+        handler.processRecord(header.recordType, plaintext, 0, plaintext.length);
+    }
+    
+    /**
+     * Use this in blocking mode only!
+     * @return
+     * @throws IOException
+     */
+    boolean readRecord() throws IOException
     {
         byte[] recordHeader = TlsUtils.readAllOrNothing(5, input);
         if (recordHeader == null)
@@ -138,6 +171,15 @@ class RecordStream
             return false;
         }
 
+        TlsHeader header = readHeader(recordHeader);
+        byte[] plaintext = decodeAndVerify(header.recordType, TlsUtils.readFully(header.recordLength, input),
+                header.recordLength);
+        handler.processRecord(header.recordType, plaintext, 0, plaintext.length);
+        return true;
+    }
+    
+    private TlsHeader readHeader(byte[] recordHeader) throws IOException
+    {
         short type = TlsUtils.readUint8(recordHeader, 0);
 
         /*
@@ -168,17 +210,15 @@ class RecordStream
         }
 
         int length = TlsUtils.readUint16(recordHeader, 3);
-        byte[] plaintext = decodeAndVerify(type, input, length);
-        handler.processRecord(type, plaintext, 0, plaintext.length);
-        return true;
+        
+        return new TlsHeader(type, readVersion, length);
     }
 
-    protected byte[] decodeAndVerify(short type, InputStream input, int len)
+    protected byte[] decodeAndVerify(short type, byte[] buf, int len)
         throws IOException
     {
         checkLength(len, ciphertextLimit, AlertDescription.record_overflow);
 
-        byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
         checkLength(decoded.length, compressedLimit, AlertDescription.record_overflow);
@@ -308,12 +348,15 @@ class RecordStream
 
     protected void safeClose()
     {
-        try
+        if (input != null)
         {
-            input.close();
-        }
-        catch (IOException e)
-        {
+            try
+            {
+                input.close();
+            }
+            catch (IOException e)
+            {
+            }
         }
 
         try

@@ -39,4 +39,8 @@ public abstract class AbstractTlsPeer
     public void notifyHandshakeComplete() throws IOException
     {
     }
+
+    public void notifyApplicationDataReceived(byte[] data)
+    {
+    }
 }

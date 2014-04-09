@@ -43,21 +43,59 @@ public class TlsClientProtocol
         return random;
     }
 
+    /**
+     * Constructor for non-blocking mode. See {@link #TlsClientProtocol(OutputStream, SecureRandom)}.
+     * @param output
+     */
+    public TlsClientProtocol(OutputStream output)
+    {
+        this(output, createSecureRandom());
+    }
+    
+    /**
+     * Constructor for non-blocking mode.<br>
+     * <br>
+     * To send data, use {@link #getOutputStream()}. Data that needs to be sent to the remote
+     * peer will be written to the OutputStream passed in to this constructor.<br>
+     * <br>
+     * To read data, use {@link #offerInput(java.nio.ByteBuffer)}. Decrypted application data
+     * will be passed to {@link TlsPeer#notifyApplicationDataReceived(byte[])}.
+     * @param output
+     * @param secureRandom
+     */
+    public TlsClientProtocol(OutputStream output, SecureRandom secureRandom)
+    {
+        super(output, secureRandom);
+    }
+
+    /**
+     * Constructor for blocking mode.
+     * @param input
+     * @param output
+     */
     public TlsClientProtocol(InputStream input, OutputStream output)
     {
         this(input, output, createSecureRandom());
     }
 
+    /**
+     * Constructor for blocking mode.
+     * @param input
+     * @param output
+     * @param secureRandom
+     */
     public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
         super(input, output, secureRandom);
     }
 
     /**
-     * Initiates a TLS handshake in the role of client
+     * Initiates a TLS handshake in the role of client. In blocking mode, this will not return
+     * until the handshake is complete. In non-blocking mode, use {@link TlsPeer#notifyHandshakeComplete()}
+     * to receive a callback when the handshake is complete.
      *
      * @param tlsClient The {@link TlsClient} to use for the handshake.
-     * @throws IOException If handshake was not successful.
+     * @throws IOException If client is in blocking mode and handshake was not successful.
      */
     public void connect(TlsClient tlsClient) throws IOException
     {
@@ -95,7 +133,10 @@ public class TlsClientProtocol
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
-        completeHandshake();
+        if (blocking)
+        {
+            handshakePump();
+        }
     }
 
     protected void cleanupHandshake()
