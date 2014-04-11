@@ -33,8 +33,8 @@ public class RSAKeyPairGenerator
         // p and q values should have a length of half the strength in bits
         //
         int strength = param.getStrength();
-        int pBitlength = (strength + 1) >>> 1;
-        int qBitlength = strength - pBitlength;
+        int qBitlength = strength >>> 1;
+        int pBitlength = strength - qBitlength;
         int mindiffbits = strength / 3;
         int minWeight = strength >>> 2;
 
