@@ -125,7 +125,7 @@ public class RSAKeyPairGenerator
      * 
      * @param bitlength the bit-length of the returned prime
      * @param e the RSA public exponent
-     * @return A prime p, with (p-1) relatively prime to e
+     * @return a prime p, with (p-1) relatively prime to e
      */
     protected BigInteger chooseRandomPrime(int bitlength, BigInteger e)
     {
