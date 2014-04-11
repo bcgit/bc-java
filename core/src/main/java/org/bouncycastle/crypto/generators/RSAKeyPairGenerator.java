@@ -20,38 +20,37 @@ public class RSAKeyPairGenerator
 
     private RSAKeyGenerationParameters param;
 
-    public void init(
-        KeyGenerationParameters param)
+    public void init(KeyGenerationParameters param)
     {
         this.param = (RSAKeyGenerationParameters)param;
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        BigInteger    p, q, n, d, e, pSub1, qSub1, phi;
+        BigInteger p, q, n, d, e, pSub1, qSub1, phi;
 
         //
         // p and q values should have a length of half the strength in bits
         //
         int strength = param.getStrength();
-        int pbitlength = (strength + 1) / 2;
-        int qbitlength = strength - pbitlength;
+        int pBitlength = (strength + 1) >>> 1;
+        int qBitlength = strength - pBitlength;
         int mindiffbits = strength / 3;
-        int minWeight = strength >> 2;
+        int minWeight = strength >>> 2;
 
         e = param.getPublicExponent();
 
         // TODO Consider generating safe primes for p, q (see DHParametersHelper.generateSafePrimes)
         // (then p-1 and q-1 will not consist of only small factors - see "Pollard's algorithm")
 
-        p = chooseRandomPrime(pbitlength, e);
+        p = chooseRandomPrime(pBitlength, e);
 
         //
         // generate a modulus of the required length
         //
         for (;;)
         {
-            q = chooseRandomPrime(qbitlength, e);
+            q = chooseRandomPrime(qBitlength, e);
 
             // p and q should not be too close together (or equal!)
             BigInteger diff = q.subtract(p).abs();
@@ -83,7 +82,7 @@ public class RSAKeyPairGenerator
              */
             if (WNafUtil.getNafWeight(n) < minWeight)
             {
-                p = chooseRandomPrime(pbitlength, e);
+                p = chooseRandomPrime(pBitlength, e);
                 continue;
             }
 
@@ -109,15 +108,15 @@ public class RSAKeyPairGenerator
         //
         // calculate the CRT factors
         //
-        BigInteger    dP, dQ, qInv;
+        BigInteger dP, dQ, qInv;
 
         dP = d.remainder(pSub1);
         dQ = d.remainder(qSub1);
         qInv = q.modInverse(p);
 
         return new AsymmetricCipherKeyPair(
-                new RSAKeyParameters(false, n, e),
-                new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
+            new RSAKeyParameters(false, n, e),
+            new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
     }
 
     /**
