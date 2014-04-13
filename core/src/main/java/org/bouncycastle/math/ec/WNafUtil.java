@@ -293,17 +293,7 @@ public abstract class WNafUtil
         BigInteger _3k = k.shiftLeft(1).add(k);
         BigInteger diff = _3k.xor(k);
 
-        int highBit = _3k.bitLength() - 1, length = 1;
-        for (int i = 1; i < highBit; ++i)
-        {
-            if (diff.testBit(i))
-            {
-                ++length;
-                ++i;
-            }
-        }
-
-        return length;
+        return diff.bitCount();
     }
 
     public static WNafPreCompInfo getWNafPreCompInfo(ECPoint p)
