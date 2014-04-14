@@ -476,6 +476,7 @@ public class DTLSServerProtocol
         TlsProtocol.assertEmpty(buf);
 
         // Verify the CertificateVerify message contains a correct signature.
+        boolean verified = false;
         try
         {
             // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
@@ -487,10 +488,14 @@ public class DTLSServerProtocol
 
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
             tlsSigner.init(state.serverContext);
-            tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
+            verified = tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
                 clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
         }
         catch (Exception e)
+        {
+        }
+
+        if (!verified)
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
