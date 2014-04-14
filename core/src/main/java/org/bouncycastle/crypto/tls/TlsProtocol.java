@@ -14,7 +14,6 @@ import java.util.Vector;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.Times;
 
 /**
