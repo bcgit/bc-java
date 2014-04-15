@@ -57,10 +57,10 @@ class MockTlsServer
             });
     }
 
-    protected ProtocolVersion getMaximumVersion()
-    {
-        return ProtocolVersion.TLSv12;
-    }
+//    protected ProtocolVersion getMaximumVersion()
+//    {
+//        return ProtocolVersion.TLSv12;
+//    }
 
     public ProtocolVersion getServerVersion() throws IOException
     {
