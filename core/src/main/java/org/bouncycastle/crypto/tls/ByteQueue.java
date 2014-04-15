@@ -8,7 +8,7 @@ public class ByteQueue
     /**
      * @return The smallest number which can be written as 2^x which is bigger than i.
      */
-    public static final int nextTwoPow(int i)
+    public static int nextTwoPow(int i)
     {
         /*
          * This code is based of a lot of code I found on the Internet which mostly
@@ -30,7 +30,7 @@ public class ByteQueue
     /**
      * The buffer where we store our data.
      */
-    private byte[] databuf;;
+    private byte[] databuf;
 
     /**
      * How many bytes at the beginning of the buffer are skipped.
