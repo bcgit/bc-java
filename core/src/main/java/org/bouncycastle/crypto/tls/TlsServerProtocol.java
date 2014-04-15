@@ -430,6 +430,11 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
+        if (TlsUtils.isTLSv12(getContext()))
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified = false;
         try

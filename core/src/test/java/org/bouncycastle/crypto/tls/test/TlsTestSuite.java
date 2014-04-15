@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls.test;
 
 import org.bouncycastle.crypto.tls.AlertDescription;
+import org.bouncycastle.crypto.tls.ProtocolVersion;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -48,16 +49,24 @@ public class TlsTestSuite extends TestSuite
         {
             TlsTestConfig c = new TlsTestConfig();
             c.clientAuth = C.CLIENT_AUTH_NONE;
+            c.serverCertReq = C.SERVER_CERT_REQ_NONE;
+
+            testSuite.addTest(new TlsTestCase(c, "GoodNoCertReq"));
+        }
+
+        {
+            TlsTestConfig c = new TlsTestConfig();
+            c.clientAuth = C.CLIENT_AUTH_NONE;
 
             testSuite.addTest(new TlsTestCase(c, "GoodOptionalCertReqDeclined"));
         }
 
         {
             TlsTestConfig c = new TlsTestConfig();
-            c.clientAuth = C.CLIENT_AUTH_NONE;
-            c.serverCertReq = C.SERVER_CERT_REQ_NONE;
+            c.serverMaximumVersion = ProtocolVersion.TLSv12;
+            c.expectServerFatalAlert(AlertDescription.decrypt_error);
 
-            testSuite.addTest(new TlsTestCase(c, "GoodServerOnlyAuthentication"));
+            testSuite.addTest(new TlsTestCase(c, "KnownIssue_TLS12_ClientAuth_NotImpl"));
         }
 
         return testSuite;
