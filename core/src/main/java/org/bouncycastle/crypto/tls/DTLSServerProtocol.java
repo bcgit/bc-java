@@ -475,6 +475,11 @@ public class DTLSServerProtocol
 
         TlsProtocol.assertEmpty(buf);
 
+        if (TlsUtils.isTLSv12(state.serverContext))
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified = false;
         try
