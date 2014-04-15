@@ -48,7 +48,6 @@ public class TlsTestSuite extends TestSuite
 
         {
             TlsTestConfig c = new TlsTestConfig();
-            c.clientAuth = C.CLIENT_AUTH_NONE;
             c.serverCertReq = C.SERVER_CERT_REQ_NONE;
 
             testSuite.addTest(new TlsTestCase(c, "GoodNoCertReq"));

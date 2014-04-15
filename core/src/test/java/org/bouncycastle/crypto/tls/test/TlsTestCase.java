@@ -25,9 +25,6 @@ public class TlsTestCase extends TestCase
 
     protected void runTest() throws Throwable
     {
-        TlsTestClientImpl clientImpl = new TlsTestClientImpl(config);
-        TlsTestServerImpl serverImpl = new TlsTestServerImpl(config);
-
         SecureRandom secureRandom = new SecureRandom();
         
         PipedInputStream clientRead = new PipedInputStream();
@@ -42,6 +39,9 @@ public class TlsTestCase extends TestCase
 
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientNetIn, clientNetOut, secureRandom);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverNetIn, serverNetOut, secureRandom);
+
+        TlsTestClientImpl clientImpl = new TlsTestClientImpl(config);
+        TlsTestServerImpl serverImpl = new TlsTestServerImpl(config);
 
         ServerThread serverThread = new ServerThread(serverProtocol, serverImpl);
         serverThread.start();
