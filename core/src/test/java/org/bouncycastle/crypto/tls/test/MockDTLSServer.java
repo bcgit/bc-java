@@ -97,7 +97,7 @@ public class MockDTLSServer
 
     protected ProtocolVersion getMaximumVersion()
     {
-        return ProtocolVersion.DTLSv10;
+        return ProtocolVersion.DTLSv12;
     }
 
     protected ProtocolVersion getMinimumVersion()

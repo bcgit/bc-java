@@ -15,59 +15,66 @@ public class TlsTestSuite extends TestSuite
     {
         TlsTestSuite testSuite = new TlsTestSuite();
 
+        addVersionTests(testSuite, ProtocolVersion.TLSv10);
+        addVersionTests(testSuite, ProtocolVersion.TLSv11);
+        addVersionTests(testSuite, ProtocolVersion.TLSv12);
+
+        return testSuite;
+    }
+
+    private static void addVersionTests(TestSuite testSuite, ProtocolVersion version)
+    {
+        String prefix = version.toString().replaceAll("[ \\.]", "") + "_";
+
+        {
+            TlsTestConfig c = new TlsTestConfig();
+            c.serverMaximumVersion = version;
+
+            testSuite.addTest(new TlsTestCase(c, prefix + "GoodDefault"));
+        }
+
         {
             TlsTestConfig c = new TlsTestConfig();
             c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
+            c.serverMaximumVersion = version;
             c.expectServerFatalAlert(AlertDescription.decrypt_error);
 
-            testSuite.addTest(new TlsTestCase(c, "BadCertificateVerify"));
+            testSuite.addTest(new TlsTestCase(c, prefix + "BadCertificateVerify"));
         }
 
         {
             TlsTestConfig c = new TlsTestConfig();
             c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
+            c.serverMaximumVersion = version;
             c.expectServerFatalAlert(AlertDescription.bad_certificate);
 
-            testSuite.addTest(new TlsTestCase(c, "BadClientCertificate"));
+            testSuite.addTest(new TlsTestCase(c, prefix + "BadClientCertificate"));
         }
 
         {
             TlsTestConfig c = new TlsTestConfig();
             c.clientAuth = C.CLIENT_AUTH_NONE;
             c.serverCertReq = C.SERVER_CERT_REQ_MANDATORY;
+            c.serverMaximumVersion = version;
             c.expectServerFatalAlert(AlertDescription.handshake_failure);
 
-            testSuite.addTest(new TlsTestCase(c, "BadMandatoryCertReqDeclined"));
-        }
-
-        {
-            TlsTestConfig c = new TlsTestConfig();
-
-            testSuite.addTest(new TlsTestCase(c, "GoodDefault"));
+            testSuite.addTest(new TlsTestCase(c, prefix + "BadMandatoryCertReqDeclined"));
         }
 
         {
             TlsTestConfig c = new TlsTestConfig();
             c.serverCertReq = C.SERVER_CERT_REQ_NONE;
+            c.serverMaximumVersion = version;
 
-            testSuite.addTest(new TlsTestCase(c, "GoodNoCertReq"));
+            testSuite.addTest(new TlsTestCase(c, prefix + "GoodNoCertReq"));
         }
 
         {
             TlsTestConfig c = new TlsTestConfig();
             c.clientAuth = C.CLIENT_AUTH_NONE;
+            c.serverMaximumVersion = version;
 
-            testSuite.addTest(new TlsTestCase(c, "GoodOptionalCertReqDeclined"));
+            testSuite.addTest(new TlsTestCase(c, prefix + "GoodOptionalCertReqDeclined"));
         }
-
-        {
-            TlsTestConfig c = new TlsTestConfig();
-            c.serverMaximumVersion = ProtocolVersion.TLSv12;
-            c.expectServerFatalAlert(AlertDescription.decrypt_error);
-
-            testSuite.addTest(new TlsTestCase(c, "KnownIssue_TLS12_ClientAuth_NotImpl"));
-        }
-
-        return testSuite;
     }
 }
