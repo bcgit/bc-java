@@ -43,6 +43,9 @@ public class TlsClientProtocol
         return random;
     }
 
+    /**
+     * @deprecated use alternate constructor taking an explicit {@link SecureRandom}
+     */
     public TlsClientProtocol(InputStream input, OutputStream output)
     {
         this(input, output, createSecureRandom());
@@ -74,10 +77,12 @@ public class TlsClientProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
-        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), secureRandom,
-            ExporterLabel.client_random);
 
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
+
+        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(),
+            tlsClientContext.getSecureRandom(), ExporterLabel.client_random);
+
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);
 
