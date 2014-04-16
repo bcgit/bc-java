@@ -221,15 +221,15 @@ public class DefaultTlsCipherFactory
         case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
-            return new MD5Digest();
+            return TlsUtils.createHash(HashAlgorithm.md5);
         case MACAlgorithm.hmac_sha1:
-            return new SHA1Digest();
+            return TlsUtils.createHash(HashAlgorithm.sha1);
         case MACAlgorithm.hmac_sha256:
-            return new SHA256Digest();
+            return TlsUtils.createHash(HashAlgorithm.sha256);
         case MACAlgorithm.hmac_sha384:
-            return new SHA384Digest();
+            return TlsUtils.createHash(HashAlgorithm.sha384);
         case MACAlgorithm.hmac_sha512:
-            return new SHA512Digest();
+            return TlsUtils.createHash(HashAlgorithm.sha512);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
