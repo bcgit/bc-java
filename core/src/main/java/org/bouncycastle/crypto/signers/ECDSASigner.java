@@ -49,18 +49,19 @@ public class ECDSASigner
         boolean                 forSigning,
         CipherParameters        param)
     {
+        SecureRandom providedRandom = null;
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
             {
-                ParametersWithRandom    rParam = (ParametersWithRandom)param;
+                ParametersWithRandom rParam = (ParametersWithRandom)param;
 
-                this.random = rParam.getRandom();
                 this.key = (ECPrivateKeyParameters)rParam.getParameters();
+                providedRandom = rParam.getRandom();
             }
             else
             {
-                this.random = new SecureRandom();
                 this.key = (ECPrivateKeyParameters)param;
             }
         }
@@ -68,6 +69,8 @@ public class ECDSASigner
         {
             this.key = (ECPublicKeyParameters)param;
         }
+
+        this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);
     }
 
     // 5.3 pg 28
@@ -185,5 +188,10 @@ public class ECDSASigner
     protected ECMultiplier createBasePointMultiplier()
     {
         return new FixedPointCombMultiplier();
+    }
+
+    protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
+    {
+        return !needed ? null : (provided != null) ? provided : new SecureRandom();
     }
 }
