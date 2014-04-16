@@ -43,7 +43,7 @@ public class TlsBlockCipher
         this.context = context;
 
         this.randomData = new byte[256];
-        context.getSecureRandom().nextBytes(randomData);
+        context.getNonceRandomGenerator().nextBytes(randomData);
 
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().encryptThenMAC;
@@ -183,7 +183,7 @@ public class TlsBlockCipher
         if (useExplicitIV)
         {
             byte[] explicitIV = new byte[blockSize];
-            context.getSecureRandom().nextBytes(explicitIV);
+            context.getNonceRandomGenerator().nextBytes(explicitIV);
 
             encryptCipher.init(true, new ParametersWithIV(null, explicitIV));
 

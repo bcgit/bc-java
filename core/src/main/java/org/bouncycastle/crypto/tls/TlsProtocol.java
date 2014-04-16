@@ -12,9 +12,9 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Times;
 
 /**
  * An implementation of all high level protocols in TLS 1.0/1.1.
@@ -823,19 +823,10 @@ public abstract class TlsProtocol
         }
     }
 
-    protected static byte[] createRandomBlock(boolean useGMTUnixTime, SecureRandom random, String asciiLabel)
+    protected static byte[] createRandomBlock(boolean useGMTUnixTime, RandomGenerator randomGenerator)
     {
-        /*
-         * We use the TLS 1.0 PRF on the SecureRandom output, to guard against RNGs where the raw
-         * output could be used to recover the internal state.
-         */
-        byte[] secret = new byte[32];
-        random.nextBytes(secret);
-
-        byte[] seed = new byte[8];
-        TlsUtils.writeUint64(Times.nanoTime(), seed, 0);
-
-        byte[] result = TlsUtils.PRF_legacy(secret, asciiLabel, seed, 32);
+        byte[] result = new byte[32];
+        randomGenerator.nextBytes(result);
 
         if (useGMTUnixTime)
         {
