@@ -868,8 +868,8 @@ public class TlsUtils
 
         byte[] b1 = new byte[size];
         byte[] b2 = new byte[size];
-        hmac_hash(new MD5Digest(), s1, labelSeed, b1);
-        hmac_hash(new SHA1Digest(), s2, labelSeed, b2);
+        hmac_hash(createHash(HashAlgorithm.md5), s1, labelSeed, b1);
+        hmac_hash(createHash(HashAlgorithm.sha1), s2, labelSeed, b2);
         for (int i = 0; i < size; i++)
         {
             b1[i] ^= b2[i];
@@ -941,8 +941,8 @@ public class TlsUtils
 
     static byte[] calculateKeyBlock_SSL(byte[] master_secret, byte[] random, int size)
     {
-        Digest md5 = new MD5Digest();
-        Digest sha1 = new SHA1Digest();
+        Digest md5 = createHash(HashAlgorithm.md5);
+        Digest sha1 = createHash(HashAlgorithm.sha1);
         int md5Size = md5.getDigestSize();
         byte[] shatmp = new byte[sha1.getDigestSize()];
         byte[] tmp = new byte[size + md5Size];
@@ -985,8 +985,8 @@ public class TlsUtils
 
     static byte[] calculateMasterSecret_SSL(byte[] pre_master_secret, byte[] random)
     {
-        Digest md5 = new MD5Digest();
-        Digest sha1 = new SHA1Digest();
+        Digest md5 = createHash(HashAlgorithm.md5);
+        Digest sha1 = createHash(HashAlgorithm.sha1);
         int md5Size = md5.getDigestSize();
         byte[] shatmp = new byte[sha1.getDigestSize()];
 
