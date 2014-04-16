@@ -50,12 +50,17 @@ public abstract class TlsDSASigner
 
     public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
     {
-        return makeSigner(algorithm, false, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        return makeSigner(algorithm, false, true, privateKey);
     }
 
     public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
         return makeSigner(algorithm, false, false, publicKey);
+    }
+
+    protected CipherParameters makeInitParameters(boolean forSigning, CipherParameters cp)
+    {
+        return cp;
     }
 
     protected Signer makeSigner(SignatureAndHashAlgorithm algorithm, boolean raw, boolean forSigning,
@@ -77,7 +82,7 @@ public abstract class TlsDSASigner
         Digest d = raw ? new NullDigest() : TlsUtils.createHash(hashAlgorithm);
 
         Signer s = new DSADigestSigner(createDSAImpl(hashAlgorithm), d);
-        s.init(forSigning, cp);
+        s.init(forSigning, makeInitParameters(forSigning, cp));
         return s;
     }
 
