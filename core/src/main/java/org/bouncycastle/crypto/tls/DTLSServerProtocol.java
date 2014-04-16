@@ -46,12 +46,14 @@ public class DTLSServerProtocol
 
         SecurityParameters securityParameters = new SecurityParameters();
         securityParameters.entity = ConnectionEnd.server;
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), secureRandom,
-            ExporterLabel.server_random);
 
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
         state.serverContext = new TlsServerContextImpl(secureRandom, securityParameters);
+
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(),
+            state.serverContext.getSecureRandom(), ExporterLabel.server_random);
+
         server.init(state.serverContext);
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);

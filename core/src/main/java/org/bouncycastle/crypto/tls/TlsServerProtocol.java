@@ -52,10 +52,12 @@ public class TlsServerProtocol
 
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.server;
-        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), secureRandom,
-            ExporterLabel.server_random);
 
         this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
+
+        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(),
+            tlsServerContext.getSecureRandom(), ExporterLabel.server_random);
+
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
 
