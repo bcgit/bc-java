@@ -14,6 +14,7 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.math.ec.WNafUtil;
 
 public class ECKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator, ECConstants
@@ -42,14 +43,32 @@ public class ECKeyPairGenerator
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         BigInteger n = params.getN();
-        int        nBitLength = n.bitLength();
-        BigInteger d;
+        int nBitLength = n.bitLength();
+        int minWeight = nBitLength >>> 2;
 
-        do
+        BigInteger d;
+        for (;;)
         {
             d = new BigInteger(nBitLength, random);
+
+            if (d.compareTo(TWO) < 0  || (d.compareTo(n) >= 0))
+            {
+                continue;
+            }
+
+            /*
+             * Require a minimum weight of the NAF representation, since low-weight primes may be
+             * weak against a version of the number-field-sieve for the discrete-logarithm-problem.
+             * 
+             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
+             */
+            if (WNafUtil.getNafWeight(d) < minWeight)
+            {
+                continue;
+            }
+
+            break;
         }
-        while (d.equals(ZERO)  || (d.compareTo(n) >= 0));
 
         ECPoint Q = createBasePointMultiplier().multiply(params.getG(), d);
 
