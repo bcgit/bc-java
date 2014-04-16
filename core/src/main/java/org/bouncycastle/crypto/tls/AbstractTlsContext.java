@@ -9,6 +9,13 @@ import org.bouncycastle.util.Times;
 abstract class AbstractTlsContext
     implements TlsContext
 {
+    private static long counter = Times.nanoTime();
+
+    private synchronized static long nextCounterValue()
+    {
+        return ++counter;
+    }
+
     private RandomGenerator nonceRandom;
     private SecureRandom secureRandom;
     private SecurityParameters securityParameters;
@@ -20,6 +27,7 @@ abstract class AbstractTlsContext
 
     AbstractTlsContext(SecureRandom secureRandom, SecurityParameters securityParameters)
     {
+        secureRandom.setSeed(nextCounterValue());
         secureRandom.setSeed(Times.nanoTime());
 
         this.nonceRandom = new DigestRandomGenerator(TlsUtils.createHash(HashAlgorithm.sha256));
