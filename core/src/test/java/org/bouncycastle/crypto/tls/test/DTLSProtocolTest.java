@@ -44,9 +44,8 @@ public class DTLSProtocolTest
         }
 
         byte[] buf = new byte[dtlsClient.getReceiveLimit()];
-        while (dtlsClient.receive(buf, 0, buf.length, 1000) >= 0)
+        while (dtlsClient.receive(buf, 0, buf.length, 100) >= 0)
         {
-            ;
         }
 
         dtlsClient.close();
