@@ -475,17 +475,19 @@ public class DTLSServerProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        if (TlsUtils.isTLSv12(state.serverContext))
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error);
-        }
-
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified = false;
         try
         {
-            // TODO For TLS 1.2, this needs to be the hash specified in the DigitallySigned
-            byte[] certificateVerifyHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+            byte[] certificateVerifyHash;
+            if (TlsUtils.isTLSv12(state.serverContext))
+            {
+                certificateVerifyHash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
+            }
+            else
+            {
+                certificateVerifyHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+            }
 
             org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
             SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
