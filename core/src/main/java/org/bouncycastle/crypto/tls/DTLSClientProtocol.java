@@ -38,7 +38,7 @@ public class DTLSClientProtocol
         state.clientContext = new TlsClientContextImpl(secureRandom, securityParameters);
 
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(),
-            state.clientContext.getSecureRandom(), ExporterLabel.client_random);
+            state.clientContext.getNonceRandomGenerator());
 
         client.init(state.clientContext);
 

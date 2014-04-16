@@ -2,8 +2,12 @@ package org.bouncycastle.crypto.tls;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.prng.RandomGenerator;
+
 public interface TlsContext
 {
+    RandomGenerator getNonceRandomGenerator();
+
     SecureRandom getSecureRandom();
 
     SecurityParameters getSecurityParameters();

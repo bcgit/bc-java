@@ -81,7 +81,7 @@ public class TlsClientProtocol
         this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
 
         this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(),
-            tlsClientContext.getSecureRandom(), ExporterLabel.client_random);
+            tlsClientContext.getNonceRandomGenerator());
 
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);

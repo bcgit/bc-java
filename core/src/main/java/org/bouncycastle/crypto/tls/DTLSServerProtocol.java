@@ -52,7 +52,7 @@ public class DTLSServerProtocol
         state.serverContext = new TlsServerContextImpl(secureRandom, securityParameters);
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(),
-            state.serverContext.getSecureRandom(), ExporterLabel.server_random);
+            state.serverContext.getNonceRandomGenerator());
 
         server.init(state.serverContext);
 
