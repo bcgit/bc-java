@@ -56,6 +56,16 @@ class TlsTestClientImpl
         return super.getClientVersion();
     }
 
+    public ProtocolVersion getMinimumVersion()
+    {
+        if (config.clientMinimumVersion != null)
+        {
+            return config.clientMinimumVersion;
+        }
+
+        return super.getMinimumVersion();
+    }
+
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
     {
         if (alertLevel == AlertLevel.fatal && firstFatalAlertConnectionEnd == -1)

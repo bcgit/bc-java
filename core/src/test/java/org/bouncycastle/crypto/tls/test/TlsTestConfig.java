@@ -48,6 +48,11 @@ public class TlsTestConfig
     public int clientAuth = CLIENT_AUTH_VALID;
 
     /**
+     * Configures the minimum protocol version the client will accept. If null, uses the library's default.
+     */
+    public ProtocolVersion clientMinimumVersion = null;
+
+    /**
      * Configures the protocol version the client will offer. If null, uses the library's default.
      */
     public ProtocolVersion clientOfferVersion = null;

@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
+import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
@@ -14,10 +15,23 @@ import org.bouncycastle.util.io.Streams;
 
 public class TlsTestCase extends TestCase
 {
+    private static void checkTLSVersion(ProtocolVersion version)
+    {
+        if (version != null && !version.isTLS())
+        {
+            throw new IllegalStateException("Non-TLS version");
+        }
+    }
+
     protected final TlsTestConfig config;
 
     public TlsTestCase(TlsTestConfig config, String name)
     {
+        checkTLSVersion(config.clientMinimumVersion);
+        checkTLSVersion(config.clientOfferVersion);
+        checkTLSVersion(config.serverMaximumVersion);
+        checkTLSVersion(config.serverMinimumVersion);
+
         this.config = config;
 
         setName(name);
@@ -71,6 +85,7 @@ public class TlsTestCase extends TestCase
         catch (Exception e)
         {
             caught = e;
+            logException(caught);
         }
 
         serverThread.allowExit();
@@ -91,6 +106,14 @@ public class TlsTestCase extends TestCase
         {
             assertNull("Unexpected client exception", caught);
             assertNull("Unexpected server exception", serverThread.caught);
+        }
+    }
+
+    protected  void logException(Exception e)
+    {
+        if (TlsTestConfig.DEBUG)
+        {
+            e.printStackTrace();
         }
     }
 
@@ -125,6 +148,7 @@ public class TlsTestCase extends TestCase
             catch (Exception e)
             {
                 caught = e;
+                logException(caught);
             }
 
             waitExit();
