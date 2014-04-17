@@ -392,6 +392,12 @@ public abstract class TlsProtocol
         }
     }
 
+    protected int applicationDataAvailable()
+        throws IOException
+    {
+        return applicationDataQueue.size();
+    }
+
     /**
      * Read data from the network. The method will return immediately, if there is still some data
      * left in the buffer, or block until some application data has been read from the network.
