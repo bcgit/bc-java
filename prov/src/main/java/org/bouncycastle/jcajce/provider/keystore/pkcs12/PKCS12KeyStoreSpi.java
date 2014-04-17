@@ -1035,9 +1035,9 @@ public class PKCS12KeyStoreSpi
                             Enumeration e = b.getBagAttributes().getObjects();
                             while (e.hasMoreElements())
                             {
-                                ASN1Sequence sq = (ASN1Sequence)e.nextElement();
-                                ASN1ObjectIdentifier aOid = (ASN1ObjectIdentifier)sq.getObjectAt(0);
-                                ASN1Set attrSet = (ASN1Set)sq.getObjectAt(1);
+                                ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                                ASN1ObjectIdentifier aOid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                                ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
                                 ASN1Primitive attr = null;
 
                                 if (attrSet.size() > 0)
@@ -1058,16 +1058,16 @@ public class PKCS12KeyStoreSpi
                                     {
                                         bagAttr.setBagAttribute(aOid, attr);
                                     }
-                                }
 
-                                if (aOid.equals(pkcs_9_at_friendlyName))
-                                {
-                                    alias = ((DERBMPString)attr).getString();
-                                    keys.put(alias, privKey);
-                                }
-                                else if (aOid.equals(pkcs_9_at_localKeyId))
-                                {
-                                    localId = (ASN1OctetString)attr;
+                                    if (aOid.equals(pkcs_9_at_friendlyName))
+                                    {
+                                        alias = ((DERBMPString)attr).getString();
+                                        keys.put(alias, privKey);
+                                    }
+                                    else if (aOid.equals(pkcs_9_at_localKeyId))
+                                    {
+                                        localId = (ASN1OctetString)attr;
+                                    }
                                 }
                             }
 
@@ -1135,38 +1135,43 @@ public class PKCS12KeyStoreSpi
                 Enumeration e = b.getBagAttributes().getObjects();
                 while (e.hasMoreElements())
                 {
-                    ASN1Sequence sq = (ASN1Sequence)e.nextElement();
-                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)sq.getObjectAt(0);
-                    ASN1Primitive attr = (ASN1Primitive)((ASN1Set)sq.getObjectAt(1)).getObjectAt(0);
-                    PKCS12BagAttributeCarrier bagAttr = null;
+                    ASN1Sequence sq = ASN1Sequence.getInstance(e.nextElement());
+                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(sq.getObjectAt(0));
+                    ASN1Set attrSet = ASN1Set.getInstance(sq.getObjectAt(1));
 
-                    if (cert instanceof PKCS12BagAttributeCarrier)
+                    if (attrSet.size() > 0)   // sometimes this is empty!
                     {
-                        bagAttr = (PKCS12BagAttributeCarrier)cert;
+                        ASN1Primitive attr = (ASN1Primitive)attrSet.getObjectAt(0);
+                        PKCS12BagAttributeCarrier bagAttr = null;
 
-                        ASN1Encodable existing = bagAttr.getBagAttribute(oid);
-                        if (existing != null)
+                        if (cert instanceof PKCS12BagAttributeCarrier)
                         {
-                            // OK, but the value has to be the same
-                            if (!existing.toASN1Primitive().equals(attr))
+                            bagAttr = (PKCS12BagAttributeCarrier)cert;
+
+                            ASN1Encodable existing = bagAttr.getBagAttribute(oid);
+                            if (existing != null)
                             {
-                                throw new IOException(
-                                    "attempt to add existing attribute with different value");
+                                // OK, but the value has to be the same
+                                if (!existing.toASN1Primitive().equals(attr))
+                                {
+                                    throw new IOException(
+                                        "attempt to add existing attribute with different value");
+                                }
+                            }
+                            else
+                            {
+                                bagAttr.setBagAttribute(oid, attr);
                             }
                         }
-                        else
-                        {
-                            bagAttr.setBagAttribute(oid, attr);
-                        }
-                    }
 
-                    if (oid.equals(pkcs_9_at_friendlyName))
-                    {
-                        alias = ((DERBMPString)attr).getString();
-                    }
-                    else if (oid.equals(pkcs_9_at_localKeyId))
-                    {
-                        localId = (ASN1OctetString)attr;
+                        if (oid.equals(pkcs_9_at_friendlyName))
+                        {
+                            alias = ((DERBMPString)attr).getString();
+                        }
+                        else if (oid.equals(pkcs_9_at_localKeyId))
+                        {
+                            localId = (ASN1OctetString)attr;
+                        }
                     }
                 }
             }
