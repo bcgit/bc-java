@@ -7,8 +7,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Date;
@@ -25,6 +23,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 /**
@@ -40,8 +39,7 @@ public class RSAKeyPairGenerator
     private static void exportKeyPair(
         OutputStream    secretOut,
         OutputStream    publicOut,
-        PublicKey       publicKey,
-        PrivateKey      privateKey,
+        KeyPair         pair,
         String          identity,
         char[]          passPhrase,
         boolean         armor)
@@ -53,7 +51,7 @@ public class RSAKeyPairGenerator
         }
 
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        PGPKeyPair          keyPair = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, publicKey, privateKey, new Date());
+        PGPKeyPair          keyPair = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, pair, new Date());
         PGPSecretKey        secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, keyPair, identity, sha1Calc, null, null, new JcaPGPContentSignerBuilder(keyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.CAST5, sha1Calc).setProvider("BC").build(passPhrase));
         
         secretKey.encode(secretOut);
@@ -101,14 +99,14 @@ public class RSAKeyPairGenerator
             FileOutputStream    out1 = new FileOutputStream("secret.asc");
             FileOutputStream    out2 = new FileOutputStream("pub.asc");
             
-            exportKeyPair(out1, out2, kp.getPublic(), kp.getPrivate(), args[1], args[2].toCharArray(), true);
+            exportKeyPair(out1, out2, kp, args[1], args[2].toCharArray(), true);
         }
         else
         {
             FileOutputStream    out1 = new FileOutputStream("secret.bpg");
             FileOutputStream    out2 = new FileOutputStream("pub.bpg");
             
-            exportKeyPair(out1, out2, kp.getPublic(), kp.getPrivate(), args[0], args[1].toCharArray(), false);
+            exportKeyPair(out1, out2, kp, args[0], args[1].toCharArray(), false);
         }
     }
 }

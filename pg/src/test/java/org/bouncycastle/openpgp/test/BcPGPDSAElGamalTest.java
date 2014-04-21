@@ -54,6 +54,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -443,7 +444,7 @@ public class BcPGPDSAElGamalTest
             
             KeyPair kp = kpg.generateKeyPair();
             
-            PGPKeyPair    pgpKp = new PGPKeyPair(PGPPublicKey.ELGAMAL_GENERAL , kp.getPublic(), kp.getPrivate(), new Date());
+            PGPKeyPair    pgpKp = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_GENERAL , kp, new Date());
             
             PGPPublicKey k1 = pgpKp.getPublicKey();
             
@@ -469,7 +470,7 @@ public class BcPGPDSAElGamalTest
                 // Run a short encrypt/decrypt test with random key for the given parameters
                 kp = keyGen.generateKeyPair();
 
-                PGPKeyPair elGamalKeyPair = new PGPKeyPair(
+                PGPKeyPair elGamalKeyPair = new JcaPGPKeyPair(
                     PublicKeyAlgorithmTags.ELGAMAL_GENERAL, kp, new Date());
 
                 cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(random));

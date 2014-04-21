@@ -3,9 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SignatureException;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -21,7 +18,6 @@ import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
@@ -108,28 +104,6 @@ public class PGPSignature
         return sigPck.getHashAlgorithm();
     }
 
-    /**
-     * @deprecated use init(PGPContentVerifierBuilderProvider, PGPPublicKey)
-     */
-    public void initVerify(
-        PGPPublicKey    pubKey,
-        String          provider)
-        throws NoSuchProviderException, PGPException
-    {
-        initVerify(pubKey, PGPUtil.getProvider(provider));
-    }
-
-        /**
-     * @deprecated use init(PGPContentVerifierBuilderProvider, PGPPublicKey)
-     */
-    public void initVerify(
-        PGPPublicKey    pubKey,
-        Provider        provider)
-        throws PGPException
-    {    
-        init(new JcaPGPContentVerifierBuilderProvider().setProvider(provider), pubKey);
-    }
-
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
@@ -143,7 +117,6 @@ public class PGPSignature
 
     public void update(
         byte    b)
-        throws SignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -175,7 +148,6 @@ public class PGPSignature
         
     public void update(
         byte[]    bytes)
-        throws SignatureException
     {
         this.update(bytes, 0, bytes.length);
     }
@@ -184,7 +156,6 @@ public class PGPSignature
         byte[]    bytes,
         int       off,
         int       length)
-        throws SignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -202,20 +173,18 @@ public class PGPSignature
     }
 
     private void byteUpdate(byte b)
-        throws SignatureException
     {
         try
         {
             sigOut.write(b);
         }
         catch (IOException e)
-        {             // TODO: we really should get rid of signature exception next....
-            throw new SignatureException(e.getMessage());
+        {
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
     private void blockUpdate(byte[] block, int off, int len)
-        throws SignatureException
     {
         try
         {
@@ -223,12 +192,12 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
     public boolean verify()
-        throws PGPException, SignatureException
+        throws PGPException
     {
         try
         {
@@ -238,7 +207,7 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new SignatureException(e.getMessage());
+            throw new PGPException(e.getMessage(), e);
         }
 
         return verifier.verify(this.getSignature());
@@ -246,7 +215,6 @@ public class PGPSignature
 
 
     private void updateWithIdData(int header, byte[] idBytes)
-        throws SignatureException
     {
         this.update((byte)header);
         this.update((byte)(idBytes.length >> 24));
@@ -257,7 +225,7 @@ public class PGPSignature
     }
     
     private void updateWithPublicKey(PGPPublicKey key)
-        throws PGPException, SignatureException
+        throws PGPException
     {
         byte[] keyBytes = getEncodedPublicKey(key);
 
@@ -275,12 +243,11 @@ public class PGPSignature
      * @param key the key to be verified.
      * @return true if the signature matches, false otherwise.
      * @throws PGPException
-     * @throws SignatureException
      */
     public boolean verifyCertification(
         PGPUserAttributeSubpacketVector userAttributes,
         PGPPublicKey    key)
-        throws PGPException, SignatureException
+        throws PGPException
     {
         if (verifier == null)
         {
@@ -320,12 +287,11 @@ public class PGPSignature
      * @param key the key to be verified.
      * @return true if the signature matches, false otherwise.
      * @throws PGPException
-     * @throws SignatureException
      */
     public boolean verifyCertification(
         String          id,
         PGPPublicKey    key)
-        throws PGPException, SignatureException
+        throws PGPException
     {
         if (verifier == null)
         {
@@ -351,13 +317,12 @@ public class PGPSignature
      * @param masterKey the key we are verifying against.
      * @param pubKey the key we are verifying.
      * @return true if the certification is valid, false otherwise.
-     * @throws SignatureException
      * @throws PGPException
      */
     public boolean verifyCertification(
         PGPPublicKey    masterKey,
         PGPPublicKey    pubKey) 
-        throws SignatureException, PGPException
+        throws PGPException
     {
         if (verifier == null)
         {
@@ -373,7 +338,6 @@ public class PGPSignature
     }
 
     private void addTrailer()
-        throws SignatureException
     {
         try
         {
@@ -383,7 +347,7 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new SignatureException(e.getMessage());
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
@@ -392,12 +356,11 @@ public class PGPSignature
      * 
      * @param pubKey the key we are checking.
      * @return true if the certification is valid, false otherwise.
-     * @throws SignatureException
      * @throws PGPException
      */
     public boolean verifyCertification(
         PGPPublicKey    pubKey) 
-        throws SignatureException, PGPException
+        throws PGPException
     {
         if (verifier == null)
         {

@@ -4,11 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.SignatureException;
 import java.util.Date;
 
 import org.bouncycastle.bcpg.MPInteger;
@@ -17,7 +12,6 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 
 /**
  * Generator for old style PGP V3 Signatures.
@@ -30,45 +24,6 @@ public class PGPV3SignatureGenerator
     private PGPContentSigner contentSigner;
     private int              sigType;
     private int              providedKeyAlgorithm = -1;
-
-    /**
-     * Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.
-     * 
-     * @param keyAlgorithm
-     * @param hashAlgorithm
-     * @param provider
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated   use constructor taking PGPContentSignerBuilder.
-     */
-     public PGPV3SignatureGenerator(
-        int  keyAlgorithm,
-        int  hashAlgorithm,
-        String provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, PGPException
-    {
-        this(keyAlgorithm, hashAlgorithm, PGPUtil.getProvider(provider));
-    }
-
- /**
-     *
-     * @param keyAlgorithm
-     * @param hashAlgorithm
-     * @param provider
-     * @throws NoSuchAlgorithmException
-     * @throws PGPException
-     * @deprecated use constructor taking PGPContentSignerBuilder.
-     */
-    public PGPV3SignatureGenerator(
-        int      keyAlgorithm,
-        int      hashAlgorithm,
-        Provider provider)
-        throws NoSuchAlgorithmException, PGPException
-    {
-        this.providedKeyAlgorithm = keyAlgorithm;
-        this.contentSignerBuilder = new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider(provider);
-    }
 
     /**
      * Create a signature generator built on the passed in contentSignerBuilder.
@@ -104,43 +59,8 @@ public class PGPV3SignatureGenerator
         }
     }
 
-    /**
-     * Initialise the generator for signing.
-     * 
-     * @param signatureType
-     * @param key
-     * @param random
-     * @throws PGPException
-     * @deprecated random now ignored - set random in PGPContentSignerBuilder
-     */
-    public void initSign(
-        int           signatureType,
-        PGPPrivateKey key,
-        SecureRandom  random)
-        throws PGPException
-    {
-        init(signatureType, key);
-    }
-
-    /**
-     * Initialise the generator for signing.
-     *
-     * @param signatureType
-     * @param key
-     * @throws PGPException
-     * @deprecated use init()
-     */
-    public void initSign(
-        int           signatureType,
-        PGPPrivateKey key)
-        throws PGPException
-    {
-        init(signatureType, key);
-    }
-
     public void update(
-        byte b) 
-        throws SignatureException
+        byte b)
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -171,8 +91,7 @@ public class PGPV3SignatureGenerator
     }
     
     public void update(
-        byte[] b) 
-        throws SignatureException
+        byte[] b)
     {
         this.update(b, 0, b.length);
     }
@@ -180,8 +99,7 @@ public class PGPV3SignatureGenerator
     public void update(
         byte[]  b,
         int     off,
-        int     len) 
-        throws SignatureException
+        int     len)
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -199,7 +117,6 @@ public class PGPV3SignatureGenerator
     }
 
     private void byteUpdate(byte b)
-        throws SignatureException
     {
         try
         {
@@ -207,12 +124,11 @@ public class PGPV3SignatureGenerator
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to update signature");
+            throw new PGPRuntimeOperationException("unable to update signature: " + e.getMessage(), e);
         }
     }
 
     private void blockUpdate(byte[] block, int off, int len)
-        throws SignatureException
     {
         try
         {
@@ -220,7 +136,7 @@ public class PGPV3SignatureGenerator
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to update signature");
+            throw new PGPRuntimeOperationException("unable to update signature: " + e.getMessage(), e);
         }
     }
 
@@ -243,10 +159,9 @@ public class PGPV3SignatureGenerator
      * 
      * @return PGPSignature
      * @throws PGPException
-     * @throws SignatureException
      */
     public PGPSignature generate()
-        throws PGPException, SignatureException
+        throws PGPException
     {
         long creationTime = new Date().getTime() / 1000;
 

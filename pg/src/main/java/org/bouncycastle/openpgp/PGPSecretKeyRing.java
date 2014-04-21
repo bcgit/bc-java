@@ -5,9 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -22,7 +19,6 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
 /**
  * Class to hold a single master secret key and its subkeys.
@@ -47,32 +43,12 @@ public class PGPSecretKeyRing
         this.extraPubKeys = extraPubKeys;
     }
 
-    /**
-     * @deprecated use version that takes KeyFingerprintCalculator
-     */
-    public PGPSecretKeyRing(
-        byte[]    encoding)
-        throws IOException, PGPException
-    {
-        this(new ByteArrayInputStream(encoding));
-    }
-
     public PGPSecretKeyRing(
         byte[]    encoding,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
         this(new ByteArrayInputStream(encoding), fingerPrintCalculator);
-    }
-
-    /**
-     * @deprecated use version that takes KeyFingerprintCalculator
-     */
-    public PGPSecretKeyRing(
-        InputStream    in)
-        throws IOException, PGPException
-    {
-        this(in, new JcaKeyFingerprintCalculator());
     }
 
     public PGPSecretKeyRing(
@@ -302,61 +278,6 @@ public class PGPSecretKeyRing
         }
 
         return new PGPSecretKeyRing(newList);
-    }
-
-    /**
-     * Return a copy of the passed in secret key ring, with the master key and sub keys encrypted
-     * using a new password and the passed in algorithm.
-     *
-     * @param ring the PGPSecretKeyRing to be copied.
-     * @param oldPassPhrase the current password for key.
-     * @param newPassPhrase the new password for the key.
-     * @param newEncAlgorithm the algorithm to be used for the encryption.
-     * @param rand source of randomness.
-     * @param provider name of the provider to use
-     * @deprecated  use version taking PBESecretKeyEncryptor/PBESecretKeyDecryptor
-     */
-    public static PGPSecretKeyRing copyWithNewPassword(
-        PGPSecretKeyRing ring,
-        char[]           oldPassPhrase,
-        char[]           newPassPhrase,
-        int              newEncAlgorithm,
-        SecureRandom     rand,
-        String           provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return copyWithNewPassword(ring, oldPassPhrase, newPassPhrase, newEncAlgorithm, rand, PGPUtil.getProvider(provider));
-    }
-
-    /**
-     * Return a copy of the passed in secret key ring, with the master key and sub keys encrypted
-     * using a new password and the passed in algorithm.
-     *
-     * @param ring the PGPSecretKeyRing to be copied.
-     * @param oldPassPhrase the current password for key.
-     * @param newPassPhrase the new password for the key.
-     * @param newEncAlgorithm the algorithm to be used for the encryption.
-     * @param rand source of randomness.
-     * @param provider provider to use
-     * @deprecated  use version taking PBESecretKeyEncryptor/PBESecretKeyDecryptor
-     */
-    public static PGPSecretKeyRing copyWithNewPassword(
-        PGPSecretKeyRing ring,
-        char[]           oldPassPhrase,
-        char[]           newPassPhrase,
-        int              newEncAlgorithm,
-        SecureRandom     rand,
-        Provider         provider)
-        throws PGPException
-    {
-        List newKeys = new ArrayList(ring.keys.size());
-
-        for (Iterator keys = ring.getSecretKeys(); keys.hasNext();)
-        {
-            newKeys.add(PGPSecretKey.copyWithNewPassword((PGPSecretKey)keys.next(), oldPassPhrase, newPassPhrase, newEncAlgorithm, rand, provider));
-        }
-
-        return new PGPSecretKeyRing(newKeys, ring.extraPubKeys);
     }
 
     /**

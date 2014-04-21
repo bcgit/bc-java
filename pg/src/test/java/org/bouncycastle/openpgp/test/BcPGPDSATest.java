@@ -39,6 +39,10 @@ import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -582,9 +586,9 @@ public class BcPGPDSATest
         char []   passPhrase = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
         sKey = new PGPSecretKeyRing(testPrivKey2, new BcKeyFingerprintCalculator());
-        pgpPrivKey = sKey.getSecretKey().extractPrivateKey(passPhrase, "BC");
+        pgpPrivKey = sKey.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
 
-        byte[]    bytes = pgpPrivKey.getKey().getEncoded();
+        byte[]    bytes = new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey).getEncoded();
         
         //
         // reading test - aes256 encrypted passphrase.
@@ -592,7 +596,7 @@ public class BcPGPDSATest
         sKey = new PGPSecretKeyRing(aesSecretKey, new BcKeyFingerprintCalculator());
         pgpPrivKey = sKey.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));
 
-        bytes = pgpPrivKey.getKey().getEncoded();
+        bytes = new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey).getEncoded();
         
         //
         // reading test - twofish encrypted passphrase.
@@ -600,7 +604,7 @@ public class BcPGPDSATest
         sKey = new PGPSecretKeyRing(twofishSecretKey, new BcKeyFingerprintCalculator());
         pgpPrivKey = sKey.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));
 
-        bytes = pgpPrivKey.getKey().getEncoded();
+        bytes = new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey).getEncoded();
         
         //
         // use of PGPKeyPair
@@ -611,7 +615,7 @@ public class BcPGPDSATest
         
         KeyPair kp = kpg.generateKeyPair();
         
-        PGPKeyPair    pgpKp = new PGPKeyPair(PGPPublicKey.DSA , kp.getPublic(), kp.getPrivate(), new Date());
+        PGPKeyPair    pgpKp = new JcaPGPKeyPair(PGPPublicKey.DSA, kp, new Date());
         
         PGPPublicKey k1 = pgpKp.getPublicKey();
         
