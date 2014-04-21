@@ -1,5 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.SignatureException;
+import java.util.Iterator;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -15,16 +23,12 @@ import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.SignatureException;
-import java.util.Iterator;
 
 public class PGPClearSignedSignatureTest 
     extends SimpleTest
@@ -215,7 +219,7 @@ public class PGPClearSignedSignatureTest
         PGPSignatureList           p3 = (PGPSignatureList)pgpFact.nextObject();
         PGPSignature               sig = p3.get(0);
         
-        sig.initVerify(pgpRings.getPublicKey(sig.getKeyID()), "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pgpRings.getPublicKey(sig.getKeyID()));
 
         ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
         InputStream           sigIn = new ByteArrayInputStream(bOut.toByteArray());
@@ -286,11 +290,11 @@ public class PGPClearSignedSignatureTest
         throws Exception
     {
         PGPSecretKey                    pgpSecKey = readSecretKey(new ByteArrayInputStream(secretKey));
-        PGPPrivateKey                   pgpPrivKey = pgpSecKey.extractPrivateKey("".toCharArray(), "BC");
-        PGPSignatureGenerator           sGen = new PGPSignatureGenerator(pgpSecKey.getPublicKey().getAlgorithm(), PGPUtil.SHA256, "BC");
+        PGPPrivateKey                   pgpPrivKey = pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build("".toCharArray()));
+        PGPSignatureGenerator           sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSecKey.getPublicKey().getAlgorithm(), PGPUtil.SHA256).setProvider("BC"));
         PGPSignatureSubpacketGenerator  spGen = new PGPSignatureSubpacketGenerator();
 
-        sGen.initSign(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
+        sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, pgpPrivKey);
 
         Iterator    it = pgpSecKey.getPublicKey().getUserIDs();
         if (it.hasNext())

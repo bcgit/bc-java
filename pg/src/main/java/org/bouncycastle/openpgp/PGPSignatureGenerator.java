@@ -4,11 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.SignatureException;
 import java.util.Date;
 
 import org.bouncycastle.bcpg.MPInteger;
@@ -22,7 +17,6 @@ import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -40,83 +34,6 @@ public class PGPSignatureGenerator
     private int providedKeyAlgorithm = -1;
 
     /**
-     * Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.
-     *
-     * @param keyAlgorithm keyAlgorithm to use for signing
-     * @param hashAlgorithm algorithm to use for digest
-     * @param provider provider to use for digest algorithm
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated use method taking a PGPContentSignerBuilder
-     */
-    public PGPSignatureGenerator(
-        int     keyAlgorithm,
-        int     hashAlgorithm,
-        String  provider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, PGPException
-    {
-        this(keyAlgorithm, provider, hashAlgorithm, provider);
-    }
-
-    /**
-     * Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.
-     *
-     * @deprecated use method taking a PGPContentSignerBuilder
-     */
-    public PGPSignatureGenerator(
-        int      keyAlgorithm,
-        int      hashAlgorithm,
-        Provider provider)
-        throws NoSuchAlgorithmException, PGPException
-    {
-        this(keyAlgorithm, provider, hashAlgorithm, provider);
-    }
-
-    /**
-     * Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.
-     *
-     * @param keyAlgorithm keyAlgorithm to use for signing
-     * @param sigProvider provider to use for signature generation
-     * @param hashAlgorithm algorithm to use for digest
-     * @param digProvider provider to use for digest algorithm
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated use method taking a PGPContentSignerBuilder
-     */
-    public PGPSignatureGenerator(
-        int     keyAlgorithm,
-        String  sigProvider,
-        int     hashAlgorithm,
-        String  digProvider)
-        throws NoSuchAlgorithmException, NoSuchProviderException, PGPException
-    {
-        this(keyAlgorithm, PGPUtil.getProvider(sigProvider), hashAlgorithm, PGPUtil.getProvider(digProvider));
-    }
-
-    /**
-     *
-     * @param keyAlgorithm
-     * @param sigProvider
-     * @param hashAlgorithm
-     * @param digProvider
-     * @throws NoSuchAlgorithmException
-     * @throws PGPException
-     * @deprecated use constructor taking PGPContentSignerBuilder.
-     */
-    public PGPSignatureGenerator(
-        int      keyAlgorithm,
-        Provider sigProvider,
-        int      hashAlgorithm,
-        Provider digProvider)
-        throws NoSuchAlgorithmException, PGPException
-    {
-        this.providedKeyAlgorithm = keyAlgorithm;
-        this.contentSignerBuilder = new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider(sigProvider).setDigestProvider(digProvider);
-    }
-
-    /**
      * Create a signature generator built on the passed in contentSignerBuilder.
      *
      * @param contentSignerBuilder  builder to produce PGPContentSigner objects for generating signatures.
@@ -125,30 +42,6 @@ public class PGPSignatureGenerator
         PGPContentSignerBuilder contentSignerBuilder)
     {
         this.contentSignerBuilder = contentSignerBuilder;
-    }
-
-    /**
-     * Initialise the generator for signing.
-     * 
-     * @param signatureType
-     * @param key
-     * @throws PGPException
-     * @deprecated use init() method
-     */
-    public void initSign(
-        int             signatureType,
-        PGPPrivateKey   key)
-        throws PGPException
-    {
-        contentSigner = contentSignerBuilder.build(signatureType, key);
-        sigOut = contentSigner.getOutputStream();
-        sigType = contentSigner.getType();
-        lastb = 0;
-
-        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
-        {
-            throw new PGPException("key algorithm mismatch");
-        }
     }
 
     /**
@@ -173,28 +66,9 @@ public class PGPSignatureGenerator
             throw new PGPException("key algorithm mismatch");
         }
     }
-
-    /**
-     * Initialise the generator for signing.
-     * 
-     * @param signatureType
-     * @param key
-     * @param random
-     * @throws PGPException
-     * @deprecated random parameter now ignored.
-     */
-    public void initSign(
-        int             signatureType,
-        PGPPrivateKey   key,
-        SecureRandom    random)
-        throws PGPException
-    {
-        initSign(signatureType, key);
-    }
     
     public void update(
-        byte    b) 
-        throws SignatureException
+        byte    b)
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -225,8 +99,7 @@ public class PGPSignatureGenerator
     }
     
     public void update(
-        byte[]    b) 
-        throws SignatureException
+        byte[]    b)
     {
         this.update(b, 0, b.length);
     }
@@ -234,8 +107,7 @@ public class PGPSignatureGenerator
     public void update(
         byte[]  b,
         int     off,
-        int     len) 
-        throws SignatureException
+        int     len)
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -253,20 +125,18 @@ public class PGPSignatureGenerator
     }
 
     private void byteUpdate(byte b)
-        throws SignatureException
     {
         try
         {
             sigOut.write(b);
         }
         catch (IOException e)
-        {             // TODO: we really should get rid of signature exception next....
-            throw new SignatureException(e.getMessage());
+        {
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
     private void blockUpdate(byte[] block, int off, int len)
-        throws SignatureException
     {
         try
         {
@@ -274,7 +144,7 @@ public class PGPSignatureGenerator
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
@@ -321,10 +191,9 @@ public class PGPSignatureGenerator
      * 
      * @return PGPSignature
      * @throws PGPException
-     * @throws SignatureException
      */
     public PGPSignature generate()
-        throws PGPException, SignatureException
+        throws PGPException
     {
         MPInteger[]             sigValues;
         int                     version = 4;
@@ -413,13 +282,12 @@ public class PGPSignatureGenerator
      * @param id the id we are certifying against the public key.
      * @param pubKey the key we are certifying against the id.
      * @return the certification.
-     * @throws SignatureException
      * @throws PGPException
      */
     public PGPSignature generateCertification(
         String          id,
         PGPPublicKey    pubKey) 
-        throws SignatureException, PGPException
+        throws PGPException
     {
         updateWithPublicKey(pubKey);
 
@@ -436,13 +304,12 @@ public class PGPSignatureGenerator
      * @param userAttributes the id we are certifying against the public key.
      * @param pubKey the key we are certifying against the id.
      * @return the certification.
-     * @throws SignatureException
      * @throws PGPException
      */
     public PGPSignature generateCertification(
         PGPUserAttributeSubpacketVector userAttributes,
         PGPPublicKey                    pubKey)
-        throws SignatureException, PGPException
+        throws PGPException
     {
         updateWithPublicKey(pubKey);
 
@@ -474,13 +341,12 @@ public class PGPSignatureGenerator
      * @param masterKey the key we are certifying against.
      * @param pubKey the key we are certifying.
      * @return the certification.
-     * @throws SignatureException
      * @throws PGPException
      */
     public PGPSignature generateCertification(
         PGPPublicKey    masterKey,
         PGPPublicKey    pubKey) 
-        throws SignatureException, PGPException
+        throws PGPException
     {
         updateWithPublicKey(masterKey);
         updateWithPublicKey(pubKey);
@@ -493,12 +359,11 @@ public class PGPSignatureGenerator
      * 
      * @param pubKey the key we are certifying.
      * @return the certification.
-     * @throws SignatureException
      * @throws PGPException
      */
     public PGPSignature generateCertification(
         PGPPublicKey    pubKey)
-        throws SignatureException, PGPException
+        throws PGPException
     {
         if ((sigType == PGPSignature.SUBKEY_REVOCATION || sigType == PGPSignature.SUBKEY_BINDING) && !pubKey.isMasterKey())
         {
@@ -556,7 +421,6 @@ public class PGPSignatureGenerator
     }
 
     private void updateWithIdData(int header, byte[] idBytes)
-        throws SignatureException
     {
         this.update((byte)header);
         this.update((byte)(idBytes.length >> 24));
@@ -567,7 +431,7 @@ public class PGPSignatureGenerator
     }
 
     private void updateWithPublicKey(PGPPublicKey key)
-        throws PGPException, SignatureException
+        throws PGPException
     {
         byte[] keyBytes = getEncodedPublicKey(key);
 

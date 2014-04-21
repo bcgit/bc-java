@@ -29,6 +29,7 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1219,7 +1220,7 @@ public class BcPGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new BcKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1500,7 +1501,7 @@ public class BcPGPKeyRingTest
             
             byte[]    bytes = pgpSec.getEncoded();
             
-            pgpSec = new PGPSecretKeyRing(bytes);
+            pgpSec = new PGPSecretKeyRing(bytes, new BcKeyFingerprintCalculator());
             
             Iterator    it = pgpSec.getSecretKeys();
             while (it.hasNext())
@@ -1933,8 +1934,8 @@ public class BcPGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair                    elgKp = elgKpg.generateKeyPair();
-        PGPKeyPair        dsaKeyPair = new PGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
-        PGPKeyPair        elgKeyPair = new PGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
+        PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
+        PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
     
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
                 "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
@@ -1994,9 +1995,9 @@ public class BcPGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair1 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair1 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
                           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair2 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
 
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
                 "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
@@ -2060,8 +2061,8 @@ public class BcPGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair                    elgKp = elgKpg.generateKeyPair();
-        PGPKeyPair        dsaKeyPair = new PGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
-        PGPKeyPair        elgKeyPair = new PGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
+        PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
+        PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
     
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
                 "test", PGPEncryptedData.AES_256, passPhrase, true, null, null, new SecureRandom(), "BC");
@@ -2207,9 +2208,9 @@ public class BcPGPKeyRingTest
         //
         KeyPairGenerator  rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
         KeyPair           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair1 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair1 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
                           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair2 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
         char[]            passPhrase = "passwd".toCharArray();
 
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,

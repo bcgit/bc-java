@@ -11,6 +11,7 @@ import org.bouncycastle.jcajce.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -97,8 +98,8 @@ public class JcaPGPContentVerifierBuilderProvider
                         return signature.verify(expected);
                     }
                     catch (SignatureException e)
-                    {   // TODO: need a specific runtime exception for PGP operators.
-                        throw new IllegalStateException("unable to verify signature");
+                    {
+                        throw new PGPRuntimeOperationException("unable to verify signature: " + e.getMessage(), e);
                     }
                 }
 

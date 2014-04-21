@@ -31,6 +31,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
@@ -1579,7 +1580,7 @@ public class PGPKeyRingTest
 
                 PGPSecretKey    k = (PGPSecretKey)it.next();
 
-                k.extractPrivateKey(sec3pass1, "BC");
+                k.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(sec3pass1));
             }
             
             if (keyCount != 2)
@@ -1625,7 +1626,7 @@ public class PGPKeyRingTest
 
                 PGPSecretKey    k = (PGPSecretKey)it.next();
 
-                k.extractPrivateKey(sec3pass1, "BC");
+                k.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(sec3pass1));
             }
 
             if (keyCount != 2)
@@ -2081,8 +2082,8 @@ public class PGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair                    elgKp = elgKpg.generateKeyPair();
-        PGPKeyPair        dsaKeyPair = new PGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
-        PGPKeyPair        elgKeyPair = new PGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
+        PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
+        PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
     
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
                 "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
@@ -2120,7 +2121,7 @@ public class PGPKeyRingTest
             if (sig.getKeyID() == vKey.getKeyID()
                 && sig.getSignatureType() == PGPSignature.SUBKEY_BINDING)
             {
-                sig.initVerify(vKey, "BC");
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
 
                 if (!sig.verifyCertification(vKey, sKey))
                 {
@@ -2142,9 +2143,9 @@ public class PGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair1 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair1 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
                           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair2 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
 
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
                 "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
@@ -2208,8 +2209,8 @@ public class PGPKeyRingTest
         // this is quicker because we are using pregenerated parameters.
         //
         KeyPair                    elgKp = elgKpg.generateKeyPair();
-        PGPKeyPair        dsaKeyPair = new PGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
-        PGPKeyPair        elgKeyPair = new PGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
+        PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
+        PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
     
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
                 "test", PGPEncryptedData.AES_256, passPhrase, true, null, null, new SecureRandom(), "BC");
@@ -2263,7 +2264,7 @@ public class PGPKeyRingTest
             if (sig.getKeyID() == vKey.getKeyID()
                 && sig.getSignatureType() == PGPSignature.SUBKEY_BINDING)
             {
-                sig.initVerify(vKey, "BC");
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
     
                 if (!sig.verifyCertification(vKey, sKey))
                 {
@@ -2517,7 +2518,7 @@ public class PGPKeyRingTest
 
             if (sig.getSignatureType() == PGPSignature.POSITIVE_CERTIFICATION)
             {
-                sig.initVerify(pub, "BC");
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pub);
 
                 if (!sig.verifyCertification(userID, pub))
                 {
@@ -2531,9 +2532,9 @@ public class PGPKeyRingTest
         //
         KeyPairGenerator  rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
         KeyPair           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair1 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair1 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
                           rsaKp = rsaKpg.generateKeyPair();
-        PGPKeyPair        rsaKeyPair2 = new PGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+        PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
         char[]            passPhrase = "passwd".toCharArray();
 
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
@@ -2549,7 +2550,7 @@ public class PGPKeyRingTest
 
             if (sig.getSignatureType() == PGPSignature.POSITIVE_CERTIFICATION)
             {
-                sig.initVerify(pub, "BC");
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pub);
 
                 if (!sig.verifyCertification(userID, pub))
                 {

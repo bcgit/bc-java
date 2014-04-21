@@ -56,10 +56,13 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
@@ -530,7 +533,7 @@ public class PGPRSATest
             {
                 PGPSignature sig = (PGPSignature)sigs.next();
 
-                sig.initVerify(pubKey, "BC");
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
 
                 if (!sig.verifyCertification(attributes, pubKey))
                 {
@@ -567,9 +570,9 @@ public class PGPRSATest
 
         PGPUserAttributeSubpacketVector uVec = vGen.generate();
 
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, "BC");
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1).setProvider("BC"));
 
-        sGen.initSign(PGPSignature.POSITIVE_CERTIFICATION, pgpSec.getSecretKey().extractPrivateKey(pass, "BC"));
+        sGen.init(PGPSignature.POSITIVE_CERTIFICATION, pgpSec.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass)));
 
         PGPSignature sig = sGen.generateCertification(uVec, pubKey);
 
@@ -587,7 +590,7 @@ public class PGPRSATest
             {
                 PGPSignature s = (PGPSignature)sigs.next();
 
-                s.initVerify(pubKey, "BC");
+                s.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
 
                 if (!s.verifyCertification(attributes, pubKey))
                 {
@@ -852,7 +855,7 @@ public class PGPRSATest
         
         PGPSignature    sig = (PGPSignature)it.next();
         
-        sig.initVerify(pgpPub.getPublicKey(), "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pgpPub.getPublicKey());
         
         if (!sig.verifyCertification(uid, pgpPub.getPublicKey()))
         {
@@ -894,7 +897,7 @@ public class PGPRSATest
         if (!noIDEA())
         {
             PGPSecretKeyRing        pgpPriv = new PGPSecretKeyRing(testPrivKeyV3, new JcaKeyFingerprintCalculator());
-            PGPPrivateKey           pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(passP, "BC");
+            PGPPrivateKey           pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passP));
 
             //
             // write a v3 private key
@@ -914,7 +917,7 @@ public class PGPRSATest
         // Read the private key
         //
         PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(testPrivKey, new JcaKeyFingerprintCalculator());
-        PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(pass, "BC");
+        PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass));
         
         //
         // write a private key
@@ -941,7 +944,7 @@ public class PGPRSATest
 
         byte[]  out = c.doFinal(in);
         
-        c.init(Cipher.DECRYPT_MODE, pgpPrivKey.getKey());
+        c.init(Cipher.DECRYPT_MODE, new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey));
         
         out = c.doFinal(out);
         
@@ -968,7 +971,7 @@ public class PGPRSATest
         InputStream                dIn = p2.getInputStream();
         int                        ch;
 
-        ops.initVerify(pgpPub.getPublicKey(ops.getKeyID()), "BC");
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pgpPub.getPublicKey(ops.getKeyID()));
         
         while ((ch = dIn.read()) >= 0)
         {
@@ -998,7 +1001,7 @@ public class PGPRSATest
     
         PGPPublicKeyEncryptedData    encP = (PGPPublicKeyEncryptedData)encList.get(0);
         
-        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
+        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass));
 
         InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
                  
@@ -1052,7 +1055,7 @@ public class PGPRSATest
     
         encP = (PGPPublicKeyEncryptedData)encList.get(0);
         
-        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
+        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass));
 
         PublicKeyDataDecryptorFactory dataDecryptorFactory = new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey);
         if (encP.getSymmetricAlgorithm(dataDecryptorFactory) != SymmetricKeyAlgorithmTags.CAST5)
@@ -1097,7 +1100,7 @@ public class PGPRSATest
     
         encP = (PGPPublicKeyEncryptedData)encList.get(0);
         
-        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(pass, "BC");
+        pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass));
 
         clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
         
@@ -1137,7 +1140,11 @@ public class PGPRSATest
     
         KeyPair                    kp = kpg.generateKeyPair();
 
-        PGPSecretKey    secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), kp.getPrivate(), new Date(), "fred", SymmetricKeyAlgorithmTags.CAST5, passPhrase, null, null, new SecureRandom(), "BC");
+        PGPSecretKey    secretKey = new PGPSecretKey(
+                                         PGPSignature.DEFAULT_CERTIFICATION,
+                                         new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, kp, new Date()), "fred",
+                                         null, null, new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"),
+                                         new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).build(passPhrase));
     
         PGPPublicKey    key = secretKey.getPublicKey();
 
@@ -1149,14 +1156,14 @@ public class PGPRSATest
 
         sig = (PGPSignature)it.next();
 
-        sig.initVerify(key, "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
 
         if (!sig.verifyCertification(uid, key))
         {
             fail("failed to verify certification");
         }
 
-        pgpPrivKey = secretKey.extractPrivateKey(passPhrase, "BC");
+        pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
         
         key = PGPPublicKey.removeCertification(key, uid, sig);
         
@@ -1171,9 +1178,9 @@ public class PGPRSATest
         
         keyEnc = key.getEncoded();
 
-        PGPSignatureGenerator sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, "BC");
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1).setProvider("BC"));
         
-        sGen.initSign(PGPSignature.KEY_REVOCATION, secretKey.extractPrivateKey(passPhrase, "BC"));
+        sGen.init(PGPSignature.KEY_REVOCATION, secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase)));
 
         sig = sGen.generateCertification(key);
 
@@ -1189,7 +1196,7 @@ public class PGPRSATest
 
         sig = (PGPSignature)sgIt.next();
 
-        sig.initVerify(key, "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
 
         if (!sig.verifyCertification(key))
         {
@@ -1214,9 +1221,13 @@ public class PGPRSATest
         //
         kp = kpg.generateKeyPair();
 
-        secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), kp.getPrivate(), new Date(), "fred", SymmetricKeyAlgorithmTags.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
-    
-        secretKey.extractPrivateKey(passPhrase, "BC");
+        secretKey = new PGPSecretKey(
+                                PGPSignature.DEFAULT_CERTIFICATION,
+                                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, kp, new Date()), "fred",
+                                null, null, new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"),
+                                new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(passPhrase));
+
+        secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
         
         secretKey.encode(new ByteArrayOutputStream());
         
@@ -1225,9 +1236,9 @@ public class PGPRSATest
         //
         String  newPass = "newPass";
         
-        secretKey = PGPSecretKey.copyWithNewPassword(secretKey, passPhrase, newPass.toCharArray(), secretKey.getKeyEncryptionAlgorithm(), new SecureRandom(), "BC");
+        secretKey = PGPSecretKey.copyWithNewPassword(secretKey, new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase), new JcePBESecretKeyEncryptorBuilder(secretKey.getKeyEncryptionAlgorithm()).setProvider("BC").setSecureRandom(new SecureRandom()).build(newPass.toCharArray()));
         
-        secretKey.extractPrivateKey(newPass.toCharArray(), "BC");
+        secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass.toCharArray()));
         
         secretKey.encode(new ByteArrayOutputStream());
         
@@ -1243,14 +1254,14 @@ public class PGPRSATest
 
         sig = (PGPSignature)it.next();
 
-        sig.initVerify(key, "BC");
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
 
         if (!sig.verifyCertification(uid, key))
         {
             fail("failed to verify certification");
         }
 
-        pgpPrivKey = secretKey.extractPrivateKey(newPass.toCharArray(), "BC");
+        pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass.toCharArray()));
         
         //
         // signature generation
@@ -1261,9 +1272,9 @@ public class PGPRSATest
         
         ByteArrayInputStream        testIn = new ByteArrayInputStream(data.getBytes());
         
-        sGen = new PGPSignatureGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1, "BC");
+        sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1).setProvider("BC"));
     
-        sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+        sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 
         PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(
             PGPCompressedData.ZIP);
@@ -1316,7 +1327,7 @@ public class PGPRSATest
 
         dIn = p2.getInputStream();
 
-        ops.initVerify(secretKey.getPublicKey(), "BC");
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretKey.getPublicKey());
         
         while ((ch = dIn.read()) >= 0)
         {
@@ -1336,16 +1347,16 @@ public class PGPRSATest
         bOut = new ByteArrayOutputStream();
         
         testIn = new ByteArrayInputStream(data.getBytes());
-        PGPV3SignatureGenerator    sGenV3 = new PGPV3SignatureGenerator(PGPPublicKey.RSA_GENERAL, PGPUtil.SHA1, "BC");
+        PGPV3SignatureGenerator    sGenV3 = new PGPV3SignatureGenerator(new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_GENERAL, PGPUtil.SHA1).setProvider("BC"));
     
-        sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+        sGenV3.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 
         cGen = new PGPCompressedDataGenerator(
                                                                 PGPCompressedData.ZIP);
 
         bcOut = new BCPGOutputStream(cGen.open(bOut));
 
-        sGen.generateOnePassVersion(false).encode(bcOut);
+        sGenV3.generateOnePassVersion(false).encode(bcOut);
 
         lGen = new PGPLiteralDataGenerator();
         lOut = lGen.open(
@@ -1358,12 +1369,12 @@ public class PGPRSATest
         while ((ch = testIn.read()) >= 0)
         {
             lOut.write(ch);
-            sGen.update((byte)ch);
+            sGenV3.update((byte)ch);
         }
 
         lOut.close();
 
-        sGen.generate().encode(bcOut);
+        sGenV3.generate().encode(bcOut);
 
         bcOut.close();
 
@@ -1388,7 +1399,7 @@ public class PGPRSATest
 
         dIn = p2.getInputStream();
 
-        ops.initVerify(secretKey.getPublicKey(), "BC");
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secretKey.getPublicKey());
         
         while ((ch = dIn.read()) >= 0)
         {
@@ -1405,11 +1416,11 @@ public class PGPRSATest
         //
         // extract PGP 8 private key
         //
-        pgpPriv = new PGPSecretKeyRing(pgp8Key);
+        pgpPriv = new PGPSecretKeyRing(pgp8Key, new JcaKeyFingerprintCalculator());
         
         secretKey = pgpPriv.getSecretKey();
         
-        pgpPrivKey = secretKey.extractPrivateKey(pgp8Pass, "BC");
+        pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pgp8Pass));
 
         //
         // expiry
@@ -1429,7 +1440,7 @@ public class PGPRSATest
         int           subKeyDays)
         throws Exception
     {            
-        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(encodedRing);
+        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(encodedRing, new JcaKeyFingerprintCalculator());
         PGPPublicKey k = pubRing.getPublicKey();
         
         if (k.getValidDays() != masterDays)

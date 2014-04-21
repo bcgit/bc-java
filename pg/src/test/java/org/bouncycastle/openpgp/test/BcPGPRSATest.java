@@ -67,6 +67,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -848,7 +849,7 @@ public class BcPGPRSATest
 
         byte[]  out = c.doFinal(in);
         
-        c.init(Cipher.DECRYPT_MODE, pgpPrivKey.getKey());
+        c.init(Cipher.DECRYPT_MODE, new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey));
         
         out = c.doFinal(out);
         

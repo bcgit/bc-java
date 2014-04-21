@@ -3,9 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SignatureException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -13,7 +10,6 @@ import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 
 /**
  * A one pass signature object.
@@ -41,39 +37,6 @@ public class PGPOnePassSignature
         this.sigPack = sigPack;
         this.signatureType = sigPack.getSignatureType();
     }
-    
-    /**
-     * Initialise the signature object for verification.
-     * 
-     * @param pubKey
-     * @param provider
-     * @throws NoSuchProviderException
-     * @throws PGPException
-     * @deprecated use init() method.
-     */
-    public void initVerify(
-        PGPPublicKey    pubKey,
-        String          provider)
-        throws NoSuchProviderException, PGPException
-    {
-        initVerify(pubKey, PGPUtil.getProvider(provider));
-    }
-
-    /**
-     * Initialise the signature object for verification.
-     *
-     * @param pubKey
-     * @param provider
-     * @throws PGPException
-     * @deprecated use init() method.
-     */
-    public void initVerify(
-        PGPPublicKey    pubKey,
-        Provider        provider)
-        throws PGPException
-    {
-        init(new JcaPGPContentVerifierBuilderProvider().setProvider(provider), pubKey);
-    }
 
     /**
      * Initialise the signature object for verification.
@@ -95,7 +58,6 @@ public class PGPOnePassSignature
 
     public void update(
         byte    b)
-        throws SignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -127,7 +89,6 @@ public class PGPOnePassSignature
 
     public void update(
         byte[]    bytes)
-        throws SignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -146,7 +107,6 @@ public class PGPOnePassSignature
         byte[]    bytes,
         int       off,
         int       length)
-        throws SignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -164,20 +124,18 @@ public class PGPOnePassSignature
     }
 
     private void byteUpdate(byte b)
-        throws SignatureException
     {
         try
         {
             sigOut.write(b);
         }
         catch (IOException e)
-        {             // TODO: we really should get rid of signature exception next....
-            throw new SignatureException(e.getMessage());
+        {
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
     private void blockUpdate(byte[] block, int off, int len)
-        throws SignatureException
     {
         try
         {
@@ -185,7 +143,7 @@ public class PGPOnePassSignature
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
@@ -195,11 +153,10 @@ public class PGPOnePassSignature
      * @param pgpSig
      * @return boolean
      * @throws PGPException
-     * @throws SignatureException
      */
     public boolean verify(
         PGPSignature    pgpSig)
-        throws PGPException, SignatureException
+        throws PGPException
     {
         try
         {
