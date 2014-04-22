@@ -9,6 +9,7 @@ import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -25,11 +26,15 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1936,9 +1941,10 @@ public class BcPGPKeyRingTest
         KeyPair                    elgKp = elgKpg.generateKeyPair();
         PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
         PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
-    
+
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
-                "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
+                "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.DSA, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
     
         keyRingGen.addSubKey(elgKeyPair);
     
@@ -1998,13 +2004,13 @@ public class BcPGPKeyRingTest
         PGPKeyPair        rsaKeyPair1 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
                           rsaKp = rsaKpg.generateKeyPair();
         PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
-
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
-                "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
+                            "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
         PGPSecretKeyRing       secRing1 = keyRingGen.generateSecretKeyRing();
         PGPPublicKeyRing       pubRing1 = keyRingGen.generatePublicKeyRing();
         keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair2,
-                "test", PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
+                            "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
         PGPSecretKeyRing       secRing2 = keyRingGen.generateSecretKeyRing();
         PGPPublicKeyRing       pubRing2 = keyRingGen.generatePublicKeyRing();
 
@@ -2063,9 +2069,10 @@ public class BcPGPKeyRingTest
         KeyPair                    elgKp = elgKpg.generateKeyPair();
         PGPKeyPair        dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
         PGPKeyPair        elgKeyPair = new JcaPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
-    
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
         PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
-                "test", PGPEncryptedData.AES_256, passPhrase, true, null, null, new SecureRandom(), "BC");
+                   "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.DSA, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
+
     
         keyRingGen.addSubKey(elgKeyPair);
     
@@ -2212,9 +2219,9 @@ public class BcPGPKeyRingTest
                           rsaKp = rsaKpg.generateKeyPair();
         PGPKeyPair        rsaKeyPair2 = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
         char[]            passPhrase = "passwd".toCharArray();
-
-        PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
-                userID, PGPEncryptedData.AES_256, passPhrase, null, null, new SecureRandom(), "BC");
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, rsaKeyPair1,
+                                    userID, sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
 
         PGPPublicKeyRing       pubRing1 = keyRingGen.generatePublicKeyRing();
 

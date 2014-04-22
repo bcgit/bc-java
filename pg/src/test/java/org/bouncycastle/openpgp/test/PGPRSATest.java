@@ -661,9 +661,9 @@ public class PGPRSATest
         svg.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
         PGPSignatureSubpacketVector hashedPcks = svg.generate();
 
-        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION,
-            sgnKeyPair, identity, PGPEncryptedData.AES_256, passPhrase,
-            true, hashedPcks, unhashedPcks, new SecureRandom(), "BC");
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, sgnKeyPair,
+                                    identity, sha1Calc, hashedPcks, unhashedPcks, new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
 
         svg = new PGPSignatureSubpacketGenerator();
         svg.setKeyExpirationTime(true, 86400L * 366 * 2);
@@ -845,7 +845,7 @@ public class PGPRSATest
         //
         PGPPublicKeyRing        pgpPub = new PGPPublicKeyRing(testPubKey);
 
-        pubKey = pgpPub.getPublicKey().getKey("BC");
+        pubKey = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(pgpPub.getPublicKey());
 
         Iterator    it = pgpPub.getPublicKey().getUserIDs();
         
@@ -879,7 +879,7 @@ public class PGPRSATest
         // Read the public key
         //
         PGPPublicKeyRing     pgpPubV3 = new PGPPublicKeyRing(testPubKeyV3);
-        PublicKey            pubKeyV3 = pgpPub.getPublicKey().getKey("BC");
+        PublicKey            pubKeyV3 = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(pgpPub.getPublicKey());
 
         //
         // write a V3 public key

@@ -6,10 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -350,19 +347,6 @@ public class PGPUtil
             
             return new ArmoredInputStream(in);
         }
-    }
-
-    static Provider getProvider(String providerName)
-        throws NoSuchProviderException
-    {
-        Provider prov = Security.getProvider(providerName);
-
-        if (prov == null)
-        {
-            throw new NoSuchProviderException("provider " + providerName + " not found.");
-        }
-
-        return prov;
     }
     
     static class BufferedInputStreamExt extends BufferedInputStream

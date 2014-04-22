@@ -260,7 +260,7 @@ public class PGPDSAElGamalTest
                 if (pgpKey.getAlgorithm() == PGPPublicKey.ELGAMAL_ENCRYPT
                     || pgpKey.getAlgorithm() == PGPPublicKey.ELGAMAL_GENERAL)
                 {
-                    pKey = pgpKey.getKey("BC");
+                    pKey = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(pgpKey);
                     pgpKeyID = pgpKey.getKeyID();
                     if (pgpKey.getBitStrength() != 1024)
                     {
@@ -526,7 +526,7 @@ public class PGPDSAElGamalTest
 
                     PGPPublicKey k = (PGPPublicKey)objF.nextObject();
 
-                    pKey = k.getKey("BC");
+                    pKey = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(k);
                     pgpKeyID = k.getKeyID();
                     if (k.getBitStrength() != 1024)
                     {

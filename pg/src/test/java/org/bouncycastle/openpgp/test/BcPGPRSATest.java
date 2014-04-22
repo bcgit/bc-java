@@ -750,7 +750,7 @@ public class BcPGPRSATest
         //
         PGPPublicKeyRing        pgpPub = new PGPPublicKeyRing(testPubKey, new BcKeyFingerprintCalculator());
 
-        pubKey = pgpPub.getPublicKey().getKey("BC");
+        pubKey = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(pgpPub.getPublicKey());
 
         Iterator    it = pgpPub.getPublicKey().getUserIDs();
         
@@ -784,7 +784,7 @@ public class BcPGPRSATest
         // Read the public key
         //
         PGPPublicKeyRing     pgpPubV3 = new PGPPublicKeyRing(testPubKeyV3, new BcKeyFingerprintCalculator());
-        PublicKey            pubKeyV3 = pgpPub.getPublicKey().getKey("BC");
+        PublicKey            pubKeyV3 = new JcaPGPKeyConverter().setProvider("BC").getPublicKey(pgpPub.getPublicKey());
 
         //
         // write a V3 public key

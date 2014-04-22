@@ -3,9 +3,6 @@ package org.bouncycastle.openpgp;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -24,7 +21,6 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -86,42 +82,6 @@ public class PGPPublicKey
                 this.keyStrength = ((ElGamalPublicBCPGKey)key).getP().bitLength();
             }
         }
-    }
-    
-    /**
-     * Create a PGPPublicKey from the passed in JCA one.
-     * <p>
-     * Note: the time passed in affects the value of the key's keyID, so you probably only want
-     * to do this once for a JCA key, or make sure you keep track of the time you used.
-     * 
-     * @param algorithm asymmetric algorithm type representing the public key.
-     * @param pubKey actual public key to associate.
-     * @param time date of creation.
-     * @param provider provider to use for underlying digest calculations.
-     * @throws PGPException on key creation problem.
-     * @throws NoSuchProviderException if the specified provider is required and cannot be found.
-     * @deprecated use JcaPGPKeyConverter.getPGPPublicKey()
-     */
-    public PGPPublicKey(
-        int            algorithm,
-        PublicKey      pubKey,
-        Date           time,
-        String         provider) 
-        throws PGPException, NoSuchProviderException
-    {
-        this(new JcaPGPKeyConverter().setProvider(provider).getPGPPublicKey(algorithm, pubKey, time));
-    }
-
-    /**
-         * @deprecated use JcaPGPKeyConverter.getPGPPublicKey()
-     */
-    public PGPPublicKey(
-        int            algorithm,
-        PublicKey      pubKey,
-        Date           time)
-        throws PGPException
-    {
-        this(new JcaPGPKeyConverter().getPGPPublicKey(algorithm, pubKey, time));
     }
 
     /**
@@ -410,37 +370,6 @@ public class PGPPublicKey
     public int getBitStrength()
     {
         return keyStrength;
-    }
-
-    /**
-     * Return the public key contained in the object.
-     * 
-     * @param provider provider to construct the key for.
-     * @return a JCE/JCA public key.
-     * @throws PGPException if the key algorithm is not recognised.
-     * @throws NoSuchProviderException if the provider cannot be found.
-     * @deprecated use a JcaPGPKeyConverter
-     */
-    public PublicKey getKey(
-        String provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return new JcaPGPKeyConverter().setProvider(provider).getPublicKey(this);
-    }
-
-    /**
-     * Return the public key contained in the object.
-     *
-     * @param provider provider to construct the key for.
-     * @return a JCE/JCA public key.
-     * @throws PGPException if the key algorithm is not recognised.
-     * @deprecated use a JcaPGPKeyConverter
-     */
-    public PublicKey getKey(
-        Provider provider)
-        throws PGPException
-    {
-        return new JcaPGPKeyConverter().setProvider(provider).getPublicKey(this);
     }
 
     /**

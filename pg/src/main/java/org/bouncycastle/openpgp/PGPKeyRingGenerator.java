@@ -1,20 +1,13 @@
 package org.bouncycastle.openpgp;
 
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 /**
  * Generator for a PGP master and subkey ring. This class will generate
@@ -30,114 +23,6 @@ public class PGPKeyRingGenerator
     private PGPSignatureSubpacketVector hashedPcks;
     private PGPSignatureSubpacketVector unhashedPcks;
     private PGPContentSignerBuilder     keySignerBuilder;
-    
-    /**
-     * Create a new key ring generator using old style checksumming. It is recommended to use
-     * SHA1 checksumming where possible.
-     * 
-     * @param certificationLevel the certification level for keys on this ring.
-     * @param masterKey the master key pair.
-     * @param id the id to be associated with the ring.
-     * @param encAlgorithm the algorithm to be used to protect secret keys.
-     * @param passPhrase the passPhrase to be used to protect secret keys.
-     * @param hashedPcks packets to be included in the certification hash.
-     * @param unhashedPcks packets to be attached unhashed to the certification.
-     * @param rand input secured random
-     * @param provider the provider to use for encryption.
-     * 
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     * @deprecated   use method taking PBESecretKeyDecryptor
-     */
-    public PGPKeyRingGenerator(
-        int                            certificationLevel,
-        PGPKeyPair                     masterKey,
-        String                         id,
-        int                            encAlgorithm,
-        char[]                         passPhrase,
-        PGPSignatureSubpacketVector    hashedPcks,
-        PGPSignatureSubpacketVector    unhashedPcks,
-        SecureRandom                   rand,
-        String                         provider)
-        throws PGPException, NoSuchProviderException
-    {
-        this(certificationLevel, masterKey, id, encAlgorithm, passPhrase, false, hashedPcks, unhashedPcks, rand, provider);
-    }
-
-    /**
-     * Create a new key ring generator.
-     * 
-     * @param certificationLevel the certification level for keys on this ring.
-     * @param masterKey the master key pair.
-     * @param id the id to be associated with the ring.
-     * @param encAlgorithm the algorithm to be used to protect secret keys.
-     * @param passPhrase the passPhrase to be used to protect secret keys.
-     * @param useSHA1 checksum the secret keys with SHA1 rather than the older 16 bit checksum.
-     * @param hashedPcks packets to be included in the certification hash.
-     * @param unhashedPcks packets to be attached unhashed to the certification.
-     * @param rand input secured random
-     * @param provider the provider to use for encryption.
-     * 
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     * @deprecated   use method taking PBESecretKeyDecryptor
-     */
-    public PGPKeyRingGenerator(
-        int                            certificationLevel,
-        PGPKeyPair                     masterKey,
-        String                         id,
-        int                            encAlgorithm,
-        char[]                         passPhrase,
-        boolean                        useSHA1,
-        PGPSignatureSubpacketVector    hashedPcks,
-        PGPSignatureSubpacketVector    unhashedPcks,
-        SecureRandom                   rand,
-        String                         provider)
-        throws PGPException, NoSuchProviderException
-    {
-        this(certificationLevel, masterKey, id, encAlgorithm, passPhrase, useSHA1, hashedPcks, unhashedPcks, rand, PGPUtil.getProvider(provider));
-    }
-
-    /**
-     * Create a new key ring generator.
-     *
-     * @param certificationLevel the certification level for keys on this ring.
-     * @param masterKey the master key pair.
-     * @param id the id to be associated with the ring.
-     * @param encAlgorithm the algorithm to be used to protect secret keys.
-     * @param passPhrase the passPhrase to be used to protect secret keys.
-     * @param useSHA1 checksum the secret keys with SHA1 rather than the older 16 bit checksum.
-     * @param hashedPcks packets to be included in the certification hash.
-     * @param unhashedPcks packets to be attached unhashed to the certification.
-     * @param rand input secured random
-     * @param provider the provider to use for encryption.
-     *
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     * @deprecated  use method taking PBESecretKeyEncryptor
-     */
-    public PGPKeyRingGenerator(
-        int                            certificationLevel,
-        PGPKeyPair                     masterKey,
-        String                         id,
-        int                            encAlgorithm,
-        char[]                         passPhrase,
-        boolean                        useSHA1,
-        PGPSignatureSubpacketVector    hashedPcks,
-        PGPSignatureSubpacketVector    unhashedPcks,
-        SecureRandom                   rand,
-        Provider                       provider)
-        throws PGPException, NoSuchProviderException
-    {
-        this.masterKey = masterKey;
-        this.hashedPcks = hashedPcks;
-        this.unhashedPcks = unhashedPcks;
-        this.keyEncryptor = new JcePBESecretKeyEncryptorBuilder(encAlgorithm).setProvider(provider).setSecureRandom(rand).build(passPhrase);
-        this.checksumCalculator = convertSHA1Flag(useSHA1);
-        this.keySignerBuilder = new JcaPGPContentSignerBuilder(masterKey.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1);
-
-        keys.add(new PGPSecretKey(certificationLevel, masterKey, id, checksumCalculator, hashedPcks, unhashedPcks, keySignerBuilder, keyEncryptor));
-    }
 
     /**
      * Create a new key ring generator.
@@ -262,11 +147,5 @@ public class PGPKeyRingGenerator
         }
         
         return new PGPPublicKeyRing(pubKeys);
-    }
-
-    private static PGPDigestCalculator convertSHA1Flag(boolean useSHA1)
-        throws PGPException
-    {
-        return useSHA1 ? new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1) : null;
     }
 }

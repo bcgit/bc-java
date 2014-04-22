@@ -2,8 +2,6 @@ package org.bouncycastle.openpgp;
 
 import java.io.EOFException;
 import java.io.InputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
@@ -12,7 +10,6 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -70,56 +67,6 @@ public class PGPPublicKeyEncryptedData
         byte[] plain = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
 
         return plain[0];
-    }
-
-    /**
-     * Return the decrypted data stream for the packet.
-     *
-     * @param privKey private key to use
-     * @param provider provider to use for private key and symmetric key decryption.
-     * @return InputStream
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     * @deprecated use method that takes a PublicKeyDataDecryptorFactory
-     */
-    public InputStream getDataStream(
-        PGPPrivateKey  privKey,
-        String         provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return getDataStream(privKey, provider, provider);
-    }
-
-    /**
-     * Return the decrypted data stream for the packet.
-     * 
-     * @param privKey private key to use.
-     * @param asymProvider asymetric provider to use with private key.
-     * @param provider provider to use for symmetric algorithm.
-     * @return InputStream
-     * @throws PGPException
-     * @throws NoSuchProviderException
-     *  @deprecated use method that takes a PublicKeyDataDecryptorFactory
-     */
-    public InputStream getDataStream(
-        PGPPrivateKey  privKey,
-        String         asymProvider,
-        String         provider)
-        throws PGPException, NoSuchProviderException
-    {
-        return getDataStream(privKey, PGPUtil.getProvider(asymProvider), PGPUtil.getProvider(provider));
-    }
-
-    /**
-     *  @deprecated use method that takes a PublicKeyDataDecryptorFactory
-     */
-    public InputStream getDataStream(
-        PGPPrivateKey  privKey,
-        Provider       asymProvider,
-        Provider       provider)
-        throws PGPException
-    {
-        return getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(asymProvider).setContentProvider(provider).build(privKey));
     }
 
     /**
