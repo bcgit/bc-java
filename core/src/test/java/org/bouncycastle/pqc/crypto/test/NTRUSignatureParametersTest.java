@@ -13,7 +13,7 @@ public class NTRUSignatureParametersTest
     public void testLoadSave()
         throws IOException
     {
-        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD})
+        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD, NTRUSigningKeyGenerationParameters.APR2011_743, NTRUSigningKeyGenerationParameters.APR2011_743_PROD})
         {
             testLoadSave(params);
         }
@@ -31,7 +31,7 @@ public class NTRUSignatureParametersTest
     public void testEqualsHashCode()
         throws IOException
     {
-        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD})
+        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD, NTRUSigningKeyGenerationParameters.APR2011_743, NTRUSigningKeyGenerationParameters.APR2011_743_PROD})
         {
             testEqualsHashCode(params);
         }
@@ -56,7 +56,7 @@ public class NTRUSignatureParametersTest
 
     public void testClone()
     {
-        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD})
+        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157, NTRUSigningKeyGenerationParameters.TEST157_PROD, NTRUSigningKeyGenerationParameters.APR2011_743, NTRUSigningKeyGenerationParameters.APR2011_743_PROD})
         {
             assertEquals(params, params.clone());
         }

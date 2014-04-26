@@ -60,14 +60,32 @@ public class NTRUSignerTest
     /**
      * a test for the one-method-call variants: sign(byte, SignatureKeyPair) and verify(byte[], byte[], SignatureKeyPair)
      */
-    public void testSignVerify()
+    public void testSignVerify157()
         throws IOException
     {
-        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157.clone(), NTRUSigningKeyGenerationParameters.TEST157_PROD.clone()})
+        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157.clone(), NTRUSigningKeyGenerationParameters.TEST157_PROD.clone(), NTRUSigningKeyGenerationParameters.APR2011_439.clone(), NTRUSigningKeyGenerationParameters.APR2011_439_PROD.clone(), NTRUSigningKeyGenerationParameters.APR2011_743.clone(), NTRUSigningKeyGenerationParameters.APR2011_743_PROD.clone()})
         {
             testSignVerify(params);
         }
     }
+
+    public void testSignVerify439()
+        throws IOException
+    {
+        for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.APR2011_439.clone(), NTRUSigningKeyGenerationParameters.APR2011_439_PROD.clone()})
+        {
+            testSignVerify(params);
+        }
+    }
+//
+//    public void testSignVerify743()
+//        throws IOException
+//    {
+//        for (NTRUSigningKeyGenerationParameters params :  new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.APR2011_743.clone(), NTRUSigningKeyGenerationParameters.APR2011_743_PROD.clone()})
+//        {
+//            testSignVerify(params);
+//        }
+//    }
 
     private void testSignVerify(NTRUSigningKeyGenerationParameters params)
         throws IOException
