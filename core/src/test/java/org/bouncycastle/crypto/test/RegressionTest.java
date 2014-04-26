@@ -11,6 +11,7 @@ public class RegressionTest
         new AESLightTest(),
         new AESFastTest(),
         new AESWrapTest(),
+        new AESWrapPadTest(),
         new DESTest(),
         new DESedeTest(),
         new ModeTest(),
