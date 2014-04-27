@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
+import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
@@ -153,7 +154,15 @@ public final class AES
         }
     }
 
-    
+    public static class RFC5649Wrap
+        extends BaseWrapCipher
+    {
+        public RFC5649Wrap()
+        {
+            super(new RFC5649WrapEngine(new AESFastEngine()));
+        }
+    }
+
     /**
      * PBEWithAES-CBC
      */
@@ -512,7 +521,9 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes128_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes192_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes256_wrap, "AESWRAP");
+
             provider.addAlgorithm("Cipher.AESRFC3211WRAP", PREFIX + "$RFC3211Wrap");
+            provider.addAlgorithm("Cipher.AESRFC5649WRAP", PREFIX + "$RFC5649Wrap");
 
             provider.addAlgorithm("Cipher.GCM", PREFIX + "$GCM");
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes128_GCM, "GCM");

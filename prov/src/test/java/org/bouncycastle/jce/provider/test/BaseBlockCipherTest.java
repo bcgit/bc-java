@@ -1,15 +1,17 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.util.test.TestFailedException;
+import java.security.Key;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.Key;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestFailedException;
 
 public abstract class BaseBlockCipherTest
     extends SimpleTest
@@ -104,9 +106,29 @@ public abstract class BaseBlockCipherTest
         byte[]  out)
         throws Exception
     {
+        wrapTest(id, wrappingAlgorithm, kek, null, null, in, out);
+    }
+
+    protected void wrapTest(
+        int     id,
+        String  wrappingAlgorithm,
+        byte[]  kek,
+        byte[] iv,
+        SecureRandom rand,
+        byte[]  in,
+        byte[]  out)
+        throws Exception
+    {
         Cipher wrapper = Cipher.getInstance(wrappingAlgorithm, "BC");
 
-        wrapper.init(Cipher.WRAP_MODE, new SecretKeySpec(kek, algorithm));
+        if (iv != null)
+        {
+            wrapper.init(Cipher.WRAP_MODE, new SecretKeySpec(kek, algorithm), new IvParameterSpec(iv), rand);
+        }
+        else
+        {
+            wrapper.init(Cipher.WRAP_MODE, new SecretKeySpec(kek, algorithm), rand);
+        }
 
         try
         {
@@ -125,7 +147,14 @@ public abstract class BaseBlockCipherTest
             fail("failed wrap test exception " + e.toString(), e);
         }
 
-        wrapper.init(Cipher.UNWRAP_MODE, new SecretKeySpec(kek, algorithm));
+        if (iv != null)
+        {
+            wrapper.init(Cipher.UNWRAP_MODE, new SecretKeySpec(kek, algorithm), new IvParameterSpec(iv));
+        }
+        else
+        {
+            wrapper.init(Cipher.UNWRAP_MODE, new SecretKeySpec(kek, algorithm));
+        }
 
         try
         {
