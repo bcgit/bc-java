@@ -1,12 +1,5 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPLiteralData;
-import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
-import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.util.test.UncloseableOutputStream;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +7,13 @@ import java.io.OutputStream;
 import java.security.Security;
 import java.util.Date;
 import java.util.Random;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.UncloseableOutputStream;
 
 public class PGPPacketTest
     extends SimpleTest
@@ -63,7 +63,7 @@ public class PGPPacketTest
         
         generator.close();
         
-        PGPObjectFactory        fact = new PGPObjectFactory(bOut.toByteArray());
+        JcaPGPObjectFactory        fact = new JcaPGPObjectFactory(bOut.toByteArray());
         PGPLiteralData          data = (PGPLiteralData)fact.nextObject();
         InputStream             in = data.getInputStream();
 

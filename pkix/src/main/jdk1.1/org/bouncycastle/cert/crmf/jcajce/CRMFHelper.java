@@ -44,7 +44,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
-import org.bouncycastle.jcajce.JcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 class CRMFHelper
 {

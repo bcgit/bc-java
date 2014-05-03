@@ -22,13 +22,14 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
@@ -81,7 +82,7 @@ public class KeyBasedFileProcessor
         
         try
         {
-            PGPObjectFactory pgpF = new PGPObjectFactory(in);
+            JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(in);
             PGPEncryptedDataList    enc;
 
             Object                  o = pgpF.nextObject();
@@ -104,7 +105,7 @@ public class KeyBasedFileProcessor
             PGPPrivateKey               sKey = null;
             PGPPublicKeyEncryptedData   pbe = null;
             PGPSecretKeyRingCollection  pgpSec = new PGPSecretKeyRingCollection(
-                PGPUtil.getDecoderStream(keyIn));
+                PGPUtil.getDecoderStream(keyIn), new JcaKeyFingerprintCalculator());
 
             while (sKey == null && it.hasNext())
             {
@@ -120,14 +121,14 @@ public class KeyBasedFileProcessor
     
             InputStream         clear = pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(sKey));
             
-            PGPObjectFactory    plainFact = new PGPObjectFactory(clear);
+            JcaPGPObjectFactory    plainFact = new JcaPGPObjectFactory(clear);
             
             Object              message = plainFact.nextObject();
     
             if (message instanceof PGPCompressedData)
             {
                 PGPCompressedData   cData = (PGPCompressedData)message;
-                PGPObjectFactory    pgpFact = new PGPObjectFactory(cData.getDataStream());
+                JcaPGPObjectFactory    pgpFact = new JcaPGPObjectFactory(cData.getDataStream());
                 
                 message = pgpFact.nextObject();
             }

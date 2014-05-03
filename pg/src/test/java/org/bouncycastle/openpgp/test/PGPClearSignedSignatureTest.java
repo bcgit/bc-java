@@ -12,7 +12,6 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -23,6 +22,8 @@ import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
@@ -213,9 +214,9 @@ public class PGPClearSignedSignatureTest
             bOut.write((byte)ch);
         }
 
-        PGPPublicKeyRingCollection pgpRings = new PGPPublicKeyRingCollection(publicKey);
+        PGPPublicKeyRingCollection pgpRings = new PGPPublicKeyRingCollection(publicKey, new JcaKeyFingerprintCalculator());
 
-        PGPObjectFactory           pgpFact = new PGPObjectFactory(aIn);
+        JcaPGPObjectFactory           pgpFact = new JcaPGPObjectFactory(aIn);
         PGPSignatureList           p3 = (PGPSignatureList)pgpFact.nextObject();
         PGPSignature               sig = p3.get(0);
         
@@ -251,7 +252,7 @@ public class PGPClearSignedSignatureTest
         InputStream    in)
         throws IOException, PGPException
     {
-        PGPSecretKeyRingCollection        pgpSec = new PGPSecretKeyRingCollection(in);
+        PGPSecretKeyRingCollection        pgpSec = new PGPSecretKeyRingCollection(in, new JcaKeyFingerprintCalculator());
 
         PGPSecretKey    key = null;
 

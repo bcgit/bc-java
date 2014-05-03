@@ -1,32 +1,31 @@
-package org.bouncycastle.openssl;
+package org.bouncycastle.openssl.jcajce;
 
 import java.io.IOException;
 import java.io.Writer;
 
-import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.util.io.pem.PemGenerationException;
 import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
 
 /**
- * General purpose writer for OpenSSL PEM objects.
- * @deprecated use JcaPEMWriter
+ * General purpose writer for OpenSSL PEM objects based on JCA/JCE classes.
  */
-public class PEMWriter
+public class JcaPEMWriter
     extends PemWriter
 {
     /**
      * Base constructor.
-     * 
+     *
      * @param out output stream to use.
      */
-    public PEMWriter(Writer out)
+    public JcaPEMWriter(Writer out)
     {
         super(out);
     }
 
     /**
-     * @throws IOException
+     * @throws java.io.IOException
      */
     public void writeObject(
         Object  obj)
@@ -38,7 +37,7 @@ public class PEMWriter
     /**
      * @param obj
      * @param encryptor
-     * @throws IOException
+     * @throws java.io.IOException
      */
     public void writeObject(
         Object  obj,

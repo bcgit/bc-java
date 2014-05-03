@@ -16,16 +16,16 @@ import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.bc.BcPGPPublicKeyRingCollection;
+import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRingCollection;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
@@ -1103,7 +1103,7 @@ public class BcPGPKeyRingTest
     public void test1()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub1);
+        BcPGPPublicKeyRingCollection    pubRings = new BcPGPPublicKeyRingCollection(pub1);
 
         int                                        count = 0;
 
@@ -1210,7 +1210,7 @@ public class BcPGPKeyRingTest
             fail("wrong number of public keyrings on case-insensitive partial match");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec1);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec1);
 
         rIt = secretRings.getKeyRings();
         count = 0;
@@ -1321,13 +1321,13 @@ public class BcPGPKeyRingTest
     public void test2()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub2);
+        BcPGPPublicKeyRingCollection    pubRings = new BcPGPPublicKeyRingCollection(pub2);
 
         int                            count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new BcPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1341,7 +1341,7 @@ public class BcPGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new BcKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1366,14 +1366,14 @@ public class BcPGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec2);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec2);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1444,13 +1444,13 @@ public class BcPGPKeyRingTest
     public void test3()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub3);
+        BcPGPPublicKeyRingCollection    pubRings = new BcPGPPublicKeyRingCollection(pub3);
 
         int                                        count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new BcPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1487,14 +1487,14 @@ public class BcPGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec3);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec3);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1533,14 +1533,14 @@ public class BcPGPKeyRingTest
     public void test4()
         throws Exception
     {
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec4);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec4);
 
         Iterator    rIt = secretRings.getKeyRings();
         int            count = 0;
         
         byte[]    encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1579,13 +1579,13 @@ public class BcPGPKeyRingTest
     public void test5()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub5);
+        BcPGPPublicKeyRingCollection    pubRings = new BcPGPPublicKeyRingCollection(pub5);
 
         int                           count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new BcPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1625,14 +1625,14 @@ public class BcPGPKeyRingTest
             return;
         }
 
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec5);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec5);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1676,7 +1676,7 @@ public class BcPGPKeyRingTest
     public void test6()
         throws Exception
     {
-        PGPPublicKeyRingCollection  pubRings = new PGPPublicKeyRingCollection(pub6);
+        BcPGPPublicKeyRingCollection  pubRings = new BcPGPPublicKeyRingCollection(pub6);
         Iterator                    rIt = pubRings.getKeyRings();
 
         while (rIt.hasNext())
@@ -1726,7 +1726,7 @@ public class BcPGPKeyRingTest
             }
         }
 
-        PGPSignature    sig =((PGPSignatureList)new PGPObjectFactory(pub7revoke).nextObject()).get(0);
+        PGPSignature    sig =((PGPSignatureList)new JcaPGPObjectFactory(pub7revoke).nextObject()).get(0);
 
         sig.init(new BcPGPContentVerifierBuilderProvider(), masterKey);
 
@@ -1739,13 +1739,13 @@ public class BcPGPKeyRingTest
     public void test8()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub8);
+        BcPGPPublicKeyRingCollection    pubRings = new BcPGPPublicKeyRingCollection(pub8);
 
         int                           count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new BcPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1780,14 +1780,14 @@ public class BcPGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec8);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec8);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1826,14 +1826,14 @@ public class BcPGPKeyRingTest
     public void test9()
         throws Exception
     { 
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec9);
+        BcPGPSecretKeyRingCollection    secretRings = new BcPGPSecretKeyRingCollection(sec9);
 
         Iterator    rIt = secretRings.getKeyRings();
         int         count = 0;
         
         byte[] encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new BcPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -2140,7 +2140,7 @@ public class BcPGPKeyRingTest
         SecureRandom rand = new SecureRandom();
 
         // Read the secret key rings
-        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+        BcPGPSecretKeyRingCollection privRings = new BcPGPSecretKeyRingCollection(
                                                          new ByteArrayInputStream(rewrapKey)); 
 
         Iterator rIt = privRings.getKeyRings();
@@ -2183,7 +2183,7 @@ public class BcPGPKeyRingTest
         throws Exception
     {
         checkSecretKeyRingWithPersonalCertificate(secWithPersonalCertificate);
-        PGPSecretKeyRingCollection secRing = new PGPSecretKeyRingCollection(secWithPersonalCertificate);
+        BcPGPSecretKeyRingCollection secRing = new BcPGPSecretKeyRingCollection(secWithPersonalCertificate);
         checkSecretKeyRingWithPersonalCertificate(secRing.getEncoded());
     }
 
@@ -2246,7 +2246,7 @@ public class BcPGPKeyRingTest
     private void checkSecretKeyRingWithPersonalCertificate(byte[] keyRing)
         throws Exception
     {
-        PGPSecretKeyRingCollection secCol = new PGPSecretKeyRingCollection(keyRing);
+        BcPGPSecretKeyRingCollection secCol = new BcPGPSecretKeyRingCollection(keyRing);
 
 
         int count = 0;

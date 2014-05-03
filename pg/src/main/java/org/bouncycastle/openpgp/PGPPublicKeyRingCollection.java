@@ -1,8 +1,5 @@
 package org.bouncycastle.openpgp;
 
-import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.util.Strings;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +11,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.util.Strings;
 
 /**
  * Often a PGP key ring file is made up of a succession of master/sub-key key rings.
@@ -31,12 +33,31 @@ public class PGPPublicKeyRingCollection
         this.pubRings = pubRings;
         this.order = order;
     }
-    
-    public PGPPublicKeyRingCollection(
-        byte[]    encoding)
+
+    /**
+     * @deprecated use JcePGPPublicKeyRingCollection or BcPGPPublicKeyRingCollection.
+     */
+    public PGPPublicKeyRingCollection(byte[] encoding)
         throws IOException, PGPException
     {
-        this(new ByteArrayInputStream(encoding));
+        this(encoding, new BcKeyFingerprintCalculator());
+    }
+
+    /**
+     * @deprecated use JcePGPPublicKeyRingCollection or BcPGPPublicKeyRingCollection.
+     */
+    public PGPPublicKeyRingCollection(InputStream in)
+        throws IOException, PGPException
+    {
+        this(in, new BcKeyFingerprintCalculator());
+    }
+
+    public PGPPublicKeyRingCollection(
+        byte[]    encoding,
+        KeyFingerPrintCalculator fingerPrintCalculator)
+        throws IOException, PGPException
+    {
+        this(new ByteArrayInputStream(encoding), fingerPrintCalculator);
     }
 
     /**
@@ -47,10 +68,11 @@ public class PGPPublicKeyRingCollection
      * @throws PGPException if an object is encountered which isn't a PGPPublicKeyRing
      */
     public PGPPublicKeyRingCollection(
-        InputStream    in)
+        InputStream    in,
+        KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        PGPObjectFactory    pgpFact = new PGPObjectFactory(in);
+        PGPObjectFactory    pgpFact = new PGPObjectFactory(in, fingerPrintCalculator);
         Object              obj;
 
         while ((obj = pgpFact.nextObject()) != null)

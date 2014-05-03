@@ -36,8 +36,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.jcajce.JcaJceHelper;
-import org.bouncycastle.jcajce.JcaJceUtils;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.operator.OperatorCreationException;
 
 class OperatorHelper

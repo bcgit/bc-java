@@ -2,7 +2,7 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPMarker;
-import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -51,7 +51,7 @@ public class PGPMarkerTest
             //
             // test encrypted message
             //
-            PGPObjectFactory        pgpFact = new PGPObjectFactory(message1);
+            JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(message1);
 
             Object    o;
             
@@ -67,7 +67,7 @@ public class PGPMarkerTest
                 }
             }
             
-            pgpFact = new PGPObjectFactory(message2);
+            pgpFact = new JcaPGPObjectFactory(message2);
 
             if (pgpFact.nextObject() instanceof PGPMarker)
             {

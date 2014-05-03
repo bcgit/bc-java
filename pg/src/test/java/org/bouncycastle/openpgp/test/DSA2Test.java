@@ -16,7 +16,6 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -25,6 +24,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -175,7 +175,7 @@ public class DSA2Test
 
         sGen.generate().encode(bcOut);
 
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(bOut.toByteArray());
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         PGPOnePassSignature     ops = p1.get(0);
 
@@ -212,11 +212,11 @@ public class DSA2Test
         throws Exception
     {
         PGPPublicKeyRing publicKey = loadPublicKey(publicKeyFile);
-        PGPObjectFactory pgpFact = loadSig(sigFile);
+        JcaPGPObjectFactory pgpFact = loadSig(sigFile);
 
         PGPCompressedData c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
 
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         PGPOnePassSignature ops = p1.get(0);
@@ -238,13 +238,13 @@ public class DSA2Test
         assertTrue(ops.verify(p3.get(0)));
     }
 
-    private PGPObjectFactory loadSig(
+    private JcaPGPObjectFactory loadSig(
         String sigName)
         throws Exception
     {
         FileInputStream fIn = new FileInputStream(getDataHome() + "/sigs/" + sigName);
 
-        return new PGPObjectFactory(fIn);
+        return new JcaPGPObjectFactory(fIn);
     }
 
     private PGPPublicKeyRing loadPublicKey(

@@ -20,6 +20,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 
 class PGPExampleUtil
@@ -78,7 +79,7 @@ class PGPExampleUtil
     static PGPPublicKey readPublicKey(InputStream input) throws IOException, PGPException
     {
         PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(
-            PGPUtil.getDecoderStream(input));
+            PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
 
         //
         // we just loop through the collection till we find a key suitable for encryption, in the real
@@ -125,7 +126,7 @@ class PGPExampleUtil
     static PGPSecretKey readSecretKey(InputStream input) throws IOException, PGPException
     {
         PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(
-            PGPUtil.getDecoderStream(input));
+            PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
 
         //
         // we just loop through the collection till we find a key suitable for encryption, in the real

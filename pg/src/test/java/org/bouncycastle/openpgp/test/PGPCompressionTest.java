@@ -1,18 +1,18 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPCompressedData;
-import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPObjectFactory;
-import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.util.test.UncloseableOutputStream;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.UncloseableOutputStream;
 
 public class PGPCompressionTest 
     extends SimpleTest
@@ -79,7 +79,7 @@ public class PGPCompressionTest
     private void validateData(byte[] data)
         throws IOException, PGPException
     {
-        PGPObjectFactory pgpFact = new PGPObjectFactory(data);
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(data);
         PGPCompressedData c1 = (PGPCompressedData)pgpFact.nextObject();
         InputStream pIn = c1.getDataStream();
 
@@ -110,7 +110,7 @@ public class PGPCompressionTest
 
         out.close();
 
-        PGPObjectFactory pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(bOut.toByteArray());
         PGPCompressedData c1 = (PGPCompressedData)pgpFact.nextObject();
         InputStream pIn = c1.getDataStream();
 

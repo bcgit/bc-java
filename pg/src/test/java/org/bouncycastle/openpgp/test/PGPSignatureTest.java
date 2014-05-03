@@ -21,7 +21,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -34,6 +33,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -170,7 +170,7 @@ public class PGPSignatureTest
 
         byte[] sigBytes = sig.getEncoded();
 
-        PGPObjectFactory f = new PGPObjectFactory(sigBytes);
+        JcaPGPObjectFactory f = new JcaPGPObjectFactory(sigBytes);
 
         sig = ((PGPSignatureList) f.nextObject()).get(0);
 
@@ -571,7 +571,7 @@ public class PGPSignatureTest
     private void testMissingSubpackets(byte[] signature) 
         throws IOException
     {
-        PGPObjectFactory f = new PGPObjectFactory(signature);
+        JcaPGPObjectFactory f = new JcaPGPObjectFactory(signature);
         Object           obj = f.nextObject();
         
         while (!(obj instanceof PGPSignatureList))
@@ -837,7 +837,7 @@ public class PGPSignatureTest
         byte[] original) 
         throws IOException, PGPException, NoSuchProviderException, SignatureException
     {
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(encodedSig);
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(encodedSig);
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         PGPOnePassSignature     ops = p1.get(0);
         PGPLiteralData          p2 = (PGPLiteralData)pgpFact.nextObject();

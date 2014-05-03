@@ -19,6 +19,8 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+
 public class ProviderJcaJceHelper
     implements JcaJceHelper
 {

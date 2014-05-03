@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.jcajce.JcaJceUtils;
+import org.bouncycastle.jcajce.util.JcaJceUtils;
 
 class CMSUtils
 {

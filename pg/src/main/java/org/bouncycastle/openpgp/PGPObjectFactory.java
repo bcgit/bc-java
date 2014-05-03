@@ -9,7 +9,7 @@ import java.util.List;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 
 /**
  * General class for reading a PGP object stream.
@@ -24,10 +24,13 @@ public class PGPObjectFactory
     private BCPGInputStream in;
     private KeyFingerPrintCalculator fingerPrintCalculator;
 
+    /**
+     * @deprecated use JcaPGPObjectFactory or BcPGPObjectFactory
+     */
     public PGPObjectFactory(
         InputStream in)
     {
-        this(in, new JcaKeyFingerprintCalculator());
+        this(in, new BcKeyFingerprintCalculator());
     }
 
     /**
@@ -44,6 +47,9 @@ public class PGPObjectFactory
         this.fingerPrintCalculator = fingerPrintCalculator;
     }
 
+    /**
+     * @deprecated use JcaPGPObjectFactory or BcPGPObjectFactory
+     */
     public PGPObjectFactory(
         byte[] bytes)
     {

@@ -15,7 +15,6 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
@@ -24,6 +23,8 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -68,7 +69,7 @@ public class DetachedSignatureProcessor
     {
         in = PGPUtil.getDecoderStream(in);
         
-        PGPObjectFactory    pgpFact = new PGPObjectFactory(in);
+        JcaPGPObjectFactory    pgpFact = new JcaPGPObjectFactory(in);
         PGPSignatureList    p3;
 
         Object    o = pgpFact.nextObject();
@@ -76,7 +77,7 @@ public class DetachedSignatureProcessor
         {
             PGPCompressedData             c1 = (PGPCompressedData)o;
 
-            pgpFact = new PGPObjectFactory(c1.getDataStream());
+            pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
             
             p3 = (PGPSignatureList)pgpFact.nextObject();
         }
@@ -85,7 +86,7 @@ public class DetachedSignatureProcessor
             p3 = (PGPSignatureList)o;
         }
             
-        PGPPublicKeyRingCollection  pgpPubRingCollection = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(keyIn));
+        PGPPublicKeyRingCollection  pgpPubRingCollection = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(keyIn), new JcaKeyFingerprintCalculator());
 
 
         InputStream                 dIn = new BufferedInputStream(new FileInputStream(fileName));

@@ -1,24 +1,19 @@
 package org.bouncycastle.pqc.crypto.test;
 
 
-import java.io.IOException;
-import java.util.Random;
-
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigner;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPublicKeyParameters;
-import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
-import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
-import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated algorithm no longer safe.
+ */
 public class NTRUSignerTest
     extends TestCase
 {
+    public void testStub()
+    {
+
+    }
+    /*
     public void testCreateBasis()
     {
         for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157.clone(), NTRUSigningKeyGenerationParameters.TEST157_PROD.clone()})
@@ -59,7 +54,7 @@ public class NTRUSignerTest
 
     /**
      * a test for the one-method-call variants: sign(byte, SignatureKeyPair) and verify(byte[], byte[], SignatureKeyPair)
-     */
+     *
     public void testSignVerify157()
         throws IOException
     {
@@ -220,7 +215,7 @@ public class NTRUSignerTest
 
     /**
      * test for the initSign/update/sign and initVerify/update/verify variant
-     */
+     *
     public void testInitUpdateSign()
     {
         for (NTRUSigningKeyGenerationParameters params : new NTRUSigningKeyGenerationParameters[]{NTRUSigningKeyGenerationParameters.TEST157.clone(), NTRUSigningKeyGenerationParameters.TEST157_PROD.clone()})
@@ -307,7 +302,7 @@ public class NTRUSignerTest
          * Constructs a new instance with a set of signature parameters.
          *
          * @param params signature parameters
-         */
+         *
         public VisibleNTRUSigner(NTRUSigningParameters params)
         {
             super(params);
@@ -318,4 +313,5 @@ public class NTRUSignerTest
             return super.createMsgRep(hash, i);
         }
     }
+    */
 }
