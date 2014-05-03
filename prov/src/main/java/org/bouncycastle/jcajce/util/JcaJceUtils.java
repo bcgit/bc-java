@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce;
+package org.bouncycastle.jcajce.util;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;

@@ -1336,7 +1336,7 @@ public class BcPGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new BcKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())

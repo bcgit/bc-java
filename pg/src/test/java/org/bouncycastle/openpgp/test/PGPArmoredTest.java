@@ -1,16 +1,16 @@
 package org.bouncycastle.openpgp.test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
-import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 
 public class PGPArmoredTest
     extends SimpleTest
@@ -162,7 +162,7 @@ public class PGPArmoredTest
 
         ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(bOut.toByteArray()));
 
-        PGPObjectFactory fact = new PGPObjectFactory(aIn);
+        JcaPGPObjectFactory fact = new JcaPGPObjectFactory(aIn);
         int count = 0;
 
         while (fact.nextObject() != null)
@@ -188,7 +188,7 @@ public class PGPArmoredTest
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(bOut.toByteArray()));
 
-        fact = new PGPObjectFactory(aIn);
+        fact = new JcaPGPObjectFactory(aIn);
         count = 0;
 
         while (fact.nextObject() != null)
@@ -224,7 +224,7 @@ public class PGPArmoredTest
         do
         {
             atLeastOne = false;
-            fact = new PGPObjectFactory(aIn);
+            fact = new JcaPGPObjectFactory(aIn);
 
             while (fact.nextObject() != null)
             {

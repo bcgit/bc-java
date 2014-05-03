@@ -441,7 +441,7 @@ public class BcPGPRSATest
 
         byte[] bytes = bOut.toByteArray();
 
-        PGPObjectFactory f = new PGPObjectFactory(bytes);
+        PGPObjectFactory f = new PGPObjectFactory(bytes, new BcKeyFingerprintCalculator());
         checkLiteralData((PGPLiteralData)f.nextObject(), text);
 
         ByteArrayOutputStream bcOut = new ByteArrayOutputStream();
@@ -463,7 +463,7 @@ public class BcPGPRSATest
         //
         // asymmetric
         //
-        PGPObjectFactory pgpF = new PGPObjectFactory(encData);
+        PGPObjectFactory pgpF = new PGPObjectFactory(encData, new BcKeyFingerprintCalculator());
 
         PGPEncryptedDataList       encList = (PGPEncryptedDataList)pgpF.nextObject();
 
@@ -471,14 +471,14 @@ public class BcPGPRSATest
 
         InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(pgpPrivKey));
 
-        PGPObjectFactory pgpFact = new PGPObjectFactory(clear);
+        PGPObjectFactory pgpFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
 
         checkLiteralData((PGPLiteralData)pgpFact.nextObject(), text);
 
         //
         // PBE
         //
-        pgpF = new PGPObjectFactory(encData);
+        pgpF = new PGPObjectFactory(encData, new BcKeyFingerprintCalculator());
 
         encList = (PGPEncryptedDataList)pgpF.nextObject();
 
@@ -486,7 +486,7 @@ public class BcPGPRSATest
 
         clear = encPbe.getDataStream(new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider()));
 
-        pgpF = new PGPObjectFactory(clear);
+        pgpF = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
 
         checkLiteralData((PGPLiteralData)pgpF.nextObject(), text);
     }
@@ -1000,7 +1000,7 @@ public class BcPGPRSATest
 
         cOut.close();
 
-        pgpF = new PGPObjectFactory(cbOut.toByteArray());
+        pgpF = new PGPObjectFactory(cbOut.toByteArray(), new BcKeyFingerprintCalculator());
 
         encList = (PGPEncryptedDataList)pgpF.nextObject();
     
@@ -1207,11 +1207,11 @@ public class BcPGPRSATest
         //
         // verify generated signature
         //
-        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        pgpFact = new PGPObjectFactory(bOut.toByteArray(), new BcKeyFingerprintCalculator());
 
         c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new PGPObjectFactory(c1.getDataStream(), new BcKeyFingerprintCalculator());
         
         p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         
@@ -1279,11 +1279,11 @@ public class BcPGPRSATest
         //
         // verify generated signature
         //
-        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        pgpFact = new PGPObjectFactory(bOut.toByteArray(), new BcKeyFingerprintCalculator());
 
         c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new PGPObjectFactory(c1.getDataStream(), new BcKeyFingerprintCalculator());
         
         p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         

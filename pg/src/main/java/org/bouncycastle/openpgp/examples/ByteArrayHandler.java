@@ -20,9 +20,9 @@ import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
@@ -62,7 +62,7 @@ public class ByteArrayHandler
 
         in = PGPUtil.getDecoderStream(in);
 
-        PGPObjectFactory         pgpF = new PGPObjectFactory(in);
+        JcaPGPObjectFactory         pgpF = new JcaPGPObjectFactory(in);
         PGPEncryptedDataList     enc;
         Object                          o = pgpF.nextObject();
         
@@ -82,11 +82,11 @@ public class ByteArrayHandler
 
         InputStream clear = pbe.getDataStream(new JcePBEDataDecryptorFactoryBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
 
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(clear);
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(clear);
 
         PGPCompressedData   cData = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(cData.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(cData.getDataStream());
 
         PGPLiteralData ld = (PGPLiteralData)pgpFact.nextObject();
 

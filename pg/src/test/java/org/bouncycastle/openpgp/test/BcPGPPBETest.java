@@ -15,8 +15,8 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
@@ -66,16 +66,16 @@ public class BcPGPPBETest
         Date      date)
         throws Exception
     {
-        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        JcaPGPObjectFactory         pgpF = new JcaPGPObjectFactory(message);
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
         
-        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);
+        JcaPGPObjectFactory         pgpFact = new JcaPGPObjectFactory(clear);
         PGPCompressedData        cData = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(cData.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(cData.getDataStream());
         
         PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
         
@@ -115,7 +115,7 @@ public class BcPGPPBETest
         Date      date)
         throws Exception
     {
-        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        JcaPGPObjectFactory         pgpF = new JcaPGPObjectFactory(message);
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
@@ -126,10 +126,10 @@ public class BcPGPPBETest
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
 
-        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);
+        JcaPGPObjectFactory         pgpFact = new JcaPGPObjectFactory(clear);
         PGPCompressedData        cData = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(cData.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(cData.getDataStream());
 
         PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
 
@@ -165,16 +165,16 @@ public class BcPGPPBETest
         Date      date)
         throws Exception
     {
-        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        JcaPGPObjectFactory         pgpF = new JcaPGPObjectFactory(message);
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
 
-        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);
+        JcaPGPObjectFactory         pgpFact = new JcaPGPObjectFactory(clear);
         PGPCompressedData        cData = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(cData.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(cData.getDataStream());
 
         PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
 
@@ -362,7 +362,7 @@ public class BcPGPPBETest
         //
         // sample message
         //
-        PGPObjectFactory pgpFact = new PGPObjectFactory(testPBEAsym);
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(testPBEAsym);
 
         PGPEncryptedDataList enc = (PGPEncryptedDataList)pgpFact.nextObject();
 
@@ -370,7 +370,7 @@ public class BcPGPPBETest
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider()));
 
-        pgpFact = new PGPObjectFactory(clear);
+        pgpFact = new JcaPGPObjectFactory(clear);
 
         PGPLiteralData          ld = (PGPLiteralData)pgpFact.nextObject();
 

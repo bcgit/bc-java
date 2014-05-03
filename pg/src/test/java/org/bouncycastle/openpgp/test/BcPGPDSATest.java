@@ -21,7 +21,6 @@ import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -34,6 +33,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
@@ -361,10 +361,10 @@ public class BcPGPDSATest
 
         cGen.close();
 
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(bOut.toByteArray());
         PGPCompressedData       c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
         
         
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
@@ -419,11 +419,11 @@ public class BcPGPDSATest
         //
         // test signature message
         //
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(sig1);
+        JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(sig1);
 
         PGPCompressedData       c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
         
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         
@@ -495,11 +495,11 @@ public class BcPGPDSATest
         //
         // verify generated signature - canconical text
         //
-        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        pgpFact = new JcaPGPObjectFactory(bOut.toByteArray());
 
         c1 = (PGPCompressedData)pgpFact.nextObject();
 
-        pgpFact = new PGPObjectFactory(c1.getDataStream());
+        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
     
         p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
     

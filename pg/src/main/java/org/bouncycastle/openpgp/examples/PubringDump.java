@@ -1,18 +1,16 @@
 package org.bouncycastle.openpgp.examples;
 
-import java.io.*;
-
+import java.io.FileInputStream;
 import java.security.Security;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
-
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -61,7 +59,7 @@ public class PubringDump
         // Read the public key rings
         //
         PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(
-            PGPUtil.getDecoderStream(new FileInputStream(args[0])));
+            PGPUtil.getDecoderStream(new FileInputStream(args[0])), new JcaKeyFingerprintCalculator());
 
         Iterator    rIt = pubRings.getKeyRings();
             

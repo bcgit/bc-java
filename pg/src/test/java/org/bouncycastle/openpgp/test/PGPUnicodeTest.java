@@ -19,6 +19,7 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 
@@ -150,7 +151,7 @@ public class PGPUnicodeTest
     {
         FileInputStream fIn = new FileInputStream(getDataHome() + keyName);
 
-        return new PGPSecretKeyRingCollection(fIn);
+        return new PGPSecretKeyRingCollection(fIn, new JcaKeyFingerprintCalculator());
     }
 
     private String getDataHome()

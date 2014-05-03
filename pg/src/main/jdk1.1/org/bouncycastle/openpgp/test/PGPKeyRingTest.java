@@ -18,6 +18,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -447,7 +448,7 @@ public class PGPKeyRingTest
                 
                 byte[]    bytes = pgpPub.getEncoded();
                 
-                pgpPub = new PGPPublicKeyRing(bytes);
+                pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
                 
                 Iterator    it = pgpPub.getPublicKeys();
                 while (it.hasNext())
@@ -495,7 +496,7 @@ public class PGPKeyRingTest
                     
                     byte[] pkBytes = pk.getEncoded();
                     
-                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes);
+                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes, new JcaKeyFingerprintCalculator());
                 }
                 
                 if (keyCount != 2)
@@ -552,7 +553,7 @@ public class PGPKeyRingTest
                 
                 byte[]    bytes = pgpPub.getEncoded();
                 
-                pgpPub = new PGPPublicKeyRing(bytes);
+                pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
                 
                 Iterator    it = pgpPub.getPublicKeys();
                 while (it.hasNext())
@@ -561,7 +562,7 @@ public class PGPKeyRingTest
                     
                     byte[] pkBytes = pk.getEncoded();
                     
-                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes);
+                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes, new JcaKeyFingerprintCalculator());
                     
                     keyCount++;
                 }
@@ -608,7 +609,7 @@ public class PGPKeyRingTest
                     
                     byte[] pkBytes = pk.getEncoded();
                     
-                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes);
+                    PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes, new JcaKeyFingerprintCalculator());
                     
                     if (k.getKeyID() == -4049084404703773049L
                          || k.getKeyID() == -1413891222336124627L)
@@ -676,7 +677,7 @@ public class PGPKeyRingTest
                 
                 byte[]    bytes = pgpPub.getEncoded();
                 
-                pgpPub = new PGPPublicKeyRing(bytes);
+                pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
                 
                 Iterator    it = pgpPub.getPublicKeys();
                 while (it.hasNext())
@@ -839,7 +840,7 @@ public class PGPKeyRingTest
                 
                 byte[]    bytes = pgpPub.getEncoded();
                 
-                pgpPub = new PGPPublicKeyRing(bytes);
+                pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
                 
                 Iterator    it = pgpPub.getPublicKeys();
                 while (it.hasNext())

@@ -21,11 +21,11 @@ import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRingCollection;
+import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -1169,7 +1169,7 @@ public class PGPKeyRingTest
     public void test1()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub1);
+        JcaPGPPublicKeyRingCollection    pubRings = new JcaPGPPublicKeyRingCollection(pub1);
 
         int                                        count = 0;
 
@@ -1185,7 +1185,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1276,7 +1276,7 @@ public class PGPKeyRingTest
             fail("wrong number of public keyrings on case-insensitive partial match");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec1);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec1);
 
         rIt = secretRings.getKeyRings();
         count = 0;
@@ -1305,7 +1305,7 @@ public class PGPKeyRingTest
                 
                 byte[] pkBytes = pk.getEncoded();
                 
-                PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes);
+                PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes, new JcaKeyFingerprintCalculator());
             }
             
             if (keyCount != 2)
@@ -1387,13 +1387,13 @@ public class PGPKeyRingTest
     public void test2()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub2);
+        JcaPGPPublicKeyRingCollection    pubRings = new JcaPGPPublicKeyRingCollection(pub2);
 
         int                            count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new JcaPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1407,7 +1407,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1416,7 +1416,7 @@ public class PGPKeyRingTest
                 
                 byte[] pkBytes = pk.getEncoded();
                 
-                PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes);
+                PGPPublicKeyRing  pkR = new PGPPublicKeyRing(pkBytes, new JcaKeyFingerprintCalculator());
                 
                 keyCount++;
             }
@@ -1432,14 +1432,14 @@ public class PGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec2);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec2);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1510,13 +1510,13 @@ public class PGPKeyRingTest
     public void test3()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub3);
+        JcaPGPPublicKeyRingCollection    pubRings = new JcaPGPPublicKeyRingCollection(pub3);
 
         int                                        count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new JcaPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1530,7 +1530,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1553,14 +1553,14 @@ public class PGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec3);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec3);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1599,14 +1599,14 @@ public class PGPKeyRingTest
     public void test4()
         throws Exception
     {
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec4);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec4);
 
         Iterator    rIt = secretRings.getKeyRings();
         int            count = 0;
         
         byte[]    encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1659,13 +1659,13 @@ public class PGPKeyRingTest
     public void test5()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub5);
+        JcaPGPPublicKeyRingCollection    pubRings = new JcaPGPPublicKeyRingCollection(pub5);
 
         int                           count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new JcaPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1679,7 +1679,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1705,14 +1705,14 @@ public class PGPKeyRingTest
             return;
         }
 
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec5);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec5);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1765,7 +1765,7 @@ public class PGPKeyRingTest
     public void test6()
         throws Exception
     {
-        PGPPublicKeyRingCollection  pubRings = new PGPPublicKeyRingCollection(pub6);
+        JcaPGPPublicKeyRingCollection  pubRings = new JcaPGPPublicKeyRingCollection(pub6);
         Iterator                    rIt = pubRings.getKeyRings();
 
         while (rIt.hasNext())
@@ -1883,13 +1883,13 @@ public class PGPKeyRingTest
     public void test8()
         throws Exception
     {
-        PGPPublicKeyRingCollection    pubRings = new PGPPublicKeyRingCollection(pub8);
+        JcaPGPPublicKeyRingCollection    pubRings = new JcaPGPPublicKeyRingCollection(pub8);
 
         int                           count = 0;
 
         byte[]    encRing = pubRings.getEncoded();
 
-        pubRings = new PGPPublicKeyRingCollection(encRing);
+        pubRings = new JcaPGPPublicKeyRingCollection(encRing);
         
         Iterator    rIt = pubRings.getKeyRings();
         
@@ -1903,7 +1903,7 @@ public class PGPKeyRingTest
             
             byte[]    bytes = pgpPub.getEncoded();
             
-            pgpPub = new PGPPublicKeyRing(bytes);
+            pgpPub = new PGPPublicKeyRing(bytes, new JcaKeyFingerprintCalculator());
             
             Iterator    it = pgpPub.getPublicKeys();
             while (it.hasNext())
@@ -1924,14 +1924,14 @@ public class PGPKeyRingTest
             fail("wrong number of public keyrings");
         }
         
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec8);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec8);
 
         rIt = secretRings.getKeyRings();
         count = 0;
         
         encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -1970,14 +1970,14 @@ public class PGPKeyRingTest
     public void test9()
         throws Exception
     { 
-        PGPSecretKeyRingCollection    secretRings = new PGPSecretKeyRingCollection(sec9);
+        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec9);
 
         Iterator    rIt = secretRings.getKeyRings();
         int         count = 0;
         
         byte[] encRing = secretRings.getEncoded();
         
-        secretRings = new PGPSecretKeyRingCollection(encRing);
+        secretRings = new JcaPGPSecretKeyRingCollection(encRing);
         
         while (rIt.hasNext())
         {
@@ -2038,7 +2038,7 @@ public class PGPKeyRingTest
             }
         }
         
-        PGPPublicKeyRing    publicRing = new PGPPublicKeyRing(pub10);
+        PGPPublicKeyRing    publicRing = new PGPPublicKeyRing(pub10, new JcaKeyFingerprintCalculator());
         Iterator            publicKeys = publicRing.getPublicKeys();
         
         while (publicKeys.hasNext())
@@ -2280,7 +2280,7 @@ public class PGPKeyRingTest
     private void test11()
         throws Exception
     {
-        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(subKeyBindingKey);
+        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(subKeyBindingKey, new JcaKeyFingerprintCalculator());
         Iterator         it = pubRing.getPublicKeys();
         
         while (it.hasNext())
@@ -2298,7 +2298,7 @@ public class PGPKeyRingTest
         throws Exception
     {
         // Read the secret key rings
-        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+        JcaPGPSecretKeyRingCollection privRings = new JcaPGPSecretKeyRingCollection(
                                                          new ByteArrayInputStream(rewrapKey)); 
         char[] newPass = "fred".toCharArray();
 
@@ -2362,7 +2362,7 @@ public class PGPKeyRingTest
         throws Exception
     {
         // Read the secret key rings
-        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+        JcaPGPSecretKeyRingCollection privRings = new JcaPGPSecretKeyRingCollection(
                                                          new ByteArrayInputStream(privv3));
         char[] newPass = "fred".toCharArray();
 
@@ -2427,7 +2427,7 @@ public class PGPKeyRingTest
         throws Exception
     {
         // Read the secret key rings
-        PGPSecretKeyRingCollection privRings = new PGPSecretKeyRingCollection(
+        JcaPGPSecretKeyRingCollection privRings = new JcaPGPSecretKeyRingCollection(
                                                          new ByteArrayInputStream(rewrapKey));
         char[] newPass = "fred".toCharArray();
 
@@ -2494,7 +2494,7 @@ public class PGPKeyRingTest
     {
         checkPublicKeyRingWithX509(pubWithX509);
 
-        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(pubWithX509);
+        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(pubWithX509, new JcaKeyFingerprintCalculator());
 
         checkPublicKeyRingWithX509(pubRing.getEncoded());
     }
@@ -2503,14 +2503,14 @@ public class PGPKeyRingTest
         throws Exception
     {
         checkSecretKeyRingWithPersonalCertificate(secWithPersonalCertificate);
-        PGPSecretKeyRingCollection secRing = new PGPSecretKeyRingCollection(secWithPersonalCertificate);
+        JcaPGPSecretKeyRingCollection secRing = new JcaPGPSecretKeyRingCollection(secWithPersonalCertificate);
         checkSecretKeyRingWithPersonalCertificate(secRing.getEncoded());
     }
 
     private void testUmlaut()
         throws Exception
     {
-        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(umlautKeySig);
+        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(umlautKeySig, new JcaKeyFingerprintCalculator());
 
         PGPPublicKey pub = pubRing.getPublicKey();
         String       userID = (String)pub.getUserIDs().next();
@@ -2567,7 +2567,7 @@ public class PGPKeyRingTest
     private void checkSecretKeyRingWithPersonalCertificate(byte[] keyRing)
         throws Exception
     {
-        PGPSecretKeyRingCollection secCol = new PGPSecretKeyRingCollection(keyRing);
+        JcaPGPSecretKeyRingCollection secCol = new JcaPGPSecretKeyRingCollection(keyRing);
 
 
         int count = 0;
@@ -2592,7 +2592,7 @@ public class PGPKeyRingTest
     private void checkPublicKeyRingWithX509(byte[] keyRing)
         throws Exception
     {
-        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(keyRing);
+        PGPPublicKeyRing pubRing = new PGPPublicKeyRing(keyRing, new JcaKeyFingerprintCalculator());
         Iterator         it = pubRing.getPublicKeys();
 
         if (it.hasNext())

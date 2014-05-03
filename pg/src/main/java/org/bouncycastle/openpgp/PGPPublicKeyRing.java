@@ -15,7 +15,6 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
 /**
  * Class to hold a single master public key and its subkeys.
@@ -27,16 +26,6 @@ public class PGPPublicKeyRing
     extends PGPKeyRing
 {
     List keys;
-
-    /**
-     * @deprecated use version that takes a KeyFingerPrintCalculator
-     */
-    public PGPPublicKeyRing(
-        byte[]    encoding)
-        throws IOException
-    {
-        this(new ByteArrayInputStream(encoding), new JcaKeyFingerprintCalculator());
-    }
 
     public PGPPublicKeyRing(
         byte[]    encoding,
@@ -53,16 +42,6 @@ public class PGPPublicKeyRing
         List pubKeys)
     {
         this.keys = pubKeys;
-    }
-
-    /**
-     * @deprecated use version that takes a KeyFingerPrintCalculator
-     */
-    public PGPPublicKeyRing(
-        InputStream    in)
-        throws IOException
-    {
-        this(in, new JcaKeyFingerprintCalculator());
     }
 
     public PGPPublicKeyRing(
