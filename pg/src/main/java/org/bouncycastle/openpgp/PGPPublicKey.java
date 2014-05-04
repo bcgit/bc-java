@@ -365,7 +365,7 @@ public class PGPPublicKey
     /**
      * Return the strength of the key in bits.
      * 
-     * @return bit strenght of key.
+     * @return bit strength of key.
      */
     public int getBitStrength()
     {
@@ -383,15 +383,36 @@ public class PGPPublicKey
         
         for (int i = 0; i != ids.size(); i++)
         {
-            if (ids.get(i) instanceof String)
+            if (ids.get(i) instanceof UserIDPacket)
             {
-                temp.add(ids.get(i));
+                temp.add(((UserIDPacket)ids.get(i)).getID());
             }
         }
         
         return temp.iterator();
     }
-    
+
+    /**
+     * Return any userIDs associated with the key in raw byte form. No attempt is made
+     * to convert the IDs into Strings.
+     *
+     * @return an iterator of Strings.
+     */
+    public Iterator getRawUserIDs()
+    {
+        List    temp = new ArrayList();
+
+        for (int i = 0; i != ids.size(); i++)
+        {
+            if (ids.get(i) instanceof UserIDPacket)
+            {
+                temp.add(((UserIDPacket)ids.get(i)).getRawID());
+            }
+        }
+
+        return temp.iterator();
+    }
+
     /**
      * Return any user attribute vectors associated with the key.
      * 
@@ -421,6 +442,24 @@ public class PGPPublicKey
     public Iterator getSignaturesForID(
         String   id)
     {
+        return getSignaturesForID(new UserIDPacket(id));
+    }
+
+    /**
+     * Return any signatures associated with the passed in id.
+     *
+     * @param rawID the id to be matched in raw byte form.
+     * @return an iterator of PGPSignature objects.
+     */
+    public Iterator getSignaturesForID(
+        byte[]   rawID)
+    {
+        return getSignaturesForID(new UserIDPacket(rawID));
+    }
+
+    private Iterator getSignaturesForID(
+        UserIDPacket   id)
+    {
         for (int i = 0; i != ids.size(); i++)
         {
             if (id.equals(ids.get(i)))
@@ -428,10 +467,10 @@ public class PGPPublicKey
                 return ((ArrayList)idSigs.get(i)).iterator();
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Return an iterator of signatures associated with the passed in user attributes.
      * 
@@ -548,11 +587,11 @@ public class PGPPublicKey
             
             for (int i = 0; i != ids.size(); i++)
             {
-                if (ids.get(i) instanceof String)
+                if (ids.get(i) instanceof UserIDPacket)
                 {
-                    String    id = (String)ids.get(i);
+                    UserIDPacket    id = (UserIDPacket)ids.get(i);
                     
-                    out.writePacket(new UserIDPacket(id));
+                    out.writePacket(id);
                 }
                 else
                 {
@@ -630,7 +669,7 @@ public class PGPPublicKey
         String          id,
         PGPSignature    certification)
     {
-        return addCert(key, id, certification);
+        return addCert(key, new UserIDPacket(id), certification);
     }
 
     /**
@@ -708,7 +747,21 @@ public class PGPPublicKey
         PGPPublicKey    key,
         String          id)
     {
-        return removeCert(key, id);
+        return removeCert(key, new UserIDPacket(id));
+    }
+
+    /**
+     * Remove any certifications associated with a given id on a key.
+     *
+     * @param key the key the certifications are to be removed from.
+     * @param rawID the id that is to be removed in raw byte form.
+     * @return the re-certified key, null if the id was not found on the key.
+     */
+    public static PGPPublicKey removeCertification(
+        PGPPublicKey    key,
+        byte[]          rawID)
+    {
+        return removeCert(key, new UserIDPacket(rawID));
     }
 
     private static PGPPublicKey removeCert(
@@ -739,6 +792,22 @@ public class PGPPublicKey
 
     /**
      * Remove a certification associated with a given id on a key.
+     *
+     * @param key the key the certifications are to be removed from.
+     * @param id the id that the certification is to be removed from (in its raw byte form)
+     * @param certification the certification to be removed.
+     * @return the re-certified key, null if the certification was not found.
+     */
+    public static PGPPublicKey removeCertification(
+        PGPPublicKey    key,
+        byte[]          id,
+        PGPSignature    certification)
+    {
+        return removeCert(key, new UserIDPacket(id), certification);
+    }
+
+    /**
+     * Remove a certification associated with a given id on a key.
      * 
      * @param key the key the certifications are to be removed from.
      * @param id the id that the certification is to be removed from.
@@ -750,7 +819,7 @@ public class PGPPublicKey
         String          id,
         PGPSignature    certification)
     {
-        return removeCert(key, id, certification);
+        return removeCert(key, new UserIDPacket(id), certification);
     }
 
     /**
@@ -860,13 +929,13 @@ public class PGPPublicKey
         {
             for (Iterator it = key.getUserIDs(); it.hasNext();)
             {
-                String id = (String)it.next();
+                UserIDPacket id = (UserIDPacket)it.next();
                 for (Iterator sIt = key.getSignaturesForID(id); sIt.hasNext();)
                 {
                     if (certification == sIt.next())
                     {
                         found = true;
-                        returnKey = PGPPublicKey.removeCertification(returnKey, id, certification);
+                        returnKey = PGPPublicKey.removeCertification(returnKey, id.getRawID(), certification);
                     }
                 }
             }

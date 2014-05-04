@@ -24,6 +24,7 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -35,6 +36,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1164,6 +1166,31 @@ public class PGPKeyRingTest
         "qSMdu21VSl60TMTjxav149AdutzuCVa/yPBM/zLQdlvQoGYg2IbN4+7gDHKURcSx" +
         "DgOAzCcEZxdMvRk2kaOI5RRf5gV9e+ErvEMzJ/xT8xWsi+aLOhaDMbwq2LLiK2L+" +
         "tXV/Z3H/Ot4u3E7H+6fHPElFYbQUdGVzdCA8dGVzdEBrZXkudGVzdD4="
+    );
+
+    private static final byte[] problemUserID = Base64.decode(
+        "mQGiBDfzC2IRBADjnqYxAM1LPqFZCpF9ULb4G7L88E/p4sNo4k1LkzGtNOiroEHcacEAcTeP" +
+        "ljhgTA06l9jpnwx/dE0MEAiEtYexvkBv3LR2qXvuF67TKKlvanB32g0AmxNijHDdN2d+79ZA" +
+        "heZ4rY702W6DZh6FuKMAsTBfAFW5jLCWyJ4FwsLILwCg/3mjYePND5l0UcxaV0RKRBGnhqsE" +
+        "AIb9PJyWxSa8uzYQ+/APMg16Rrbti21zEQorFoc6yrC2hWbS7ro5yEVJxJa14s7VKlR+IAhg" +
+        "vR2+Q6jF6uvE1NZXzX6bvGaK3IpWMZdYcUY63EsHnutV+xON6Xd9C06xjAssvRQnxSuLXCg4" +
+        "md1Cr2kiKWaBExzxniKeql5lrqXKBACPcHbwZ8Efgt1TLG4yUf8nIQZwDeAhUPqJVWXurpWx" +
+        "r36ET4oQWb5HhO9GEe+2dttyJgV+stZJbZrPVmxmY1hUTZxIZ1ygGcMvrsVZZO0C9QsvMCyy" +
+        "xx4RzmTqomkC6Gtl3KtrZ4X28FQFDZi7MQaSXKEu2yS/NKJu2iT2BNKnE7QjTGFzc2UgTb5y" +
+        "a2VkYWhsIExhcnNlbiA8bG1sQGdyMy5kaz6ISwQQEQIACwUCN/MLYgQLAwIBAAoJEKg2SsWJ" +
+        "xEiGFbcAnA/ka/KE0Mnli7ybUhSrbESR/fZlAJ9SxU2foiRHMF8pF7I8KIJ9AQKSZLkCDQQ3" +
+        "8wtiEAgA9kJXtwh/CBdyorrWqULzBej5UxE5T7bxbrlLOCDaAadWoxTpj0BV89AHxstDqZSt" +
+        "90xkhkn4DIO9ZekX1KHTUPj1WV/cdlJPPT2N286Z4VeSWc39uK50T8X8dryDxUcwYc58yWb/" +
+        "Ffm7/ZFexwGq01uejaClcjrUGvC/RgBYK+X0iP1YTknbzSC0neSRBzZrM2w4DUUdD3yIsxx8" +
+        "Wy2O9vPJI8BD8KVbGI2Ou1WMuF040zT9fBdXQ6MdGGzeMyEstSr/POGxKUAYEY18hKcKctaG" +
+        "xAMZyAcpesqVDNmWn6vQClCbAkbTCD1mpF1Bn5x8vYlLIhkmuquiXsNV6TILOwACAgf/cugy" +
+        "0nyWpA6GxoNqpdky1oCEbgII/lFKkGfQb/sHLgHURjmiaDXSuRJDRXC6YVC0HWqA+bfknR5m" +
+        "o1cvohu4GL/oul1eD85UfU29vg5Hr6f601o6xWVCiHF14B24JvO7jhYMd1MQRl7PVzH0a1Gp" +
+        "4hSoEvsUjU1HhGUhmMpUxwGJyIFt4RTkqKWK15omuJf4TLT47T58n9uClTNyxpx+oJGaiD0O" +
+        "SiEn9d4w5XFewhyXFQhisr99979dLq+buvH1QueMkVDExF4D8LN5gid8JPy/RqFxnHE8AcSF" +
+        "XHz9ou8m936pkyKYIMQkCwdw7/Wv7MK64ZED2zOnXnSb/JWY2YhGBBgRAgAGBQI38wtiAAoJ" +
+        "EKg2SsWJxEiGJdcAoIQOLuHGGS01Gz5WUpiQZYRtRMIYAKDuYx6bfQngRMs3/gEG0zoSGohY" +
+        "lQ=="
     );
 
     public void test1()
@@ -2624,6 +2651,37 @@ public class PGPKeyRingTest
         }
     }
 
+    // test for key ring with non-UTF8 User ID.
+    private void testBadUserID()
+        throws Exception
+    {
+        PGPPublicKeyRing pgpRing = new JcaPGPPublicKeyRing(problemUserID);
+
+        byte[] enc = pgpRing.getEncoded();
+
+        if (!Arrays.areEqual(problemUserID, enc))
+        {
+            fail("encoded key does not match original");
+        }
+
+        PGPPublicKey pubKey = pgpRing.getPublicKey();
+
+        Iterator it = pubKey.getRawUserIDs();
+
+        byte[] rawID = (byte[])it.next();
+
+        it = pubKey.getSignaturesForID(rawID);
+
+        PGPSignature sig = (PGPSignature)it.next();
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
+
+        if (!sig.verifyCertification(rawID, pubKey))
+        {
+            fail("Certification not validated for rawID");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -2649,6 +2707,7 @@ public class PGPKeyRingTest
             testSecretKeyRingWithPersonalCertificate();
             insertMasterTest();
             testUmlaut();
+            testBadUserID();
         }
         catch (PGPException e)
         {
