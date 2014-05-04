@@ -79,7 +79,7 @@ public abstract class PGPKeyRing
             if (obj instanceof UserIDPacket)
             {
                 UserIDPacket id = (UserIDPacket)obj;
-                ids.add(id.getID());
+                ids.add(id);
             }
             else
             {

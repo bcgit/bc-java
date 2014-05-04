@@ -311,6 +311,37 @@ public class PGPSignature
     }
 
     /**
+     * Verify the signature as certifying the passed in public key as associated
+     * with the passed in rawID.
+     *
+     * @param rawID id the key was stored under in its raw byte form.
+     * @param key the key to be verified.
+     * @return true if the signature matches, false otherwise.
+     * @throws PGPException
+     */
+    public boolean verifyCertification(
+        byte[]          rawID,
+        PGPPublicKey    key)
+        throws PGPException
+    {
+        if (verifier == null)
+        {
+            throw new PGPException("PGPSignature not initialised - call init().");
+        }
+
+        updateWithPublicKey(key);
+
+        //
+        // hash in the rawID
+        //
+        updateWithIdData(0xb4, rawID);
+
+        addTrailer();
+
+        return verifier.verify(this.getSignature());
+    }
+
+    /**
      * Verify a certification for the passed in key against the passed in
      * master key.
      * 

@@ -520,11 +520,11 @@ public class PGPSecretKey
             
             for (int i = 0; i != pub.ids.size(); i++)
             {
-                if (pub.ids.get(i) instanceof String)
+                if (pub.ids.get(i) instanceof UserIDPacket)
                 {
-                    String    id = (String)pub.ids.get(i);
+                    UserIDPacket    id = (UserIDPacket)pub.ids.get(i);
                     
-                    out.writePacket(new UserIDPacket(id));
+                    out.writePacket(id);
                 }
                 else
                 {
