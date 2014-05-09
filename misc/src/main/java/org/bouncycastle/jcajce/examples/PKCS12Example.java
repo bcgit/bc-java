@@ -156,7 +156,7 @@ public class PKCS12Example
     }
 
     /**
-     * we generate a certificate signed by our CA's intermediate certficate
+     * we generate a certificate signed by our CA's intermediate certificate
      */
     public static Certificate createCert(
         PublicKey       pubKey,
