@@ -383,9 +383,9 @@ public class PGPPublicKey
         
         for (int i = 0; i != ids.size(); i++)
         {
-            if (ids.get(i) instanceof String)
+            if (ids.get(i) instanceof UserIDPacket)
             {
-                temp.add(ids.get(i));
+                temp.add(((UserIDPacket)ids.get(i)).getID());
             }
         }
         
@@ -548,11 +548,11 @@ public class PGPPublicKey
             
             for (int i = 0; i != ids.size(); i++)
             {
-                if (ids.get(i) instanceof String)
+                if (ids.get(i) instanceof UserIDPacket)
                 {
-                    String    id = (String)ids.get(i);
+                    UserIDPacket    id = (UserIDPacket)ids.get(i);
                     
-                    out.writePacket(new UserIDPacket(id));
+                    out.writePacket(id);
                 }
                 else
                 {
