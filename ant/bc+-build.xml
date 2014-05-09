@@ -347,7 +347,7 @@
                     <attribute name="Specification-Version" value="1.1" />
                     <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                    <attribute name="Implementation-Version" value="${release.name}.0" />
+                    <attribute name="Implementation-Version" value="${release.version}.0" />
                     <attribute name="Application-Name" value="Bouncy Castle Provider" />
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
@@ -433,7 +433,7 @@
                 <attribute name="Specification-Version" value="1.1" />
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle JCE and Provider" />
                 <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
@@ -452,7 +452,7 @@
                     <attribute name="Specification-Version" value="1.1" />
                     <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                     <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                    <attribute name="Implementation-Version" value="${release.name}.0" />
+                    <attribute name="Implementation-Version" value="${release.version}.0" />
                     <attribute name="Application-Name" value="Bouncy Castle JCE and Provider" />
                     <attribute name="Trusted-Library" value="true" />
                     <attribute name="Permissions" value="all-permissions" />
@@ -502,7 +502,7 @@
                 <attribute name="Specification-Version" value="1.1" />
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle S/MIME API" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
@@ -550,7 +550,7 @@
                 <attribute name="Specification-Version" value="1.1" />
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle PKIX API" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
@@ -600,7 +600,7 @@
                 <attribute name="Specification-Version" value="1.1" />
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle OpenPGP API" />
                 <attribute name="Trusted-Library" value="true" /> 
                 <attribute name="Permissions" value="all-permissions" />
@@ -661,7 +661,7 @@
                 <attribute name="Specification-Version" value="1.1" />
                 <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.name}.0" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle Test Classes" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
