@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.engines;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
@@ -8,9 +11,6 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 /**
  * this does your basic ElGamal algorithm.
@@ -170,7 +170,7 @@ public class ElGamalEngine
 
             BigInteger input = new BigInteger(1, block);
 
-            if (input.bitLength() >= p.bitLength())
+            if (input.compareTo(p) >= 0)
             {
                 throw new DataLengthException("input too large for ElGamal cipher.\n");
             }
