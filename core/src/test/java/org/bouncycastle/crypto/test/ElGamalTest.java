@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.test;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
@@ -10,12 +13,10 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.Arrays;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class ElGamalTest
     extends SimpleTest
@@ -127,6 +128,30 @@ public class ElGamalTest
         catch (DataLengthException ex)
         {
             fail("in range block failed");
+        }
+
+        try
+        {
+            bytes = BigIntegers.asUnsignedByteArray(p);
+
+            e.processBlock(bytes, 0, bytes.length);
+
+            fail("out of range block not detected");
+        }
+        catch (DataLengthException ex)
+        {
+            // expected
+        }
+
+        try
+        {
+            bytes = BigIntegers.asUnsignedByteArray(p.subtract(BigInteger.valueOf(1)));
+
+            e.processBlock(bytes, 0, bytes.length);
+        }
+        catch (DataLengthException ex)
+        {
+            fail("boundary block rejected");
         }
     }
 
