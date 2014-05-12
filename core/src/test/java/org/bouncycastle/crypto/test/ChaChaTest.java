@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
@@ -156,6 +158,7 @@ public class ChaChaTest
         chachaTest2(new ParametersWithIV(new KeyParameter(Hex.decode("0558ABFE51A4F74A9DF04396E93C8FE23588DB2E81D4277ACD2073C6196CBF12")), Hex.decode("167DE44BB21980E7")),
                   set6v1_0, set6v1_65472, set6v1_65536);
         reinitBug();
+        skipTest();
     }
 
     private void chachaTest1(int rounds, CipherParameters params, String v0, String v192, String v256, String v448)
@@ -262,6 +265,100 @@ public class ChaChaTest
         }
         catch (IllegalArgumentException e)
         {
+        }
+    }
+
+    private boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)
+    {
+        for (int i = bOff; i != b.length; i++)
+        {
+            if (a[aOff + i - bOff] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void skipTest()
+    {
+        SecureRandom rand = new SecureRandom();
+        byte[]       plain = new byte[5000];
+        byte[]       cipher = new byte[5000];
+
+        rand.nextBytes(plain);
+
+        CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("0053A6F94C9FF24598EB3E91E4378ADD3083D6297CCF2275C81B6EC11467BA0D")), Hex.decode("0D74DB42A91077DE"));
+        ChaChaEngine    engine = new ChaChaEngine();
+
+        engine.init(true, params);
+
+        engine.processBytes(plain, 0, plain.length, cipher, 0);
+
+        byte[]      fragment = new byte[20];
+
+        engine.init(true, params);
+
+        engine.skip(10);
+
+        engine.processBytes(plain, 10, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 10, fragment, 0))
+        {
+            fail("skip forward 10 failed");
+        }
+
+        engine.skip(1000);
+
+        engine.processBytes(plain, 1010 + fragment.length, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010 + fragment.length, fragment, 0))
+        {
+            fail("skip forward 1000 failed");
+        }
+
+        engine.skip(-10);
+
+        engine.processBytes(plain, 1010 + 2 * fragment.length - 10, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010 + 2 * fragment.length - 10, fragment, 0))
+        {
+            fail("skip back 10 failed");
+        }
+
+        engine.skip(-1000);
+
+        engine.processBytes(plain, 60, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 60, fragment, 0))
+        {
+            fail("skip back 1000 failed");
+        }
+
+        engine.reset();
+
+        for (int i = 0; i != 1000; i++)
+        {
+            engine.skip(i);
+
+            engine.processBytes(plain, i, fragment.length, fragment, 0);
+
+            if (!areEqual(cipher, i, fragment, 0))
+            {
+                fail("skip forward i failed: " + i);
+            }
+
+            engine.skip(-fragment.length);
+
+            engine.processBytes(plain, i, fragment.length, fragment, 0);
+
+            if (!areEqual(cipher, i, fragment, 0))
+            {
+                fail("skip back i failed: " + i);
+            }
+
+            engine.reset();
         }
     }
 

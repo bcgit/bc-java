@@ -37,6 +37,19 @@ public class ChaChaEngine extends Salsa20Engine
         }
     }
 
+    protected boolean isCounterAtZero()
+    {
+        return engineState[12] == 0 && engineState[13] == 0;
+    }
+
+    protected void retreatCounter()
+    {
+        if (--engineState[12] == Integer.MIN_VALUE)
+        {
+            --engineState[13];
+        }
+    }
+
     protected void resetCounter()
     {
         engineState[12] = engineState[13] = 0;
