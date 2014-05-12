@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.MaxBytesExceededException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.SkippingCipher;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -14,7 +15,7 @@ import org.bouncycastle.util.Strings;
  * Implementation of Daniel J. Bernstein's Salsa20 stream cipher, Snuffle 2005
  */
 public class Salsa20Engine
-    implements StreamCipher
+    implements StreamCipher, SkippingCipher
 {
     public final static int DEFAULT_ROUNDS = 20;
 
@@ -162,6 +163,19 @@ public class Salsa20Engine
         }
     }
 
+    protected boolean isCounterAtZero()
+    {
+        return engineState[8] == 0 && engineState[9] == 0;
+    }
+
+    protected void retreatCounter()
+    {
+        if (--engineState[8] == Integer.MIN_VALUE)
+        {
+            --engineState[9];
+        }
+    }
+
     public void processBytes(
         byte[]     in, 
         int     inOff, 
@@ -200,6 +214,54 @@ public class Salsa20Engine
             out[i + outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
             index = (index + 1) & 63;
         }
+    }
+
+    public long skip(long numberOfBlocks)
+    {
+        if (numberOfBlocks >= 0)
+        {
+            for (long i = 0; i < numberOfBlocks; i++)
+            {
+                if (index == 0)
+                {
+                    if (numberOfBlocks - i < 64)
+                    {
+                        generateKeyStream(keyStream);
+                    }
+
+                    advanceCounter();
+                }
+
+                index = (index + 1) & 63;
+            }
+        }
+        else
+        {
+            for (long i = 0; i > numberOfBlocks; i--)
+            {
+                index = (index - 1) & 63;
+
+                if (index == 0)
+                {
+                    retreatCounter();
+                    if (i - numberOfBlocks < 63)
+                    {
+                        if (isCounterAtZero())
+                        {
+                            generateKeyStream(keyStream);
+                        }
+                        else
+                        {
+                            retreatCounter();
+                            generateKeyStream(keyStream);
+                            advanceCounter();
+                        }
+                    }
+                }
+            }
+        }
+
+        return numberOfBlocks;
     }
 
     public void reset()
