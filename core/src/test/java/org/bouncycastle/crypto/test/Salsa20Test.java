@@ -333,6 +333,15 @@ public class Salsa20Test
             fail("skip back 1000 failed");
         }
 
+        engine.seekTo(1010);
+
+        engine.processBytes(plain, 1010, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010, fragment, 0))
+        {
+            fail("seek to 1010 failed");
+        }
+
         engine.reset();
 
         for (int i = 0; i != 1000; i++)

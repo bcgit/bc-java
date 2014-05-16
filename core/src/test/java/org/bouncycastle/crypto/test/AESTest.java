@@ -1,7 +1,10 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -243,6 +246,109 @@ public class AESTest
         }
     }
 
+    private boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)
+    {
+        for (int i = bOff; i != b.length; i++)
+        {
+            if (a[aOff + i - bOff] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void skipTest()
+    {
+        SecureRandom rand = new SecureRandom();
+        byte[]       plain = new byte[5000];
+        byte[]       cipher = new byte[5000];
+
+        rand.nextBytes(plain);
+
+        CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
+        SICBlockCipher engine = new SICBlockCipher(new AESEngine());
+
+        engine.init(true, params);
+
+        engine.processBytes(plain, 0, plain.length, cipher, 0);
+
+        byte[]      fragment = new byte[20];
+
+        engine.init(true, params);
+
+        engine.skip(10);
+
+        engine.processBytes(plain, 10, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 10, fragment, 0))
+        {
+            fail("skip forward 10 failed");
+        }
+
+        engine.skip(1000);
+
+        engine.processBytes(plain, 1010 + fragment.length, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010 + fragment.length, fragment, 0))
+        {
+            fail("skip forward 1000 failed");
+        }
+
+        engine.skip(-10);
+
+        engine.processBytes(plain, 1010 + 2 * fragment.length - 10, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010 + 2 * fragment.length - 10, fragment, 0))
+        {
+            fail("skip back 10 failed");
+        }
+
+        engine.skip(-1000);
+
+        engine.processBytes(plain, 60, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 60, fragment, 0))
+        {
+            fail("skip back 1000 failed");
+        }
+
+        engine.seekTo(1010);
+
+        engine.processBytes(plain, 1010, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010, fragment, 0))
+        {
+            fail("seek to 1010 failed");
+        }
+
+        engine.reset();
+
+        for (int i = 0; i != 1000; i++)
+        {
+            engine.skip(i);
+
+            engine.processBytes(plain, i, fragment.length, fragment, 0);
+
+            if (!areEqual(cipher, i, fragment, 0))
+            {
+                fail("skip forward i failed: " + i);
+            }
+
+            engine.skip(-fragment.length);
+
+            engine.processBytes(plain, i, fragment.length, fragment, 0);
+
+            if (!areEqual(cipher, i, fragment, 0))
+            {
+                fail("skip back i failed: " + i);
+            }
+
+            engine.reset();
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -285,6 +391,8 @@ public class AESTest
         testNullSIC();
         testNullOFB();
         testNullCFB();
+
+        skipTest();
     }
 
     public static void main(

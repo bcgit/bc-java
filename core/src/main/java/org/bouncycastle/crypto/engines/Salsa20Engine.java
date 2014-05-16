@@ -216,15 +216,15 @@ public class Salsa20Engine
         }
     }
 
-    public long skip(long numberOfBlocks)
+    public long skip(long numberOfBytes)
     {
-        if (numberOfBlocks >= 0)
+        if (numberOfBytes >= 0)
         {
-            for (long i = 0; i < numberOfBlocks; i++)
+            for (long i = 0; i < numberOfBytes; i++)
             {
                 if (index == 0)
                 {
-                    if (numberOfBlocks - i < 64)
+                    if (numberOfBytes - i < 64)
                     {
                         generateKeyStream(keyStream);
                     }
@@ -237,14 +237,14 @@ public class Salsa20Engine
         }
         else
         {
-            for (long i = 0; i > numberOfBlocks; i--)
+            for (long i = 0; i > numberOfBytes; i--)
             {
                 index = (index - 1) & 63;
 
                 if (index == 0)
                 {
                     retreatCounter();
-                    if (i - numberOfBlocks < 63)
+                    if (i - numberOfBytes < 63)
                     {
                         if (isCounterAtZero())
                         {
@@ -261,7 +261,14 @@ public class Salsa20Engine
             }
         }
 
-        return numberOfBlocks;
+        return numberOfBytes;
+    }
+
+    public long seekTo(long position)
+    {
+        reset();
+
+        return skip(position);
     }
 
     public void reset()
