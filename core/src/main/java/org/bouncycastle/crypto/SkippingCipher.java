@@ -6,12 +6,19 @@ package org.bouncycastle.crypto;
 public interface SkippingCipher
 {
     /**
-     * Skip numberOfBlocks forwards, or backwards. If the cipher is a stream cipher a block
-     * size of 1 is assumed.
+     * Skip numberOfBytes forwards, or backwards.
      *
-     * @param numberOfBlocks the number of blocks to skip (positive forward, negative backwards).
-     * @return the number of blocks actually skipped.
-     * @throws java.lang.IllegalArgumentException if numberOfBlocks is an invalid value.
+     * @param numberOfBytes the number of bytes to skip (positive forward, negative backwards).
+     * @return the number of bytes actually skipped.
+     * @throws java.lang.IllegalArgumentException if numberOfBytes is an invalid value.
      */
-    long skip(long numberOfBlocks);
+    long skip(long numberOfBytes);
+
+    /**
+     * Reset the cipher and then skip forward to a given position.
+     *
+     * @param position the number of bytes in to set the cipher state to.
+     * @return the byte position moved to.
+     */
+    long seekTo(long position);
 }
