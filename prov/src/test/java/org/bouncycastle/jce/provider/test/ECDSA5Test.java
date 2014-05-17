@@ -11,11 +11,14 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -35,6 +38,8 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
@@ -152,6 +157,61 @@ public class ECDSA5Test
             fail("s component wrong." + System.getProperty("line.separator")
                 + " expecting: " + s + System.getProperty("line.separator")
                 + " got      : " + sig[1]);
+        }
+    }
+
+    // test BSI algorithm support.
+    private void testBSI()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec(TeleTrusTObjectIdentifiers.brainpoolP512r1.getId()));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        byte[] data = "Hello World!!!".getBytes();
+        String[] cvcAlgs = { "SHA1WITHCVC-ECDSA", "SHA224WITHCVC-ECDSA",
+                             "SHA256WITHCVC-ECDSA", "SHA384WITHCVC-ECDSA",
+                             "SHA512WITHCVC-ECDSA" };
+        String[] cvcOids = { EACObjectIdentifiers.id_TA_ECDSA_SHA_1.getId(), EACObjectIdentifiers.id_TA_ECDSA_SHA_224.getId(),
+                             EACObjectIdentifiers.id_TA_ECDSA_SHA_256.getId(), EACObjectIdentifiers.id_TA_ECDSA_SHA_384.getId(),
+                             EACObjectIdentifiers.id_TA_ECDSA_SHA_512.getId() };
+
+        testBsiAlgorithms(kp, data, cvcAlgs, cvcOids);
+
+        String[] plainAlgs = { "SHA1WITHPLAIN-ECDSA", "SHA224WITHPLAIN-ECDSA",
+                             "SHA256WITHPLAIN-ECDSA", "SHA384WITHPLAIN-ECDSA",
+                             "SHA512WITHPLAIN-ECDSA", "RIPEMD160WITHPLAIN-ECDSA" };
+        String[] plainOids = { BSIObjectIdentifiers.ecdsa_plain_SHA1.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA224.getId(),
+                                BSIObjectIdentifiers.ecdsa_plain_SHA256.getId(), BSIObjectIdentifiers.ecdsa_plain_SHA384.getId(),
+                                BSIObjectIdentifiers.ecdsa_plain_SHA512.getId(), BSIObjectIdentifiers.ecdsa_plain_RIPEMD160.getId() };
+
+        testBsiAlgorithms(kp, data, plainAlgs, plainOids);
+    }
+
+    private void testBsiAlgorithms(KeyPair kp, byte[] data, String[] algs, String[] oids)
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException
+    {
+        for (int i = 0; i != algs.length; i++)
+        {
+            Signature sig1 = Signature.getInstance(algs[i], "BC");
+            Signature sig2 = Signature.getInstance(oids[i], "BC");
+
+            sig1.initSign(kp.getPrivate());
+
+            sig1.update(data);
+
+            byte[] sig = sig1.sign();
+
+            sig2.initVerify(kp.getPublic());
+
+            sig2.update(data);
+
+            if (!sig2.verify(sig))
+            {
+                fail("BSI CVC signature failed: " + algs[i]);
+            }
         }
     }
 
@@ -850,6 +910,7 @@ public class ECDSA5Test
         testKeyPairGenerationWithOIDs();
         testNamedCurveParameterPreservation();
         testNamedCurveSigning();
+        testBSI();
     }
 
     public static void main(
