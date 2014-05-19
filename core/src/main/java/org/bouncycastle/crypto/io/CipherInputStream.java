@@ -6,6 +6,7 @@ import java.io.InputStream;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.SkippingCipher;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 
@@ -240,9 +241,36 @@ public class CipherInputStream
             return 0;
         }
 
-        int skip = (int)Math.min(n, available());
-        bufOff += skip;
-        return skip;
+        if (streamCipher instanceof SkippingCipher)
+        {
+            int avail = available();
+            if (n <= avail)
+            {
+                bufOff += n;
+
+                return n;
+            }
+
+            bufOff = maxBuf;
+
+            long skip = in.skip(n - avail);
+
+            long cSkip = ((SkippingCipher)streamCipher).skip(skip);
+
+            if (skip != cSkip)
+            {
+                throw new IOException("Unable to skip cipher " + skip + " bytes.");
+            }
+
+            return skip;
+        }
+        else
+        {
+            int skip = (int)Math.min(n, available());
+            bufOff += skip;
+
+            return skip;
+        }
     }
 
     public int available()
@@ -317,6 +345,7 @@ public class CipherInputStream
 
     public void mark(int readlimit)
     {
+        // TODO: add support for skipping ciphers
     }
 
     public void reset()

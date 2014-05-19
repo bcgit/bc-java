@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -511,6 +512,9 @@ public class CipherStreamTest
         testMode(new Grain128Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
         testMode(new HC128Engine(), new KeyParameter(new byte[16]));
         testMode(new HC256Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+
+        testSkipping(new Salsa20Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
+        testSkipping(new SICBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
     }
 
     private void testModes(BlockCipher cipher1, BlockCipher cipher2, int keySize)
@@ -545,6 +549,60 @@ public class CipherStreamTest
             testMode(new GCMBlockCipher(cipher1), withIv);
             testMode(new OCBBlockCipher(cipher1, cipher2), new ParametersWithIV(key, new byte[15]));
         }
+    }
+
+    private void testSkipping(StreamCipher cipher, CipherParameters params)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        init(cipher, true, params);
+
+        OutputStream cOut = createCipherOutputStream(bOut, cipher);
+        byte[] data = new byte[5000];
+
+        new SecureRandom().nextBytes(data);
+
+        cOut.write(data);
+
+        cOut.close();
+
+        init(cipher, false, params);
+
+        InputStream cIn = createCipherInputStream(bOut.toByteArray(), cipher);
+
+        cIn.skip(50);
+
+        byte[] block = new byte[50];
+
+        cIn.read(block);
+
+        if (!areEqual(data, 50, block, 0))
+        {
+            fail("initial skip mismatch");
+        }
+
+        cIn.skip(3000);
+
+        cIn.read(block);
+
+        if (!areEqual(data, 3100, block, 0))
+        {
+            fail("second skip mismatch");
+        }
+    }
+
+    private boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)
+    {
+        for (int i = bOff; i != b.length; i++)
+        {
+            if (a[aOff + i - bOff] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static void main(String[] args)
