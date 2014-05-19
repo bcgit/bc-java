@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.SkippingCipher;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
@@ -11,7 +12,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * block cipher. This mode is also known as CTR mode.
  */
 public class SICBlockCipher
-    extends StreamBlockCipherMode
+    extends StreamBlockCipher
     implements SkippingCipher
 {
     private final BlockCipher     cipher;

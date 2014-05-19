@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -12,7 +13,7 @@ import org.bouncycastle.crypto.params.ParametersWithSBox;
  * An implementation of the GOST CFB mode with CryptoPro key meshing as described in RFC 4357.
  */
 public class GCFBBlockCipher
-    implements BlockCipher
+    extends StreamBlockCipher
 {
     private static final byte[] C =
         {
@@ -30,6 +31,8 @@ public class GCFBBlockCipher
 
     public GCFBBlockCipher(BlockCipher engine)
     {
+        super(engine);
+
         this.cfbEngine = new CFBBlockCipher(engine, engine.getBlockSize() * 8);
     }
 
@@ -73,6 +76,13 @@ public class GCFBBlockCipher
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
+        this.processBytes(in, inOff, cfbEngine.getBlockSize(), out, outOff);
+
+        return cfbEngine.getBlockSize();
+    }
+
+    protected byte processByte(byte b)
+    {
         if (counter > 0 && counter % 1024 == 0)
         {
             BlockCipher  base = cfbEngine.getUnderlyingCipher();
@@ -88,18 +98,18 @@ public class GCFBBlockCipher
 
             key = new KeyParameter(nextKey);
 
-            byte[] iv = new byte[8];
-
             base.init(true, key);
 
-            base.processBlock(cfbEngine.getCurrentIV(), 0, iv, 0);
+            byte[] iv = cfbEngine.getCurrentIV();
+
+            base.processBlock(iv, 0, iv, 0);
 
             cfbEngine.init(forEncryption, new ParametersWithIV(key, iv));
         }
 
-        counter += cfbEngine.getBlockSize();
+        counter++;
 
-        return cfbEngine.processBlock(in, inOff, out, outOff);
+        return cfbEngine.processByte(b);
     }
 
     public void reset()

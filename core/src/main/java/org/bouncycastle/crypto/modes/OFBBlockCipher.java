@@ -3,13 +3,14 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
  * implements a Output-FeedBack (OFB) mode on top of a simple cipher.
  */
 public class OFBBlockCipher
-    extends StreamBlockCipherMode
+    extends StreamBlockCipher
 {
     private int             byteCount;
     private byte[]          IV;

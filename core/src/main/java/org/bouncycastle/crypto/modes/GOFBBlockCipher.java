@@ -3,13 +3,14 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
  * implements the GOST 28147 OFB counter mode (GCTR).
  */
 public class GOFBBlockCipher
-    extends StreamBlockCipherMode
+    extends StreamBlockCipher
 {
     private byte[]          IV;
     private byte[]          ofbV;
