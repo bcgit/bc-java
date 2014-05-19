@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -10,7 +11,7 @@ import org.bouncycastle.util.Arrays;
  * implements a Cipher-FeedBack (CFB) mode on top of a simple cipher.
  */
 public class CFBBlockCipher
-    extends StreamBlockCipherMode
+    extends StreamBlockCipher
 {
     private byte[]          IV;
     private byte[]          cfbV;
@@ -42,16 +43,6 @@ public class CFBBlockCipher
         this.cfbV = new byte[cipher.getBlockSize()];
         this.cfbOutV = new byte[cipher.getBlockSize()];
         this.inBuf = new byte[blockSize];
-    }
-
-    /**
-     * return the underlying block cipher that we are wrapping.
-     *
-     * @return the underlying block cipher that we are wrapping.
-     */
-    public BlockCipher getUnderlyingCipher()
-    {
-        return cipher;
     }
 
     /**
