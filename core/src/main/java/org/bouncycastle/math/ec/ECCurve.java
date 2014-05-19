@@ -331,16 +331,33 @@ public abstract class ECCurve
             break;
         }
         case 0x04: // uncompressed
+        {
+            if (encoded.length != (2 * expectedLength + 1))
+            {
+                throw new IllegalArgumentException("Incorrect length for uncompressed encoding");
+            }
+
+            BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
+            BigInteger Y = BigIntegers.fromUnsignedByteArray(encoded, 1 + expectedLength, expectedLength);
+
+            p = createPoint(X, Y);
+            break;
+        }
         case 0x06: // hybrid
         case 0x07: // hybrid
         {
             if (encoded.length != (2 * expectedLength + 1))
             {
-                throw new IllegalArgumentException("Incorrect length for uncompressed/hybrid encoding");
+                throw new IllegalArgumentException("Incorrect length for hybrid encoding");
             }
 
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
             BigInteger Y = BigIntegers.fromUnsignedByteArray(encoded, 1 + expectedLength, expectedLength);
+            
+            if (Y.testBit(0) != (encoded[0] == 0x07))
+            {
+                throw new IllegalArgumentException("Inconsistent Y coordinate in hybrid encoding");
+            }
 
             p = createPoint(X, Y);
             break;
