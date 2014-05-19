@@ -28,15 +28,12 @@ import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
@@ -77,15 +74,6 @@ public class JCEStreamCipher
     {
         cipher = engine;
         this.ivLength = ivLength;
-    }
-        
-    protected JCEStreamCipher(
-        BlockCipher engine,
-        int         ivLength)
-    {
-        this.ivLength = ivLength;
-
-        cipher = new StreamBlockCipher(engine);
     }
 
     protected int engineGetBlockSize() 

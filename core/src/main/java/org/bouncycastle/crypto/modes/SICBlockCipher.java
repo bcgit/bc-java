@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.SkippingCipher;
-import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
@@ -12,7 +11,8 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * block cipher. This mode is also known as CTR mode.
  */
 public class SICBlockCipher
-    implements BlockCipher, StreamCipher, SkippingCipher
+    extends StreamBlockCipherMode
+    implements SkippingCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
@@ -29,6 +29,8 @@ public class SICBlockCipher
      */
     public SICBlockCipher(BlockCipher c)
     {
+        super(c);
+
         this.cipher = c;
         this.blockSize = cipher.getBlockSize();
         this.IV = new byte[blockSize];
@@ -36,18 +38,6 @@ public class SICBlockCipher
         this.counterOut = new byte[blockSize];
         this.byteCount = 0;
     }
-
-
-    /**
-     * return the underlying block cipher that we are wrapping.
-     *
-     * @return the underlying block cipher that we are wrapping.
-     */
-    public BlockCipher getUnderlyingCipher()
-    {
-        return cipher;
-    }
-
 
     public void init(
         boolean             forEncryption, //ignored by this CTR mode
@@ -79,39 +69,10 @@ public class SICBlockCipher
         return cipher.getAlgorithmName() + "/SIC";
     }
 
-    public byte returnByte(byte in)
-    {
-        return processByte(in);
-    }
-
-    public void processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        if (outOff + len > out.length)
-        {
-            throw new DataLengthException("output buffer too small");
-        }
-
-        if (inOff + len > in.length)
-        {
-            throw new DataLengthException("input buffer too small for len");
-        }
-
-        int inStart = inOff;
-        int inEnd = inOff + len;
-        int outStart = outOff;
-
-        while (inStart < inEnd)
-        {
-             out[outStart++] = processByte(in[inStart++]);
-        }
-    }
-
     public int getBlockSize()
     {
         return cipher.getBlockSize();
     }
-
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
           throws DataLengthException, IllegalStateException
@@ -121,7 +82,7 @@ public class SICBlockCipher
         return blockSize;
     }
 
-    private byte processByte(byte in)
+    protected byte processByte(byte in)
           throws DataLengthException, IllegalStateException
     {
         if (byteCount == 0)
@@ -130,6 +91,7 @@ public class SICBlockCipher
         }
 
         byte rv = (byte)(counterOut[byteCount++] ^ in);
+
         if (byteCount == counter.length)
         {
             byteCount = 0;
