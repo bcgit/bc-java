@@ -145,9 +145,7 @@ public class AuthorityKeyIdentifier
         GeneralNames            name,
         BigInteger              serialNumber)
     {
-        this.keyidentifier = null;
-        this.certissuer = GeneralNames.getInstance(name.toASN1Primitive());
-        this.certserno = new ASN1Integer(serialNumber);
+        this((byte[])null, name, serialNumber);
     }
 
     /**
@@ -156,9 +154,7 @@ public class AuthorityKeyIdentifier
      public AuthorityKeyIdentifier(
          byte[]                  keyIdentifier)
      {
-         this.keyidentifier = new DEROctetString(keyIdentifier);
-         this.certissuer = null;
-         this.certserno = null;
+         this(keyIdentifier, null, null);
      }
 
     /**
@@ -170,9 +166,9 @@ public class AuthorityKeyIdentifier
         GeneralNames            name,
         BigInteger              serialNumber)
     {
-        this.keyidentifier = new DEROctetString(keyIdentifier);
-        this.certissuer = GeneralNames.getInstance(name.toASN1Primitive());
-        this.certserno = new ASN1Integer(serialNumber);
+        this.keyidentifier = (keyIdentifier != null) ? new DEROctetString(keyIdentifier) : null;
+        this.certissuer = name;
+        this.certserno = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
     }
     
     public byte[] getKeyIdentifier()

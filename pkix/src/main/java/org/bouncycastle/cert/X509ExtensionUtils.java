@@ -2,6 +2,7 @@ package org.bouncycastle.cert;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -63,6 +64,11 @@ public class X509ExtensionUtils
     public AuthorityKeyIdentifier createAuthorityKeyIdentifier(SubjectPublicKeyInfo publicKeyInfo)
     {
         return new AuthorityKeyIdentifier(calculateIdentifier(publicKeyInfo));
+    }
+
+    public AuthorityKeyIdentifier createAuthorityKeyIdentifier(SubjectPublicKeyInfo publicKeyInfo, GeneralNames generalNames, BigInteger serial)
+    {
+        return new AuthorityKeyIdentifier(calculateIdentifier(publicKeyInfo), generalNames, serial);
     }
 
     /**
