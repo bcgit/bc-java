@@ -107,7 +107,7 @@ public abstract class DigestTest
         }
     }
 
-    private byte[] toByteArray(String input)
+    protected byte[] toByteArray(String input)
     {
         byte[] bytes = new byte[input.length()];
         
