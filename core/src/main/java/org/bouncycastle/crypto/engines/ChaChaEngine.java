@@ -37,17 +37,17 @@ public class ChaChaEngine extends Salsa20Engine
         }
     }
 
-    protected boolean isCounterAtZero()
-    {
-        return engineState[12] == 0 && engineState[13] == 0;
-    }
-
     protected void retreatCounter()
     {
         if (--engineState[12] == Integer.MIN_VALUE)
         {
             --engineState[13];
         }
+    }
+
+    protected long getCounter()
+    {
+        return ((long)engineState[13] << 32) | (engineState[12] & 0xffffffffL);
     }
 
     protected void resetCounter()
