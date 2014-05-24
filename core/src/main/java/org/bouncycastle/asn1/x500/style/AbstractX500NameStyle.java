@@ -14,7 +14,7 @@ import org.bouncycastle.asn1.x500.X500NameStyle;
 
 /**
  * This class provides some default behavior and common implementation for a
- * X500NameStyle. It should be easily extendible to support implementing the
+ * X500NameStyle. It should be easily extendable to support implementing the
  * desired X500NameStyle.
  */
 public abstract class AbstractX500NameStyle
@@ -80,13 +80,16 @@ public abstract class AbstractX500NameStyle
     /**
      * For all string values starting with '#' is assumed, that these are
      * already valid ASN.1 objects encoded in hex.
-     * <p/>
+     * <p>
      * All other string values are send to
      * {@link AbstractX500NameStyle#encodeStringValue(ASN1ObjectIdentifier, String)}.
-     * <p/>
+     * </p>
      * Subclasses should overwrite
      * {@link AbstractX500NameStyle#encodeStringValue(ASN1ObjectIdentifier, String)}
      * to change the encoding of specific types.
+     *
+     * @param oid the DN name of the value.
+     * @param value the String representation of the value.
      */
     public ASN1Encodable stringToValue(ASN1ObjectIdentifier oid, String value)
     {
@@ -112,12 +115,13 @@ public abstract class AbstractX500NameStyle
 
     /**
      * Encoded every value into a UTF8String.
-     * <p/>
+     * <p>
      * Subclasses should overwrite
      * this method to change the encoding of specific types.
+     * </p>
      *
-     * @param oid   of the value
-     * @param value to encode
+     * @param oid the DN oid of the value
+     * @param value the String representation of the value
      * @return a the value encoded into a ASN.1 object. Never returns <code>null</code>.
      */
     protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid, String value)
