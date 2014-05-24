@@ -6,6 +6,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Class representing the ASN.1 OBJECT IDENTIFIER type.
+ */
 public class ASN1ObjectIdentifier
     extends ASN1Primitive
 {
@@ -153,6 +156,11 @@ public class ASN1ObjectIdentifier
         this.body = Arrays.clone(bytes);
     }
 
+    /**
+     * Create an OID based on the passed in String.
+     *
+     * @param identifier a string representation of an OID.
+     */
     public ASN1ObjectIdentifier(
         String identifier)
     {
@@ -168,6 +176,12 @@ public class ASN1ObjectIdentifier
         this.identifier = identifier;
     }
 
+     /**
+      * Create an OID that creates a branch under the current one.
+      *
+      * @param branchID node numbers for the new branch.
+      * @return the OID for the new created branch.
+      */
     ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branchID)
     {
         if (!isValidBranchID(branchID, 0))
@@ -178,9 +192,37 @@ public class ASN1ObjectIdentifier
         this.identifier = oid.getId() + "." + branchID;
     }
 
+    /**
+     * Return the OID as a string.
+     *
+     * @return the string representation of the OID carried by this object.
+     */
     public String getId()
     {
         return identifier;
+    }
+
+    /**
+     * Return an OID that creates a branch under the current one.
+     *
+     * @param branchID node numbers for the new branch.
+     * @return the OID for the new created branch.
+     */
+    public ASN1ObjectIdentifier branch(String branchID)
+    {
+        return new ASN1ObjectIdentifier(this, branchID);
+    }
+
+    /**
+     * Return  true if this oid is an extension of the passed in branch, stem.
+     *
+     * @param stem the arc or branch that is a possible parent.
+     * @return true if the branch is on the passed in stem, false otherwise.
+     */
+    public boolean on(ASN1ObjectIdentifier stem)
+    {
+        String id = getId(), stemId = stem.getId();
+        return id.length() > stemId.length() && id.charAt(stemId.length()) == '.' && id.startsWith(stemId);
     }
 
     private void writeField(
@@ -426,28 +468,5 @@ public class ASN1ObjectIdentifier
         }
 
         return new ASN1ObjectIdentifier(enc);
-    }
-
-    /**
-     * Return an OID that creates a branch under the current one.
-     *
-     * @param branchID node numbers for the new branch.
-     * @return the OID for the new created branch.
-     */
-    public ASN1ObjectIdentifier branch(String branchID)
-    {
-        return new ASN1ObjectIdentifier(this, branchID);
-    }
-
-    /**
-     * Return  true if this oid is an extension of the passed in branch, stem.
-     *
-     * @param stem the arc or branch that is a possible parent.
-     * @return true if the branch is on the passed in stem, false otherwise.
-     */
-    public boolean on(ASN1ObjectIdentifier stem)
-    {
-        String id = getId(), stemId = stem.getId();
-        return id.length() > stemId.length() && id.charAt(stemId.length()) == '.' && id.startsWith(stemId);
     }
 }
