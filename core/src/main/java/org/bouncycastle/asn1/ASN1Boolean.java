@@ -4,6 +4,19 @@ import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Public facade of ASN.1 Boolean data.
+ * <p>
+ * Use following to place a new instance of ASN.1 Boolean in your dataset:
+ * </p>
+ * <ul>
+ * <li> ASN1Boolean.TRUE literal</li>
+ * <li> ASN1Boolean.FALSE literal</li>
+ * <li> {@link ASN1Boolean#getInstance(boolean) ASN1Boolean.getInstance(boolean)}</li>
+ * <li> {@link ASN1Boolean#getInstance(int) ASN1Boolean.getInstance(int)}</li>
+ * </ul>
+ * </p>
+ */
 public class ASN1Boolean
     extends ASN1Primitive
 {
@@ -14,7 +27,6 @@ public class ASN1Boolean
 
     public static final ASN1Boolean FALSE = new ASN1Boolean(false);
     public static final ASN1Boolean TRUE  = new ASN1Boolean(true);
-
 
     /**
      * return a boolean from the passed in object.
