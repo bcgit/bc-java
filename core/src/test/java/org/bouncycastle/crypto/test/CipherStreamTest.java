@@ -674,6 +674,8 @@ public class CipherStreamTest
         {
             fail(cipher.getAlgorithmName() + " fourth reset read failed");
         }
+
+        cIn.close();
     }
 
     private boolean areEqual(byte[] a, int aOff, byte[] b, int bOff)

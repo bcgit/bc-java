@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SkippingCipher;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A CipherInputStream is composed of an InputStream and a cipher so that read() methods return data
@@ -344,8 +345,29 @@ public class CipherInputStream
             }
         }
         maxBuf = bufOff = 0;
+        markBufOff = 0;
+        markPosition = 0;
+        if (markBuf != null)
+        {
+            Arrays.fill(markBuf, (byte)0);
+            markBuf = null;
+        }
+        if (buf != null)
+        {
+            Arrays.fill(buf, (byte)0);
+            buf = null;
+        }
+        Arrays.fill(inBuf, (byte)0);
     }
 
+    /**
+     * Mark the current position.
+     * <p>
+     * This method only works if markSupported() returns true - which means the underlying stream supports marking, and the cipher passed
+     * in to this stream's constructor is a SkippingCipher (so capable of being reset to an arbitrary point easily).
+     * </p>
+     * @param readlimit the maximum read ahead required before a reset() may be called.
+     */
     public void mark(int readlimit)
     {
         in.mark(readlimit);
@@ -365,6 +387,11 @@ public class CipherInputStream
         markBufOff = bufOff;
     }
 
+    /**
+     * Reset to the last marked position, if supported.
+     *
+     * @throws IOException if marking not supported by the cipher used, or the underlying stream.
+     */
     public void reset()
         throws IOException
     {
@@ -385,6 +412,12 @@ public class CipherInputStream
         bufOff = markBufOff;
      }
 
+    /**
+     * Return true if mark(readlimit) is supported. This will be true if the underlying stream supports marking and the
+     * cipher used is a SkippingCipher,
+     *
+     * @return true if mark(readlimit) supported, false otherwise.
+     */
     public boolean markSupported()
     {
         if (streamCipher instanceof SkippingCipher)
