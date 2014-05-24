@@ -5,6 +5,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Class representing the ASN.1 INTEGER type.
+ */
 public class ASN1Integer
     extends ASN1Primitive
 {

@@ -5,6 +5,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Class representing the ASN.1 ENUMERATED type.
+ */
 public class ASN1Enumerated
     extends ASN1Primitive
 {
@@ -15,7 +18,7 @@ public class ASN1Enumerated
      *
      * @param obj an ASN1Enumerated or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
-     * @return an ASN1Enumerated instance.
+     * @return an ASN1Enumerated instance, or null.
      */
     public static ASN1Enumerated getInstance(
         Object  obj)
@@ -48,7 +51,7 @@ public class ASN1Enumerated
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
-     * @return an ASN1Enumerated instance.
+     * @return an ASN1Enumerated instance, or null.
      */
     public static ASN1Enumerated getInstance(
         ASN1TaggedObject obj,
