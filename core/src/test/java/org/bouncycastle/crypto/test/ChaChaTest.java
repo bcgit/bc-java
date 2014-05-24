@@ -329,11 +329,29 @@ public class ChaChaTest
 
         engine.skip(-1000);
 
+        if (engine.getPosition() != 60)
+        {
+            fail("skip position incorrect - " + 60 + " got " + engine.getPosition());
+        }
+
         engine.processBytes(plain, 60, fragment.length, fragment, 0);
 
         if (!areEqual(cipher, 60, fragment, 0))
         {
             fail("skip back 1000 failed");
+        }
+
+        long pos = engine.seekTo(1010);
+        if (pos != 1010)
+        {
+            fail("position wrong");
+        }
+
+        engine.processBytes(plain, 1010, fragment.length, fragment, 0);
+
+        if (!areEqual(cipher, 1010, fragment, 0))
+        {
+            fail("seek to 1010 failed");
         }
 
         engine.reset();
@@ -342,6 +360,11 @@ public class ChaChaTest
         {
             engine.skip(i);
 
+            if (engine.getPosition() != i)
+            {
+                fail("skip forward at wrong position");
+            }
+
             engine.processBytes(plain, i, fragment.length, fragment, 0);
 
             if (!areEqual(cipher, i, fragment, 0))
@@ -349,7 +372,17 @@ public class ChaChaTest
                 fail("skip forward i failed: " + i);
             }
 
+            if (engine.getPosition() != i + fragment.length)
+            {
+                fail("cipher at wrong position: " + engine.getPosition() + " [" + i + "]");
+            }
+
             engine.skip(-fragment.length);
+
+            if (engine.getPosition() != i)
+            {
+                fail("skip back at wrong position");
+            }
 
             engine.processBytes(plain, i, fragment.length, fragment, 0);
 

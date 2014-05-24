@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto;
 
 /**
- * Ciphers producing a key stream which can be reset to particular points in the stream.
+ * Ciphers producing a key stream which can be reset to particular points in the stream implement this.
  */
 public interface SkippingCipher
 {
@@ -21,4 +21,11 @@ public interface SkippingCipher
      * @return the byte position moved to.
      */
     long seekTo(long position);
+
+    /**
+     * Return the current "position" of the cipher
+     *
+     * @return the current byte position.
+     */
+    long getPosition();
 }

@@ -261,17 +261,16 @@ public class AESTest
 
     private void skipTest()
     {
-        SecureRandom rand = new SecureRandom();
-        byte[]       plain = new byte[5000];
-        byte[]       cipher = new byte[5000];
-
-        rand.nextBytes(plain);
-
         CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
         SICBlockCipher engine = new SICBlockCipher(new AESEngine());
 
         engine.init(true, params);
 
+        SecureRandom rand = new SecureRandom();
+        byte[]       plain = new byte[5000];
+        byte[]       cipher = new byte[5000];
+
+        rand.nextBytes(plain);
         engine.processBytes(plain, 0, plain.length, cipher, 0);
 
         byte[]      fragment = new byte[20];
@@ -279,6 +278,11 @@ public class AESTest
         engine.init(true, params);
 
         engine.skip(10);
+
+        if (engine.getPosition() != 10)
+        {
+            fail("skip position incorrect - 10 got " + engine.getPosition());
+        }
 
         engine.processBytes(plain, 10, fragment.length, fragment, 0);
 
@@ -289,6 +293,11 @@ public class AESTest
 
         engine.skip(1000);
 
+        if (engine.getPosition() != 1010 + fragment.length)
+        {
+            fail("skip position incorrect - " + (1010 + fragment.length) + " got " + engine.getPosition());
+        }
+
         engine.processBytes(plain, 1010 + fragment.length, fragment.length, fragment, 0);
 
         if (!areEqual(cipher, 1010 + fragment.length, fragment, 0))
@@ -297,6 +306,11 @@ public class AESTest
         }
 
         engine.skip(-10);
+
+        if (engine.getPosition() != 1010 + 2 * fragment.length - 10)
+        {
+            fail("skip position incorrect - " + (1010 + 2 * fragment.length - 10) + " got " + engine.getPosition());
+        }
 
         engine.processBytes(plain, 1010 + 2 * fragment.length - 10, fragment.length, fragment, 0);
 
@@ -307,6 +321,11 @@ public class AESTest
 
         engine.skip(-1000);
 
+        if (engine.getPosition() != 60)
+        {
+            fail("skip position incorrect - " + 60 + " got " + engine.getPosition());
+        }
+
         engine.processBytes(plain, 60, fragment.length, fragment, 0);
 
         if (!areEqual(cipher, 60, fragment, 0))
@@ -314,7 +333,12 @@ public class AESTest
             fail("skip back 1000 failed");
         }
 
-        engine.seekTo(1010);
+        long pos = engine.seekTo(1010);
+
+        if (pos != 1010)
+        {
+            fail("position incorrect - " + 1010 + " got " + pos);
+        }
 
         engine.processBytes(plain, 1010, fragment.length, fragment, 0);
 
@@ -329,6 +353,11 @@ public class AESTest
         {
             engine.skip(i);
 
+            if (engine.getPosition() != i)
+            {
+                fail("skip forward at wrong position");
+            }
+
             engine.processBytes(plain, i, fragment.length, fragment, 0);
 
             if (!areEqual(cipher, i, fragment, 0))
@@ -336,7 +365,17 @@ public class AESTest
                 fail("skip forward i failed: " + i);
             }
 
+            if (engine.getPosition() != i + fragment.length)
+            {
+                fail("cipher at wrong position: " + engine.getPosition() + " [" + i + "]");
+            }
+
             engine.skip(-fragment.length);
+
+            if (engine.getPosition() != i)
+            {
+                fail("skip back at wrong position");
+            }
 
             engine.processBytes(plain, i, fragment.length, fragment, 0);
 

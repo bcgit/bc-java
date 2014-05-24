@@ -571,7 +571,11 @@ public class CipherStreamTest
 
         InputStream cIn = createCipherInputStream(bOut.toByteArray(), cipher);
 
-        cIn.skip(50);
+        long skip = cIn.skip(50);
+        if (skip != 50)
+        {
+            fail("wrong number of bytes skipped: " + skip);
+        }
 
         byte[] block = new byte[50];
 
@@ -582,13 +586,93 @@ public class CipherStreamTest
             fail("initial skip mismatch");
         }
 
-        cIn.skip(3000);
+        skip = cIn.skip(3000);
+        if (skip != 3000)
+        {
+            fail("wrong number of bytes skipped: " + skip);
+        }
 
         cIn.read(block);
 
         if (!areEqual(data, 3100, block, 0))
         {
             fail("second skip mismatch");
+        }
+
+        cipher.reset();
+
+        cIn = createCipherInputStream(bOut.toByteArray(), cipher);
+        if (!cIn.markSupported())
+        {
+            fail("marking not supported");
+        }
+
+        cIn.mark(100);
+
+        cIn.read(block);
+
+        if (!areEqual(data, 0, block, 0))
+        {
+            fail("initial mark read failed");
+        }
+
+        cIn.reset();
+
+        cIn.read(block);
+
+        if (!areEqual(data, 0, block, 0))
+        {
+            fail(cipher.getAlgorithmName() + " initial reset read failed");
+        }
+
+        cIn.reset();
+
+        cIn.read(block);
+
+        cIn.mark(100);
+
+        cIn.read(block);
+
+        if (!areEqual(data, 50, block, 0))
+        {
+            fail("second mark read failed");
+        }
+
+        cIn.reset();
+
+        cIn.read(block);
+
+        if (!areEqual(data, 50, block, 0))
+        {
+            fail(cipher.getAlgorithmName() + " second reset read failed");
+        }
+
+        cIn.mark(3000);
+
+        skip = cIn.skip(2050);
+        if (skip != 2050)
+        {
+            fail("wrong number of bytes skipped: " + skip);
+        }
+
+        cIn.reset();
+
+        cIn.read(block);
+
+        if (!areEqual(data, 100, block, 0))
+        {
+            fail(cipher.getAlgorithmName() + " third reset read failed");
+        }
+
+        cIn.read(new byte[2150]);
+
+        cIn.reset();
+
+        cIn.read(block);
+
+        if (!areEqual(data, 100, block, 0))
+        {
+            fail(cipher.getAlgorithmName() + " fourth reset read failed");
         }
     }
 

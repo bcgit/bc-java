@@ -4,8 +4,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.MaxBytesExceededException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.SkippingCipher;
-import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
@@ -15,7 +14,7 @@ import org.bouncycastle.util.Strings;
  * Implementation of Daniel J. Bernstein's Salsa20 stream cipher, Snuffle 2005
  */
 public class Salsa20Engine
-    implements StreamCipher, SkippingCipher
+    implements SkippingStreamCipher
 {
     public final static int DEFAULT_ROUNDS = 20;
 
@@ -143,14 +142,14 @@ public class Salsa20Engine
             throw new MaxBytesExceededException("2^70 byte limit per IV; Change IV");
         }
 
-        if (index == 0)
-        {
-            generateKeyStream(keyStream);
-            advanceCounter();
-        }
-
         byte out = (byte)(keyStream[index]^in);
         index = (index + 1) & 63;
+
+        if (index == 0)
+        {
+            advanceCounter();
+            generateKeyStream(keyStream);
+        }
 
         return out;
     }
@@ -161,11 +160,6 @@ public class Salsa20Engine
         {
             ++engineState[9];
         }
-    }
-
-    protected boolean isCounterAtZero()
-    {
-        return engineState[8] == 0 && engineState[9] == 0;
     }
 
     protected void retreatCounter()
@@ -205,14 +199,14 @@ public class Salsa20Engine
 
         for (int i = 0; i < len; i++)
         {
-            if (index == 0)
-            {
-                generateKeyStream(keyStream);
-                advanceCounter();
-            }
-
             out[i + outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
             index = (index + 1) & 63;
+
+            if (index == 0)
+            {
+                advanceCounter();
+                generateKeyStream(keyStream);
+            }
         }
     }
 
@@ -222,44 +216,28 @@ public class Salsa20Engine
         {
             for (long i = 0; i < numberOfBytes; i++)
             {
+                index = (index + 1) & 63;
+
                 if (index == 0)
                 {
-                    if (numberOfBytes - i < 64)
-                    {
-                        generateKeyStream(keyStream);
-                    }
-
                     advanceCounter();
                 }
-
-                index = (index + 1) & 63;
             }
         }
         else
         {
             for (long i = 0; i > numberOfBytes; i--)
             {
-                index = (index - 1) & 63;
-
                 if (index == 0)
                 {
                     retreatCounter();
-                    if (i - numberOfBytes < 63)
-                    {
-                        if (isCounterAtZero())
-                        {
-                            generateKeyStream(keyStream);
-                        }
-                        else
-                        {
-                            retreatCounter();
-                            generateKeyStream(keyStream);
-                            advanceCounter();
-                        }
-                    }
                 }
+
+                index = (index - 1) & 63;
             }
         }
+
+        generateKeyStream(keyStream);
 
         return numberOfBytes;
     }
@@ -271,11 +249,23 @@ public class Salsa20Engine
         return skip(position);
     }
 
+    public long getPosition()
+    {
+        return getCounter() * 64 + index;
+    }
+
     public void reset()
     {
         index = 0;
         resetLimitCounter();
         resetCounter();
+
+        generateKeyStream(keyStream);
+    }
+
+    protected long getCounter()
+    {
+        return ((long)engineState[9] << 32) | (engineState[8] & 0xffffffffL);
     }
 
     protected void resetCounter()

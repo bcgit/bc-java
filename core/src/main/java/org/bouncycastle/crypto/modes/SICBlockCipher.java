@@ -3,9 +3,10 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.SkippingCipher;
+import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implements the Segmented Integer Counter (SIC) mode on top of a simple
@@ -13,7 +14,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  */
 public class SICBlockCipher
     extends StreamBlockCipher
-    implements SkippingCipher
+    implements SkippingStreamCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
@@ -177,8 +178,28 @@ public class SICBlockCipher
     {
         reset();
 
-        skip(position);
+        return skip(position);
+    }
 
-        return 0;
+    public long getPosition()
+    {
+        byte[] res = new byte[IV.length];
+
+        System.arraycopy(counter, 0, res, 0, res.length);
+
+        for (int i = res.length - 1; i >= 1; i--)
+        {
+            int v = (res[i] - IV[i]);
+
+            if (v < 0)
+            {
+               res[i - 1]--;
+               v += 256;
+            }
+
+            res[i] = (byte)v;
+        }
+
+        return Pack.bigEndianToLong(res, res.length - 8) * blockSize + byteCount;
     }
 }
