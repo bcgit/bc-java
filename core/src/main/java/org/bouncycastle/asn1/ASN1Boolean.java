@@ -19,7 +19,9 @@ public class ASN1Boolean
     /**
      * return a boolean from the passed in object.
      *
+     * @param obj an ASN1Boolean or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
         Object  obj)
@@ -47,6 +49,7 @@ public class ASN1Boolean
 
     /**
      * return an ASN1Boolean from the passed in boolean.
+     * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
         boolean  value)
@@ -56,6 +59,7 @@ public class ASN1Boolean
 
     /**
      * return an ASN1Boolean from the passed in value.
+     * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
         int value)
@@ -71,6 +75,7 @@ public class ASN1Boolean
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
+     * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
         ASN1TaggedObject obj,

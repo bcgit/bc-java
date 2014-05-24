@@ -15,8 +15,9 @@ public class ASN1ObjectIdentifier
 
     /**
      * return an OID from the passed in object
-     *
+     * @param obj an ASN1ObjectIdentifier or an object that can be converted into one.
      * @throws IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1ObjectIdentifier instance, or null.
      */
     public static ASN1ObjectIdentifier getInstance(
         Object obj)
@@ -55,6 +56,7 @@ public class ASN1ObjectIdentifier
      *                 tagged false otherwise.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
+     * @return an ASN1ObjectIdentifier instance, or null.
      */
     public static ASN1ObjectIdentifier getInstance(
         ASN1TaggedObject obj,

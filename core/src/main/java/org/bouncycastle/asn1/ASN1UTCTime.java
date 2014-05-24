@@ -17,7 +17,9 @@ public class ASN1UTCTime
     /**
      * return an UTC Time from the passed in object.
      *
+     * @param obj an ASN1UTCTime or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(
         Object  obj)
@@ -50,6 +52,7 @@ public class ASN1UTCTime
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
+     * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(
         ASN1TaggedObject obj,
@@ -92,7 +95,8 @@ public class ASN1UTCTime
     }
 
     /**
-     * base constructer from a java.util.date object
+     * base constructor from a java.util.date object
+     * @param time the Date to build the time from.
      */
     public ASN1UTCTime(
         Date time)

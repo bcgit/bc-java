@@ -16,6 +16,7 @@ abstract public class ASN1Set
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1Set instance, or null.
      */
     public static ASN1Set getInstance(
         Object  obj)
@@ -67,6 +68,7 @@ abstract public class ASN1Set
      *          false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *          be converted.
+     * @return an ASN1Set instance.
      */
     public static ASN1Set getInstance(
         ASN1TaggedObject    obj,
@@ -135,6 +137,7 @@ abstract public class ASN1Set
 
     /**
      * create a sequence containing one object
+     * @param obj object to be added to the SET.
      */
     protected ASN1Set(
         ASN1Encodable obj)
@@ -144,6 +147,8 @@ abstract public class ASN1Set
 
     /**
      * create a sequence containing a vector of objects.
+     * @param v a vector of objects to make up the SET.
+     * @param doSort true if should be sorted DER style, false otherwise.
      */
     protected ASN1Set(
         ASN1EncodableVector v,
