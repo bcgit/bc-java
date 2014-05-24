@@ -11,9 +11,11 @@ public class ASN1Enumerated
     byte[]      bytes;
 
     /**
-     * return an integer from the passed in object
+     * return an enumerated from the passed in object
      *
+     * @param obj an ASN1Enumerated or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1Enumerated instance.
      */
     public static ASN1Enumerated getInstance(
         Object  obj)
@@ -46,6 +48,7 @@ public class ASN1Enumerated
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
+     * @return an ASN1Enumerated instance.
      */
     public static ASN1Enumerated getInstance(
         ASN1TaggedObject obj,
@@ -64,7 +67,9 @@ public class ASN1Enumerated
     }
 
     /**
-     * @deprecated use ASN1Enumerated
+     * Constructor from int.
+     *
+     * @param value the value of this enumerated.
      */
     public ASN1Enumerated(
         int         value)
@@ -73,7 +78,9 @@ public class ASN1Enumerated
     }
 
     /**
-     * @deprecated use ASN1Enumerated
+     * Constructor from BigInteger
+     *
+     * @param value the value of this enumerated.
      */
     public ASN1Enumerated(
         BigInteger   value)
@@ -82,7 +89,9 @@ public class ASN1Enumerated
     }
 
     /**
-     * @deprecated use ASN1Enumerated
+     * Constructor from encoded BigInteger.
+     *
+     * @param bytes the value of this enumerated as an encoded BigInteger (signed).
      */
     public ASN1Enumerated(
         byte[]   bytes)

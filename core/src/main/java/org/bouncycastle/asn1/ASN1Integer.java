@@ -13,7 +13,9 @@ public class ASN1Integer
     /**
      * return an integer from the passed in object
      *
+     * @param obj an ASN1Integer or an object that can be converted into one.
      * @throws IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1Integer instance.
      */
     public static ASN1Integer getInstance(
         Object obj)
@@ -46,6 +48,7 @@ public class ASN1Integer
      *                 tagged false otherwise.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
+     * @return an ASN1Integer instance.
      */
     public static ASN1Integer getInstance(
         ASN1TaggedObject obj,
@@ -94,6 +97,7 @@ public class ASN1Integer
     /**
      * in some cases positive values get crammed into a space,
      * that's not quite big enough...
+     * @return the BigInteger that results from treating this ASN.1 INTEGER as unsigned.
      */
     public BigInteger getPositiveValue()
     {

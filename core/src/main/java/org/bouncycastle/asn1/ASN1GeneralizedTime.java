@@ -18,7 +18,9 @@ public class ASN1GeneralizedTime
        /**
         * return a generalized time from the passed in object
         *
+        * @param obj an ASN1GeneralizedTime or an object that can be converted into one.
         * @exception IllegalArgumentException if the object cannot be converted.
+        * @return an ASN1GeneralizedTime instance, or null.
         */
        public static ASN1GeneralizedTime getInstance(
            Object  obj)
@@ -51,6 +53,7 @@ public class ASN1GeneralizedTime
         *              tagged false otherwise.
         * @exception IllegalArgumentException if the tagged object cannot
         *               be converted.
+        * @return an ASN1GeneralizedTime instance.
         */
        public static ASN1GeneralizedTime getInstance(
            ASN1TaggedObject obj,

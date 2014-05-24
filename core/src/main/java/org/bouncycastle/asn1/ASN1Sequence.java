@@ -14,6 +14,7 @@ public abstract class ASN1Sequence
      *
      * @param obj the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
+     * @return an ASN1Sequence instance, or null.
      */
     public static ASN1Sequence getInstance(
         Object  obj)
@@ -65,6 +66,7 @@ public abstract class ASN1Sequence
      *          false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *          be converted.
+     * @return an ASN1Sequence instance.
      */
     public static ASN1Sequence getInstance(
         ASN1TaggedObject    obj,
@@ -118,6 +120,7 @@ public abstract class ASN1Sequence
 
     /**
      * create a sequence containing one object
+     * @param obj the object to be put in the SEQUENCE.
      */
     protected ASN1Sequence(
         ASN1Encodable obj)
@@ -127,6 +130,7 @@ public abstract class ASN1Sequence
 
     /**
      * create a sequence containing a vector of objects.
+     * @param v the vector of objects to be put in the SEQUENCE
      */
     protected ASN1Sequence(
         ASN1EncodableVector v)
