@@ -191,7 +191,7 @@ public class GOFBBlockCipher
             out[outOff] =     (byte)num;
     }
 
-    protected byte processByte(byte b)
+    protected byte calculateByte(byte b)
     {
         if (byteCount == 0)
         {

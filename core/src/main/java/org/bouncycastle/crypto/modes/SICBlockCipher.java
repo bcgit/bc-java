@@ -84,7 +84,7 @@ public class SICBlockCipher
         return blockSize;
     }
 
-    protected byte processByte(byte in)
+    protected byte calculateByte(byte in)
           throws DataLengthException, IllegalStateException
     {
         if (byteCount == 0)

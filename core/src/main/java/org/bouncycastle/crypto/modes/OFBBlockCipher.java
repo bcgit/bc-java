@@ -155,7 +155,7 @@ public class OFBBlockCipher
         cipher.reset();
     }
 
-    protected byte processByte(byte in)
+    protected byte calculateByte(byte in)
           throws DataLengthException, IllegalStateException
     {
         if (byteCount == 0)

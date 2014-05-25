@@ -170,7 +170,7 @@ public class Salsa20Engine
         }
     }
 
-    public void processBytes(
+    public int processBytes(
         byte[]     in, 
         int     inOff, 
         int     len, 
@@ -208,6 +208,8 @@ public class Salsa20Engine
                 generateKeyStream(keyStream);
             }
         }
+
+        return len;
     }
 
     public long skip(long numberOfBytes)

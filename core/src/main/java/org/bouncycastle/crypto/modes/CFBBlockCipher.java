@@ -113,7 +113,7 @@ public class CFBBlockCipher
         return cipher.getAlgorithmName() + "/CFB" + (blockSize * 8);
     }
 
-    protected byte processByte(byte in)
+    protected byte calculateByte(byte in)
           throws DataLengthException, IllegalStateException
     {
         return (encrypting) ? encryptByte(in) : decryptByte(in);

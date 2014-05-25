@@ -69,7 +69,7 @@ public class ISAACEngine
         return out;
     }
     
-    public void processBytes(
+    public int processBytes(
         byte[]  in, 
         int     inOff, 
         int     len, 
@@ -101,6 +101,8 @@ public class ISAACEngine
             out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
             index = (index + 1) & 1023;
         }
+
+        return len;
     }
     
     public String getAlgorithmName()
