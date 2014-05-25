@@ -47,13 +47,13 @@ public abstract class Mod
                 --uvLen;
             }
 
-            if (Nat.gte(len, u, v))
+            if (Nat.gte(uvLen, u, v))
             {
-                Nat.sub(len, u, v, u);
+                Nat.sub(uvLen, u, v, u);
 //              assert (u[0] & 1) == 0;
                 ac += Nat.sub(len, a, b, a) - bc;
                 ac = inversionStep(p, u, uvLen, a, ac);
-                if (Nat.isOne(len, u))
+                if (Nat.isOne(uvLen, u))
                 {
                     inversionResult(p, ac, a, z);
                     return;
@@ -61,11 +61,11 @@ public abstract class Mod
             }
             else
             {
-                Nat.sub(len, v, u, v);
+                Nat.sub(uvLen, v, u, v);
 //              assert (v[0] & 1) == 0;
                 bc += Nat.sub(len, b, a, b) - ac;
                 bc = inversionStep(p, v, uvLen, b, bc);
-                if (Nat.isOne(len, v))
+                if (Nat.isOne(uvLen, v))
                 {
                     inversionResult(p, bc, b, z);
                     return;
@@ -90,7 +90,7 @@ public abstract class Mod
         do
         {
             byte[] bytes = new byte[len << 2];
-            rand. nextBytes(bytes);
+            rand.nextBytes(bytes);
             Pack.bigEndianToInt(bytes, 0, s);
             s[len - 1] &= m;
         }
