@@ -20,6 +20,9 @@ export PATH
 if [ "$1" = "test" ]
 then
     ant -f ant/jdk15+.xml test
+elif [ "$1" = "clean" ]
+then
+    ant -f ant/jdk15+.xml clean
 else
     if ant -f ant/jdk15+.xml build-provider
     then
