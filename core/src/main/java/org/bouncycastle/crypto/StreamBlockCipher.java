@@ -26,10 +26,10 @@ public abstract class StreamBlockCipher
 
     public final byte returnByte(byte in)
     {
-        return processByte(in);
+        return calculateByte(in);
     }
 
-    public void processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
         if (outOff + len > out.length)
@@ -48,9 +48,11 @@ public abstract class StreamBlockCipher
 
         while (inStart < inEnd)
         {
-             out[outStart++] = processByte(in[inStart++]);
+             out[outStart++] = calculateByte(in[inStart++]);
         }
+
+        return len;
     }
 
-    protected abstract byte processByte(byte b);
+    protected abstract byte calculateByte(byte b);
 }

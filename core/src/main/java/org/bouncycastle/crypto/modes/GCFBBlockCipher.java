@@ -81,7 +81,7 @@ public class GCFBBlockCipher
         return cfbEngine.getBlockSize();
     }
 
-    protected byte processByte(byte b)
+    protected byte calculateByte(byte b)
     {
         if (counter > 0 && counter % 1024 == 0)
         {
@@ -109,7 +109,7 @@ public class GCFBBlockCipher
 
         counter++;
 
-        return cfbEngine.processByte(b);
+        return cfbEngine.calculateByte(b);
     }
 
     public void reset()
