@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * standard vector test for SHA-512/224 from FIPS 180-4.
@@ -38,15 +39,54 @@ public class SHA512t224DigestTest
     public void performTest()
     {
         super.performTest();
-        
+
         millionATest(million_a_digest);
+
+        // test state encoding;
+
+        byte[] lastV = toByteArray(messages[messages.length - 1]);
+        byte[] lastDigest = Hex.decode(digests[digests.length - 1]);
+
+        SHA512tDigest digest = new SHA512tDigest(224);
+        byte[] resBuf = new byte[digest.getDigestSize()];
+
+        digest.update(lastV, 0, lastV.length / 2);
+
+        // copy the Digest
+        SHA512tDigest copy1 = new SHA512tDigest(digest.getEncodedState());
+        SHA512tDigest copy2 = new SHA512tDigest(copy1.getEncodedState());
+
+        digest.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
+
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing state vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        copy1.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
+        copy1.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing state copy1 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        copy2.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
+        copy2.doFinal(resBuf, 0);
+
+        if (!areEqual(lastDigest, resBuf))
+        {
+            fail("failing state copy2 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
+        }
     }
 
     protected Digest cloneDigest(Digest digest)
     {
         return new SHA512tDigest((SHA512tDigest)digest);
     }
-    
+
     public static void main(
         String[]    args)
     {
