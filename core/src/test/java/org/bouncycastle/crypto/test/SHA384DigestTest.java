@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * standard vector test for SHA-384 from FIPS Draft 180-2.
@@ -40,50 +39,17 @@ public class SHA384DigestTest
         super.performTest();
 
         millionATest(million_a_digest);
-
-        // test state encoding;
-
-        byte[] lastV = toByteArray(messages[messages.length - 1]);
-        byte[] lastDigest = Hex.decode(digests[digests.length - 1]);
-
-        SHA384Digest digest = new SHA384Digest();
-        byte[] resBuf = new byte[digest.getDigestSize()];
-
-        digest.update(lastV, 0, lastV.length / 2);
-
-        // copy the Digest
-        SHA384Digest copy1 = new SHA384Digest(digest.getEncodedState());
-        SHA384Digest copy2 = new SHA384Digest(copy1.getEncodedState());
-
-        digest.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy1.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-        copy1.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy1 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy2.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-        copy2.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy2 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
     }
 
     protected Digest cloneDigest(Digest digest)
     {
         return new SHA384Digest((SHA384Digest)digest);
+    }
+
+    @Override
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new SHA384Digest(encodedState);
     }
 
     public static void main(

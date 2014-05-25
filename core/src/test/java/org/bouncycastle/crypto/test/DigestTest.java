@@ -1,11 +1,12 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.EncodableDigest;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
-public abstract class DigestTest 
+public abstract class DigestTest
     extends SimpleTest
 {
     private Digest digest;
@@ -42,68 +43,110 @@ public abstract class DigestTest
         byte[] lastDigest = Hex.decode(results[input.length - 1]);
         
         vectorTest(digest, input.length - 1, resBuf, lastV, Hex.decode(results[input.length - 1]));
-        
-        //
-        // clone test
-        //
-        digest.update(lastV, 0, lastV.length/2);
 
-        // clone the Digest
-        Digest d = cloneDigest(digest);
-        
-        digest.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        testClone(resBuf, lastV, lastDigest);
+        testMemo(resBuf, lastV, lastDigest);
+        if (digest instanceof EncodableDigest)
+        {
+            testEncodedState(resBuf, lastV, lastDigest);
+        }
+    }
+
+    private void testEncodedState(byte[] resBuf, byte[] input, byte[] expected)
+    {
+        // test state encoding;
+        digest.update(input, 0, input.length / 2);
+
+        // copy the Digest
+        Digest copy1 = cloneDigest(((EncodableDigest)digest).getEncodedState());
+        Digest copy2 = cloneDigest(((EncodableDigest)copy1).getEncodedState());
+
+        digest.update(input, input.length / 2, input.length - input.length / 2);
+
         digest.doFinal(resBuf, 0);
 
-        if (!areEqual(lastDigest, resBuf))
+        if (!areEqual(expected, resBuf))
         {
-            fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            fail("failing state vector test", expected, new String(Hex.encode(resBuf)));
         }
 
-        d.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
-        d.doFinal(resBuf, 0);
+        copy1.update(input, input.length / 2, input.length - input.length / 2);
+        copy1.doFinal(resBuf, 0);
 
-        if (!areEqual(lastDigest, resBuf))
+        if (!areEqual(expected, resBuf))
         {
-            fail("failing second clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+            fail("failing state copy1 vector test", expected, new String(Hex.encode(resBuf)));
         }
 
-        //
-        // memo test
-        //
+        copy2.update(input, input.length / 2, input.length - input.length / 2);
+        copy2.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing state copy2 vector test", expected, new String(Hex.encode(resBuf)));
+        }
+    }
+
+    private void testMemo(byte[] resBuf, byte[] input, byte[] expected)
+    {
         Memoable m = (Memoable)digest;
 
-        digest.update(lastV, 0, lastV.length/2);
+        digest.update(input, 0, input.length/2);
 
         // copy the Digest
         Memoable copy1 = m.copy();
         Memoable copy2 = copy1.copy();
 
-        digest.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        digest.update(input, input.length/2, input.length - input.length/2);
         digest.doFinal(resBuf, 0);
 
-        if (!areEqual(lastDigest, resBuf))
+        if (!areEqual(expected, resBuf))
         {
             fail("failing memo vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
         }
 
         m.reset(copy1);
 
-        digest.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        digest.update(input, input.length/2, input.length - input.length/2);
         digest.doFinal(resBuf, 0);
 
-        if (!areEqual(lastDigest, resBuf))
+        if (!areEqual(expected, resBuf))
         {
             fail("failing memo reset vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
         }
 
         Digest md = (Digest)copy2;
 
-        md.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
+        md.update(input, input.length/2, input.length - input.length/2);
         md.doFinal(resBuf, 0);
 
-        if (!areEqual(lastDigest, resBuf))
+        if (!areEqual(expected, resBuf))
         {
             fail("failing memo copy vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+        }
+    }
+
+    private void testClone(byte[] resBuf, byte[] input, byte[] expected)
+    {
+        digest.update(input, 0, input.length/2);
+
+        // clone the Digest
+        Digest d = cloneDigest(digest);
+
+        digest.update(input, input.length/2, input.length - input.length/2);
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
+        }
+
+        d.update(input, input.length/2, input.length - input.length/2);
+        d.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing second clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
         }
     }
 
@@ -136,7 +179,12 @@ public abstract class DigestTest
     }
     
     protected abstract Digest cloneDigest(Digest digest);
-    
+
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     //
     // optional tests
     //
