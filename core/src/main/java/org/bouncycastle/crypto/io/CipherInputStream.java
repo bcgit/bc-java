@@ -74,8 +74,8 @@ public class CipherInputStream
     }
 
     /**
-     * Constructs a CipherInputStream from an InputStream and a
-     * BufferedBlockCipher.
+     * Constructs a CipherInputStream from an InputStream, a
+     * BufferedBlockCipher, and a specified internal buffer size.
      */
     public CipherInputStream(
         InputStream is,
@@ -90,7 +90,7 @@ public class CipherInputStream
     }
 
     /**
-     * Constructs a CipherInputStream from an InputStream and a StreamCipher.
+     * Constructs a CipherInputStream from an InputStream, a StreamCipher, and a specified internal buffer size.
      */
     public CipherInputStream(
         InputStream is,
@@ -105,7 +105,7 @@ public class CipherInputStream
     }
 
     /**
-     * Constructs a CipherInputStream from an InputStream and an AEADBlockCipher.
+     * Constructs a CipherInputStream from an InputStream, an AEADBlockCipher, and a specified internal buffer size.
      */
     public CipherInputStream(
         InputStream is,
