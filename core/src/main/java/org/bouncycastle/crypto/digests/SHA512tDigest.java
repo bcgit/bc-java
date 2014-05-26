@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.MemoableResetException;
+import org.bouncycastle.util.Pack;
 
 /**
  * FIPS 180-4 implementation of SHA-512/t
@@ -51,6 +52,17 @@ public class SHA512tDigest
         this.digestLength = t.digestLength;
 
         reset(t);
+    }
+
+    public SHA512tDigest(byte[] encodedState)
+    {
+        this(readDigestLength(encodedState));
+        restoreState(encodedState);
+    }
+
+    private static int readDigestLength(byte[] encodedState)
+    {
+        return Pack.bigEndianToInt(encodedState, encodedState.length - 4);
     }
 
     public String getAlgorithmName()
@@ -202,4 +214,14 @@ public class SHA512tDigest
         this.H7t = t.H7t;
         this.H8t = t.H8t;
     }
+
+    public byte[] getEncodedState()
+    {
+        final int baseSize = getEncodedStateSize();
+        byte[] encoded = new byte[baseSize + 4];
+        populateState(encoded);
+        Pack.intToBigEndian(digestLength * 8, encoded, baseSize);
+        return encoded;
+    }
+
 }

@@ -18,7 +18,7 @@ public class SHA384DigestTest
         "abc",
         "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
     };
-    
+
     private static String[] digests =
     {
         "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
@@ -37,7 +37,7 @@ public class SHA384DigestTest
     public void performTest()
     {
         super.performTest();
-        
+
         millionATest(million_a_digest);
     }
 
@@ -45,7 +45,13 @@ public class SHA384DigestTest
     {
         return new SHA384Digest((SHA384Digest)digest);
     }
-    
+
+    @Override
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new SHA384Digest(encodedState);
+    }
+
     public static void main(
         String[]    args)
     {

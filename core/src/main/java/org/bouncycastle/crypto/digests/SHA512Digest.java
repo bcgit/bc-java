@@ -36,6 +36,11 @@ public class SHA512Digest
         super(t);
     }
 
+    public SHA512Digest(byte[] encodedState)
+    {
+        restoreState(encodedState);
+    }
+
     public String getAlgorithmName()
     {
         return "SHA-512";
@@ -97,6 +102,13 @@ public class SHA512Digest
         SHA512Digest d = (SHA512Digest)other;
 
         copyIn(d);
+    }
+
+    public byte[] getEncodedState()
+    {
+        byte[] encoded = new byte[getEncodedStateSize()];
+        super.populateState(encoded);
+        return encoded;
     }
 }
 
