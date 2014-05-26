@@ -25,13 +25,16 @@ public class CipherInputStream
 {
     private static final int INPUT_BUF_SIZE = 2048;
 
+    private final SkippingCipher skippingCipher;
+    private final byte[] inBuf;
+
     private BufferedBlockCipher bufferedBlockCipher;
     private StreamCipher streamCipher;
     private AEADBlockCipher aeadBlockCipher;
 
     private byte[] buf;
     private byte[] markBuf;
-    private final byte[] inBuf = new byte[INPUT_BUF_SIZE];
+
 
     private int bufOff;
     private int maxBuf;
@@ -47,28 +50,73 @@ public class CipherInputStream
         InputStream is,
         BufferedBlockCipher cipher)
     {
-        super(is);
-
-        this.bufferedBlockCipher = cipher;
+        this(is, cipher, INPUT_BUF_SIZE);
     }
 
+    /**
+     * Constructs a CipherInputStream from an InputStream and a StreamCipher.
+     */
     public CipherInputStream(
         InputStream is,
         StreamCipher cipher)
     {
-        super(is);
-
-        this.streamCipher = cipher;
+        this(is, cipher, INPUT_BUF_SIZE);
     }
 
     /**
      * Constructs a CipherInputStream from an InputStream and an AEADBlockCipher.
      */
-    public CipherInputStream(InputStream is, AEADBlockCipher cipher)
+    public CipherInputStream(
+        InputStream is,
+        AEADBlockCipher cipher)
+    {
+        this(is, cipher, INPUT_BUF_SIZE);
+    }
+
+    /**
+     * Constructs a CipherInputStream from an InputStream and a
+     * BufferedBlockCipher.
+     */
+    public CipherInputStream(
+        InputStream is,
+        BufferedBlockCipher cipher,
+        int bufSize)
+    {
+        super(is);
+
+        this.bufferedBlockCipher = cipher;
+        this.inBuf = new byte[bufSize];
+        this.skippingCipher = (cipher instanceof SkippingCipher) ? (SkippingCipher)cipher : null;
+    }
+
+    /**
+     * Constructs a CipherInputStream from an InputStream and a StreamCipher.
+     */
+    public CipherInputStream(
+        InputStream is,
+        StreamCipher cipher,
+        int bufSize)
+    {
+        super(is);
+
+        this.streamCipher = cipher;
+        this.inBuf = new byte[bufSize];
+        this.skippingCipher = (cipher instanceof SkippingCipher) ? (SkippingCipher)cipher : null;
+    }
+
+    /**
+     * Constructs a CipherInputStream from an InputStream and an AEADBlockCipher.
+     */
+    public CipherInputStream(
+        InputStream is,
+        AEADBlockCipher cipher,
+        int bufSize)
     {
         super(is);
 
         this.aeadBlockCipher = cipher;
+        this.inBuf = new byte[bufSize];
+        this.skippingCipher = (cipher instanceof SkippingCipher) ? (SkippingCipher)cipher : null;
     }
 
     /**
@@ -245,7 +293,7 @@ public class CipherInputStream
             return 0;
         }
 
-        if (streamCipher instanceof SkippingCipher)
+        if (skippingCipher != null)
         {
             int avail = available();
             if (n <= avail)
@@ -259,7 +307,7 @@ public class CipherInputStream
 
             long skip = in.skip(n - avail);
 
-            long cSkip = ((SkippingCipher)streamCipher).skip(skip);
+            long cSkip = skippingCipher.skip(skip);
 
             if (skip != cSkip)
             {
@@ -371,11 +419,9 @@ public class CipherInputStream
     public void mark(int readlimit)
     {
         in.mark(readlimit);
-        if (streamCipher instanceof SkippingCipher)
+        if (skippingCipher != null)
         {
-            SkippingCipher skip = (SkippingCipher)streamCipher;
-
-            markPosition = skip.getPosition();
+            markPosition = skippingCipher.getPosition();
         }
 
         if (buf != null)
@@ -395,14 +441,14 @@ public class CipherInputStream
     public void reset()
         throws IOException
     {
-        if (!(streamCipher instanceof SkippingCipher))
+        if (skippingCipher == null)
         {
             throw new IOException("cipher must implement SkippingCipher to be used with reset()");
         }
 
         in.reset();
-        SkippingCipher skip = (SkippingCipher)streamCipher;
-        skip.seekTo(markPosition);
+
+        skippingCipher.seekTo(markPosition);
 
         if (markBuf != null)
         {
@@ -420,7 +466,7 @@ public class CipherInputStream
      */
     public boolean markSupported()
     {
-        if (streamCipher instanceof SkippingCipher)
+        if (skippingCipher != null)
         {
             return in.markSupported();
         }
