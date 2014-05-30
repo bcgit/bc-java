@@ -752,11 +752,12 @@
                 <package name="org.bouncycastle.asn1.*" />
                 <package name="org.bouncycastle.crypto.*" />
                 <package name="org.bouncycastle.jce.*" />
+                <package name="org.bouncycastle.jcajce.*" />
                 <package name="org.bouncycastle.pqc.*" />
                 <package name="org.bouncycastle.x509.*" />
                 <package name="org.bouncycastle.ocsp.*" />
                 <package name="org.bouncycastle.util.*" />
-                <group title="JCE Utility and Extension Packages" packages="org.bouncycastle.jce*" />
+                <group title="JCE Utility and Extension Packages" packages="org.bouncycastle.jce*,org.bouncycastle.jcajce*" />
                 <group title="OCSP Support Packages" packages="org.bouncycastle.ocsp*" />
                 <group title="ASN.1 Support Packages" packages="org.bouncycastle.asn1*" />
                 <group title="Lightweight Crypto Packages" packages="org.bouncycastle.crypto*" />
@@ -764,7 +765,7 @@
                 <group title="Post-Quantum ASN.1 Packages" packages="org.bouncycastle.pqc.asn1*" />
                 <group title="Post-Quantum Lightweight Math Packages" packages="org.bouncycastle.pqc.math*" />
                 <group title="Utility Packages" packages="org.bouncycastle.util*:org.bouncycastle.math*" />
-                <group title="JCE Provider and Test Classes" packages="org.bouncycastle.jce.provider*" />
+                <group title="JCE Provider and Test Classes" packages="org.bouncycastle.jce.provider*,org.bouncycastle.jcajce.provider*" />
                 <group title="Post-Quantum Provider and Test Classes" packages="org.bouncycastle.pqc.jcajce.*" />
             </docElements>
         </compile-doc>
@@ -789,17 +790,18 @@
                 <package name="org.bouncycastle.asn1.*" />
                 <package name="org.bouncycastle.crypto.*" />
                 <package name="org.bouncycastle.jce.*" />
+                <package name="org.bouncycastle.jcajce.*" />
                 <package name="org.bouncycastle.x509.*" />
                 <package name="org.bouncycastle.ocsp.*" />
                 <package name="org.bouncycastle.util.*" />
                 <package name="javax.crypto.*" />
                 <group title="JCE Package" packages="javax.crypto*" />
-                <group title="JCE Utility and Extension Packages" packages="org.bouncycastle.jce*" />
+                <group title="JCE Utility and Extension Packages" packages="org.bouncycastle.jce*,org.bouncycastle.jcajce*" />
                 <group title="OCSP Support Packages" packages="org.bouncycastle.ocsp*" />
                 <group title="ASN.1 Support Packages" packages="org.bouncycastle.asn1*" />
                 <group title="Lightweight Crypto Packages" packages="org.bouncycastle.crypto*" />
                 <group title="Utility Packages" packages="org.bouncycastle.util*:org.bouncycastle.math*" />
-                <group title="JCE Provider and Test Classes" packages="org.bouncycastle.jce.provider*" />
+                <group title="JCE Provider and Test Classes" packages="org.bouncycastle.jce.provider*,org.bouncycastle.jcajce.provider*" />
             </docElements>
         </compile-doc>
 
