@@ -36,6 +36,11 @@ public class SHA384Digest
         super(t);
     }
 
+    public SHA384Digest(byte[] encodedState)
+    {
+        restoreState(encodedState);
+    }
+
     public String getAlgorithmName()
     {
         return "SHA-384";
@@ -95,5 +100,12 @@ public class SHA384Digest
         SHA384Digest d = (SHA384Digest)other;
 
         super.copyIn(d);
+    }
+
+    public byte[] getEncodedState()
+    {
+        byte[] encoded = new byte[getEncodedStateSize()];
+        super.populateState(encoded);
+        return encoded;
     }
 }
