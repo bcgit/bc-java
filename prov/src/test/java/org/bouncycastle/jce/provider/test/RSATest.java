@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -147,6 +148,20 @@ public class RSATest
         
         PrivateKey  priv2048Key = fact.generatePrivate(priv2048KeySpec);
         PublicKey   pub2048Key = fact.generatePublic(pub2048KeySpec);
+
+        //
+        // key without CRT coefficients
+        //
+        PrivateKeyInfo keyInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+        BigInteger zero = BigInteger.valueOf(0);
+        PKCS8EncodedKeySpec noCrtSpec = new PKCS8EncodedKeySpec(new PrivateKeyInfo(keyInfo.getPrivateKeyAlgorithm(),
+                                                   new org.bouncycastle.asn1.pkcs.RSAPrivateKey(privKeySpec.getModulus(), privKeySpec.getPublicExponent(), privKeySpec.getPrivateExponent(), zero, zero, zero, zero, zero)).getEncoded());
+
+        PrivateKey noCrtKey = fact.generatePrivate(noCrtSpec);
+        if (noCrtKey instanceof RSAPrivateCrtKey)
+        {
+            fail("private key without CRT coefficients returned as CRT key");
+        }
 
         //
         // No Padding
