@@ -36,48 +36,10 @@ public class SHA1DigestTest
         return new SHA1Digest((SHA1Digest)digest);
     }
 
-    public void performTest()
+    @Override
+    protected Digest cloneDigest(byte[] encodedState)
     {
-        super.performTest();
-
-        // test state encoding;
-
-        byte[] lastV = toByteArray(messages[messages.length - 1]);
-        byte[] lastDigest = Hex.decode(digests[digests.length - 1]);
-
-        SHA1Digest digest = new SHA1Digest();
-        byte[] resBuf = new byte[digest.getDigestSize()];
-
-        digest.update(lastV, 0, lastV.length/2);
-
-        // copy the Digest
-        SHA1Digest copy1 = new SHA1Digest(digest.getEncodedState());
-        SHA1Digest copy2 = new SHA1Digest(copy1.getEncodedState());
-
-        digest.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy1.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
-        copy1.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy1 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy2.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-        copy2.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy2 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
+        return new SHA1Digest(encodedState);
     }
 
     public static void main(
