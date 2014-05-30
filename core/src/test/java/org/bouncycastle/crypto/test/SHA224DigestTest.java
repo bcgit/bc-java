@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * standard vector test for SHA-224 from RFC 3874 - only the last three are in
@@ -38,53 +37,21 @@ public class SHA224DigestTest
     public void performTest()
     {
         super.performTest();
-        
+
         millionATest(million_a_digest);
-        
-        // test state encoding; 
-        byte[] lastV = toByteArray(messages[messages.length - 1]);
-        byte[] lastDigest = Hex.decode(digests[digests.length - 1]);
-
-        SHA224Digest digest = new SHA224Digest();
-        byte[] resBuf = new byte[digest.getDigestSize()];
-
-        digest.update(lastV, 0, lastV.length/2);
-
-        // copy the Digest
-        SHA224Digest copy1 = new SHA224Digest(digest.getEncodedState());
-        SHA224Digest copy2 = new SHA224Digest(copy1.getEncodedState());
-
-        digest.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-
-        digest.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy1.update(lastV, lastV.length/2, lastV.length - lastV.length/2);
-        copy1.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy1 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
-
-        copy2.update(lastV, lastV.length / 2, lastV.length - lastV.length / 2);
-        copy2.doFinal(resBuf, 0);
-
-        if (!areEqual(lastDigest, resBuf))
-        {
-            fail("failing state copy2 vector test", digests[digests.length - 1], new String(Hex.encode(resBuf)));
-        }
     }
 
     protected Digest cloneDigest(Digest digest)
     {
         return new SHA224Digest((SHA224Digest)digest);
     }
-    
+
+    @Override
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new SHA224Digest(encodedState);
+    }
+
     public static void main(
         String[]    args)
     {
