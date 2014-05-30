@@ -21,6 +21,54 @@ public class SCryptTest extends SimpleTest
 
     public void performTest() throws Exception
     {
+        testParameters();
+        testVectors();
+    }
+
+    public void testParameters()
+    {
+        checkOK("Minimal values", new byte[0], new byte[0], 2, 1, 1, 1);
+        checkIllegal("Cost parameter must be > 1", new byte[0], new byte[0], 1, 1, 1, 1);
+        checkOK("Cost parameter 65536 OK for r == 1", new byte[0], new byte[0], 65536, 1, 1, 1);
+        checkIllegal("Cost parameter must <= 65536 for r == 1", new byte[0], new byte[0], 65537, 1, 1, 1);
+        checkIllegal("Block size must be >= 1", new byte[0], new byte[0], 2, 0, 2, 1);
+        checkIllegal("Parallelisation parameter must be >= 1", new byte[0], new byte[0], 2, 1, 0, 1);
+        // checkOK("Parallelisation parameter 65535 OK for r = 4", new byte[0], new byte[0], 2, 32,
+        // 65535, 1);
+        checkIllegal("Parallelisation parameter must be < 65535 for r = 4", new byte[0], new byte[0], 2, 32, 65536, 1);
+
+        checkIllegal("Len parameter must be > 1", new byte[0], new byte[0], 2, 1, 1, 0);
+       }
+
+    private void checkOK(String msg, byte[] pass, byte[] salt, int N, int r, int p, int len)
+    {
+        try
+        {
+            SCrypt.generate(pass, salt, N, r, p, len);
+        }
+        catch (IllegalArgumentException e)
+        {
+            e.printStackTrace();
+            fail(msg);
+        }
+    }
+
+    private void checkIllegal(String msg, byte[] pass, byte[] salt, int N, int r, int p, int len)
+    {
+        try
+        {
+            SCrypt.generate(pass, salt, N, r, p, len);
+            fail(msg);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // e.printStackTrace();
+        }
+    }
+
+    public void testVectors()
+        throws Exception
+    {
         BufferedReader br = new BufferedReader(new InputStreamReader(
             getClass().getResourceAsStream("SCryptTestVectors.txt")));
 
