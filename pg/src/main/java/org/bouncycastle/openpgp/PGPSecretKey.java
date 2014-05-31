@@ -63,16 +63,33 @@ public class PGPSecretKey
         throws PGPException
     {
         this.pub = pubKey;
+        this.secret = buildSecretKeyPacket(isMasterKey, privKey, pubKey, keyEncryptor, checksumCalculator);
+    }
 
-        BCPGObject      secKey = (BCPGObject)privKey.getPrivateKeyDataPacket();
+    private static SecretKeyPacket buildSecretKeyPacket(boolean isMasterKey, PGPPrivateKey privKey, PGPPublicKey pubKey, PBESecretKeyEncryptor keyEncryptor, PGPDigestCalculator checksumCalculator)
+        throws PGPException
+    {
+        BCPGObject secKey = (BCPGObject)privKey.getPrivateKeyDataPacket();
+
+        if (secKey == null)
+        {
+            if (isMasterKey)
+            {
+                return new SecretKeyPacket(pubKey.publicPk, SymmetricKeyAlgorithmTags.NULL, null, null, new byte[0]);
+            }
+            else
+            {
+                return new SecretSubkeyPacket(pubKey.publicPk, SymmetricKeyAlgorithmTags.NULL, null, null, new byte[0]);
+            }
+        }
 
         try
         {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            BCPGOutputStream        pOut = new BCPGOutputStream(bOut);
-            
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            BCPGOutputStream pOut = new BCPGOutputStream(bOut);
+
             pOut.writeObject(secKey);
-            
+
             byte[]    keyData = bOut.toByteArray();
 
             pOut.write(checksum(checksumCalculator, keyData, keyData.length));
@@ -86,7 +103,7 @@ public class PGPSecretKey
                 byte[] encData = keyEncryptor.encryptKeyData(keyData, 0, keyData.length);
                 byte[] iv = keyEncryptor.getCipherIV();
 
-                S2K    s2k = keyEncryptor.getS2K();
+                S2K s2k = keyEncryptor.getS2K();
 
                 int s2kUsage;
 
@@ -105,22 +122,22 @@ public class PGPSecretKey
 
                 if (isMasterKey)
                 {
-                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                    return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
                 }
                 else
                 {
-                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                    return new SecretSubkeyPacket(pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
                 }
             }
             else
             {
                 if (isMasterKey)
                 {
-                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, bOut.toByteArray());
+                    return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
                 }
                 else
                 {
-                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, bOut.toByteArray());
+                    return new SecretSubkeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
                 }
             }
         }

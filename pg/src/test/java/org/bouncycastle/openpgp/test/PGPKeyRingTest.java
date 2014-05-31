@@ -33,7 +33,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPPrivateKey;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
@@ -2682,6 +2684,55 @@ public class PGPKeyRingTest
         }
     }
 
+    public void testNoExportPrivateKey()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpGen.initialize(1024);
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        JcaPGPKeyConverter converter = new JcaPGPKeyConverter();
+        PGPPublicKey       pubKey = converter.getPGPPublicKey(PGPPublicKey.RSA_GENERAL, kp.getPublic(), new Date());
+        PGPPrivateKey      privKey = new JcaPGPPrivateKey(pubKey, kp.getPrivate());
+
+        doTestNoExportPrivateKey(new PGPKeyPair(pubKey, privKey));
+    }
+
+    private void doTestNoExportPrivateKey(PGPKeyPair keyPair)
+        throws Exception
+    {
+        PGPDigestCalculator    sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPKeyRingGenerator    keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, keyPair,
+                       "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.RSA_SIGN, HashAlgorithmTags.SHA1), null);
+
+        PGPPublicKey pubKey = keyPair.getPublicKey();
+        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+        if (pubRing.getPublicKey(pubKey.getKeyID()) == null)
+        {
+            fail("no public key found");
+        }
+
+        for (Iterator it = pubRing.getPublicKey().getSignatures(); it.hasNext();)
+        {
+            PGPSignature sig = (PGPSignature)it.next();
+
+            sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), pubKey);
+
+            if (!sig.verifyCertification("test", pubKey))
+            {
+                fail("certification failed");
+            }
+        }
+
+        pubRing.getEncoded();
+
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+        secRing.getEncoded();
+    }
+
     public void performTest()
         throws Exception
     {
@@ -2708,6 +2759,7 @@ public class PGPKeyRingTest
             insertMasterTest();
             testUmlaut();
             testBadUserID();
+            testNoExportPrivateKey();
         }
         catch (PGPException e)
         {

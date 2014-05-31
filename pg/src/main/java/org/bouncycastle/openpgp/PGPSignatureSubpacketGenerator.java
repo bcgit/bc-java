@@ -133,6 +133,16 @@ public class PGPSignatureSubpacketGenerator
         list.add(new SignerUserID(isCritical, userID));
     }
 
+    public void setSignerUserID(boolean isCritical, byte[] rawUserID)
+    {
+        if (rawUserID == null)
+        {
+            throw new IllegalArgumentException("attempt to set null SignerUserID");
+        }
+
+        list.add(new SignerUserID(isCritical, rawUserID));
+    }
+
     public void setEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
         throws IOException
     {

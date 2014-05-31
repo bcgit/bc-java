@@ -655,6 +655,21 @@ public class PGPPublicKey
         return revoked;
     }
 
+    /**
+     * Add a certification for an id to the given public key.
+     *
+     * @param key the key the certification is to be added to.
+     * @param rawID the raw bytes making up the user id..
+     * @param certification the new certification.
+     * @return the re-certified key.
+     */
+    public static PGPPublicKey addCertification(
+        PGPPublicKey    key,
+        byte[]          rawID,
+        PGPSignature    certification)
+    {
+        return addCert(key, new UserIDPacket(rawID), certification);
+    }
 
     /**
      * Add a certification for an id to the given public key.
