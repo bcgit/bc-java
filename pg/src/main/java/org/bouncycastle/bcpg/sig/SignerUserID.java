@@ -2,26 +2,15 @@ package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * packet giving the User ID of the signer.
  */
 public class SignerUserID 
     extends SignatureSubpacket
-{    
-    private static byte[] userIDToBytes(
-        String    id)
-    {
-        byte[] idData = new byte[id.length()];
-        
-        for (int i = 0; i != id.length(); i++)
-        {
-            idData[i] = (byte)id.charAt(i);
-        }
-        
-        return idData;
-    }
-    
+{
     public SignerUserID(
         boolean    critical,
         byte[]     data)
@@ -33,18 +22,16 @@ public class SignerUserID
         boolean    critical,
         String     userID)
     {
-        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, userIDToBytes(userID));
+        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, Strings.toUTF8ByteArray(userID));
     }
     
     public String getID()
     {
-        char[]    chars = new char[data.length];
-        
-        for (int i = 0; i != chars.length; i++)
-        {
-            chars[i] = (char)(data[i] & 0xff);
-        }
-        
-        return new String(chars);
+        return Strings.fromUTF8ByteArray(data);
+    }
+
+    public byte[] getRawID()
+    {
+        return Arrays.clone(data);
     }
 }
