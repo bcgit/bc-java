@@ -4,8 +4,17 @@ import java.io.IOException;
 import java.security.AlgorithmParameters;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 
+/**
+ * General JCA/JCE utility methods.
+ */
 public class JcaJceUtils
 {
     private JcaJceUtils()
@@ -37,6 +46,13 @@ public class JcaJceUtils
         return asn1Params;
     }
 
+    /**
+     * Load an AlgorithmParameters object with the passed in ASN.1 encodable - if possible.
+     *
+     * @param params the AlgorithmParameters object to be initialised.
+     * @param sParams the ASN.1 encodable to initialise params with.
+     * @throws IOException if the parameters cannot be initialised.
+     */
     public static void loadParameters(AlgorithmParameters params, ASN1Encodable sParams)
         throws IOException
     {
@@ -48,6 +64,61 @@ public class JcaJceUtils
         catch (Exception ex)
         {
             params.init(sParams.toASN1Primitive().getEncoded());
+        }
+    }
+
+    /**
+     * Attempt to find a standard JCA name for the digest represented by the past in OID.
+     *
+     * @param digestAlgOID the OID of the digest algorithm of interest.
+     * @return a string representing the standard name - the OID as a string if none available.
+     */
+    public static String getDigestAlgName(
+        ASN1ObjectIdentifier digestAlgOID)
+    {
+        if (PKCSObjectIdentifiers.md5.equals(digestAlgOID))
+        {
+            return "MD5";
+        }
+        else if (OIWObjectIdentifiers.idSHA1.equals(digestAlgOID))
+        {
+            return "SHA1";
+        }
+        else if (NISTObjectIdentifiers.id_sha224.equals(digestAlgOID))
+        {
+            return "SHA224";
+        }
+        else if (NISTObjectIdentifiers.id_sha256.equals(digestAlgOID))
+        {
+            return "SHA256";
+        }
+        else if (NISTObjectIdentifiers.id_sha384.equals(digestAlgOID))
+        {
+            return "SHA384";
+        }
+        else if (NISTObjectIdentifiers.id_sha512.equals(digestAlgOID))
+        {
+            return "SHA512";
+        }
+        else if (TeleTrusTObjectIdentifiers.ripemd128.equals(digestAlgOID))
+        {
+            return "RIPEMD128";
+        }
+        else if (TeleTrusTObjectIdentifiers.ripemd160.equals(digestAlgOID))
+        {
+            return "RIPEMD160";
+        }
+        else if (TeleTrusTObjectIdentifiers.ripemd256.equals(digestAlgOID))
+        {
+            return "RIPEMD256";
+        }
+        else if (CryptoProObjectIdentifiers.gostR3411.equals(digestAlgOID))
+        {
+            return "GOST3411";
+        }
+        else
+        {
+            return digestAlgOID.getId();
         }
     }
 }

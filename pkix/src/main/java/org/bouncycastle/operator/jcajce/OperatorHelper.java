@@ -91,9 +91,9 @@ class OperatorHelper
         oids.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
         oids.put(NISTObjectIdentifiers.id_sha384, "SHA-384");
         oids.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD-128");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD-160");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-256");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
 
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
 
@@ -242,7 +242,7 @@ class OperatorHelper
 
         try
         {
-            dig = helper.createDigest(getDigestAlgName(digAlgId.getAlgorithm()));
+            dig = helper.createDigest(JcaJceUtils.getDigestAlgName(digAlgId.getAlgorithm()));
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -336,7 +336,7 @@ class OperatorHelper
             if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
+                return JcaJceUtils.getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
             }
         }
 
@@ -346,55 +346,6 @@ class OperatorHelper
         }
 
         return sigAlgId.getAlgorithm().getId();
-    }
-
-    private static String getDigestAlgName(
-        ASN1ObjectIdentifier digestAlgOID)
-    {
-        if (PKCSObjectIdentifiers.md5.equals(digestAlgOID))
-        {
-            return "MD5";
-        }
-        else if (OIWObjectIdentifiers.idSHA1.equals(digestAlgOID))
-        {
-            return "SHA1";
-        }
-        else if (NISTObjectIdentifiers.id_sha224.equals(digestAlgOID))
-        {
-            return "SHA224";
-        }
-        else if (NISTObjectIdentifiers.id_sha256.equals(digestAlgOID))
-        {
-            return "SHA256";
-        }
-        else if (NISTObjectIdentifiers.id_sha384.equals(digestAlgOID))
-        {
-            return "SHA384";
-        }
-        else if (NISTObjectIdentifiers.id_sha512.equals(digestAlgOID))
-        {
-            return "SHA512";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd128.equals(digestAlgOID))
-        {
-            return "RIPEMD128";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd160.equals(digestAlgOID))
-        {
-            return "RIPEMD160";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd256.equals(digestAlgOID))
-        {
-            return "RIPEMD256";
-        }
-        else if (CryptoProObjectIdentifiers.gostR3411.equals(digestAlgOID))
-        {
-            return "GOST3411";
-        }
-        else
-        {
-            return digestAlgOID.getId();
-        }
     }
 
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
