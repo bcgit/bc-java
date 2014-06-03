@@ -1,15 +1,12 @@
 package org.bouncycastle.openpgp.examples;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.security.Security;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -78,7 +75,7 @@ public class DirectKeySignature
             String notationValue = args[4];
 
             // create the signed keyRing
-            PGPPublicKeyRing sRing = new PGPPublicKeyRing(new ByteArrayInputStream(signPublicKey(secRing.getSecretKey(), secretKeyPass, ring.getPublicKey(), notationName, notationValue, true)), new JcaKeyFingerprintCalculator());
+            PGPPublicKeyRing sRing = new PGPPublicKeyRing(new ByteArrayInputStream(signPublicKey(secRing.getSecretKey(), secretKeyPass, ring.getPublicKey(), notationName, notationValue)), new JcaKeyFingerprintCalculator());
             ring = sRing;
 
             // write the created keyRing to file
@@ -95,24 +92,13 @@ public class DirectKeySignature
         }
     }
 
-    private static byte[] signPublicKey(PGPSecretKey secretKey, String secretKeyPass, PGPPublicKey keyToBeSigned, String notationName, String notationValue, boolean armor) throws Exception
+    private static byte[] signPublicKey(PGPSecretKey secretKey, String secretKeyPass, PGPPublicKey keyToBeSigned, String notationName, String notationValue) throws Exception
     {
-        OutputStream out = new ByteArrayOutputStream();
-
-        if (armor)
-        {
-            out = new ArmoredOutputStream(out);
-        }
-
         PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(secretKeyPass.toCharArray()));
 
         PGPSignatureGenerator       sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(secretKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1).setProvider("BC"));
 
         sGen.init(PGPSignature.DIRECT_KEY, pgpPrivKey);
-
-        BCPGOutputStream            bOut = new BCPGOutputStream(out);
-
-        sGen.generateOnePassVersion(false).encode(bOut);
 
         PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
 
@@ -121,14 +107,8 @@ public class DirectKeySignature
         spGen.setNotationData(true, isHumanReadable, notationName, notationValue);
 
         PGPSignatureSubpacketVector packetVector = spGen.generate();
+
         sGen.setHashedSubpackets(packetVector);
-
-        bOut.flush();
-
-        if (armor)
-        {
-            out.close();
-        }
 
         return PGPPublicKey.addCertification(keyToBeSigned, sGen.generate()).getEncoded();
     }
