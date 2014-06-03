@@ -9,6 +9,27 @@ import java.util.SimpleTimeZone;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+- * UTC time object.
+ * Internal facade of {@link ASN1UTCTime}.
+ * <p>
+ * This datatype is valid only from 1950-01-01 00:00:00 UTC until 2049-12-31 23:59:59 UTC.
+ * <p>
+ * <hr>
+ * <p><b>X.690</b></p>
+ * <p><b>11: Restrictions on BER employed by both CER and DER</b></p>
+ * <p><b>11.8 UTCTime </b></p>
+ * <b>11.8.1</b> The encoding shall terminate with "Z",
+ * as described in the ITU-T X.680 | ISO/IEC 8824-1 clause on UTCTime.
+ * <p>
+ * <b>11.8.2</b> The seconds element shall always be present.
+ * <p>
+ * <b>11.8.3</b> Midnight (GMT) shall be represented in the form:
+ * <blockquote>
+ * "YYMMDD000000Z"
+ * </blockquote>
+ * where "YYMMDD" represents the day following the midnight in question.
+ */
 public class ASN1UTCTime
     extends ASN1Primitive
 {
