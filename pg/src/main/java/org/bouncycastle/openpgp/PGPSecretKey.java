@@ -29,7 +29,7 @@ import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
 /**
- * general class to handle a PGP secret key object.
+ * general class to handle and construct  a PGP secret key object.
  */
 public class PGPSecretKey
 {    
@@ -53,8 +53,19 @@ public class PGPSecretKey
     {
         this(privKey, pubKey, checksumCalculator, false, keyEncryptor);
     }
-    
-    PGPSecretKey(
+
+    /**
+     * Construct a PGPSecretKey using the passed in private key and public key. This constructor will not add any
+     * certifications but assumes that pubKey already has what is required.
+     *
+     * @param privKey the private key component.
+     * @param pubKey the public key component.
+     * @param checksumCalculator a calculator for the private key checksum
+     * @param isMasterKey true if the key is a master key, false otherwise.
+     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @throws PGPException if there is an issue creating the secret key packet.
+     */
+    public PGPSecretKey(
         PGPPrivateKey   privKey,
         PGPPublicKey    pubKey,
         PGPDigestCalculator checksumCalculator,
@@ -94,7 +105,7 @@ public class PGPSecretKey
 
             pOut.write(checksum(checksumCalculator, keyData, keyData.length));
 
-            int encAlgorithm = keyEncryptor.getAlgorithm();
+            int encAlgorithm = (keyEncryptor != null) ? keyEncryptor.getAlgorithm() : SymmetricKeyAlgorithmTags.NULL;
 
             if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
             {
@@ -151,6 +162,20 @@ public class PGPSecretKey
         }
     }
 
+    /**
+     * Construct a PGPSecretKey using the passed in private/public key pair and binding it to the passed in id
+     * using a generated certification of certificationLevel.The secret key checksum is calculated using the original
+     * non-digest based checksum.
+     *
+     * @param certificationLevel the type of certification to be added.
+     * @param keyPair the public/private keys to use.
+     * @param id the id to bind to the key.
+     * @param hashedPcks the hashed packets to be added to the certification.
+     * @param unhashedPcks the unhashed packets to be added to the certification.
+     * @param certificationSignerBuilder the builder for generating the certification.
+     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @throws PGPException if there is an issue creating the secret key packet or the certification.
+     */
     public PGPSecretKey(
         int                         certificationLevel,
         PGPKeyPair                  keyPair,
@@ -164,6 +189,20 @@ public class PGPSecretKey
         this(certificationLevel, keyPair, id, null, hashedPcks, unhashedPcks, certificationSignerBuilder, keyEncryptor);
     }
 
+    /**
+     * Construct a PGPSecretKey using the passed in private/public key pair and binding it to the passed in id
+     * using a generated certification of certificationLevel.
+     *
+     * @param certificationLevel the type of certification to be added.
+     * @param keyPair the public/private keys to use.
+     * @param id the id to bind to the key.
+     * @param checksumCalculator a calculator for the private key checksum.
+     * @param hashedPcks the hashed packets to be added to the certification.
+     * @param unhashedPcks the unhashed packets to be added to the certification.
+     * @param certificationSignerBuilder the builder for generating the certification.
+     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @throws PGPException if there is an issue creating the secret key packet or the certification.
+     */
     public PGPSecretKey(
         int                         certificationLevel,
         PGPKeyPair                  keyPair,
@@ -298,7 +337,7 @@ public class PGPSecretKey
     /**
      * Return any user attribute vectors associated with the key.
      * 
-     * @return an iterator of Strings.
+     * @return an iterator of PGPUserAttributeSubpacketVector.
      */
     public Iterator getUserAttributes()
     {
@@ -469,9 +508,9 @@ public class PGPSecretKey
 
             try
             {
-            dOut.write(bytes, 0, length);
+                dOut.write(bytes, 0, length);
 
-            dOut.close();
+                dOut.close();
             }
             catch (Exception e)
             {
