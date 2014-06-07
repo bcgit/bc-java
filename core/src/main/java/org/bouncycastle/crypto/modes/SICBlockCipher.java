@@ -90,6 +90,8 @@ public class SICBlockCipher
         if (byteCount == 0)
         {
             cipher.processBlock(counter, 0, counterOut, 0);
+
+            return (byte)(counterOut[byteCount++] ^ in);
         }
 
         byte rv = (byte)(counterOut[byteCount++] ^ in);
