@@ -25,6 +25,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -110,6 +111,27 @@ public class PGPECDSATest
         if (!Arrays.areEqual(secRing.getEncoded(), secRingEnc.getEncoded()))
         {
             fail("secret key ring encoding failed");
+        }
+
+
+        //
+        // try a signature using encoded key
+        //
+        signGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256).setProvider("BC"));
+
+        signGen.init(PGPSignature.BINARY_DOCUMENT, secRing.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(passPhrase)));
+
+        signGen.update("hello world!".getBytes());
+
+        sig = signGen.generate();
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), secRing.getSecretKey().getPublicKey());
+
+        sig.update("hello world!".getBytes());
+
+        if (!sig.verify())
+        {
+            fail("re-encoded signature failed to verify!");
         }
     }
 
