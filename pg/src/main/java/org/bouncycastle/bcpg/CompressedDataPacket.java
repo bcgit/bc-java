@@ -3,26 +3,26 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 
 /**
- * generic compressed data object.
+ * A generic compressed data object.
  */
-public class CompressedDataPacket 
+public class CompressedDataPacket
     extends InputStreamPacket
 {
     int    algorithm;
-    
+
     CompressedDataPacket(
         BCPGInputStream    in)
         throws IOException
     {
         super(in);
-        
-        algorithm = in.read();    
+
+        algorithm = in.read();
     }
-    
+
     /**
-     * return the algorithm tag value.
+     * Gets the {@link CompressionAlgorithmTags compression algorithm} used for this packet.
      * 
-     * @return algorithm tag value.
+     * @return the compression algorithm tag value.
      */
     public int getAlgorithm()
     {

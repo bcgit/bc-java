@@ -8,9 +8,17 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A PGP encrypted data object.
+ * <p/>
+ * Encrypted data packets are decrypted using a {@link PGPDataDecryptor} obtained from a
+ * {@link PGPDataDecryptorFactory}.
+ */
 public abstract class PGPEncryptedData
     implements SymmetricKeyAlgorithmTags
 {
@@ -19,9 +27,9 @@ public abstract class PGPEncryptedData
         int[]         lookAhead = new int[22];
         int           bufPtr;
         InputStream   in;
-        
+
         TruncatedStream(
-            InputStream    in) 
+            InputStream    in)
             throws IOException
         {
             for (int i = 0; i != lookAhead.length; i++)
@@ -31,34 +39,34 @@ public abstract class PGPEncryptedData
                     throw new EOFException();
                 }
             }
-            
+
             bufPtr = 0;
             this.in = in;
         }
 
-        public int read() 
+        public int read()
             throws IOException
         {
             int    ch = in.read();
-            
+
             if (ch >= 0)
             {
                 int    c = lookAhead[bufPtr];
-                
+
                 lookAhead[bufPtr] = ch;
                 bufPtr = (bufPtr + 1) % lookAhead.length;
-                
+
                 return c;
             }
-            
+
             return -1;
         }
-        
+
         int[] getLookAhead()
         {
             int[]    tmp = new int[lookAhead.length];
             int    count = 0;
-            
+
             for (int i = bufPtr; i != lookAhead.length; i++)
             {
                 tmp[count++] = lookAhead[i];
@@ -67,11 +75,11 @@ public abstract class PGPEncryptedData
             {
                 tmp[count++] = lookAhead[i];
             }
-            
+
             return tmp;
         }
     }
-    
+
     InputStreamPacket        encData;
     InputStream              encStream;
     TruncatedStream          truncStream;
@@ -82,31 +90,41 @@ public abstract class PGPEncryptedData
     {
         this.encData = encData;
     }
-    
+
     /**
      * Return the raw input stream for the data stream.
-     * 
-     * @return InputStream
+     * <p/>
+     * Note this stream is shared with all other encryption methods in the same
+     * {@link PGPEncryptedDataList} and with any decryption methods in sub-classes, so consuming
+     * this stream will affect decryption.
+     *
+     * @return the encrypted data in this packet.
      */
     public InputStream getInputStream()
     {
         return encData.getInputStream();
     }
-    
+
     /**
-     * Return true if the message is integrity protected.
-     * @return true if there is a modification detection code package associated with this stream
+     * Checks whether the packet is integrity protected.
+     *
+     * @return <code>true</code> if there is a modification detection code package associated with
+     *         this stream
      */
     public boolean isIntegrityProtected()
     {
         return (encData instanceof SymmetricEncIntegrityPacket);
     }
-    
+
     /**
+     * Verifies the integrity of the packet against the modification detection code associated with
+     * it in the stream.
+     * <p/>
      * Note: This can only be called after the message has been read.
-     * 
-     * @return true if the message verifies, false otherwise.
-     * @throws PGPException if the message is not integrity protected.
+     *
+     * @return <code>true</code> if the message verifies, <code>false</code> otherwise.
+     * @throws PGPException if the message is not {@link #isIntegrityProtected() integrity
+     *             protected}.
      */
     public boolean verify()
         throws PGPException, IOException

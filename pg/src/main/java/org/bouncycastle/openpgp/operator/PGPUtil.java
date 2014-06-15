@@ -22,6 +22,7 @@ class PGPUtil
         char[]  passPhrase)
         throws PGPException
     {
+        // TODO: Never used
         String    algName = null;
         int        keySize = 0;
 
