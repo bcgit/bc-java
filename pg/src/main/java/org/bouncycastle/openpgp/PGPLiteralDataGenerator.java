@@ -43,6 +43,7 @@ public class PGPLiteralDataGenerator implements StreamGenerator
     /**
      * The special name indicating a "for your eyes only" packet.
      */
+    // TODO: Not used?
     public static final String  CONSOLE = PGPLiteralData.CONSOLE;
 
     /**

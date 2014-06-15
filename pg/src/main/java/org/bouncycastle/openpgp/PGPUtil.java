@@ -37,6 +37,7 @@ public class PGPUtil
      */
     public static String getDefaultProvider()
     {
+        // TODO: This is unused?
         return defProvider;
     }
 

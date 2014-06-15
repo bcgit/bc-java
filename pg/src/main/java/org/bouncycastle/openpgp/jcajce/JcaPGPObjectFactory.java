@@ -29,6 +29,7 @@ public class JcaPGPObjectFactory
      */
     public JcaPGPObjectFactory(InputStream in)
     {
+        // FIXME: Convert this to builder style so we can set provider?
         super(in, new JcaKeyFingerprintCalculator());
     }
 }
