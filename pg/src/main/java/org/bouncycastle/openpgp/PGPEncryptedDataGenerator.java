@@ -41,6 +41,7 @@ import org.bouncycastle.util.io.TeeOutputStream;
 public class PGPEncryptedDataGenerator
     implements SymmetricKeyAlgorithmTags, StreamGenerator
 {
+    // TODO: These seem to belong on the PBE classes. Are they even used now?
     /**
      * Specifier for SHA-1 S2K PBE generator.
      */
