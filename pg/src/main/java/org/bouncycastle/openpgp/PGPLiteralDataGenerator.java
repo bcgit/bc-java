@@ -208,18 +208,7 @@ public class PGPLiteralDataGenerator implements StreamGenerator
         File            file)
         throws IOException
     {
-        if (pkOut != null)
-        {
-            throw new IllegalStateException("generator already in open state");
-        }
-
-        byte[] encName = Strings.toUTF8ByteArray(file.getName());
-
-        pkOut = new BCPGOutputStream(out, PacketTags.LITERAL_DATA, file.length() + 2 + encName.length + 4, oldFormat);
-        
-        writeHeader(pkOut, format, encName, file.lastModified());
-
-        return new WrappedGeneratorStream(pkOut, this);
+        return open(out, format, file.getName(), file.length(), new Date(file.lastModified()));
     }
 
     /**
