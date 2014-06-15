@@ -40,16 +40,6 @@ public class PGPPBEEncryptedData
     }
 
     /**
-     * Return the raw input stream for the data stream.
-     * 
-     * @return InputStream
-     */
-    public InputStream getInputStream()
-    {
-        return encData.getInputStream();
-    }
-
-   /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data.
