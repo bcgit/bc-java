@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
@@ -13,21 +14,31 @@ import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * A password based encryption object.
+ * <p/>
+ * PBE encrypted data objects can be {@link #getDataStream(PBEDataDecryptorFactory) decrypted }
+ * using a {@link PBEDataDecryptorFactory}.
  */
 public class PGPPBEEncryptedData
     extends PGPEncryptedData
 {
     SymmetricKeyEncSessionPacket    keyData;
-    
+
+    /**
+     * Construct a PBE encryped data object.
+     *
+     * @param keyData the PBE key data packet associated with the encrypted data in the PGP object
+     *            stream.
+     * @param encData the encrypted data.
+     */
     PGPPBEEncryptedData(
         SymmetricKeyEncSessionPacket    keyData,
         InputStreamPacket               encData)
     {
         super(encData);
-        
+
         this.keyData = keyData;
     }
-    
+
     /**
      * Return the raw input stream for the data stream.
      * 
@@ -41,8 +52,9 @@ public class PGPPBEEncryptedData
    /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
-     * @param dataDecryptorFactory   decryptor factory to use to recover the session data.
-     * @return  the integer encryption algorithm code.
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data.
+     * @return the identifier of the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
+     *         encrypt this object.
      * @throws PGPException if the session data cannot be recovered.
      */
     public int getSymmetricAlgorithm(
@@ -55,12 +67,14 @@ public class PGPPBEEncryptedData
         return sessionData[0];
     }
 
-   /**
+    /**
      * Open an input stream which will provide the decrypted data protected by this object.
-     *
-     * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.
-     * @return  the resulting input stream
-     * @throws PGPException  if the session data cannot be recovered or the stream cannot be created.
+     * 
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide
+     *            the stream.
+     * @return the resulting decrypted input stream, probably containing a sequence of PGP data
+     *         objects.
+     * @throws PGPException if the session data cannot be recovered or the stream cannot be created.
      */
     public InputStream getDataStream(
         PBEDataDecryptorFactory dataDecryptorFactory)

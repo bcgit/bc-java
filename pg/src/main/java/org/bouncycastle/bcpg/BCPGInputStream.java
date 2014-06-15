@@ -7,7 +7,7 @@ import java.io.InputStream;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * reader for PGP objects
+ * Stream reader for PGP objects
  */
 public class BCPGInputStream
     extends InputStream implements PacketTags
@@ -15,19 +15,19 @@ public class BCPGInputStream
     InputStream    in;
     boolean        next = false;
     int            nextB;
-    
+
     public BCPGInputStream(
         InputStream    in)
     {
         this.in = in;
     }
-    
+
     public int available()
         throws IOException
     {
         return in.available();
     }
-    
+
     public int read()
         throws IOException
     {
@@ -98,11 +98,11 @@ public class BCPGInputStream
     }
 
     /**
-     * returns the next packet tag in the stream.
-     * 
-     * @return the tag number.
-     * 
-     * @throws IOException
+     * Obtains the tag of the next packet in the stream.
+     *
+     * @return the {@link PacketTags tag number}.
+     *
+     * @throws IOException if an error occurs reading the tag from the stream.
      */
     public int nextPacketTag()
         throws IOException
@@ -117,8 +117,8 @@ public class BCPGInputStream
             {
                 nextB = -1;
             }
-        } 
-        
+        }
+
         next = true;
 
         if (nextB >= 0)
@@ -132,20 +132,24 @@ public class BCPGInputStream
                 return ((nextB & 0x3f) >> 2);
             }
         }
-        
+
         return nextB;
     }
 
+    /**
+     * Reads the next packet from the stream.
+     * @throws IOException
+     */
     public Packet readPacket()
         throws IOException
     {
         int    hdr = this.read();
-        
+
         if (hdr < 0)
         {
             return null;
         }
-        
+
         if ((hdr & 0x80) == 0)
         {
             throw new IOException("invalid header encountered");
@@ -155,11 +159,11 @@ public class BCPGInputStream
         int        tag = 0;
         int        bodyLen = 0;
         boolean    partial = false;
-        
+
         if (newPacket)
         {
             tag = hdr & 0x3f;
-            
+
             int    l = this.read();
 
             if (l < 192)
@@ -185,7 +189,7 @@ public class BCPGInputStream
         else
         {
             int lengthType = hdr & 0x3;
-            
+
             tag = (hdr & 0x3f) >> 2;
 
             switch (lengthType)
@@ -208,7 +212,7 @@ public class BCPGInputStream
         }
 
         BCPGInputStream    objStream;
-        
+
         if (bodyLen == 0 && partial)
         {
             objStream = this;
@@ -265,13 +269,13 @@ public class BCPGInputStream
             throw new IOException("unknown packet type encountered: " + tag);
         }
     }
-    
+
     public void close()
         throws IOException
     {
         in.close();
     }
-    
+
     /**
      * a stream that overlays our input stream, allowing the user to only read a segment of it.
      *
@@ -317,12 +321,12 @@ public class BCPGInputStream
             throws IOException
         {
             int            l = in.read();
-            
+
             if (l < 0)
             {
                 return -1;
             }
-            
+
             partial = false;
             if (l < 192)
             {
@@ -341,10 +345,10 @@ public class BCPGInputStream
                 partial = true;
                 dataLength = 1 << (l & 0x1f);
             }
-            
+
             return dataLength;
         }
-        
+
         public int read(byte[] buf, int offset, int len)
             throws IOException
         {
@@ -366,7 +370,7 @@ public class BCPGInputStream
 
             return -1;
         }
-        
+
         public int read()
             throws IOException
         {

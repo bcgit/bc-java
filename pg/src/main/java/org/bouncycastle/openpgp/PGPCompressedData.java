@@ -6,52 +6,62 @@ import java.io.InputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import org.bouncycastle.apache.bzip2.CBZip2InputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressedDataPacket;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
-import org.bouncycastle.apache.bzip2.CBZip2InputStream;
+import org.bouncycastle.bcpg.PacketTags;
 
 /**
- * Compressed data objects.
+ * A PGP compressed data object.
  */
-public class PGPCompressedData 
+public class PGPCompressedData
     implements CompressionAlgorithmTags
 {
     CompressedDataPacket    data;
-    
+
+    /**
+     * Construct a compressed data object, reading a single {@link PacketTags#COMPRESSED_DATA}
+     * packet from the stream.
+     *
+     * @param pIn a PGP input stream, with a compressed data packet as the current packet.
+     * @throws IOException if an error occurs reading the packet from the stream.
+     */
     public PGPCompressedData(
         BCPGInputStream    pIn)
         throws IOException
     {
         data = (CompressedDataPacket)pIn.readPacket();
     }
-    
+
     /**
-     * Return the algorithm used for compression
-     * 
-     * @return algorithm code
+     * Return the {@link CompressionAlgorithmTags compression algorithm} used for this packet.
+     *
+     * @return the compression algorithm code
      */
     public int getAlgorithm()
     {
         return data.getAlgorithm();
     }
-    
+
     /**
      * Return the raw input stream contained in the object.
-     * 
-     * @return InputStream
+     * <p/>
+     * Note that this stream is shared with the decompression stream, so consuming the returned
+     * stream will affect decompression.
+     *
+     * @return the raw data in the compressed data packet.
      */
     public InputStream getInputStream()
     {
         return data.getInputStream();
     }
-    
+
     /**
-     * Return an uncompressed input stream which allows reading of the 
-     * compressed data.
-     * 
-     * @return InputStream
-     * @throws PGPException
+     * Return an input stream that decompresses and returns data in the compressed packet.
+     *
+     * @return a stream over the uncompressed data.
+     * @throws PGPException if an error occurs constructing the decompression stream.
      */
     public InputStream getDataStream()
         throws PGPException
@@ -62,9 +72,9 @@ public class PGPCompressedData
       }
       if (this.getAlgorithm() == ZIP)
       {
-          return new InflaterInputStream(this.getInputStream(), new Inflater(true)) 
+          return new InflaterInputStream(this.getInputStream(), new Inflater(true))
           {
-              // If the "nowrap" inflater option is used the stream can 
+              // If the "nowrap" inflater option is used the stream can
               // apparently overread - we override fill() and provide
               // an extra byte for the end of the input stream to get
               // around this.
@@ -77,16 +87,16 @@ public class PGPCompressedData
                   {
                       throw new EOFException("Unexpected end of ZIP input stream");
                   }
-                  
+
                   len = this.in.read(buf, 0, buf.length);
-                  
+
                   if (len == -1)
                   {
                       buf[0] = 0;
                       len = 1;
                       eof = true;
                   }
-                  
+
                   inf.setInput(buf, 0, len);
               }
 
@@ -97,7 +107,7 @@ public class PGPCompressedData
       {
           return new InflaterInputStream(this.getInputStream())
           {
-              // If the "nowrap" inflater option is used the stream can 
+              // If the "nowrap" inflater option is used the stream can
               // apparently overread - we override fill() and provide
               // an extra byte for the end of the input stream to get
               // around this.
@@ -110,9 +120,9 @@ public class PGPCompressedData
                   {
                       throw new EOFException("Unexpected end of ZIP input stream");
                   }
-                  
+
                   len = this.in.read(buf, 0, buf.length);
-                  
+
                   if (len == -1)
                   {
                       buf[0] = 0;
@@ -137,7 +147,7 @@ public class PGPCompressedData
               throw new PGPException("I/O problem with stream: " + e, e);
           }
       }
-        
+
       throw new PGPException("can't recognise compression algorithm: " + this.getAlgorithm());
     }
 }
