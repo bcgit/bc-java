@@ -62,13 +62,6 @@ public class LiteralDataPacket
      */
     public byte[] getRawFileName()
     {
-        byte[] tmp = new byte[fileName.length];
-
-        for (int i = 0; i != tmp.length; i++)
-        {
-            tmp[i] = fileName[i];
-        }
-
-        return tmp;
+        return Arrays.clone(fileName);
     }
 }
