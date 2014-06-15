@@ -235,7 +235,7 @@ public class PGPUtil
         throws IOException
     {
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
-        OutputStream pOut = lData.open(out, fileType, file.getName(), file.length(), new Date(file.lastModified()));
+        OutputStream pOut = lData.open(out, fileType, file);
         pipeFileContents(file, pOut, 4096);
     }
 
@@ -294,7 +294,7 @@ public class PGPUtil
      * If the initial bytes of the underlying stream are binary PGP encodings, then the stream will
      * be returned directly, otherwise an {@link ArmoredInputStream} is used to wrap the provided
      * stream and remove ASCII-Armored encoding.
-     * 
+     *
      * @param in the stream to be checked and possibly wrapped.
      * @return a stream that will return PGP binary encoded data.
      * @throws IOException if an error occurs reading the stream, or initalising the
