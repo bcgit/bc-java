@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -16,10 +17,11 @@ public class BcPBEKeyEncryptionMethodGenerator
     extends PBEKeyEncryptionMethodGenerator
 {
     /**
-     *  Create a PBE encryption method generator using the provided calculator for key calculation.
+     * Create a PBE encryption method generator using the provided digest and the default S2K count
+     * for key generation.
      *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
-     * @param s2kDigestCalculator  the digest calculator to use for key calculation.
+     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param s2kDigestCalculator the digest calculator to use for key calculation.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator)
     {
@@ -27,9 +29,10 @@ public class BcPBEKeyEncryptionMethodGenerator
     }
 
     /**
-     * Create a PBE encryption method generator using the default SHA-1 digest calculator for key calculation.
+     * Create a PBE encryption method generator using the default SHA-1 digest and the default S2K
+     * count for key generation.
      *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
+     * @param passPhrase the passphrase to use as the primary source of key material.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase)
     {
@@ -37,11 +40,12 @@ public class BcPBEKeyEncryptionMethodGenerator
     }
 
     /**
-     *  Create a PBE encryption method generator using the provided calculator and S2K count for key calculation.
-     *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
-     * @param s2kDigestCalculator  the digest calculator to use for key calculation.
-     * @param s2kCount the S2K count to use.
+     * Create a PBE encryption method generator using the provided calculator and S2K count for key
+     * generation.
+     * 
+     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param s2kDigestCalculator the digest calculator to use for key calculation.
+     * @param s2kCount the single byte {@link S2K} count to use.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator, int s2kCount)
     {
@@ -49,23 +53,17 @@ public class BcPBEKeyEncryptionMethodGenerator
     }
 
     /**
-     * Create a PBE encryption method generator using the default SHA-1 digest calculator and
-     * a S2K count other than the default of 0x60  for key calculation.
+     * Create a PBE encryption method generator using the default SHA-1 digest calculator and a S2K
+     * count other than the default for key generation.
      *
      * @param passPhrase the passphrase to use as the primary source of key material.
-     * @param s2kCount the S2K count to use.
+     * @param s2kCount the single byte {@link S2K} count to use.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, int s2kCount)
     {
         super(passPhrase, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
-    /**
-     * Provide a user defined source of randomness.
-     *
-     * @param random  the secure random to be used.
-     * @return  the current generator.
-     */
     public PBEKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)
     {
         super.setSecureRandom(random);

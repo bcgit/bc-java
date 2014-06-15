@@ -6,7 +6,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 /**
- * Basic output stream.
+ * Output stream that writes data in ASCII Armored format.
  */
 public class ArmoredOutputStream
     extends OutputStream
@@ -84,7 +84,7 @@ public class ArmoredOutputStream
     boolean         start = true;
     boolean         clearText = false;
     boolean         newLine = false;
-    
+
     String          nl = System.getProperty("line.separator");
 
     String          type;
@@ -94,22 +94,34 @@ public class ArmoredOutputStream
     String          footerTail = "-----";
 
     String          version = "BCPG v@RELEASE_NAME@";
-    
+
     Hashtable       headers = new Hashtable();
-    
+
+    /**
+     * Constructs an armored output stream with {@link #resetHeaders() default headers}.
+     *
+     * @param out the OutputStream to wrap.
+     */
     public ArmoredOutputStream(
         OutputStream    out)
     {
         this.out = out;
-        
+
         if (nl == null)
         {
             nl = "\r\n";
         }
-        
+
         resetHeaders();
     }
-    
+
+    /**
+     * Constructs an armored output stream with default and custom headers.
+     * 
+     * @param out the OutputStream to wrap.
+     * @param headers additional headers that add to or override the {@link #resetHeaders() default
+     *            headers}.
+     */
     public ArmoredOutputStream(
         OutputStream    out,
         Hashtable       headers)
@@ -117,18 +129,18 @@ public class ArmoredOutputStream
         this(out);
 
         Enumeration e = headers.keys();
-        
+
         while (e.hasMoreElements())
         {
             Object key = e.nextElement();
-            
+
             this.headers.put(key, headers.get(key));
         }
     }
-    
+
     /**
      * Set an additional header entry.
-     * 
+     *
      * @param name the name of the header entry.
      * @param value the value of the header entry.
      */
@@ -138,7 +150,7 @@ public class ArmoredOutputStream
     {
         this.headers.put(name, value);
     }
-    
+
     /**
      * Reset the headers to only contain a Version string.
      */
@@ -147,17 +159,17 @@ public class ArmoredOutputStream
         headers.clear();
         headers.put("Version", version);
     }
-    
+
     /**
      * Start a clear text signed message.
      * @param hashAlgorithm
      */
     public void beginClearText(
-        int    hashAlgorithm) 
+        int    hashAlgorithm)
         throws IOException
     {
         String    hash;
-        
+
         switch (hashAlgorithm)
         {
         case HashAlgorithmTags.SHA1:
@@ -184,43 +196,43 @@ public class ArmoredOutputStream
         default:
             throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
         }
-        
+
         String armorHdr = "-----BEGIN PGP SIGNED MESSAGE-----" + nl;
         String hdrs = "Hash: " + hash + nl + nl;
-        
+
         for (int i = 0; i != armorHdr.length(); i++)
         {
             out.write(armorHdr.charAt(i));
         }
-        
+
         for (int i = 0; i != hdrs.length(); i++)
         {
             out.write(hdrs.charAt(i));
         }
-        
+
         clearText = true;
         newLine = true;
         lastb = 0;
     }
-    
+
     public void endClearText()
     {
         clearText = false;
     }
-    
+
     private void writeHeaderEntry(
         String name,
-        String value) 
+        String value)
         throws IOException
     {
         for (int i = 0; i != name.length(); i++)
         {
             out.write(name.charAt(i));
         }
-        
+
         out.write(':');
         out.write(' ');
-        
+
         for (int i = 0; i != value.length(); i++)
         {
             out.write(value.charAt(i));
@@ -231,7 +243,7 @@ public class ArmoredOutputStream
             out.write(nl.charAt(i));
         }
     }
-    
+
     public void write(
         int    b)
         throws IOException
@@ -259,12 +271,12 @@ public class ArmoredOutputStream
             lastb = b;
             return;
         }
-        
+
         if (start)
         {
             boolean     newPacket = (b & 0x40) != 0;
             int         tag = 0;
-            
+
             if (newPacket)
             {
                 tag = b & 0x3f;
@@ -288,7 +300,7 @@ public class ArmoredOutputStream
             default:
                 type = "MESSAGE";
             }
-            
+
             for (int i = 0; i != headerStart.length(); i++)
             {
                 out.write(headerStart.charAt(i));
@@ -308,20 +320,20 @@ public class ArmoredOutputStream
             {
                 out.write(nl.charAt(i));
             }
-          
+
             writeHeaderEntry("Version", (String)headers.get("Version"));
 
             Enumeration e = headers.keys();
             while (e.hasMoreElements())
             {
                 String  key = (String)e.nextElement();
-                
+
                 if (!key.equals("Version"))
                 {
                     writeHeaderEntry(key, (String)headers.get(key));
                 }
             }
-            
+
             for (int i = 0; i != nl.length(); i++)
             {
                 out.write(nl.charAt(i));
@@ -346,12 +358,12 @@ public class ArmoredOutputStream
         crc.update(b);
         buf[bufPtr++] = b & 0xff;
     }
-    
+
     public void flush()
         throws IOException
     {
     }
-    
+
     /**
      * <b>Note</b>: close does nor close the underlying stream. So it is possible to write
      * multiple objects using armoring to a single stream.
@@ -362,48 +374,48 @@ public class ArmoredOutputStream
         if (type != null)
         {
             encode(out, buf, bufPtr);
-        
+
             for (int i = 0; i != nl.length(); i++)
             {
                 out.write(nl.charAt(i));
             }
             out.write('=');
-        
+
             int        crcV = crc.getValue();
-        
+
             buf[0] = ((crcV >> 16) & 0xff);
             buf[1] = ((crcV >> 8) & 0xff);
             buf[2] = (crcV & 0xff);
-        
+
             encode(out, buf, 3);
-        
+
             for (int i = 0; i != nl.length(); i++)
             {
                 out.write(nl.charAt(i));
             }
-        
+
             for (int i = 0; i != footerStart.length(); i++)
             {
                 out.write(footerStart.charAt(i));
             }
-        
+
             for (int i = 0; i != type.length(); i++)
             {
                 out.write(type.charAt(i));
             }
-        
+
             for (int i = 0; i != footerTail.length(); i++)
             {
                 out.write(footerTail.charAt(i));
             }
-        
+
             for (int i = 0; i != nl.length(); i++)
             {
                 out.write(nl.charAt(i));
             }
-        
+
             out.flush();
-            
+
             type = null;
             start = true;
         }

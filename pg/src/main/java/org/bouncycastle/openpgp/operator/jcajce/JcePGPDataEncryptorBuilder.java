@@ -10,6 +10,7 @@ import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -18,6 +19,14 @@ import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
+/**
+ * {@link PGPDataEncryptorBuilder} implementation that sources cryptographic primitives using the
+ * JCE APIs.
+ * <p/>
+ * By default, cryptographic primitives will be loaded using the default JCE load order (i.e.
+ * without specifying a provider). <br/>
+ * A specific provider can be specified using one of the {@link #setProvider(String)} methods.
+ */
 public class JcePGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder
 {
@@ -26,6 +35,12 @@ public class JcePGPDataEncryptorBuilder
     private boolean withIntegrityPacket;
     private int encAlgorithm;
 
+    /**
+     * Constructs a new data encryptor builder for a specified cipher type.
+     *
+     * @param encAlgorithm one of the {@link SymmetricKeyAlgorithmTags supported symmetric cipher
+     *            algorithms}. May not be {@link SymmetricKeyAlgorithmTags#NULL}.
+     */
     public JcePGPDataEncryptorBuilder(int encAlgorithm)
     {
         this.encAlgorithm = encAlgorithm;
@@ -37,10 +52,10 @@ public class JcePGPDataEncryptorBuilder
     }
 
     /**
-     * Determine whether or not the resulting encrypted data will be protected using an integrity packet.
+     * Sets whether or not the resulting encrypted data will be protected using an integrity packet.
      *
      * @param withIntegrityPacket true if an integrity packet is to be included, false otherwise.
-     * @return  the current builder.
+     * @return the current builder.
      */
     public JcePGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket)
     {
@@ -49,6 +64,12 @@ public class JcePGPDataEncryptorBuilder
         return this;
     }
 
+    /**
+     * Sets the JCE provider to source cryptographic primitives from.
+     *
+     * @param provider the JCE provider to use.
+     * @return the current builder.
+     */
     public JcePGPDataEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
@@ -56,6 +77,12 @@ public class JcePGPDataEncryptorBuilder
         return this;
     }
 
+    /**
+     * Sets the JCE provider to source cryptographic primitives from.
+     *
+     * @param providerName the name of the JCE provider to use.
+     * @return the current builder.
+     */
     public JcePGPDataEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
@@ -65,9 +92,11 @@ public class JcePGPDataEncryptorBuilder
 
     /**
      * Provide a user defined source of randomness.
-     *
-     * @param random  the secure random to be used.
-     * @return  the current builder.
+     * <p/>
+     * If no SecureRandom is configured, a default SecureRandom will be used.
+     * 
+     * @param random the secure random to be used.
+     * @return the current builder.
      */
     public JcePGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
     {

@@ -18,6 +18,9 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
+/**
+ * {@link JcaJceHelper} that obtains all algorithms using a specific named provider.
+ */
 public class NamedJcaJceHelper
     implements JcaJceHelper
 {
