@@ -14,6 +14,10 @@ import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 
+/**
+ * Builder for {@link PBEDataDecryptorFactory} instances that obtain cryptographic primitives using
+ * the JCE API.
+ */
 public class JcePBEDataDecryptorFactoryBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
@@ -55,6 +59,12 @@ public class JcePBEDataDecryptorFactoryBuilder
         return this;
     }
 
+    /**
+     * Construct a {@link PBEDataDecryptorFactory} to use to decrypt PBE encrypted data.
+     *
+     * @param passPhrase the pass phrase to use to generate keys in the resulting factory.
+     * @return a decryptor factory that can be used to generate PBE keys.
+     */
     public PBEDataDecryptorFactory build(char[] passPhrase)
     {
          return new PBEDataDecryptorFactory(passPhrase, calculatorProvider)

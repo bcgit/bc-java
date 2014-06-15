@@ -17,15 +17,15 @@ import org.bouncycastle.util.io.TeeInputStream;
  */
 public class PGPPublicKeyEncryptedData
     extends PGPEncryptedData
-{    
+{
     PublicKeyEncSessionPacket        keyData;
-    
+
     PGPPublicKeyEncryptedData(
         PublicKeyEncSessionPacket    keyData,
         InputStreamPacket            encData)
     {
         super(encData);
-        
+
         this.keyData = keyData;
     }
 
@@ -33,19 +33,19 @@ public class PGPPublicKeyEncryptedData
         byte[]    sessionInfo)
     {
         int    check = 0;
-        
+
         for (int i = 1; i != sessionInfo.length - 2; i++)
         {
             check += sessionInfo[i] & 0xff;
         }
-        
+
         return (sessionInfo[sessionInfo.length - 2] == (byte)(check >> 8))
                     && (sessionInfo[sessionInfo.length - 1] == (byte)(check));
     }
-    
+
     /**
      * Return the keyID for the key used to encrypt the data.
-     * 
+     *
      * @return long
      */
     public long getKeyID()
@@ -55,9 +55,10 @@ public class PGPPublicKeyEncryptedData
 
     /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
-     *
-     * @param dataDecryptorFactory   decryptor factory to use to recover the session data.
-     * @return  the integer encryption algorithm code.
+     * 
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data.
+     * @return the identifier of the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
+     *         encrypt this object.
      * @throws PGPException if the session data cannot be recovered.
      */
     public int getSymmetricAlgorithm(

@@ -18,11 +18,30 @@ import org.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
- *  Generator for encrypted objects.
+ * Generator for encrypted objects.
+ * <p/>
+ * A PGPEncryptedDataGenerator is used by configuring one or more {@link #methods encryption
+ * methods}, and then invoking one of the open functions to create an OutputStream that raw data can
+ * be supplied to for encryption:
+ * <ul>
+ * <li>If the length of the data to be written is known in advance, use
+ * {@link #open(OutputStream, long)} to create a packet containing a single encrypted object.</li>
+ * <li>If the length of the data is unknown, use {@link #open(OutputStream, byte[])} to create an
+ * packet consisting of a series of encrypted objects (partials).</li>
+ * </ul>
+ * <p/>
+ * Raw data is not typically written directly to the OutputStream obtained from a
+ * PGPEncryptedDataGenerator. The OutputStream is usually wrapped by a
+ * {@link PGPLiteralDataGenerator}, and often with a {@link PGPCompressedDataGenerator} between.
+ * <p/>
+ * Once plaintext data for encryption has been written to the constructed OutputStream, writing of
+ * the encrypted object stream is completed by closing the OutputStream obtained from the
+ * <code>open()</code> method, or equivalently invoking {@link #close()} on this generator.
  */
 public class PGPEncryptedDataGenerator
     implements SymmetricKeyAlgorithmTags, StreamGenerator
 {
+    // TODO: These seem to belong on the PBE classes. Are they even used now?
     /**
      * Specifier for SHA-1 S2K PBE generator.
      */
@@ -85,11 +104,11 @@ public class PGPEncryptedDataGenerator
     }
 
     /**
-        *  Added a key encryption method to be used to encrypt the session data associated
-        *  with this encrypted data.
-        *
-        * @param method  key encryption method to use.
-        */
+     * Add a key encryption method to be used to encrypt the session data associated with this
+     * encrypted data.
+     *
+     * @param method key encryption method to use.
+     */
     public void addMethod(PGPKeyEncryptionMethodGenerator method)
     {
         methods.add(method);
@@ -99,12 +118,12 @@ public class PGPEncryptedDataGenerator
         byte[]    sessionInfo)
     {
         int    check = 0;
-        
+
         for (int i = 1; i != sessionInfo.length - 2; i++)
         {
             check += sessionInfo[i] & 0xff;
         }
-        
+
         sessionInfo[sessionInfo.length - 2] = (byte)(check >> 8);
         sessionInfo[sessionInfo.length - 1] = (byte)(check);
     }
@@ -121,20 +140,26 @@ public class PGPEncryptedDataGenerator
     }
 
     /**
-     * If buffer is non null stream assumed to be partial, otherwise the
-     * length will be used to output a fixed length packet.
+     * Create an OutputStream based on the configured methods.
+     *
+     * If the supplied buffer is non <code>null</code> the stream returned will write a sequence of
+     * partial packets, otherwise the length will be used to output a fixed length packet.
      * <p>
-     * The stream created can be closed off by either calling close()
-     * on the stream or close() on the generator. Closing the returned
-     * stream does not close off the OutputStream parameter out.
-     * 
-     * @param out
-     * @param length
-     * @param buffer
+     * The stream created can be closed off by either calling close() on the stream or close() on
+     * the generator. Closing the returned stream does not close off the OutputStream parameter out.
+     *
+     * @param out the stream to write encrypted packets to.
+     * @param length the length of the data to be encrypted. Ignored if buffer is non
+     *            <code>null</code>.
+     * @param buffer a buffer to use to buffer and write partial packets.
      * @return the generator's output stream.
-     * @throws java.io.IOException
-     * @throws PGPException
-     * @throws IllegalStateException
+     * @throws IOException if an error occurs writing stream header information to the provider
+     *             output stream.
+     * @throws PGPException if an error occurs initialising PGP encryption for the configured
+     *             encryption methods.
+     * @throws IllegalStateException if this generator already has an open OutputStream, or no
+     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *             configured.
      */
     private OutputStream open(
         OutputStream    out,
@@ -160,7 +185,7 @@ public class PGPEncryptedDataGenerator
         rand = dataEncryptorBuilder.getSecureRandom();
 
         if (methods.size() == 1)
-        {    
+        {
 
             if (methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
             {
@@ -197,7 +222,7 @@ public class PGPEncryptedDataGenerator
             PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(key);
 
             digestCalc = dataEncryptor.getIntegrityCalculator();
-            
+
             if (buffer == null)
             {
                 //
@@ -250,18 +275,23 @@ public class PGPEncryptedDataGenerator
     }
 
     /**
-     * Return an outputstream which will encrypt the data as it is written
-     * to it.
+     * Create an OutputStream based on the configured methods to write a single encrypted object of
+     * known length.
+     *
      * <p>
-     * The stream created can be closed off by either calling close()
-     * on the stream or close() on the generator. Closing the returned
-     * stream does not close off the OutputStream parameter out.
-     * 
-     * @param out
-     * @param length
-     * @return OutputStream
-     * @throws IOException
-     * @throws PGPException
+     * The stream created can be closed off by either calling close() on the stream or close() on
+     * the generator. Closing the returned stream does not close off the OutputStream parameter out.
+     *
+     * @param out the stream to write encrypted packets to.
+     * @param length the length of the data to be encrypted.
+     * @return the output stream to write data to for encryption.
+     * @throws IOException if an error occurs writing stream header information to the provider
+     *             output stream.
+     * @throws PGPException if an error occurs initialising PGP encryption for the configured
+     *             encryption methods.
+     * @throws IllegalStateException if this generator already has an open OutputStream, or no
+     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *             configured.
      */
     public OutputStream open(
         OutputStream    out,
@@ -270,24 +300,29 @@ public class PGPEncryptedDataGenerator
     {
         return this.open(out, length, null);
     }
-    
+
     /**
-     * Return an outputstream which will encrypt the data as it is written
-     * to it. The stream will be written out in chunks according to the size of the
+     * Create an OutputStream which will encrypt the data as it is written to it. The stream of
+     * encrypted data will be written out in chunks (partial packets) according to the size of the
      * passed in buffer.
      * <p>
-     * The stream created can be closed off by either calling close()
-     * on the stream or close() on the generator. Closing the returned
-     * stream does not close off the OutputStream parameter out.
+     * The stream created can be closed off by either calling close() on the stream or close() on
+     * the generator. Closing the returned stream does not close off the OutputStream parameter out.
      * <p>
-     * <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2
-     * bytes worth of the buffer will be used.
+     * <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2 bytes
+     * worth of the buffer will be used.
      * 
-     * @param out
-     * @param buffer the buffer to use.
-     * @return OutputStream
-     * @throws IOException
-     * @throws PGPException
+     * @param out the stream to write encrypted packets to.
+     * @param buffer a buffer to use to buffer and write partial packets. The returned stream takes
+     *            ownership of the buffer and will use it to buffer plaintext data for encryption.
+     * @return the output stream to write data to for encryption.
+     * @throws IOException if an error occurs writing stream header information to the provider
+     *             output stream.
+     * @throws PGPException if an error occurs initialising PGP encryption for the configured
+     *             encryption methods.
+     * @throws IllegalStateException if this generator already has an open OutputStream, or no
+     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *             configured.
      */
     public OutputStream open(
         OutputStream    out,
@@ -296,19 +331,22 @@ public class PGPEncryptedDataGenerator
     {
         return this.open(out, 0, buffer);
     }
-    
+
     /**
-     * Close off the encrypted object - this is equivalent to calling close on the stream
-     * returned by the open() method.
+     * Close off the encrypted object - this is equivalent to calling close on the stream returned
+     * by the <code>open()</code> methods.
      * <p>
-     * <b>Note</b>: This does not close the underlying output stream, only the stream on top of it created by the open() method.
-     * @throws java.io.IOException
+     * <b>Note</b>: This does not close the underlying output stream, only the stream on top of it
+     * created by the <code>open()</code> method.
+     *
+     * @throws IOException if an error occurs writing trailing information (such as integrity check
+     *             information) to the underlying stream.
      */
     public void close()
         throws IOException
     {
         if (cOut != null)
-        {    
+        {
             if (digestCalc != null)
             {
                 //

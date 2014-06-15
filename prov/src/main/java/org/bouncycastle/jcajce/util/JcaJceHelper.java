@@ -18,6 +18,9 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
+/**
+ * Factory interface for instantiating JCA/JCE primitives.
+ */
 public interface JcaJceHelper
 {
     Cipher createCipher(

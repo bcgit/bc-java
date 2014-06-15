@@ -24,7 +24,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
  * Class to hold a single master secret key and its subkeys.
  * <p>
  * Often PGP keyring files consist of multiple master keys, if you are trying to process
- * or construct one of these you should use the PGPSecretKeyRingCollection class.
+ * or construct one of these you should use the {@link PGPSecretKeyRingCollection} class.
  */
 public class PGPSecretKeyRing
     extends PGPKeyRing

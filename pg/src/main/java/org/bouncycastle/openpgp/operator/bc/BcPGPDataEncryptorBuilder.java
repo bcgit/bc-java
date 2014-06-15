@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.io.CipherOutputStream;
@@ -11,6 +12,10 @@ import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
+/**
+ * {@link PGPDataEncryptorBuilder} implementation that uses the Bouncy Castle lightweight API to
+ * implement cryptographic primitives.
+ */
 public class BcPGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder
 {
@@ -18,6 +23,12 @@ public class BcPGPDataEncryptorBuilder
     private boolean withIntegrityPacket;
     private int encAlgorithm;
 
+    /**
+     * Constructs a new data encryptor builder for a specified cipher type.
+     * 
+     * @param encAlgorithm one of the {@link SymmetricKeyAlgorithmTags supported symmetric cipher
+     *            algorithms}. May not be {@link SymmetricKeyAlgorithmTags#NULL}.
+     */
     public BcPGPDataEncryptorBuilder(int encAlgorithm)
     {
         this.encAlgorithm = encAlgorithm;
@@ -28,11 +39,11 @@ public class BcPGPDataEncryptorBuilder
         }
     }
 
-   /**
-     * Determine whether or not the resulting encrypted data will be protected using an integrity packet.
+    /**
+     * Sets whether or not the resulting encrypted data will be protected using an integrity packet.
      *
      * @param withIntegrityPacket true if an integrity packet is to be included, false otherwise.
-     * @return  the current builder.
+     * @return the current builder.
      */
     public BcPGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket)
     {
@@ -43,9 +54,11 @@ public class BcPGPDataEncryptorBuilder
 
     /**
      * Provide a user defined source of randomness.
+     * <p/>
+     * If no SecureRandom is configured, a default SecureRandom will be used.
      *
-     * @param random  the secure random to be used.
-     * @return  the current builder.
+     * @param random the secure random to be used.
+     * @return the current builder.
      */
     public BcPGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
     {
