@@ -14,6 +14,8 @@ import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 public class JcaKeyFingerprintCalculator
     implements KeyFingerPrintCalculator
 {
+
+    // FIXME: Convert this to builder style so we can set provider?
     public byte[] calculateFingerprint(PublicKeyPacket publicPk)
         throws PGPException
     {

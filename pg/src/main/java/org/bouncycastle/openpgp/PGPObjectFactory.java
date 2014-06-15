@@ -8,16 +8,32 @@ import java.util.List;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 
 /**
  * General class for reading a PGP object stream.
- * <p>
- * Note: if this class finds a PGPPublicKey or a PGPSecretKey it
- * will create a PGPPublicKeyRing, or a PGPSecretKeyRing for each
- * key found. If all you are trying to do is read a key ring file use
- * either PGPPublicKeyRingCollection or PGPSecretKeyRingCollection.
+ * <p/>
+ * Note: if this class finds a {@link PGPPublicKey} or a {@link PGPSecretKey} it will create a
+ * {@link PGPPublicKeyRing}, or a {@link PGPSecretKeyRing} for each key found. If all you are trying
+ * to do is read a key ring file use either {@link PGPPublicKeyRingCollection} or
+ * {@link PGPSecretKeyRingCollection}.
+ * <p/>
+ * This factory supports reading the following types of objects:
+ * <ul>
+ * <li>{@link PacketTags#SIGNATURE} - produces a {@link PGPSignatureList}</li>
+ * <li>{@link PacketTags#SECRET_KEY} - produces a {@link PGPSecretKeyRing}</li>
+ * <li>{@link PacketTags#PUBLIC_KEY} - produces a {@link PGPPublicKeyRing}</li>
+ * <li>{@link PacketTags#PUBLIC_SUBKEY} - produces a {@link PGPPublicKey}</li>
+ * <li>{@link PacketTags#COMPRESSED_DATA} - produces a {@link PGPCompressedData}</li>
+ * <li>{@link PacketTags#LITERAL_DATA} - produces a {@link PGPLiteralData}</li>
+ * <li>{@link PacketTags#PUBLIC_KEY_ENC_SESSION} - produces a {@link PGPEncryptedDataList}</li>
+ * <li>{@link PacketTags#SYMMETRIC_KEY_ENC_SESSION} - produces a {@link PGPEncryptedDataList}</li>
+ * <li>{@link PacketTags#ONE_PASS_SIGNATURE} - produces a {@link PGPOnePassSignatureList}</li>
+ * <li>{@link PacketTags#MARKER} - produces a {@link PGPMarker}</li>
+ * </ul>
  */
 public class PGPObjectFactory
 {
@@ -25,7 +41,7 @@ public class PGPObjectFactory
     private KeyFingerPrintCalculator fingerPrintCalculator;
 
     /**
-     * @deprecated use JcaPGPObjectFactory or BcPGPObjectFactory
+     * @deprecated use {@link JcaPGPObjectFactory} or {@link BcPGPObjectFactory}
      */
     public PGPObjectFactory(
         InputStream in)
@@ -34,10 +50,11 @@ public class PGPObjectFactory
     }
 
     /**
-     * Create an object factor suitable for reading keys, key rings and key ring collections.
+     * Create an object factory suitable for reading PGP objects such as keys, key rings and key
+     * ring collections, or PGP encrypted data.
      *
-     * @param in stream to read from
-     * @param fingerPrintCalculator  calculator to use in key finger print calculations.
+     * @param in stream to read PGP data from.
+     * @param fingerPrintCalculator calculator to use in key finger print calculations.
      */
     public PGPObjectFactory(
         InputStream              in,
@@ -57,10 +74,11 @@ public class PGPObjectFactory
     }
 
     /**
-     * Create an object factor suitable for reading keys, key rings and key ring collections.
+     * Create an object factory suitable for reading PGP objects such as keys, key rings and key
+     * ring collections, or PGP encrypted data.
      *
-     * @param bytes stream to read from
-     * @param fingerPrintCalculator  calculator to use in key finger print calculations.
+     * @param bytes PGP encoded data.
+     * @param fingerPrintCalculator calculator to use in key finger print calculations.
      */
     public PGPObjectFactory(
         byte[] bytes,
@@ -70,10 +88,10 @@ public class PGPObjectFactory
     }
 
     /**
-     * Return the next object in the stream, or null if the end is reached.
-     * 
-     * @return Object
-     * @throws IOException on a parse error
+     * Return the next object in the stream, or <code>null</code> if the end of stream is reached.
+     *
+     * @return one of the supported objects - see class docs for details.
+     * @throws IOException if an error occurs reading from the wrapped stream or parsing data.
      */
     public Object nextObject()
         throws IOException
@@ -86,7 +104,7 @@ public class PGPObjectFactory
             return null;
         case PacketTags.SIGNATURE:
             l = new ArrayList();
-            
+
             while (in.nextPacketTag() == PacketTags.SIGNATURE)
             {
                 try
@@ -98,7 +116,7 @@ public class PGPObjectFactory
                     throw new IOException("can't create signature object: " + e);
                 }
             }
-            
+
             return new PGPSignatureList((PGPSignature[])l.toArray(new PGPSignature[l.size()]));
         case PacketTags.SECRET_KEY:
             try
@@ -129,7 +147,7 @@ public class PGPObjectFactory
             return new PGPEncryptedDataList(in);
         case PacketTags.ONE_PASS_SIGNATURE:
             l = new ArrayList();
-            
+
             while (in.nextPacketTag() == PacketTags.ONE_PASS_SIGNATURE)
             {
                 try
@@ -141,7 +159,7 @@ public class PGPObjectFactory
                     throw new IOException("can't create one pass signature object: " + e);
                 }
             }
-            
+
             return new PGPOnePassSignatureList((PGPOnePassSignature[])l.toArray(new PGPOnePassSignature[l.size()]));
         case PacketTags.MARKER:
             return new PGPMarker(in);
@@ -151,7 +169,7 @@ public class PGPObjectFactory
         case PacketTags.EXPERIMENTAL_4:
             return in.readPacket();
         }
-        
+
         throw new IOException("unknown object in stream: " + in.nextPacketTag());
     }
 }

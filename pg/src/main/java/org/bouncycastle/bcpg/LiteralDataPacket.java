@@ -2,27 +2,28 @@ package org.bouncycastle.bcpg;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * generic literal data packet.
+ * Generic literal data packet.
  */
-public class LiteralDataPacket 
+public class LiteralDataPacket
     extends InputStreamPacket
 {
     int     format;
     byte[]  fileName;
     long    modDate;
-    
+
     LiteralDataPacket(
         BCPGInputStream    in)
         throws IOException
     {
         super(in);
-        
-        format = in.read();    
+
+        format = in.read();
         int    l = in.read();
-        
+
         fileName = new byte[l];
         for (int i = 0; i != fileName.length; i++)
         {
@@ -31,11 +32,9 @@ public class LiteralDataPacket
 
         modDate = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
     }
-    
+
     /**
-     * return the format tag value.
-     * 
-     * @return format tag value.
+     * Return the format tag of the data packet.
      */
     public int getFormat()
     {
@@ -43,32 +42,26 @@ public class LiteralDataPacket
     }
 
     /**
-     * Return the modification time of the file in milli-seconds.
-     * 
-     * @return the modification time in millis
+     * Return the modification time for the file (milliseconds at second level precision).
      */
     public long getModificationTime()
     {
         return modDate * 1000L;
     }
-    
+
     /**
-     * @return filename
+     * Return the file name associated with the data packet.
      */
     public String getFileName()
     {
         return Strings.fromUTF8ByteArray(fileName);
     }
 
+    /**
+     * Return the file name as an uninterpreted byte array.
+     */
     public byte[] getRawFileName()
     {
-        byte[] tmp = new byte[fileName.length];
-
-        for (int i = 0; i != tmp.length; i++)
-        {
-            tmp[i] = fileName[i];
-        }
-
-        return tmp;
+        return Arrays.clone(fileName);
     }
 }

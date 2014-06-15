@@ -7,7 +7,8 @@ import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 
 /**
- * A decryptor factory for handling PBE decryption operations.
+ * A {@link PBEDataDecryptorFactory} for handling PBE decryption operations using the Bouncy Castle
+ * lightweight API to implement cryptographic primitives.
  */
 public class BcPBEDataDecryptorFactory
     extends PBEDataDecryptorFactory

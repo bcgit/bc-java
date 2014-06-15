@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -28,10 +29,11 @@ public class JcePBEKeyEncryptionMethodGenerator
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
 
     /**
-     *  Create a PBE encryption method generator using the provided calculator for key calculation.
+     * Create a PBE encryption method generator using the provided digest and the default S2K count
+     * for key generation.
      *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
-     * @param s2kDigestCalculator  the digest calculator to use for key calculation.
+     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param s2kDigestCalculator the digest calculator to use for key calculation.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator)
     {
@@ -39,9 +41,10 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     /**
-     * Create a PBE encryption method generator using the default SHA-1 digest calculator for key calculation.
+     * Create a PBE encryption method generator using the default SHA-1 digest and the default S2K
+     * count for key generation.
      *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
+     * @param passPhrase the passphrase to use as the primary source of key material.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase)
     {
@@ -49,11 +52,12 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     /**
-     *  Create a PBE encryption method generator using the provided calculator and S2K count for key calculation.
+     * Create a PBE encryption method generator using the provided calculator and S2K count for key
+     * generation.
      *
-     * @param passPhrase  the passphrase to use as the primary source of key material.
-     * @param s2kDigestCalculator  the digest calculator to use for key calculation.
-     * @param s2kCount the S2K count to use.
+     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param s2kDigestCalculator the digest calculator to use for key calculation.
+     * @param s2kCount the single byte {@link S2K} count to use.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator, int s2kCount)
     {
@@ -61,17 +65,23 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     /**
-     * Create a PBE encryption method generator using the default SHA-1 digest calculator and
-     * a S2K count other than the default of 0x60  for key calculation
+     * Create a PBE encryption method generator using the default SHA-1 digest calculator and a S2K
+     * count other than the default for key generation.
      *
      * @param passPhrase the passphrase to use as the primary source of key material.
-     * @param s2kCount the S2K count to use.
+     * @param s2kCount the single byte {@link S2K} count to use.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, int s2kCount)
     {
         super(passPhrase, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    /**
+     * Sets the JCE provider to source cryptographic primitives from.
+     *
+     * @param provider the JCE provider to use.
+     * @return the current generator.
+     */
     public JcePBEKeyEncryptionMethodGenerator setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
@@ -79,6 +89,12 @@ public class JcePBEKeyEncryptionMethodGenerator
         return this;
     }
 
+    /**
+     * Sets the JCE provider to source cryptographic primitives from.
+     *
+     * @param providerName the name of the JCE provider to use.
+     * @return the current generator.
+     */
     public JcePBEKeyEncryptionMethodGenerator setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
@@ -86,12 +102,6 @@ public class JcePBEKeyEncryptionMethodGenerator
         return this;
     }
 
-    /**
-     * Provide a user defined source of randomness.
-     *
-     * @param random  the secure random to be used.
-     * @return  the current generator.
-     */
     public PBEKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)
     {
         super.setSecureRandom(random);

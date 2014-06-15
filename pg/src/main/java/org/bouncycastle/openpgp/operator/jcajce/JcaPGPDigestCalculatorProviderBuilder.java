@@ -13,14 +13,31 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 
+/**
+ * A builder for {@link PGPDigestCalculatorProvider} instances that obtain cryptographic primitives
+ * using the JCA API.
+ * <p/>
+ * By default digest calculator providers obtained from this builder will use the default JCA
+ * algorithm lookup mechanisms (i.e. specifying no provider), but a specific provider can be
+ * specified prior to building.
+ */
 public class JcaPGPDigestCalculatorProviderBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
 
+    /**
+     * Default constructor.
+     */
     public JcaPGPDigestCalculatorProviderBuilder()
     {
     }
 
+    /**
+     * Sets the provider to use to obtain cryptographic primitives.
+     *
+     * @param provider the JCA provider to use.
+     * @return the current builder.
+     */
     public JcaPGPDigestCalculatorProviderBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
@@ -28,6 +45,12 @@ public class JcaPGPDigestCalculatorProviderBuilder
         return this;
     }
 
+    /**
+     * Sets the provider to use to obtain cryptographic primitives.
+     *
+     * @param providerName the name of the JCA provider to use.
+     * @return the current builder.
+     */
     public JcaPGPDigestCalculatorProviderBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
@@ -35,6 +58,13 @@ public class JcaPGPDigestCalculatorProviderBuilder
         return this;
     }
 
+    /**
+     * Constructs a new PGPDigestCalculatorProvider
+     *
+     * @return a PGPDigestCalculatorProvider that will use the JCA algorithm lookup strategy
+     *         configured on this builder.
+     * @throws PGPException if an error occurs constructing the digest calculator provider.
+     */
     public PGPDigestCalculatorProvider build()
         throws PGPException
     {
