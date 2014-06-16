@@ -3,46 +3,63 @@ package org.bouncycastle.crypto.params;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * This KDF has been defined by the publicly available NIST SP 800-108 specification.
+ * NIST SP800-108 allows for alternative orderings of the input fields, meaning that the input can be formated in multiple ways.
+ * There are 3 supported formats:  - Below [i]_2 is a counter of r-bits length concatenated to the fixedInputData.
+ * <ul>
+ * <li>1: K(i) := PRF( KI, [i]_2 || Label || 0x00 || Context || [L]_2 ) with the counter at the very beginning of the fixedInputData (The default implementation has this format)</li>
+ * <li>2: K(i) := PRF( KI, Label || 0x00 || Context || [L]_2 || [i]_2 ) with the counter at the very end of the fixedInputData</li>
+ * <li>3a: K(i) := PRF( KI, Label || 0x00 || [i]_2 || Context || [L]_2 ) OR:</li>
+ * <li>3b: K(i) := PRF( KI, Label || 0x00 || [i]_2 || [L]_2 || Context ) OR:</li>
+ * <li>3c: K(i) := PRF( KI, Label || [i]_2 || 0x00 || Context || [L]_2 ) etc... with the counter somewhere in the 'middle' of the fixedInputData.</li>
+ * </ul>
+ * <p>
+ * This function must be called with the following KDFCounterParameters():
+ *  - KI     <br/>
+ *  - The part of the fixedInputData that comes BEFORE the counter OR null  <br/>
+ *  - the part of the fixedInputData that comes AFTER the counter OR null  <br/>
+ *  - the length of the counter in bits (not bytes) <br/>
+ * </p>
+ * Resulting function calls assuming an 8 bit counter.
+ * <ul>
+ * <li>1.  KDFCounterParameters(ki, 	null, 									"Label || 0x00 || Context || [L]_2]",	8); </li>
+ * <li>2.  KDFCounterParameters(ki, 	"Label || 0x00 || Context || [L]_2]", 	null,									8); </li>
+ * <li>3a. KDFCounterParameters(ki, 	"Label || 0x00",						"Context || [L]_2]",					8);  </li>
+ * <li>3b. KDFCounterParameters(ki, 	"Label || 0x00",						"[L]_2] || Context",					8);</li>
+ * <li>3c. KDFCounterParameters(ki, 	"Label", 								"0x00 || Context || [L]_2]",			8); </li>
+ * </ul>
+ */
 public final class KDFCounterParameters
     implements DerivationParameters
 {
 
     private final byte[] ki;
-    private final byte[] fixedInputData_beforeCtr;
-    private final byte[] fixedInputData_afterCtr;
+    private final byte[] fixedInputDataCounterPrefix;
+    private final byte[] fixedInputDataCounterSuffix;
     private final int r;
 
     /**
-     * This KDF has been defined by the publicly available NIST SP 800-108 specification.
-     * NIST SP800-108 allows for alternative orderings of the input fields, meaning that the input can be formated in multiple ways.
-     * There are 3 supported formats:  - Below [i]_2 is a counter of r-bits length concatenated to the fixedInputData.
-     * 1: K(i) := PRF( KI, [i]_2 || Label || 0x00 || Context || [L]_2 ) with the counter at the very beginning of the fixedInputData (The default implementation has this format)
-     * 2: K(i) := PRF( KI, Label || 0x00 || Context || [L]_2 || [i]_2 ) with the counter at the very end of the fixedInputData
-     * 3a: K(i) := PRF( KI, Label || 0x00 || [i]_2 || Context || [L]_2 ) OR:
-     * 3b: K(i) := PRF( KI, Label || 0x00 || [i]_2 || [L]_2 || Context ) OR:
-     * 3c: K(i) := PRF( KI, Label || [i]_2 || 0x00 || Context || [L]_2 ) etc... with the counter somewhere in the 'middle' of the fixedInputData.
-     * 
-     * This function must be called with the following KDFCounterParameters():
-     *  - KI
-     *  - The part of the fixedInputData that comes BEFORE the counter OR null
-     *  - the part of the fixedInputData that comes AFTER the counter OR null
-     *  - the length of the counter in bits (not bytes)
-     *  
-     * Resulting function calls assuming an 8 bit counter.
-     * 1.  KDFCounterParameters(ki, 	null, 									"Label || 0x00 || Context || [L]_2]",	8);
-     * 2.  KDFCounterParameters(ki, 	"Label || 0x00 || Context || [L]_2]", 	null,									8);
-     * 3a. KDFCounterParameters(ki, 	"Label || 0x00",						"Context || [L]_2]",					8);
-     * 3b. KDFCounterParameters(ki, 	"Label || 0x00",						"[L]_2] || Context",					8);
-     * 3c. KDFCounterParameters(ki, 	"Label", 								"0x00 || Context || [L]_2]",			8);
+     * Base constructor - suffix fixed input data only.
+     *
+     * @param ki the KDF seed
+     * @param fixedInputDataCounterSuffix  fixed input data to follow counter.
+     * @param r length of the counter in bits.
      */
-    
-    public KDFCounterParameters(byte[] ki, byte[] fixedInputData, int r)
+    public KDFCounterParameters(byte[] ki, byte[] fixedInputDataCounterSuffix, int r)
     {
-    	//Retained for backwards compatibility
-    	this(ki, null, fixedInputData, r);
+    	this(ki, null, fixedInputDataCounterSuffix, r);
     }
-    	
-    public KDFCounterParameters(byte[] ki, byte[] fixedInputData_beforeCtr, byte[] fixedInputData_afterCtr, int r)
+
+    /**
+     * Base constructor - prefix and suffix fixed input data.
+     *
+     * @param ki the KDF seed
+     * @param fixedInputDataCounterPrefix fixed input data to precede counter
+     * @param fixedInputDataCounterSuffix fixed input data to follow counter.
+     * @param r length of the counter in bits.
+     */
+    public KDFCounterParameters(byte[] ki, byte[] fixedInputDataCounterPrefix, byte[] fixedInputDataCounterSuffix, int r)
     {
         if (ki == null)
         {
@@ -50,22 +67,22 @@ public final class KDFCounterParameters
         }
         this.ki = Arrays.clone(ki);
 
-        if (fixedInputData_beforeCtr == null)
+        if (fixedInputDataCounterPrefix == null)
         {
-            this.fixedInputData_beforeCtr = new byte[0];
+            this.fixedInputDataCounterPrefix = new byte[0];
         }
         else
         {
-            this.fixedInputData_beforeCtr = Arrays.clone(fixedInputData_beforeCtr);
+            this.fixedInputDataCounterPrefix = Arrays.clone(fixedInputDataCounterPrefix);
         }
         
-        if (fixedInputData_afterCtr == null)
+        if (fixedInputDataCounterSuffix == null)
         {
-            this.fixedInputData_afterCtr = new byte[0];
+            this.fixedInputDataCounterSuffix = new byte[0];
         }
         else
         {
-            this.fixedInputData_afterCtr = Arrays.clone(fixedInputData_afterCtr);
+            this.fixedInputDataCounterSuffix = Arrays.clone(fixedInputDataCounterSuffix);
         }
 
         if (r != 8 && r != 16 && r != 24 && r != 32)
@@ -83,18 +100,19 @@ public final class KDFCounterParameters
     public byte[] getFixedInputData()
     {
     	//Retained for backwards compatibility
-        return Arrays.clone(fixedInputData_afterCtr);
+        return Arrays.clone(fixedInputDataCounterSuffix);
     }
 
-    public byte[] getFixedInputData_beforeCtr()
+    public byte[] getFixedInputDataCounterPrefix()
     {
-        return Arrays.clone(fixedInputData_beforeCtr);
+        return Arrays.clone(fixedInputDataCounterPrefix);
     }
     
-    public byte[] getFixedInputData_afterCtr()
+    public byte[] getFixedInputDataCounterSuffix()
     {
-        return Arrays.clone(fixedInputData_afterCtr);
-    }    
+        return Arrays.clone(fixedInputDataCounterSuffix);
+    }
+
     public int getR()
     {
         return r;
