@@ -3,6 +3,9 @@ package org.bouncycastle.util.encoders;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * A streaming Hex encoder.
+ */
 public class HexEncoder
     implements Encoder
 {

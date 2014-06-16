@@ -6,6 +6,9 @@ import java.io.OutputStream;
 
 import org.bouncycastle.util.Strings;
 
+/**
+ * Utility class for converting hex data to bytes and back again.
+ */
 public class Hex
 {
     private static final Encoder encoder = new HexEncoder();
