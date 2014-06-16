@@ -3,6 +3,9 @@ package org.bouncycastle.util.encoders;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * A streaming Base64 encoder.
+ */
 public class Base64Encoder
     implements Encoder
 {
