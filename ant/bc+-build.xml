@@ -877,13 +877,15 @@
                 <package name="org.bouncycastle.operator.*" />
                 <package name="org.bouncycastle.mozilla.*" />
                 <package name="org.bouncycastle.tsp.*" />
-                <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
+                <group title="Certificate Packages" packages="org.bouncycastle.cert*,org.bouncycastle.mozilla*" />
                 <group title="CMS Packages" packages="org.bouncycastle.cms*" />
                 <group title="DVCS Packages" packages="org.bouncycastle.dvcs*" />
                 <group title="Extended Access Control Packages" packages="org.bouncycastle.eac*" />
-                <group title="Certificate Packages" packages="org.bouncycastle.cert*" />
                 <group title="PKCS Packages" packages="org.bouncycastle.pkcs*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
+                <group title="Support Operators" packages="org.bouncycastle.operator*" />
+                <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
+                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*" />
             </docElements>
         </compile-doc>
 
@@ -911,6 +913,7 @@
                 <package name="org.bouncycastle.bcpg.*" />
                 <group title="BCPG Support Packages" packages="org.bouncycastle.bcpg*" />
                 <group title="OpenPGP Packages" packages="org.bouncycastle.openpgp*" />
+                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
             </docElements>
         </compile-doc>
 
