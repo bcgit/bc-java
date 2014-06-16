@@ -23,12 +23,6 @@ public final class KDFCounterTests
                                    Properties vectors)
     {
 
-        // always skip AFTER_FIXED, not included in SP 800-108
-        if (config.getProperty("CTRLOCATION").matches("AFTER_FIXED"))
-        {
-            return;
-        }
-
         // create Mac based PRF from PRF property, create the KDF
         final Mac prf = CAVPReader.createPRF(config);
         final KDFCounterBytesGenerator gen = new KDFCounterBytesGenerator(prf);
@@ -44,9 +38,32 @@ public final class KDFCounterTests
         final int count = Integer.parseInt(vectors.getProperty("COUNT"));
         final int l = Integer.parseInt(vectors.getProperty("L"));
         final byte[] ki = Hex.decode(vectors.getProperty("KI"));
-        final byte[] fixedInputData = Hex.decode(vectors.getProperty("FixedInputData"));
-        final KDFCounterParameters params = new KDFCounterParameters(ki, fixedInputData, r);
-        gen.init(params);
+
+        //Three variants of this KDF are possible, with the counter before the fixed data, after the fixed data, or in the middle of the fixed data.
+        if (config.getProperty("CTRLOCATION").matches("BEFORE_FIXED"))
+        {
+            final byte[] fixedInputData = Hex.decode(vectors.getProperty("FixedInputData"));
+            final KDFCounterParameters params = new KDFCounterParameters(ki, null, fixedInputData, r);
+            gen.init(params);
+        } 
+        else if (config.getProperty("CTRLOCATION").matches("AFTER_FIXED"))
+        {
+            final byte[] fixedInputData = Hex.decode(vectors.getProperty("FixedInputData"));
+            final KDFCounterParameters params = new KDFCounterParameters(ki, fixedInputData, null, r);
+            gen.init(params);
+        }
+        else if (config.getProperty("CTRLOCATION").matches("MIDDLE_FIXED"))
+        {
+        	final byte[] DataBeforeCtrData = Hex.decode(vectors.getProperty("DataBeforeCtrData"));
+        	final byte[] DataAfterCtrData = Hex.decode(vectors.getProperty("DataAfterCtrData"));
+            final KDFCounterParameters params = new KDFCounterParameters(ki, DataBeforeCtrData, DataAfterCtrData, r);
+            gen.init(params);
+        }
+        else
+        {
+        	return; // Unknown CTRLOCATION
+        }
+    
 
         final byte[] koGenerated = new byte[l / 8];
         gen.generateBytes(koGenerated, 0, koGenerated.length);
