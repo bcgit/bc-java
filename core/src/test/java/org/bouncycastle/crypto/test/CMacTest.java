@@ -284,8 +284,7 @@ public class CMacTest
 
         if (areEqual(out, output_k256_m16))
         {
-            fail("Failed - expected " + new String(Hex.encode(output_k256_m16))
-                + " got " + new String(Hex.encode(out)));
+            fail("Failed - got " + new String(Hex.encode(output_k256_m16)));
         }
 
         if (!areEqual(out, Hex.decode("9347a60c64061b9ff2a92522ca8e08fc")))
