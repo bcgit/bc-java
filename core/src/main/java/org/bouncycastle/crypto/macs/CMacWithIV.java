@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.macs;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
 
 /**
  * A non-NIST variant which allows passing of an IV to the underlying CBC cipher.
@@ -17,5 +18,10 @@ public class CMacWithIV
     public CMacWithIV(BlockCipher cipher, int macSizeInBits)
     {
         super(cipher, macSizeInBits);
+    }
+
+    void validate(CipherParameters params)
+    {
+        // accept all
     }
 }
