@@ -142,7 +142,8 @@ public class CMac implements Mac
             cipher.processBlock(ZEROES, 0, L, 0);
             Lu = doubleLu(L);
             Lu2 = doubleLu(Lu);
-        } else if (params != null)
+        }
+        else if (params != null)
         {
             // CMAC mode does not permit IV to underlying CBC mode
             throw new IllegalArgumentException("CMac mode only permits key to be set.");
