@@ -42,8 +42,8 @@ public abstract class ECPublicBCPGKey
     }
 
     protected ECPublicBCPGKey(
-        BigInteger encodedPoint,
-        ASN1ObjectIdentifier oid)
+        ASN1ObjectIdentifier oid,
+        BigInteger encodedPoint)
         throws IOException
     {
         this.point = decodePoint(encodedPoint, oid);

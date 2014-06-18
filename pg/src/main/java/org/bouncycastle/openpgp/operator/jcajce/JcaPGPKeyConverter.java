@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -115,7 +116,7 @@ public class JcaPGPKeyConverter
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
                 ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
                     new java.security.spec.ECPoint(ecdhK.getPoint().getAffineXCoord().toBigInteger(), ecdhK.getPoint().getAffineYCoord().toBigInteger()),
-                    convertX9Parameters(ecdhK.getCurveOID(), NISTNamedCurves.getByOID(ecdhK.getCurveOID())));
+                    convertX9Parameters(ecdhK.getCurveOID(), ECNamedCurveTable.getByOID(ecdhK.getCurveOID())));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePublic(ecDhSpec);
@@ -123,7 +124,7 @@ public class JcaPGPKeyConverter
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
                 ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
                     new java.security.spec.ECPoint(ecdsaK.getPoint().getAffineXCoord().toBigInteger(), ecdsaK.getPoint().getAffineYCoord().toBigInteger()),
-                    convertX9Parameters(ecdsaK.getCurveOID(), NISTNamedCurves.getByOID(ecdsaK.getCurveOID())));
+                    convertX9Parameters(ecdsaK.getCurveOID(), ECNamedCurveTable.getByOID(ecdsaK.getCurveOID())));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePublic(ecDsaSpec);
@@ -279,7 +280,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
                                                     ecdhK.getX(),
-                                                    convertX9Parameters(ecdhPub.getCurveOID(), NISTNamedCurves.getByOID(ecdhPub.getCurveOID())));
+                                                    convertX9Parameters(ecdhPub.getCurveOID(), ECNamedCurveTable.getByOID(ecdhPub.getCurveOID())));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePrivate(ecDhSpec);
@@ -288,7 +289,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdsaK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDsaSpec = new ECPrivateKeySpec(
                                                     ecdsaK.getX(),
-                                                    convertX9Parameters(ecdsaPub.getCurveOID(), NISTNamedCurves.getByOID(ecdsaPub.getCurveOID())));
+                                                    convertX9Parameters(ecdsaPub.getCurveOID(), ECNamedCurveTable.getByOID(ecdsaPub.getCurveOID())));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePrivate(ecDsaSpec);
