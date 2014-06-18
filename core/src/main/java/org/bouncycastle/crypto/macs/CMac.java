@@ -133,36 +133,29 @@ public class CMac implements Mac
 
     public void init(CipherParameters params)
     {
-        if (params instanceof KeyParameter)
-        {
-            cipher.init(true, params);
-    
-            //initializes the L, Lu, Lu2 numbers
-            L = new byte[ZEROES.length];
-            cipher.processBlock(ZEROES, 0, L, 0);
-            Lu = doubleLu(L);
-            Lu2 = doubleLu(Lu);
-        }
-        else if (params != null)
-        {
-            if (this instanceof CMacWithIV)
-            {
-                cipher.init(true, params);
+        validate(params);
 
-                //initializes the L, Lu, Lu2 numbers
-                L = new byte[ZEROES.length];
-                cipher.processBlock(ZEROES, 0, L, 0);
-                Lu = doubleLu(L);
-                Lu2 = doubleLu(Lu);
-            }
-            else
+        cipher.init(true, params);
+
+        //initializes the L, Lu, Lu2 numbers
+        L = new byte[ZEROES.length];
+        cipher.processBlock(ZEROES, 0, L, 0);
+        Lu = doubleLu(L);
+        Lu2 = doubleLu(Lu);
+
+        reset();
+    }
+
+    void validate(CipherParameters params)
+    {
+        if (params != null)
+        {
+            if (!(params instanceof KeyParameter))
             {
                 // CMAC mode does not permit IV to underlying CBC mode
                 throw new IllegalArgumentException("CMac mode only permits key to be set.");
             }
         }
-
-        reset();
     }
 
     public int getMacSize()
