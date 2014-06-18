@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.macs.CMac;
+import org.bouncycastle.crypto.macs.CMacWithIV;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
@@ -250,7 +251,49 @@ public class CMacTest
             fail("Failed - expected " + new String(Hex.encode(output_k256_m64))
                 + " got " + new String(Hex.encode(out)));
         }
-        
+
+        // CMAC with IV
+        // 16 bytes message - 256 bytes key
+        mac = new CMacWithIV(new AESFastEngine());
+
+        mac.init(key);
+
+        mac.update(input16, 0, input16.length);
+
+        out = new byte[16];
+
+        mac.doFinal(out, 0);
+
+        if (!areEqual(out, output_k256_m16))
+        {
+            fail("Failed - expected " + new String(Hex.encode(output_k256_m16))
+                + " got " + new String(Hex.encode(out)));
+        }
+
+                // CMAC with IV
+        // 16 bytes message - 256 bytes key
+        mac = new CMacWithIV(new AESFastEngine());
+
+        mac.init(new ParametersWithIV(key, Hex.decode("000102030405060708090a0b0c0d0e0f")));
+
+        mac.update(input16, 0, input16.length);
+
+        out = new byte[16];
+
+        mac.doFinal(out, 0);
+
+        if (areEqual(out, output_k256_m16))
+        {
+            fail("Failed - expected " + new String(Hex.encode(output_k256_m16))
+                + " got " + new String(Hex.encode(out)));
+        }
+
+        if (!areEqual(out, Hex.decode("9347a60c64061b9ff2a92522ca8e08fc")))
+        {
+            fail("Failed - expected " + "9347a60c64061b9ff2a92522ca8e08fc"
+                + " got " + new String(Hex.encode(out)));
+        }
+
         testExceptions();
     }
 

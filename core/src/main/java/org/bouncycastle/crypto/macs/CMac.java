@@ -145,8 +145,21 @@ public class CMac implements Mac
         }
         else if (params != null)
         {
-            // CMAC mode does not permit IV to underlying CBC mode
-            throw new IllegalArgumentException("CMac mode only permits key to be set.");
+            if (this instanceof CMacWithIV)
+            {
+                cipher.init(true, params);
+
+                //initializes the L, Lu, Lu2 numbers
+                L = new byte[ZEROES.length];
+                cipher.processBlock(ZEROES, 0, L, 0);
+                Lu = doubleLu(L);
+                Lu2 = doubleLu(Lu);
+            }
+            else
+            {
+                // CMAC mode does not permit IV to underlying CBC mode
+                throw new IllegalArgumentException("CMac mode only permits key to be set.");
+            }
         }
 
         reset();
