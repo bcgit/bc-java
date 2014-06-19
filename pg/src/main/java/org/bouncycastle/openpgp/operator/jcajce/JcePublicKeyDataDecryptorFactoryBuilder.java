@@ -16,7 +16,6 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -135,7 +134,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
         X9ECParameters x9Params = NISTNamedCurves.getByOID(ecKey.getCurveOID());
-        ECDomainParameters ecParams = new ECDomainParameters(x9Params.getCurve(), x9Params.getG(), x9Params.getN());
 
         byte[] enc = secKeyData[0];
 
@@ -153,7 +151,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privateKeyPacket).getX()).normalize();
 
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(digestCalculatorProviderBuilder.build().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-
         Key key = new SecretKeySpec(rfc6637KDFCalculator.createKey(ecKey.getCurveOID(), S, fingerprintCalculator.calculateFingerprint(pubKeyData)), "AESWrap");
 
         try
