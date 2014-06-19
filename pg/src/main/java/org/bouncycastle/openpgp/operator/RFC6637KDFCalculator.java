@@ -85,7 +85,6 @@ public class RFC6637KDFCalculator
         dOut.write(0x00);
         dOut.write(0x00);
         dOut.write(0x01);
-        dOut.write(0x01);
         dOut.write(ZB);
         dOut.write(param);
 
