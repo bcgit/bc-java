@@ -147,6 +147,10 @@ public class GCMBlockCipher
             multiplier.init(H);
             exp = null;
         }
+        else if (this.H == null)
+        {
+            throw new IllegalArgumentException("Key must be specified in initial init");
+        }
 
         this.J0 = new byte[BLOCK_SIZE];
 
@@ -191,7 +195,7 @@ public class GCMBlockCipher
 
         if (forEncryption)
         {
-             return totalData + macSize;
+            return totalData + macSize;
         }
 
         return totalData < macSize ? 0 : totalData - macSize;
