@@ -69,13 +69,11 @@ public class AESWrapPadTest
         }
     }
 
-    @Override
     public String getName()
     {
         return "AESWrapPad";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

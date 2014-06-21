@@ -28,7 +28,6 @@ public class RegressionTest
         new ElGamalTest(),
         new ECIESTest(),
         new SigTest(),
-        new AttrCertTest(),
         new CertTest(),
         new PKCS10CertRequestTest(),
         new EncryptedPrivateKeyInfoTest(),
@@ -48,8 +47,7 @@ public class RegressionTest
         new CertPathValidatorTest(),
         new CertPathBuilderTest(),
         new NISTCertPathTest(),
-        new SerialisationTest(),
-        new AttrCertSelectorTest()
+        new SerialisationTest()
     };
 
     public static void main(
