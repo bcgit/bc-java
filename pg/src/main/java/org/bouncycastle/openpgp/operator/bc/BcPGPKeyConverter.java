@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -159,9 +160,14 @@ public class BcPGPKeyConverter
             case PGPPublicKey.ECDSA:
                 ECPublicBCPGKey ecPub = (ECPublicBCPGKey)publicPk.getKey();
 
-                X9ECParameters ecParams = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
+                X9ECParameters x9 = CustomNamedCurves.getByOID(ecPub.getCurveOID());
+                if (x9 == null)
+                {
+                    x9 = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
+                }
 
-                return new ECPublicKeyParameters(ecPub.getPoint(), new ECNamedDomainParameters(ecPub.getCurveOID(), ecParams.getCurve(), ecParams.getG(), ecParams.getN(), ecParams.getH()));
+                return new ECPublicKeyParameters(ecPub.getPoint(),
+                    new ECNamedDomainParameters(ecPub.getCurveOID(), x9.getCurve(), x9.getG(), x9.getN(), x9.getH()));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
@@ -209,9 +215,14 @@ public class BcPGPKeyConverter
                 ECPublicBCPGKey ecPub = (ECPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecPriv = (ECSecretBCPGKey)privPk;
 
-                X9ECParameters ecParams = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
+                X9ECParameters x9 = CustomNamedCurves.getByOID(ecPub.getCurveOID());
+                if (x9 == null)
+                {
+                    x9 = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
+                }
 
-                return new ECPrivateKeyParameters(ecPriv.getX(), new ECNamedDomainParameters(ecPub.getCurveOID(), ecParams.getCurve(), ecParams.getG(), ecParams.getN(), ecParams.getH()));
+                return new ECPrivateKeyParameters(ecPriv.getX(),
+                    new ECNamedDomainParameters(ecPub.getCurveOID(), x9.getCurve(), x9.getG(), x9.getN(), x9.getH()));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }

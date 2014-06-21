@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
@@ -132,16 +133,19 @@ public abstract class ECPublicBCPGKey
         ASN1ObjectIdentifier oid)
         throws IOException
     {
-        X9ECParameters curve = ECNamedCurveTable.getByOID(oid);
-        if (curve == null)
+        X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
+        if (x9 == null)
         {
-            throw new IOException(oid.getId() + " does not match any known curve.");
+            x9 = ECNamedCurveTable.getByOID(oid);
+            if (x9 == null)
+            {
+                throw new IOException(oid.getId() + " does not match any known curve.");
+            }
         }
-        if (!ECAlgorithms.isFpCurve(curve.getCurve()))
+        if (!ECAlgorithms.isFpCurve(x9.getCurve()))
         {
             throw new IOException("Only prime field curves are supported.");
         }
-
-        return curve.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
+        return x9.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
     }
 }
