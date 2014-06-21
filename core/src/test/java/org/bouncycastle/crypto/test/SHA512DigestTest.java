@@ -47,7 +47,6 @@ public class SHA512DigestTest
         return new SHA512Digest((SHA512Digest)digest);
     }
 
-    @Override
     protected Digest cloneDigest(byte[] encodedState)
     {
         return new SHA512Digest(encodedState);

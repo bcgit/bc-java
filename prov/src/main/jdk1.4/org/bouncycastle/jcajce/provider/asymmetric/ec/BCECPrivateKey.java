@@ -238,7 +238,7 @@ public class BCECPrivateKey
             ECParameterSpec p = (ECParameterSpec)ecSpec;
 
             ECPoint pG = p.getG().normalize();
-            ECPoint g = pG.getCurve().createPoint(pG.getXCoord(), pG.getYCoord(), withCompression);
+            ECPoint g = pG.getCurve().createPoint(pG.getAffineXCoord().toBigInteger(), pG.getAffineYCoord().toBigInteger());
 
             X9ECParameters ecP = new X9ECParameters(
                   p.getCurve(),
