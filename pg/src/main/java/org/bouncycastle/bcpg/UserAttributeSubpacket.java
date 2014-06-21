@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 public class UserAttributeSubpacket 
 {
     int                type;
-    private boolean    longLength;   // we preserve this as not everyone encodes length properly.
+    private boolean    forceLongLength;   // we preserve this as not everyone encodes length properly.
     protected byte[]   data;
     
     protected UserAttributeSubpacket(
@@ -27,7 +27,7 @@ public class UserAttributeSubpacket
         byte[]         data)
     {
         this.type = type;
-        this.longLength = forceLongLength;
+        this.forceLongLength = forceLongLength;
         this.data = data;
     }
     
@@ -50,11 +50,11 @@ public class UserAttributeSubpacket
     {
         int    bodyLen = data.length + 1;
 
-        if (bodyLen < 192 && !longLength)
+        if (bodyLen < 192 && !forceLongLength)
         {
             out.write((byte)bodyLen);
         }
-        else if (bodyLen <= 8383 && !longLength)
+        else if (bodyLen <= 8383 && !forceLongLength)
         {
             bodyLen -= 192;
 
