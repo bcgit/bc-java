@@ -3,12 +3,19 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -22,6 +29,12 @@ import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -151,6 +164,88 @@ public class PGPECDSATest
         }
     }
 
+    private void generateAndSignBC()
+        throws Exception
+    {
+        ECKeyPairGenerator keyGen = new ECKeyPairGenerator();
+
+        X9ECParameters x9ECParameters = NISTNamedCurves.getByName("P-256");
+        keyGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(NISTNamedCurves.getOID("P-256"), x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN()), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kpEnc = keyGen.generateKeyPair();
+
+        PGPKeyPair ecdsaKeyPair = new BcPGPKeyPair(PGPPublicKey.ECDSA, kpEnc, new Date());
+
+        //
+        // try a signature
+        //
+        PGPSignatureGenerator signGen = new PGPSignatureGenerator(new BcPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256));
+
+        signGen.init(PGPSignature.BINARY_DOCUMENT, ecdsaKeyPair.getPrivateKey());
+
+        signGen.update("hello world!".getBytes());
+
+        PGPSignature sig = signGen.generate();
+
+        sig.init(new BcPGPContentVerifierBuilderProvider(), ecdsaKeyPair.getPublicKey());
+
+        sig.update("hello world!".getBytes());
+
+        if (!sig.verify())
+        {
+            fail("signature failed to verify!");
+        }
+
+        //
+        // generate a key ring
+        //
+        char[] passPhrase = "test".toCharArray();
+        PGPDigestCalculator sha1Calc = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1);
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, ecdsaKeyPair,
+                 "test@bouncycastle.org", sha1Calc, null, null, new BcPGPContentSignerBuilder(ecdsaKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase));
+
+        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+        KeyFingerPrintCalculator fingerCalc = new BcKeyFingerprintCalculator();
+
+        PGPPublicKeyRing pubRingEnc = new PGPPublicKeyRing(pubRing.getEncoded(), fingerCalc);
+
+        if (!Arrays.areEqual(pubRing.getEncoded(), pubRingEnc.getEncoded()))
+        {
+            fail("public key ring encoding failed");
+        }
+
+        PGPSecretKeyRing secRingEnc = new PGPSecretKeyRing(secRing.getEncoded(), fingerCalc);
+
+        if (!Arrays.areEqual(secRing.getEncoded(), secRingEnc.getEncoded()))
+        {
+            fail("secret key ring encoding failed");
+        }
+
+
+        //
+        // try a signature using encoded key
+        //
+        signGen = new PGPSignatureGenerator(new BcPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256));
+
+        signGen.init(PGPSignature.BINARY_DOCUMENT, secRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase)));
+
+        signGen.update("hello world!".getBytes());
+
+        sig = signGen.generate();
+
+        sig.init(new BcPGPContentVerifierBuilderProvider(), secRing.getSecretKey().getPublicKey());
+
+        sig.update("hello world!".getBytes());
+
+        if (!sig.verify())
+        {
+            fail("re-encoded signature failed to verify!");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -179,6 +274,7 @@ public class PGPECDSATest
         PGPSecretKeyRing        secretKeyRing = new PGPSecretKeyRing(testPrivKey, new JcaKeyFingerprintCalculator());
 
         generateAndSign();
+        generateAndSignBC();
 
         //
         // sExpr
