@@ -98,7 +98,8 @@ public class GCMBlockCipher
             initialAssociatedText = param.getAssociatedText();
 
             int macSizeBits = param.getMacSize();
-            if (macSizeBits < 96 || macSizeBits > 128 || macSizeBits % 8 != 0)
+            if ((macSizeBits < 96 || macSizeBits > 128 || macSizeBits % 8 != 0)
+                && macSizeBits != 32 && macSizeBits != 64)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
