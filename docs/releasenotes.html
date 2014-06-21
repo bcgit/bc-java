@@ -38,6 +38,7 @@ Release 1.51
 <li>The PGP API now allows access and handling of User IDs as raw byte arrays, to deal with keyrings not using UTF-8.</li>
 <li>The PGP API now provides automatic conversion of embedded signatures in signature sub-packet vectors.</li>
 <li>GCM and GMAC now support tag lengths down to 32 bits.</li>
+<li>Custom implementations for many of the SEC Fp curves have been added, resulting in drastically improved performance. The current list includes all secp***k1 and secp***r1 curves from 192 to 521 bits. They can be accessed via the org.bouncycastle.crypto.ec.CustomNamedCurves class and are generally selected by other internal APIs in place of the generic implementations.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
