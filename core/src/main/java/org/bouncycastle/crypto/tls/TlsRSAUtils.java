@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.util.Arrays;
 
 public class TlsRSAUtils
 {
@@ -73,16 +74,17 @@ public class TlsRSAUtils
          * Generate 48 random bytes we can use as a Pre-Master-Secret, if the
          * PKCS1 padding check should fail.
          */
-        byte[] M = new byte[48];
-        context.getSecureRandom().nextBytes(M);
+        byte[] fallback = new byte[48];
+        context.getSecureRandom().nextBytes(fallback);
 
+        byte[] M = Arrays.clone(fallback);
         try
         {
-            PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), M);
-            encoding.init(false, new ParametersWithRandom(rsaServerPrivateKey, context.getSecureRandom()));
+            PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), fallback);
+            encoding.init(false,
+                new ParametersWithRandom(rsaServerPrivateKey, context.getSecureRandom()));
 
-            M = encoding.processBlock(encryptedPreMasterSecret, 0,
-                encryptedPreMasterSecret.length);
+            M = encoding.processBlock(encryptedPreMasterSecret, 0, encryptedPreMasterSecret.length);
         }
         catch (Exception e)
         {
@@ -110,13 +112,28 @@ public class TlsRSAUtils
              *
              * So there is nothing to do here.
              */
-        } else {
+        }
+        else
+        {
             /*
-             * Note that explicitly constructing the pre_master_secret with the
-             * ClientHello.client_version produces an invalid master_secret if the client
-             * has sent the wrong version in the original pre_master_secret.
+             * OK, we need to compare the version number in the decrypted Pre-Master-Secret with the
+             * clientVersion received during the handshake. If they don't match, we replace the
+             * decrypted Pre-Master-Secret with a random one.
              */
-            TlsUtils.writeVersion(clientVersion, M, 0);
+            int correct = (clientVersion.getMajorVersion() ^ (M[0] & 0xff))
+                | (clientVersion.getMinorVersion() ^ (M[1] & 0xff));
+            correct |= correct >> 1;
+            correct |= correct >> 2;
+            correct |= correct >> 4;
+            int mask = ~((correct & 1) - 1);
+
+            /*
+             * mask will be all bits set to 0xff if the version number differed.
+             */
+            for (int i = 0; i < 48; i++)
+            {
+                M[i] = (byte)((M[i] & (~mask)) | (fallback[i] & mask));
+            }
         }
         return M;
     }
