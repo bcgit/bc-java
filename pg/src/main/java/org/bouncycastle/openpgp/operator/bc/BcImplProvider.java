@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.digests.MD2Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
@@ -18,6 +19,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
@@ -25,10 +27,12 @@ import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
+import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -73,8 +77,10 @@ class BcImplProvider
             return new RSADigestSigner(createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.DSA:
             return new DSADigestSigner(new DSASigner(), createDigest(hashAlgorithm));
+        case PublicKeyAlgorithmTags.ECDSA:
+            return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         default:
-            throw new PGPException("cannot recognise keyAlgorithm");
+            throw new PGPException("cannot recognise keyAlgorithm: " + keyAlgorithm);
         }
     }
 
@@ -118,6 +124,24 @@ class BcImplProvider
         }
 
         return engine;
+    }
+
+    static Wrapper createWrapper(int encAlgorithm)
+        throws PGPException
+    {
+        switch (encAlgorithm)
+        {
+        case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.AES_256:
+            return new RFC3394WrapEngine(new AESFastEngine());
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            return new RFC3394WrapEngine(new CamelliaEngine());
+        default:
+            throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
+        }
     }
 
     static AsymmetricBlockCipher createPublicKeyCipher(int encAlgorithm)

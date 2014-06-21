@@ -27,7 +27,7 @@ public class BcPGPKeyPair
     public BcPGPKeyPair(int algorithm, AsymmetricCipherKeyPair keyPair, Date date)
         throws PGPException
     {
-        this.pub = getPublicKey(algorithm, (AsymmetricKeyParameter)keyPair.getPublic(), date);
-        this.priv = getPrivateKey(this.pub, (AsymmetricKeyParameter)keyPair.getPrivate());
+        this.pub = getPublicKey(algorithm, keyPair.getPublic(), date);
+        this.priv = getPrivateKey(this.pub, keyPair.getPrivate());
     }
 }

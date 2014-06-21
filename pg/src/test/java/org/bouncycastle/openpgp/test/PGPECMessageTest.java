@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -189,12 +190,95 @@ public class PGPECMessageTest
         }
     }
 
+    private void testBCEncMessage()
+        throws Exception
+    {
+        PGPObjectFactory pgpFact = new JcaPGPObjectFactory(encMessage);
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpFact.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        PGPPublicKey publicKey = new JcaPGPPublicKeyRing(testPubKey).getPublicKey(encP.getKeyID());
+
+        PGPSecretKey secretKey = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeySub), new JcePBEProtectionRemoverFactory("test".toCharArray()), publicKey);
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(secretKey.extractPrivateKey(null)));
+
+        PGPObjectFactory plainFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
+
+        PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
+
+        PGPObjectFactory compFact = new PGPObjectFactory(cData.getDataStream(), new BcKeyFingerprintCalculator());
+
+        PGPLiteralData lData = (PGPLiteralData)compFact.nextObject();
+
+        if (!"test.txt".equals(lData.getFileName()))
+        {
+            fail("wrong file name detected");
+        }
+    }
+
+    private void testBCSignedEncMessage()
+        throws Exception
+    {
+        PGPObjectFactory pgpFact = new JcaPGPObjectFactory(signedEncMessage);
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpFact.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        JcaPGPPublicKeyRing publicKeyRing = new JcaPGPPublicKeyRing(testPubKey);
+
+        PGPPublicKey publicKey = publicKeyRing.getPublicKey(encP.getKeyID());
+
+        PGPSecretKey secretKey = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeySub), new JcePBEProtectionRemoverFactory("test".toCharArray()), publicKey);
+
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secretKey.extractPrivateKey(null)));
+
+        PGPObjectFactory plainFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
+
+        PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
+
+        PGPObjectFactory compFact = new PGPObjectFactory(cData.getDataStream(), new BcKeyFingerprintCalculator());
+
+        PGPOnePassSignatureList    sList = (PGPOnePassSignatureList)compFact.nextObject();
+
+        PGPOnePassSignature        ops = sList.get(0);
+
+        PGPLiteralData             lData  = (PGPLiteralData)compFact.nextObject();
+
+        if (!"test.txt".equals(lData.getFileName()))
+        {
+            fail("wrong file name detected");
+        }
+
+        InputStream                dIn = lData .getInputStream();
+        int                        ch;
+
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKeyRing.getPublicKey(ops.getKeyID()));
+
+        while ((ch = dIn.read()) >= 0)
+        {
+            ops.update((byte)ch);
+        }
+
+        PGPSignatureList p3 = (PGPSignatureList)compFact.nextObject();
+
+        if (!ops.verify(p3.get(0)))
+        {
+            fail("Failed signature check");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         testMasterKey();
         testEncMessage();
         testSignedEncMessage();
+        testBCEncMessage();
+        testBCSignedEncMessage();
     }
 
     public String getName()
