@@ -82,6 +82,10 @@ public class GCMBlockCipher
         return cipher.getAlgorithmName() + "/GCM";
     }
 
+    /**
+     * NOTE: MAC sizes from 32 bits to 128 bits (must be a multiple of 8) are supported. The default is 128 bits.
+     * Sizes less than 96 are not recommended, but are supported for specialized applications.
+     */
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
