@@ -135,7 +135,8 @@ public class RegressionTest
         new Shacal2Test(),
         new KDFCounterGeneratorTest(),
         new KDFDoublePipelineIteratorGeneratorTest(),
-        new KDFFeedbackGeneratorTest()
+        new KDFFeedbackGeneratorTest(),
+        new CramerShoupTest()
     };
 
     public static void main(
