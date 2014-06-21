@@ -49,7 +49,16 @@ public class TlsRSAUtils
         return premasterSecret;
     }
 
+    /**
+     * @deprecated {@link TlsEncryptionCredentials#decryptPreMasterSecret(byte[])} is expected to decrypt safely
+     */
     public static byte[] safeDecryptPreMasterSecret(TlsContext context, TlsEncryptionCredentials encryptionCredentials,
+        byte[] encryptedPreMasterSecret) throws IOException
+    {
+        return encryptionCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+    }
+
+    public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
         byte[] encryptedPreMasterSecret)
     {
         /*
@@ -61,22 +70,19 @@ public class TlsRSAUtils
         boolean versionNumberCheckDisabled = false;
 
         /*
-         * Bleichenbacher side channel countermeasures have been implemented in
-         * decryptPreMasterSecret, so we con't need to do something here.
-         */
-        byte[] M = TlsUtils.EMPTY_BYTES;
-
-
-        /*
          * Generate 48 random bytes we can use as a Pre-Master-Secret, if the
          * PKCS1 padding check should fail.
          */
-        byte[] fallback = new byte[48];
-        context.getSecureRandom().nextBytes(fallback);
+        byte[] M = new byte[48];
+        context.getSecureRandom().nextBytes(M);
 
         try
         {
-            M = encryptionCredentials.decryptPreMasterSecret(encryptedPreMasterSecret, fallback);
+            PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), M);
+            encoding.init(false, new ParametersWithRandom(rsaServerPrivateKey, context.getSecureRandom()));
+
+            M = encoding.processBlock(encryptedPreMasterSecret, 0,
+                encryptedPreMasterSecret.length);
         }
         catch (Exception e)
         {
@@ -106,24 +112,11 @@ public class TlsRSAUtils
              */
         } else {
             /*
-             * OK, we need to compare the version number in the decrypted
-             * Pre-Master-Secret with the clientVersion received during the
-             * handshake. If they don't match, we replace the decrypted
-             * Pre-Master-Secret with a random one.
+             * Note that explicitly constructing the pre_master_secret with the
+             * ClientHello.client_version produces an invalid master_secret if the client
+             * has sent the wrong version in the original pre_master_secret.
              */
-            int correct = (clientVersion.getMajorVersion() ^ (M[0]&0xff)) | (clientVersion.getMinorVersion() ^ (M[1]&0xff));
-            correct |= correct>>1;
-            correct |= correct>>2;
-            correct |= correct>>4;
-            int mask = ~((correct & 1) - 1);
-
-            /*
-             * mask will be all bits set to 0xff if the version number differed.
-             */
-
-            for (int i = 0; i < 48; i++) {
-                M[i] = (byte)((M[i]&(~mask))|(fallback[i]&mask));
-            }
+            TlsUtils.writeVersion(clientVersion, M, 0);
         }
         return M;
     }
