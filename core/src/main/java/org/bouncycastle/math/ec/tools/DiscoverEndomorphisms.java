@@ -173,7 +173,7 @@ public class DiscoverEndomorphisms
         printProperty("v2", "{ " + v2[0].toString(radix) + ", " + v2[1].toString(radix) + " }");
         printProperty("(OPT) g1", g1.toString(radix));
         printProperty("(OPT) g2", g2.toString(radix));
-        printProperty("(OPT) bits", bits);
+        printProperty("(OPT) bits", Integer.toString(bits));
     }
 
     private static void printProperty(String name, Object value)
