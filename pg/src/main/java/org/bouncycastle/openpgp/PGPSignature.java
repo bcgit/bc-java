@@ -399,7 +399,8 @@ public class PGPSignature
         }
 
         if (this.getSignatureType() != KEY_REVOCATION
-            && this.getSignatureType() != SUBKEY_REVOCATION)
+            && this.getSignatureType() != SUBKEY_REVOCATION
+            && this.getSignatureType() != DIRECT_KEY)
         {
             throw new PGPException("signature is not a key signature");
         }

@@ -25,6 +25,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
 
@@ -159,7 +160,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
 
-            return PGPUtil.unpadSessionData(paddedSessionKey.getEncoded());
+            return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
         catch (InvalidKeyException e)
         {
