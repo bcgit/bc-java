@@ -32,6 +32,7 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
 
@@ -121,7 +122,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
                 c.init(Cipher.WRAP_MODE, key, random);
 
-                byte[] paddedSessionData = PGPUtil.padSessionData(sessionInfo);
+                byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
 
                 byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
                 byte[] VB = new MPInteger(new BigInteger(1, ephKp.getEncodedPublicKey())).getEncoded();

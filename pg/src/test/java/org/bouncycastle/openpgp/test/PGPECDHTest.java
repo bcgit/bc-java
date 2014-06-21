@@ -12,8 +12,14 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
@@ -34,6 +40,10 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -242,6 +252,72 @@ public class PGPECDHTest
         }
     }
 
+    private void encryptDecryptBCTest()
+        throws Exception
+    {
+        byte[]    text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
+
+
+        ECKeyPairGenerator keyGen = new ECKeyPairGenerator();
+
+        X9ECParameters x9ECParameters = NISTNamedCurves.getByName("P-256");
+        keyGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(NISTNamedCurves.getOID("P-256"), x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN()), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kpEnc = keyGen.generateKeyPair();
+
+        PGPKeyPair ecdhKeyPair = new BcPGPKeyPair(PGPPublicKey.ECDH, kpEnc, new Date());
+
+        PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
+        ByteArrayOutputStream   ldOut = new ByteArrayOutputStream();
+        OutputStream pOut = lData.open(ldOut, PGPLiteralDataGenerator.UTF8, PGPLiteralData.CONSOLE, text.length, new Date());
+
+        pOut.write(text);
+
+        pOut.close();
+
+        byte[] data = ldOut.toByteArray();
+
+        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+
+        PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()));
+
+        cPk.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(ecdhKeyPair.getPublicKey()));
+
+        OutputStream cOut = cPk.open(new UncloseableOutputStream(cbOut), data.length);
+
+        cOut.write(data);
+
+        cOut.close();
+
+        JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(cbOut.toByteArray());
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(ecdhKeyPair.getPrivateKey()));
+
+        pgpF = new JcaPGPObjectFactory(clear);
+
+        PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
+
+        clear = ld.getInputStream();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        int ch;
+        while ((ch = clear.read()) >= 0)
+        {
+            bOut.write(ch);
+        }
+
+        byte[] out = bOut.toByteArray();
+
+        if (!areEqual(out, text))
+        {
+            fail("wrong plain text in generated packet");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -262,6 +338,7 @@ public class PGPECDHTest
         testDecrypt(secretKeyRing);
 
         encryptDecryptTest();
+        encryptDecryptBCTest();
 
         generate();
     }
