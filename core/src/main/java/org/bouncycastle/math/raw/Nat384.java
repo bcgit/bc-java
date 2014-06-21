@@ -1,6 +1,5 @@
-package org.bouncycastle.math.ec.custom.sec;
+package org.bouncycastle.math.raw;
 
-import org.bouncycastle.math.ec.Nat;
 
 public abstract class Nat384
 {

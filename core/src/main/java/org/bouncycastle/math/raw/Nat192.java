@@ -1,8 +1,7 @@
-package org.bouncycastle.math.ec.custom.sec;
+package org.bouncycastle.math.raw;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.Nat;
 import org.bouncycastle.util.Pack;
 
 public abstract class Nat192

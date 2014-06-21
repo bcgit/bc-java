@@ -1,4 +1,4 @@
-package org.bouncycastle.math.ec;
+package org.bouncycastle.math.raw;
 
 import java.math.BigInteger;
 

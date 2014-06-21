@@ -3,7 +3,7 @@ package org.bouncycastle.math.ec.custom.djb;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.Nat256;
+import org.bouncycastle.math.raw.Nat256;
 
 public class Curve25519Point extends ECPoint
 {

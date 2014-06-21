@@ -3,8 +3,8 @@ package org.bouncycastle.math.ec.custom.sec;
 import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.ec.Mod;
-import org.bouncycastle.math.ec.Nat;
+import org.bouncycastle.math.raw.Mod;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 
 public class SecP384R1FieldElement extends ECFieldElement
