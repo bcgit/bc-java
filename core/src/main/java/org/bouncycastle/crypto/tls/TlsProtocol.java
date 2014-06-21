@@ -53,6 +53,7 @@ public abstract class TlsProtocol
     private ByteQueue applicationDataQueue = new ByteQueue();
     private ByteQueue alertQueue = new ByteQueue(2);
     private ByteQueue handshakeQueue = new ByteQueue();
+//    private ByteQueue heartbeatQueue = new ByteQueue();
 
     /*
      * The Record Stream we use
@@ -228,7 +229,13 @@ public abstract class TlsProtocol
         }
         case ContentType.heartbeat:
         {
+            if (!appDataReady)
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
             // TODO[RFC 6520]
+//            heartbeatQueue.addData(buf, offset, len);
+//            processHeartbeat();
         }
         default:
             /*
@@ -379,15 +386,17 @@ public abstract class TlsProtocol
                 throw new TlsFatalAlert(AlertDescription.decode_error);
             }
 
-            if (this.receivedChangeCipherSpec)
+            if (this.receivedChangeCipherSpec
+                || alertQueue.size() > 0
+                || handshakeQueue.size() > 0)
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
+            recordStream.receivedReadCipherSpec();
+
             this.receivedChangeCipherSpec = true;
 
-            recordStream.receivedReadCipherSpec();
-    
             handleChangeCipherSpecMessage();
         }
     }
