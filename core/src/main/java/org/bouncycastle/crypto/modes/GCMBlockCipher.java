@@ -98,7 +98,7 @@ public class GCMBlockCipher
             initialAssociatedText = param.getAssociatedText();
 
             int macSizeBits = param.getMacSize();
-            if (macSizeBits < 96 || macSizeBits > 128 || macSizeBits % 8 != 0)
+            if (macSizeBits < 32 || macSizeBits > 128 || macSizeBits % 8 != 0)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
@@ -128,9 +128,7 @@ public class GCMBlockCipher
             throw new IllegalArgumentException("IV must be at least 1 byte");
         }
 
-        // TODO This should be configurable by init parameters
-        // (but must be 16 if nonce length not 12) (BLOCK_SIZE?)
-//        this.tagLength = 16;
+        // TODO Restrict macSize to 16 if nonce length not 12?
 
         // Cipher always used in forward mode
         // if keyParam is null we're reusing the last key.
@@ -389,7 +387,6 @@ public class GCMBlockCipher
 
         gHASHBlock(S, X);
 
-        // TODO Fix this if tagLength becomes configurable
         // T = MSBt(GCTRk(J0,S))
         byte[] tag = new byte[BLOCK_SIZE];
         cipher.processBlock(J0, 0, tag, 0);
