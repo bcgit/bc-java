@@ -16,7 +16,9 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class CramerShoupTest extends SimpleTest {
-	
+
+    private static final SecureRandom RND = new SecureRandom();
+
 	private AsymmetricCipherKeyPair keyPair;
 
 	public static void main(String[] args) {
@@ -30,29 +32,18 @@ public class CramerShoupTest extends SimpleTest {
 
 	@Override
 	public void performTest() throws Exception {
+        BigInteger pSubOne = DHStandardGroups.rfc3526_2048.getP().subtract(BigInteger.ONE);
+	    for (int i = 0; i < 10; ++i) {
+            BigInteger message = BigIntegers.createRandomInRange(BigInteger.ONE, pSubOne, RND);
 
-		int i = 0;
-		int numTests = 10;
-		BigInteger message = BigInteger.ONE;
-		
-		while (i < numTests){
-
-			message = BigIntegers.createRandomInRange(BigInteger.ONE,
-					DHStandardGroups.rfc3526_2048.getP().subtract(BigInteger.ONE),
-					new SecureRandom());
-			
 			BigInteger m1 = encDecTest(message);
 			BigInteger m2 = labelledEncDecTest(message, "myRandomLabel");
 			BigInteger m3 = encDecEncodingTest(message);
 			BigInteger m4 = labelledEncDecEncodingTest(message, "myOtherCoolLabel");
-			
-			System.out.println(message);
-			
+
 			if (!message.equals(m1) || !message.equals(m2) || !message.equals(m3) || !message.equals(m4)){
 				fail("decrypted message != original message");
 			}
-		
-			++i;
 		}
 	}
 	
@@ -87,9 +78,9 @@ public class CramerShoupTest extends SimpleTest {
 		
 		CramerShoupCoreEngine engine = new CramerShoupCoreEngine();
 		if (label != null)
-			engine.init(true, keyPair.getPrivate(), label);
+			engine.init(false, keyPair.getPrivate(), label);
 		else
-			engine.init(true, keyPair.getPrivate());
+			engine.init(false, keyPair.getPrivate());
 		try {
 			BigInteger m = engine.decryptBlock(ciphertext);
 			
@@ -109,22 +100,21 @@ public class CramerShoupTest extends SimpleTest {
 		CramerShoupKeyPairGenerator kpGen = new CramerShoupKeyPairGenerator();
 		CramerShoupParametersGenerator pGen = new CramerShoupParametersGenerator();
 		
-		pGen.init(2048, 1, new SecureRandom());
+		pGen.init(2048, 1, RND);
 		CramerShoupParameters params = pGen.generateParameters(DHStandardGroups.rfc3526_2048);
-		CramerShoupKeyGenerationParameters param = new CramerShoupKeyGenerationParameters(new SecureRandom(), params);
+		CramerShoupKeyGenerationParameters param = new CramerShoupKeyGenerationParameters(RND, params);
 
 		kpGen.init(param);
 		keyPair = kpGen.generateKeyPair();
 		
 		CramerShoupCoreEngine engine = new CramerShoupCoreEngine();
 		if (label != null)
-			engine.init(false, keyPair.getPublic(), label);
+			engine.init(true, keyPair.getPublic(), label);
 		else
-			engine.init(false, keyPair.getPublic());
+			engine.init(true, keyPair.getPublic());
 		
 		CramerShoupCiphertext ciphertext = engine.encryptBlock(message);
 		
 		return ciphertext;
 	}
-
 }
