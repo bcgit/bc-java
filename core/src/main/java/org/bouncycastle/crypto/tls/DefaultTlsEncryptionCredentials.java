@@ -54,23 +54,9 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
         return certificate;
     }
 
-    public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret, byte[] fallback)
+    public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret)
         throws IOException
     {
-        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), fallback);
-        encoding.init(false, new ParametersWithRandom(this.privateKey, context.getSecureRandom()));
-
-        try
-        {
-            return encoding.processBlock(encryptedPreMasterSecret, 0,
-                encryptedPreMasterSecret.length);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            /*
-             * This should never happen, the decryption should always succeed, or return a random value.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, encryptedPreMasterSecret);
     }
 }
