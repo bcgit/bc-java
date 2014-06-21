@@ -9,8 +9,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
-public class DefaultTlsEncryptionCredentials
-    extends AbstractTlsEncryptionCredentials
+public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCredentials
 {
     protected TlsContext context;
     protected Certificate certificate;
@@ -58,7 +57,6 @@ public class DefaultTlsEncryptionCredentials
     public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret, byte[] fallback)
         throws IOException
     {
-
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine(), fallback);
         encoding.init(false, new ParametersWithRandom(this.privateKey, context.getSecureRandom()));
 
@@ -69,9 +67,9 @@ public class DefaultTlsEncryptionCredentials
         }
         catch (InvalidCipherTextException e)
         {
-        	/*
-        	 * This should never happen, the decryption should always succeed, or return a random value.
-        	 */
+            /*
+             * This should never happen, the decryption should always succeed, or return a random value.
+             */
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
