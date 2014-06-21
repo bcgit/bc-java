@@ -99,13 +99,23 @@ public abstract class Mod
         return s;
     }
 
+    public static void add(int[] p, int[] x, int[] y, int[] z)
+    {
+        int len = p.length;
+        int c = Nat.add(len, x, y, z);
+        if (c != 0)
+        {
+            Nat.subFrom(len, p, z);
+        }
+    }
+
     public static void subtract(int[] p, int[] x, int[] y, int[] z)
     {
         int len = p.length;
         int c = Nat.sub(len, x, y, z);
         if (c != 0)
         {
-            Nat.add(len, z, p, z);
+            Nat.addTo(len, p, z);
         }
     }
 
