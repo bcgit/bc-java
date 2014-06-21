@@ -23,43 +23,48 @@ public class CramerShoupCoreEngine {
 	private static final BigInteger ONE = BigInteger.ONE;
 	
 	private CramerShoupKeyParameters key;
+    private SecureRandom random;
 	private boolean forEncryption;
 	private String label = null;
 
 	/**
 	 * initialise the CramerShoup engine.
 	 * 
-	 * @param enc
+	 * @param forEncryption
 	 *            	whether this engine should encrypt or decrypt
 	 * @param param
 	 *            	the necessary CramerShoup key parameters.
 	 * @param label
 	 * 				the label for labelled CS as {@link String}
 	 */
-	public void init(boolean enc, CipherParameters param, String label) {
-		init(enc, param);
+	public void init(boolean forEncryption, CipherParameters param, String label) {
+		init(forEncryption, param);
 		
 		this.label = label;
 	}
-	
+
 	/**
 	 * initialise the CramerShoup engine.
 	 * 
-	 * @param enc
+	 * @param forEncryption
 	 *            whether this engine should encrypt or decrypt
 	 * @param param
 	 *            the necessary CramerShoup key parameters.
 	 */
-	public void init(boolean enc, CipherParameters param) {
+	public void init(boolean forEncryption, CipherParameters param) {
+        SecureRandom providedRandom = null;
+
 		if (param instanceof ParametersWithRandom) {
 			ParametersWithRandom rParam = (ParametersWithRandom) param;
 
 			key = (CramerShoupKeyParameters) rParam.getParameters();
+            providedRandom = rParam.getRandom();
 		} else {
 			key = (CramerShoupKeyParameters) param;
 		}
 
-		this.forEncryption = enc;
+        this.random = initSecureRandom(forEncryption, providedRandom);
+		this.forEncryption = forEncryption;
 	}
 
 	/**
@@ -103,7 +108,7 @@ public class CramerShoupCoreEngine {
 	public BigInteger convertInput(byte[] in, int inOff, int inLen) {
 		if (inLen > (getInputBlockSize() + 1)) {
 			throw new DataLengthException("input too large for Cramer Shoup cipher.");
-		} else if (inLen == (getInputBlockSize() + 1) && !forEncryption) {
+		} else if (inLen == (getInputBlockSize() + 1) && forEncryption) {
 			throw new DataLengthException("input too large for Cramer Shoup cipher.");
 		}
 
@@ -128,7 +133,7 @@ public class CramerShoupCoreEngine {
 	public byte[] convertOutput(BigInteger result) {
 		byte[] output = result.toByteArray();
 
-		if (forEncryption) {
+		if (!forEncryption) {
 			if (output[0] == 0 && output.length > getOutputBlockSize()) { // have ended up with an extra zero byte, copy down.
 				byte[] tmp = new byte[output.length - 1];
 
@@ -160,9 +165,8 @@ public class CramerShoupCoreEngine {
 	public CramerShoupCiphertext encryptBlock(BigInteger input) {
 
 		CramerShoupCiphertext result = null;
-		
 
-		if (!key.isPrivate() && !this.forEncryption && key instanceof CramerShoupPublicKeyParameters) {
+		if (!key.isPrivate() && this.forEncryption && key instanceof CramerShoupPublicKeyParameters) {
 			CramerShoupPublicKeyParameters pk = (CramerShoupPublicKeyParameters)key;
 			BigInteger p = pk.getParameters().getP();
 			BigInteger g1 = pk.getParameters().getG1();
@@ -173,7 +177,7 @@ public class CramerShoupCoreEngine {
 			if (!isValidMessage(input, p))
 				return result;
 			
-			BigInteger r = generateRandomElement(p, new SecureRandom());
+			BigInteger r = generateRandomElement(p, random);
 			
 			BigInteger u1, u2, v, e, a;
 			
@@ -207,7 +211,7 @@ public class CramerShoupCoreEngine {
 
 		BigInteger result = null;
 
-		if (key.isPrivate() && this.forEncryption && key instanceof CramerShoupPrivateKeyParameters) {
+		if (key.isPrivate() && !this.forEncryption && key instanceof CramerShoupPrivateKeyParameters) {
 			CramerShoupPrivateKeyParameters sk = (CramerShoupPrivateKeyParameters)key;
 			
 			BigInteger p = sk.getParameters().getP();
@@ -250,6 +254,11 @@ public class CramerShoupCoreEngine {
 	private boolean isValidMessage(BigInteger m, BigInteger p){
 		return m.compareTo(p) < 0;
 	}
+
+    protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
+    {
+        return !needed ? null : (provided != null) ? provided : new SecureRandom();
+    }
 
 	/**
 	 *	CS exception for wrong cipher-texts 
