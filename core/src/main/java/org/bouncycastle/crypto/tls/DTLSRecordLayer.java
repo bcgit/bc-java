@@ -245,10 +245,6 @@ class DTLSRecordLayer
                             closeTransport();
                         }
                     }
-                    else
-                    {
-                        // TODO What exception?
-                    }
 
                     continue;
                 }
