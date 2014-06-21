@@ -1,6 +1,8 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.bouncycastle.bcpg.attr.ImageAttribute;
 
@@ -69,7 +71,8 @@ public class UserAttributeSubpacketInputStream
     {
         int            l = this.read();
         int            bodyLen = 0;
-        
+        boolean        longLength = false;
+
         if (l < 0)
         {
             return null;
@@ -86,17 +89,18 @@ public class UserAttributeSubpacketInputStream
         else if (l == 255)
         {
             bodyLen = (in.read() << 24) | (in.read() << 16) |  (in.read() << 8)  | in.read();
+            longLength = true;
         }
         else
         {
-            // TODO Error?
+            throw new IOException("unrecognised length reading user attribute sub packet");
         }
 
        int        tag = in.read();
 
        if (tag < 0)
        {
-               throw new EOFException("unexpected EOF reading user attribute sub packet");
+           throw new EOFException("unexpected EOF reading user attribute sub packet");
        }
        
        byte[]    data = new byte[bodyLen - 1];
@@ -108,9 +112,9 @@ public class UserAttributeSubpacketInputStream
        switch (type)
        {
        case IMAGE_ATTRIBUTE:
-           return new ImageAttribute(data);
+           return new ImageAttribute(longLength, data);
        }
 
-       return new UserAttributeSubpacket(type, data);
+       return new UserAttributeSubpacket(type, longLength, data);
     }
 }
