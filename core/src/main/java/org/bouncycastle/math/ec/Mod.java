@@ -49,9 +49,9 @@ public abstract class Mod
 
             if (Nat.gte(uvLen, u, v))
             {
-                Nat.sub(uvLen, u, v, u);
+                Nat.subFrom(uvLen, v, u);
 //              assert (u[0] & 1) == 0;
-                ac += Nat.sub(len, a, b, a) - bc;
+                ac += Nat.subFrom(len, b, a) - bc;
                 ac = inversionStep(p, u, uvLen, a, ac);
                 if (Nat.isOne(uvLen, u))
                 {
@@ -61,9 +61,9 @@ public abstract class Mod
             }
             else
             {
-                Nat.sub(uvLen, v, u, v);
+                Nat.subFrom(uvLen, u, v);
 //              assert (v[0] & 1) == 0;
-                bc += Nat.sub(len, b, a, b) - ac;
+                bc += Nat.subFrom(len, a, b) - ac;
                 bc = inversionStep(p, v, uvLen, b, bc);
                 if (Nat.isOne(uvLen, v))
                 {
@@ -146,11 +146,11 @@ public abstract class Mod
             {
                 if (xc < 0)
                 {
-                    xc += Nat.add(len, x, p, x);
+                    xc += Nat.addTo(len, p, x);
                 }
                 else
                 {
-                    xc += Nat.sub(len, x, p, x);
+                    xc += Nat.subFrom(len, p, x);
                 }
             }
 
