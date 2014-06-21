@@ -337,15 +337,15 @@ public class PKCS1Encoding
         int     inLen)
         throws InvalidCipherTextException
     {
-		/*
-		 * If the lenght of the expected plaintext is known, we use a constant
-		 * time decryption. If the decryption fails, we return a random value.
-		 */
+        /*
+         * If the length of the expected plaintext is known, we use a constant-time decryption.
+         * If the decryption fails, we return a random value.
+         */
 		if (this.pLen != -1) {
     		return this.decodeBlockOrRandom(in, inOff, inLen);
     	}
     	
-        byte[]  block = engine.processBlock(in, inOff, inLen);
+        byte[] block = engine.processBlock(in, inOff, inLen);
 
         if (block.length < getOutputBlockSize())
         {
