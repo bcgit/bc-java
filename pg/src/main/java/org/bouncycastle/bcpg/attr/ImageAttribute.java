@@ -1,10 +1,10 @@
 package org.bouncycastle.bcpg.attr;
 
-import org.bouncycastle.bcpg.UserAttributeSubpacket;
-import org.bouncycastle.bcpg.UserAttributeSubpacketTags;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
+import org.bouncycastle.bcpg.UserAttributeSubpacket;
+import org.bouncycastle.bcpg.UserAttributeSubpacketTags;
 
 /**
  * Basic type for a image attribute packet.
@@ -20,11 +20,18 @@ public class ImageAttribute
     private int     version;
     private int     encoding;
     private byte[]  imageData;
-    
+
     public ImageAttribute(
         byte[]    data)
     {
-        super(UserAttributeSubpacketTags.IMAGE_ATTRIBUTE, data);
+        this(false, data);
+    }
+
+    public ImageAttribute(
+        boolean   forceLongLength,
+        byte[]    data)
+    {
+        super(UserAttributeSubpacketTags.IMAGE_ATTRIBUTE, forceLongLength, data);
         
         hdrLength = ((data[1] & 0xff) << 8) | (data[0] & 0xff);
         version = data[2] & 0xff;
