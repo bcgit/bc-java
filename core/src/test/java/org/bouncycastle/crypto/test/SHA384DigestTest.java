@@ -46,7 +46,6 @@ public class SHA384DigestTest
         return new SHA384Digest((SHA384Digest)digest);
     }
 
-    @Override
     protected Digest cloneDigest(byte[] encodedState)
     {
         return new SHA384Digest(encodedState);
