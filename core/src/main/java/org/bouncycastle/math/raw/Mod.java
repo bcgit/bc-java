@@ -6,6 +6,18 @@ import org.bouncycastle.util.Pack;
 
 public abstract class Mod
 {
+    public static int inverse32(int d)
+    {
+//        int x = d + (((d + 1) & 4) << 1);   // d.x == 1 mod 2**4
+        int x = d;                          // d.x == 1 mod 2**3
+        x *= 2 - d * x;                     // d.x == 1 mod 2**6
+        x *= 2 - d * x;                     // d.x == 1 mod 2**12
+        x *= 2 - d * x;                     // d.x == 1 mod 2**24
+        x *= 2 - d * x;                     // d.x == 1 mod 2**48
+//        assert d * x == 1;
+        return  x;
+    }
+
     public static void invert(int[] p, int[] x, int[] z)
     {
         int len = p.length;
