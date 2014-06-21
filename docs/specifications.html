@@ -317,7 +317,7 @@ implementations
 <tr><td><b>CBCBlockCipherMac</b></td><td>blocksize/2 unless specified</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipherMac</b></td><td>blocksize/2, in CFB 8 mode, unless specified</td><td>&nbsp;</td></tr>
 <tr><td><b>CMac</b></td><td>24 to 128 bits</td><td>Usable with block ciphers, NIST SP 800-38B.</td></tr>
-<tr><td><b>GMac</b></td><td>96 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D.</td></tr>
+<tr><td><b>GMac</b></td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D.</td></tr>
 <tr><td><b>GOST28147Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>ISO9797Alg3Mac</b></td><td>multiple of 8 bits up to underlying cipher size.</td><td>&nbsp;</td></tr>
 <tr><td><b>HMac</b></td><td>digest length</td><td>&nbsp;</td></tr>
@@ -699,7 +699,7 @@ change as the draft is finalised.
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
 <tr><td>Any MAC based on a block cipher, CBC (the default) and CFB modes.</td><td>half the cipher's block size (usually 32 bits)</td><td>&nbsp;</td></tr>
-<tr><td>*-GMAC</td><td>96 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D. e.g. AES-GMAC.</td></tr>
+<tr><td>*-GMAC</td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D. e.g. AES-GMAC.</td></tr>
 <tr><td>VMPC-MAC</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>HMac-MD2</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>HMac-MD4</td><td>128</td><td>&nbsp;</td></tr>
