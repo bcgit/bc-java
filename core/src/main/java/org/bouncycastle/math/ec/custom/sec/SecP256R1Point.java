@@ -3,7 +3,8 @@ package org.bouncycastle.math.ec.custom.sec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.Nat;
+import org.bouncycastle.math.raw.Nat;
+import org.bouncycastle.math.raw.Nat256;
 
 public class SecP256R1Point extends ECPoint
 {

@@ -2,7 +2,8 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.Nat;
+import org.bouncycastle.math.raw.Nat;
+import org.bouncycastle.math.raw.Nat256;
 
 public class SecP256K1Field
 {

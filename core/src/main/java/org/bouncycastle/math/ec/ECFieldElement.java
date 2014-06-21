@@ -3,6 +3,8 @@ package org.bouncycastle.math.ec;
 import java.math.BigInteger;
 import java.util.Random;
 
+import org.bouncycastle.math.raw.Mod;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
