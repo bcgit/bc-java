@@ -281,9 +281,7 @@ public class BCStyle
         defaultSymbols = copyHashTable(DefaultSymbols);
         defaultLookUp = copyHashTable(DefaultLookUp);
     }
-    
-    
-    @Override
+
     protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid,
     		String value) {
     	if (oid.equals(EmailAddress) || oid.equals(DC))

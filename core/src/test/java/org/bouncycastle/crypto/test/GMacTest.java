@@ -14,7 +14,7 @@ import org.bouncycastle.util.test.SimpleTest;
  * Test vectors for AES-GMAC, extracted from <a
  * href="http://csrc.nist.gov/groups/STM/cavp/documents/mac/gcmtestvectors.zip">NIST CAVP GCM test
  * vectors</a>.
- * 
+ *
  */
 public class GMacTest extends SimpleTest
 {
@@ -115,8 +115,7 @@ public class GMacTest extends SimpleTest
         // Invalid mac size
         testInvalidMacSize(97);
         testInvalidMacSize(136);
-        testInvalidMacSize(88);
-        testInvalidMacSize(64);
+        testInvalidMacSize(24);
     }
 
     private void testInvalidMacSize(int size)
@@ -129,6 +128,10 @@ public class GMacTest extends SimpleTest
         }
         catch (IllegalArgumentException e)
         {
+            if (!e.getMessage().startsWith("Invalid value for MAC size"))
+            {
+                fail("Illegal mac size failed with unexpected message");
+            }
         }
     }
 
@@ -155,7 +158,7 @@ public class GMacTest extends SimpleTest
         if (!areEqual(testCase.getTag(), generatedMac))
         {
             fail("Failed " + testCase.getName() + " - expected " + new String(Hex.encode(testCase.getTag())) + " got "
-                    + new String(Hex.encode(generatedMac)));
+                + new String(Hex.encode(generatedMac)));
         }
     }
 

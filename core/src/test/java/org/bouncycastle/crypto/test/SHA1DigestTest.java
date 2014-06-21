@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * standard vector test for SHA-1 from "Handbook of Applied Cryptography", page 345.
@@ -36,7 +35,6 @@ public class SHA1DigestTest
         return new SHA1Digest((SHA1Digest)digest);
     }
 
-    @Override
     protected Digest cloneDigest(byte[] encodedState)
     {
         return new SHA1Digest(encodedState);
