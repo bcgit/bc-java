@@ -279,54 +279,63 @@ public class PKCS1Encoding
      * 
      * @throws InvalidCipherTextException
      */
-	private byte[] decodeBlockOrRandom(byte[] in, int inOff, int inLen)
-			throws InvalidCipherTextException {
-		if (!forPrivateKey) {
-			throw new InvalidCipherTextException("sorry, this method is only for decryption, not for signing");
-		}
-		byte[] block = engine.processBlock(in, inOff, inLen);
-		byte[] random = null;
-		if (this.fallback == null) {
-			random = new byte[this.pLen];
-			this.random.nextBytes(random);
-		} else {
-			random = fallback;
-		}
-		
+    private byte[] decodeBlockOrRandom(byte[] in, int inOff, int inLen)
+        throws InvalidCipherTextException
+    {
+        if (!forPrivateKey)
+        {
+            throw new InvalidCipherTextException("sorry, this method is only for decryption, not for signing");
+        }
+
+        byte[] block = engine.processBlock(in, inOff, inLen);
+        byte[] random = null;
+        if (this.fallback == null)
+        {
+            random = new byte[this.pLen];
+            this.random.nextBytes(random);
+        }
+        else
+        {
+            random = fallback;
+        }
+
 		/*
 		 * TODO: This is a potential dangerous side channel. However, you can
 		 * fix this by changing the RSA engine in a way, that it will always
 		 * return blocks of the same length and prepend them with 0 bytes if
 		 * needed.
 		 */
-		if (block.length < getOutputBlockSize()) {
-			throw new InvalidCipherTextException("block truncated");
-		}
+        if (block.length < getOutputBlockSize())
+        {
+            throw new InvalidCipherTextException("block truncated");
+        }
 
 		/*
 		 * TODO: Potential side channel. Fix it by making the engine always
 		 * return blocks of the correct length.
 		 */
-		if (useStrictLength && block.length != engine.getOutputBlockSize()) {
-			throw new InvalidCipherTextException("block incorrect size");
-		}
+        if (useStrictLength && block.length != engine.getOutputBlockSize())
+        {
+            throw new InvalidCipherTextException("block incorrect size");
+        }
 
 		/*
 		 * Check the padding.
 		 */
-		int correct = PKCS1Encoding.checkPkcs1Encoding(block, this.pLen);
+        int correct = PKCS1Encoding.checkPkcs1Encoding(block, this.pLen);
 		
 		/*
 		 * Now, to a constant time constant memory copy of the decrypted value
 		 * or the random value, depending on the validity of the padding.
 		 */
-		byte[] result = new byte[this.pLen];
-		for (int i = 0; i < this.pLen; i++) {
-			result[i] = (byte)((block[i+(block.length-pLen)]&(~correct)) | (random[i]&correct));
-		}
-		
-		return result;
-	}
+        byte[] result = new byte[this.pLen];
+        for (int i = 0; i < this.pLen; i++)
+        {
+            result[i] = (byte)((block[i + (block.length - pLen)] & (~correct)) | (random[i] & correct));
+        }
+
+        return result;
+    }
 
     /**
      * @exception InvalidCipherTextException if the decrypted block is not in PKCS1 format.
