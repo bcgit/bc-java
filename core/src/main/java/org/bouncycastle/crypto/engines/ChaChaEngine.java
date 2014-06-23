@@ -39,7 +39,12 @@ public class ChaChaEngine extends Salsa20Engine
 
     protected void retreatCounter()
     {
-        if (--engineState[12] == Integer.MIN_VALUE)
+        if (engineState[12] == 0 && engineState[13] == 0)
+        {
+            throw new IllegalStateException("attempt to reduce counter past zero.");
+        }
+
+        if (--engineState[12] == -1)
         {
             --engineState[13];
         }
