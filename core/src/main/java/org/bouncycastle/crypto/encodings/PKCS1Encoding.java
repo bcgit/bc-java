@@ -274,7 +274,7 @@ public class PKCS1Encoding
      * @param in The encrypted block.
      * @param inOff Offset in the encrypted block.
      * @param inLen Length of the encrypted block.
-     * @param pLen Length of the desired output.
+     * //@param pLen Length of the desired output.
      * @return The plaintext without padding, or a random value if the padding was incorrect.
      * 
      * @throws InvalidCipherTextException
