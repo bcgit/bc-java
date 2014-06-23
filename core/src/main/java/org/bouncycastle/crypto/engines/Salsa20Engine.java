@@ -164,7 +164,12 @@ public class Salsa20Engine
 
     protected void retreatCounter()
     {
-        if (--engineState[8] == Integer.MIN_VALUE)
+        if (engineState[8] == 0 && engineState[9] == 0)
+        {
+            throw new IllegalStateException("attempt to reduce counter past zero.");
+        }
+
+        if (--engineState[8] == -1)
         {
             --engineState[9];
         }
