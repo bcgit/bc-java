@@ -117,10 +117,28 @@ public class SICBlockCipher
 
     private void decrementCounter()
     {
-        // increment counter by 1.
-        for (int i = counter.length - 1; i >= 0 && --counter[i] == Integer.MIN_VALUE; i--)
+        if (counter[0] == 0)
         {
-            ; // do nothing - pre-increment and test for 0 in counter does the job.
+            boolean nonZero = false;
+
+            for (int i = counter.length - 1; i > 0; i--)
+            {
+                if (counter[i] != 0)
+                {
+                    nonZero = true;
+                }
+            }
+
+            if (!nonZero)
+            {
+                throw new IllegalStateException("attempt to reduce counter past zero.");
+            }
+        }
+
+        // decrement counter by 1.
+        for (int i = counter.length - 1; i >= 0 && --counter[i] == -1; i--)
+        {
+            ;
         }
     }
 
