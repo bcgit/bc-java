@@ -760,14 +760,15 @@
                 <package name="org.bouncycastle.crypto.*" />
                 <package name="org.bouncycastle.jce.*" />
                 <package name="org.bouncycastle.jcajce.*" />
+                <package name="org.bouncycastle.math.*" />
                 <package name="org.bouncycastle.pqc.*" />
                 <package name="org.bouncycastle.util.*" />
                 <group title="ASN.1 Support Packages" packages="org.bouncycastle.asn1*" />
+                <group title="JCA/JCE Provider" packages="org.bouncycastle.jce.provider*,org.bouncycastle.jcajce.provider*" />
+                <group title="JCA/JCE Utility and Extension Packages" packages="org.bouncycastle.jce*,org.bouncycastle.jcajce*" />
                 <group title="Lightweight Crypto Packages" packages="org.bouncycastle.crypto*" />
-                <group title="JCE Provider" packages="org.bouncycastle.jce.provider*,org.bouncycastle.jcajce.provider*" />
-                <group title="JCE Utility and Extension Packages" packages="org.bouncycastle.jce*,org.bouncycastle.jcajce*" />
+                <group title="Math and Utility Packages" packages="org.bouncycastle.util*:org.bouncycastle.math*" />
                 <group title="Test Packages" packages="org.bouncycastle.crypto.test*,org.bouncycastle.util.utiltest,org.bouncycastle.asn1.test*,org.bouncycastle.util.encoders.test*,org.bouncycastle.util.io.test*,org.bouncycastle.util.io.pem.test*,org.bouncycastle.math.ec.test*,org.bouncycastle.crypto.ec.test*,org.bouncycastle.crypto.prng.test*,org.bouncycastle.crypto.tls.test*,org.bouncycastle.crypto.agreement.test*,org.bouncycastle.jce.provider.test*" />
-                <group title="Utility Packages" packages="org.bouncycastle.util*:org.bouncycastle.math*" />
                 <group title="Post-Quantum Lightweight Crypto Packages" packages="org.bouncycastle.pqc.crypto*" />
                 <group title="Post-Quantum ASN.1 Packages" packages="org.bouncycastle.pqc.asn1*" />
                 <group title="Post-Quantum Lightweight Math Packages" packages="org.bouncycastle.pqc.math*" />
@@ -878,12 +879,12 @@
                 <package name="org.bouncycastle.mozilla.*" />
                 <package name="org.bouncycastle.tsp.*" />
                 <group title="Certificate Packages" packages="org.bouncycastle.cert*,org.bouncycastle.mozilla*" />
+                <group title="Cryptographic Operators" packages="org.bouncycastle.operator*" />
                 <group title="CMS Packages" packages="org.bouncycastle.cms*" />
                 <group title="DVCS Packages" packages="org.bouncycastle.dvcs*" />
                 <group title="Extended Access Control Packages" packages="org.bouncycastle.eac*" />
                 <group title="PKCS Packages" packages="org.bouncycastle.pkcs*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
-                <group title="Support Operators" packages="org.bouncycastle.operator*" />
                 <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
                 <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*" />
             </docElements>
