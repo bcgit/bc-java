@@ -696,11 +696,10 @@ public class PGPSignatureTest
         {
             PGPUserAttributeSubpacketVector attr = (PGPUserAttributeSubpacketVector)attrit.next();
 
-            Iterator<PGPSignature> sigit =
-                masterPk.getSignaturesForUserAttribute(attr);
+            Iterator sigit = masterPk.getSignaturesForUserAttribute(attr);
             while (sigit.hasNext())
             {
-                PGPSignature sig = sigit.next();
+                PGPSignature sig = (PGPSignature)sigit.next();
 
                 sig.init(new BcPGPContentVerifierBuilderProvider(), masterPk);
                 if (!sig.verifyCertification(attr, masterPk))
@@ -765,7 +764,7 @@ public class PGPSignatureTest
 
         sVec = sGen.generate();
 
-        nd = sVec.getNotationDataOccurences();
+        nd = sVec.getNotationDataOccurrences();
 
         if (nd.length != 3 || !nd[0].isHumanReadable() || nd[1].isHumanReadable() || nd[2].isHumanReadable())
         {
