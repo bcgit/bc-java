@@ -2281,7 +2281,7 @@ public class CertTest
         ASN1EncodableVector certs = new ASN1EncodableVector();
 
         certs.add(new ASN1InputStream(CertPathTest.rootCertBin).readObject());
-        certs.add(new DERTaggedObject(false, 2, new ASN1InputStream(AttrCertTest.attrCert).readObject()));
+        certs.add(new DERTaggedObject(false, 2, new ASN1InputStream(AttrCertData.attrCert).readObject()));
 
         ASN1EncodableVector crls = new ASN1EncodableVector();
 

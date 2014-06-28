@@ -2,15 +2,16 @@ package org.bouncycastle.math.ec.test;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -503,8 +504,8 @@ public class ECPointTest extends TestCase
      */
     public void testAddSubtractMultiplyTwiceEncoding()
     {
-        Set names = new HashSet(Collections.list(ECNamedCurveTable.getNames()));
-        names.addAll(Collections.list(CustomNamedCurves.getNames()));
+        Set names = new HashSet(enumToList(ECNamedCurveTable.getNames()));
+        names.addAll(enumToList(CustomNamedCurves.getNames()));
 
         Iterator it = names.iterator();
         while (it.hasNext())
@@ -523,6 +524,18 @@ public class ECPointTest extends TestCase
                 implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9ECParameters);
             }
         }
+    }
+
+    private List enumToList(Enumeration en)
+    {
+        List rv = new ArrayList();
+
+        while (en.hasMoreElements())
+        {
+            rv.add(en.nextElement());
+        }
+
+        return rv;
     }
 
     private void assertPointsEqual(String message, ECPoint a, ECPoint b)
