@@ -190,12 +190,23 @@ public class PKCS12KeyStoreSpi
         {
             SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
 
-            return new SubjectKeyIdentifier(info);
+            return new SubjectKeyIdentifier(getDigest(info));
         }
         catch (Exception e)
         {
             throw new RuntimeException("error creating key");
         }
+    }
+
+    private static byte[] getDigest(SubjectPublicKeyInfo spki)
+    {
+        Digest digest = new SHA1Digest();
+        byte[]  resBuf = new byte[digest.getDigestSize()];
+
+        byte[] bytes = spki.getPublicKeyData().getBytes();
+        digest.update(bytes, 0, bytes.length);
+        digest.doFinal(resBuf, 0);
+        return resBuf;
     }
 
     public void setRandom(
