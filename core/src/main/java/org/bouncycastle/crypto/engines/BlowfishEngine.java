@@ -7,15 +7,70 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
- * A class that provides Blowfish key encryption operations,
- * such as encoding data and generating keys.
- * All the algorithms herein are from Applied Cryptography
- * and implement a simplified cryptography interface.
+ * Implementation of the <a href="https://www.schneier.com/blowfish.html">Blowfish block cipher</a>
+ * as described in Applied Cryptography.
  */
-public final class BlowfishEngine
+public class BlowfishEngine
 implements BlockCipher
 {
-    private final static int[] 
+
+    /**
+     * A cyclic producer of 4 byte words.
+     */
+    protected interface WordCycle
+    {
+        /**
+         * Produce the next word, cycling over the internal byte sequence as necessary.
+         */
+        public int next();
+
+    }
+
+    /**
+     * A cycle of words over a byte sequence of arbitrary length.
+     */
+    protected static class ByteCycle
+        implements WordCycle
+    {
+        private byte[] vals;
+        private int pos;
+
+        public ByteCycle(byte[] vals)
+        {
+            this.vals = vals;
+        }
+
+        public int next()
+        {
+            int current = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                current = (current << 8) | (vals[pos++] & 0xFF);
+                if (pos == vals.length)
+                {
+                    pos = 0;
+                }
+            }
+            return current;
+        }
+
+    }
+
+    /**
+     * A word cycle that always returns the value 0.
+     */
+    protected static class ZeroCycle
+        implements WordCycle
+    {
+
+        public int next()
+        {
+            return 0;
+        }
+
+    }
+
+    private final static int[]
         KP = {
                 0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344,
                 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
@@ -333,6 +388,18 @@ implements BlockCipher
         {
             this.encrypting = encrypting;
             this.workingKey = ((KeyParameter)params).getKey();
+
+            /*
+             * (1)
+             * Initialise the S-boxes and the P-array, with a fixed string
+             * This string contains the hexadecimal digits of pi (3.141...)
+             */
+            System.arraycopy(KS0, 0, S0, 0, SBOX_SK);
+            System.arraycopy(KS1, 0, S1, 0, SBOX_SK);
+            System.arraycopy(KS2, 0, S2, 0, SBOX_SK);
+            System.arraycopy(KS3, 0, S3, 0, SBOX_SK);
+            System.arraycopy(KP, 0, P, 0, P_SZ);
+
             setKey(this.workingKey);
 
             return;
@@ -404,12 +471,16 @@ implements BlockCipher
     private void processTable(
         int     xl,
         int     xr,
-        int[]   table)
+        int[]   table,
+        WordCycle salt)
     {
         int size = table.length;
 
         for (int s = 0; s < size; s += 2)
         {
+            xl ^= salt.next();
+            xr ^= salt.next();
+
             xl ^= P[0];
 
             for (int i = 1; i < ROUNDS; i += 2)
@@ -428,23 +499,32 @@ implements BlockCipher
         }
     }
 
-    private void setKey(byte[] key)
+    /**
+     * Sets the key, using the key schedule.
+     *
+     * @param key the bytes of the key.
+     */
+    protected void setKey(byte[] key)
     {
+        setKey(key, new ZeroCycle());
+    }
+
+    /**
+     * The core Blowfish key schedule.
+     *
+     * @param key the bytes of the key
+     * @param salt a word sequence to xor into the words encrypted during the key schedule.
+     */
+    protected final void setKey(byte[] key, WordCycle salt)
+    {
+        // WordCycle hook is to support bcrypt (which mixes key/salt into the key schedule).
+        // For Blowfish salt is always zeros.
+
         /*
          * - comments are from _Applied Crypto_, Schneier, p338
          * please be careful comparing the two, AC numbers the
          * arrays from 1, the enclosed code from 0.
-         *
-         * (1)
-         * Initialise the S-boxes and the P-array, with a fixed string
-         * This string contains the hexadecimal digits of pi (3.141...)
          */
-        System.arraycopy(KS0, 0, S0, 0, SBOX_SK);
-        System.arraycopy(KS1, 0, S1, 0, SBOX_SK);
-        System.arraycopy(KS2, 0, S2, 0, SBOX_SK);
-        System.arraycopy(KS3, 0, S3, 0, SBOX_SK);
-
-        System.arraycopy(KP, 0, P, 0, P_SZ);
 
         /*
          * (2)
@@ -453,26 +533,10 @@ implements BlockCipher
          * (up to P[17]).  Repeatedly cycle through the key bits until the
          * entire P-array has been XOR-ed with the key bits
          */
-        int keyLength = key.length;
-        int keyIndex = 0;
-
+        WordCycle keyCycle = new ByteCycle(key);
         for (int i=0; i < P_SZ; i++)
         {
-            // get the 32 bits of the key, in 4 * 8 bit chunks
-            int data = 0x0000000;
-            for (int j=0; j < 4; j++)
-            {
-                // create a 32 bit block
-                data = (data << 8) | (key[keyIndex++] & 0xff);
-
-                // wrap when we get to the end of the key
-                if (keyIndex >= keyLength)
-                {
-                    keyIndex = 0;
-                }
-            }
-            // XOR the newly created 32 bit chunk onto the P-array
-            P[i] ^= data;
+            P[i] ^= keyCycle.next();
         }
 
         /*
@@ -496,11 +560,11 @@ implements BlockCipher
          * continuously changing Blowfish algorithm
          */
 
-        processTable(0, 0, P);
-        processTable(P[P_SZ - 2], P[P_SZ - 1], S0);
-        processTable(S0[SBOX_SK - 2], S0[SBOX_SK - 1], S1);
-        processTable(S1[SBOX_SK - 2], S1[SBOX_SK - 1], S2);
-        processTable(S2[SBOX_SK - 2], S2[SBOX_SK - 1], S3);
+        processTable(0, 0, P, salt);
+        processTable(P[P_SZ - 2], P[P_SZ - 1], S0, salt);
+        processTable(S0[SBOX_SK - 2], S0[SBOX_SK - 1], S1, salt);
+        processTable(S1[SBOX_SK - 2], S1[SBOX_SK - 1], S2, salt);
+        processTable(S2[SBOX_SK - 2], S2[SBOX_SK - 1], S3, salt);
     }
 
     /**
