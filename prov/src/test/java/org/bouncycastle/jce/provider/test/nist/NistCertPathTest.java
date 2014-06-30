@@ -34,8 +34,9 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.Extension;
 
 /**
  * NIST CertPath test data for RFC 3280
@@ -830,11 +831,11 @@ public class NistCertPathTest
         throws Exception
     {
         X509Certificate cert = loadCert(trustAnchorName);
-        byte[]          extBytes = cert.getExtensionValue(X509Extension.nameConstraints.getId());
+        byte[]          extBytes = cert.getExtensionValue(Extension.nameConstraints.getId());
         
         if (extBytes != null)
         {
-            ASN1Encodable extValue = X509ExtensionUtil.fromExtensionValue(extBytes);
+            ASN1Encodable extValue = ASN1Primitive.fromByteArray(ASN1OctetString.getInstance(extBytes).getOctets());
             
             return new TrustAnchor(cert, extValue.toASN1Primitive().getEncoded(ASN1Encoding.DER));
         }
