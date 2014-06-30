@@ -62,6 +62,7 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.cert.test.PEMData;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
@@ -606,23 +607,6 @@ public class BcCertTest
         if (!cert.getKeyUsage()[7])
         {
             fail("error generating cert - key usage wrong.");
-        }
-
-        List l = cert.getExtendedKeyUsage();
-        if (!l.get(0).equals(KeyPurposeId.anyExtendedKeyUsage.getId()))
-        {
-            fail("failed extended key usage test");
-        }
-
-        Collection c = cert.getSubjectAlternativeNames();
-        Iterator   it = c.iterator();
-        while (it.hasNext())
-        {
-            List    gn = (List)it.next();
-            if (!gn.get(1).equals("test@test.test"))
-            {
-                fail("failed subject alternative names test");
-            }
         }
 
         // System.out.println(cert);

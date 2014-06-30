@@ -2,15 +2,16 @@ package org.bouncycastle.math.ec.test;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -173,8 +174,8 @@ public class ECPointPerformanceTest extends TestCase
 
     public void testMultiply() throws Exception
     {
-        SortedSet names = new TreeSet(Collections.list(ECNamedCurveTable.getNames()));
-        names.addAll(Collections.list(CustomNamedCurves.getNames()));
+        SortedSet names = new TreeSet(enumToList(ECNamedCurveTable.getNames()));
+        names.addAll(enumToList(CustomNamedCurves.getNames()));
 
         Set oids = new HashSet();
 
@@ -194,5 +195,17 @@ public class ECPointPerformanceTest extends TestCase
 
             randMult(name);
         }
+    }
+
+    private List enumToList(Enumeration en)
+    {
+        List rv = new ArrayList();
+
+        while (en.hasMoreElements())
+        {
+            rv.add(en.nextElement());
+        }
+
+        return rv;
     }
 }
