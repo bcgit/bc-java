@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.text.SimpleDateFormat;
 import org.bouncycastle.jce.cert.CertPath;
 import org.bouncycastle.jce.cert.CertPathBuilder;
 import org.bouncycastle.jce.cert.CertPathBuilderException;
@@ -2018,7 +2019,7 @@ public class RFC3280CertPathUtilities
         }
         if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
         {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss +0000");
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
             message += ", reason: " + crlReasons[certStatus.getCertStatus()];

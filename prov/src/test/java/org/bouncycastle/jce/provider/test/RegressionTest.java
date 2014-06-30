@@ -48,7 +48,6 @@ public class RegressionTest
         new NamedCurveTest(),
         new PKIXTest(),
         new NetscapeCertRequestTest(),
-        new X509StoreTest(),
         new X509StreamParserTest(),
         new X509CertificatePairTest(),
         new CertPathTest(),
