@@ -16,16 +16,24 @@ public class AllTests
     
     public static Test suite() 
         throws Exception
-    {   
+    {
         TestSuite suite = new TestSuite("CMS tests");
-        
-        suite.addTest(CompressedDataTest.suite());
-        suite.addTest(SignedDataTest.suite());
-        suite.addTest(EnvelopedDataTest.suite());
 
-        suite.addTest(CompressedDataStreamTest.suite());
-        suite.addTest(SignedDataStreamTest.suite());
-        suite.addTest(EnvelopedDataStreamTest.suite());
+        suite.addTest(NewCompressedDataTest.suite());
+        suite.addTest(NewSignedDataTest.suite());
+        suite.addTest(NewEnvelopedDataTest.suite());
+        suite.addTest(NewAuthenticatedDataTest.suite());
+        suite.addTest(NewAuthenticatedDataStreamTest.suite());
+        suite.addTest(NewCompressedDataStreamTest.suite());
+        suite.addTest(NewSignedDataStreamTest.suite());
+        suite.addTest(NewEnvelopedDataStreamTest.suite());
+
+        suite.addTest(MiscDataStreamTest.suite());
+        suite.addTest(Rfc4134Test.suite());
+        suite.addTest(ConverterTest.suite());
+
+        suite.addTest(BcEnvelopedDataTest.suite());
+        suite.addTest(BcSignedDataTest.suite());
 
         return suite;
     }
