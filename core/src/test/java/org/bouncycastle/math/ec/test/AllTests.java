@@ -16,6 +16,7 @@ public class AllTests
     {   
         TestSuite suite = new TestSuite("EC Math tests");
 
+        suite.addTest(ECAlgorithmsTest.suite());
         suite.addTest(ECPointTest.suite());
 
         return suite;
