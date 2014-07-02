@@ -163,7 +163,7 @@ public class DiscoverEndomorphisms
          */
         BigInteger d = (v1[0].multiply(v2[1])).subtract(v1[1].multiply(v2[0]));
 
-        int bits = n.bitLength() + 2;
+        int bits = n.bitLength() + 16 - (n.bitLength() & 7);
         BigInteger g1 = roundQuotient(v2[1].shiftLeft(bits), d);
         BigInteger g2 = roundQuotient(v1[1].shiftLeft(bits), d).negate();
 
