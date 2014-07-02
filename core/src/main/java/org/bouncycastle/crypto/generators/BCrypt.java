@@ -26,6 +26,7 @@ public class BCrypt
 
         public EksBlowfishEngine(byte[] salt, int cost)
         {
+            super(false);   // Don't restrict min/max key lengths
             this.salt = Arrays.copyOf(salt, salt.length);
             this.cost = cost;
         }

@@ -14,6 +14,15 @@ public class BlowfishEngine
 implements BlockCipher
 {
 
+    /** Minimum key size for Blowfish */
+    private static final int MIN_KEY_SIZE = 4;
+
+    /** Maximum key size for Blowfish */
+    // Some implementations allow up to 72 byte keys, but key bits beyond 448 do not affect every
+    // bit in ciphertext and are technically unspecified behaviour (despite ref impl not enforcing
+    // limit).
+    private static final int MAX_KEY_SIZE = 56;
+
     /**
      * A cyclic producer of 4 byte words.
      */
@@ -363,8 +372,21 @@ implements BlockCipher
 
     private byte[] workingKey = null;
 
+    private boolean checkKeySize;
+
     public BlowfishEngine()
     {
+        this(true);
+    }
+
+    /**
+     * Construct a Blowfish engine.
+     *
+     * @param checkKeySize <code>true</code> to enforce spec defined min/max keysizes.
+     */
+    protected BlowfishEngine(boolean checkKeySize)
+    {
+        this.checkKeySize = checkKeySize;
         S0 = new int[SBOX_SK];
         S1 = new int[SBOX_SK];
         S2 = new int[SBOX_SK];
@@ -373,12 +395,25 @@ implements BlockCipher
     }
 
     /**
+     * Factory method to construct a BlowfishEngine instance that does not check min/max key sizes.
+     * <p>
+     * Blowfish is defined for keys 32.448 bits in size, but some applications may require relaxed
+     * checking of key sizes.<br/>
+     * The original implementation of this engine did not check key sizes, so this factory can be
+     * used if interoperability/compatibility with such a system is required.
+     */
+    public static BlowfishEngine uncheckedKeySize()
+    {
+        return new BlowfishEngine(false);
+    }
+
+    /**
      * initialise a Blowfish cipher.
-     *
+     * 
      * @param encrypting whether or not we are for encryption.
-     * @param params the parameters required to set up the cipher.
-     * @exception IllegalArgumentException if the params argument is
-     * inappropriate.
+     * @param params the parameters required to set up the cipher - a {@link KeyParameter} with a
+     *            32..448 bit key.
+     * @exception IllegalArgumentException if the params argument is inappropriate.
      */
     public void init(
         boolean             encrypting,
@@ -519,6 +554,19 @@ implements BlockCipher
     {
         // WordCycle hook is to support bcrypt (which mixes key/salt into the key schedule).
         // For Blowfish salt is always zeros.
+
+        if (key == null || key.length == 0)
+        {
+            throw new IllegalArgumentException("Key must be specified.");
+        }
+        if (checkKeySize && key.length < MIN_KEY_SIZE)
+        {
+            throw new IllegalArgumentException("Minimum size is " + (MIN_KEY_SIZE * 8) + " bits.");
+        }
+        if (checkKeySize && key.length > MAX_KEY_SIZE)
+        {
+            throw new IllegalArgumentException("Maximum size is " + (MAX_KEY_SIZE * 8) + " bits.");
+        }
 
         /*
          * - comments are from _Applied Crypto_, Schneier, p338
