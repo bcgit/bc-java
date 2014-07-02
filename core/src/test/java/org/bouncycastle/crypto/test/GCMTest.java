@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.modes.gcm.Tables64kGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables8kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Times;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -420,10 +421,9 @@ public class GCMTest
         checkTestCase(encCipher, decCipher, testName + " (reused)", SA, P, C, T);
 
         // Key reuse
-        AEADParameters keyReuseParams = new AEADParameters(null, parameters.getMacSize(), parameters.getNonce(), parameters.getAssociatedText());
+        AEADParameters keyReuseParams = AEADTestUtil.reuseKey(parameters);
         encCipher.init(true, keyReuseParams);
         decCipher.init(false, keyReuseParams);
-        checkTestCase(encCipher, decCipher, testName + " (key reuse)", SA, P, C, T);
         checkTestCase(encCipher, decCipher, testName + " (key reuse)", SA, P, C, T);
     }
 
@@ -502,12 +502,19 @@ public class GCMTest
         throws InvalidCipherTextException
     {
         SecureRandom srng = new SecureRandom();
+        srng.setSeed(Times.nanoTime());
+        randomTests(srng, null);
+        randomTests(srng, new BasicGCMMultiplier());
+        randomTests(srng, new Tables8kGCMMultiplier());
+        randomTests(srng, new Tables64kGCMMultiplier());
+    }
+
+    private void randomTests(SecureRandom srng, GCMMultiplier m)
+        throws InvalidCipherTextException
+    {
         for (int i = 0; i < 10; ++i)
         {
-            randomTest(srng, null);
-            randomTest(srng, new BasicGCMMultiplier());
-            randomTest(srng, new Tables8kGCMMultiplier());
-            randomTest(srng, new Tables64kGCMMultiplier());
+            randomTest(srng, m);
         }
     }
 
@@ -534,9 +541,8 @@ public class GCMTest
         byte[] IV = new byte[ivLength];
         srng.nextBytes(IV);
 
-        GCMBlockCipher cipher = new GCMBlockCipher(createAESEngine(), m);
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
-        cipher.init(true, parameters);
+        GCMBlockCipher cipher = initCipher(m, true, parameters);
         byte[] C = new byte[cipher.getOutputSize(P.length)];
         int predicted = cipher.getUpdateOutputSize(P.length);
 
@@ -594,9 +600,9 @@ public class GCMTest
         }
 
         //
-        // key  reuse test
+        // key reuse test
         //
-        cipher.init(false, new AEADParameters(null, parameters.getMacSize(), parameters.getNonce(), parameters.getAssociatedText()));
+        cipher.init(false, AEADTestUtil.reuseKey(parameters));
         decP = new byte[cipher.getOutputSize(C.length)];
 
         split = nextInt(srng, SA.length + 1);
@@ -624,10 +630,8 @@ public class GCMTest
         byte[] A = null;
         byte[] IV = new byte[16];
 
-        GCMBlockCipher cipher = new GCMBlockCipher(createAESEngine(), new BasicGCMMultiplier());
         AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
-
-        cipher.init(true, parameters);
+        GCMBlockCipher cipher = initCipher(null, true, parameters);
 
         if (cipher.getUpdateOutputSize(0) != 0)
         {
@@ -660,7 +664,6 @@ public class GCMTest
 
     private static int nextInt(SecureRandom rand, int n)
     {
-
         if ((n & -n) == n)  // i.e., n is a power of 2
         {
             return (int)((n * (long)(rand.nextInt() >>> 1)) >> 31);

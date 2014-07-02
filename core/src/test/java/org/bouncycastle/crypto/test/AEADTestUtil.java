@@ -14,7 +14,6 @@ import org.bouncycastle.util.test.TestFailedException;
 
 public class AEADTestUtil
 {
-
     public static void testTampering(Test test, AEADBlockCipher cipher, CipherParameters params)
         throws InvalidCipherTextException
     {
@@ -468,4 +467,8 @@ public class AEADTestUtil
         }
     }
 
+    static AEADParameters reuseKey(AEADParameters p)
+    {
+        return new AEADParameters(null, p.getMacSize(), p.getNonce(), p.getAssociatedText());
+    }
 }
