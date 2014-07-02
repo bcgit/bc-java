@@ -70,7 +70,8 @@ public class ECPointPerformanceTest extends TestCase
                 ECCurve c = C;
                 ECPoint g = G;
 
-                if (c.getCoordinateSystem() != coord)
+                boolean defaultCoord = (c.getCoordinateSystem() == coord);
+                if (!defaultCoord)
                 {
                     c = C.configure().setCoordinateSystem(coord).create();
                     g = c.importPoint(G);
@@ -79,9 +80,10 @@ public class ECPointPerformanceTest extends TestCase
                 double avgRate = randMult(random, g, n);
                 String coordName = COORD_NAMES[coord];
                 StringBuffer sb = new StringBuffer();
-                sb.append("  ");
+                sb.append("   ");
+                sb.append(defaultCoord ? '*' : ' ');
                 sb.append(coordName);
-                for (int j = sb.length(); j < 28; ++j)
+                for (int j = sb.length(); j < 30; ++j)
                 {
                     sb.append(' ');
                 }
