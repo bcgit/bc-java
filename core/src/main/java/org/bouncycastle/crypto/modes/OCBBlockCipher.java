@@ -13,9 +13,8 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
- * An implementation of the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-07">The OCB Authenticated-Encryption
- * Algorithm</a>, licensed per:
+ * An implementation of <a href="http://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
+ * Authenticated-Encryption Algorithm</a>, licensed per:
  * <p>
  * <blockquote> <a href="http://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
  * Open-Source Software Implementations of OCB</a> (Jan 9, 2013) &mdash; &ldquo;License 1&rdquo; <br>
@@ -113,6 +112,7 @@ public class OCBBlockCipher
     public void init(boolean forEncryption, CipherParameters parameters)
         throws IllegalArgumentException
     {
+        boolean oldForEncryption = this.forEncryption;
         this.forEncryption = forEncryption;
         this.macBlock = null;
 
@@ -166,18 +166,17 @@ public class OCBBlockCipher
          * KEY-DEPENDENT INITIALISATION
          */
 
-        if (keyParameter == null)
+        if (keyParameter != null)
         {
-            // TODO If 'keyParameter' is null we're re-using the last key.
-        }
-        else
-        {
+            // hashCipher always used in forward mode
+            hashCipher.init(true, keyParameter);
+            mainCipher.init(forEncryption, keyParameter);
             KtopInput = null;
         }
-
-        // hashCipher always used in forward mode
-        hashCipher.init(true, keyParameter);
-        mainCipher.init(forEncryption, keyParameter);
+        else if (oldForEncryption != forEncryption)
+        {
+            throw new IllegalArgumentException("cannot change encrypting state without providing key.");
+        }
 
         this.L_Asterisk = new byte[16];
         hashCipher.processBlock(L_Asterisk, 0, L_Asterisk, 0);
@@ -571,7 +570,7 @@ public class OCBBlockCipher
         while ((x & 1L) == 0L)
         {
             ++n;
-            x >>= 1;
+            x >>>= 1;
         }
         return n;
     }
