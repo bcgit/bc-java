@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -9,13 +11,13 @@ import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Times;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * Test vectors from the "work in progress" Internet-Draft <a
- * href="http://tools.ietf.org/html/draft-irtf-cfrg-ocb-07">The OCB Authenticated-Encryption
- * Algorithm</a>
+ * Test vectors from <a href="http://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
+ * Authenticated-Encryption Algorithm</a>
  */
 public class OCBTest
     extends SimpleTest
@@ -121,16 +123,18 @@ public class OCBTest
             runTestCase("Test Case " + i, TEST_VECTORS_96[i], 96, K96);
         }
 
-        runLongerTestCase(128, 128, Hex.decode("67E944D23256C5E0B6C61FA22FDF1EA2"));
-        runLongerTestCase(192, 128, Hex.decode("F673F2C3E7174AAE7BAE986CA9F29E17"));
-        runLongerTestCase(256, 128, Hex.decode("D90EB8E9C977C88B79DD793D7FFA161C"));
-        runLongerTestCase(128, 96, Hex.decode("77A3D8E73589158D25D01209"));
-        runLongerTestCase(192, 96, Hex.decode("05D56EAD2752C86BE6932C5E"));
-        runLongerTestCase(256, 96, Hex.decode("5458359AC23B0CBA9E6330DD"));
-        runLongerTestCase(128, 64, Hex.decode("192C9B7BD90BA06A"));
-        runLongerTestCase(192, 64, Hex.decode("0066BC6E0EF34E24"));
-        runLongerTestCase(256, 64, Hex.decode("7D4EA5D445501CBE"));
+        runLongerTestCase(128, 128, "67E944D23256C5E0B6C61FA22FDF1EA2");
+        runLongerTestCase(192, 128, "F673F2C3E7174AAE7BAE986CA9F29E17");
+        runLongerTestCase(256, 128, "D90EB8E9C977C88B79DD793D7FFA161C");
+        runLongerTestCase(128, 96, "77A3D8E73589158D25D01209");
+        runLongerTestCase(192, 96, "05D56EAD2752C86BE6932C5E");
+        runLongerTestCase(256, 96, "5458359AC23B0CBA9E6330DD");
+        runLongerTestCase(128, 64, "192C9B7BD90BA06A");
+        runLongerTestCase(192, 64, "0066BC6E0EF34E24");
+        runLongerTestCase(256, 64, "7D4EA5D445501CBE");
 
+        randomTests();
+        outputSizeTests();
         testExceptions();
     }
 
@@ -179,18 +183,20 @@ public class OCBTest
 
         int macLengthBytes = macLengthBits / 8;
 
-        // TODO Variations processing AAD and cipher bytes incrementally
-
         KeyParameter keyParameter = new KeyParameter(K);
-        AEADParameters aeadParameters = new AEADParameters(keyParameter, macLengthBits, N, A);
+        AEADParameters parameters = new AEADParameters(keyParameter, macLengthBits, N, A);
 
-        AEADBlockCipher encCipher = initOCBCipher(true, aeadParameters);
-        AEADBlockCipher decCipher = initOCBCipher(false, aeadParameters);
+        AEADBlockCipher encCipher = initOCBCipher(true, parameters);
+        AEADBlockCipher decCipher = initOCBCipher(false, parameters);
 
         checkTestCase(encCipher, decCipher, testName, macLengthBytes, P, C);
         checkTestCase(encCipher, decCipher, testName + " (reused)", macLengthBytes, P, C);
 
-        // TODO Key reuse
+        // Key reuse
+        AEADParameters keyReuseParams = AEADTestUtil.reuseKey(parameters);
+        encCipher.init(true, keyReuseParams);
+        decCipher.init(false, keyReuseParams);
+        checkTestCase(encCipher, decCipher, testName + " (key reuse)", macLengthBytes, P, C);
     }
 
     private BlockCipher createUnderlyingCipher()
@@ -259,15 +265,15 @@ public class OCBTest
         }
     }
 
-    private void runLongerTestCase(int keyLen, int tagLen, byte[] expectedOutput)
+    private void runLongerTestCase(int keyLen, int tagLen, String expectedOutputHex)
         throws InvalidCipherTextException
     {
+        byte[] expectedOutput = Hex.decode(expectedOutputHex);
         byte[] keyBytes = new byte[keyLen / 8];
         keyBytes[keyBytes.length - 1] = (byte)tagLen;
         KeyParameter key = new KeyParameter(keyBytes);
 
         AEADBlockCipher c1 = initOCBCipher(true, new AEADParameters(key, tagLen, createNonce(385)));
-
         AEADBlockCipher c2 = createOCBCipher();
 
         long total = 0;
@@ -332,6 +338,179 @@ public class OCBTest
         c1.processAADBytes(output, 0, len);
 
         return len;
+    }
+
+    private void randomTests()
+        throws InvalidCipherTextException
+    {
+        SecureRandom srng = new SecureRandom();
+        srng.setSeed(Times.nanoTime());
+        for (int i = 0; i < 10; ++i)
+        {
+            randomTest(srng);
+        }
+    }
+
+    private void randomTest(SecureRandom srng)
+        throws InvalidCipherTextException
+    {
+        int kLength = 16 + 8 * (Math.abs(srng.nextInt()) % 3);
+        byte[] K = new byte[kLength];
+        srng.nextBytes(K);
+
+        int pLength = srng.nextInt() >>> 16;
+        byte[] P = new byte[pLength];
+        srng.nextBytes(P);
+
+        int aLength = srng.nextInt() >>> 24;
+        byte[] A = new byte[aLength];
+        srng.nextBytes(A);
+
+        int saLength = srng.nextInt() >>> 24;
+        byte[] SA = new byte[saLength];
+        srng.nextBytes(SA);
+
+        int ivLength = 1 + nextInt(srng, 15);
+        byte[] IV = new byte[ivLength];
+        srng.nextBytes(IV);
+
+        AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
+        AEADBlockCipher cipher = initOCBCipher(true, parameters);
+        byte[] C = new byte[cipher.getOutputSize(P.length)];
+        int predicted = cipher.getUpdateOutputSize(P.length);
+
+        int split = nextInt(srng, SA.length + 1);
+        cipher.processAADBytes(SA, 0, split);
+        int len = cipher.processBytes(P, 0, P.length, C, 0);
+        cipher.processAADBytes(SA, split, SA.length - split);
+
+        if (predicted != len)
+        {
+            fail("encryption reported incorrect update length in randomised test");
+        }
+
+        len += cipher.doFinal(C, len);
+
+        if (C.length != len)
+        {
+            fail("encryption reported incorrect length in randomised test");
+        }
+
+        byte[] encT = cipher.getMac();
+        byte[] tail = new byte[C.length - P.length];
+        System.arraycopy(C, P.length, tail, 0, tail.length);
+
+        if (!areEqual(encT, tail))
+        {
+            fail("stream contained wrong mac in randomised test");
+        }
+
+        cipher.init(false, parameters);
+        byte[] decP = new byte[cipher.getOutputSize(C.length)];
+        predicted = cipher.getUpdateOutputSize(C.length);
+
+        split = nextInt(srng, SA.length + 1);
+        cipher.processAADBytes(SA, 0, split);
+        len = cipher.processBytes(C, 0, C.length, decP, 0);
+        cipher.processAADBytes(SA, split, SA.length - split);
+
+        if (predicted != len)
+        {
+            fail("decryption reported incorrect update length in randomised test");
+        }
+
+        len += cipher.doFinal(decP, len);
+
+        if (!areEqual(P, decP))
+        {
+            fail("incorrect decrypt in randomised test");
+        }
+
+        byte[] decT = cipher.getMac();
+        if (!areEqual(encT, decT))
+        {
+            fail("decryption produced different mac from encryption");
+        }
+
+        //
+        // key reuse test
+        //
+        cipher.init(false, AEADTestUtil.reuseKey(parameters));
+        decP = new byte[cipher.getOutputSize(C.length)];
+
+        split = nextInt(srng, SA.length + 1);
+        cipher.processAADBytes(SA, 0, split);
+        len = cipher.processBytes(C, 0, C.length, decP, 0);
+        cipher.processAADBytes(SA, split, SA.length - split);
+
+        len += cipher.doFinal(decP, len);
+
+        if (!areEqual(P, decP))
+        {
+            fail("incorrect decrypt in randomised test");
+        }
+
+        decT = cipher.getMac();
+        if (!areEqual(encT, decT))
+        {
+            fail("decryption produced different mac from encryption");
+        }
+    }
+
+    private void outputSizeTests()
+    {
+        byte[] K = new byte[16];
+        byte[] A = null;
+        byte[] IV = new byte[15];
+
+        AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, IV, A);
+        AEADBlockCipher cipher = initOCBCipher(true, parameters);
+
+        if (cipher.getUpdateOutputSize(0) != 0)
+        {
+            fail("incorrect getUpdateOutputSize for initial 0 bytes encryption");
+        }
+
+        if (cipher.getOutputSize(0) != 16)
+        {
+            fail("incorrect getOutputSize for initial 0 bytes encryption");
+        }
+
+        cipher.init(false, parameters);
+
+        if (cipher.getUpdateOutputSize(0) != 0)
+        {
+            fail("incorrect getUpdateOutputSize for initial 0 bytes decryption");
+        }
+
+        // NOTE: 0 bytes would be truncated data, but we want it to fail in the doFinal, not here
+        if (cipher.getOutputSize(0) != 0)
+        {
+            fail("fragile getOutputSize for initial 0 bytes decryption");
+        }
+
+        if (cipher.getOutputSize(16) != 0)
+        {
+            fail("incorrect getOutputSize for initial MAC-size bytes decryption");
+        }
+    }
+
+    private static int nextInt(SecureRandom rand, int n)
+    {
+        if ((n & -n) == n)  // i.e., n is a power of 2
+        {
+            return (int)((n * (long)(rand.nextInt() >>> 1)) >> 31);
+        }
+
+        int bits, value;
+        do
+        {
+            bits = rand.nextInt() >>> 1;
+            value = bits % n;
+        }
+        while (bits - value + (n - 1) < 0);
+
+        return value;
     }
 
     public static void main(String[] args)
