@@ -1,10 +1,11 @@
 package org.bouncycastle.math.ec;
 
-import org.bouncycastle.util.Arrays;
-
+import java.io.Serializable;
 import java.math.BigInteger;
 
-class LongArray
+import org.bouncycastle.util.Arrays;
+
+class LongArray implements Serializable
 {
 //    private static long DEINTERLEAVE_MASK = 0x5555555555555555L;
 

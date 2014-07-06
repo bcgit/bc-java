@@ -1,5 +1,6 @@
 package org.bouncycastle.math.ec;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Random;
 
@@ -9,7 +10,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public abstract class ECFieldElement
-    implements ECConstants
+    implements ECConstants, Serializable
 {
     public abstract BigInteger     toBigInteger();
     public abstract String         getFieldName();

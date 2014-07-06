@@ -1,8 +1,9 @@
 package org.bouncycastle.math.field;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
-class PrimeField implements FiniteField
+class PrimeField implements FiniteField, Serializable
 {
     protected final BigInteger characteristic;
 
