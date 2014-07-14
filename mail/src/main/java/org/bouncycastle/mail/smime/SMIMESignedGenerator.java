@@ -2,6 +2,8 @@ package org.bouncycastle.mail.smime;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -117,7 +119,15 @@ public class SMIMESignedGenerator
 
     static
     {
-        CommandMap.setDefaultCommandMap(addCommands(CommandMap.getDefaultCommandMap()));
+        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                CommandMap.setDefaultCommandMap(addCommands(CommandMap.getDefaultCommandMap()));
+
+                return null;
+            }
+        });
 
         Map stdMicAlgs = new HashMap();
 

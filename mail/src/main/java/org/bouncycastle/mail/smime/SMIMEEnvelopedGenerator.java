@@ -2,6 +2,8 @@ package org.bouncycastle.mail.smime;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,7 +72,15 @@ public class SMIMEEnvelopedGenerator
 
     static
     {
-        CommandMap.setDefaultCommandMap(addCommands(CommandMap.getDefaultCommandMap()));
+        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                CommandMap.setDefaultCommandMap(addCommands(CommandMap.getDefaultCommandMap()));
+
+                return null;
+            }
+        });
     }
 
     private static MailcapCommandMap addCommands(CommandMap cm)
@@ -193,13 +203,13 @@ public class SMIMEEnvelopedGenerator
             throws IOException
         {
             OutputStream encrypted;
-            
+
             try
             {
                 if (_firstTime)
                 {
                     encrypted = fact.open(out, _encryptor);
-                    
+
                     _firstTime = false;
                 }
                 else
@@ -208,9 +218,9 @@ public class SMIMEEnvelopedGenerator
                 }
 
                 _content.getDataHandler().setCommandMap(addCommands(CommandMap.getDefaultCommandMap()));
-                
+
                 _content.writeTo(encrypted);
-                
+
                 encrypted.close();
             }
             catch (MessagingException e)
@@ -223,7 +233,7 @@ public class SMIMEEnvelopedGenerator
             }
         }
     }
-    
+
     private class EnvelopedGenerator
         extends CMSEnvelopedDataStreamGenerator
     {
