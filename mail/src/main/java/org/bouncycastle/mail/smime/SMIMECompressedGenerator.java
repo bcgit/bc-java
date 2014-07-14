@@ -2,6 +2,8 @@ package org.bouncycastle.mail.smime;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.activation.CommandMap;
 import javax.activation.MailcapCommandMap;
@@ -36,12 +38,20 @@ public class SMIMECompressedGenerator
 
     static
     {
-        MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
+        final MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
 
         mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
         mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
 
-        CommandMap.setDefaultCommandMap(mc);
+        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                CommandMap.setDefaultCommandMap(mc);
+
+                return null;
+            }
+        });
     }
 
     /**

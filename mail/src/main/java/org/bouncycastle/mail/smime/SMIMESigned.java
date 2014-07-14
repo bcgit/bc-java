@@ -1,8 +1,11 @@
 package org.bouncycastle.mail.smime;
 
-import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSProcessable;
-import org.bouncycastle.cms.CMSSignedData;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.activation.CommandMap;
 import javax.activation.MailcapCommandMap;
@@ -13,10 +16,10 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimePart;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSProcessable;
+import org.bouncycastle.cms.CMSSignedData;
 
 /**
  * general class for handling a pkcs7-signature message.
@@ -79,7 +82,7 @@ public class SMIMESigned
 
     static
     {
-        MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
+        final MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
 
         mc.addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
         mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
@@ -87,7 +90,15 @@ public class SMIMESigned
         mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
         mc.addMailcap("multipart/signed;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.multipart_signed");
         
-        CommandMap.setDefaultCommandMap(mc);
+        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                CommandMap.setDefaultCommandMap(mc);
+
+                return null;
+            }
+        });
     }
     
     /**
