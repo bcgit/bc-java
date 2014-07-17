@@ -87,6 +87,26 @@ public class X509v2AttributeCertificateBuilder
         return this;
     }
 
+    /**
+     * Add a given extension field for the standard extensions tag (tag 3) using a byte encoding of the
+     * extension value.
+     *
+     * @param oid the OID defining the extension type.
+     * @param isCritical true if the extension is critical, false otherwise.
+     * @param encodedValue a byte array representing the encoding of the extension value.
+     * @return this builder object.
+     */
+    public X509v2AttributeCertificateBuilder addExtension(
+        ASN1ObjectIdentifier oid,
+        boolean isCritical,
+        byte[] encodedValue)
+        throws CertIOException
+    {
+        extGenerator.addExtension(oid, isCritical, encodedValue);
+
+        return this;
+    }
+
    /**
      * Generate an X509 certificate, based on the current issuer and subject
      * using the passed in signer.
