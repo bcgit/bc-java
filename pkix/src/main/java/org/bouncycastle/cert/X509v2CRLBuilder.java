@@ -3,6 +3,7 @@ package org.bouncycastle.cert;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -44,6 +45,43 @@ public class X509v2CRLBuilder
     }
 
     /**
+     * Basic constructor with Locale. You may need to use this constructor if the default locale
+     * doesn't use a Gregorian calender so that the Time produced is compatible with other ASN.1 implementations.
+     *
+     * @param issuer the issuer this CRL is associated with.
+     * @param thisUpdate  the date of this update.
+     * @param dateLocale locale to be used for date interpretation.
+     */
+    public X509v2CRLBuilder(
+        X500Name issuer,
+        Date     thisUpdate,
+        Locale   dateLocale)
+    {
+        tbsGen = new V2TBSCertListGenerator();
+        extGenerator = new ExtensionsGenerator();
+
+        tbsGen.setIssuer(issuer);
+        tbsGen.setThisUpdate(new Time(thisUpdate, dateLocale));
+    }
+
+    /**
+     * Basic constructor.
+     *
+     * @param issuer the issuer this CRL is associated with.
+     * @param thisUpdate  the Time of this update.
+     */
+    public X509v2CRLBuilder(
+        X500Name issuer,
+        Time     thisUpdate)
+    {
+        tbsGen = new V2TBSCertListGenerator();
+        extGenerator = new ExtensionsGenerator();
+
+        tbsGen.setIssuer(issuer);
+        tbsGen.setThisUpdate(thisUpdate);
+    }
+
+    /**
      * Set the date by which the next CRL will become available.
      *
      * @param date  date of next CRL update.
@@ -52,7 +90,33 @@ public class X509v2CRLBuilder
     public X509v2CRLBuilder setNextUpdate(
         Date    date)
     {
-        tbsGen.setNextUpdate(new Time(date));
+        return this.setNextUpdate(new Time(date));
+    }
+
+    /**
+     * Set the date by which the next CRL will become available.
+     *
+     * @param date  date of next CRL update.
+     * @param dateLocale locale to be used for date interpretation.
+     * @return the current builder.
+     */
+    public X509v2CRLBuilder setNextUpdate(
+        Date    date,
+        Locale  dateLocale)
+    {
+        return this.setNextUpdate(new Time(date, dateLocale));
+    }
+
+    /**
+     * Set the date by which the next CRL will become available.
+     *
+     * @param date  date of next CRL update.
+     * @return the current builder.
+     */
+    public X509v2CRLBuilder setNextUpdate(
+        Time    date)
+    {
+        tbsGen.setNextUpdate(date);
 
         return this;
     }
