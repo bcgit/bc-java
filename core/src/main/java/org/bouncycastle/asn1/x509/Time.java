@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.x509;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 
 import org.bouncycastle.asn1.ASN1Choice;
@@ -40,28 +41,61 @@ public class Time
     }
 
     /**
-     * creates a time object from a given date - if the date is between 1950
+     * Creates a time object from a given date - if the date is between 1950
      * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime
      * is used.
+     *
+     * @param time a date object representing the time of interest.
      */
     public Time(
-        Date    date)
+        Date    time)
     {
         SimpleTimeZone      tz = new SimpleTimeZone(0, "Z");
         SimpleDateFormat    dateF = new SimpleDateFormat("yyyyMMddHHmmss");
 
         dateF.setTimeZone(tz);
 
-        String  d = dateF.format(date) + "Z";
+        String  d = dateF.format(time) + "Z";
         int     year = Integer.parseInt(d.substring(0, 4));
 
         if (year < 1950 || year > 2049)
         {
-            time = new DERGeneralizedTime(d);
+            this.time = new DERGeneralizedTime(d);
         }
         else
         {
-            time = new DERUTCTime(d.substring(2));
+            this.time = new DERUTCTime(d.substring(2));
+        }
+    }
+
+    /**
+     * Creates a time object from a given date and locale - if the date is between 1950
+     * and 2049 a UTCTime object is generated, otherwise a GeneralizedTime
+     * is used. You may need to use this constructor if the default locale
+     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
+     *
+     * @param time a date object representing the time of interest.
+     * @param locale an appropriate Locale for producing an ASN.1 GeneralizedTime value.
+     */
+    public Time(
+        Date    time,
+        Locale locale)
+    {
+        SimpleTimeZone      tz = new SimpleTimeZone(0, "Z");
+        SimpleDateFormat    dateF = new SimpleDateFormat("yyyyMMddHHmmss", locale);
+
+        dateF.setTimeZone(tz);
+
+        String  d = dateF.format(time) + "Z";
+        int     year = Integer.parseInt(d.substring(0, 4));
+
+        if (year < 1950 || year > 2049)
+        {
+            this.time = new DERGeneralizedTime(d);
+        }
+        else
+        {
+            this.time = new DERUTCTime(d.substring(2));
         }
     }
 

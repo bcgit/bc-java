@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
@@ -101,12 +102,32 @@ public class ASN1GeneralizedTime
     }
 
     /**
-     * base constructor from a java.util.date object
+     * Base constructor from a java.util.date object
+     *
+     * @param time a date object representing the time of interest.
      */
     public ASN1GeneralizedTime(
         Date time)
     {
         SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+
+        dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
+
+        this.time = Strings.toByteArray(dateF.format(time));
+    }
+
+    /**
+     * Base constructor from a java.util.date and Locale - you may need to use this if the default locale
+     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
+     *
+     * @param time a date object representing the time of interest.
+     * @param locale an appropriate Locale for producing an ASN.1 GeneralizedTime value.
+     */
+    public ASN1GeneralizedTime(
+        Date time,
+        Locale locale)
+    {
+        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'", locale);
 
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
 
