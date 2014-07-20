@@ -43,7 +43,7 @@ public class SMIMECompressedGenerator
         mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
         mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
 
-        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        AccessController.doPrivileged(new PrivilegedAction()
         {
             public Object run()
             {

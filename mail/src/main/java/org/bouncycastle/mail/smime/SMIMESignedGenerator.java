@@ -119,7 +119,7 @@ public class SMIMESignedGenerator
 
     static
     {
-        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        AccessController.doPrivileged(new PrivilegedAction()
         {
             public Object run()
             {

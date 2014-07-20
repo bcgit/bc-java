@@ -72,7 +72,7 @@ public class SMIMEEnvelopedGenerator
 
     static
     {
-        AccessController.doPrivileged(new PrivilegedAction<Object>()
+        AccessController.doPrivileged(new PrivilegedAction()
         {
             public Object run()
             {
