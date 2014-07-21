@@ -1,19 +1,22 @@
 package org.bouncycastle.cms.jcajce;
 
-import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.Provider;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * the RecipientInfo class for a recipient who has been sent a message
@@ -74,10 +77,22 @@ public abstract class JcePasswordRecipient
         {
             throw new CMSException("cannot process content encryption key: " + e.getMessage(), e);
         }
-        catch (GeneralSecurityException e)
+        catch (InvalidAlgorithmParameterException e)
         {
             throw new CMSException("cannot process content encryption key: " + e.getMessage(), e);
         }
+    }
+
+    public byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+        throws CMSException
+    {
+        PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
+
+        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator();
+
+        gen.init(encodedPassword, params.getSalt(), params.getIterationCount().intValue());
+
+        return ((KeyParameter)gen.generateDerivedParameters(keySize)).getKey();
     }
 
     public int getPasswordConversionScheme()

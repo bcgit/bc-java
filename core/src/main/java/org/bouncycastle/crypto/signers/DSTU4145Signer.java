@@ -163,7 +163,7 @@ public class DSTU4145Signer
     {
         if (x.bitLength() > bitLength)
         {
-            x = x.mod(BigInteger.ONE.shiftLeft(bitLength));
+            x = x.mod(ONE.shiftLeft(bitLength));
         }
         return x;
     }

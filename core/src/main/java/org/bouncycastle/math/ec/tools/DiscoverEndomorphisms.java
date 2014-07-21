@@ -213,7 +213,7 @@ public class DiscoverEndomorphisms
         BigInteger s0 = ECConstants.ONE, s1 = ECConstants.ZERO;
         BigInteger t0 = ECConstants.ZERO, t1 = ECConstants.ONE;
 
-        while (r1.compareTo(BigInteger.ONE) > 0)
+        while (r1.compareTo(ECConstants.ONE) > 0)
         {
             BigInteger[] qr = r0.divideAndRemainder(r1);
             BigInteger q = qr[0], r2 = qr[1];
