@@ -34,10 +34,10 @@ public final class KDFCounterParameters
     implements DerivationParameters
 {
 
-    private final byte[] ki;
-    private final byte[] fixedInputDataCounterPrefix;
-    private final byte[] fixedInputDataCounterSuffix;
-    private final int r;
+    private byte[] ki;
+    private byte[] fixedInputDataCounterPrefix;
+    private byte[] fixedInputDataCounterSuffix;
+    private int r;
 
     /**
      * Base constructor - suffix fixed input data only.
