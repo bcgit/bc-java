@@ -182,7 +182,7 @@ public abstract class DigestTest
 
     protected Digest cloneDigest(byte[] encodedState)
     {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException("Unsupported");
     }
 
     //

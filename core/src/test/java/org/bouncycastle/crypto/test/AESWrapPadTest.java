@@ -123,7 +123,7 @@ public class AESWrapPadTest
         for (int i = 0; i < numOfRandomIterations; i++)
         {
             int kekLength = 128;
-            boolean shouldIncrease = rnd.nextBoolean();
+            boolean shouldIncrease = (rnd.nextInt() & 0x01) != 0;
             if (shouldIncrease)
             {
                 kekLength = 256;
