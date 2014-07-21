@@ -222,7 +222,7 @@ public abstract class ECFieldElement
          */
         public ECFieldElement sqrt()
         {
-            if (isZero() || isOne())
+            if (this.isZero() || this.isOne()) // earlier JDK compatibility
             {
                 return this;
             }

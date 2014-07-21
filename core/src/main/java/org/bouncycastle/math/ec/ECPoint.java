@@ -532,7 +532,7 @@ public abstract class ECPoint
 
         protected ECPoint detach()
         {
-            return new ECPoint.Fp(null, getAffineXCoord(), getAffineYCoord());
+            return new ECPoint.Fp(null, this.getAffineXCoord(), this.getAffineYCoord());
         }
 
         protected boolean getCompressionYTilde()
@@ -1311,7 +1311,7 @@ public abstract class ECPoint
 
         protected ECPoint detach()
         {
-            return new ECPoint.F2m(null, getAffineXCoord(), getAffineYCoord());
+            return new ECPoint.F2m(null, this.getAffineXCoord(), this.getAffineYCoord()); // earlier JDK
         }
 
         public ECFieldElement getYCoord()
@@ -1363,24 +1363,24 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             {
                 // Y is actually Lambda (X + Y/X) here
-                ECFieldElement X = getRawXCoord(), L = getRawYCoord();
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
 
                 ECFieldElement X2 = X.multiply(scale);
                 ECFieldElement L2 = L.add(X).divide(scale).add(X2);
 
-                return getCurve().createRawPoint(X, L2, getRawZCoords(), this.withCompression);
+                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
             }
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
                 // Y is actually Lambda (X + Y/X) here
-                ECFieldElement X = getRawXCoord(), L = getRawYCoord(), Z = getRawZCoords()[0];
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(), Z = this.getRawZCoords()[0]; // earlier JDK
 
                 // We scale the Z coordinate also, to avoid an inversion
                 ECFieldElement X2 = X.multiply(scale.square());
                 ECFieldElement L2 = L.add(X).add(X2);
                 ECFieldElement Z2 = Z.multiply(scale);
 
-                return getCurve().createRawPoint(X2, L2, new ECFieldElement[]{ Z2 }, this.withCompression);
+                return this.getCurve().createRawPoint(X2, L2, new ECFieldElement[]{ Z2 }, this.withCompression); // earlier JDK
             }
             default:
             {
@@ -1403,12 +1403,12 @@ public abstract class ECPoint
             case ECCurve.COORD_LAMBDA_AFFINE:
             case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
-                ECFieldElement X = getRawXCoord(), L = getRawYCoord();
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
 
                 // Y is actually Lambda (X + Y/X) here
                 ECFieldElement L2 = L.add(X).multiply(scale).add(X);
 
-                return getCurve().createRawPoint(X, L2, getRawZCoords(), this.withCompression);
+                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
             }
             default:
             {
