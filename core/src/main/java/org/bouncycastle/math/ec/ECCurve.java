@@ -844,7 +844,7 @@ public abstract class ECCurve
             {
                 if (X.isZero())
                 {
-                    if (!Y.square().equals(getB()))
+                    if (!Y.square().equals(this.getB()))
                     {
                         throw new IllegalArgumentException();
                     }
