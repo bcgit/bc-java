@@ -19,7 +19,7 @@ import org.bouncycastle.math.ec.ECPoint;
 
 public class ECAlgorithmsTest extends TestCase
 {
-    private static final int SCALE = 8;
+    private static final int SCALE = 4;
     private static final SecureRandom RND = new SecureRandom();
 
     public void testSumOfMultiplies()
