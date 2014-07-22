@@ -101,9 +101,10 @@ public abstract class Mod
 
         do
         {
-            byte[] bytes = new byte[len << 2];
-            rand.nextBytes(bytes);
-            Pack.bigEndianToInt(bytes, 0, s);
+            for (int i = 0; i != len; i++)
+            {
+                s[i] = rand.nextInt();
+            }
             s[len - 1] &= m;
         }
         while (Nat.gte(len, s, p));
