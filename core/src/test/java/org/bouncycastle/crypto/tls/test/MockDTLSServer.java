@@ -57,7 +57,7 @@ public class MockDTLSServer
             });
     }
 
-    public CertificateRequest getCertificateRequest()
+    public CertificateRequest getCertificateRequest() throws IOException
     {
         Vector serverSigAlgs = null;
 
@@ -78,7 +78,10 @@ public class MockDTLSServer
             }
         }
 
-        return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+        Vector certificateAuthorities = new Vector();
+        certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
+
+        return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, serverSigAlgs, certificateAuthorities);
     }
 
     public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate)
