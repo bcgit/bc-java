@@ -775,7 +775,18 @@ public class TlsClientProtocol
 
         if (sessionServerExtensions != null)
         {
-            this.securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
+            /*
+             * draft-ietf-tls-encrypt-then-mac-03 3. If a server receives an encrypt-then-MAC
+             * request extension from a client and then selects a stream or AEAD cipher suite, it
+             * MUST NOT send an encrypt-then-MAC response extension back to the client.
+             */
+            boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
+            if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(selectedCipherSuite))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            this.securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
 
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
                 sessionServerExtensions, AlertDescription.illegal_parameter);
