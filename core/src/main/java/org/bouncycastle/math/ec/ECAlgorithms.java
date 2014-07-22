@@ -52,10 +52,10 @@ public class ECAlgorithms
         ECEndomorphism endomorphism = c.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism);
+            return ECAlgorithms.validatePoint(implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism));
         }
 
-        return implSumOfMultiplies(imported, ks);
+        return ECAlgorithms.validatePoint(implSumOfMultiplies(imported, ks));
     }
 
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
@@ -70,17 +70,18 @@ public class ECAlgorithms
             ECCurve.F2m f2mCurve = (ECCurve.F2m)cp;
             if (f2mCurve.isKoblitz())
             {
-                return P.multiply(a).add(Q.multiply(b));
+                return ECAlgorithms.validatePoint(P.multiply(a).add(Q.multiply(b)));
             }
         }
 
         ECEndomorphism endomorphism = cp.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return implSumOfMultipliesGLV(new ECPoint[]{ P, Q }, new BigInteger[]{ a, b }, (GLVEndomorphism)endomorphism);
+            return ECAlgorithms.validatePoint(
+                implSumOfMultipliesGLV(new ECPoint[]{ P, Q }, new BigInteger[]{ a, b }, (GLVEndomorphism)endomorphism));
         }
 
-        return implShamirsTrickWNaf(P, a, Q, b);
+        return ECAlgorithms.validatePoint(implShamirsTrickWNaf(P, a, Q, b));
     }
 
     /*
@@ -108,7 +109,7 @@ public class ECAlgorithms
         ECCurve cp = P.getCurve();
         Q = importPoint(cp, Q);
 
-        return implShamirsTrickJsf(P, k, Q, l);
+        return ECAlgorithms.validatePoint(implShamirsTrickJsf(P, k, Q, l));
     }
 
     public static ECPoint importPoint(ECCurve c, ECPoint p)
@@ -150,6 +151,49 @@ public class ECAlgorithms
         }
 
         zs[off] = u;
+    }
+
+    /**
+     * Simple shift-and-add multiplication. Serves as reference implementation
+     * to verify (possibly faster) implementations, and for very small scalars.
+     * 
+     * @param p
+     *            The point to multiply.
+     * @param k
+     *            The multiplier.
+     * @return The result of the point multiplication <code>kP</code>.
+     */
+    public static ECPoint referenceMultiply(ECPoint p, BigInteger k)
+    {
+        BigInteger x = k.abs();
+        ECPoint q = p.getCurve().getInfinity();
+        int t = x.bitLength();
+        if (t > 0)
+        {
+            if (x.testBit(0))
+            {
+                q = p;
+            }
+            for (int i = 1; i < t; i++)
+            {
+                p = p.twice();
+                if (x.testBit(i))
+                {
+                    q = q.add(p);
+                }
+            }
+        }
+        return k.signum() < 0 ? q.negate() : q;
+    }
+
+    public static ECPoint validatePoint(ECPoint p)
+    {
+        if (!p.isValid())
+        {
+            throw new IllegalArgumentException("Invalid point");
+        }
+
+        return p;
     }
 
     static ECPoint implShamirsTrickJsf(ECPoint P, BigInteger k,

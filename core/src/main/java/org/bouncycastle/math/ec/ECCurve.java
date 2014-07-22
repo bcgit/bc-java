@@ -105,6 +105,30 @@ public abstract class ECCurve
         return new Config(this.coord, this.endomorphism, this.multiplier);
     }
 
+    public ECPoint validatePoint(BigInteger x, BigInteger y)
+    {
+        ECPoint p = createPoint(x, y);
+        if (!p.isValid())
+        {
+            throw new IllegalArgumentException("Invalid point coordinates");
+        }
+        return p;
+    }
+
+    /**
+     * @deprecated per-point compression property will be removed, use {@link #validatePoint(BigInteger, BigInteger)}
+     * and refer {@link ECPoint#getEncoded(boolean)}
+     */
+    public ECPoint validatePoint(BigInteger x, BigInteger y, boolean withCompression)
+    {
+        ECPoint p = createPoint(x, y, withCompression);
+        if (!p.isValid())
+        {
+            throw new IllegalArgumentException("Invalid point coordinates");
+        }
+        return p;
+    }
+
     public ECPoint createPoint(BigInteger x, BigInteger y)
     {
         return createPoint(x, y, false);
@@ -190,7 +214,7 @@ public abstract class ECCurve
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
 
-        return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
+        return validatePoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
     /**
@@ -304,7 +328,8 @@ public abstract class ECCurve
         ECPoint p = null;
         int expectedLength = (getFieldSize() + 7) / 8;
 
-        switch (encoded[0])
+        byte type = encoded[0];
+        switch (type)
         {
         case 0x00: // infinity
         {
@@ -324,7 +349,7 @@ public abstract class ECCurve
                 throw new IllegalArgumentException("Incorrect length for compressed encoding");
             }
 
-            int yTilde = encoded[0] & 1;
+            int yTilde = type & 1;
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
 
             p = decompressPoint(yTilde, X);
@@ -340,7 +365,7 @@ public abstract class ECCurve
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
             BigInteger Y = BigIntegers.fromUnsignedByteArray(encoded, 1 + expectedLength, expectedLength);
 
-            p = createPoint(X, Y);
+            p = validatePoint(X, Y);
             break;
         }
         case 0x06: // hybrid
@@ -353,17 +378,22 @@ public abstract class ECCurve
 
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
             BigInteger Y = BigIntegers.fromUnsignedByteArray(encoded, 1 + expectedLength, expectedLength);
-            
-            if (Y.testBit(0) != (encoded[0] == 0x07))
+
+            if (Y.testBit(0) != (type == 0x07))
             {
                 throw new IllegalArgumentException("Inconsistent Y coordinate in hybrid encoding");
             }
 
-            p = createPoint(X, Y);
+            p = validatePoint(X, Y);
             break;
         }
         default:
-            throw new IllegalArgumentException("Invalid point encoding 0x" + Integer.toString(encoded[0], 16));
+            throw new IllegalArgumentException("Invalid point encoding 0x" + Integer.toString(type, 16));
+        }
+
+        if (type != 0x00 && p.isInfinity())
+        {
+            throw new IllegalArgumentException("Invalid infinity encoding");
         }
 
         return p;
@@ -415,10 +445,41 @@ public abstract class ECCurve
             ^ Integers.rotateLeft(getB().toBigInteger().hashCode(), 16);
     }
 
+    public static abstract class AbstractFp extends ECCurve
+    {
+        protected AbstractFp(BigInteger q)
+        {
+            super(FiniteFields.getPrimeField(q));
+        }
+
+        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
+        {
+            ECFieldElement x = fromBigInteger(X1);
+            ECFieldElement rhs = x.square().add(a).multiply(x).add(b);
+            ECFieldElement y = rhs.sqrt();
+
+            /*
+             * If y is not a square, then we haven't got a point on the curve
+             */
+            if (y == null)
+            {
+                throw new IllegalArgumentException("Invalid point compression");
+            }
+
+            if (y.testBitZero() != (yTilde == 1))
+            {
+                // Use the other root
+                y = y.negate();
+            }
+
+            return createRawPoint(x, y, true);
+        }
+    }
+
     /**
      * Elliptic curve over Fp
      */
-    public static class Fp extends ECCurve
+    public static class Fp extends AbstractFp
     {
         private static final int FP_DEFAULT_COORDS = COORD_JACOBIAN_MODIFIED;
 
@@ -432,7 +493,7 @@ public abstract class ECCurve
 
         public Fp(BigInteger q, BigInteger a, BigInteger b, BigInteger order, BigInteger cofactor)
         {
-            super(FiniteFields.getPrimeField(q));
+            super(q);
 
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
@@ -452,7 +513,7 @@ public abstract class ECCurve
 
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
-            super(FiniteFields.getPrimeField(q));
+            super(q);
 
             this.q = q;
             this.r = r;
@@ -531,44 +592,14 @@ public abstract class ECCurve
             return super.importPoint(p);
         }
 
-        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
-        {
-            ECFieldElement x = fromBigInteger(X1);
-            ECFieldElement alpha = x.square().add(a).multiply(x).add(b);
-            ECFieldElement beta = alpha.sqrt();
-
-            //
-            // if we can't find a sqrt we haven't got a point on the
-            // curve - run!
-            //
-            if (beta == null)
-            {
-                throw new RuntimeException("Invalid point compression");
-            }
-
-            if (beta.testBitZero() != (yTilde == 1))
-            {
-                // Use the other root
-                beta = beta.negate();
-            }
-
-            return new ECPoint.Fp(this, x, beta, true);
-        }
-
         public ECPoint getInfinity()
         {
             return infinity;
         }
     }
 
-    /**
-     * Elliptic curves over F2m. The Weierstrass equation is given by
-     * <code>y<sup>2</sup> + xy = x<sup>3</sup> + ax<sup>2</sup> + b</code>.
-     */
-    public static class F2m extends ECCurve
+    public static abstract class AbstractF2m extends ECCurve
     {
-        private static final int F2M_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
-
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
             if (k1 == 0)
@@ -598,6 +629,20 @@ public abstract class ECCurve
 
             return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, k2, k3, m });
         }
+
+        protected AbstractF2m(int m, int k1, int k2, int k3)
+        {
+            super(buildField(m, k1, k2, k3));
+        }
+    }
+
+    /**
+     * Elliptic curves over F2m. The Weierstrass equation is given by
+     * <code>y<sup>2</sup> + xy = x<sup>3</sup> + ax<sup>2</sup> + b</code>.
+     */
+    public static class F2m extends AbstractF2m
+    {
+        private static final int F2M_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
 
         /**
          * The exponent <code>m</code> of <code>F<sub>2<sup>m</sup></sub></code>.
@@ -763,7 +808,7 @@ public abstract class ECCurve
             BigInteger order,
             BigInteger cofactor)
         {
-            super(buildField(m, k1, k2, k3));
+            super(m, k1, k2, k3);
 
             this.m = m;
             this.k1 = k1;
@@ -780,7 +825,7 @@ public abstract class ECCurve
 
         protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
-            super(buildField(m, k1, k2, k3));
+            super(m, k1, k2, k3);
 
             this.m = m;
             this.k1 = k1;
@@ -929,7 +974,7 @@ public abstract class ECCurve
          */
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECFieldElement xp = fromBigInteger(X1), yp;
+            ECFieldElement xp = fromBigInteger(X1), yp = null;
             if (xp.isZero())
             {
                 yp = b.sqrt();
@@ -938,34 +983,38 @@ public abstract class ECCurve
             {
                 ECFieldElement beta = xp.square().invert().multiply(b).add(a).add(xp);
                 ECFieldElement z = solveQuadraticEquation(beta);
-                if (z == null)
+                if (z != null)
                 {
-                    throw new IllegalArgumentException("Invalid point compression");
-                }
-                if (z.testBitZero() != (yTilde == 1))
-                {
-                    z = z.addOne();
-                }
+                    if (z.testBitZero() != (yTilde == 1))
+                    {
+                        z = z.addOne();
+                    }
 
-                switch (this.getCoordinateSystem())
-                {
-                case COORD_LAMBDA_AFFINE:
-                case COORD_LAMBDA_PROJECTIVE:
-                {
-                    yp = z.add(xp);
-                    break;
-                }
-                default:
-                {
-                    yp = z.multiply(xp);
-                    break;
-                }
+                    switch (this.getCoordinateSystem())
+                    {
+                    case COORD_LAMBDA_AFFINE:
+                    case COORD_LAMBDA_PROJECTIVE:
+                    {
+                        yp = z.add(xp);
+                        break;
+                    }
+                    default:
+                    {
+                        yp = z.multiply(xp);
+                        break;
+                    }
+                    }
                 }
             }
 
-            return new ECPoint.F2m(this, xp, yp, true);
+            if (yp == null)
+            {
+                throw new IllegalArgumentException("Invalid point compression");
+            }
+
+            return createRawPoint(xp, yp, true);
         }
-        
+
         /**
          * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
          * D.1.6) The other solution is <code>z + 1</code>.

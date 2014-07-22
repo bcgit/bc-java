@@ -5,15 +5,10 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.GLVMultiplier;
-import org.bouncycastle.math.ec.endo.GLVTypeBEndomorphism;
-import org.bouncycastle.math.ec.endo.GLVTypeBParameters;
-import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.util.encoders.Hex;
 
-public class SecP256K1Curve extends ECCurve
+public class SecP256K1Curve extends ECCurve.AbstractFp
 {
     public static final BigInteger q = new BigInteger(1,
         Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"));
@@ -24,7 +19,7 @@ public class SecP256K1Curve extends ECCurve
 
     public SecP256K1Curve()
     {
-        super(FiniteFields.getPrimeField(q));
+        super(q);
 
         this.infinity = new SecP256K1Point(this, null, null);
 
@@ -74,30 +69,6 @@ public class SecP256K1Curve extends ECCurve
     protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
     {
         return new SecP256K1Point(this, x, y, zs, withCompression);
-    }
-
-    protected ECPoint decompressPoint(int yTilde, BigInteger X1)
-    {
-        ECFieldElement x = fromBigInteger(X1);
-        ECFieldElement alpha = x.square().multiply(x).add(getB());
-        ECFieldElement beta = alpha.sqrt();
-
-        //
-        // if we can't find a sqrt we haven't got a point on the
-        // curve - run!
-        //
-        if (beta == null)
-        {
-            throw new RuntimeException("Invalid point compression");
-        }
-
-        if (beta.testBitZero() != (yTilde == 1))
-        {
-            // Use the other root
-            beta = beta.negate();
-        }
-
-        return new SecP256K1Point(this, x, beta, true);
     }
 
     public ECPoint getInfinity()

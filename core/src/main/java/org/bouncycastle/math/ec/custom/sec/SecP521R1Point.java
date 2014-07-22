@@ -5,7 +5,7 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.raw.Nat;
 
-public class SecP521R1Point extends ECPoint
+public class SecP521R1Point extends ECPoint.AbstractFp
 {
     /**
      * Create a point which encodes with point compression.
@@ -61,11 +61,6 @@ public class SecP521R1Point extends ECPoint
     protected ECPoint detach()
     {
         return new SecP521R1Point(null, getAffineXCoord(), getAffineYCoord());
-    }
-
-    protected boolean getCompressionYTilde()
-    {
-        return this.getAffineYCoord().testBitZero();
     }
 
     public ECPoint add(ECPoint b)
@@ -324,17 +319,6 @@ public class SecP521R1Point extends ECPoint
          * way to calculate 2.A.B, if A^2 and B^2 are already known.
          */
         return a.add(b).square().subtract(aSquared).subtract(bSquared);
-    }
-
-    public ECPoint subtract(ECPoint b)
-    {
-        if (b.isInfinity())
-        {
-            return this;
-        }
-
-        // Add -b
-        return add(b.negate());
     }
 
     public ECPoint negate()
