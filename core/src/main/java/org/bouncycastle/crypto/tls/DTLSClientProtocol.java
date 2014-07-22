@@ -718,7 +718,18 @@ public class DTLSClientProtocol
                 }
             }
 
-            securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(serverExtensions);
+            /*
+             * draft-ietf-tls-encrypt-then-mac-03 3. If a server receives an encrypt-then-MAC
+             * request extension from a client and then selects a stream or AEAD cipher suite, it
+             * MUST NOT send an encrypt-then-MAC response extension back to the client.
+             */
+            boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(serverExtensions);
+            if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(state.selectedCipherSuite))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
 
             state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, serverExtensions,
                 AlertDescription.illegal_parameter);

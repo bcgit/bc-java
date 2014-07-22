@@ -235,7 +235,15 @@ public abstract class AbstractTlsServer
     {
         if (this.encryptThenMACOffered && allowEncryptThenMAC())
         {
-            TlsExtensionsUtils.addEncryptThenMACExtension(checkServerExtensions());
+            /*
+             * draft-ietf-tls-encrypt-then-mac-03 3. If a server receives an encrypt-then-MAC
+             * request extension from a client and then selects a stream or AEAD cipher suite, it
+             * MUST NOT send an encrypt-then-MAC response extension back to the client.
+             */
+            if (TlsUtils.isBlockCipherSuite(this.selectedCipherSuite))
+            {
+                TlsExtensionsUtils.addEncryptThenMACExtension(checkServerExtensions());
+            }
         }
 
         if (this.maxFragmentLengthOffered >= 0)

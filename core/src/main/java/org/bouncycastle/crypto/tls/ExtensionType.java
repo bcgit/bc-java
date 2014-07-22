@@ -49,11 +49,9 @@ public class ExtensionType
     public static final int session_ticket = 35;
 
     /*
-     * draft-gutmann-tls-encrypt-then-mac-05
-     * 
-     * NOTE: This value has not yet been reserved by the IETF 
+     * draft-ietf-tls-encrypt-then-mac-03
      */
-    public static final int encrypt_then_mac = 66;
+    public static final int encrypt_then_mac = 22;
 
     /*
      * RFC 5746 3.2.
