@@ -54,7 +54,7 @@ import org.bouncycastle.util.Strings;
 public class IESCipher
     extends CipherSpi
 {
-    private final int ivLength;
+    private int ivLength;
     private IESEngine engine;
     private int state = -1;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -67,7 +67,8 @@ public class IESCipher
 
     public IESCipher(IESEngine engine)
     {
-        this(engine, 0);
+        this.engine = engine;
+        this.ivLength = 0;
     }
 
     public IESCipher(IESEngine engine, int ivLength)
