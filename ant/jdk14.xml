@@ -84,8 +84,10 @@
             <fileset dir="core/src/test/" includes="**/*.properties" />
             <fileset dir="prov/src/main/" includes="**/*.properties" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
+            <fileset dir="prov/src/test/resources" includes="**/*.*" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
             <fileset dir="pg/src/test/resources" includes="**/*.*" />
+            <fileset dir="mail/src/test/resources" includes="**/*.*" />
             <fileset dir="core/src/test/data" includes="**/*.pem" />
             <fileset dir="core/src/test/data" includes="**/*.properties" />
             <fileset dir="core/src/test/data" includes="**/*.eml" />

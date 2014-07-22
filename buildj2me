@@ -1,0 +1,222 @@
+#!/bin/sh -
+#
+# build script for J2ME - this only includes the lightweight API
+# if a distribution name is given as an argument the build is placed
+# in a subdirectory - nothing gets compiled as we expect the classes
+# to be in ./palm
+#
+# Note: this script expects javadoc for jdk 1.3 to be in your path.
+#
+
+base=$1
+version=`echo $base | sed -e "s/\([0-9]\)\([0-9a-z]*\)/\1.\2/"`
+
+WINDOWTITLE="Bouncy Castle Cryptography $version API Specification"
+HEADER="<b>Bouncy Castle Cryptography $version</b>"
+DOCTITLE="Bouncy Castle $version API Specification"
+
+echo "making j2me lightweight release"
+
+if test "$base" != "" 
+then
+    target=build/artifacts/j2me/lcrypto-j2me-$base
+
+    mkdir -p $target
+    mkdir $target/javadoc
+    mkdir $target/src
+    tar cf - common.xml midp.xml crypto_env.properties index.html LICENSE.html CONTRIBUTORS.html docs zips | (cd $target && tar xf -)
+    ((cd core/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/test/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pkix/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pkix/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pkix/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pkix/src/test/java; tar cf - org/bouncycastle/cert/test ) | (cd $target/src && tar xf - ) )
+    ((cd pkix/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
+
+    (cd $target;
+        rm src/org/bouncycastle/crypto/test/AllTests.java
+        rm src/org/bouncycastle/util/StreamParser.java
+        rm src/org/bouncycastle/util/StreamParsingException.java
+        rm src/org/bouncycastle/asn1/util/Dump.java
+        rm src/org/bouncycastle/asn1/test/AllTests.java
+        rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
+        rm src/org/bouncycastle/asn1/test/AttributeTableUnitTest.java
+        rm src/org/bouncycastle/asn1/test/BiometricDataUnitTest.java
+        rm src/org/bouncycastle/asn1/test/BitStringConstantTester.java
+        rm src/org/bouncycastle/asn1/test/CommitmentTypeIndicationUnitTest.java
+        rm src/org/bouncycastle/asn1/test/CommitmentTypeQualifierUnitTest.java
+        rm src/org/bouncycastle/asn1/test/DataGroupHashUnitTest.java
+        rm src/org/bouncycastle/asn1/test/DERUTF8StringTest.java
+        rm src/org/bouncycastle/asn1/test/EqualsAndHashCodeTest.java
+        rm src/org/bouncycastle/asn1/test/GeneralizedTimeTest.java
+        rm src/org/bouncycastle/asn1/test/GenerationTest.java
+        rm src/org/bouncycastle/asn1/test/InputStreamTest.java
+        rm src/org/bouncycastle/asn1/test/Iso4217CurrencyCodeUnitTest.java
+        rm src/org/bouncycastle/asn1/test/KeyUsageTest.java
+        rm src/org/bouncycastle/asn1/test/LDSSecurityObjectUnitTest.java
+        rm -rf src/org/bouncycastle/pqc/math/ntru
+        rm -rf src/org/bouncycastle/pqc/crypto/test/ntru
+        rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
+        rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringTest*
+        rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
+        rm src/org/bouncycastle/asn1/test/MonetaryValueUnitTest.java
+        rm src/org/bouncycastle/asn1/test/NameOrPseudonymUnitTest.java
+        rm src/org/bouncycastle/asn1/test/NetscapeCertTypeTest.java
+        rm src/org/bouncycastle/asn1/test/OctetStringTest.java
+        rm src/org/bouncycastle/asn1/test/ParseTest.java
+        rm src/org/bouncycastle/asn1/test/PersonalDataUnitTest.java
+        rm src/org/bouncycastle/asn1/test/PKIFailureInfoTest.java
+        rm src/org/bouncycastle/asn1/test/QCStatementUnitTest.java
+        rm src/org/bouncycastle/asn1/test/ReasonFlagsTest.java
+        rm src/org/bouncycastle/asn1/test/SemanticsInformationUnitTest.java
+        rm src/org/bouncycastle/asn1/test/SetTest.java
+        rm src/org/bouncycastle/asn1/test/SignerLocationUnitTest.java
+        rm src/org/bouncycastle/asn1/test/SMIMETest.java
+        rm src/org/bouncycastle/asn1/test/TagTest.java
+        rm src/org/bouncycastle/asn1/test/TypeOfBiometricDataUnitTest.java
+        rm src/org/bouncycastle/asn1/test/UTCTimeTest.java
+        rm src/org/bouncycastle/crypto/test/AESVectorFileTest.java
+        rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
+        rm src/org/bouncycastle/crypto/test/HCFamilyVecTest.java
+        rm src/org/bouncycastle/crypto/test/RSABlindedTest.java
+        find src -name AllTests.java -exec rm {} \;
+        find src -name jcajce -exec rm -r {} \;
+        rm src/org/bouncycastle/asn1/test/GetInstanceTest.java
+        rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
+        rm src/org/bouncycastle/asn1/test/OctetStringTest.java
+        rm src/org/bouncycastle/asn1/test/ParseTest.java
+        rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
+        rm -r src/org/bouncycastle/pqc/crypto/test
+        rm src/org/bouncycastle/cert/test/BcCertTest.java
+        rm src/org/bouncycastle/crypto/test/SCryptTest.java
+        rm src/org/bouncycastle/crypto/examples/DESExample.java
+        rm src/org/bouncycastle/pqc/crypto/test/EncryptionKeyTest.java
+        rm -r src/org/bouncycastle/util/io/pem
+        rm -r src/org/bouncycastle/crypto/test/cavp
+        rm -r src/org/bouncycastle/crypto/test/speedy
+        rm -r src/org/bouncycastle/asn1/test/EnumeratedTest.java
+        rm -r src/org/bouncycastle/crypto/test/KDFFeedbackGeneratorTest.java
+        rm -r src/org/bouncycastle/crypto/test/KDFDoublePipelineIteratorGeneratorTest.java
+        rm -r src/org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
+        rm src/org/bouncycastle/cert/test/ConverterTest.java
+        rm src/org/bouncycastle/cert/test/BcPKCS10Test.java
+        rm src/org/bouncycastle/cert/test/BcAttrCertTest.java
+        rm src/org/bouncycastle/cert/test/BcAttrCertSelectorTest.java
+        rm -r src/org/bouncycastle/util/utiltest
+        rm -r src/org/bouncycastle/openpgp/examples
+        rm src/org/bouncycastle/openpgp/PGPCompressed*
+        rm -r src/org/bouncycastle/util/encoders/test
+        rm -r src/org/bouncycastle/util/io/test
+        rm src/org/bouncycastle/cms/CMSProcessableFile.java
+        rm -r src/org/bouncycastle/math/ec/test
+        rm -r src/org/bouncycastle/crypto/agreement/test
+        rm -r src/org/bouncycastle/crypto/tls/test
+        rm -r src/org/bouncycastle/i18n
+        rm -r src/org/bouncycastle/openssl
+        rm -r src/org/bouncycastle/apache
+        rm -r src/org/bouncycastle/voms
+        rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
+    )
+
+
+   (2>&1 find $target -name CVS -exec rm -rf \{\} \; ) > /dev/null
+
+    (
+    cd $target;
+    javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
+      -header "$HEADER" \
+    -group "Lightweight Crypto Packages" "org.bouncycastle.crypto*" \
+    -group "ASN.1 Support Packages" "org.bouncycastle.asn1*" \
+    -group "OpenPGP Support Packages" "org.bouncycastle.bcpg*:org.bouncycastle.openpgp*" \
+    -group "Basic Signing And Encryption" "org.bouncycastle.operator*" \
+    -group "Certificate Generation And Handling Support Packages" "org.bouncycastle.cert*" \
+    -group "CMS Support Packages" "org.bouncycastle.cms*" \
+    -group "EAC Support Packages" "org.bouncycastle.eac*" \
+    -group "TSP Support Packages" "org.bouncycastle.tsp*" \
+    -group "PKCS Support Packages" "org.bouncycastle.pkcs*" \
+    -group "Post-Quantum Crypto Packages" "org.bouncycastle.pqc*" \
+    -group "Utility Packages" "org.bouncycastle.util*:org.bouncycastle.math*" \
+      -classpath classes \
+      -d javadoc -sourcepath src -breakiterator \
+    org.bouncycastle.asn1 \
+    org.bouncycastle.asn1.cmp \
+    org.bouncycastle.asn1.cms \
+    org.bouncycastle.asn1.cryptopro \
+    org.bouncycastle.asn1.esf \
+    org.bouncycastle.asn1.ess \
+    org.bouncycastle.asn1.gnu \
+    org.bouncycastle.asn1.iana \
+    org.bouncycastle.asn1.icao \
+    org.bouncycastle.asn1.misc \
+    org.bouncycastle.asn1.mozilla \
+    org.bouncycastle.asn1.nist \
+    org.bouncycastle.asn1.ocsp \
+    org.bouncycastle.asn1.oiw \
+    org.bouncycastle.asn1.pkcs \
+    org.bouncycastle.asn1.sec \
+    org.bouncycastle.asn1.smime \
+    org.bouncycastle.asn1.teletrust \
+    org.bouncycastle.asn1.test \
+    org.bouncycastle.asn1.tsp \
+    org.bouncycastle.asn1.util \
+    org.bouncycastle.asn1.x500 \
+    org.bouncycastle.asn1.x500.style \
+    org.bouncycastle.asn1.x509 \
+    org.bouncycastle.asn1.x9 \
+    org.bouncycastle.bcpg \
+    org.bouncycastle.bcpg.sig \
+    org.bouncycastle.openpgp \
+    org.bouncycastle.openpgp.bc \
+    org.bouncycastle.openpgp.operator \
+    org.bouncycastle.openpgp.operator.bc \
+    org.bouncycastle.operator \
+    org.bouncycastle.operator.bc \
+    org.bouncycastle.cert \
+    org.bouncycastle.cert.crmf \
+    org.bouncycastle.cert.crmf.bc \
+    org.bouncycastle.cert.cmp \
+    org.bouncycastle.pkcs \
+    org.bouncycastle.pkcs.bc \
+    org.bouncycastle.tsp \
+    org.bouncycastle.cms \
+    org.bouncycastle.cms.bc \
+    org.bouncycastle.math.ec \
+    org.bouncycastle.crypto \
+    org.bouncycastle.crypto.agreement \
+    org.bouncycastle.crypto.commitments \
+    org.bouncycastle.crypto.digests \
+    org.bouncycastle.crypto.encodings \
+    org.bouncycastle.crypto.engines \
+    org.bouncycastle.crypto.generators \
+    org.bouncycastle.crypto.io \
+    org.bouncycastle.crypto.kems \
+    org.bouncycastle.crypto.macs \
+    org.bouncycastle.crypto.modes \
+    org.bouncycastle.crypto.params \
+    org.bouncycastle.crypto.parsers \
+    org.bouncycastle.crypto.paddings \
+    org.bouncycastle.crypto.signers \
+    org.bouncycastle.crypto.prng \
+    org.bouncycastle.crypto.tls \
+    org.bouncycastle.crypto.test \
+    org.bouncycastle.crypto.util \
+    org.bouncycastle.crypto.examples \
+    org.bouncycastle.pqc.asn1 \
+    org.bouncycastle.pqc.crypto \
+    org.bouncycastle.pqc.crypto.rainbow \
+    org.bouncycastle.pqc.crypto.mceliece \
+    org.bouncycastle.pqc.crypto.gmss \
+    org.bouncycastle.pqc.math.linearalgebra \
+    org.bouncycastle.util \
+    org.bouncycastle.util.encoders \
+    org.bouncycastle.util.test > /dev/null \
+
+    )
+fi
+

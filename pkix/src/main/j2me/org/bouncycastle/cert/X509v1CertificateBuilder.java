@@ -2,7 +2,6 @@ package org.bouncycastle.cert;
 
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -35,23 +34,6 @@ public class X509v1CertificateBuilder
     {
         this(issuer, serial, new Time(notBefore), new Time(notAfter), subject, publicKeyInfo);
     }
-
-   /**
-    * Create a builder for a version 1 certificate. You may need to use this constructor if the default locale
-    * doesn't use a Gregorian calender so that the Time produced is compatible with other ASN.1 implementations.
-    *
-    * @param issuer the certificate issuer
-    * @param serial the certificate serial number
-    * @param notBefore the date before which the certificate is not valid
-    * @param notAfter the date after which the certificate is not valid
-    * @param dateLocale locale to be used for date interpretation.
-    * @param subject the certificate subject
-    * @param publicKeyInfo the info structure for the public key to be associated with this certificate.
-    */
-   public X509v1CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, Locale dateLocale, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
-   {
-       this(issuer, serial, new Time(notBefore, dateLocale), new Time(notAfter, dateLocale), subject, publicKeyInfo);
-   }
 
    /**
     * Create a builder for a version 1 certificate.
