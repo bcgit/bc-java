@@ -377,12 +377,48 @@ public class TlsECCUtils
 
     public static ECPoint deserializeECPoint(short[] ecPointFormats, ECCurve curve, byte[] encoding) throws IOException
     {
-        /*
-         * NOTE: Here we implicitly decode compressed or uncompressed encodings. DefaultTlsClient by
-         * default is set up to advertise that we can parse any encoding so this works fine, but
-         * extra checks might be needed here if that were changed.
-         */
-        // TODO Review handling of infinity and hybrid encodings
+        if (encoding == null || encoding.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        short actualFormat;
+        switch (encoding[0])
+        {
+        case 0x02: // compressed
+        case 0x03: // compressed
+        {
+            if (ECAlgorithms.isF2mCurve(curve))
+            {
+                actualFormat = ECPointFormat.ansiX962_compressed_char2;
+            }
+            else if (ECAlgorithms.isFpCurve(curve))
+            {
+                actualFormat = ECPointFormat.ansiX962_compressed_prime;
+            }
+            else
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            break;
+        }
+        case 0x04: // uncompressed
+        {
+            actualFormat = ECPointFormat.uncompressed;
+            break;
+        }
+        case 0x00: // infinity
+        case 0x06: // hybrid
+        case 0x07: // hybrid
+        default:
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        if (!Arrays.contains(ecPointFormats, actualFormat))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         return curve.decodePoint(encoding);
     }
 
