@@ -5,7 +5,7 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.raw.Nat256;
 
-public class Curve25519Point extends ECPoint
+public class Curve25519Point extends ECPoint.AbstractFp
 {
     /**
      * Create a point which encodes with point compression.
@@ -53,11 +53,6 @@ public class Curve25519Point extends ECPoint
     protected ECPoint detach()
     {
         return new Curve25519Point(null, getAffineXCoord(), getAffineYCoord());
-    }
-
-    protected boolean getCompressionYTilde()
-    {
-        return this.getAffineYCoord().testBitZero();
     }
 
     public ECFieldElement getZCoord(int index)
@@ -255,16 +250,6 @@ public class Curve25519Point extends ECPoint
         }
 
         return twiceJacobianModified(false).add(this);
-    }
-
-    public ECPoint subtract(ECPoint b)
-    {
-        if (b.isInfinity())
-        {
-            return this;
-        }
-
-        return add(b.negate());
     }
 
     public ECPoint negate()

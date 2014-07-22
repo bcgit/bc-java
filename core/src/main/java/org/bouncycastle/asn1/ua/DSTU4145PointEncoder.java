@@ -125,7 +125,7 @@ public abstract class DSTU4145PointEncoder
             xp = xp.addOne();
         }
 
-        ECFieldElement yp;
+        ECFieldElement yp = null;
         if (xp.isZero())
         {
             yp = curve.getB().sqrt();
@@ -134,15 +134,19 @@ public abstract class DSTU4145PointEncoder
         {
             ECFieldElement beta = xp.square().invert().multiply(curve.getB()).add(curve.getA()).add(xp);
             ECFieldElement z = solveQuadraticEquation(curve, beta);
-            if (z == null)
+            if (z != null)
             {
-                throw new RuntimeException("Invalid point compression");
+                if (!trace(z).equals(k))
+                {
+                    z = z.addOne();
+                }
+                yp = xp.multiply(z);
             }
-            if (!trace(z).equals(k))
-            {
-                z = z.addOne();
-            }
-            yp = xp.multiply(z);
+        }
+
+        if (yp == null)
+        {
+            throw new IllegalArgumentException("Invalid point compression");
         }
 
         return curve.createPoint(xp.toBigInteger(), yp.toBigInteger());

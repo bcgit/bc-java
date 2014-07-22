@@ -34,6 +34,7 @@ Release 1.51
 <li>User Attribute subpackets in PGP with long length encodings could result in certification verification failing. This has been fixed.</li>
 <li>Calls to  CommandMap.setDefaultCommandMap() in the SMIME API are now wrapped in doPrivileged() blocks to allow them to work with a security manager.</li>
 <li>The encoding of the certificate_authorities field of a TLS CertificateRequest has been fixed.</li>
+<li>EC point formats are now strictly enforced in the TLS API.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -44,6 +45,7 @@ Release 1.51
 <li>The PGP API now provides automatic conversion of embedded signatures in signature sub-packet vectors.</li>
 <li>GCM and GMAC now support tag lengths down to 32 bits.</li>
 <li>Custom implementations for many of the SEC Fp curves have been added, resulting in drastically improved performance. The current list includes all secp***k1 and secp***r1 curves from 192 to 521 bits. They can be accessed via the org.bouncycastle.crypto.ec.CustomNamedCurves class and are generally selected by other internal APIs in place of the generic implementations.</li>
+<li>Automatic EC point validation added, both for decoded inputs and multiplier outputs.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>

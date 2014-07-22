@@ -286,35 +286,6 @@ public class ECPointTest extends TestCase
     }
 
     /**
-     * Simple shift-and-add multiplication. Serves as reference implementation
-     * to verify (possibly faster) implementations in
-     * {@link org.bouncycastle.math.ec.ECPoint ECPoint}.
-     * 
-     * @param p
-     *            The point to multiply.
-     * @param k
-     *            The multiplier.
-     * @return The result of the point multiplication <code>kP</code>.
-     */
-    private ECPoint multiply(ECPoint p, BigInteger k)
-    {
-        ECPoint q = p.getCurve().getInfinity();
-        int t = k.bitLength();
-        for (int i = 0; i < t; i++)
-        {
-            if (i != 0)
-            {
-                p = p.twice();
-            }
-            if (k.testBit(i))
-            {
-                q = q.add(p);
-            }
-        }
-        return q;
-    }
-
-    /**
      * Checks, if the point multiplication algorithm of the given point yields
      * the same result as point multiplication done by the reference
      * implementation given in <code>multiply()</code>. This method chooses a
@@ -329,7 +300,7 @@ public class ECPointTest extends TestCase
     private void implTestMultiply(ECPoint p, int numBits)
     {
         BigInteger k = new BigInteger(numBits, secRand);
-        ECPoint ref = multiply(p, k);
+        ECPoint ref = ECAlgorithms.referenceMultiply(p, k);
         ECPoint q = p.multiply(k);
         assertPointsEqual("ECPoint.multiply is incorrect", ref, q);
     }
@@ -353,7 +324,7 @@ public class ECPointTest extends TestCase
 
         do
         {
-            ECPoint ref = multiply(p, k);
+            ECPoint ref = ECAlgorithms.referenceMultiply(p, k);
             ECPoint q = p.multiply(k);
             assertPointsEqual("ECPoint.multiply is incorrect", ref, q);
             k = k.add(BigInteger.ONE);

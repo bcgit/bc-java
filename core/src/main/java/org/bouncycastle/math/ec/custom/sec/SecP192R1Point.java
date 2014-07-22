@@ -6,7 +6,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat192;
 
-public class SecP192R1Point extends ECPoint
+public class SecP192R1Point extends ECPoint.AbstractFp
 {
     /**
      * Create a point which encodes with point compression.
@@ -62,11 +62,6 @@ public class SecP192R1Point extends ECPoint
     protected ECPoint detach()
     {
         return new SecP192R1Point(null, getAffineXCoord(), getAffineYCoord());
-    }
-
-    protected boolean getCompressionYTilde()
-    {
-        return this.getAffineYCoord().testBitZero();
     }
 
     // B.3 pg 62
@@ -301,18 +296,6 @@ public class SecP192R1Point extends ECPoint
 
         // NOTE: Be careful about recursions between twicePlus and threeTimes
         return twice().add(this);
-    }
-
-    // D.3.2 pg 102 (see Note:)
-    public ECPoint subtract(ECPoint b)
-    {
-        if (b.isInfinity())
-        {
-            return this;
-        }
-
-        // Add -b
-        return add(b.negate());
     }
 
     public ECPoint negate()
