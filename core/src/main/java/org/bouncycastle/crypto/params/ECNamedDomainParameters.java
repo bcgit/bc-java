@@ -9,7 +9,7 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECNamedDomainParameters
     extends ECDomainParameters
 {
-    private final ASN1ObjectIdentifier name;
+    private ASN1ObjectIdentifier name;
 
     public ECNamedDomainParameters(ASN1ObjectIdentifier name, ECCurve curve, ECPoint G, BigInteger n)
     {

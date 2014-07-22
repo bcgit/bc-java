@@ -10,7 +10,7 @@ import org.bouncycastle.util.Pack;
 public class SHA512tDigest
     extends LongDigest
 {
-    private final int digestLength;
+    private int digestLength;      // non-final due to old flow analyser.
 
     private long  H1t, H2t, H3t, H4t, H5t, H6t, H7t, H8t;
 

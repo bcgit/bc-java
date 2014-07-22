@@ -25,8 +25,8 @@ public class CipherInputStream
 {
     private static final int INPUT_BUF_SIZE = 2048;
 
-    private final SkippingCipher skippingCipher;
-    private final byte[] inBuf;
+    private SkippingCipher skippingCipher;
+    private byte[] inBuf;
 
     private BufferedBlockCipher bufferedBlockCipher;
     private StreamCipher streamCipher;

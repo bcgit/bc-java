@@ -299,10 +299,9 @@ public class CramerShoupCoreEngine
     /**
      * CS exception for wrong cipher-texts
      */
-    public class CramerShoupCiphertextException
+    public static class CramerShoupCiphertextException
         extends Exception
     {
-
         private static final long serialVersionUID = -6360977166495345076L;
 
         public CramerShoupCiphertextException(String msg)
