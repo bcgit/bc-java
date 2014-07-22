@@ -102,7 +102,7 @@ public class CertificateRequest
                 X500Name certificateAuthority = (X500Name)certificateAuthorities.elementAt(i);
                 byte[] derEncoding = certificateAuthority.getEncoded(ASN1Encoding.DER);
                 derEncodings.addElement(derEncoding);
-                totalLength += derEncoding.length;
+                totalLength += derEncoding.length + 2;
             }
 
             TlsUtils.checkUint16(totalLength);
@@ -110,8 +110,8 @@ public class CertificateRequest
 
             for (int i = 0; i < derEncodings.size(); ++i)
             {
-                byte[] encDN = (byte[])derEncodings.elementAt(i);
-                output.write(encDN);
+                byte[] derEncoding = (byte[])derEncodings.elementAt(i);
+                TlsUtils.writeOpaque16(derEncoding, output);
             }
         }
     }
