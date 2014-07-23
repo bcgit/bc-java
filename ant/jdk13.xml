@@ -163,6 +163,7 @@
                 <exclude name="**/SignedMailValidatorTest.java" />
                 <exclude name="**/DummyCertPathReviewer.java" />
             </fileset>
+            <fileset dir="mail/src/test/resources" />
             <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="core/src/test/javadoc" includes="**/*.html" />
             <fileset dir="core/src/test/resources" includes="**/*.properties" />

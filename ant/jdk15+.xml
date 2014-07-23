@@ -53,6 +53,7 @@
             <fileset dir="mail/src/main/javadoc" includes="**/*.html" />
             <fileset dir="mail/src/main/resources" includes="**/*.properties" />
             <fileset dir="mail/src/test/java" includes="**/*.java" />
+            <fileset dir="mail/src/test/resources" includes="**/*.*" />
 
             <fileset dir="core/src/test/data" includes="**/*.message" />
             <fileset dir="core/src/test/data" includes="**/*.eml" />
