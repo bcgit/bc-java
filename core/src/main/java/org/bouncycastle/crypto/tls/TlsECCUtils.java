@@ -460,7 +460,7 @@ public class TlsECCUtils
     public static ECPrivateKeyParameters generateEphemeralClientKeyExchange(SecureRandom random, short[] ecPointFormats,
         ECDomainParameters ecParams, OutputStream output) throws IOException
     {
-        AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(random, ecParams);
+        AsymmetricCipherKeyPair kp = generateECKeyPair(random, ecParams);
 
         ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
         writeECPoint(ecPointFormats, ecPublicKey.getQ(), output);
@@ -569,7 +569,7 @@ public class TlsECCUtils
 
                 checkNamedCurve(namedCurves, namedCurve);
 
-                return TlsECCUtils.getParametersForNamedCurve(namedCurve);
+                return getParametersForNamedCurve(namedCurve);
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -668,7 +668,7 @@ public class TlsECCUtils
 
     public static void writeECPoint(short[] ecPointFormats, ECPoint point, OutputStream output) throws IOException
     {
-        TlsUtils.writeOpaque8(TlsECCUtils.serializeECPoint(ecPointFormats, point), output);
+        TlsUtils.writeOpaque8(serializeECPoint(ecPointFormats, point), output);
     }
 
     public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException
