@@ -52,10 +52,10 @@ public class ECAlgorithms
         ECEndomorphism endomorphism = c.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return ECAlgorithms.validatePoint(implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism));
+            return validatePoint(implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism));
         }
 
-        return ECAlgorithms.validatePoint(implSumOfMultiplies(imported, ks));
+        return validatePoint(implSumOfMultiplies(imported, ks));
     }
 
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
@@ -70,18 +70,18 @@ public class ECAlgorithms
             ECCurve.F2m f2mCurve = (ECCurve.F2m)cp;
             if (f2mCurve.isKoblitz())
             {
-                return ECAlgorithms.validatePoint(P.multiply(a).add(Q.multiply(b)));
+                return validatePoint(P.multiply(a).add(Q.multiply(b)));
             }
         }
 
         ECEndomorphism endomorphism = cp.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return ECAlgorithms.validatePoint(
+            return validatePoint(
                 implSumOfMultipliesGLV(new ECPoint[]{ P, Q }, new BigInteger[]{ a, b }, (GLVEndomorphism)endomorphism));
         }
 
-        return ECAlgorithms.validatePoint(implShamirsTrickWNaf(P, a, Q, b));
+        return validatePoint(implShamirsTrickWNaf(P, a, Q, b));
     }
 
     /*
@@ -109,7 +109,7 @@ public class ECAlgorithms
         ECCurve cp = P.getCurve();
         Q = importPoint(cp, Q);
 
-        return ECAlgorithms.validatePoint(implShamirsTrickJsf(P, k, Q, l));
+        return validatePoint(implShamirsTrickJsf(P, k, Q, l));
     }
 
     public static ECPoint importPoint(ECCurve c, ECPoint p)
