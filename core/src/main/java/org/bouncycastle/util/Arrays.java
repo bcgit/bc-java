@@ -923,7 +923,7 @@ public final class Arrays
         return result;
     }
 
-    public static short[] prepend(short[] a, byte b)
+    public static short[] prepend(short[] a, short b)
     {
         if (a == null)
         {
