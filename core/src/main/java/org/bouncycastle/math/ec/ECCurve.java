@@ -454,7 +454,7 @@ public abstract class ECCurve
 
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECFieldElement x = fromBigInteger(X1);
+            ECFieldElement x = this.fromBigInteger(X1);
             ECFieldElement rhs = x.square().add(a).multiply(x).add(b);
             ECFieldElement y = rhs.sqrt();
 
@@ -472,7 +472,7 @@ public abstract class ECCurve
                 y = y.negate();
             }
 
-            return createRawPoint(x, y, true);
+            return this.createRawPoint(x, y, true);
         }
     }
 
