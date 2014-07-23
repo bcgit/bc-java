@@ -534,7 +534,7 @@ public abstract class ECPoint
             ECFieldElement X = this.x, Y = this.y, A = curve.getA(), B = curve.getB();
             ECFieldElement lhs = Y.square();
 
-            switch (getCurveCoordinateSystem())
+            switch (this.getCurveCoordinateSystem())
             {
             case ECCurve.COORD_AFFINE:
                 break;
@@ -579,7 +579,7 @@ public abstract class ECPoint
             }
 
             // Add -b
-            return add(b.negate());
+            return this.add(b.negate());
         }
     }
 
@@ -1347,7 +1347,7 @@ public abstract class ECPoint
 
         protected boolean satisfiesCurveEquation()
         {
-            ECCurve curve = getCurve();
+            ECCurve curve = this.getCurve();
             ECFieldElement X = this.x, A = curve.getA(), B = curve.getB();
             
             int coord = curve.getCoordinateSystem();
