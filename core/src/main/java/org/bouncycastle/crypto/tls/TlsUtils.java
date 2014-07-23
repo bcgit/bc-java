@@ -191,25 +191,25 @@ public class TlsUtils
     public static void writeUint24(int i, OutputStream output)
         throws IOException
     {
-        output.write(i >>> 16);
-        output.write(i >>> 8);
-        output.write(i);
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
+        output.write((byte)i);
     }
 
     public static void writeUint24(int i, byte[] buf, int offset)
     {
         buf[offset] = (byte)(i >>> 16);
         buf[offset + 1] = (byte)(i >>> 8);
-        buf[offset + 2] = (byte)(i);
+        buf[offset + 2] = (byte)i;
     }
 
     public static void writeUint32(long i, OutputStream output)
         throws IOException
     {
-        output.write((int)(i >>> 24));
-        output.write((int)(i >>> 16));
-        output.write((int)(i >>> 8));
-        output.write((int)(i));
+        output.write((byte)(i >>> 24));
+        output.write((byte)(i >>> 16));
+        output.write((byte)(i >>> 8));
+        output.write((byte)i);
     }
 
     public static void writeUint32(long i, byte[] buf, int offset)
@@ -217,7 +217,7 @@ public class TlsUtils
         buf[offset] = (byte)(i >>> 24);
         buf[offset + 1] = (byte)(i >>> 16);
         buf[offset + 2] = (byte)(i >>> 8);
-        buf[offset + 3] = (byte)(i);
+        buf[offset + 3] = (byte)i;
     }
 
     public static void writeUint48(long i, OutputStream output)
@@ -228,7 +228,7 @@ public class TlsUtils
         output.write((byte)(i >>> 24));
         output.write((byte)(i >>> 16));
         output.write((byte)(i >>> 8));
-        output.write((byte)(i));
+        output.write((byte)i);
     }
 
     public static void writeUint48(long i, byte[] buf, int offset)
@@ -238,7 +238,7 @@ public class TlsUtils
         buf[offset + 2] = (byte)(i >>> 24);
         buf[offset + 3] = (byte)(i >>> 16);
         buf[offset + 4] = (byte)(i >>> 8);
-        buf[offset + 5] = (byte)(i);
+        buf[offset + 5] = (byte)i;
     }
 
     public static void writeUint64(long i, OutputStream output)
@@ -251,7 +251,7 @@ public class TlsUtils
         output.write((byte)(i >>> 24));
         output.write((byte)(i >>> 16));
         output.write((byte)(i >>> 8));
-        output.write((byte)(i));
+        output.write((byte)i);
     }
 
     public static void writeUint64(long i, byte[] buf, int offset)
@@ -263,7 +263,7 @@ public class TlsUtils
         buf[offset + 4] = (byte)(i >>> 24);
         buf[offset + 5] = (byte)(i >>> 16);
         buf[offset + 6] = (byte)(i >>> 8);
-        buf[offset + 7] = (byte)(i);
+        buf[offset + 7] = (byte)i;
     }
 
     public static void writeOpaque8(byte[] buf, OutputStream output)
@@ -451,23 +451,24 @@ public class TlsUtils
         {
             throw new EOFException();
         }
-        return (((long)i1) << 24) | (((long)i2) << 16) | (((long)i3) << 8) | ((long)i4);
+        return ((i1 << 2) | (i2 << 16) | (i3 << 8) | i4) & 0xFFFFFFFFL;
+    }
+
+    public static long readUint32(byte[] buf, int offset)
+    {
+        int n = (buf[offset] & 0xff) << 24;
+        n |= (buf[++offset] & 0xff) << 16;
+        n |= (buf[++offset] & 0xff) << 8;
+        n |= (buf[++offset] & 0xff);
+        return n & 0xFFFFFFFFL;
     }
 
     public static long readUint48(InputStream input)
         throws IOException
     {
-        int i1 = input.read();
-        int i2 = input.read();
-        int i3 = input.read();
-        int i4 = input.read();
-        int i5 = input.read();
-        int i6 = input.read();
-        if (i6 < 0)
-        {
-            throw new EOFException();
-        }
-        return (((long)i1) << 40) | (((long)i2) << 32) | (((long)i3) << 24) | (((long)i4) << 16) | (((long)i5) << 8) | ((long)i6);
+        int hi = readUint24(input);
+        int lo = readUint24(input);
+        return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
     public static long readUint48(byte[] buf, int offset)
@@ -1026,7 +1027,7 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length);
     }
 
-    public static final Digest createHash(short hashAlgorithm)
+    public static Digest createHash(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
@@ -1047,7 +1048,7 @@ public class TlsUtils
         }
     }
 
-    public static final Digest cloneHash(short hashAlgorithm, Digest hash)
+    public static Digest cloneHash(short hashAlgorithm, Digest hash)
     {
         switch (hashAlgorithm)
         {
@@ -1068,7 +1069,7 @@ public class TlsUtils
         }
     }
 
-    public static final Digest createPRFHash(int prfAlgorithm)
+    public static Digest createPRFHash(int prfAlgorithm)
     {
         switch (prfAlgorithm)
         {
@@ -1079,7 +1080,7 @@ public class TlsUtils
         }
     }
 
-    public static final Digest clonePRFHash(int prfAlgorithm, Digest hash)
+    public static Digest clonePRFHash(int prfAlgorithm, Digest hash)
     {
         switch (prfAlgorithm)
         {
@@ -1090,7 +1091,7 @@ public class TlsUtils
         }
     }
 
-    public static final short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
+    public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
     {
         switch (prfAlgorithm)
         {
