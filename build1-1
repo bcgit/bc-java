@@ -15,35 +15,38 @@ WINDOWTITLE="Bouncy Castle Cryptography $version API Specification"
 HEADER="<b>Bouncy Castle Cryptography $version</b>"
 DOCTITLE="Bouncy Castle $version API Specification"
 
-if test "$base" != ""  -a ! -d lcrypto-jdk11-$base
+artifacts=build/artifacts/jdk1.1
+mkdir -p $artifacts
+
+if test "$base" != ""  -a ! -d $artifacts/lcrypto-jdk11-$base
 then
     echo "making lightweight release"
 
-    mkdir lcrypto-jdk11-$base
-    mkdir lcrypto-jdk11-$base/src
-    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd lcrypto-jdk11-$base && tar xf -)
+    mkdir $artifacts/lcrypto-jdk11-$base
+    mkdir $artifacts/lcrypto-jdk11-$base/src
+    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/lcrypto-jdk11-$base && tar xf -)
     (cd core/src/main/java && tar cf - org/bouncycastle/LICENSE.java \
     org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1 ) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/main/javadoc && tar cf -  \
     org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 ) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/main/jdk1.4 && tar cf - org/bouncycastle/util) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/main/jdk1.3 && tar cf - org/bouncycastle/asn1) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/main/jdk1.1 && tar cf - *) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/test/java && tar cf - org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/test/jdk1.3 && tar cf - org) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/test/jdk1.2 && tar cf - org) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/test/jdk1.1 && tar cf - org) \
-     | (cd lcrypto-jdk11-$base/src && tar xf -)
+     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (
-        cd lcrypto-jdk11-$base;
+        cd $artifacts/lcrypto-jdk11-$base;
 
         mkdir classes; mkdir javadoc;
 
@@ -150,49 +153,49 @@ javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/li
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/t*/*.java 
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */u*/*.java )
 
-        cp ../core/src/test/resources/org/bouncycastle/crypto/test/*.txt classes/org/bouncycastle/crypto/test/
+        cp ../../../../core/src/test/resources/org/bouncycastle/crypto/test/*.txt classes/org/bouncycastle/crypto/test/
 
         echo "lightweight regression test"
         java -mx512m -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.crypto.test.RegressionTest
         java -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.asn1.test.RegressionTest
     )
-    (2>&1 find lcrypto-jdk11-$base -name CVS -exec rm -rf \{\} \; ) > /dev/null
+    (2>&1 find $artifacts/lcrypto-jdk11-$base -name CVS -exec rm -rf \{\} \; ) > /dev/null
 fi
 
-if  test "$base" != "" -a ! -d jce-jdk11-$base
+if  test "$base" != "" -a ! -d $artifacts/jce-jdk11-$base
 then
     echo "making JCE release"
 
-    mkdir jce-jdk11-$base
-    mkdir jce-jdk11-$base/src
-    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd jce-jdk11-$base; tar xf -)
-    ((cd jce/src/main/java && tar cf - *) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/java && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.4 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.3 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.2 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.1 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/java && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.4 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.3 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.2 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.1 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/javadoc && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/java && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/javadoc && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/java && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.4 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.4 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.3 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.3 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.2 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.1 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.1 && tar cf - * ) | (cd jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/java && tar cf - org/bouncycastle/jce/exception ) | (cd jce-jdk11-$base/src && tar xf -))
+    mkdir $artifacts/jce-jdk11-$base
+    mkdir $artifacts/jce-jdk11-$base/src
+    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/jce-jdk11-$base; tar xf -)
+    ((cd jce/src/main/java && tar cf - *) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/test/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/test/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd core/src/main/javadoc && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/javadoc && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/test/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
+    ((cd prov/src/main/java && tar cf - org/bouncycastle/jce/exception ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
 
 
     (
-    cd jce-jdk11-$base; mkdir classes; mkdir javadoc;
+    cd $artifacts/jce-jdk11-$base; mkdir classes; mkdir javadoc;
 
     rm -rf src/org/bouncycastle/crypto/test/ntru
     rm -rf src/org/bouncycastle/pqc/math/ntru
@@ -413,27 +416,27 @@ then
     java -classpath classes:$JDK11PATH/lib/classes.zip org.bouncycastle.jce.provider.test.RegressionTest
     )
 
-    ( 2>&1 find jce-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
+    ( 2>&1 find $artifacts/jce-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
 fi
 
-if test "$base" != "" -a ! -d bcpkix-jdk11-$base
+if test "$base" != "" -a ! -d $artifacts/bcpkix-jdk11-$base
 then
     echo "making PKIX release"
 
-    mkdir bcpkix-jdk11-$base
-    mkdir bcpkix-jdk11-$base/src
-    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd bcpkix-jdk11-$base; tar xf -)
-    ((cd pkix/src/main/java && tar cf - * ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.4 && tar cf - org/bouncycastle/cms org/bouncycastle/eac ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.3 && tar cf - org/bouncycastle/cert org/bouncycastle/pkcs org/bouncycastle/cms org/bouncycastle/eac org/bouncycastle/tsp org/bouncycastle/operator ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.2 && tar cf - org/bouncycastle/cert org/bouncycastle/cms ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.1 && tar cf - * ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/java && tar cf - * ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.3 && tar cf - org/bouncycastle/cert ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.1 && tar cf - org/bouncycastle/cert ) | (cd bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/javadoc && tar cf - * ) | (cd bcpkix-jdk11-$base/src && tar xf -))
+    mkdir $artifacts/bcpkix-jdk11-$base
+    mkdir $artifacts/bcpkix-jdk11-$base/src
+    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpkix-jdk11-$base; tar xf -)
+    ((cd pkix/src/main/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/main/jdk1.4 && tar cf - org/bouncycastle/cms org/bouncycastle/eac ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/main/jdk1.3 && tar cf - org/bouncycastle/cert org/bouncycastle/pkcs org/bouncycastle/cms org/bouncycastle/eac org/bouncycastle/tsp org/bouncycastle/operator ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/main/jdk1.2 && tar cf - org/bouncycastle/cert org/bouncycastle/cms ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/test/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/test/jdk1.3 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/test/jdk1.1 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    ((cd pkix/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
     (
-    cd bcpkix-jdk11-$base; mkdir classes; mkdir javadoc;
+    cd $artifacts/bcpkix-jdk11-$base; mkdir classes; mkdir javadoc;
 
     PATH=$JDK11PATH/bin:$PATH
     export PATH
@@ -497,29 +500,29 @@ then
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.CertTest
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.AttrCertTest
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.PKCS10Test
-    # java -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.openssl.test.ReaderTest
+    # java -classpath ../$artifacts/jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.openssl.test.ReaderTest
     )
 
-    (2>&1 find bcpkix-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
+    (2>&1 find $artifacts/bcpkix-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
 fi
 
-if test "$base" != "" -a ! -d bcpg-jdk11-$base
+if test "$base" != "" -a ! -d $artifacts/bcpg-jdk11-$base
 then
     echo "making OpenPGP release"
 
-    mkdir bcpg-jdk11-$base
-    mkdir bcpg-jdk11-$base/src
-    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd bcpg-jdk11-$base; tar xf -)
-    ((cd pg/src/main/java && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/main/jdk1.1 && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/test/java && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/test/jdk1.1 && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
-    ((cd pg/src/main/javadoc && tar cf - * ) | (cd bcpg-jdk11-$base/src && tar xf -))
+    mkdir $artifacts/bcpg-jdk11-$base
+    mkdir $artifacts/bcpg-jdk11-$base/src
+    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpg-jdk11-$base; tar xf -)
+    ((cd pg/src/main/java && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/test/java && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     (
-    cd bcpg-jdk11-$base; mkdir classes; mkdir javadoc;
+    cd $artifacts/bcpg-jdk11-$base; mkdir classes; mkdir javadoc;
 
     PATH=$JDK11PATH/bin:$PATH
     export PATH
@@ -570,12 +573,12 @@ q
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/*/*.java openpgp/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/test/RegressionTest.java )
 
-    cp ../pg/src/test/resources/org/bouncycastle/openpgp/test/bigpub.asc classes/org/bouncycastle/openpgp/test/bigpub.asc
+    cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/bigpub.asc classes/org/bouncycastle/openpgp/test/bigpub.asc
 
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.openpgp.test.RegressionTest
 
     )
 
-    (2>&1 find bcpg-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
+    (2>&1 find $artifacts/bcpg-jdk11-$base -name CVS -exec rm -rf \{\} \;) > /dev/null
 fi
 
