@@ -304,7 +304,8 @@ public abstract class ECPoint
             }
 
             BigInteger h = curve.getCofactor();
-            if (h != null && ECAlgorithms.referenceMultiply(this, h).isInfinity())
+            if (h != null && !h.equals(ECConstants.ONE)
+                && ECAlgorithms.referenceMultiply(this, h).isInfinity())
             {
                 return false;
             }
