@@ -589,7 +589,7 @@ public abstract class ECPoint
     public static class Fp extends AbstractFp
     {
         /**
-         * Create a point which encodes with point compression.
+         * Create a point which encodes without point compression.
          * 
          * @param curve the curve to use
          * @param x affine x co-ordinate
