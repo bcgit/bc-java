@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.BigIntegers;
 
 class DHKeyGeneratorHelper
@@ -23,7 +24,15 @@ class DHKeyGeneratorHelper
 
         if (limit != 0)
         {
-            return new BigInteger(limit, random).setBit(limit - 1);
+            int minWeight = limit >>> 2;
+            for (;;)
+            {
+                BigInteger x = new BigInteger(limit, random).setBit(limit - 1);
+                if (WNafUtil.getNafWeight(x) >= minWeight)
+                {
+                    return x;
+                }
+            }
         }
 
         BigInteger min = TWO;
@@ -40,7 +49,15 @@ class DHKeyGeneratorHelper
         }
         BigInteger max = q.subtract(TWO);
 
-        return BigIntegers.createRandomInRange(min, max, random);
+        int minWeight = max.bitLength() >>> 2;
+        for (;;)
+        {
+            BigInteger x = BigIntegers.createRandomInRange(min, max, random);
+            if (WNafUtil.getNafWeight(x) >= minWeight)
+            {
+                return x;
+            }
+        }
     }
 
     BigInteger calculatePublic(DHParameters dhParams, BigInteger x)
