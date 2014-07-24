@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.generators;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
@@ -7,10 +10,8 @@ import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 /**
  * a DSA key pair generator.
@@ -45,13 +46,20 @@ public class DSAKeyPairGenerator
 
     private static BigInteger generatePrivateKey(BigInteger q, SecureRandom random)
     {
-        // TODO Prefer this method? (change test cases that used fixed random)
-        // B.1.1 Key Pair Generation Using Extra Random Bits
-//        BigInteger c = new BigInteger(q.bitLength() + 64, random);
-//        return c.mod(q.subtract(ONE)).add(ONE);
-
         // B.1.2 Key Pair Generation by Testing Candidates
-        return BigIntegers.createRandomInRange(ONE, q.subtract(ONE), random);
+        int minWeight = q.bitLength() >>> 2;
+        for (;;)
+        {
+            // TODO Prefer this method? (change test cases that used fixed random)
+            // B.1.1 Key Pair Generation Using Extra Random Bits
+//            BigInteger x = new BigInteger(q.bitLength() + 64, random).mod(q.subtract(ONE)).add(ONE);
+
+            BigInteger x = BigIntegers.createRandomInRange(ONE, q.subtract(ONE), random);
+            if (WNafUtil.getNafWeight(x) >= minWeight)
+            {
+                return x;
+            }
+        }
     }
 
     private static BigInteger calculatePublicKey(BigInteger p, BigInteger g, BigInteger x)
