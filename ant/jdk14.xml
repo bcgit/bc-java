@@ -113,6 +113,12 @@
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/test/jdk1.4" includes="**/*.java" />
         </copy>
+        <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="core/src/main/javadoc" />
+            <fileset dir="prov/src/main/javadoc" />
+            <fileset dir="pkix/src/main/javadoc" />
+            <fileset dir="pg/src/main/javadoc" />
+        </copy>
         <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
     </target>
 
