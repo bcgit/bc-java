@@ -621,7 +621,7 @@
         <mkdir dir="${artifacts.jars.dir}" />
 
         <property name="test.target.dir" value="${artifacts.dir}/${test.target}" />
-<property name="test.target.src.dir" value="${test.target.dir}/src" />
+        <property name="test.target.src.dir" value="${test.target.dir}/src" />
 
         <mkdir dir="${test.target.dir}" />
 
@@ -673,7 +673,8 @@
     </target>
 
     <target name="test">
-        <junit fork="yes" dir="${basedir}" failureProperty="test.failed">
+        <mkdir dir="${basedir}/${build.dir}/${target.prefix}" />
+        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed">
             <classpath>
                 <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">
@@ -681,7 +682,7 @@
                     <exclude name="**/bcprov-jdk*.jar" />
                 </fileset>
             </classpath>
-            <sysproperty key="bc.test.data.home" value="core/src/test/data" />
+            <sysproperty key="bc.test.data.home" value="../../core/src/test/data" />
 
             <formatter type="xml" />
             <test name="${testcase}" todir="${artifacts.reports.xml.dir}" if="testcase" />
@@ -703,7 +704,7 @@
     </target>
 
     <target name="test-lw">
-        <junit fork="yes" dir="${basedir}" failureProperty="test.failed">
+        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed">
             <classpath>
                 <fileset dir="${artifacts.jars.dir}">
                     <include name="**/*.jar" />
