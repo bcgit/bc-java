@@ -63,6 +63,14 @@ public class TlsUtils
         }
     }
 
+    public static void checkUint8(long i) throws IOException
+    {
+        if (!isValidUint8(i))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
     public static void checkUint16(int i) throws IOException
     {
         if (!isValidUint16(i))
@@ -71,7 +79,23 @@ public class TlsUtils
         }
     }
 
+    public static void checkUint16(long i) throws IOException
+    {
+        if (!isValidUint16(i))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
     public static void checkUint24(int i) throws IOException
+    {
+        if (!isValidUint24(i))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    public static void checkUint24(long i) throws IOException
     {
         if (!isValidUint24(i))
         {
@@ -113,14 +137,29 @@ public class TlsUtils
         return (i & 0xFF) == i;
     }
 
+    public static boolean isValidUint8(long i)
+    {
+        return (i & 0xFFL) == i;
+    }
+
     public static boolean isValidUint16(int i)
     {
         return (i & 0xFFFF) == i;
     }
 
+    public static boolean isValidUint16(long i)
+    {
+        return (i & 0xFFFFL) == i;
+    }
+
     public static boolean isValidUint24(int i)
     {
         return (i & 0xFFFFFF) == i;
+    }
+
+    public static boolean isValidUint24(long i)
+    {
+        return (i & 0xFFFFFFL) == i;
     }
 
     public static boolean isValidUint32(long i)
