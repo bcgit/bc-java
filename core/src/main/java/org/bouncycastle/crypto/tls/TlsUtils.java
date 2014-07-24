@@ -1305,6 +1305,44 @@ public class TlsUtils
         return v;
     }
 
+    public static int getCipherType(int ciphersuite) throws IOException
+    {
+        switch (getEncryptionAlgorithm(ciphersuite))
+        {
+        case EncryptionAlgorithm.AES_128_GCM:
+        case EncryptionAlgorithm.AES_256_GCM:
+        case EncryptionAlgorithm.AES_128_CCM:
+        case EncryptionAlgorithm.AES_128_CCM_8:
+        case EncryptionAlgorithm.AES_256_CCM:
+        case EncryptionAlgorithm.AES_256_CCM_8:
+        case EncryptionAlgorithm.CAMELLIA_128_GCM:
+        case EncryptionAlgorithm.CAMELLIA_256_GCM:
+        case EncryptionAlgorithm.AEAD_CHACHA20_POLY1305:
+            return CipherType.aead;
+
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+        case EncryptionAlgorithm.AES_128_CBC:
+        case EncryptionAlgorithm.AES_256_CBC:
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+        case EncryptionAlgorithm.SEED_CBC:
+            return CipherType.block;
+
+        case EncryptionAlgorithm.RC4_40:
+        case EncryptionAlgorithm.RC4_128:
+        case EncryptionAlgorithm.ESTREAM_SALSA20:
+        case EncryptionAlgorithm.SALSA20:
+            return CipherType.stream;
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
     public static int getEncryptionAlgorithm(int ciphersuite) throws IOException
     {
         switch (ciphersuite)
@@ -1722,55 +1760,17 @@ public class TlsUtils
 
     public static boolean isAEADCipherSuite(int ciphersuite) throws IOException
     {
-        switch (getEncryptionAlgorithm(ciphersuite))
-        {
-        case EncryptionAlgorithm.AES_128_GCM:
-        case EncryptionAlgorithm.AES_256_GCM:
-        case EncryptionAlgorithm.AES_128_CCM:
-        case EncryptionAlgorithm.AES_128_CCM_8:
-        case EncryptionAlgorithm.AES_256_CCM:
-        case EncryptionAlgorithm.AES_256_CCM_8:
-        case EncryptionAlgorithm.CAMELLIA_128_GCM:
-        case EncryptionAlgorithm.CAMELLIA_256_GCM:
-        case EncryptionAlgorithm.AEAD_CHACHA20_POLY1305:
-            return true;
-        default:
-            return false;
-        }
+        return CipherType.aead == getCipherType(ciphersuite);
     }
 
     public static boolean isBlockCipherSuite(int ciphersuite) throws IOException
     {
-        switch (getEncryptionAlgorithm(ciphersuite))
-        {
-        case EncryptionAlgorithm.RC2_CBC_40:
-        case EncryptionAlgorithm.IDEA_CBC:
-        case EncryptionAlgorithm.DES40_CBC:
-        case EncryptionAlgorithm.DES_CBC:
-        case EncryptionAlgorithm._3DES_EDE_CBC:
-        case EncryptionAlgorithm.AES_128_CBC:
-        case EncryptionAlgorithm.AES_256_CBC:
-        case EncryptionAlgorithm.CAMELLIA_128_CBC:
-        case EncryptionAlgorithm.CAMELLIA_256_CBC:
-        case EncryptionAlgorithm.SEED_CBC:
-            return true;
-        default:
-            return false;
-        }
+        return CipherType.block == getCipherType(ciphersuite);
     }
 
     public static boolean isStreamCipherSuite(int ciphersuite) throws IOException
     {
-        switch (getEncryptionAlgorithm(ciphersuite))
-        {
-        case EncryptionAlgorithm.RC4_40:
-        case EncryptionAlgorithm.RC4_128:
-        case EncryptionAlgorithm.ESTREAM_SALSA20:
-        case EncryptionAlgorithm.SALSA20:
-            return true;
-        default:
-            return false;
-        }
+        return CipherType.stream == getCipherType(ciphersuite);
     }
 
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
