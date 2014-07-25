@@ -353,6 +353,11 @@ public abstract class ECCurve
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
 
             p = decompressPoint(yTilde, X);
+            if (!p.satisfiesCofactor())
+            {
+                throw new IllegalArgumentException("Invalid point");
+            }
+
             break;
         }
         case 0x04: // uncompressed
@@ -472,12 +477,7 @@ public abstract class ECCurve
                 y = y.negate();
             }
 
-            ECPoint p = this.createRawPoint(x, y, true);
-            if (!p.satisfiesCofactor())
-            {
-                throw new IllegalArgumentException("Invalid point");
-            }
-            return p;
+            return this.createRawPoint(x, y, true);
         }
     }
 
@@ -1017,13 +1017,7 @@ public abstract class ECCurve
                 throw new IllegalArgumentException("Invalid point compression");
             }
 
-            ECPoint p = this.createRawPoint(x, y, true);
-            if (!p.satisfiesCofactor())
-            {
-                throw new IllegalArgumentException("Invalid point");
-            }
-
-            return p;
+            return this.createRawPoint(x, y, true);
         }
 
         /**
