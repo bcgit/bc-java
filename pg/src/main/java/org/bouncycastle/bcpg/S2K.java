@@ -27,6 +27,9 @@ public class S2K
 
     public static final int GNU_DUMMY_S2K = 101;
 
+    public static final int GNU_PROTECTION_MODE_NO_PRIVATE_KEY = 1;
+    public static final int GNU_PROTECTION_MODE_DIVERT_TO_CARD = 2;
+
     int       type;
     int       algorithm;
     byte[]    iv;
