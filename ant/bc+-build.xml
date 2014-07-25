@@ -201,7 +201,7 @@
             <element name="docElements" />
             <sequential>
             <mkdir dir="@{docsDir}" />
-            <javadoc maxmemory="128m" sourcepath="@{srcDir}"
+            <javadoc maxmemory="384m" sourcepath="@{srcDir}"
                      destdir="@{docsDir}"
                      windowtitle="Bouncy Castle Library ${release.name} API Specification"
                      header="&lt;b&gt;Bouncy Castle Cryptography Library ${release.name}&lt;/b&gt;">
