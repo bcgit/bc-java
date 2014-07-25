@@ -64,6 +64,12 @@ public abstract class ECPoint
         this.zs = zs;
     }
 
+    protected boolean satisfiesCofactor()
+    {
+        BigInteger h = curve.getCofactor();
+        return h == null || h.equals(ECConstants.ONE) || !ECAlgorithms.referenceMultiply(this, h).isInfinity();
+    }
+
     protected abstract boolean satisfiesCurveEquation();
 
     public final ECPoint getDetachedPoint()
@@ -303,9 +309,7 @@ public abstract class ECPoint
                 return false;
             }
 
-            BigInteger h = curve.getCofactor();
-            if (h != null && !h.equals(ECConstants.ONE)
-                && ECAlgorithms.referenceMultiply(this, h).isInfinity())
+            if (!satisfiesCofactor())
             {
                 return false;
             }
