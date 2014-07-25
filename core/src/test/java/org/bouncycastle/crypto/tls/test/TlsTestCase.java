@@ -4,17 +4,99 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-import junit.framework.TestCase;
-
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-public class TlsTestCase extends TestCase
+import static org.junit.Assert.*;
+
+@RunWith(Parameterized.class)
+public class TlsTestCase
 {
+
+    // Make the access to constants less verbose
+    static abstract class C extends TlsTestConfig {}
+
+    @Parameterized.Parameters(name = "{index}: {1}")
+    public static Collection<Object[]> data() {
+        List<Object[]> params = new ArrayList<Object[]>();
+        addVersionTests(params, ProtocolVersion.TLSv10);
+        addVersionTests(params, ProtocolVersion.TLSv11);
+        addVersionTests(params, ProtocolVersion.TLSv12);
+        return params;
+    }
+
+    private static void addVersionTests(List<Object[]> params, ProtocolVersion version)
+    {
+        String prefix = version.toString().replaceAll("[ \\.]", "") + "_";
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+
+            params.add(new Object[] { c, prefix + "GoodDefault" });
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
+            c.expectServerFatalAlert(AlertDescription.decrypt_error);
+
+            params.add(new Object[] { c, prefix + "BadCertificateVerify" });
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
+            c.expectServerFatalAlert(AlertDescription.bad_certificate);
+
+            params.add(new Object[] { c, prefix + "BadClientCertificate" });
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_NONE;
+            c.serverCertReq = C.SERVER_CERT_REQ_MANDATORY;
+            c.expectServerFatalAlert(AlertDescription.handshake_failure);
+
+            params.add(new Object[] { c, prefix + "BadMandatoryCertReqDeclined" });
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.serverCertReq = C.SERVER_CERT_REQ_NONE;
+
+            params.add(new Object[] { c, prefix + "GoodNoCertReq" });
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_NONE;
+
+            params.add(new Object[] { c, prefix + "GoodOptionalCertReqDeclined" });
+        }
+    }
+
+    private static TlsTestConfig createTlsTestConfig(ProtocolVersion version)
+    {
+        TlsTestConfig c = new TlsTestConfig();
+        c.clientMinimumVersion = ProtocolVersion.TLSv10;
+        c.clientOfferVersion = ProtocolVersion.TLSv12;
+        c.serverMaximumVersion = version;
+        c.serverMinimumVersion = ProtocolVersion.TLSv10;
+        return c;
+    }
+
+
     private static void checkTLSVersion(ProtocolVersion version)
     {
         if (version != null && !version.isTLS())
@@ -33,11 +115,10 @@ public class TlsTestCase extends TestCase
         checkTLSVersion(config.serverMinimumVersion);
 
         this.config = config;
-
-        setName(name);
     }
 
-    protected void runTest() throws Throwable
+    @Test
+    public void runTest() throws Throwable
     {
         SecureRandom secureRandom = new SecureRandom();
         

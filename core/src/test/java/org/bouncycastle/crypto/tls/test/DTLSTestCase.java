@@ -1,8 +1,9 @@
 package org.bouncycastle.crypto.tls.test;
 
 import java.security.SecureRandom;
-
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
@@ -10,9 +11,96 @@ import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.util.Arrays;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-public class DTLSTestCase extends TestCase
+import static org.junit.Assert.*;
+
+@RunWith(Parameterized.class)
+public class DTLSTestCase
 {
+    // Make the access to constants less verbose
+    static abstract class C extends TlsTestConfig {}
+
+    @Parameterized.Parameters(name = "{index}: {1}")
+    public static Collection<Object[]> data() {
+        List<Object[]> params = new ArrayList<Object[]>();
+        addVersionTests(params, ProtocolVersion.DTLSv10);
+        addVersionTests(params, ProtocolVersion.DTLSv12);
+        return params;
+    }
+
+    private static void addVersionTests(List<Object[]> params, ProtocolVersion version)
+    {
+        String prefix = version.toString().replaceAll("[ \\.]", "") + "_";
+
+        /*
+         * NOTE: Temporarily disabled automatic test runs because of problems getting a clean exit
+         * of the DTLS server after a fatal alert. As of writing, manual runs show the correct
+         * alerts being raised
+         */
+
+//        {
+//            TlsTestConfig c = createDTLSTestConfig(version);
+//            c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
+//            c.expectServerFatalAlert(AlertDescription.decrypt_error);
+//
+//            testSuite.addTest(new DTLSTestCase(c, prefix + "BadCertificateVerify"));
+//        }
+//
+//        {
+//            TlsTestConfig c = createDTLSTestConfig(version);
+//            c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
+//            c.expectServerFatalAlert(AlertDescription.bad_certificate);
+//
+//            testSuite.addTest(new DTLSTestCase(c, prefix + "BadClientCertificate"));
+//        }
+//
+//        {
+//            TlsTestConfig c = createDTLSTestConfig(version);
+//            c.clientAuth = C.CLIENT_AUTH_NONE;
+//            c.serverCertReq = C.SERVER_CERT_REQ_MANDATORY;
+//            c.expectServerFatalAlert(AlertDescription.handshake_failure);
+//
+//            testSuite.addTest(new DTLSTestCase(c, prefix + "BadMandatoryCertReqDeclined"));
+//        }
+
+        {
+            TlsTestConfig c = createDTLSTestConfig(version);
+
+            params.add(new Object[] { c, prefix + "GoodDefault" });
+        }
+
+        {
+            TlsTestConfig c = createDTLSTestConfig(version);
+            c.serverCertReq = C.SERVER_CERT_REQ_NONE;
+
+            params.add(new Object[]{ c, prefix + "GoodNoCertReq"});
+        }
+
+        {
+            TlsTestConfig c = createDTLSTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_NONE;
+
+            params.add(new Object[]{ c, prefix + "GoodOptionalCertReqDeclined"});
+        }
+    }
+
+    private static TlsTestConfig createDTLSTestConfig(ProtocolVersion version)
+    {
+        TlsTestConfig c = new TlsTestConfig();
+        c.clientMinimumVersion = ProtocolVersion.DTLSv10;
+        /*
+         * TODO We'd like to just set the offer version to DTLSv12, but there is a known issue with
+         * overly-restrictive version checks b/w BC DTLS 1.2 client, BC DTLS 1.0 server
+         */
+        c.clientOfferVersion = version;
+        c.serverMaximumVersion = version;
+        c.serverMinimumVersion = ProtocolVersion.DTLSv10;
+        return c;
+    }
+
     private static void checkDTLSVersion(ProtocolVersion version)
     {
         if (version != null && !version.isDTLS())
@@ -31,11 +119,10 @@ public class DTLSTestCase extends TestCase
         checkDTLSVersion(config.serverMinimumVersion);
 
         this.config = config;
-
-        setName(name);
     }
 
-    protected void runTest() throws Throwable
+    @Test
+    public void runTest() throws Throwable
     {
         SecureRandom secureRandom = new SecureRandom();
 
