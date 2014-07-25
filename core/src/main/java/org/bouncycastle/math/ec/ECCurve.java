@@ -472,7 +472,12 @@ public abstract class ECCurve
                 y = y.negate();
             }
 
-            return this.createRawPoint(x, y, true);
+            ECPoint p = this.createRawPoint(x, y, true);
+            if (!p.satisfiesCofactor())
+            {
+                throw new IllegalArgumentException("Invalid point");
+            }
+            return p;
         }
     }
 
@@ -974,14 +979,14 @@ public abstract class ECCurve
          */
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
-            ECFieldElement xp = fromBigInteger(X1), yp = null;
-            if (xp.isZero())
+            ECFieldElement x = fromBigInteger(X1), y = null;
+            if (x.isZero())
             {
-                yp = b.sqrt();
+                y = b.sqrt();
             }
             else
             {
-                ECFieldElement beta = xp.square().invert().multiply(b).add(a).add(xp);
+                ECFieldElement beta = x.square().invert().multiply(b).add(a).add(x);
                 ECFieldElement z = solveQuadraticEquation(beta);
                 if (z != null)
                 {
@@ -995,24 +1000,30 @@ public abstract class ECCurve
                     case COORD_LAMBDA_AFFINE:
                     case COORD_LAMBDA_PROJECTIVE:
                     {
-                        yp = z.add(xp);
+                        y = z.add(x);
                         break;
                     }
                     default:
                     {
-                        yp = z.multiply(xp);
+                        y = z.multiply(x);
                         break;
                     }
                     }
                 }
             }
 
-            if (yp == null)
+            if (y == null)
             {
                 throw new IllegalArgumentException("Invalid point compression");
             }
 
-            return createRawPoint(xp, yp, true);
+            ECPoint p = this.createRawPoint(x, y, true);
+            if (!p.satisfiesCofactor())
+            {
+                throw new IllegalArgumentException("Invalid point");
+            }
+
+            return p;
         }
 
         /**
