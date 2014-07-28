@@ -258,6 +258,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/bcpg/**/*.java" />
+                 <include name="org/bouncycastle/apache/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
@@ -582,9 +583,6 @@
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
                  <exclude name="**/test/*.java" />
-             </fileset>
-             <fileset dir="${bzip2.src.dir}">
-                 <include name="org/bouncycastle/apache/**/*.java" />
              </fileset>
         </copy>
 
