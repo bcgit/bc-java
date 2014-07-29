@@ -241,8 +241,6 @@ public class PGPECDHTest
     public void performTest()
         throws Exception
     {
-        PGPUtil.setDefaultProvider("BC");
-
         //
         // Read the public key
         //

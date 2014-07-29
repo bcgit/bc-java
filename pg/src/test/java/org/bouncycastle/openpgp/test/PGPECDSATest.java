@@ -20,6 +20,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -69,6 +70,8 @@ public class PGPECDSATest
             "CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEOo7jqSA8uK83WEA/ifRQClHfrOJ" +
             "LkPwpS3vASkG6NATgbf558BMn4MyZj9KAQD7Bt0PKcV/9XylCzT4W0JhD2xyHMi6" +
             "v6l5G+iXs6s2dw==");
+
+    char[] testPasswd = "test".toCharArray();
 
     byte[] sExprKey =
         Base64.decode(
@@ -249,8 +252,6 @@ public class PGPECDSATest
     public void performTest()
         throws Exception
     {
-        PGPUtil.setDefaultProvider("BC");
-
         //
         // Read the public key
         //
@@ -272,6 +273,8 @@ public class PGPECDSATest
         // Read the private key
         //
         PGPSecretKeyRing        secretKeyRing = new PGPSecretKeyRing(testPrivKey, new JcaKeyFingerprintCalculator());
+
+        PGPPrivateKey privKey = secretKeyRing.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().build(testPasswd));
 
         generateAndSign();
         generateAndSignBC();

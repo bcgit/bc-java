@@ -143,8 +143,6 @@ public class PGPDSAElGamalTest
         try
         {
             PGPPublicKey pubKey = null;
-            
-            PGPUtil.setDefaultProvider("BC");
 
             //
             // Read the public key
