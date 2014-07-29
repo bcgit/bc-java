@@ -398,8 +398,6 @@ public class PGPDSATest
         KeyFactory fact = KeyFactory.getInstance("DSA", "BC");
         PGPPublicKey pubKey = null;
         PrivateKey privKey = null;
-        
-        PGPUtil.setDefaultProvider("BC");
 
         //
         // Read the public key

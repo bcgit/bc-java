@@ -34,6 +34,7 @@ public class PGPUtil
      * provider must be determined on the fly.
      *
      * @return the name of the default provider.
+     * @deprecated unused
      */
     public static String getDefaultProvider()
     {
@@ -45,6 +46,7 @@ public class PGPUtil
      * Set the provider to be used by the package when it is necessary to find one on the fly.
      *
      * @param provider the name of the JCA/JCE provider to use by default.
+     * @deprecated unused
      */
     public static void setDefaultProvider(
         String    provider)

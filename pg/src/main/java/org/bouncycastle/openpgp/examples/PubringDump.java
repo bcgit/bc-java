@@ -52,8 +52,6 @@ public class PubringDump
         throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
-        
-        PGPUtil.setDefaultProvider("BC");
 
         //
         // Read the public key rings
