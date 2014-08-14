@@ -93,8 +93,6 @@ public class ArmoredOutputStream
     String          footerStart = "-----END PGP ";
     String          footerTail = "-----";
 
-    String          version = "BCPG v@RELEASE_NAME@";
-
     Hashtable       headers = new Hashtable();
 
     /**
@@ -157,7 +155,6 @@ public class ArmoredOutputStream
     public void resetHeaders()
     {
         headers.clear();
-        headers.put("Version", version);
     }
 
     /**
