@@ -15,8 +15,8 @@ import org.bouncycastle.crypto.tls.UDPTransport;
 /**
  * A simple test designed to conduct a DTLS handshake with an external DTLS server.
  * <p/>
- * Please refer to GnuTLSSetup.txt or OpenSSLSetup.txt, and x509-*.pem files in this package for
- * help configuring an external DTLS server.
+ * Please refer to GnuTLSSetup.html or OpenSSLSetup.html (under 'docs'), and x509-*.pem files in
+ * this package (under 'src/test/resources') for help configuring an external DTLS server.
  */
 public class DTLSClientTest
 {
