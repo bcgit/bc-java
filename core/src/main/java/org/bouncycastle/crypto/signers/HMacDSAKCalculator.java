@@ -61,7 +61,7 @@ public class HMacDSAKCalculator
 
         BigInteger mInt = bitsToInt(message);
 
-        if (mInt.compareTo(n) > 0)
+        if (mInt.compareTo(n) >= 0)
         {
             mInt = mInt.subtract(n);
         }
