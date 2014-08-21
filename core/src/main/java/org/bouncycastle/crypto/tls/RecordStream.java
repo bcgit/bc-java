@@ -35,17 +35,17 @@ class RecordStream
         this.output = output;
         this.readCompression = new TlsNullCompression();
         this.writeCompression = this.readCompression;
-        this.readCipher = new TlsNullCipher(context);
-        this.writeCipher = this.readCipher;
-
-        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     void init(TlsContext context)
     {
         this.context = context;
+        this.readCipher = new TlsNullCipher(context);
+        this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash();
         this.handshakeHash.init(context);
+
+        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     int getPlaintextLimit()

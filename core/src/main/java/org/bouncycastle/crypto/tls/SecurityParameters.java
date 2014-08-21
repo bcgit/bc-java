@@ -6,7 +6,7 @@ public class SecurityParameters
 {
     int entity = -1;
     int cipherSuite = -1;
-    short compressionAlgorithm = -1;
+    short compressionAlgorithm = CompressionMethod._null;
     int prfAlgorithm = -1;
     int verifyDataLength = -1;
     byte[] masterSecret = null;
