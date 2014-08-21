@@ -414,7 +414,8 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        if (!Arrays.contains(ecPointFormats, actualFormat))
+        if (actualFormat != ECPointFormat.uncompressed
+            && (ecPointFormats == null || !Arrays.contains(ecPointFormats, actualFormat)))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
