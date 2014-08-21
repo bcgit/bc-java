@@ -19,7 +19,7 @@ public class TlsBlockCipher
     protected TlsContext context;
     protected byte[] randomData;
     protected boolean useExplicitIV;
-    private boolean encryptThenMAC;
+    protected boolean encryptThenMAC;
 
     protected BlockCipher encryptCipher;
     protected BlockCipher decryptCipher;

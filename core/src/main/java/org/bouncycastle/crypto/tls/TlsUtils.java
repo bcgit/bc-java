@@ -1005,9 +1005,7 @@ public class TlsUtils
             ++i;
         }
 
-        byte rval[] = new byte[size];
-        System.arraycopy(tmp, 0, rval, 0, size);
-        return rval;
+        return Arrays.copyOfRange(tmp, 0, size);
     }
 
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
@@ -1283,9 +1281,9 @@ public class TlsUtils
     static final byte[] SSL_SERVER = {0x53, 0x52, 0x56, 0x52};
 
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    static final byte[][] SSL3_CONST = genConst();
+    static final byte[][] SSL3_CONST = genSSL3Const();
 
-    private static byte[][] genConst()
+    private static byte[][] genSSL3Const()
     {
         int n = 10;
         byte[][] arr = new byte[n][];

@@ -23,9 +23,9 @@ public class SSL3Mac
     static final byte[] OPAD = genPad(OPAD_BYTE, 48);
 
     private Digest digest;
+    private int padLength;
 
     private byte[] secret;
-    private int padLength;
 
     /**
      * Base constructor for one of the standard digest algorithms that the byteLength of
