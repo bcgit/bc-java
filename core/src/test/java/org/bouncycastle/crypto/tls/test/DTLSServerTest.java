@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 
@@ -22,7 +21,6 @@ public class DTLSServerTest
     public static void main(String[] args)
         throws Exception
     {
-        InetAddress address = InetAddress.getLocalHost();
         int port = 5556;
 
         int mtu = 1500;
@@ -34,7 +32,7 @@ public class DTLSServerTest
         byte[] data = new byte[mtu];
         DatagramPacket packet = new DatagramPacket(data, mtu);
 
-        DatagramSocket socket = new DatagramSocket(port, address);
+        DatagramSocket socket = new DatagramSocket(port);
         socket.receive(packet);
 
         System.out.println("Accepting connection from " + packet.getAddress().getHostAddress() + ":" + port);
