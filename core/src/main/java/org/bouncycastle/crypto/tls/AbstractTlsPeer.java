@@ -28,7 +28,7 @@ public abstract class AbstractTlsPeer
         }
     }
 
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
     }
 

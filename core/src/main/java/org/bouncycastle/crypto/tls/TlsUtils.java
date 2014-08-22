@@ -820,8 +820,8 @@ public class TlsUtils
 
         // supported_signature_algorithms
         int length = 2 * supportedSignatureAlgorithms.size();
-        TlsUtils.checkUint16(length);
-        TlsUtils.writeUint16(length, output);
+        checkUint16(length);
+        writeUint16(length, output);
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
@@ -842,7 +842,7 @@ public class TlsUtils
         throws IOException
     {
         // supported_signature_algorithms
-        int length = TlsUtils.readUint16(input);
+        int length = readUint16(input);
         if (length < 2 || (length & 1) != 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);

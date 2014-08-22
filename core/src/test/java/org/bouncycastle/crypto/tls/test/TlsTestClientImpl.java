@@ -66,7 +66,7 @@ class TlsTestClientImpl
         return super.getMinimumVersion();
     }
 
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         if (alertLevel == AlertLevel.fatal && firstFatalAlertConnectionEnd == -1)
         {

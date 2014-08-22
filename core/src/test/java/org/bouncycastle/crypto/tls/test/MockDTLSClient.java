@@ -36,7 +36,7 @@ public class MockDTLSClient
         return this.session;
     }
 
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
         out.println("DTLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
