@@ -94,7 +94,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
@@ -160,7 +160,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (CryptoException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
 
         this.srpClient.init(N, g, TlsUtils.createHash(HashAlgorithm.sha1), context.getSecureRandom());
@@ -191,7 +191,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (CryptoException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 

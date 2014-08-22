@@ -86,7 +86,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         if (tlsSigner == null)
@@ -97,7 +97,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             }
             catch (ClassCastException e)
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
             }
 
             TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);

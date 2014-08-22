@@ -433,7 +433,7 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 
@@ -578,7 +578,7 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 
