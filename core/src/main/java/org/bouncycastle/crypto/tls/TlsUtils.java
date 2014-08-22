@@ -1227,12 +1227,12 @@ public class TlsUtils
 
             // TODO Add support for ClientCertificateType.*_fixed_*
 
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
         }
         catch (Exception e)
         {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
-
-        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)

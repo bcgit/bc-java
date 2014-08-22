@@ -141,7 +141,7 @@ public class TlsPSKKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         // Sanity check the PublicKeyFactory

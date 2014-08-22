@@ -93,7 +93,7 @@ public class DefaultTlsSignerCredentials
         }
         catch (CryptoException e)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
     }
 
