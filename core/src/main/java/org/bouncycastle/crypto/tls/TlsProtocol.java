@@ -618,7 +618,7 @@ public abstract class TlsProtocol
      * @throws IOException
      *             If alert was fatal.
      */
-    protected void failWithError(short alertLevel, short alertDescription, String message, Exception cause)
+    protected void failWithError(short alertLevel, short alertDescription, String message, Throwable cause)
         throws IOException
     {
         /*
@@ -687,7 +687,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
+    protected void raiseAlert(short alertLevel, short alertDescription, String message, Throwable cause)
         throws IOException
     {
         getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);

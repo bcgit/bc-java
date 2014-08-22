@@ -128,7 +128,9 @@ public class TlsExtensionsUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return new byte[]{ (byte)maxFragmentLength };
+        byte[] extensionData = new byte[1];
+        TlsUtils.writeUint8(maxFragmentLength, extensionData, 0);
+        return extensionData;
     }
 
     public static byte[] createServerNameExtension(ServerNameList serverNameList)

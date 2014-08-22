@@ -9,8 +9,7 @@ public abstract class PSKTlsClient
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        super();
-        this.pskIdentity = pskIdentity;
+        this(new DefaultTlsCipherFactory(), pskIdentity);
     }
 
     public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)

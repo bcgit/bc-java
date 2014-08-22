@@ -22,7 +22,7 @@ import org.bouncycastle.util.Arrays;
 public class MockDTLSServer
     extends DefaultTlsServer
 {
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
         out.println("DTLS server raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
