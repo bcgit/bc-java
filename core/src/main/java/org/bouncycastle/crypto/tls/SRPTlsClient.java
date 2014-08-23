@@ -23,9 +23,18 @@ public abstract class SRPTlsClient
         this.password = Arrays.clone(password);
     }
 
+    protected boolean requireSRPServerExtension()
+    {
+        // No explicit guidance in RFC 5054; by default an (empty) extension from server is optional
+        return false;
+    }
+
     public int[] getCipherSuites()
     {
-        return new int[] { CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA };
+        return new int[]
+        {
+            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA
+        };
     }
 
     public Hashtable getClientExtensions()
@@ -42,7 +51,10 @@ public abstract class SRPTlsClient
         if (!TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsSRPUtils.EXT_SRP,
             AlertDescription.illegal_parameter))
         {
-            // No explicit guidance in RFC 5054 here; we allow an optional empty extension from server
+            if (requireSRPServerExtension())
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
 
         super.processServerExtensions(serverExtensions);

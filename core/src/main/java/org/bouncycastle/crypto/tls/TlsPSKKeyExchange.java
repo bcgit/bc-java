@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
- * TLS 1.0 PSK key exchange (RFC 4279).
+ * (D)TLS PSK key exchange (RFC 4279).
  */
 public class TlsPSKKeyExchange
     extends AbstractTlsKeyExchange

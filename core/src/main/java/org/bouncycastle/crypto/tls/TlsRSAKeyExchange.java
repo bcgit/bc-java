@@ -13,7 +13,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * TLS 1.0/1.1 and SSLv3 RSA key exchange.
+ * (D)TLS and SSLv3 RSA key exchange.
  */
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
