@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -14,14 +13,11 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
- * TLS 1.0/1.1 DH key exchange.
+ * (D)TLS DH key exchange.
  */
 public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected static final BigInteger ONE = BigInteger.valueOf(1);
-    protected static final BigInteger TWO = BigInteger.valueOf(2);
-
     protected TlsSigner tlsSigner;
     protected DHParameters dhParameters;
 

@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
- * ECDH key exchange (see RFC 4492)
+ * (D)TLS ECDH key exchange (see RFC 4492).
  */
 public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {
@@ -49,7 +49,6 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.keyExchange = keyExchange;
         this.namedCurves = namedCurves;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
@@ -159,7 +158,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         {
             // TODO Validate client cert has matching parameters (see 'TlsECCUtils.areOnSameCurve')?
 
-            this.agreementCredentials = (TlsAgreementCredentials) clientCredentials;
+            this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
         }
         else if (clientCredentials instanceof TlsSignerCredentials)
         {
