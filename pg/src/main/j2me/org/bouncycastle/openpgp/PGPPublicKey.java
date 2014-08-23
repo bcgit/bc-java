@@ -503,6 +503,26 @@ public class PGPPublicKey
         }
     }
 
+    /**
+     * Return all signatures/certifications directly associated with this key (ie, not to a user id).
+     *
+     * @return an iterator (possibly empty) with all signatures/certifications.
+     */
+    public Iterator getKeySignatures()
+    {
+        if (subSigs == null)
+        {
+            List sigs = new ArrayList();
+            sigs.addAll(keySigs);
+            
+            return sigs.iterator();
+        }
+        else
+        {
+            return subSigs.iterator();
+        }
+    }
+
     public PublicKeyPacket getPublicKeyPacket()
     {
         return publicPk;
