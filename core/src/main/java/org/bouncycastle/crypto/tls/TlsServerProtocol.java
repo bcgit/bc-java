@@ -76,7 +76,12 @@ public class TlsServerProtocol
         this.prepareFinishHash = null;
     }
 
-    protected AbstractTlsContext getContext()
+    protected TlsContext getContext()
+    {
+        return tlsServerContext;
+    }
+
+    AbstractTlsContext getContextAdmin()
     {
         return tlsServerContext;
     }
@@ -516,7 +521,7 @@ public class TlsServerProtocol
          */
         this.clientExtensions = readExtensions(buf);
 
-        getContext().setClientVersion(client_version);
+        getContextAdmin().setClientVersion(client_version);
 
         tlsServer.notifyClientVersion(client_version);
 
@@ -641,7 +646,7 @@ public class TlsServerProtocol
         recordStream.setReadVersion(server_version);
         recordStream.setWriteVersion(server_version);
         recordStream.setRestrictReadVersion(true);
-        getContext().setServerVersion(server_version);
+        getContextAdmin().setServerVersion(server_version);
 
         TlsUtils.writeVersion(server_version, message);
 
