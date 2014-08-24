@@ -9,14 +9,13 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.prng.ThreadedSeedGenerator;
 import org.bouncycastle.util.Arrays;
 
 public class TlsClientProtocol
     extends TlsProtocol
 {
     protected TlsClient tlsClient = null;
-    protected TlsClientContextImpl tlsClientContext = null;
+    TlsClientContextImpl tlsClientContext = null;
 
     protected byte[] selectedSessionID = null;
 
@@ -89,11 +88,16 @@ public class TlsClientProtocol
         this.certificateRequest = null;
     }
 
-    protected AbstractTlsContext getContext()
+    protected TlsContext getContext()
     {
         return tlsClientContext;
     }
 
+    AbstractTlsContext getContextAdmin()
+    {
+        return tlsClientContext;
+    }
+    
     protected TlsPeer getPeer()
     {
         return tlsClient;
@@ -403,12 +407,13 @@ public class TlsClientProtocol
 
                 sendChangeCipherSpecMessage();
                 sendFinishedMessage();
-                this.connection_state = CS_CLIENT_FINISHED;
                 break;
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
+
+            this.connection_state = CS_CLIENT_FINISHED;
             break;
         }
         case HandshakeType.server_key_exchange:
@@ -510,12 +515,14 @@ public class TlsClientProtocol
                 invalidateSession();
 
                 receiveNewSessionTicketMessage(buf);
-                this.connection_state = CS_SERVER_SESSION_TICKET;
                 break;
             }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
+
+            this.connection_state = CS_SERVER_SESSION_TICKET;
+            break;
         }
         case HandshakeType.hello_request:
         {
@@ -594,7 +601,7 @@ public class TlsClientProtocol
         }
 
         this.recordStream.setWriteVersion(server_version);
-        getContext().setServerVersion(server_version);
+        getContextAdmin().setServerVersion(server_version);
         this.tlsClient.notifyServerVersion(server_version);
 
         /*
@@ -808,7 +815,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        getContext().setClientVersion(client_version);
+        getContextAdmin().setClientVersion(client_version);
 
         /*
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a

@@ -10,7 +10,6 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public class DHStandardGroups
 {
-
     private static DHParameters fromPG(String hexP, String hexG)
     {
         BigInteger p = new BigInteger(1, Hex.decode(hexP));
@@ -115,7 +114,8 @@ public class DHStandardGroups
         + "BEC7E8F323A97A7E36CC88BE0F1D45B7FF585AC54BD407B22B4154AA"
         + "CC8F6D7EBF48E1D814CC5ED20F8037E0A79715EEF29BE32806A1D58B"
         + "B7C5DA76F550AA3D8A1FBFF0EB19CCB1A313D55CDA56C9EC2EF29632"
-        + "387FE8D76E3C0468043E8F663F4860EE12BF2D5B0B7474D6E694F91E" + "6DCC4024FFFFFFFFFFFFFFFF";
+        + "387FE8D76E3C0468043E8F663F4860EE12BF2D5B0B7474D6E694F91E"
+        + "6DCC4024FFFFFFFFFFFFFFFF";
     private static final String rfc3526_6144_g = "02";
     public static final DHParameters rfc3526_6144 = fromPG(rfc3526_6144_p, rfc3526_6144_g);
 
