@@ -768,15 +768,10 @@ public abstract class TlsProtocol
     protected byte[] createVerifyData(boolean isServer)
     {
         TlsContext context = getContext();
-
-        if (isServer)
-        {
-            return TlsUtils.calculateVerifyData(context, ExporterLabel.server_finished,
-                getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_SERVER));
-        }
-
-        return TlsUtils.calculateVerifyData(context, ExporterLabel.client_finished,
-            getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_CLIENT));
+        String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
+        byte[] sslSender = isServer ? TlsUtils.SSL_SERVER : TlsUtils.SSL_CLIENT;
+        byte[] hash = getCurrentPRFHash(context, recordStream.getHandshakeHash(), sslSender);
+        return TlsUtils.calculateVerifyData(context, asciiLabel, hash);
     }
 
     /**
@@ -809,7 +804,8 @@ public abstract class TlsProtocol
         recordStream.flush();
     }
 
-    protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
+    protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
         throws IOException
     {
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);

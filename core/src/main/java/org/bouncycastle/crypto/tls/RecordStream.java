@@ -20,7 +20,6 @@ class RecordStream
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    private TlsContext context = null;
     private TlsHandshakeHash handshakeHash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
@@ -39,7 +38,6 @@ class RecordStream
 
     void init(TlsContext context)
     {
-        this.context = context;
         this.readCipher = new TlsNullCipher(context);
         this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash();

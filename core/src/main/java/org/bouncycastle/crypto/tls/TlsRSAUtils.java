@@ -50,15 +50,6 @@ public class TlsRSAUtils
         return premasterSecret;
     }
 
-    /**
-     * @deprecated {@link TlsEncryptionCredentials#decryptPreMasterSecret(byte[])} is expected to decrypt safely
-     */
-    public static byte[] safeDecryptPreMasterSecret(TlsContext context, TlsEncryptionCredentials encryptionCredentials,
-        byte[] encryptedPreMasterSecret) throws IOException
-    {
-        return encryptionCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
-    }
-
     public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
         byte[] encryptedPreMasterSecret)
     {

@@ -26,31 +26,6 @@ public class TlsClientProtocol
     protected CertificateStatus certificateStatus = null;
     protected CertificateRequest certificateRequest = null;
 
-    private static SecureRandom createSecureRandom()
-    {
-        /*
-         * We use our threaded seed generator to generate a good random seed. If the user has a
-         * better random seed, he should use the constructor with a SecureRandom.
-         */
-        ThreadedSeedGenerator tsg = new ThreadedSeedGenerator();
-        SecureRandom random = new SecureRandom();
-
-        /*
-         * Hopefully, 20 bytes in fast mode are good enough.
-         */
-        random.setSeed(tsg.generateSeed(20, true));
-
-        return random;
-    }
-
-    /**
-     * @deprecated use alternate constructor taking an explicit {@link SecureRandom}
-     */
-    public TlsClientProtocol(InputStream input, OutputStream output)
-    {
-        this(input, output, createSecureRandom());
-    }
-
     public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
         super(input, output, secureRandom);

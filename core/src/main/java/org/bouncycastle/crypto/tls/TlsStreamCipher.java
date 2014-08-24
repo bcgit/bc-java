@@ -22,16 +22,6 @@ public class TlsStreamCipher
 
     protected boolean usesNonce;
 
-    /**
-     * @deprecated Use version with additional 'usesNonce' argument
-     */
-    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize) throws IOException
-    {
-        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest, cipherKeySize, false);
-    }
-
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
         StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize, boolean usesNonce) throws IOException
