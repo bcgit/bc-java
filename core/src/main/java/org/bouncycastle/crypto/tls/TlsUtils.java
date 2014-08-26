@@ -1027,7 +1027,11 @@ public class TlsUtils
             return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
 
-        return PRF(context, pre_master_secret, ExporterLabel.master_secret, seed, 48);
+        String asciiLabel = securityParameters.extendedMasterSecret
+            ?   ExporterLabel.extended_master_secret
+            :   ExporterLabel.master_secret;
+
+        return PRF(context, pre_master_secret, asciiLabel, seed, 48);
     }
 
     static byte[] calculateMasterSecret_SSL(byte[] pre_master_secret, byte[] random)
