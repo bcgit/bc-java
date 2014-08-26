@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
@@ -39,8 +40,8 @@ public class MockDTLSClient
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-            + ")");
+        out.println("DTLS client raised alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
             out.println(message);
@@ -54,8 +55,8 @@ public class MockDTLSClient
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS client received alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-            + ")");
+        out.println("DTLS client received alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
     }
 
     public ProtocolVersion getClientVersion()
