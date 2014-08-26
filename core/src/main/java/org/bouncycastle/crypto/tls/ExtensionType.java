@@ -54,6 +54,13 @@ public class ExtensionType
     public static final int encrypt_then_mac = 22;
 
     /*
+     * draft-ietf-tls-session-hash-01
+     * 
+     * WARNING: Placeholder value; the real value is TBA
+     */
+    public static final int extended_master_secret = 100;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;

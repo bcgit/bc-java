@@ -247,10 +247,11 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
+        securityParameters.sessionHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
-
-        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
 
         /*
          * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
@@ -390,6 +391,12 @@ public class DTLSServerProtocol
             }
         }
 
+        if (securityParameters.extendedMasterSecret)
+        {
+            state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.serverExtensions);
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
+        }
+
         if (state.serverExtensions != null)
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
@@ -473,7 +480,8 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        DigitallySigned clientCertificateVerify = DigitallySigned.parse(state.serverContext, buf);
+        TlsServerContextImpl context = state.serverContext;
+        DigitallySigned clientCertificateVerify = DigitallySigned.parse(context, buf);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -481,14 +489,14 @@ public class DTLSServerProtocol
         boolean verified = false;
         try
         {
-            byte[] certificateVerifyHash;
-            if (TlsUtils.isTLSv12(state.serverContext))
+            byte[] hash;
+            if (TlsUtils.isTLSv12(context))
             {
-                certificateVerifyHash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
+                hash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
             }
             else
             {
-                certificateVerifyHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+                hash = context.getSecurityParameters().getSessionHash();
             }
 
             org.bouncycastle.asn1.x509.Certificate x509Cert = state.clientCertificate.getCertificateAt(0);
@@ -496,9 +504,9 @@ public class DTLSServerProtocol
             AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
 
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
-            tlsSigner.init(state.serverContext);
+            tlsSigner.init(context);
             verified = tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash);
+                clientCertificateVerify.getSignature(), publicKey, hash);
         }
         catch (Exception e)
         {
@@ -563,11 +571,16 @@ public class DTLSServerProtocol
          */
         state.clientExtensions = TlsProtocol.readExtensions(buf);
 
-        state.serverContext.setClientVersion(client_version);
+        TlsServerContextImpl context = state.serverContext;
+        SecurityParameters securityParameters = context.getSecurityParameters();
+
+        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
+
+        context.setClientVersion(client_version);
 
         state.server.notifyClientVersion(client_version);
 
-        state.serverContext.getSecurityParameters().clientRandom = client_random;
+        securityParameters.clientRandom = client_random;
 
         state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
         state.server.notifyOfferedCompressionMethods(state.offeredCompressionMethods);

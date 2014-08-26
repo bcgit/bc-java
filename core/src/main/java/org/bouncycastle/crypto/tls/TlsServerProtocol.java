@@ -441,14 +441,14 @@ public class TlsServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
-            byte[] certificateVerifyHash;
+            byte[] hash;
             if (TlsUtils.isTLSv12(getContext()))
             {
-                certificateVerifyHash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
+                hash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
             }
             else
             {
-                certificateVerifyHash = TlsProtocol.getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                hash = securityParameters.getSessionHash();
             }
 
             org.bouncycastle.asn1.x509.Certificate x509Cert = peerCertificate.getCertificateAt(0);
@@ -458,7 +458,7 @@ public class TlsServerProtocol
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(clientCertificateType);
             tlsSigner.init(getContext());
             if (!tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, certificateVerifyHash))
+                clientCertificateVerify.getSignature(), publicKey, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }
@@ -519,6 +519,8 @@ public class TlsServerProtocol
          * extensions.
          */
         this.clientExtensions = readExtensions(buf);
+
+        this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
         getContextAdmin().setClientVersion(client_version);
 
@@ -585,10 +587,11 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
+        this.prepareFinishHash = recordStream.prepareToFinish();
+        this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+
         establishMasterSecret(getContext(), keyExchange);
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-        this.prepareFinishHash = recordStream.prepareToFinish();
 
         if (!expectSessionTicket)
         {
@@ -704,6 +707,12 @@ public class TlsServerProtocol
                 this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
                 this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
+        }
+
+        if (securityParameters.extendedMasterSecret)
+        {
+            this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
 
         /*

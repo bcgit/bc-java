@@ -367,10 +367,11 @@ public class TlsClientProtocol
                 sendClientKeyExchangeMessage();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
+                TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
+                this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+
                 establishMasterSecret(getContext(), keyExchange);
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-                TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
                 {
@@ -395,7 +396,7 @@ public class TlsClientProtocol
                     else
                     {
                         signatureAndHashAlgorithm = null;
-                        hash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                        hash = securityParameters.getSessionHash();
                     }
 
                     byte[] signature = signerCredentials.generateCertificateSignature(hash);
@@ -574,7 +575,7 @@ public class TlsClientProtocol
     {
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
-        TlsProtocol.assertEmpty(buf);
+        assertEmpty(buf);
 
         tlsClient.notifyNewSessionTicket(newSessionTicket);
     }
@@ -658,6 +659,17 @@ public class TlsClientProtocol
         this.serverExtensions = readExtensions(buf);
 
         /*
+         * draft-ietf-tls-session-hash-01 5.2. If a server receives the "extended_master_secret"
+         * extension, it MUST include the "extended_master_secret" extension in its ServerHello
+         * message.
+         */
+        boolean serverSentExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+        if (serverSentExtendedMasterSecret != securityParameters.extendedMasterSecret)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message.
          * 
@@ -684,6 +696,29 @@ public class TlsClientProtocol
                 }
 
                 /*
+                 * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless the
+                 * same extension type appeared in the corresponding ClientHello. If a client
+                 * receives an extension type in ServerHello that it did not request in the
+                 * associated ClientHello, it MUST abort the handshake with an unsupported_extension
+                 * fatal alert.
+                 */
+                if (null == TlsUtils.getExtensionData(this.clientExtensions, extType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                }
+
+                /*
+                 * draft-ietf-tls-session-hash-01 5.2. Implementation note: if the server decides to
+                 * proceed with resumption, the extension does not have any effect. Requiring the
+                 * extension to be included anyway makes the extension negotiation logic easier,
+                 * because it does not depend on whether resumption is accepted or not.
+                 */
+                if (extType.equals(TlsExtensionsUtils.EXT_extended_master_secret))
+                {
+                    continue;
+                }
+
+                /*
                  * RFC 3546 2.3. If [...] the older session is resumed, then the server MUST ignore
                  * extensions appearing in the client hello, and send a server hello containing no
                  * extensions[.]
@@ -694,18 +729,6 @@ public class TlsClientProtocol
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-polarssl] PolarSSL test server sends server extensions e.g. ec_point_formats
 //                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
-
-                /*
-                 * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless the
-                 * same extension type appeared in the corresponding ClientHello. If a client
-                 * receives an extension type in ServerHello that it did not request in the
-                 * associated ClientHello, it MUST abort the handshake with an unsupported_extension
-                 * fatal alert.
-                 */
-                if (null == TlsUtils.getExtensionData(this.clientExtensions, extType))
-                {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
                 }
             }
         }
@@ -750,6 +773,8 @@ public class TlsClientProtocol
 
             sessionClientExtensions = null;
             sessionServerExtensions = this.sessionParameters.readServerExtensions();
+
+            this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
         }
 
         this.securityParameters.cipherSuite = selectedCipherSuite;
@@ -845,6 +870,8 @@ public class TlsClientProtocol
         }
 
         this.clientExtensions = this.tlsClient.getClientExtensions();
+
+        this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
 

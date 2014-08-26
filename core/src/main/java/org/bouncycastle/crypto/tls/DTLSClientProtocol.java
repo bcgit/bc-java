@@ -152,6 +152,10 @@ public class DTLSClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
+            Hashtable sessionServerExtensions = state.sessionParameters.readServerExtensions();
+
+            securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
+
             securityParameters.masterSecret = Arrays.clone(state.sessionParameters.getMasterSecret());
             recordLayer.initPendingEpoch(state.client.getCipher());
 
@@ -311,10 +315,11 @@ public class DTLSClientProtocol
         byte[] clientKeyExchangeBody = generateClientKeyExchange(state);
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
 
+        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
+        securityParameters.sessionHash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
+
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
-
-        TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
 
         if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
         {
@@ -339,7 +344,7 @@ public class DTLSClientProtocol
             else
             {
                 signatureAndHashAlgorithm = null;
-                hash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
+                hash = securityParameters.getSessionHash();
             }
 
             byte[] signature = signerCredentials.generateCertificateSignature(hash);
@@ -411,10 +416,13 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        state.clientContext.setClientVersion(client_version);
+        TlsClientContextImpl context = state.clientContext;
+
+        context.setClientVersion(client_version);
         TlsUtils.writeVersion(client_version, buf);
 
-        buf.write(state.clientContext.getSecurityParameters().getClientRandom());
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        buf.write(securityParameters.getClientRandom());
 
         // Session ID
         byte[] session_id = TlsUtils.EMPTY_BYTES;
@@ -438,6 +446,8 @@ public class DTLSClientProtocol
 
         // Integer -> byte[]
         state.clientExtensions = client.getClientExtensions();
+
+        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
 
         // Cipher Suites (and SCSV)
         {
@@ -657,6 +667,17 @@ public class DTLSClientProtocol
         Hashtable serverExtensions = TlsProtocol.readExtensions(buf);
 
         /*
+         * draft-ietf-tls-session-hash-01 5.2. If a server receives the "extended_master_secret"
+         * extension, it MUST include the "extended_master_secret" extension in its ServerHello
+         * message.
+         */
+        boolean serverSentExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+        if (serverSentExtendedMasterSecret != securityParameters.extendedMasterSecret)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.
@@ -669,26 +690,53 @@ public class DTLSClientProtocol
                 Integer extType = (Integer)e.nextElement();
 
                 /*
-                 * RFC 5746 Note that sending a "renegotiation_info" extension in response to a
+                 * RFC 5746 3.6. Note that sending a "renegotiation_info" extension in response to a
                  * ClientHello containing only the SCSV is an explicit exception to the prohibition
                  * in RFC 5246, Section 7.4.1.4, on the server sending unsolicited extensions and is
                  * only allowed because the client is signaling its willingness to receive the
-                 * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV. TLS implementations
-                 * MUST continue to comply with Section 7.4.1.4 for all other extensions.
+                 * extension via the TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
                  */
-                if (!extType.equals(TlsProtocol.EXT_RenegotiationInfo)
-                    && null == TlsUtils.getExtensionData(state.clientExtensions, extType))
+                if (extType.equals(TlsProtocol.EXT_RenegotiationInfo))
                 {
-                    /*
-                     * RFC 3546 2.3 Note that for all extension types (including those defined in
-                     * future), the extension type MUST NOT appear in the extended server hello
-                     * unless the same extension type appeared in the corresponding client hello.
-                     * Thus clients MUST abort the handshake if they receive an extension type in
-                     * the extended server hello that they did not request in the associated
-                     * (extended) client hello.
-                     */
+                    continue;
+                }
+
+                /*
+                 * RFC 5246 7.4.1.4 An extension type MUST NOT appear in the ServerHello unless the
+                 * same extension type appeared in the corresponding ClientHello. If a client
+                 * receives an extension type in ServerHello that it did not request in the
+                 * associated ClientHello, it MUST abort the handshake with an unsupported_extension
+                 * fatal alert.
+                 */
+                if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
+                {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension);
                 }
+
+                /*
+                 * draft-ietf-tls-session-hash-01 5.2. Implementation note: if the server decides to
+                 * proceed with resumption, the extension does not have any effect. Requiring the
+                 * extension to be included anyway makes the extension negotiation logic easier,
+                 * because it does not depend on whether resumption is accepted or not.
+                 */
+                if (extType.equals(TlsExtensionsUtils.EXT_extended_master_secret))
+                {
+                    continue;
+                }
+
+                /*
+                 * RFC 3546 2.3. If [...] the older session is resumed, then the server MUST ignore
+                 * extensions appearing in the client hello, and send a server hello containing no
+                 * extensions[.]
+                 */
+                // TODO[sessions]
+//                if (this.resumedSession)
+//                {
+//                    // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
+//                    // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
+//                    // TODO[compat-polarssl] PolarSSL test server sends server extensions e.g. ec_point_formats
+////                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+//                }
             }
 
             /*
