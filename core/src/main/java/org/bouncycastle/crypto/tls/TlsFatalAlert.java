@@ -19,7 +19,7 @@ public class TlsFatalAlert
 
     public TlsFatalAlert(short alertDescription, Throwable alertCause)
     {
-        super("Fatal alert: " + alertDescription);
+        super(AlertDescription.getText(alertDescription));
 
         this.alertDescription = alertDescription;
         this.alertCause = alertCause;
