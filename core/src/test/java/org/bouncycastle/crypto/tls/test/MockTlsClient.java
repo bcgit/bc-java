@@ -76,6 +76,8 @@ class MockTlsClient
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
+        // TODO[draft-ietf-tls-session-hash-01] Enable once code-point assigned (only for compatible server though)
+//        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;

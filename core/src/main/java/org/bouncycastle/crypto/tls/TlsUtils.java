@@ -1011,7 +1011,16 @@ public class TlsUtils
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
-        byte[] seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
+
+        byte[] seed;
+        if (securityParameters.extendedMasterSecret)
+        {
+            seed = securityParameters.getSessionHash();
+        }
+        else
+        {
+            seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
+        }
 
         if (isSSL(context))
         {
