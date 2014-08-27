@@ -46,20 +46,20 @@ public class SetTest
         v.add(new DEROctetString(data));
         v.add(new DERBitString(data));
         v.add(new ASN1Integer(100));
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
 
         checkedSortedSet(0, new DERSet(v));
 
         v = new ASN1EncodableVector();
         v.add(new ASN1Integer(100));
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
         v.add(new DEROctetString(data));
         v.add(new DERBitString(data));
 
         checkedSortedSet(1, new DERSet(v));
 
         v = new ASN1EncodableVector();
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
         v.add(new DEROctetString(data));
         v.add(new DERBitString(data));
         v.add(new ASN1Integer(100));
@@ -71,7 +71,7 @@ public class SetTest
         v.add(new DERBitString(data));
         v.add(new DEROctetString(data));
         v.add(new ASN1Integer(100));
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
 
         checkedSortedSet(3, new DERSet(v));
 
@@ -79,7 +79,7 @@ public class SetTest
         v.add(new DEROctetString(data));
         v.add(new DERBitString(data));
         v.add(new ASN1Integer(100));
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
 
         ASN1Set s = new BERSet(v);
 
@@ -100,9 +100,9 @@ public class SetTest
         // equality test
         v = new ASN1EncodableVector();
 
-        v.add(new ASN1Boolean(true));
-        v.add(new ASN1Boolean(true));
-        v.add(new ASN1Boolean(true));
+        v.add(ASN1Boolean.getInstance(true));
+        v.add(ASN1Boolean.getInstance(true));
+        v.add(ASN1Boolean.getInstance(true));
 
         s = new DERSet(v);
     }
