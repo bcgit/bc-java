@@ -9,8 +9,7 @@ public abstract class PSKTlsClient
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        super();
-        this.pskIdentity = pskIdentity;
+        this(new DefaultTlsCipherFactory(), pskIdentity);
     }
 
     public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)
@@ -21,9 +20,13 @@ public abstract class PSKTlsClient
 
     public int[] getCipherSuites()
     {
-        return new int[] { CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA, CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA };
+        return new int[]
+        {
+            CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA
+        };
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException

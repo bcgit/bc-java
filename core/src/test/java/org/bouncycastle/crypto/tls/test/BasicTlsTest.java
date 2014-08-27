@@ -5,16 +5,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlertLevel;
-import org.bouncycastle.crypto.tls.AlwaysValidVerifyer;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
-import org.bouncycastle.crypto.tls.LegacyTlsClient;
+import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClient;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
@@ -28,19 +29,40 @@ public class BasicTlsTest
 {
     private static final int PORT_NO = 8003;
 
-    // private static final String CLIENT = "client";
-    // private static final char[] CLIENT_PASSWORD = "clientPassword".toCharArray();
-    // private static final char[] SERVER_PASSWORD = "serverPassword".toCharArray();
-    // private static final char[] TRUST_STORE_PASSWORD = "trustPassword".toCharArray();
+    protected boolean isSufficientVMVersion(String vmVersion)
+    {
+        if (vmVersion == null)
+        {
+            return false;
+        }
+        String[] parts = vmVersion.split("\\.");
+        if (parts == null || parts.length != 2)
+        {
+            return false;
+        }
+        try
+        {
+            int major = Integer.parseUnsignedInt(parts[0]);
+            if (major != 1)
+            {
+                return major > 1;
+            }
+            int minor = Integer.parseUnsignedInt(parts[1]);
+            return minor >= 7;
+        }
+        catch (NumberFormatException e)
+        {
+            return false;
+        }
+    }
 
     public void testConnection()
         throws Exception
     {
         String vmVersion = System.getProperty("java.specification.version");
-
-        if (vmVersion == null || !vmVersion.equals("1.7"))
+        if (!isSufficientVMVersion(vmVersion))
         {
-            return;      // only works on later VMs.
+            return; // only works on later VMs.
         }
 
         Thread server = new HTTPSServerThread();
@@ -49,7 +71,6 @@ public class BasicTlsTest
 
         Thread.yield();
 
-        AlwaysValidVerifyer verifyer = new AlwaysValidVerifyer();
         Socket s = null;
 
         for (int i = 0; s == null && i != 3; i++)
@@ -71,15 +92,21 @@ public class BasicTlsTest
             throw new IOException("unable to connect");
         }
 
-        // long time = System.currentTimeMillis();
-        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
-        protocol.connect(new LegacyTlsClient(verifyer));
+        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream(),
+            new SecureRandom());
+        protocol.connect(new MyTlsClient(new ServerOnlyTlsAuthentication()
+        {
+            public void notifyServerCertificate(Certificate serverCertificate) throws IOException
+            {
+                // NOTE: In production code this MUST verify the certificate!
+            }
+        }));
+
         InputStream is = protocol.getInputStream();
         OutputStream os = protocol.getOutputStream();
 
         os.write("GET / HTTP/1.1\r\n\r\n".getBytes());
 
-        // time = System.currentTimeMillis();
         byte[] buf = new byte[4096];
         int read = 0;
         int total = 0;
@@ -161,8 +188,7 @@ public class BasicTlsTest
     static class MyTlsClient
         extends DefaultTlsClient
     {
-
-        public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+        public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
             out.println("TLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription

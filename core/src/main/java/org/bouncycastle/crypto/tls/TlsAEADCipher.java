@@ -120,7 +120,7 @@ public class TlsAEADCipher
         }
         catch (Exception e)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
 
         if (outputPos != output.length)
@@ -162,7 +162,7 @@ public class TlsAEADCipher
         }
         catch (Exception e)
         {
-            throw new TlsFatalAlert(AlertDescription.bad_record_mac);
+            throw new TlsFatalAlert(AlertDescription.bad_record_mac, e);
         }
 
         if (outputPos != output.length)

@@ -32,7 +32,7 @@ public class TlsECCUtils
     public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.elliptic_curves);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
 
-    private static final String[] curveNames = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
@@ -142,7 +142,7 @@ public class TlsECCUtils
 
     public static String getNameOfNamedCurve(int namedCurve)
     {
-        return isSupportedNamedCurve(namedCurve) ? curveNames[namedCurve - 1] : null;
+        return isSupportedNamedCurve(namedCurve) ? CURVE_NAMES[namedCurve - 1] : null;
     }
 
     public static ECDomainParameters getParametersForNamedCurve(int namedCurve)
@@ -171,7 +171,7 @@ public class TlsECCUtils
 
     public static boolean hasAnySupportedNamedCurves()
     {
-        return curveNames.length > 0;
+        return CURVE_NAMES.length > 0;
     }
 
     public static boolean containsECCCipherSuites(int[] cipherSuites)
@@ -308,7 +308,7 @@ public class TlsECCUtils
 
     public static boolean isSupportedNamedCurve(int namedCurve)
     {
-        return (namedCurve > 0 && namedCurve <= curveNames.length);
+        return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
     }
 
     public static boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat)
@@ -414,7 +414,8 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        if (!Arrays.contains(ecPointFormats, actualFormat))
+        if (actualFormat != ECPointFormat.uncompressed
+            && (ecPointFormats == null || !Arrays.contains(ecPointFormats, actualFormat)))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -432,7 +433,7 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 
@@ -577,7 +578,7 @@ public class TlsECCUtils
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 

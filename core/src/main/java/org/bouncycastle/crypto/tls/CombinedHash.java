@@ -78,25 +78,25 @@ class CombinedHash
     /**
      * @see org.bouncycastle.crypto.Digest#update(byte)
      */
-    public void update(byte in)
+    public void update(byte input)
     {
-        md5.update(in);
-        sha1.update(in);
+        md5.update(input);
+        sha1.update(input);
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#update(byte[], int, int)
      */
-    public void update(byte[] in, int inOff, int len)
+    public void update(byte[] input, int inOff, int len)
     {
-        md5.update(in, inOff, len);
-        sha1.update(in, inOff, len);
+        md5.update(input, inOff, len);
+        sha1.update(input, inOff, len);
     }
 
     /**
      * @see org.bouncycastle.crypto.Digest#doFinal(byte[], int)
      */
-    public int doFinal(byte[] out, int outOff)
+    public int doFinal(byte[] output, int outOff)
     {
         if (context != null && TlsUtils.isSSL(context))
         {
@@ -104,8 +104,8 @@ class CombinedHash
             ssl3Complete(sha1, SSL3Mac.IPAD, SSL3Mac.OPAD, 40);
         }
 
-        int i1 = md5.doFinal(out, outOff);
-        int i2 = sha1.doFinal(out, outOff + i1);
+        int i1 = md5.doFinal(output, outOff);
+        int i2 = sha1.doFinal(output, outOff + i1);
         return i1 + i2;
     }
 

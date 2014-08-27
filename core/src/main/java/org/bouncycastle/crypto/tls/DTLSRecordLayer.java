@@ -427,7 +427,7 @@ class DTLSRecordLayer
         }
     }
 
-    private void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
+    private void raiseAlert(short alertLevel, short alertDescription, String message, Throwable cause)
         throws IOException
     {
         peer.notifyAlertRaised(alertLevel, alertDescription, message, cause);

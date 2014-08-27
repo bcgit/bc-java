@@ -50,8 +50,8 @@ public class TlsDHUtils
     {
         AsymmetricCipherKeyPair kp = generateDHKeyPair(random, dhParams);
 
-        DHPublicKeyParameters dh_public = (DHPublicKeyParameters) kp.getPublic();
-        writeDHParameter(dh_public.getY(), output);
+        DHPublicKeyParameters dhPublic = (DHPublicKeyParameters) kp.getPublic();
+        writeDHParameter(dhPublic.getY(), output);
 
         return (DHPrivateKeyParameters) kp.getPrivate();
     }
@@ -59,11 +59,10 @@ public class TlsDHUtils
     public static DHPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, DHParameters dhParams,
         OutputStream output) throws IOException
     {
-        AsymmetricCipherKeyPair kp = TlsDHUtils.generateDHKeyPair(random, dhParams);
+        AsymmetricCipherKeyPair kp = generateDHKeyPair(random, dhParams);
 
-        DHPublicKeyParameters dhPublicKey = (DHPublicKeyParameters)kp.getPublic();
-        ServerDHParams params = new ServerDHParams(dhPublicKey);
-        params.encode(output);
+        DHPublicKeyParameters dhPublic = (DHPublicKeyParameters)kp.getPublic();
+        new ServerDHParams(dhPublic).encode(output);
 
         return (DHPrivateKeyParameters)kp.getPrivate();
     }

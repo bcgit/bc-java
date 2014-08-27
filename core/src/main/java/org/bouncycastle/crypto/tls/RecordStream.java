@@ -20,7 +20,6 @@ class RecordStream
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    private TlsContext context = null;
     private TlsHandshakeHash handshakeHash = null;
 
     private ProtocolVersion readVersion = null, writeVersion = null;
@@ -35,17 +34,16 @@ class RecordStream
         this.output = output;
         this.readCompression = new TlsNullCompression();
         this.writeCompression = this.readCompression;
-        this.readCipher = new TlsNullCipher(context);
-        this.writeCipher = this.readCipher;
-
-        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     void init(TlsContext context)
     {
-        this.context = context;
+        this.readCipher = new TlsNullCipher(context);
+        this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash();
         this.handshakeHash.init(context);
+
+        setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }
 
     int getPlaintextLimit()
@@ -125,11 +123,11 @@ class RecordStream
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
-        pendingCompression = null;
-        pendingCipher = null;
+        this.pendingCompression = null;
+        this.pendingCipher = null;
     }
 
-    public boolean readRecord()
+    boolean readRecord()
         throws IOException
     {
         byte[] recordHeader = TlsUtils.readAllOrNothing(5, input);
@@ -173,7 +171,7 @@ class RecordStream
         return true;
     }
 
-    protected byte[] decodeAndVerify(short type, InputStream input, int len)
+    byte[] decodeAndVerify(short type, InputStream input, int len)
         throws IOException
     {
         checkLength(len, ciphertextLimit, AlertDescription.record_overflow);
@@ -214,7 +212,7 @@ class RecordStream
         return decoded;
     }
 
-    protected void writeRecord(short type, byte[] plaintext, int plaintextOffset, int plaintextLength)
+    void writeRecord(short type, byte[] plaintext, int plaintextOffset, int plaintextLength)
         throws IOException
     {
         // Never send anything until a valid ClientHello has been received
@@ -306,7 +304,7 @@ class RecordStream
         handshakeHash.update(message, offset, len);
     }
 
-    protected void safeClose()
+    void safeClose()
     {
         try
         {
@@ -325,7 +323,7 @@ class RecordStream
         }
     }
 
-    protected void flush()
+    void flush()
         throws IOException
     {
         output.flush();
