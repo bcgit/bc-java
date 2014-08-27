@@ -13,7 +13,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * TLS 1.0/1.1 and SSLv3 RSA key exchange.
+ * (D)TLS and SSLv3 RSA key exchange.
  */
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
@@ -67,7 +67,7 @@ public class TlsRSAKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         // Sanity check the PublicKeyFactory

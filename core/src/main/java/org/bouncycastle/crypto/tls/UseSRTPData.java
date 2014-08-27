@@ -5,8 +5,8 @@ package org.bouncycastle.crypto.tls;
  */
 public class UseSRTPData
 {
-    private int[] protectionProfiles;
-    private byte[] mki;
+    protected int[] protectionProfiles;
+    protected byte[] mki;
 
     /**
      * @param protectionProfiles see {@link SRTPProtectionProfile} for valid constants.

@@ -16,9 +16,6 @@ import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
-/**
- * An implementation of all high level protocols in TLS 1.0/1.1.
- */
 public abstract class TlsProtocol
 {
     protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
@@ -58,7 +55,7 @@ public abstract class TlsProtocol
     /*
      * The Record Stream we use
      */
-    protected RecordStream recordStream;
+    RecordStream recordStream;
     protected SecureRandom secureRandom;
 
     private TlsInputStream tlsInputStream = null;
@@ -93,7 +90,9 @@ public abstract class TlsProtocol
         this.secureRandom = secureRandom;
     }
 
-    protected abstract AbstractTlsContext getContext();
+    protected abstract TlsContext getContext();
+
+    abstract AbstractTlsContext getContextAdmin();
 
     protected abstract TlsPeer getPeer();
 
@@ -181,7 +180,7 @@ public abstract class TlsProtocol
                     this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
                 }
 
-                getContext().setResumableSession(this.tlsSession);
+                getContextAdmin().setResumableSession(this.tlsSession);
             }
 
             getPeer().notifyHandshakeComplete();
@@ -236,6 +235,7 @@ public abstract class TlsProtocol
             // TODO[RFC 6520]
 //            heartbeatQueue.addData(buf, offset, len);
 //            processHeartbeat();
+            break;
         }
         default:
             /*
@@ -243,6 +243,7 @@ public abstract class TlsProtocol
              * 
              * RFC2246 defines on page 13, that we should ignore this.
              */
+            break;
         }
     }
 
@@ -260,9 +261,8 @@ public abstract class TlsProtocol
             {
                 byte[] beginning = new byte[4];
                 handshakeQueue.read(beginning, 0, 4, 0);
-                ByteArrayInputStream bis = new ByteArrayInputStream(beginning);
-                short type = TlsUtils.readUint8(bis);
-                int len = TlsUtils.readUint24(bis);
+                short type = TlsUtils.readUint8(beginning, 0);
+                int len = TlsUtils.readUint24(beginning, 1);
 
                 /*
                  * Check if we have enough bytes in the buffer to read the full message.
@@ -468,7 +468,7 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlert e)
         {
-            if (!this.closed)
+            if (!closed)
             {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to read record", e);
             }
@@ -476,7 +476,7 @@ public abstract class TlsProtocol
         }
         catch (IOException e)
         {
-            if (!this.closed)
+            if (!closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
             }
@@ -484,7 +484,7 @@ public abstract class TlsProtocol
         }
         catch (RuntimeException e)
         {
-            if (!this.closed)
+            if (!closed)
             {
                 this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
             }
@@ -501,7 +501,7 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlert e)
         {
-            if (!this.closed)
+            if (!closed)
             {
                 this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to write record", e);
             }
@@ -618,7 +618,7 @@ public abstract class TlsProtocol
      * @throws IOException
      *             If alert was fatal.
      */
-    protected void failWithError(short alertLevel, short alertDescription, String message, Exception cause)
+    protected void failWithError(short alertLevel, short alertDescription, String message, Throwable cause)
         throws IOException
     {
         /*
@@ -687,7 +687,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void raiseAlert(short alertLevel, short alertDescription, String message, Exception cause)
+    protected void raiseAlert(short alertLevel, short alertDescription, String message, Throwable cause)
         throws IOException
     {
         getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);
@@ -713,7 +713,7 @@ public abstract class TlsProtocol
             certificate = Certificate.EMPTY_CHAIN;
         }
 
-        if (certificate.getLength() == 0)
+        if (certificate.isEmpty())
         {
             TlsContext context = getContext();
             if (!context.isServer())
@@ -721,8 +721,8 @@ public abstract class TlsProtocol
                 ProtocolVersion serverVersion = getContext().getServerVersion();
                 if (serverVersion.isSSL())
                 {
-                    String message = serverVersion.toString() + " client didn't provide credentials";
-                    raiseWarning(AlertDescription.no_certificate, message);
+                    String errorMessage = serverVersion.toString() + " client didn't provide credentials";
+                    raiseWarning(AlertDescription.no_certificate, errorMessage);
                     return;
                 }
             }
@@ -768,15 +768,10 @@ public abstract class TlsProtocol
     protected byte[] createVerifyData(boolean isServer)
     {
         TlsContext context = getContext();
-
-        if (isServer)
-        {
-            return TlsUtils.calculateVerifyData(context, ExporterLabel.server_finished,
-                getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_SERVER));
-        }
-
-        return TlsUtils.calculateVerifyData(context, ExporterLabel.client_finished,
-            getCurrentPRFHash(getContext(), recordStream.getHandshakeHash(), TlsUtils.SSL_CLIENT));
+        String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
+        byte[] sslSender = isServer ? TlsUtils.SSL_SERVER : TlsUtils.SSL_CLIENT;
+        byte[] hash = getCurrentPRFHash(context, recordStream.getHandshakeHash(), sslSender);
+        return TlsUtils.calculateVerifyData(context, asciiLabel, hash);
     }
 
     /**
@@ -809,7 +804,13 @@ public abstract class TlsProtocol
         recordStream.flush();
     }
 
-    protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions, short alertDescription)
+    protected boolean isClosed()
+    {
+        return closed;
+    }
+
+    protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
         throws IOException
     {
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);

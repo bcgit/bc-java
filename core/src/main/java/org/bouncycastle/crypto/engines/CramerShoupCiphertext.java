@@ -2,17 +2,18 @@ package org.bouncycastle.crypto.engines;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+
 /**
  * Class, holding Cramer Shoup ciphertexts (u1, u2, e, v)
  */
 public class CramerShoupCiphertext
 {
-
     BigInteger u1, u2, e, v;
 
     public CramerShoupCiphertext()
     {
-
     }
 
     public CramerShoupCiphertext(BigInteger u1, BigInteger u2, BigInteger e, BigInteger v)
@@ -26,38 +27,29 @@ public class CramerShoupCiphertext
     public CramerShoupCiphertext(byte[] c)
     {
         int off = 0, s;
-        byte[] size = new byte[4];
         byte[] tmp;
 
-        System.arraycopy(c, off, size, 0, 4);
-        s = byteArrayToInt(size);
-        tmp = new byte[s];
+        s = Pack.bigEndianToInt(c, off);
         off += 4;
-        System.arraycopy(c, off, tmp, 0, s);
+        tmp = Arrays.copyOfRange(c, off, off + s);
         off += s;
         u1 = new BigInteger(tmp);
 
-        System.arraycopy(c, off, size, 0, 4);
-        s = byteArrayToInt(size);
-        tmp = new byte[s];
+        s = Pack.bigEndianToInt(c, off);
         off += 4;
-        System.arraycopy(c, off, tmp, 0, s);
+        tmp = Arrays.copyOfRange(c, off, off + s);
         off += s;
         u2 = new BigInteger(tmp);
 
-        System.arraycopy(c, off, size, 0, 4);
-        s = byteArrayToInt(size);
-        tmp = new byte[s];
+        s = Pack.bigEndianToInt(c, off);
         off += 4;
-        System.arraycopy(c, off, tmp, 0, s);
+        tmp = Arrays.copyOfRange(c, off, off + s);
         off += s;
         e = new BigInteger(tmp);
 
-        System.arraycopy(c, off, size, 0, 4);
-        s = byteArrayToInt(size);
-        tmp = new byte[s];
+        s = Pack.bigEndianToInt(c, off);
         off += 4;
-        System.arraycopy(c, off, tmp, 0, s);
+        tmp = Arrays.copyOfRange(c, off, off + s);
         off += s;
         v = new BigInteger(tmp);
     }
@@ -122,7 +114,6 @@ public class CramerShoupCiphertext
      */
     public byte[] toByteArray()
     {
-
         byte[] u1Bytes = u1.toByteArray();
         int u1Length = u1Bytes.length;
         byte[] u2Bytes = u2.toByteArray();
@@ -134,46 +125,23 @@ public class CramerShoupCiphertext
 
         int off = 0;
         byte[] result = new byte[u1Length + u2Length + eLength + vLength + 4 * 4];
-        System.arraycopy(intToByteArray(u1Length), 0, result, 0, 4);
+        Pack.intToBigEndian(u1Length, result, off);
         off += 4;
         System.arraycopy(u1Bytes, 0, result, off, u1Length);
         off += u1Length;
-        System.arraycopy(intToByteArray(u2Length), 0, result, off, 4);
+        Pack.intToBigEndian(u2Length, result, off);
         off += 4;
         System.arraycopy(u2Bytes, 0, result, off, u2Length);
         off += u2Length;
-        System.arraycopy(intToByteArray(eLength), 0, result, off, 4);
+        Pack.intToBigEndian(eLength, result, off);
         off += 4;
         System.arraycopy(eBytes, 0, result, off, eLength);
         off += eLength;
-        System.arraycopy(intToByteArray(vLength), 0, result, off, 4);
+        Pack.intToBigEndian(vLength, result, off);
         off += 4;
         System.arraycopy(vBytes, 0, result, off, vLength);
+        off += vLength;
 
         return result;
-    }
-
-    private byte[] intToByteArray(int in)
-    {
-        byte[] bytes = new byte[4];
-        for (int i = 0; i < 4; i++)
-        {
-            bytes[3 - i] = (byte)(in >>> (i * 8));
-        }
-        return bytes;
-    }
-
-    private int byteArrayToInt(byte[] in)
-    {
-        if (in.length != 4)
-        {
-            return -1;
-        }
-        int r = 0;
-        for (int i = 3; i >= 0; i--)
-        {
-            r += (int)in[i] << ((3 - i) * 8);
-        }
-        return r;
     }
 }

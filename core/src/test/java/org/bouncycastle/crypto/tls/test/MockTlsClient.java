@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
@@ -36,11 +37,11 @@ class MockTlsClient
         return this.session;
     }
 
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-            + ")");
+        out.println("TLS client raised alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
             out.println("> " + message);
@@ -54,8 +55,8 @@ class MockTlsClient
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS client received alert (AlertLevel." + alertLevel + ", AlertDescription."
-            + alertDescription + ")");
+        out.println("TLS client received alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
     }
 
 //    public int[] getCipherSuites()
@@ -75,6 +76,8 @@ class MockTlsClient
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
+        // TODO[draft-ietf-tls-session-hash-01] Enable once code-point assigned (only for compatible server though)
+//        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;

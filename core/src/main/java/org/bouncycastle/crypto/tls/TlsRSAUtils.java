@@ -44,19 +44,10 @@ public class TlsRSAUtils
             /*
              * This should never happen, only during decryption.
              */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
 
         return premasterSecret;
-    }
-
-    /**
-     * @deprecated {@link TlsEncryptionCredentials#decryptPreMasterSecret(byte[])} is expected to decrypt safely
-     */
-    public static byte[] safeDecryptPreMasterSecret(TlsContext context, TlsEncryptionCredentials encryptionCredentials,
-        byte[] encryptedPreMasterSecret) throws IOException
-    {
-        return encryptionCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
     }
 
     public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,

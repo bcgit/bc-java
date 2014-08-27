@@ -39,14 +39,6 @@ public class Certificate
     }
 
     /**
-     * @deprecated use {@link #getCertificateList()} instead
-     */
-    public org.bouncycastle.asn1.x509.Certificate[] getCerts()
-    {
-        return getCertificateList();
-    }
-
-    /**
      * @return an array of {@link org.bouncycastle.asn1.x509.Certificate} representing a certificate
      *         chain.
      */

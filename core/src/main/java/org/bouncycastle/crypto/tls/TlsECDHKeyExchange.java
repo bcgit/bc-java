@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 
 /**
- * ECDH key exchange (see RFC 4492)
+ * (D)TLS ECDH key exchange (see RFC 4492).
  */
 public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {
@@ -49,7 +49,6 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.keyExchange = keyExchange;
         this.namedCurves = namedCurves;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
@@ -86,7 +85,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         if (tlsSigner == null)
@@ -97,7 +96,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             }
             catch (ClassCastException e)
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
             }
 
             TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
@@ -159,7 +158,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         {
             // TODO Validate client cert has matching parameters (see 'TlsECCUtils.areOnSameCurve')?
 
-            this.agreementCredentials = (TlsAgreementCredentials) clientCredentials;
+            this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
         }
         else if (clientCredentials instanceof TlsSignerCredentials)
         {

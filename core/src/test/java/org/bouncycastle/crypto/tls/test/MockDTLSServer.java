@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.AlertLevel;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
@@ -22,11 +23,11 @@ import org.bouncycastle.util.Arrays;
 public class MockDTLSServer
     extends DefaultTlsServer
 {
-    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Exception cause)
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS server raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-            + ")");
+        out.println("DTLS server raised alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
             out.println(message);
@@ -40,8 +41,8 @@ public class MockDTLSServer
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("DTLS server received alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-            + ")");
+        out.println("DTLS server received alert: " + AlertLevel.getText(alertLevel)
+            + ", " + AlertDescription.getText(alertDescription));
     }
 
     protected int[] getCipherSuites()

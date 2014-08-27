@@ -14,7 +14,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
- * ECDHE key exchange (see RFC 4492)
+ * (D)TLS ECDHE key exchange (see RFC 4492).
  */
 public class TlsECDHEKeyExchange
     extends TlsECDHKeyExchange
@@ -108,7 +108,7 @@ public class TlsECDHEKeyExchange
             TlsECCUtils.writeNamedECParameters(namedCurve, buf);
         }
 
-        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters) kp.getPublic();
+        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters)kp.getPublic();
         TlsECCUtils.writeECPoint(clientECPointFormats, ecPublicKey.getQ(), buf);
 
         /*

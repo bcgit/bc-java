@@ -22,16 +22,6 @@ public class TlsStreamCipher
 
     protected boolean usesNonce;
 
-    /**
-     * @deprecated Use version with additional 'usesNonce' argument
-     */
-    public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-        StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
-        int cipherKeySize) throws IOException
-    {
-        this(context, clientWriteCipher, serverWriteCipher, clientWriteDigest, serverWriteDigest, cipherKeySize, false);
-    }
-
     public TlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
         StreamCipher serverWriteCipher, Digest clientWriteDigest, Digest serverWriteDigest,
         int cipherKeySize, boolean usesNonce) throws IOException
@@ -157,7 +147,7 @@ public class TlsStreamCipher
         return Arrays.copyOfRange(deciphered, 0, plaintextLength);
     }
 
-    private void checkMAC(long seqNo, short type, byte[] recBuf, int recStart, int recEnd, byte[] calcBuf, int calcOff, int calcLen)
+    protected void checkMAC(long seqNo, short type, byte[] recBuf, int recStart, int recEnd, byte[] calcBuf, int calcOff, int calcLen)
         throws IOException
     {
         byte[] receivedMac = Arrays.copyOfRange(recBuf, recStart, recEnd);
@@ -169,7 +159,7 @@ public class TlsStreamCipher
         }
     }
 
-    private void updateIV(StreamCipher cipher, boolean forEncryption, long seqNo)
+    protected void updateIV(StreamCipher cipher, boolean forEncryption, long seqNo)
     {
         byte[] nonce = new byte[8];
         TlsUtils.writeUint64(seqNo, nonce, 0);

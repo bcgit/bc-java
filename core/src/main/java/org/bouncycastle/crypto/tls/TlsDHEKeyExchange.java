@@ -91,7 +91,7 @@ public class TlsDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        ServerDHParams params = ServerDHParams.parse(teeIn);
+        ServerDHParams dhParams = ServerDHParams.parse(teeIn);
 
         DigitallySigned signed_params = DigitallySigned.parse(context, input);
 
@@ -102,7 +102,7 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(params.getPublicKey());
+        this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)

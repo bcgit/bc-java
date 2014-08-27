@@ -820,8 +820,8 @@ public class TlsUtils
 
         // supported_signature_algorithms
         int length = 2 * supportedSignatureAlgorithms.size();
-        TlsUtils.checkUint16(length);
-        TlsUtils.writeUint16(length, output);
+        checkUint16(length);
+        writeUint16(length, output);
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
@@ -842,7 +842,7 @@ public class TlsUtils
         throws IOException
     {
         // supported_signature_algorithms
-        int length = TlsUtils.readUint16(input);
+        int length = readUint16(input);
         if (length < 2 || (length & 1) != 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
@@ -1005,22 +1005,33 @@ public class TlsUtils
             ++i;
         }
 
-        byte rval[] = new byte[size];
-        System.arraycopy(tmp, 0, rval, 0, size);
-        return rval;
+        return Arrays.copyOfRange(tmp, 0, size);
     }
 
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
-        byte[] seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
+
+        byte[] seed;
+        if (securityParameters.extendedMasterSecret)
+        {
+            seed = securityParameters.getSessionHash();
+        }
+        else
+        {
+            seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
+        }
 
         if (isSSL(context))
         {
             return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
 
-        return PRF(context, pre_master_secret, ExporterLabel.master_secret, seed, 48);
+        String asciiLabel = securityParameters.extendedMasterSecret
+            ?   ExporterLabel.extended_master_secret
+            :   ExporterLabel.master_secret;
+
+        return PRF(context, pre_master_secret, asciiLabel, seed, 48);
     }
 
     static byte[] calculateMasterSecret_SSL(byte[] pre_master_secret, byte[] random)
@@ -1229,12 +1240,12 @@ public class TlsUtils
 
             // TODO Add support for ClientCertificateType.*_fixed_*
 
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
         }
         catch (Exception e)
         {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
-
-        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)
@@ -1283,9 +1294,9 @@ public class TlsUtils
     static final byte[] SSL_SERVER = {0x53, 0x52, 0x56, 0x52};
 
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    static final byte[][] SSL3_CONST = genConst();
+    static final byte[][] SSL3_CONST = genSSL3Const();
 
-    private static byte[][] genConst()
+    private static byte[][] genSSL3Const()
     {
         int n = 10;
         byte[][] arr = new byte[n][];

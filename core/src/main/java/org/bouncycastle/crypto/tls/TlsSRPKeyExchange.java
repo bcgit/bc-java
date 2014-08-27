@@ -12,14 +12,13 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
- * TLS 1.1 SRP key exchange (RFC 5054).
+ * (D)TLS SRP key exchange (RFC 5054).
  */
 public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 {
@@ -52,7 +51,6 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.keyExchange = keyExchange;
         this.identity = identity;
         this.password = password;
     }
@@ -61,7 +59,8 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
     {
         super.init(context);
 
-        if (this.tlsSigner != null) {
+        if (this.tlsSigner != null)
+        {
             this.tlsSigner.init(context);
         }
     }
@@ -94,7 +93,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
         if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
@@ -160,7 +159,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (CryptoException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
 
         this.srpClient.init(N, g, TlsUtils.createHash(HashAlgorithm.sha1), context.getSecureRandom());
@@ -191,7 +190,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         }
         catch (CryptoException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
     }
 
