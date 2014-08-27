@@ -10,19 +10,19 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public class DHStandardGroups
 {
+    private static BigInteger fromHex(String hex)
+    {
+        return new BigInteger(1, Hex.decode(hex));
+    }
+
     private static DHParameters fromPG(String hexP, String hexG)
     {
-        BigInteger p = new BigInteger(1, Hex.decode(hexP));
-        BigInteger g = new BigInteger(1, Hex.decode(hexG));
-        return new DHParameters(p, g);
+        return new DHParameters(fromHex(hexP), fromHex(hexG));
     }
 
     private static DHParameters fromPGQ(String hexP, String hexG, String hexQ)
     {
-        BigInteger p = new BigInteger(1, Hex.decode(hexP));
-        BigInteger g = new BigInteger(1, Hex.decode(hexG));
-        BigInteger q = new BigInteger(1, Hex.decode(hexQ));
-        return new DHParameters(p, g, q);
+        return new DHParameters(fromHex(hexP), fromHex(hexG), fromHex(hexQ));
     }
 
     /*
