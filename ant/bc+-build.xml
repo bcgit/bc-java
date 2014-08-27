@@ -257,8 +257,6 @@
                  <include name="org/bouncycastle/crypto/**/*.java" />
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
-                 <include name="org/bouncycastle/bcpg/**/*.java" />
-                 <include name="org/bouncycastle/apache/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
@@ -310,6 +308,7 @@
                  <exclude name="org/bouncycastle/pkcs/**" />
                  <exclude name="org/bouncycastle/tsp/**" />
                  <exclude name="org/bouncycastle/voms/**" />
+                 <exclude name="org/bouncycastle/apache/**" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
         </copy>
@@ -579,7 +578,9 @@
 
         <copy todir="${pg.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <include name="org/bouncycastle/bcpg/**/*.java" />
                  <include name="org/bouncycastle/openpgp/**/*.java" />
+                 <include name="org/bouncycastle/apache/**/*.java" />
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
                  <exclude name="**/test/*.java" />
@@ -902,6 +903,7 @@
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/openpgp/**/test/*.java" />
                  <include name="org/bouncycastle/bcpg/**/test/*.java" />
+                 <include name="org/bouncycastle/apache/**/*.html" />
                  <include name="org/bouncycastle/openpgp/**/*.html" />
                  <include name="org/bouncycastle/bcpg/**/*.html" />
              </fileset>
