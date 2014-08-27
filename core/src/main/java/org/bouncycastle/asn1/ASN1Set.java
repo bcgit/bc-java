@@ -481,15 +481,15 @@ public abstract class ASN1Set
         return len == a.length;
     }
 
-    private byte[] getEncoded(
+    private byte[] getDEREncoded(
         ASN1Encodable obj)
     {
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ASN1OutputStream        aOut = new ASN1OutputStream(bOut);
+        DEROutputStream         dOut = new DEROutputStream(bOut);
 
         try
         {
-            aOut.writeObject(obj);
+            dOut.writeObject(obj);
         }
         catch (IOException e)
         {
@@ -513,13 +513,13 @@ public abstract class ASN1Set
                 {
                     int    index = 0;
                     int    swapIndex = 0;
-                    byte[] a = getEncoded((ASN1Encodable)set.elementAt(0));
+                    byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
 
                     swapped = false;
 
                     while (index != lastSwap)
                     {
-                        byte[] b = getEncoded((ASN1Encodable)set.elementAt(index + 1));
+                        byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
 
                         if (lessThanOrEqual(a, b))
                         {
