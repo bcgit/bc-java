@@ -42,12 +42,12 @@ public class BasicTlsTest
         }
         try
         {
-            int major = Integer.parseUnsignedInt(parts[0]);
+            int major = Integer.parseInt(parts[0]);
             if (major != 1)
             {
                 return major > 1;
             }
-            int minor = Integer.parseUnsignedInt(parts[1]);
+            int minor = Integer.parseInt(parts[1]);
             return minor >= 7;
         }
         catch (NumberFormatException e)
