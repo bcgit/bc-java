@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -713,7 +714,7 @@ public class CertPathValidatorUtilities
                                                  List certStores)
         throws AnnotatedException
     {
-        Set certs = new HashSet();
+        Set certs = new LinkedHashSet();
         Iterator iter = certStores.iterator();
 
         while (iter.hasNext())
@@ -1371,7 +1372,7 @@ public class CertPathValidatorUtilities
         throws AnnotatedException
     {
         X509CertStoreSelector certSelect = new X509CertStoreSelector();
-        Set certs = new HashSet();
+        Set certs = new LinkedHashSet();
         try
         {
             certSelect.setSubject(cert.getIssuerX500Principal().getEncoded());

@@ -692,7 +692,7 @@ catch (Exception e)
                                                  List certStores)
         throws AnnotatedException
     {
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         Iterator iter = certStores.iterator();
 
         while (iter.hasNext())
@@ -704,7 +704,15 @@ catch (Exception e)
                 X509Store certStore = (X509Store)obj;
                 try
                 {
-                    certs.addAll(certStore.getMatches(certSelect));
+                    Iterator certsIter = certStore.getMatches(certSelect).iterator();
+                    while (certsIter.hasNext())
+                    {
+                        Object cert = iter.next();
+                        if (!certs.contains(cert))
+                        {
+                            certs.add(cert);
+                        }
+                    }
                 }
                 catch (StoreException e)
                 {
@@ -718,7 +726,15 @@ catch (Exception e)
 
                 try
                 {
-                    certs.addAll(certStore.getCertificates(certSelect));
+                    Iterator certsIter = certStore.getCertificates(certSelect).iterator();
+                    while (certsIter.hasNext())
+                    {
+                        Object cert = iter.next();
+                        if (!certs.contains(cert))
+                        {
+                            certs.add(cert);
+                        }
+                    }
                 }
                 catch (CertStoreException e)
                 {
@@ -1362,7 +1378,7 @@ catch (Exception e)
         throws AnnotatedException
     {
         X509CertStoreSelector certSelect = new X509CertStoreSelector();
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         try
         {
             certSelect.setSubject(PrincipalUtil.getSubjectX509Principal(cert).getEncoded());
@@ -1396,7 +1412,10 @@ catch (Exception e)
             issuer = (X509Certificate)iter.next();
             // issuer cannot be verified because possible DSA inheritance
             // parameters are missing
-            certs.add(issuer);
+            if (!certs.contains(issuer))
+            {
+                certs.add(issuer);
+            }
         }
         return certs;
     }

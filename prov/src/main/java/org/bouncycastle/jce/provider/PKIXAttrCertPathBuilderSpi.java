@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -254,7 +255,7 @@ public class PKIXAttrCertPathBuilderSpi
                                             "No additional X.509 stores can be added from certificate locations.",
                                             e);
                 }
-                Collection issuers = new HashSet();
+                Collection issuers = new LinkedHashSet();
                 // try to get the issuer certificate from one
                 // of the stores
                 try

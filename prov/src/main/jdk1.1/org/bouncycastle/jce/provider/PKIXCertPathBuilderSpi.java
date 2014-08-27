@@ -276,14 +276,22 @@ public class PKIXCertPathBuilderSpi
         List            certStores) 
         throws CertStoreException
     {
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         Iterator iter = certStores.iterator();
 
         while (iter.hasNext())
         {
             CertStore   certStore = (CertStore)iter.next();
 
-            certs.addAll(certStore.getCertificates(certSelect));
+            Iterator certsIter = certStore.getCertificates(certSelect).iterator();
+            while (certsIter.hasNext())
+            {
+                Object cert = iter.next();
+                if (!certs.contains(cert))
+                {
+                    certs.add(cert);
+                }
+            }
         }
 
         return certs;
