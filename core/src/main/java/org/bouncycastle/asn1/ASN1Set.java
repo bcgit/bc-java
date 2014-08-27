@@ -484,19 +484,14 @@ public abstract class ASN1Set
     private byte[] getDEREncoded(
         ASN1Encodable obj)
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
-
         try
         {
-            dOut.writeObject(obj);
+            return obj.toASN1Primitive().getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
             throw new IllegalArgumentException("cannot encode object added to SET");
         }
-
-        return bOut.toByteArray();
     }
 
     protected void sort()
