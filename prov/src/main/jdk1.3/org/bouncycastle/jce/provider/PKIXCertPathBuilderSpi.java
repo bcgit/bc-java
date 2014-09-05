@@ -3,6 +3,9 @@ package org.bouncycastle.jce.provider;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.PublicKey;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.jce.cert.CertPath;
 import org.bouncycastle.jce.cert.CertPathBuilderException;
 import org.bouncycastle.jce.cert.CertPathBuilderResult;
@@ -32,7 +35,9 @@ import java.util.Set;
 
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import org.bouncycastle.jce.PrincipalUtil;
+import org.bouncycastle.jce.provider.CertPathValidatorUtilities;
 
 /**
  * Implements the PKIX CertPathBuilding algorithem for BouncyCastle.
@@ -310,14 +315,22 @@ public class PKIXCertPathBuilderSpi
         List            certStores) 
         throws CertStoreException
     {
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         Iterator iter = certStores.iterator();
 
         while (iter.hasNext())
         {
             CertStore   certStore = (CertStore)iter.next();
 
-            certs.addAll(certStore.getCertificates(certSelect));
+            Iterator certsIter = certStore.getCertificates(certSelect).iterator();
+            while (certsIter.hasNext())
+            {
+                Object cert = iter.next();
+                if (!certs.contains(cert))
+                {
+                    certs.add(cert);
+                }
+            }
         }
 
         return certs;
@@ -353,6 +366,21 @@ public class PKIXCertPathBuilderSpi
         catch (Exception ex)
         {
             throw new CertPathValidatorException("Issuer not found", null, null, -1);
+        }
+
+        try
+        {
+            byte[] akiExtensionValue = cert.getExtensionValue(CertPathValidatorUtilities.AUTHORITY_KEY_IDENTIFIER);
+            if (akiExtensionValue != null)
+            {
+                ASN1Primitive aki = X509ExtensionUtil.fromExtensionValue(akiExtensionValue);
+                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki).getKeyIdentifier();
+                certSelect.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
+            }
+        }
+        catch (IOException e)
+        {
+            // authority key identifier could not be retrieved from target cert, just search without it
         }
 
         Iterator iter;

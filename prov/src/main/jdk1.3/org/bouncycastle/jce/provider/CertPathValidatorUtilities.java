@@ -45,10 +45,12 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.CertificateList;
@@ -72,6 +74,7 @@ import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CRLStoreSelector;
 import org.bouncycastle.x509.X509CertStoreSelector;
 import org.bouncycastle.x509.X509Store;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 public class CertPathValidatorUtilities
 {
@@ -692,7 +695,7 @@ catch (Exception e)
                                                  List certStores)
         throws AnnotatedException
     {
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         Iterator iter = certStores.iterator();
 
         while (iter.hasNext())
@@ -704,7 +707,15 @@ catch (Exception e)
                 X509Store certStore = (X509Store)obj;
                 try
                 {
-                    certs.addAll(certStore.getMatches(certSelect));
+                    Iterator certsIter = certStore.getMatches(certSelect).iterator();
+                    while (certsIter.hasNext())
+                    {
+                        Object cert = iter.next();
+                        if (!certs.contains(cert))
+                        {
+                            certs.add(cert);
+                        }
+                    }
                 }
                 catch (StoreException e)
                 {
@@ -718,7 +729,15 @@ catch (Exception e)
 
                 try
                 {
-                    certs.addAll(certStore.getCertificates(certSelect));
+                    Iterator certsIter = certStore.getCertificates(certSelect).iterator();
+                    while (certsIter.hasNext())
+                    {
+                        Object cert = iter.next();
+                        if (!certs.contains(cert))
+                        {
+                            certs.add(cert);
+                        }
+                    }
                 }
                 catch (CertStoreException e)
                 {
@@ -1362,7 +1381,7 @@ catch (Exception e)
         throws AnnotatedException
     {
         X509CertStoreSelector certSelect = new X509CertStoreSelector();
-        Set certs = new HashSet();
+        List certs = new ArrayList();
         try
         {
             certSelect.setSubject(PrincipalUtil.getSubjectX509Principal(cert).getEncoded());
@@ -1371,6 +1390,21 @@ catch (Exception e)
         {
             throw new AnnotatedException(
                 "Subject criteria for certificate selector to find issuer certificate could not be set.", ex);
+        }
+
+        try
+        {
+            byte[] akiExtensionValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
+            if (akiExtensionValue != null)
+            {
+                ASN1Primitive aki = X509ExtensionUtil.fromExtensionValue(akiExtensionValue);
+                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki).getKeyIdentifier();
+                certSelect.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
+            }
+        }
+        catch (IOException e)
+        {
+            // authority key identifier could not be retrieved from target cert, just search without it
         }
 
         Iterator iter;
@@ -1396,7 +1430,10 @@ catch (Exception e)
             issuer = (X509Certificate)iter.next();
             // issuer cannot be verified because possible DSA inheritance
             // parameters are missing
-            certs.add(issuer);
+            if (!certs.contains(issuer))
+            {
+                certs.add(issuer);
+            }
         }
         return certs;
     }
