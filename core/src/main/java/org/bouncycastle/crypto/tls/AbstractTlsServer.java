@@ -246,7 +246,7 @@ public abstract class AbstractTlsServer
             }
         }
 
-        if (this.maxFragmentLengthOffered >= 0)
+        if (this.maxFragmentLengthOffered >= 0 && MaxFragmentLength.isValid(maxFragmentLengthOffered))
         {
             TlsExtensionsUtils.addMaxFragmentLengthExtension(checkServerExtensions(), this.maxFragmentLengthOffered);
         }
