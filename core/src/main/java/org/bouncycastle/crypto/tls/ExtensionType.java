@@ -61,6 +61,13 @@ public class ExtensionType
     public static final int extended_master_secret = 100;
 
     /*
+     * draft-ietf-tls-negotiated-ff-dhe-01
+     * 
+     * WARNING: Placeholder value; the real value is TBA
+     */
+    public static final int negotiated_ff_dhe_groups = 101;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;

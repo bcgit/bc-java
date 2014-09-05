@@ -140,10 +140,7 @@ public class TlsExtensionsUtils
     public static byte[] createMaxFragmentLengthExtension(short maxFragmentLength)
         throws IOException
     {
-        if (!MaxFragmentLength.isValid(maxFragmentLength))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        TlsUtils.checkUint8(maxFragmentLength);
 
         byte[] extensionData = new byte[1];
         TlsUtils.writeUint8(maxFragmentLength, extensionData, 0);
@@ -240,14 +237,7 @@ public class TlsExtensionsUtils
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        short maxFragmentLength = (short)extensionData[0];
-
-        if (!MaxFragmentLength.isValid(maxFragmentLength))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        return maxFragmentLength;
+        return TlsUtils.readUint8(extensionData, 0);
     }
 
     public static ServerNameList readServerNameExtension(byte[] extensionData)
