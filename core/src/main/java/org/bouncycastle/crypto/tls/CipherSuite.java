@@ -323,6 +323,14 @@ public class CipherSuite
     public static final int TLS_PSK_DHE_WITH_AES_256_CCM_8 = 0xC0AB;
 
     /*
+     * RFC 7251
+     */
+    public static final int TLS_ECDHE_ECDSA_WITH_AES_128_CCM = 0xC0AC;
+    public static final int TLS_ECDHE_ECDSA_WITH_AES_256_CCM = 0xC0AD;
+    public static final int TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 = 0xC0AE;
+    public static final int TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8 = 0xC0AF;
+
+    /*
      * draft-agl-tls-chacha20poly1305-04
      */
     public static final int TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC13;
