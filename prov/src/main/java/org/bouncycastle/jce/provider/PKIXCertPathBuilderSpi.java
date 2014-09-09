@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
@@ -69,7 +70,7 @@ public class PKIXCertPathBuilderSpi
         // search target certificates
 
         Selector certSelect = pkixParams.getTargetConstraints();
-        if (!(certSelect instanceof X509CertStoreSelector))
+        if (!(certSelect instanceof X509CertStoreSelector || certSelect instanceof PKIXCertStoreSelector))
         {
             throw new CertPathBuilderException(
                 "TargetConstraints must be an instance of "
@@ -77,17 +78,32 @@ public class PKIXCertPathBuilderSpi
                     + this.getClass().getName() + " class.");
         }
 
-        try
+        if (certSelect instanceof X509CertStoreSelector)
         {
-            targets = CertPathValidatorUtilities.findCertificates((X509CertStoreSelector)certSelect, pkixParams.getStores());
-            targets.addAll(CertPathValidatorUtilities.findCertificates((X509CertStoreSelector)certSelect, pkixParams.getCertStores()));
+            try
+            {
+                targets = CertPathValidatorUtilities.findCertificates((X509CertStoreSelector)certSelect, pkixParams.getStores());
+                targets.addAll(CertPathValidatorUtilities.findCertificates((X509CertStoreSelector)certSelect, pkixParams.getCertStores()));
+            }
+            catch (AnnotatedException e)
+            {
+                throw new ExtCertPathBuilderException(
+                    "Error finding target certificate.", e);
+            }
         }
-        catch (AnnotatedException e)
+        else
         {
-            throw new ExtCertPathBuilderException(
-                "Error finding target certificate.", e);
+            try
+            {
+                targets = CertPathValidatorUtilities.findCertificates((PKIXCertStoreSelector)certSelect, pkixParams.getStores());
+                targets.addAll(CertPathValidatorUtilities.findCertificates((PKIXCertStoreSelector)certSelect, pkixParams.getCertStores()));
+            }
+            catch (AnnotatedException e)
+            {
+                throw new ExtCertPathBuilderException(
+                    "Error finding target certificate.", e);
+            }
         }
-
         if (targets.isEmpty())
         {
 
@@ -225,7 +241,7 @@ public class PKIXCertPathBuilderSpi
                 // of the stores
                 try
                 {
-                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, pkixParams));
+                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, pkixParams.getCertStores(), pkixParams.getStores()));
                 }
                 catch (AnnotatedException e)
                 {

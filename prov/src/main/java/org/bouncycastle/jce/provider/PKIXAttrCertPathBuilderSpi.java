@@ -259,7 +259,7 @@ public class PKIXAttrCertPathBuilderSpi
                 // of the stores
                 try
                 {
-                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, pkixParams));
+                    issuers.addAll(CertPathValidatorUtilities.findIssuerCerts(tbvCert, pkixParams.getCertStores(), pkixParams.getStores()));
                 }
                 catch (AnnotatedException e)
                 {

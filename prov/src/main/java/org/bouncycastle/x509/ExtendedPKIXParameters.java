@@ -278,6 +278,7 @@ public class ExtendedPKIXParameters
      * 
      * @param store The store to add.
      * @see #getStores()
+     * @deprectaed use addStore().
      */
     public void addAdditionalStore(Store store)
     {
