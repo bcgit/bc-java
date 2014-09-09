@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.provider;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -12,6 +13,8 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.PKIXParameters;
 import java.security.cert.PolicyQualifierInfo;
@@ -61,10 +64,14 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.jcajce.PKIXCertStore;
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Selector;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
@@ -715,14 +722,85 @@ public class CertPathValidatorUtilities
     {
         Set certs = new HashSet();
         Iterator iter = certStores.iterator();
+        org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory certFact = new org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory();
 
         while (iter.hasNext())
         {
             Object obj = iter.next();
 
-            if (obj instanceof X509Store)
+            if (obj instanceof Store)
             {
-                X509Store certStore = (X509Store)obj;
+                Store certStore = (Store)obj;
+                try
+                {
+                    for (Iterator it = certStore.getMatches(certSelect).iterator(); it.hasNext();)
+                    {
+                        Object cert = it.next();
+
+                        if (cert instanceof Encodable)
+                        {
+                            certs.add(certFact.engineGenerateCertificate(new ByteArrayInputStream(((Encodable)cert).getEncoded())));
+                        }
+                        else if (cert instanceof Certificate)
+                        {
+                             certs.add(cert);
+                        }
+                        else
+                        {
+                            throw new AnnotatedException(
+                                    "Unknown object found in certificate store.");
+                        }
+                    }
+                }
+                catch (StoreException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while picking certificates from X.509 store.", e);
+                }
+                catch (IOException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while extracting certificates from X.509 store.", e);
+                }
+                catch (CertificateException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while extracting certificates from X.509 store.", e);
+                }
+            }
+            else
+            {
+                CertStore certStore = (CertStore)obj;
+
+                try
+                {
+                    certs.addAll(certStore.getCertificates(certSelect));
+                }
+                catch (CertStoreException e)
+                {
+                    throw new AnnotatedException(
+                        "Problem while picking certificates from certificate store.",
+                        e);
+                }
+            }
+        }
+        return certs;
+    }
+
+    protected static Collection findCertificates(PKIXCertStoreSelector certSelect,
+                                                 List certStores)
+        throws AnnotatedException
+    {
+        Set certs = new HashSet();
+        Iterator iter = certStores.iterator();
+
+        while (iter.hasNext())
+        {
+            Object obj = iter.next();
+
+            if (obj instanceof Store)
+            {
+                Store certStore = (Store)obj;
                 try
                 {
                     certs.addAll(certStore.getMatches(certSelect));
@@ -739,7 +817,7 @@ public class CertPathValidatorUtilities
 
                 try
                 {
-                    certs.addAll(certStore.getCertificates(certSelect));
+                    certs.addAll(PKIXCertStoreSelector.getCertificates(certSelect, certStore));
                 }
                 catch (CertStoreException e)
                 {
@@ -1360,27 +1438,30 @@ public class CertPathValidatorUtilities
      * Find the issuer certificates of a given certificate.
      *
      * @param cert       The certificate for which an issuer should be found.
-     * @param pkixParams
      * @return A <code>Collection</code> object containing the issuer
      *         <code>X509Certificate</code>s. Never <code>null</code>.
      * @throws AnnotatedException if an error occurs.
      */
-    protected static Collection findIssuerCerts(
+    static Collection findIssuerCerts(
         X509Certificate cert,
-        ExtendedPKIXBuilderParameters pkixParams)
+        List            certStores,
+        List            pkixCertStores)
         throws AnnotatedException
     {
-        X509CertStoreSelector certSelect = new X509CertStoreSelector();
-        Set certs = new HashSet();
+        X509CertSelector selector = new X509CertSelector();
+
         try
         {
-            certSelect.setSubject(cert.getIssuerX500Principal().getEncoded());
+            selector.setSubject(cert.getIssuerX500Principal().getEncoded());
         }
-        catch (IOException ex)
+        catch (IOException e)
         {
             throw new AnnotatedException(
-                "Subject criteria for certificate selector to find issuer certificate could not be set.", ex);
+                           "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
         }
+
+        PKIXCertStoreSelector certSelect = new PKIXCertStoreSelector.Builder(selector).build();
+        Set certs = new HashSet();
 
         Iterator iter;
 
@@ -1388,9 +1469,8 @@ public class CertPathValidatorUtilities
         {
             List matches = new ArrayList();
 
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixParams.getCertStores()));
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixParams.getStores()));
-            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixParams.getAdditionalStores()));
+            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, certStores));
+            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixCertStores));
 
             iter = matches.iterator();
         }

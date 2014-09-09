@@ -19,11 +19,13 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.util.Encodable;
 
 /**
  * Holding class for an X.509 Certificate structure.
  */
 public class X509CertificateHolder
+    implements Encodable
 {
     private Certificate x509Certificate;
     private Extensions  extensions;
@@ -214,7 +216,7 @@ public class X509CertificateHolder
     /**
      * Return the underlying ASN.1 structure for the certificate in this holder.
      *
-     * @return a X509CertificateStructure object.
+     * @return a Certificate object.
      */
     public Certificate toASN1Structure()
     {
