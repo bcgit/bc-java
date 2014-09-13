@@ -302,7 +302,7 @@ public class SignerInformation
     {
         if (signedAttributeSet != null)
         {
-            return signedAttributeSet.getEncoded();
+            return signedAttributeSet.getEncoded(ASN1Encoding.DER);
         }
 
         return null;
