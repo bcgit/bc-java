@@ -121,6 +121,14 @@ public class GenericSigner
         {
             byte[] sig = engine.processBlock(signature, 0, signature.length);
 
+            // Extend with leading zeroes to match the digest size, if necessary.
+            if (sig.length < hash.length)
+            {
+                byte[] tmp = new byte[hash.length];
+                System.arraycopy(sig, 0, tmp, tmp.length - sig.length, sig.length);
+                sig = tmp;
+            }
+
             return Arrays.constantTimeAreEqual(sig, hash);
         }
         catch (Exception e)
