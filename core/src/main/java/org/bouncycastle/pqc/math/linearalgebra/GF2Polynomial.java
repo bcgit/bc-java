@@ -1730,7 +1730,7 @@ public class GF2Polynomial
      * Sets the bit at position <i>i</i>.
      *
      * @param i int
-     * @throws BitDoesNotExistException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
+     * @throws RuntimeException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
      */
     public void setBit(int i)
         throws RuntimeException
@@ -1738,10 +1738,6 @@ public class GF2Polynomial
         if (i < 0 || i > (len - 1))
         {
             throw new RuntimeException();
-        }
-        if (i > (len - 1))
-        {
-            return;
         }
         value[i >>> 5] |= bitMask[i & 0x1f];
         return;
@@ -1767,7 +1763,7 @@ public class GF2Polynomial
      * Resets the bit at position <i>i</i>.
      *
      * @param i int
-     * @throws BitDoesNotExistException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
+     * @throws RuntimeException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
      */
     public void resetBit(int i)
         throws RuntimeException
@@ -1776,10 +1772,6 @@ public class GF2Polynomial
         {
             throw new RuntimeException();
         }
-        if (i > (len - 1))
-        {
-            return;
-        }
         value[i >>> 5] &= ~bitMask[i & 0x1f];
     }
 
@@ -1787,7 +1779,7 @@ public class GF2Polynomial
      * Xors the bit at position <i>i</i>.
      *
      * @param i int
-     * @throws BitDoesNotExistException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
+     * @throws RuntimeException if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
      */
     public void xorBit(int i)
         throws RuntimeException
@@ -1795,10 +1787,6 @@ public class GF2Polynomial
         if (i < 0 || i > (len - 1))
         {
             throw new RuntimeException();
-        }
-        if (i > (len - 1))
-        {
-            return;
         }
         value[i >>> 5] ^= bitMask[i & 0x1f];
     }

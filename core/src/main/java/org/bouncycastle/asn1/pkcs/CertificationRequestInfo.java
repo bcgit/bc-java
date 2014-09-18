@@ -89,14 +89,14 @@ public class CertificationRequestInfo
         SubjectPublicKeyInfo    pkInfo,
         ASN1Set                 attributes)
     {
-        this.subject = X500Name.getInstance(subject.toASN1Primitive());
-        this.subjectPKInfo = pkInfo;
-        this.attributes = attributes;
-
-        if ((subject == null) || (version == null) || (subjectPKInfo == null))
+        if (subject == null) || (pkInfo == null) || (attributes == null))
         {
             throw new IllegalArgumentException("Not all mandatory fields set in CertificationRequestInfo generator.");
         }
+        
+        this.subject = X500Name.getInstance(subject.toASN1Primitive());
+        this.subjectPKInfo = pkInfo;
+        this.attributes = attributes;
     }
 
     /**
