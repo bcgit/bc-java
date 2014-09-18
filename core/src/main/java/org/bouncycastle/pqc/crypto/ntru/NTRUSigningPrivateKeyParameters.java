@@ -126,7 +126,9 @@ public class NTRUSigningPrivateKeyParameters
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((bases == null) ? 0 : bases.hashCode());
+        result = prime * result;
+        if (bases==null) return result;
+        result += bases.hashCode();
         for (Basis basis : bases)
         {
             result += basis.hashCode();
@@ -150,12 +152,13 @@ public class NTRUSigningPrivateKeyParameters
             return false;
         }
         NTRUSigningPrivateKeyParameters other = (NTRUSigningPrivateKeyParameters)obj;
+        if ((bases == null) != (other.bases == null))
+        {
+            return false;
+        }
         if (bases == null)
         {
-            if (other.bases != null)
-            {
-                return false;
-            }
+            return true;
         }
         if (bases.size() != other.bases.size())
         {

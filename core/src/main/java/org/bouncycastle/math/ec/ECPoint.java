@@ -771,14 +771,7 @@ public abstract class ECPoint
                     Y3 = W1.subtract(X3).multiply(dy).subtract(A1);
                     Z3 = dx;
 
-                    if (Z1IsOne)
-                    {
-                        Z3Squared = C;
-                    }
-                    else
-                    {
-                        Z3 = Z3.multiply(Z1);
-                    }
+                    Z3 = Z3.multiply(Z1);
                 }
                 else
                 {
@@ -967,7 +960,7 @@ public abstract class ECPoint
                     }
                     else if (!a4.isZero())
                     {
-                        ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.square();
+                        ECFieldElement Z1Squared = Z1.square();
                         ECFieldElement Z1Pow4 = Z1Squared.square();
                         if (a4Neg.bitLength() < a4.bitLength())
                         {
