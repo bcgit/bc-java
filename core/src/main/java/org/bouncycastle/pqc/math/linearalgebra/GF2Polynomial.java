@@ -1752,7 +1752,11 @@ public class GF2Polynomial
      */
     public int getBit(int i)
     {
-        if (i < 0 || i > (len - 1))
+        if (i < 0)
+        {
+            throw new RuntimeException();
+        }
+        if (i > (len - 1))
         {
             return 0;
         }
@@ -1768,9 +1772,13 @@ public class GF2Polynomial
     public void resetBit(int i)
         throws RuntimeException
     {
-        if (i < 0 || i > (len - 1))
+        if (i < 0)
         {
             throw new RuntimeException();
+        }
+        if (i > (len - 1))
+        {
+            return;
         }
         value[i >>> 5] &= ~bitMask[i & 0x1f];
     }
@@ -1800,7 +1808,11 @@ public class GF2Polynomial
      */
     public boolean testBit(int i)
     {
-        if (i < 0 || i > (len - 1))
+        if (i < 0)
+        {
+            throw new RuntimeException();
+        }
+        if (i > (len - 1))
         {
             return false;
         }
