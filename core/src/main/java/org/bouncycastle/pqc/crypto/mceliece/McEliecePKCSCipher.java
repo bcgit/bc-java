@@ -209,7 +209,7 @@ public class McEliecePKCSCipher
         }
 
         // check if padding byte is valid
-        if (mrBytes[index] != 0x01)
+        if (index<0 || mrBytes[index] != 0x01)
         {
             throw new Exception("Bad Padding: invalid ciphertext");
         }
