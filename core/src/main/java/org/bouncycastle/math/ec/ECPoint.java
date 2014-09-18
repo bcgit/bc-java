@@ -1,12 +1,13 @@
 package org.bouncycastle.math.ec;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Hashtable;
 
 /**
  * base class for points on elliptic curves.
  */
-public abstract class ECPoint
+public abstract class ECPoint implements Serializable
 {
     protected static ECFieldElement[] EMPTY_ZS = new ECFieldElement[0];
 

@@ -1,5 +1,6 @@
 package org.bouncycastle.math.ec;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Hashtable;
 import java.util.Random;
@@ -14,7 +15,7 @@ import org.bouncycastle.util.Integers;
 /**
  * base class for an elliptic curve
  */
-public abstract class ECCurve
+public abstract class ECCurve implements Serializable
 {
     public static final int COORD_AFFINE = 0;
     public static final int COORD_HOMOGENEOUS = 1;

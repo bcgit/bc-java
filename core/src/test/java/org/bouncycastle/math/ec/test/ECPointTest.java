@@ -1,5 +1,9 @@
 package org.bouncycastle.math.ec.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -12,9 +16,12 @@ import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
@@ -517,5 +524,27 @@ public class ECPointTest extends TestCase
     public static Test suite()
     {
         return new TestSuite(ECPointTest.class);
+    }
+
+    /**
+     * Roundtrips ECPoint instances via Java serialization.
+     */
+    public void testJavaSerialization() throws Exception
+    {
+        for (ECPoint point : fp.p)
+        {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            new ObjectOutputStream(os).writeObject(point);
+            ECPoint pointCopy = (ECPoint) new ObjectInputStream(new ByteArrayInputStream(os.toByteArray())).readObject();
+            assertEquals(point, pointCopy);
+        }
+
+        for (ECPoint point : f2m.p)
+	    {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            new ObjectOutputStream(os).writeObject(point);
+            ECPoint pointCopy = (ECPoint) new ObjectInputStream(new ByteArrayInputStream(os.toByteArray())).readObject();
+            assertEquals(point, pointCopy);
+        }
     }
 }

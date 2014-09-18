@@ -1,10 +1,11 @@
 package org.bouncycastle.math.field;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import org.bouncycastle.util.Integers;
 
-class GenericPolynomialExtensionField implements PolynomialExtensionField
+class GenericPolynomialExtensionField implements PolynomialExtensionField, Serializable
 {
     protected final FiniteField subfield;
     protected final Polynomial minimalPolynomial;

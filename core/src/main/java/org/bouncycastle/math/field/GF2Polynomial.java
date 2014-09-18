@@ -1,8 +1,10 @@
 package org.bouncycastle.math.field;
 
+import java.io.Serializable;
+
 import org.bouncycastle.util.Arrays;
 
-class GF2Polynomial implements Polynomial
+class GF2Polynomial implements Polynomial, Serializable
 {
     protected final int[] exponents;
 
