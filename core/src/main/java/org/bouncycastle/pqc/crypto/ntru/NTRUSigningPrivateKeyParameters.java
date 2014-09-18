@@ -152,9 +152,13 @@ public class NTRUSigningPrivateKeyParameters
             return false;
         }
         NTRUSigningPrivateKeyParameters other = (NTRUSigningPrivateKeyParameters)obj;
-        if (bases == null || other.bases != null)
+        if ((bases == null) != (other.bases == null))
         {
             return false;
+        }
+        if (bases == null)
+        {
+            return true;
         }
         if (bases.size() != other.bases.size())
         {
