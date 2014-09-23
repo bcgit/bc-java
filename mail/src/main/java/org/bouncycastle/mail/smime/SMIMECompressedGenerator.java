@@ -38,20 +38,25 @@ public class SMIMECompressedGenerator
 
     static
     {
-        final MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
+        CommandMap commandMap = CommandMap.getDefaultCommandMap();
 
-        mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
-        mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
-
-        AccessController.doPrivileged(new PrivilegedAction()
+        if (commandMap instanceof MailcapCommandMap)
         {
-            public Object run()
-            {
-                CommandMap.setDefaultCommandMap(mc);
+            final MailcapCommandMap mc = (MailcapCommandMap)commandMap;
 
-                return null;
-            }
-        });
+            mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
+            mc.addMailcap("application/x-pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.x_pkcs7_mime");
+
+            AccessController.doPrivileged(new PrivilegedAction()
+            {
+                public Object run()
+                {
+                    CommandMap.setDefaultCommandMap(mc);
+
+                    return null;
+                }
+            });
+        }
     }
 
     /**

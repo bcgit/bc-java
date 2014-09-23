@@ -6,8 +6,6 @@ import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathBuilderResult;
 import java.security.cert.CertPathBuilderSpi;
 import java.security.cert.CertPathParameters;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
@@ -20,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
+import org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory;
 import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
@@ -171,13 +170,13 @@ public class PKIXCertPathBuilderSpi
         tbvPath.add(tbvCert);
 
         CertificateFactory cFact;
-        CertPathValidator validator;
+        PKIXCertPathValidatorSpi validator;
         CertPathBuilderResult builderResult = null;
 
         try
         {
-            cFact = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
-            validator = CertPathValidator.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
+            cFact = new CertificateFactory();
+            validator = new PKIXCertPathValidatorSpi();
         }
         catch (Exception e)
         {
@@ -197,7 +196,7 @@ public class PKIXCertPathBuilderSpi
                 PKIXCertPathValidatorResult result = null;
                 try
                 {
-                    certPath = cFact.generateCertPath(tbvPath);
+                    certPath = cFact.engineGenerateCertPath(tbvPath);
                 }
                 catch (Exception e)
                 {
@@ -208,7 +207,7 @@ public class PKIXCertPathBuilderSpi
 
                 try
                 {
-                    result = (PKIXCertPathValidatorResult) validator.validate(
+                    result = (PKIXCertPathValidatorResult) validator.engineValidate(
                         certPath, pkixParams);
                 }
                 catch (Exception e)
@@ -233,7 +232,7 @@ public class PKIXCertPathBuilderSpi
                 catch (CertificateParsingException e)
                 {
                     throw new AnnotatedException(
-                        "No additiontal X.509 stores can be added from certificate locations.",
+                        "No additional X.509 stores can be added from certificate locations.",
                         e);
                 }
                 Collection issuers = new HashSet();

@@ -37,8 +37,12 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -1200,10 +1204,10 @@ public class RFC3280CertPathUtilities
                 throw new CertPathValidatorException("Subject alternative name extension could not be decoded.", e,
                     certPath, index);
             }
-            Vector emails = new X509Name(dns).getValues(X509Name.EmailAddress);
-            for (Enumeration e = emails.elements(); e.hasMoreElements();)
+            RDN[] emails = X500Name.getInstance(dns).getRDNs(PKCSObjectIdentifiers.pkcs_9_at_emailAddress);
+            for (int ei = 0; ei != emails.length; ei++)
             {
-                String email = (String)e.nextElement();
+                String email = ((ASN1String)(emails[ei].getFirst().getValue())).getString();
                 GeneralName emailAsGeneralName = new GeneralName(GeneralName.rfc822Name, email);
                 try
                 {

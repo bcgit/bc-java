@@ -38,6 +38,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
@@ -57,8 +58,11 @@ import org.bouncycastle.cms.bc.BcRSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.BufferingContentSigner;
@@ -1436,7 +1440,16 @@ public class BcSignedDataTest
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
-            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+            assertEquals(false, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+
+            RSADigestSigner sig = new RSADigestSigner(new SHA1Digest());
+
+            sig.init(false, PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo()));
+
+            byte[] encoded = signer.toASN1Structure().getAuthenticatedAttributes().getEncoded();
+            sig.update(encoded, 0, encoded.length);
+
+            assertEquals(true, sig.verifySignature(signer.getSignature()));
         }
     }
     
