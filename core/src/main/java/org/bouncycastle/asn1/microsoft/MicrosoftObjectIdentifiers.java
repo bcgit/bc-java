@@ -21,6 +21,8 @@ public interface MicrosoftObjectIdentifiers
     static final ASN1ObjectIdentifier    microsoftCaVersion      = microsoft.branch("21.1");
     /** OID: 1.3.6.1.4.1.311.21.2 */
     static final ASN1ObjectIdentifier    microsoftPrevCaCertHash = microsoft.branch("21.2");
+    /** OID: 1.3.6.1.4.1.311.21.4 */
+    static final ASN1ObjectIdentifier    microsoftCrlNextPublish = microsoft.branch("21.4");
     /** OID: 1.3.6.1.4.1.311.21.7 */
     static final ASN1ObjectIdentifier    microsoftCertTemplateV2 = microsoft.branch("21.7");
     /** OID: 1.3.6.1.4.1.311.21.10 */
