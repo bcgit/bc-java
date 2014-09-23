@@ -71,7 +71,7 @@ public class CertificationRequestInfo
         SubjectPublicKeyInfo    pkInfo,
         ASN1Set                 attributes)
     {
-        if ((subject == null) || (pkInfo == null) || (attributes == null))
+        if ((subject == null) || (pkInfo == null))
         {
             throw new IllegalArgumentException("Not all mandatory fields set in CertificationRequestInfo generator.");
         }
@@ -89,7 +89,7 @@ public class CertificationRequestInfo
         SubjectPublicKeyInfo    pkInfo,
         ASN1Set                 attributes)
     {
-        if ((subject == null) || (pkInfo == null) || (attributes == null))
+        if ((subject == null) || (pkInfo == null))
         {
             throw new IllegalArgumentException("Not all mandatory fields set in CertificationRequestInfo generator.");
         }

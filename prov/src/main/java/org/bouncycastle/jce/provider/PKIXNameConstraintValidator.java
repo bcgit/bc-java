@@ -635,10 +635,14 @@ public class PKIXNameConstraintValidator
     private boolean emailIsConstrained(String email, String constraint)
     {
         String sub = email.substring(email.indexOf('@') + 1);
-        // a particular mailbox
+        // a particular mailbox or @domain
         if (constraint.indexOf('@') != -1)
         {
             if (email.equalsIgnoreCase(constraint))
+            {
+                return true;
+            }
+            if (sub.equalsIgnoreCase(constraint.substring(1)))
             {
                 return true;
             }

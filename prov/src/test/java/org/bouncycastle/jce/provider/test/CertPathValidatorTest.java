@@ -242,6 +242,37 @@ public class CertPathValidatorTest
         PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)cpv.validate(cp, param);
     }
 
+    private void checkPolicyProcessingAtDomainMatch()
+        throws Exception
+    {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate   root = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("qvRooCa3.crt"));
+        X509Certificate   ca1 = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("suvaRoot1.crt"));
+        X509Certificate   ca2 = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("suvaEmail1.crt"));
+        X509Certificate   ee = (X509Certificate)cf.generateCertificate(this.getClass().getResourceAsStream("suvaEE.crt"));
+
+        List certchain = new ArrayList();
+        certchain.add(ee);
+        certchain.add(ca2);
+        certchain.add(ca1);
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(root, null));
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX","BC");
+        PKIXParameters param = new PKIXParameters(trust);
+        param.setRevocationEnabled(false);
+
+        CertPath cp = cf.generateCertPath(certchain);
+
+        MyChecker checker = new MyChecker();
+        param.addCertPathChecker(checker);
+
+        PKIXCertPathValidatorResult result =
+            (PKIXCertPathValidatorResult) cpv.validate(cp, param);
+    }
+
     public void performTest()
         throws Exception
     {
@@ -343,6 +374,7 @@ public class CertPathValidatorTest
         }
 
         checkCircProcessing();
+        checkPolicyProcessingAtDomainMatch();
     }
 
     public String getName()
