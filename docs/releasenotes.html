@@ -23,8 +23,21 @@ to conform the algorithms to the JCE framework.
 <h2>2.0 Release History</h2>
 
 <h3>2.1.1 Version</h3>
-Release 1.51
+Release 1.52
 <h3>2.1.2 Defects Fixed</h3>
+<ul>
+<li>GenericSigner in the lightweight API would fail if the digest started with a zero byte, occassionally causing a TLS negotiation to fail. This has been fixed.</li>
+<li>Some BC internal classes expected the BC provider to be accessible within thhe provider. This has been fixed.</li>
+<li>Email based policy constraints in CertPath validation did not include '@'domain.name as a possible match. This has been fixed.</li>
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>The CMP support class CMPCertificate restricted the types of certificates that could be added. A more flexible method has been introduced to allow for other certificate types.</li>
+</ul>
+
+<h3>2.2.1 Version</h3>
+Release 1.51
+<h3>2.2.2 Defects Fixed</h3>
 <ul>
 <li>The AEAD GCM AlgorithmParameters object was unable to return a GCMParameterSpec object. This has been fixed.</li>
 <li>Cipher.getIV() was returning null for AEAD mode ciphers. This has been fixed.</li>
@@ -38,7 +51,7 @@ Release 1.51
 <li>The provider implementation was failing to throw an exception if algorithm parameters were passed in when none were required for EC key agreement. This has been fixed.</li>
 <li>PKCS#12 files containing keys/certificates with empty attribute sets attached to them no longer cause an ArrayIndexOutOfBoundsException to be thrown.</li>
 </ul>
-<h3>2.1.3 Additional Features and Functionality</h3>
+<h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>The range of key algorithm names that will be interpreted by KeyAgreement.generateSecret() has been expanded for ECDH derived algorithms in the provider. A KeyAgreement of ECDHwithSHA1KDF can now be explicitly created.</li>
 <li>ECIES now supports the use of IVs with the underlying block cipher and CBC mode in both the lightweight and the JCE APIs.</li>
@@ -65,15 +78,15 @@ Release 1.51
 <li>Full support is now provided for client-side auth in the D/TLS server code.</li>
 <li>Compatibility issues with some OSGI containers have been addressed.</li>
 </ul>
-<h3>2.1.4 Notes</h3>
+<h3>2.2.4 Notes</h3>
 <ul>
 <li>Support for NTRUSigner has been deprecated as the algorithm has been withdrawn.</li>
 <li>Some changes have affected the return values of some methods. If you are migrating from an earlier release, it is recommended to recompile before using this release.</li>
 <li>There has been further clean out of deprecated methods in this release. If your code has previously been flagged as using a deprecated method you may need to change it. The OpenPGP API is the most heavily affected.</li>
 </ul>
-<h3>2.2.1 Version</h3>
+<h3>2.3.1 Version</h3>
 Release 1.50
-<h3>2.2.2 Defects Fixed</h3>
+<h3>2.3.2 Defects Fixed</h3>
 <ul>
 <li>The DualECSP800DRBG sometimes truncated the last block in the generated stream incorrectly. This has been fixed.</li>
 <li>Keys produced from RSA certificates with specialised parameters would lose the parameter settings. This has been fixed.</li>
@@ -87,7 +100,7 @@ Release 1.50
 <li>Default RC2 parameters for 40 bit RC2 keys in CMSEnvelopedData were encoding incorrectly. This has been fixed.</li>
 <li>In case of a long hash the DSTU4145 implementation would sometimes remove one bit too much during truncation. This has been fixed.</li>
 </ul>
-<h3>2.2.3 Additional Features and Functionality</h3>
+<h3>2.3.3 Additional Features and Functionality</h3>
 <ul>
 <li>Additional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages and allow for non-default parameters.</li>
 <li>OCB implementation updated to account for changes in draft-irtf-cfrg-ocb-03.</li>
@@ -106,7 +119,7 @@ Release 1.50
 <li>Package version information is now included in the jar MANIFEST.MF.</li>
 <li>The JDK 1.5+ provider will now recognise and use GCMParameterSpec if it is run in a 1.7 JVM.</li>
 </ul>
-<h3>2.2.4 Notes</h3>
+<h3>2.3.4 Notes</h3>
 <ul>
 <li>org.bouncycastle.crypto.DerivationFunction is now a base interface, the getDigest() method appears on DigestDerivationFunction.</li>
 <li>Recent developments at NIST indicate the SHA-3 may be changed before final standardisation. Please bare this in mind if you are using it.</li>
@@ -116,9 +129,9 @@ Release 1.50
 <li>ECDH support for OpenPGP should still be regarded as experimental. It is still possible there will be compliance issues with other implementations.</li>
 </ul>
 
-<h3>2.3.1 Version</h3>
+<h3>2.4.1 Version</h3>
 Release 1.49
-<h3>2.3.2 Defects Fixed</h3>
+<h3>2.4.2 Defects Fixed</h3>
 <ul>
 <li>Occasional ArrayOutOfBounds exception in DSTU-4145 signature generation has been fixed.</li>
 <li>The handling of escaped characters in X500 names is much improved.</li>
@@ -129,7 +142,7 @@ Release 1.49
 <li>PEMParser would throw a NullPointerException if it ran into explicit EC curve parameters, it would also throw an Exception if the named curve was not already defined. The parser now returns X9ECParmameters for explicit parameters and returns an ASN1ObjectIdentifier for a named curve.</li>
 <li>The V2TBSCertListGenerator was adding the wrong date type for CRL invalidity date extensions. This has been fixed.</li>
 </ul>
-<h3>2.3.3 Additional Features and Functionality</h3>
+<h3>2.4.3 Additional Features and Functionality</h3>
 <ul>
 <li>A SecretKeyFactory has been added that enables use of PBKDF2WithHmacSHA.</li>
 <li>Support has been added to PKCS12 KeyStores and PfxPdu to handle PKCS#5 encrypted private keys.</li>
@@ -158,15 +171,15 @@ class NonMemoableDigest has been added which hides the Memoable interface where 
 <li>A basic commitment package has been introduced into the lightweight API containing a digest based commitment scheme.</li>
 <li>It is now possible to set the NotAfter and NotBefore date in the CRMF CertificateRequestMessageBuilder class.</li>
 </ul>
-<h3>2.3.4 Notes</h3>
+<h3>2.4.4 Notes</h3>
 <ul>
 <li>The NTRU implementation has been moved into the org.bouncycastle.pqc package hierarchy.</li>
 <li>The change to PEMParser to support explicit EC curves is not backward compatible. If you run into a named curve you need to use org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID() to look the curve up if required.</li>
 </ul>
 
-<h3>2.4.1 Version</h3>
+<h3>2.5.1 Version</h3>
 Release 1.48
-<h3>2.4.2 Defects Fixed</h3>
+<h3>2.5.2 Defects Fixed</h3>
 <ul>
 <li>Occasional key compatibility issues in IES due to variable length keys have been fixed.</li>
 <li>PEMWriter now recognises the new PKCS10CertificationRequest object.</li>
@@ -178,7 +191,7 @@ Release 1.48
 <li>A regression in 1.47 which prevented key wrapping with regular symmetric PBE algorihtms has been fixed.</li>
 </ul>
 
-<h3>2.4.3 Additional Features and Functionality</h3>
+<h3>2.5.3 Additional Features and Functionality</h3>
 <ul>
 <li>IES now supports auto generation of ephemeral keys in both the JCE and the lightweight APIs.</li>
 <li>A new class PEMParser has been added to return the new CertificateHolder and Request objects introduced recently.</li>
@@ -193,9 +206,9 @@ Release 1.48
 <li>T61String now uses UTF-8 encoding by default rather than a simple 8 bit transform.</li>
 </ul>
 
-<h3>2.5.1 Version</h3>
+<h3>2.6.1 Version</h3>
 Release 1.47
-<h3>2.5.2 Defects Fixed</h3>
+<h3>2.6.2 Defects Fixed</h3>
 <ul>
 <li>OpenPGP ID based certifications now support UTF-8. Note: this may mean that some old certifications no longer validate - if this happens a retry can be added using by converting the ID using Strings.fromByteArray(Strings.toByteArray(id)) - this will strip out the top byte in each character.</li>
 <li>IPv4/IPv6 parsing in CIDR no longer assumes octet boundaries on a mask.</li>
@@ -212,7 +225,7 @@ Release 1.47
 <li>Check of DH parameter L could reject some valid keys. This is now fixed.</li>
 </ul>
 
-<h3>2.5.3 Additional Features and Functionality</h3>
+<h3>2.6.3 Additional Features and Functionality</h3>
 <ul>
 <li>Support is now provided via the RepeatedKey class to enable IV only re-initialisation in the JCE layer. The same effect can be acheived in the light weight API by using null as the key parameter when creating a ParametersWithIV object.</li>
 <li>CRMF now supports empty poposkInput.</li>
@@ -232,7 +245,7 @@ Release 1.47
 <li>The J2ME lcrypto release now includes higher level classes for handling PKCS, CMS, CRMF, CMP, EAC, OpenPGP, and certificate generation.</li>
 </ul>
 
-<h3>2.5.4 Other notes</h3>
+<h3>2.6.4 Other notes</h3>
 <p>
 Okay, so we have had to do another release. The issue we have run into is that we probably didn't go far enough in 1.46, but we are now confident that moving from this release to 2.0 should be largely just getting rid of deprecated methods. While this release does change a lot it is relatively straight forward to do a port and we have a <a href="http://www.bouncycastle.org/wiki/display/JA1/Porting+from+earlier+BC+releases+to+1.47+and+later">porting guide</a> which explains the important ones. The area there has been the most change in is the ASN.1 library which was in bad need of a rewrite after 10 years of patching. On the bright side the rewrite did allow us to eliminate a few problems and bugs in the ASN.1 library, so we have some hope anyone porting to it will also have similar benefits. As with 1.46 the other point of emphasis has been making sure interface support is available for operations across the major APIs, so the lightweight API or some local role your own methods can be used instead for doing encryption and signing.
 </p>
