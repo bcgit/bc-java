@@ -49,16 +49,16 @@ public class ExtensionType
     public static final int encrypt_then_mac = 22;
 
     /*
+     * draft-ietf-tls-session-hash-01
+     * 
+     * NOTE: Early code-point assignment
+     */
+    public static final int extended_master_secret = 23;
+
+    /*
      * RFC 5077 7.
      */
     public static final int session_ticket = 35;
-
-    /*
-     * draft-ietf-tls-session-hash-01
-     * 
-     * WARNING: Placeholder value; the real value is TBA
-     */
-    public static final int extended_master_secret = 100;
 
     /*
      * draft-ietf-tls-negotiated-ff-dhe-01
