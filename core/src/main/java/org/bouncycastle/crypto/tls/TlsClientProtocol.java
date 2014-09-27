@@ -783,9 +783,10 @@ public class TlsClientProtocol
         if (sessionServerExtensions != null)
         {
             /*
-             * draft-ietf-tls-encrypt-then-mac-03 3. If a server receives an encrypt-then-MAC
-             * request extension from a client and then selects a stream or AEAD cipher suite, it
-             * MUST NOT send an encrypt-then-MAC response extension back to the client.
+             * RFC 7366 3. If a server receives an encrypt-then-MAC request extension from a client
+             * and then selects a stream or Authenticated Encryption with Associated Data (AEAD)
+             * ciphersuite, it MUST NOT send an encrypt-then-MAC response extension back to the
+             * client.
              */
             boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
             if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(selectedCipherSuite))

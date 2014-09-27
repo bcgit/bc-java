@@ -44,14 +44,14 @@ public class ExtensionType
     public static final int heartbeat = 15;
 
     /*
+     * RFC 7366
+     */
+    public static final int encrypt_then_mac = 22;
+
+    /*
      * RFC 5077 7.
      */
     public static final int session_ticket = 35;
-
-    /*
-     * draft-ietf-tls-encrypt-then-mac-03
-     */
-    public static final int encrypt_then_mac = 22;
 
     /*
      * draft-ietf-tls-session-hash-01
