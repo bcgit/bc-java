@@ -236,6 +236,23 @@ public class CertificateTest
       + "qukHSj8Kiio6Jecl//qDPG/mHo1ro+8rH+rbze7EEfKMp5yeWCwXGthL9oYo"
       + "RYl+UuI=");
 
+
+    // bad issuer certificate
+    private static final byte[] dudCert = Base64.decode(
+        "MIICLzCCAZgCBFp/9TowDQYJKoZIhvcNAQEFBQAwAjEAMB4XDTA4MDcyNTEzNTQ0" +
+        "MFoXDTEzMDgyNTA1MDAwMFowgboxCzAJBgNVBAYTAlVTMQ0wCwYDVQQIEwRJb3dh" +
+        "MRMwEQYDVQQHEwpEZXMgTW9pbmVzMT0wOwYDVQQKEzRTdGF0ZSBvZiBJb3dhLCBE" +
+        "ZXBhcnRtZW50IG9mIEFkbWluaXN0cmF0aXZlIFNlcnZpY2VzMSowKAYDVQQLEyFJ" +
+        "bmZvcm1hdGlvbiBUZWNobm9sb2d5IEVudGVycHJpc2UxHDAaBgNVBAMTE3d3dy5k" +
+        "b20uc3RhdGUuaWEudXMwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAK0C7Jca" +
+        "C0RiD0hcBcPUdGc78y815yPuHGmF/A2K+3LbwfFXDhsY7ebRxHVfL7gt+nFBvJ2r" +
+        "MqDBIMHFB3vYdSnGbND41eso6cLnzkMVtSisG25Tat3F8BF/js54sa0mFEn4qMQ+" +
+        "6T6jxyPflsjKpmi6L7lfRdPNbBbKSmK9ik2lAgMBAAEwDQYJKoZIhvcNAQEFBQAD" +
+        "gYEAc9Rx95MiPzJiCn3nOoP+3PPQCGTyUcUWZfYKXuC7aOzMYUXes71Q3K1/W6Vy" +
+        "V2Tlrbj0KT8j2/kBmy8+7d5whnUklJNsH6VJMst3V4Uxvk3os+uaW0FHsW389sNY" +
+        "/5LdslDjfqV2nUc2GqDPn38PATL26SRJKlCvU2NagdID3WM="
+    );
+
    String[] subjects = 
    {
        "C=AU,ST=Victoria,L=South Melbourne,O=Connect 4 Pty Ltd,OU=Webserver Team,CN=www2.connect4.com.au,E=webmaster@connect4.com.au",
@@ -552,6 +569,16 @@ public class CertificateTest
         }
     }
 
+    private void checkDudCertificate()
+    {
+        Certificate cert = Certificate.getInstance(dudCert);
+
+        if (!"".equals(cert.getIssuer().toString()))
+        {
+            fail("empty issuer not recognised correctly");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -564,6 +591,7 @@ public class CertificateTest
         checkCertificate(7, cert7);
         checkAttributeCertificate(8,cert8);
         checkV1AttributeCertificate(9, attrCertv1);
+        checkDudCertificate();
     }
 
     public static void main(
