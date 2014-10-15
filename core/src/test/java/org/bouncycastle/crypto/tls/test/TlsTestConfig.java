@@ -58,6 +58,11 @@ public class TlsTestConfig
     public ProtocolVersion clientOfferVersion = null;
 
     /**
+     * Configures whether the client will indicate version fallback via TLS_FALLBACK_SCSV.
+     */
+    public boolean clientFallback = false;
+
+    /**
      * Configures whether the test server will send a certificate request.
      */
     public int serverCertReq = SERVER_CERT_REQ_OPTIONAL;

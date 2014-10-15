@@ -214,6 +214,17 @@ public class AlertDescription
      */
     public static final short unknown_psk_identity = 115;
 
+    /*
+     * draft-bmoeller-tls-downgrade-scsv-02
+     */
+
+    /**
+     * If TLS_FALLBACK_SCSV appears in ClientHello.cipher_suites and the highest protocol version
+     * supported by the server is higher than the version indicated in ClientHello.client_version,
+     * the server MUST respond with an inappropriate_fallback alert.
+     */
+    public static final short inappropriate_fallback = 86;
+
     public static String getName(short alertDescription)
     {
         switch (alertDescription)
@@ -278,6 +289,8 @@ public class AlertDescription
             return "bad_certificate_hash_value";
         case unknown_psk_identity:
             return "unknown_psk_identity";
+        case inappropriate_fallback:
+            return "inappropriate_fallback";
         default:
             return "UNKNOWN";
         }

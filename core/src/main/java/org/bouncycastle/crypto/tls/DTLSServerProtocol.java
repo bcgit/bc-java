@@ -344,7 +344,7 @@ public class DTLSServerProtocol
         state.selectedCipherSuite = state.server.getSelectedCipherSuite();
         if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || CipherSuite.isSCSV(state.selectedCipherSuite)
             || !TlsUtils.isValidCipherSuiteForVersion(state.selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -579,6 +579,7 @@ public class DTLSServerProtocol
         context.setClientVersion(client_version);
 
         state.server.notifyClientVersion(client_version);
+        state.server.notifyFallback(Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
 
         securityParameters.clientRandom = client_random;
 
