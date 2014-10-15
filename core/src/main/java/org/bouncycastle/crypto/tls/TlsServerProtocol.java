@@ -473,6 +473,8 @@ public class TlsServerProtocol
         throws IOException
     {
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
+        recordStream.setWriteVersion(client_version);
+
         if (client_version.isDTLS())
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -525,6 +527,7 @@ public class TlsServerProtocol
         getContextAdmin().setClientVersion(client_version);
 
         tlsServer.notifyClientVersion(client_version);
+        tlsServer.notifyFallback(Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
 
         securityParameters.clientRandom = client_random;
 
@@ -663,7 +666,7 @@ public class TlsServerProtocol
         int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
         if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || CipherSuite.isSCSV(selectedCipherSuite)
             || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);

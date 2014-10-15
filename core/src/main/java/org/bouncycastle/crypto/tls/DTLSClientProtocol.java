@@ -439,6 +439,8 @@ public class DTLSClientProtocol
         // Cookie
         TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
+        boolean fallback = client.isFallback();
+
         /*
          * Cipher suites
          */
@@ -459,12 +461,23 @@ public class DTLSClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noRenegSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
-            if (noRenegExt && noSCSV)
+            if (noRenegExt && noRenegSCSV)
             {
                 // TODO Consider whether to default to a client extension instead
                 state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            }
+
+            /*
+             * draft-bmoeller-tls-downgrade-scsv-02 4. If a client sends a
+             * ClientHello.client_version containing a lower value than the latest (highest-valued)
+             * version supported by the client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite
+             * value in ClientHello.cipher_suites.
+             */
+            if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
+            {
+                state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
             }
 
             TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
@@ -631,7 +644,7 @@ public class DTLSClientProtocol
         state.selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!Arrays.contains(state.offeredCipherSuites, state.selectedCipherSuite)
             || state.selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || state.selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || CipherSuite.isSCSV(state.selectedCipherSuite)
             || !TlsUtils.isValidCipherSuiteForVersion(state.selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);

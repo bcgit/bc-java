@@ -628,7 +628,7 @@ public class TlsClientProtocol
         int selectedCipherSuite = TlsUtils.readUint16(buf);
         if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || selectedCipherSuite == CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+            || CipherSuite.isSCSV(selectedCipherSuite)
             || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -857,6 +857,8 @@ public class TlsClientProtocol
             }
         }
 
+        boolean fallback = this.tlsClient.isFallback();
+
         this.offeredCipherSuites = this.tlsClient.getCipherSuites();
 
         this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
@@ -892,14 +894,25 @@ public class TlsClientProtocol
             byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
 
-            boolean noSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            boolean noRenegSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
-            if (noRenegExt && noSCSV)
+            if (noRenegExt && noRenegSCSV)
             {
                 // TODO Consider whether to default to a client extension instead
 //                this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.clientExtensions);
 //                this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
                 this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+            }
+
+            /*
+             * draft-bmoeller-tls-downgrade-scsv-02 4. If a client sends a
+             * ClientHello.client_version containing a lower value than the latest (highest-valued)
+             * version supported by the client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite
+             * value in ClientHello.cipher_suites.
+             */
+            if (fallback && !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
+            {
+                this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
             }
 
             TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);

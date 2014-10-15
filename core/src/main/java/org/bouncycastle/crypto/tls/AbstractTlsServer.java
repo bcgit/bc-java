@@ -112,6 +112,20 @@ public abstract class AbstractTlsServer
         this.clientVersion = clientVersion;
     }
 
+    public void notifyFallback(boolean isFallback) throws IOException
+    {
+        /*
+         * draft-bmoeller-tls-downgrade-scsv-02 3. If TLS_FALLBACK_SCSV appears in
+         * ClientHello.cipher_suites and the highest protocol version supported by the server is
+         * higher than the version indicated in ClientHello.client_version, the server MUST respond
+         * with an inappropriate_fallback alert.
+         */
+        if (isFallback && getMaximumVersion().isLaterVersionOf(clientVersion))
+        {
+            throw new TlsFatalAlert(AlertDescription.inappropriate_fallback);
+        }
+    }
+
     public void notifyOfferedCipherSuites(int[] offeredCipherSuites)
         throws IOException
     {
