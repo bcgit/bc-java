@@ -63,6 +63,16 @@ public abstract class AbstractTlsClient
         return ProtocolVersion.TLSv12;
     }
 
+    public boolean isFallback()
+    {
+        /*
+         * draft-bmoeller-tls-downgrade-scsv-02 4. [..] is meant for use by clients that repeat a
+         * connection attempt with a downgraded protocol in order to avoid interoperability problems
+         * with legacy servers.
+         */
+        return false;
+    }
+
     public Hashtable getClientExtensions()
         throws IOException
     {
