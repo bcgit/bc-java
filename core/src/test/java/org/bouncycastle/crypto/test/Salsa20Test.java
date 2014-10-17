@@ -281,8 +281,8 @@ public class Salsa20Test
     private void skipTest()
     {
         SecureRandom rand = new SecureRandom();
-        byte[]       plain = new byte[5000];
-        byte[]       cipher = new byte[5000];
+        byte[]       plain = new byte[50000];
+        byte[]       cipher = new byte[50000];
 
         rand.nextBytes(plain);
 
@@ -353,7 +353,7 @@ public class Salsa20Test
 
         engine.reset();
 
-        for (int i = 0; i != 1000; i++)
+        for (int i = 0; i != 5000; i++)
         {
             engine.skip(i);
 
