@@ -66,7 +66,13 @@ class TlsTestClientImpl
         return super.getMinimumVersion();
     }
 
+    public boolean isFallback()
+    {
+        return config.clientFallback;
+    }
+
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
+    
     {
         if (alertLevel == AlertLevel.fatal && firstFatalAlertConnectionEnd == -1)
         {

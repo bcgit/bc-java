@@ -15,11 +15,38 @@ public class TlsTestSuite extends TestSuite
     {
         TlsTestSuite testSuite = new TlsTestSuite();
 
+        addFallbackTests(testSuite);
         addVersionTests(testSuite, ProtocolVersion.TLSv10);
         addVersionTests(testSuite, ProtocolVersion.TLSv11);
         addVersionTests(testSuite, ProtocolVersion.TLSv12);
 
         return testSuite;
+    }
+
+    private static void addFallbackTests(TestSuite testSuite)
+    {
+        {
+            TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12);
+            c.clientFallback = true;
+
+            testSuite.addTest(new TlsTestCase(c, "FallbackGood"));
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12);
+            c.clientOfferVersion = ProtocolVersion.TLSv11;
+            c.clientFallback = true;
+            c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
+
+            testSuite.addTest(new TlsTestCase(c, "FallbackBad"));
+        }
+
+        {
+            TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12);
+            c.clientOfferVersion = ProtocolVersion.TLSv11;
+
+            testSuite.addTest(new TlsTestCase(c, "FallbackNone"));
+        }
     }
 
     private static void addVersionTests(TestSuite testSuite, ProtocolVersion version)

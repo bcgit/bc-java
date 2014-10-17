@@ -11,6 +11,8 @@ public interface TlsServer
 
     void notifyClientVersion(ProtocolVersion clientVersion) throws IOException;
 
+    void notifyFallback(boolean isFallback) throws IOException;
+
     void notifyOfferedCipherSuites(int[] offeredCipherSuites)
         throws IOException;
 

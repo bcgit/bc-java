@@ -23,6 +23,8 @@ public interface TlsClient
 
     ProtocolVersion getClientVersion();
 
+    boolean isFallback();
+
     int[] getCipherSuites();
 
     short[] getCompressionMethods();
