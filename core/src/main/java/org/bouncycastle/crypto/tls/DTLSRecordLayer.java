@@ -442,17 +442,17 @@ class DTLSRecordLayer
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)
         throws IOException
     {
-        if (recordQueue.size() > 0)
+        if (recordQueue.available() > 0)
         {
             int length = 0;
-            if (recordQueue.size() >= RECORD_HEADER_LENGTH)
+            if (recordQueue.available() >= RECORD_HEADER_LENGTH)
             {
                 byte[] lengthBytes = new byte[2];
                 recordQueue.read(lengthBytes, 0, 2, 11);
                 length = TlsUtils.readUint16(lengthBytes, 0);
             }
 
-            int received = Math.min(recordQueue.size(), RECORD_HEADER_LENGTH + length);
+            int received = Math.min(recordQueue.available(), RECORD_HEADER_LENGTH + length);
             recordQueue.removeData(buf, off, received, 0);
             return received;
         }
