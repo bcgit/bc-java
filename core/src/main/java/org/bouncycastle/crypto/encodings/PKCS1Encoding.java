@@ -70,7 +70,7 @@ public class PKCS1Encoding
 	 * @param cipher
 	 *            The cipher to use for cryptographic operation.
 	 * @param fallback
-	 *            The fallback value, we don't to a arraycopy here.
+	 *            The fallback value, we don't do an arraycopy here.
 	 */
 	public PKCS1Encoding(
     	AsymmetricBlockCipher   cipher,
@@ -350,7 +350,8 @@ public class PKCS1Encoding
          * If the length of the expected plaintext is known, we use a constant-time decryption.
          * If the decryption fails, we return a random value.
          */
-		if (this.pLen != -1) {
+		if (this.pLen != -1)
+        {
     		return this.decodeBlockOrRandom(in, inOff, inLen);
     	}
     	
