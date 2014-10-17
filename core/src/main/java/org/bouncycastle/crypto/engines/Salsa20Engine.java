@@ -154,11 +154,66 @@ public class Salsa20Engine
         return out;
     }
 
+    protected void advanceCounter(long diff)
+    {
+        int hi = (int)(diff >>> 32);
+        int lo = (int)diff;
+
+        if (hi > 0)
+        {
+            engineState[9] += hi;
+        }
+
+        int oldState = engineState[8];
+
+        engineState[8] += lo;
+
+        if (oldState != 0 && engineState[8] < oldState)
+        {
+            engineState[9]++;
+        }
+    }
+
     protected void advanceCounter()
     {
         if (++engineState[8] == 0)
         {
             ++engineState[9];
+        }
+    }
+
+    protected void retreatCounter(long diff)
+    {
+        int hi = (int)(diff >>> 32);
+        int lo = (int)diff;
+
+        if (hi != 0)
+        {
+            if ((engineState[9] & 0xffffffffL) >= (hi & 0xffffffffL))
+            {
+                engineState[9] -= hi;
+            }
+            else
+            {
+                throw new IllegalStateException("attempt to reduce counter past zero.");
+            }
+        }
+
+        if ((engineState[8] & 0xffffffffL) >= (lo & 0xffffffffL))
+        {
+            engineState[8] -= lo;
+        }
+        else
+        {
+            if (engineState[9] != 0)
+            {
+                --engineState[9];
+                engineState[8] -= lo;
+            }
+            else
+            {
+                throw new IllegalStateException("attempt to reduce counter past zero.");
+            }
         }
     }
 
@@ -221,19 +276,40 @@ public class Salsa20Engine
     {
         if (numberOfBytes >= 0)
         {
-            for (long i = 0; i < numberOfBytes; i++)
-            {
-                index = (index + 1) & 63;
+            long remaining = numberOfBytes;
 
-                if (index == 0)
-                {
-                    advanceCounter();
-                }
+            if (remaining >= 64)
+            {
+                long count = remaining / 64;
+
+                advanceCounter(count);
+
+                remaining -= count * 64;
+            }
+
+            int oldIndex = index;
+
+            index = (index + (int)remaining) & 63;
+
+            if (index < oldIndex)
+            {
+                advanceCounter();
             }
         }
         else
         {
-            for (long i = 0; i > numberOfBytes; i--)
+            long remaining = -numberOfBytes;
+
+            if (remaining >= 64)
+            {
+                long count = remaining / 64;
+
+                retreatCounter(count);
+
+                remaining -= count * 64;
+            }
+
+            for (long i = 0; i < remaining; i++)
             {
                 if (index == 0)
                 {

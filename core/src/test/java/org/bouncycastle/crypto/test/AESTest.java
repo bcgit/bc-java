@@ -267,8 +267,8 @@ public class AESTest
         engine.init(true, params);
 
         SecureRandom rand = new SecureRandom();
-        byte[]       plain = new byte[5000];
-        byte[]       cipher = new byte[5000];
+        byte[]       plain = new byte[50000];
+        byte[]       cipher = new byte[50000];
 
         rand.nextBytes(plain);
         engine.processBytes(plain, 0, plain.length, cipher, 0);
@@ -349,7 +349,7 @@ public class AESTest
 
         engine.reset();
 
-        for (int i = 0; i != 1000; i++)
+        for (int i = 0; i != 5000; i++)
         {
             engine.skip(i);
 
