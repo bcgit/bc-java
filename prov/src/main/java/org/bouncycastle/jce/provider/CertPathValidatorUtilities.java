@@ -247,7 +247,7 @@ public class CertPathValidatorUtilities
         throws CertificateParsingException
     {
         // if in the IssuerAltName extension an URI
-        // is given, add an additinal X.509 store
+        // is given, add an additional X.509 store
         if (cert.getIssuerAlternativeNames() != null)
         {
             Iterator it = cert.getIssuerAlternativeNames().iterator();
