@@ -16,7 +16,7 @@ class DTLSReassembler
         this.missing.addElement(new Range(0, length));
     }
 
-    short getType()
+    short getMsgType()
     {
         return msg_type;
     }

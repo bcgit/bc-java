@@ -97,7 +97,7 @@ class DTLSReliableHandshake
                 if (body != null)
                 {
                     previousInboundFlight = null;
-                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getType(), body));
+                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getMsgType(), body));
                 }
             }
         }
@@ -196,7 +196,7 @@ class DTLSReliableHandshake
                             {
                                 previousInboundFlight = null;
                                 return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
-                                    reassembler.getType(), body));
+                                    reassembler.getMsgType(), body));
                             }
                         }
                     }
