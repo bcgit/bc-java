@@ -29,11 +29,66 @@ public class ChaChaEngine extends Salsa20Engine
         return "ChaCha" + rounds;
     }
 
+    protected void advanceCounter(long diff)
+    {
+        int hi = (int)(diff >>> 32);
+        int lo = (int)diff;
+
+        if (hi > 0)
+        {
+            engineState[13] += hi;
+        }
+
+        int oldState = engineState[12];
+
+        engineState[12] += lo;
+
+        if (oldState != 0 && engineState[12] < oldState)
+        {
+            engineState[13]++;
+        }
+    }
+
     protected void advanceCounter()
     {
         if (++engineState[12] == 0)
         {
             ++engineState[13];
+        }
+    }
+
+    protected void retreatCounter(long diff)
+    {
+        int hi = (int)(diff >>> 32);
+        int lo = (int)diff;
+
+        if (hi != 0)
+        {
+            if ((engineState[13] & 0xffffffffL) >= (hi & 0xffffffffL))
+            {
+                engineState[13] -= hi;
+            }
+            else
+            {
+                throw new IllegalStateException("attempt to reduce counter past zero.");
+            }
+        }
+
+        if ((engineState[12] & 0xffffffffL) >= (lo & 0xffffffffL))
+        {
+            engineState[12] -= lo;
+        }
+        else
+        {
+            if (engineState[13] != 0)
+            {
+                --engineState[13];
+                engineState[12] -= lo;
+            }
+            else
+            {
+                throw new IllegalStateException("attempt to reduce counter past zero.");
+            }
         }
     }
 
