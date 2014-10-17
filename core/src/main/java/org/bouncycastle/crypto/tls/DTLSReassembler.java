@@ -80,15 +80,11 @@ class DTLSReassembler
                 }
                 else
                 {
-                    if (copyEnd == range.getEnd())
-                    {
-                        range.setEnd(copyStart);
-                    }
-                    else
+                    if (copyEnd != range.getEnd())
                     {
                         missing.insertElementAt(new Range(copyEnd, range.getEnd()), ++i);
-                        range.setEnd(copyStart);
                     }
+                    range.setEnd(copyStart);
                 }
             }
         }
