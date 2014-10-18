@@ -62,10 +62,11 @@ public class PKCS7Padding
         {
             throw new InvalidCipherTextException("pad block corrupted");
         }
-        
+
+        byte countAsbyte = (byte)count;
         for (int i = 1; i <= count; i++)
         {
-            if (in[in.length - i] != count)
+            if (in[in.length - i] != countAsbyte)
             {
                 throw new InvalidCipherTextException("pad block corrupted");
             }

@@ -75,7 +75,8 @@ public class RegressionTest
         new SHA3Test(),
         new SkeinTest(),
         new Shacal2Test(),
-        new DetDSATest()
+        new DetDSATest(),
+        new ThreefishTest()
     };
 
     public static void main(
