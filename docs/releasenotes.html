@@ -30,6 +30,7 @@ Release 1.52
 <li>Some BC internal classes expected the BC provider to be accessible within thhe provider. This has been fixed.</li>
 <li>Email based policy constraints in CertPath validation did not include '@'domain.name as a possible match. This has been fixed.</li>
 <li>The Shacal2Engine would throw an ArrayIndexOutOfBoundsException if presented with input longer than a block size. This has been fixed.</li>
+<li>Using PKCS5/PKCS7 with pad values greater than 127 would result in an exception on decryption. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
