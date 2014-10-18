@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Block cipher Shacal2, designed by Helena Handschuh and David Naccache,
@@ -91,10 +92,10 @@ public class Shacal2Engine
 		}
 	}
 	
-	public void encryptBlock(byte[] in, int inOffset, byte[] out, int outOffset) 
+	private void encryptBlock(byte[] in, int inOffset, byte[] out, int outOffset)
 	{
 		int[] block = new int[BLOCK_SIZE / 4];// corresponds to working variables a,b,c,d,e,f,g,h of FIPS PUB 180-2
-		bytes2ints(in, block, inOffset, 0);
+		byteBlockToInts(in, block, inOffset, 0);
 		
 		for (int i = 0; i < ROUNDS; i++) 
 		{			
@@ -121,10 +122,10 @@ public class Shacal2Engine
 		ints2bytes(block, out, outOffset);
 	}
 	
-	public void decryptBlock(byte[] in, int inOffset, byte[] out, int outOffset) 
-	{		
+	private void decryptBlock(byte[] in, int inOffset, byte[] out, int outOffset)
+	{
 		int[] block = new int[BLOCK_SIZE / 4];
-		bytes2ints(in, block, inOffset, 0);		
+		byteBlockToInts(in, block, inOffset, 0);
 		for (int i = ROUNDS - 1; i >-1; i--) 
 		{
             int tmp = block[0] - (((block[1] >>> 2) | (block[1] << -2))
@@ -176,6 +177,17 @@ public class Shacal2Engine
 
 		return BLOCK_SIZE;
 	}
+
+    private void byteBlockToInts(byte[] bytes, int[] block, int bytesPos, int blockPos)
+    {
+        for (int i = blockPos; i <  BLOCK_SIZE / 4; i++)
+        {
+            block[i] = ((bytes[bytesPos++] & 0xFF) << 24)
+                | ((bytes[bytesPos++] & 0xFF) << 16)
+                | ((bytes[bytesPos++] & 0xFF) << 8)
+                | (bytes[bytesPos++] & 0xFF);
+        }
+    }
 
     private void bytes2ints(byte[] bytes, int[] block, int bytesPos, int blockPos)
     {
