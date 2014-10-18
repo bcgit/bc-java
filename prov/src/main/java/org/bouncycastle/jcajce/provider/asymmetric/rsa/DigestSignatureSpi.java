@@ -37,6 +37,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
+import org.bouncycastle.util.Arrays;
 
 public class DigestSignatureSpi
     extends SignatureSpi
@@ -171,13 +172,7 @@ public class DigestSignatureSpi
 
         if (sig.length == expected.length)
         {
-            for (int i = 0; i < sig.length; i++)
-            {
-                if (sig[i] != expected[i])
-                {
-                    return false;
-                }
-            }
+            return Arrays.constantTimeAreEqual(sig, expected);
         }
         else if (sig.length == expected.length - 2)  // NULL left out
         {
@@ -187,28 +182,26 @@ public class DigestSignatureSpi
             expected[1] -= 2;      // adjust lengths
             expected[3] -= 2;
 
+            int nonEqual = 0;
+
             for (int i = 0; i < hash.length; i++)
             {
-                if (sig[sigOffset + i] != expected[expectedOffset + i])  // check hash
-                {
-                    return false;
-                }
+                nonEqual |= (sig[sigOffset + i] ^ expected[expectedOffset + i]);
             }
 
             for (int i = 0; i < sigOffset; i++)
             {
-                if (sig[i] != expected[i])  // check header less NULL
-                {
-                    return false;
-                }
+                nonEqual |= (sig[i] ^ expected[i]);  // check header less NULL
             }
+
+            return nonEqual == 0;
         }
         else
         {
+            Arrays.constantTimeAreEqual(expected, expected);  // keep time "steady".
+
             return false;
         }
-
-        return true;
     }
 
     protected void engineSetParameter(
