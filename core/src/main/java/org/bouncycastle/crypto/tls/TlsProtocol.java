@@ -257,7 +257,7 @@ public abstract class TlsProtocol
             /*
              * We need the first 4 bytes, they contain type and length of the message.
              */
-            if (handshakeQueue.size() >= 4)
+            if (handshakeQueue.available() >= 4)
             {
                 byte[] beginning = new byte[4];
                 handshakeQueue.read(beginning, 0, 4, 0);
@@ -267,7 +267,7 @@ public abstract class TlsProtocol
                 /*
                  * Check if we have enough bytes in the buffer to read the full message.
                  */
-                if (handshakeQueue.size() >= (len + 4))
+                if (handshakeQueue.available() >= (len + 4))
                 {
                     /*
                      * Read the message.
@@ -321,7 +321,7 @@ public abstract class TlsProtocol
     private void processAlert()
         throws IOException
     {
-        while (alertQueue.size() >= 2)
+        while (alertQueue.available() >= 2)
         {
             /*
              * An alert is always 2 bytes. Read the alert.
@@ -387,8 +387,8 @@ public abstract class TlsProtocol
             }
 
             if (this.receivedChangeCipherSpec
-                || alertQueue.size() > 0
-                || handshakeQueue.size() > 0)
+                || alertQueue.available() > 0
+                || handshakeQueue.available() > 0)
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
@@ -404,7 +404,7 @@ public abstract class TlsProtocol
     protected int applicationDataAvailable()
         throws IOException
     {
-        return applicationDataQueue.size();
+        return applicationDataQueue.available();
     }
 
     /**
@@ -425,7 +425,7 @@ public abstract class TlsProtocol
             return 0;
         }
 
-        while (applicationDataQueue.size() == 0)
+        while (applicationDataQueue.available() == 0)
         {
             /*
              * We need to read some data.
@@ -449,7 +449,7 @@ public abstract class TlsProtocol
             safeReadRecord();
         }
 
-        len = Math.min(len, applicationDataQueue.size());
+        len = Math.min(len, applicationDataQueue.available());
         applicationDataQueue.removeData(buf, offset, len, 0);
         return len;
     }

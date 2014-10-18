@@ -142,11 +142,19 @@ public class ByteQueue
         removeData(buf, 0, len, skip);
         return buf;
     }
+    
+    /**
+     * @deprecated Use 'available' instead
+     */
+    public int size()
+    {
+        return available;
+    }
 
     /**
      * @return The number of bytes which are available in this buffer.
      */
-    public int size()
+    public int available()
     {
         return available;
     }

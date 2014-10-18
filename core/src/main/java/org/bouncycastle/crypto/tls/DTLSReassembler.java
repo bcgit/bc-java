@@ -16,7 +16,7 @@ class DTLSReassembler
         this.missing.addElement(new Range(0, length));
     }
 
-    short getType()
+    short getMsgType()
     {
         return msg_type;
     }
@@ -80,15 +80,11 @@ class DTLSReassembler
                 }
                 else
                 {
-                    if (copyEnd == range.getEnd())
-                    {
-                        range.setEnd(copyStart);
-                    }
-                    else
+                    if (copyEnd != range.getEnd())
                     {
                         missing.insertElementAt(new Range(copyEnd, range.getEnd()), ++i);
-                        range.setEnd(copyStart);
                     }
+                    range.setEnd(copyStart);
                 }
             }
         }
