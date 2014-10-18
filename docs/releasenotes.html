@@ -29,10 +29,12 @@ Release 1.52
 <li>GenericSigner in the lightweight API would fail if the digest started with a zero byte, occassionally causing a TLS negotiation to fail. This has been fixed.</li>
 <li>Some BC internal classes expected the BC provider to be accessible within thhe provider. This has been fixed.</li>
 <li>Email based policy constraints in CertPath validation did not include '@'domain.name as a possible match. This has been fixed.</li>
+<li>The Shacal2Engine would throw an ArrayIndexOutOfBoundsException if presented with input longer than a block size. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>The CMP support class CMPCertificate restricted the types of certificates that could be added. A more flexible method has been introduced to allow for other certificate types.</li>
+<li>Work has been done to reduce computation requirements for long skips associated with implementations of the SkippingCipher interface.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
