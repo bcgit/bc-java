@@ -215,7 +215,7 @@ public class AlertDescription
     public static final short unknown_psk_identity = 115;
 
     /*
-     * draft-bmoeller-tls-downgrade-scsv-02
+     * draft-ietf-tls-downgrade-scsv-00
      */
 
     /**

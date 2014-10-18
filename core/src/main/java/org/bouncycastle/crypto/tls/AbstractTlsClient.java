@@ -66,7 +66,7 @@ public abstract class AbstractTlsClient
     public boolean isFallback()
     {
         /*
-         * draft-bmoeller-tls-downgrade-scsv-02 4. [..] is meant for use by clients that repeat a
+         * draft-ietf-tls-downgrade-scsv-00 4. [..] is meant for use by clients that repeat a
          * connection attempt with a downgraded protocol in order to avoid interoperability problems
          * with legacy servers.
          */
