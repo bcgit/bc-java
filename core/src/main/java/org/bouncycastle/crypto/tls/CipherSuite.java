@@ -350,7 +350,7 @@ public class CipherSuite
     public static final int TLS_DHE_RSA_WITH_SALSA20_SHA1 = 0xE41F;
 
     /*
-     * draft-bmoeller-tls-downgrade-scsv-02
+     * draft-ietf-tls-downgrade-scsv-00
      */
     public static final int TLS_FALLBACK_SCSV = 0x5600;
 
