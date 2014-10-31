@@ -12,6 +12,27 @@ public class SignerInformationStore
     private List all = new ArrayList();
     private Map table = new HashMap();
 
+    /**
+     * Create a store containing a single SignerInformation object.
+     *
+     * @param signerInfo the signer information to contain.
+     */
+    public SignerInformationStore(
+        SignerInformation  signerInfo)
+    {
+        this.all = new ArrayList(1);
+        this.all.add(signerInfo);
+
+        SignerId sid = signerInfo.getSID();
+
+        table.put(sid, all);
+    }
+
+    /**
+     * Create a store containing a collection of SignerInformation objects.
+     *
+     * @param signerInfos a collection signer information objects to contain.
+     */
     public SignerInformationStore(
         Collection  signerInfos)
     {
