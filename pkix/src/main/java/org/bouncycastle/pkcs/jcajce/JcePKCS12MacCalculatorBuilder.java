@@ -62,6 +62,13 @@ public class JcePKCS12MacCalculatorBuilder
         return this;
     }
 
+    public JcePKCS12MacCalculatorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
+
+        return this;
+    }
+
     public AlgorithmIdentifier getDigestAlgorithmIdentifier()
     {
         return new AlgorithmIdentifier(algorithm, DERNull.INSTANCE);

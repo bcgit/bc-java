@@ -33,6 +33,13 @@ public class BcPKCS12MacCalculatorBuilder
         this.saltLength = digest.getDigestSize();
     }
 
+    public BcPKCS12MacCalculatorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
+
+        return this;
+    }
+
     public AlgorithmIdentifier getDigestAlgorithmIdentifier()
     {
         return algorithmIdentifier;
