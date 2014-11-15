@@ -35,9 +35,16 @@ public interface MiscObjectIdentifiers
     static final ASN1ObjectIdentifier   verisign                = new ASN1ObjectIdentifier("2.16.840.1.113733.1");
 
     /** Verisign CZAG (Country,Zip,Age,Gender) Extension OID: 2.16.840.1.113733.1.6.3 */
-    static final ASN1ObjectIdentifier    verisignCzagExtension   = verisign.branch("6.3");
+    static final ASN1ObjectIdentifier   verisignCzagExtension   = verisign.branch("6.3");
+
+    static final ASN1ObjectIdentifier   verisignPrivate_6_9     = verisign.branch("6.9");
+    static final ASN1ObjectIdentifier   verisignOnSiteJurisdictionHash = verisign.branch("6.11");
+    static final ASN1ObjectIdentifier   verisignBitString_6_13   = verisign.branch("6.13");
+
     /** Verisign D&amp;B D-U-N-S number Extension OID: 2.16.840.1.113733.1.6.15 */
-    static final ASN1ObjectIdentifier    verisignDnbDunsNumber   = verisign.branch("6.15");
+    static final ASN1ObjectIdentifier   verisignDnbDunsNumber   = verisign.branch("6.15");
+
+    static final ASN1ObjectIdentifier   verisignIssStrongCrypto = verisign.branch("8.1");
 
     //
     // Novell
