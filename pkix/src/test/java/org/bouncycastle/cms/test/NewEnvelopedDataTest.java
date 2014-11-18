@@ -26,8 +26,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.cms.Attribute;
-import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.*;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -1136,7 +1135,7 @@ public class NewEnvelopedDataTest
     }
 
     private void tryKekAlgorithmAEAD(SecretKey kek, ASN1ObjectIdentifier algOid, ASN1ObjectIdentifier aeadAlgorithm, ASN1ObjectIdentifier baseOID)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
     {
         byte[]    data = "WallaWallaWashington".getBytes();
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -1165,6 +1164,45 @@ public class NewEnvelopedDataTest
             byte[] recData = recipient.getContent(new JceKEKEnvelopedRecipient(kek).setKeySizeValidation(true).setProvider(BC));
 
             assertTrue(Arrays.equals(data, recData));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
+
+        byte[] edData = ed.getEncoded();
+
+        ContentInfo   eContentInfo = ContentInfo.getInstance(edData);
+
+        EnvelopedData envD = EnvelopedData.getInstance(eContentInfo.getContent());
+
+        EncryptedContentInfo eInfo = envD.getEncryptedContentInfo();
+
+        eInfo.getEncryptedContent().getOctets()[10] ^= 0xff;
+
+        ed = new CMSEnvelopedData(new ContentInfo(eContentInfo.getContentType(), new EnvelopedData(envD.getOriginatorInfo(), envD.getRecipientInfos(), eInfo, envD.getUnprotectedAttrs())).getEncoded());
+
+        recipients = ed.getRecipientInfos();
+
+        c = recipients.getRecipients();
+        it = c.iterator();
+
+        if (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(algOid.getId(), recipient.getKeyEncryptionAlgOID());
+
+            try
+            {
+                byte[] recData = recipient.getContent(new JceKEKEnvelopedRecipient(kek).setKeySizeValidation(true).setProvider(BC));
+
+                fail("MAC error not detected");
+            }
+            catch (CMSException e)
+            {
+                // expected
+            }
         }
         else
         {
