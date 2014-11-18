@@ -335,7 +335,7 @@ public class AEADTest extends SimpleTest
 
         GCMParameterSpec gcmSpec = algParams.getParameterSpec(GCMParameterSpec.class);
 
-        if (!Arrays.areEqual(gcmSpec.getIV(), gcmParameters.getNonce()) || gcmSpec.getTLen() != gcmParameters.getIcvLen())
+        if (!Arrays.areEqual(gcmSpec.getIV(), gcmParameters.getNonce()) || gcmSpec.getTLen() != gcmParameters.getIcvLen() * 8)
         {
             fail("spec parameters mismatch");
         }
