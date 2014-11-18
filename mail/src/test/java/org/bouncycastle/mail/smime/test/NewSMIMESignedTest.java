@@ -1280,7 +1280,7 @@ public class NewSMIMESignedTest
             Iterator        certIt = certCollection.iterator();
             X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
 
-            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(certHolder)));
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
         }
     }
     

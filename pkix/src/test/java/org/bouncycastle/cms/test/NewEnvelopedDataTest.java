@@ -1052,6 +1052,14 @@ public class NewEnvelopedDataTest
         throws Exception
     {
         tryKekAlgorithm(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap);
+
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_GCM, NISTObjectIdentifiers.id_aes128_GCM);
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_GCM, NISTObjectIdentifiers.id_aes192_GCM);
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_GCM, NISTObjectIdentifiers.id_aes256_GCM);
+
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, NISTObjectIdentifiers.id_aes128_CCM);
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_CCM, NISTObjectIdentifiers.id_aes192_CCM);
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_CCM, NISTObjectIdentifiers.id_aes256_CCM);
     }
 
     public void testAES192KEK()
@@ -1110,6 +1118,43 @@ public class NewEnvelopedDataTest
         Iterator it = c.iterator();
 
         assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+
+        if (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(algOid.getId(), recipient.getKeyEncryptionAlgOID());
+
+            byte[] recData = recipient.getContent(new JceKEKEnvelopedRecipient(kek).setKeySizeValidation(true).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
+    }
+
+    private void tryKekAlgorithmAEAD(SecretKey kek, ASN1ObjectIdentifier algOid, ASN1ObjectIdentifier aeadAlgorithm, ASN1ObjectIdentifier baseOID)
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
+    {
+        byte[]    data = "WallaWallaWashington".getBytes();
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        byte[]  kekId = new byte[] { 1, 2, 3, 4, 5 };
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+                                new CMSProcessableByteArray(data),
+                                new JceCMSContentEncryptorBuilder(aeadAlgorithm).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        Collection c = recipients.getRecipients();
+        Iterator it = c.iterator();
+
+        assertEquals(ed.getContentEncryptionAlgorithm().getAlgorithm(), baseOID);
 
         if (it.hasNext())
         {
