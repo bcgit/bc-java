@@ -396,7 +396,7 @@ public final class AES
             try
             {
                 params = AlgorithmParameters.getInstance("CCM", BouncyCastleProvider.PROVIDER_NAME);
-                params.init(new CCMParameters(iv, 128).getEncoded());
+                params.init(new CCMParameters(iv, 12).getEncoded());
             }
             catch (Exception e)
             {
@@ -434,7 +434,7 @@ public final class AES
             try
             {
                 params = AlgorithmParameters.getInstance("GCM", BouncyCastleProvider.PROVIDER_NAME);
-                params.init(new GCMParameters(nonce, 128).getEncoded());
+                params.init(new GCMParameters(nonce, 12).getEncoded());
             }
             catch (Exception e)
             {
@@ -462,7 +462,20 @@ public final class AES
         protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-            throw new InvalidParameterSpecException("No supported AlgorithmParameterSpec for AES parameter generation.");
+            if (gcmSpecClass != null)
+            {
+                try
+                {
+                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                    Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
+
+                    gcmParams = new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8);
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidParameterSpecException("Cannot process GCMParameterSpec.");
+                }
+            }
         }
 
         protected void engineInit(byte[] params)
@@ -513,7 +526,7 @@ public final class AES
                 {
                     Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
 
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(gcmParams.getIcvLen()), gcmParams.getNonce() });
+                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(gcmParams.getIcvLen() * 8), gcmParams.getNonce() });
                 }
                 catch (NoSuchMethodException e)
                 {
@@ -537,20 +550,7 @@ public final class AES
         protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-            if (gcmSpecClass != null)
-            {
-                try
-                {
-                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-                    Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-                    ccmParams = new CCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue());
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidParameterSpecException("Cannot process GCMParameterSpec.");
-                }
-            }
+            throw new InvalidParameterSpecException("No supported AlgorithmParameterSpec for AES parameter generation.");
         }
 
         protected void engineInit(byte[] params)
@@ -601,7 +601,7 @@ public final class AES
                 {
                     Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
 
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(ccmParams.getIcvLen()), ccmParams.getNonce() });
+                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(ccmParams.getIcvLen() * 8), ccmParams.getNonce() });
                 }
                 catch (NoSuchMethodException e)
                 {
