@@ -1,14 +1,10 @@
 package org.bouncycastle.jce.provider.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.Key;
 import java.security.Security;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.io.InvalidCipherTextIOException;
@@ -25,7 +21,7 @@ public class CipherStreamTest2
 
     public String getName()
     {
-        return "CipherStreamTest";
+        return "CipherStreamTest2";
     }
 
     private void testModes(String algo, String[] transforms, boolean authenticated)
@@ -119,6 +115,10 @@ public class CipherStreamTest2
         {
             // Expected
         }
+        catch (IOException e)       //     cause will be AEADBadTagException
+        {
+            // Expected
+        }
         try
         {
             input.close();
@@ -168,6 +168,11 @@ public class CipherStreamTest2
             catch (InvalidCipherTextIOException e)
             {
                 // Expected
+                break;
+            }
+            catch (IOException e)
+            {
+                // Expected from JDK 1.7 on
                 break;
             }
             catch (Exception e)

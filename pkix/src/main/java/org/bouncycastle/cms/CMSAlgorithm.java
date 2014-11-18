@@ -17,9 +17,17 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  RC2_CBC         = PKCSObjectIdentifiers.RC2_CBC;
     public static final ASN1ObjectIdentifier  IDEA_CBC        = new ASN1ObjectIdentifier("1.3.6.1.4.1.188.7.1.1.2");
     public static final ASN1ObjectIdentifier  CAST5_CBC       = new ASN1ObjectIdentifier("1.2.840.113533.7.66.10");
+
     public static final ASN1ObjectIdentifier  AES128_CBC      = NISTObjectIdentifiers.id_aes128_CBC;
     public static final ASN1ObjectIdentifier  AES192_CBC      = NISTObjectIdentifiers.id_aes192_CBC;
     public static final ASN1ObjectIdentifier  AES256_CBC      = NISTObjectIdentifiers.id_aes256_CBC;
+    public static final ASN1ObjectIdentifier  AES128_CCM      = NISTObjectIdentifiers.id_aes128_CCM;
+    public static final ASN1ObjectIdentifier  AES192_CCM      = NISTObjectIdentifiers.id_aes192_CCM;
+    public static final ASN1ObjectIdentifier  AES256_CCM      = NISTObjectIdentifiers.id_aes256_CCM;
+    public static final ASN1ObjectIdentifier  AES128_GCM      = NISTObjectIdentifiers.id_aes128_GCM;
+    public static final ASN1ObjectIdentifier  AES192_GCM      = NISTObjectIdentifiers.id_aes192_GCM;
+    public static final ASN1ObjectIdentifier  AES256_GCM      = NISTObjectIdentifiers.id_aes256_GCM;
+
     public static final ASN1ObjectIdentifier  CAMELLIA128_CBC = NTTObjectIdentifiers.id_camellia128_cbc;
     public static final ASN1ObjectIdentifier  CAMELLIA192_CBC = NTTObjectIdentifiers.id_camellia192_cbc;
     public static final ASN1ObjectIdentifier  CAMELLIA256_CBC = NTTObjectIdentifiers.id_camellia256_cbc;

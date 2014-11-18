@@ -12,6 +12,7 @@ import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
@@ -24,10 +25,7 @@ import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.modes.CFBBlockCipher;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.modes.OFBBlockCipher;
+import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
@@ -97,6 +95,15 @@ public final class AES
         public GCM()
         {
             super(new GCMBlockCipher(new AESFastEngine()));
+        }
+    }
+
+    static public class CCM
+        extends BaseBlockCipher
+    {
+        public CCM()
+        {
+            super(new CCMBlockCipher(new AESFastEngine()));
         }
     }
 
@@ -362,6 +369,82 @@ public final class AES
         }
     }
 
+    public static class AlgParamGenCCM
+        extends BaseAlgorithmParameterGenerator
+    {
+        protected void engineInit(
+            AlgorithmParameterSpec genParamSpec,
+            SecureRandom random)
+            throws InvalidAlgorithmParameterException
+        {
+            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for AES parameter generation.");
+        }
+
+        protected AlgorithmParameters engineGenerateParameters()
+        {
+            byte[]  iv = new byte[12];
+
+            if (random == null)
+            {
+                random = new SecureRandom();
+            }
+
+            random.nextBytes(iv);
+
+            AlgorithmParameters params;
+
+            try
+            {
+                params = AlgorithmParameters.getInstance("CCM", BouncyCastleProvider.PROVIDER_NAME);
+                params.init(new CCMParameters(iv, 128).getEncoded());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.getMessage());
+            }
+
+            return params;
+        }
+    }
+
+    public static class AlgParamGenGCM
+        extends BaseAlgorithmParameterGenerator
+    {
+        protected void engineInit(
+            AlgorithmParameterSpec genParamSpec,
+            SecureRandom random)
+            throws InvalidAlgorithmParameterException
+        {
+            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for AES parameter generation.");
+        }
+
+        protected AlgorithmParameters engineGenerateParameters()
+        {
+            byte[]  nonce = new byte[12];
+
+            if (random == null)
+            {
+                random = new SecureRandom();
+            }
+
+            random.nextBytes(nonce);
+
+            AlgorithmParameters params;
+
+            try
+            {
+                params = AlgorithmParameters.getInstance("GCM", BouncyCastleProvider.PROVIDER_NAME);
+                params.init(new GCMParameters(nonce, 128).getEncoded());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.getMessage());
+            }
+
+            return params;
+        }
+    }
+
     public static class AlgParams
         extends IvAlgorithmParameters
     {
@@ -379,21 +462,7 @@ public final class AES
         protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-            if (gcmSpecClass != null)
-            {
-                try
-                {
-                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-                    Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-
-                    gcmParams = new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue());
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidParameterSpecException("Cannot process GCMParameterSpec.");
-                }
-            }
+            throw new InvalidParameterSpecException("No supported AlgorithmParameterSpec for AES parameter generation.");
         }
 
         protected void engineInit(byte[] params)
@@ -460,6 +529,94 @@ public final class AES
         }
     }
 
+    public static class AlgParamsCCM
+        extends BaseAlgorithmParameters
+    {
+        private CCMParameters ccmParams;
+
+        protected void engineInit(AlgorithmParameterSpec paramSpec)
+            throws InvalidParameterSpecException
+        {
+            if (gcmSpecClass != null)
+            {
+                try
+                {
+                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                    Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
+
+                    ccmParams = new CCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue());
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidParameterSpecException("Cannot process GCMParameterSpec.");
+                }
+            }
+        }
+
+        protected void engineInit(byte[] params)
+            throws IOException
+        {
+            ccmParams = CCMParameters.getInstance(params);
+        }
+
+        protected void engineInit(byte[] params, String format)
+            throws IOException
+        {
+            if (!isASN1FormatString(format))
+            {
+                throw new IOException("unknown format specified");
+            }
+
+            ccmParams = CCMParameters.getInstance(params);
+        }
+
+        protected byte[] engineGetEncoded()
+            throws IOException
+        {
+            return ccmParams.getEncoded();
+        }
+
+        protected byte[] engineGetEncoded(String format)
+            throws IOException
+        {
+            if (!isASN1FormatString(format))
+            {
+                throw new IOException("unknown format specified");
+            }
+
+            return ccmParams.getEncoded();
+        }
+
+        protected String engineToString()
+        {
+            return "CCM";
+        }
+
+        protected AlgorithmParameterSpec localEngineGetParameterSpec(Class paramSpec)
+            throws InvalidParameterSpecException
+        {
+            if (gcmSpecClass != null)
+            {
+                try
+                {
+                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
+
+                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(ccmParams.getIcvLen()), ccmParams.getNonce() });
+                }
+                catch (NoSuchMethodException e)
+                {
+                    throw new InvalidParameterSpecException("no constructor found!");   // should never happen
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidParameterSpecException("construction failed: " + e.getMessage());   // should never happen
+                }
+            }
+
+            throw new InvalidParameterSpecException("unknown parameter spec: " + paramSpec.getName());
+        }
+    }
+
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
@@ -493,6 +650,11 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes192_GCM, "GCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes256_GCM, "GCM");
 
+            provider.addAlgorithm("AlgorithmParameters.CCM", PREFIX + "$AlgParamsCCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes128_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes192_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + NISTObjectIdentifiers.id_aes256_CCM, "CCM");
+
             provider.addAlgorithm("AlgorithmParameterGenerator.AES", PREFIX + "$AlgParamGen");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + wrongAES128, "AES");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + wrongAES192, "AES");
@@ -525,6 +687,21 @@ public final class AES
             provider.addAlgorithm("Cipher.AESRFC3211WRAP", PREFIX + "$RFC3211Wrap");
             provider.addAlgorithm("Cipher.AESRFC5649WRAP", PREFIX + "$RFC5649Wrap");
 
+            provider.addAlgorithm("AlgorithmParameterGenerator.CCM", PREFIX + "$AlgParamGenCCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes128_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_CCM, "CCM");
+
+            provider.addAlgorithm("Cipher.CCM", PREFIX + "$CCM");
+            provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes128_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes192_CCM, "CCM");
+            provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes256_CCM, "CCM");
+
+            provider.addAlgorithm("AlgorithmParameterGenerator.GCM", PREFIX + "$AlgParamGenGCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes128_GCM, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_GCM, "GCM");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_GCM, "GCM");
+
             provider.addAlgorithm("Cipher.GCM", PREFIX + "$GCM");
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes128_GCM, "GCM");
             provider.addAlgorithm("Alg.Alias.Cipher." + NISTObjectIdentifiers.id_aes192_GCM, "GCM");
@@ -550,6 +727,12 @@ public final class AES
             provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes128_wrap, PREFIX + "$KeyGen128");
             provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes192_wrap, PREFIX + "$KeyGen192");
             provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes256_wrap, PREFIX + "$KeyGen256");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes128_GCM, PREFIX + "$KeyGen128");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes192_GCM, PREFIX + "$KeyGen192");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes256_GCM, PREFIX + "$KeyGen256");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes128_CCM, PREFIX + "$KeyGen128");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes192_CCM, PREFIX + "$KeyGen192");
+            provider.addAlgorithm("KeyGenerator." + NISTObjectIdentifiers.id_aes256_CCM, PREFIX + "$KeyGen256");
 
             provider.addAlgorithm("Mac.AESCMAC", PREFIX + "$AESCMAC");
             
