@@ -191,8 +191,12 @@ public abstract class AbstractTlsClient
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            int[] namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
-            if (namedCurves != null)
+            /*
+             * RFC 5246 7.4.1.4. An extension type MUST NOT appear in the ServerHello unless the same
+             * extension type appeared in the corresponding ClientHello.
+             */
+            int[] serverNamedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
+            if (serverNamedCurves != null && namedCurves == null)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
