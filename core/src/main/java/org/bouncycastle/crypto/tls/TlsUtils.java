@@ -1416,9 +1416,9 @@ public class TlsUtils
 
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
+        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
         case CipherSuite.TLS_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
             return EncryptionAlgorithm.AES_128_CCM;
 
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
