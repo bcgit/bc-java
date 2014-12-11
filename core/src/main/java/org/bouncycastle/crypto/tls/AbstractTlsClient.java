@@ -29,6 +29,34 @@ public abstract class AbstractTlsClient
         this.cipherFactory = cipherFactory;
     }
 
+    protected boolean allowUnexpectedServerExtension(Integer extensionType, byte[] extensionData)
+        throws IOException
+    {
+        switch (extensionType.intValue())
+        {
+        case ExtensionType.elliptic_curves:
+            /*
+             * Exception added based on field reports that some servers do send this, although the
+             * Supported Elliptic Curves Extension is clearly intended to be client-only. If
+             * present, we still require that it is a valid EllipticCurveList.
+             */
+            TlsECCUtils.readSupportedEllipticCurvesExtension(extensionData);
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    protected void checkForUnexpectedServerExtension(Hashtable serverExtensions, Integer extensionType)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(serverExtensions, extensionType);
+        if (extensionData != null && !allowUnexpectedServerExtension(extensionType, extensionData))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -186,25 +214,17 @@ public abstract class AbstractTlsClient
             /*
              * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
              */
-            if (serverExtensions.containsKey(TlsUtils.EXT_signature_algorithms))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            checkForUnexpectedServerExtension(serverExtensions, TlsUtils.EXT_signature_algorithms);
 
-            /*
-             * RFC 5246 7.4.1.4. An extension type MUST NOT appear in the ServerHello unless the same
-             * extension type appeared in the corresponding ClientHello.
-             */
-            int[] serverNamedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(serverExtensions);
-            if (serverNamedCurves != null && namedCurves == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_elliptic_curves);
 
-            this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
-            if (this.serverECPointFormats != null && !TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+            if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
+            }
+            else
+            {
+                checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_ec_point_formats);
             }
         }
     }
