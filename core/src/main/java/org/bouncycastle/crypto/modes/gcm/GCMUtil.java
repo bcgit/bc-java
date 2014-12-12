@@ -7,7 +7,7 @@ abstract class GCMUtil
 {
     private static final int E1 = 0xe1000000;
     private static final byte E1B = (byte)0xe1;
-    private static final long E1L = (E1 & 0xFFFFFFFFL) << 24;
+    private static final long E1L = (E1 & 0xFFFFFFFFL) << 32;
 
     private static int[] generateLookup()
     {
@@ -152,28 +152,25 @@ abstract class GCMUtil
 
     static void multiply(long[] x, long[] y)
     {
-        long[] r0 = new long[]{ x[0], x[1] };
-        long[] r1 = new long[2];
+        long r00 = x[0], r01 = x[1], r10 = 0, r11 = 0;
 
         for (int i = 0; i < 2; ++i)
         {
             long bits = y[i];
-            for (int j = 63; j >= 0; --j)
+            for (int j = 0; j < 64; ++j)
             {
-                if ((bits & (1L << j)) != 0)
-                {
-                    xor(r1, r0);
-                }
+                long m1 = bits >> 63; bits <<= 1;
+                r10 ^= (r00 & m1);
+                r11 ^= (r01 & m1);
 
-                if (shiftRight(r0) != 0)
-                {
-                    r0[0] ^= E1L;
-                }
+                long m2 = (r01 << 63) >> 63;
+                r01 = (r01 >>> 1) | (r00 << 63);
+                r00 = (r00 >>> 1) ^ (m2 & E1L);
             }
         }
 
-        x[0] = r1[0];
-        x[1] = r1[1];
+        x[0] = r10;
+        x[1] = r11;
     }
 
     // P is the value with only bit i=1 set
