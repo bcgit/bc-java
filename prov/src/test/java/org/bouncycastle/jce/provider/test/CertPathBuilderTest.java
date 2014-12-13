@@ -16,7 +16,6 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -49,8 +48,7 @@ public class CertPathBuilderTest
         list.add(interCrl);
         CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
         CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
-        Calendar validDate = Calendar.getInstance();
-        validDate.set(2008,8,4,14,49,10);
+        Date validDate = new Date(rootCrl.getThisUpdate().getTime() + 60 * 60 * 1000);
 
             //Searching for rootCert by subjectDN without CRL
         Set trust = new HashSet();
@@ -61,7 +59,7 @@ public class CertPathBuilderTest
         targetConstraints.setSubject(finalCert.getSubjectX500Principal().getEncoded());
         PKIXBuilderParameters params = new PKIXBuilderParameters(trust, targetConstraints);
         params.addCertStore(store);
-        params.setDate(validDate.getTime());
+        params.setDate(validDate);
         PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult) cpb.build(params);
         CertPath                  path = result.getCertPath();
 
