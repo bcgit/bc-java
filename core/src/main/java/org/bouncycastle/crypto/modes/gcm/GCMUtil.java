@@ -1,12 +1,10 @@
 package org.bouncycastle.crypto.modes.gcm;
 
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-abstract class GCMUtil
+public abstract class GCMUtil
 {
     private static final int E1 = 0xe1000000;
-    private static final byte E1B = (byte)0xe1;
     private static final long E1L = (E1 & 0xFFFFFFFFL) << 32;
 
     private static int[] generateLookup()
@@ -31,126 +29,114 @@ abstract class GCMUtil
 
     private static final int[] LOOKUP = generateLookup();
 
-    static byte[] oneAsBytes()
+    public static byte[] oneAsBytes()
     {
         byte[] tmp = new byte[16];
         tmp[0] = (byte)0x80;
         return tmp;
     }
 
-    static int[] oneAsInts()
+    public static int[] oneAsInts()
     {
         int[] tmp = new int[4];
         tmp[0] = 1 << 31;
         return tmp;
     }
 
-    static long[] oneAsLongs()
+    public static long[] oneAsLongs()
     {
         long[] tmp = new long[2];
         tmp[0] = 1L << 63;
         return tmp;
     }
 
-    static byte[] asBytes(int[] x)
+    public static byte[] asBytes(int[] x)
     {
         byte[] z = new byte[16];
         Pack.intToBigEndian(x, z, 0);
         return z;
     }
 
-    static void asBytes(int[] x, byte[] z)
+    public static void asBytes(int[] x, byte[] z)
     {
         Pack.intToBigEndian(x, z, 0);
     }
 
-    static byte[] asBytes(long[] x)
+    public static byte[] asBytes(long[] x)
     {
         byte[] z = new byte[16];
         Pack.longToBigEndian(x, z, 0);
         return z;
     }
 
-    static void asBytes(long[] x, byte[] z)
+    public static void asBytes(long[] x, byte[] z)
     {
         Pack.longToBigEndian(x, z, 0);
     }
 
-    static int[] asInts(byte[] x)
+    public static int[] asInts(byte[] x)
     {
         int[] z = new int[4];
         Pack.bigEndianToInt(x, 0, z);
         return z;
     }
 
-    static void asInts(byte[] x, int[] z)
+    public static void asInts(byte[] x, int[] z)
     {
         Pack.bigEndianToInt(x, 0, z);
     }
 
-    static long[] asLongs(byte[] x)
+    public static long[] asLongs(byte[] x)
     {
         long[] z = new long[2];
         Pack.bigEndianToLong(x, 0, z);
         return z;
     }
 
-    static void asLongs(byte[] x, long[] z)
+    public static void asLongs(byte[] x, long[] z)
     {
         Pack.bigEndianToLong(x, 0, z);
     }
 
-    static void multiply(byte[] x, byte[] y)
+    public static void multiply(byte[] x, byte[] y)
     {
-        byte[] r0 = Arrays.clone(x);
-        byte[] r1 = new byte[16];
-
-        for (int i = 0; i < 16; ++i)
-        {
-            byte bits = y[i];
-            for (int j = 7; j >= 0; --j)
-            {
-                if ((bits & (1 << j)) != 0)
-                {
-                    xor(r1, r0);
-                }
-
-                if (shiftRight(r0) != 0)
-                {
-                    r0[0] ^= E1B;
-                }
-            }
-        }
-
-        System.arraycopy(r1, 0, x, 0, 16);
+        int[] t1 = GCMUtil.asInts(x);
+        int[] t2 = GCMUtil.asInts(y);
+        GCMUtil.multiply(t1, t2);
+        GCMUtil.asBytes(t1, x);
     }
 
-    static void multiply(int[] x, int[] y)
+    public static void multiply(int[] x, int[] y)
     {
-        int[] r0 = Arrays.clone(x);
-        int[] r1 = new int[4];
-
+        int r00 = x[0], r01 = x[1], r02 = x[2], r03 = x[3];
+        int r10 = 0, r11 = 0, r12 = 0, r13 = 0;
+        
         for (int i = 0; i < 4; ++i)
         {
             int bits = y[i];
-            for (int j = 31; j >= 0; --j)
+            for (int j = 0; j < 32; ++j)
             {
-                if ((bits & (1 << j)) != 0)
-                {
-                    xor(r1, r0);
-                }
+                int m1 = bits >> 31; bits <<= 1;
+                r10 ^= (r00 & m1);
+                r11 ^= (r01 & m1);
+                r12 ^= (r02 & m1);
+                r13 ^= (r03 & m1);
 
-                if (shiftRight(r0) != 0)
-                {
-                    r0[0] ^= E1;
-                }
+                int m2 = (r03 << 31) >> 8;
+                r03 = (r03 >>> 1) | (r02 << 63);
+                r02 = (r02 >>> 1) | (r01 << 63);
+                r01 = (r01 >>> 1) | (r00 << 63);
+                r00 = (r00 >>> 1) ^ (m2 & E1);
             }
         }
 
-        System.arraycopy(r1, 0, x, 0, 4);
+        x[0] = r10;
+        x[1] = r11;
+        x[2] = r12;
+        x[3] = r13;
     }
 
-    static void multiply(long[] x, long[] y)
+    public static void multiply(long[] x, long[] y)
     {
         long r00 = x[0], r01 = x[1], r10 = 0, r11 = 0;
 
@@ -163,7 +149,7 @@ abstract class GCMUtil
                 r10 ^= (r00 & m1);
                 r11 ^= (r01 & m1);
 
-                long m2 = (r01 << 63) >> 63;
+                long m2 = (r01 << 63) >> 8;
                 r01 = (r01 >>> 1) | (r00 << 63);
                 r00 = (r00 >>> 1) ^ (m2 & E1L);
             }
@@ -174,24 +160,20 @@ abstract class GCMUtil
     }
 
     // P is the value with only bit i=1 set
-    static void multiplyP(int[] x)
+    public static void multiplyP(int[] x)
     {
-        if (shiftRight(x) != 0)
-        {
-            x[0] ^= E1;
-        }
+        int m = shiftRight(x) >> 8;
+        x[0] ^= (m & E1);
     }
 
-    static void multiplyP(int[] x, int[] y)
+    public static void multiplyP(int[] x, int[] z)
     {
-        if (shiftRight(x, y) != 0)
-        {
-            y[0] ^= E1;
-        }
+        int m = shiftRight(x, z) >> 8;
+        z[0] ^= (m & E1);
     }
 
     // P is the value with only bit i=1 set
-    static void multiplyP8(int[] x)
+    public static void multiplyP8(int[] x)
     {
 //        for (int i = 8; i != 0; --i)
 //        {
@@ -202,72 +184,10 @@ abstract class GCMUtil
         x[0] ^= LOOKUP[c >>> 24];
     }
 
-    static void multiplyP8(int[] x, int[] y)
+    public static void multiplyP8(int[] x, int[] y)
     {
         int c = shiftRightN(x, 8, y);
         y[0] ^= LOOKUP[c >>> 24];
-    }
-
-    static byte shiftRight(byte[] x)
-    {
-//        int c = 0;
-//        for (int i = 0; i < 16; ++i)
-//        {
-//            int b = x[i] & 0xff;
-//            x[i] = (byte)((b >>> 1) | c);
-//            c = (b & 1) << 7;
-//        }
-//        return (byte)c;
-
-        int i = 0, c = 0;
-        do
-        {
-            int b = x[i] & 0xff;
-            x[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            x[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            x[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            x[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-        }
-        while (i < 16);
-        return (byte)c;
-    }
-
-    static byte shiftRight(byte[] x, byte[] z)
-    {
-//        int c = 0;
-//        for (int i = 0; i < 16; ++i)
-//        {
-//            int b = x[i] & 0xff;
-//            z[i] = (byte) ((b >>> 1) | c);
-//            c = (b & 1) << 7;
-//        }
-//        return (byte) c;
-
-        int i = 0, c = 0;
-        do
-        {
-            int b = x[i] & 0xff;
-            z[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            z[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            z[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-            b = x[i] & 0xff;
-            z[i++] = (byte)((b >>> 1) | c);
-            c = (b & 1) << 7;
-        }
-        while (i < 16);
-        return (byte)c;
     }
 
     static int shiftRight(int[] x)
@@ -390,7 +310,7 @@ abstract class GCMUtil
         return b << nInv;
     }
 
-    static void xor(byte[] x, byte[] y)
+    public static void xor(byte[] x, byte[] y)
     {
         int i = 0;
         do
@@ -403,15 +323,15 @@ abstract class GCMUtil
         while (i < 16);
     }
 
-    static void xor(byte[] x, byte[] y, int yOff, int yLen)
+    public static void xor(byte[] x, byte[] y, int yOff, int yLen)
     {
-        while (yLen-- > 0)
+        while (--yLen >= 0)
         {
             x[yLen] ^= y[yOff + yLen];
         }
     }
 
-    static void xor(byte[] x, byte[] y, byte[] z)
+    public static void xor(byte[] x, byte[] y, byte[] z)
     {
         int i = 0;
         do
@@ -424,7 +344,7 @@ abstract class GCMUtil
         while (i < 16);
     }
 
-    static void xor(int[] x, int[] y)
+    public static void xor(int[] x, int[] y)
     {
         x[0] ^= y[0];
         x[1] ^= y[1];
@@ -432,7 +352,7 @@ abstract class GCMUtil
         x[3] ^= y[3];
     }
 
-    static void xor(int[] x, int[] y, int[] z)
+    public static void xor(int[] x, int[] y, int[] z)
     {
         z[0] = x[0] ^ y[0];
         z[1] = x[1] ^ y[1];
@@ -440,13 +360,13 @@ abstract class GCMUtil
         z[3] = x[3] ^ y[3];
     }
 
-    static void xor(long[] x, long[] y)
+    public static void xor(long[] x, long[] y)
     {
         x[0] ^= y[0];
         x[1] ^= y[1];
     }
 
-    static void xor(long[] x, long[] y, long[] z)
+    public static void xor(long[] x, long[] y, long[] z)
     {
         z[0] = x[0] ^ y[0];
         z[1] = x[1] ^ y[1];
