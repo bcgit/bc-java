@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
+import org.bouncycastle.crypto.modes.gcm.GCMUtil;
 import org.bouncycastle.crypto.modes.gcm.Tables1kGCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.Tables8kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -366,7 +367,7 @@ public class GCMBlockCipher
             // Find the difference between the AAD hashes
             if (atLengthPre > 0)
             {
-                xor(S_at, S_atPre);
+                GCMUtil.xor(S_at, S_atPre);
             }
 
             // Number of cipher-text blocks produced
@@ -382,10 +383,10 @@ public class GCMBlockCipher
             exp.exponentiateX(c, H_c);
 
             // Carry the difference forward
-            multiply(S_at, H_c);
+            GCMUtil.multiply(S_at, H_c);
 
             // Adjust the current hash
-            xor(S, S_at);
+            GCMUtil.xor(S, S_at);
         }
 
         // Final gHASH
@@ -398,7 +399,7 @@ public class GCMBlockCipher
         // T = MSBt(GCTRk(J0,S))
         byte[] tag = new byte[BLOCK_SIZE];
         cipher.processBlock(J0, 0, tag, 0);
-        xor(tag, S);
+        GCMUtil.xor(tag, S);
 
         int resultLen = extra;
 
@@ -473,7 +474,7 @@ public class GCMBlockCipher
     {
         byte[] tmp = getNextCounterBlock();
 
-        xor(tmp, block);
+        GCMUtil.xor(tmp, block);
         System.arraycopy(tmp, 0, out, outOff, BLOCK_SIZE);
 
         gHASHBlock(S, forEncryption ? tmp : block);
@@ -485,7 +486,7 @@ public class GCMBlockCipher
     {
         byte[] tmp = getNextCounterBlock();
 
-        xor(tmp, buf, off, len);
+        GCMUtil.xor(tmp, buf, off, len);
         System.arraycopy(tmp, 0, out, outOff, len);
 
         gHASHPartial(S, forEncryption ? tmp : buf, 0, len);
@@ -504,13 +505,13 @@ public class GCMBlockCipher
 
     private void gHASHBlock(byte[] Y, byte[] b)
     {
-        xor(Y, b);
+        GCMUtil.xor(Y, b);
         multiplier.multiplyH(Y);
     }
 
     private void gHASHPartial(byte[] Y, byte[] b, int off, int len)
     {
-        xor(Y, b, off, len);
+        GCMUtil.xor(Y, b, off, len);
         multiplier.multiplyH(Y);
     }
 
@@ -531,66 +532,5 @@ public class GCMBlockCipher
         // TODO Sure would be nice if ciphers could operate on int[]
         cipher.processBlock(counter, 0, tmp, 0);
         return tmp;
-    }
-
-    private static void multiply(byte[] block, byte[] val)
-    {
-        byte[] tmp = Arrays.clone(block);
-        byte[] c = new byte[16];
-
-        for (int i = 0; i < 16; ++i)
-        {
-            byte bits = val[i];
-            for (int j = 7; j >= 0; --j)
-            {
-                if ((bits & (1 << j)) != 0)
-                {
-                    xor(c, tmp);
-                }
-
-                boolean lsb = (tmp[15] & 1) != 0;
-                shiftRight(tmp);
-                if (lsb)
-                {
-                    // R = new byte[]{ 0xe1, ... };
-//                    xor(v, R);
-                    tmp[0] ^= (byte)0xe1;
-                }
-            }
-        }
-
-        System.arraycopy(c, 0, block, 0, 16);
-    }
-
-    private static void shiftRight(byte[] block)
-    {
-        int i = 0;
-        int bit = 0;
-        for (;;)
-        {
-            int b = block[i] & 0xff;
-            block[i] = (byte) ((b >>> 1) | bit);
-            if (++i == 16)
-            {
-                break;
-            }
-            bit = (b & 1) << 7;
-        }
-    }
-
-    private static void xor(byte[] block, byte[] val)
-    {
-        for (int i = 15; i >= 0; --i)
-        {
-            block[i] ^= val[i];
-        }
-    }
-
-    private static void xor(byte[] block, byte[] val, int off, int len)
-    {
-        while (len-- > 0)
-        {
-            block[len] ^= val[off + len];
-        }
     }
 }
