@@ -404,6 +404,14 @@ public class IESCipher
 
         final byte[] V;
 
+        if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
+        {
+            if (engineSpec.getPointCompression())
+            {
+                engine.setPointCompression(true);
+            }
+        }
+
         if (otherKeyParameter != null)
         {
             try
@@ -441,7 +449,7 @@ public class IESCipher
             // Encrypt the buffer
             try
             {
-                engine.init(key, params, kGen, engineSpec.getPointCompression());
+                engine.init(key, params, kGen);
 
                 return engine.processBlock(in, 0, in.length);
             }

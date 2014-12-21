@@ -121,14 +121,12 @@ public class IESEngine
      * @param publicKey      the recipient's/sender's public key parameters
      * @param params         encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
      * @param ephemeralKeyPairGenerator             the ephemeral key pair generator to use.
-     * @param usePointCompression if true then output compressed EC coordinates
      */
-    public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator, boolean usePointCompression)
+    public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator)
     {
         this.forEncryption = true;
         this.pubParam = publicKey;
         this.keyPairGenerator = ephemeralKeyPairGenerator;
-        this.usePointCompression = usePointCompression;
 
         extractParams(params);
     }
@@ -147,6 +145,14 @@ public class IESEngine
         this.keyParser = publicKeyParser;
 
         extractParams(params);
+    }
+
+    /**
+     * @param usePointCompression if true then processBlock() outputs compressed EC coordinates
+     */
+    public void setPointCompression(boolean usePointCompression)
+    {
+        this.usePointCompression = usePointCompression;
     }
 
     private void extractParams(CipherParameters params)
@@ -408,7 +414,6 @@ public class IESEngine
                     this.compressedEphemeralPublicKey = ((ECPublicKeyParameters)publicKey).getQ().getEncoded(true);
                 } else {
                     // this path should never be taken
-                    usePointCompression = false;
                 }
             }
         }
