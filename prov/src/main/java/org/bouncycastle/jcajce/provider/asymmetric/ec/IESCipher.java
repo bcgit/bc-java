@@ -441,7 +441,7 @@ public class IESCipher
             // Encrypt the buffer
             try
             {
-                engine.init(key, params, kGen);
+                engine.init(key, params, kGen, engineSpec.getPointCompression());
 
                 return engine.processBlock(in, 0, in.length);
             }

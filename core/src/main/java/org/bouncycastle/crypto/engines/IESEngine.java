@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
@@ -44,6 +45,8 @@ public class IESEngine
     private EphemeralKeyPairGenerator keyPairGenerator;
     private KeyParser keyParser;
     private byte[] IV;
+    private byte[] compressedEphemeralPublicKey;
+    private boolean usePointCompression = false;
 
     /**
      * set up for use with stream mode, where the key derivation function
@@ -117,12 +120,14 @@ public class IESEngine
      * @param publicKey      the recipient's/sender's public key parameters
      * @param params         encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
      * @param ephemeralKeyPairGenerator             the ephemeral key pair generator to use.
+     * @param usePointCompression if true then output compressed EC coordinates
      */
-    public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator)
+    public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator, boolean usePointCompression)
     {
         this.forEncryption = true;
         this.pubParam = publicKey;
         this.keyPairGenerator = ephemeralKeyPairGenerator;
+        this.usePointCompression = usePointCompression;
 
         extractParams(params);
     }
@@ -256,11 +261,18 @@ public class IESEngine
         mac.doFinal(T, 0);
 
 
-        // Output the triple (V,C,T).
-        byte[] Output = new byte[V.length + len + T.length];
-        System.arraycopy(V, 0, Output, 0, V.length);
-        System.arraycopy(C, 0, Output, V.length, len);
-        System.arraycopy(T, 0, Output, V.length + len, T.length);
+        // Output the triple (V,C,T) where
+        //   V is the ephemeral public key
+        //   C is the ciphertext
+        //   T is the authentication tag
+        byte[] ephPublicKey = V;
+        if (usePointCompression) {
+            ephPublicKey = compressedEphemeralPublicKey;
+        }
+        byte[] Output = new byte[ephPublicKey.length + len + T.length];
+        System.arraycopy(ephPublicKey, 0, Output, 0, ephPublicKey.length);
+        System.arraycopy(C, 0, Output, ephPublicKey.length, len);
+        System.arraycopy(T, 0, Output, ephPublicKey.length + len, T.length);
         return Output;
     }
 
@@ -387,6 +399,14 @@ public class IESEngine
 
                 this.privParam = ephKeyPair.getKeyPair().getPrivate();
                 this.V = ephKeyPair.getEncodedPublicKey();
+
+                AsymmetricKeyParameter publicKey = ephKeyPair.getKeyPair().getPublic();
+                if (publicKey instanceof ECPublicKeyParameters) {
+                    this.compressedEphemeralPublicKey = ((ECPublicKeyParameters)publicKey).getQ().getEncoded(true);
+                } else {
+                    // this path should never be taken
+                    usePointCompression = false;
+                }
             }
         }
         else
@@ -418,9 +438,14 @@ public class IESEngine
         byte[] VZ;
         if (V.length != 0)
         {
-            VZ = new byte[V.length + Z.length];
-            System.arraycopy(V, 0, VZ, 0, V.length);
-            System.arraycopy(Z, 0, VZ, V.length, Z.length);
+            byte[] ephPublicKey = V;
+            // when decrypting V contains the authoritative bytes (ie the bytes that came in on the wire)
+            if (usePointCompression && forEncryption) {
+                ephPublicKey = compressedEphemeralPublicKey;
+            }
+            VZ = new byte[ephPublicKey.length + Z.length];
+            System.arraycopy(ephPublicKey, 0, VZ, 0, ephPublicKey.length);
+            System.arraycopy(Z, 0, VZ, ephPublicKey.length, Z.length);
         }
         else
         {

@@ -14,6 +14,7 @@ public class IESParameterSpec
     private byte[] encoding;
     private int macKeySize;
     private int cipherKeySize;
+    private boolean usePointCompression = false;
     private byte[] nonce;
 
 
@@ -47,7 +48,7 @@ public class IESParameterSpec
         int macKeySize,
         int cipherKeySize)
     {
-        this(derivation, encoding, macKeySize, cipherKeySize, null);
+        this(derivation, encoding, macKeySize, cipherKeySize, null, false);
     }
 
     /**
@@ -65,6 +66,27 @@ public class IESParameterSpec
         int macKeySize,
         int cipherKeySize,
         byte[] nonce)
+    {
+        this(derivation, encoding, macKeySize, cipherKeySize, null, false);
+    }
+
+    /**
+     * Set the IES engine parameters.
+     *
+     * @param derivation    the optional derivation vector for the KDF.
+     * @param encoding      the optional encoding vector for the KDF.
+     * @param macKeySize    the key size (in bits) for the MAC.
+     * @param cipherKeySize the key size (in bits) for the block cipher.
+     * @param nonce         an IV to use initialising the block cipher.
+     * @param usePointCompression whether to use EC point compression or not (false by default)
+     */
+    public IESParameterSpec(
+        byte[] derivation,
+        byte[] encoding,
+        int macKeySize,
+        int cipherKeySize,
+        byte[] nonce,
+        boolean usePointCompression)
     {
         if (derivation != null)
         {
@@ -89,6 +111,7 @@ public class IESParameterSpec
         this.macKeySize = macKeySize;
         this.cipherKeySize = cipherKeySize;
         this.nonce = Arrays.clone(nonce);
+        this.usePointCompression = usePointCompression;
     }
 
     /**
@@ -131,5 +154,23 @@ public class IESParameterSpec
     public byte[] getNonce()
     {
         return Arrays.clone(nonce);
+    }
+
+    /**
+     * Set the 'point compression' flag.
+     */
+    public void setPointCompression(boolean usePointCompression)
+    {
+        this.usePointCompression = usePointCompression;
+    }
+
+    /**
+     * Return the 'point compression' flag.
+     *
+     * @return the point compression flag
+     */
+    public boolean getPointCompression()
+    {
+        return usePointCompression;
     }
 }
