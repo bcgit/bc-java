@@ -400,6 +400,8 @@ public class IESEngine
                 this.privParam = ephKeyPair.getKeyPair().getPrivate();
                 this.V = ephKeyPair.getEncodedPublicKey();
 
+                // take a copy of the compressed ephemeral public key in case usePointCompression is true
+                // when it comes time to return the encrypted V,C,T triple.
                 AsymmetricKeyParameter publicKey = ephKeyPair.getKeyPair().getPublic();
                 if (publicKey instanceof ECPublicKeyParameters) {
                     this.compressedEphemeralPublicKey = ((ECPublicKeyParameters)publicKey).getQ().getEncoded(true);
@@ -438,14 +440,9 @@ public class IESEngine
         byte[] VZ;
         if (V.length != 0)
         {
-            byte[] ephPublicKey = V;
-            // when decrypting V contains the authoritative bytes (ie the bytes that came in on the wire)
-            if (usePointCompression && forEncryption) {
-                ephPublicKey = compressedEphemeralPublicKey;
-            }
-            VZ = new byte[ephPublicKey.length + Z.length];
-            System.arraycopy(ephPublicKey, 0, VZ, 0, ephPublicKey.length);
-            System.arraycopy(Z, 0, VZ, ephPublicKey.length, Z.length);
+            VZ = new byte[V.length + Z.length];
+            System.arraycopy(V, 0, VZ, 0, V.length);
+            System.arraycopy(Z, 0, VZ, V.length, Z.length);
         }
         else
         {
