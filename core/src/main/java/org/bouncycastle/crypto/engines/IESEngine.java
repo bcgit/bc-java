@@ -47,6 +47,7 @@ public class IESEngine
     private byte[] IV;
     private byte[] compressedEphemeralPublicKey;
     private boolean usePointCompression = false;
+    private int numEphemeralPubKeyBytes;
 
     /**
      * set up for use with stream mode, where the key derivation function
@@ -294,7 +295,7 @@ public class IESEngine
         if (cipher == null)
         {
             // Streaming mode.
-            K1 = new byte[inLen - V.length - mac.getMacSize()];
+            K1 = new byte[inLen - numEphemeralPubKeyBytes - mac.getMacSize()];
             K2 = new byte[param.getMacKeySize() / 8];
             K = new byte[K1.length + K2.length];
 
@@ -315,7 +316,7 @@ public class IESEngine
 
             for (int i = 0; i != K1.length; i++)
             {
-                M[i] = (byte)(in_enc[inOff + V.length + i] ^ K1[i]);
+                M[i] = (byte)(in_enc[inOff + numEphemeralPubKeyBytes + i] ^ K1[i]);
             }
 
             len = K1.length;
@@ -341,8 +342,8 @@ public class IESEngine
                 cipher.init(false, new KeyParameter(K1));    
             }
 
-            M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
-            len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
+            M = new byte[cipher.getOutputSize(inLen - numEphemeralPubKeyBytes - mac.getMacSize())];
+            len = cipher.processBytes(in_enc, inOff + numEphemeralPubKeyBytes, inLen - numEphemeralPubKeyBytes - mac.getMacSize(), M, 0);
             len += cipher.doFinal(M, len);
         }
 
@@ -362,7 +363,7 @@ public class IESEngine
 
         byte[] T2 = new byte[T1.length];
         mac.init(new KeyParameter(K2));
-        mac.update(in_enc, inOff + V.length, inLen - V.length - T2.length);
+        mac.update(in_enc, inOff + numEphemeralPubKeyBytes, inLen - numEphemeralPubKeyBytes - T2.length);
 
         if (P2 != null)
         {
@@ -426,8 +427,16 @@ public class IESEngine
                     throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
                 }
 
-                int encLength = (inLen - bIn.available());
-                this.V = Arrays.copyOfRange(in, inOff, inOff + encLength);
+                numEphemeralPubKeyBytes = (inLen - bIn.available());
+                if (pubParam instanceof ECPublicKeyParameters) {
+                    this.V = ((ECPublicKeyParameters)pubParam).getQ().getEncoded(false);
+                    // getEncoded(false) gives the full-fat (uncompressed) version of the
+                    // ephemeral key. but when reading bytes out of the incoming encrypted V,C,T
+                    // triple you still need the correct offset, which will be different to
+                    // V.length if V was a compressed ECPoint
+                } else {
+                    this.V = Arrays.copyOfRange(in, inOff, inOff + numEphemeralPubKeyBytes);
+                }
             }
         }
 
