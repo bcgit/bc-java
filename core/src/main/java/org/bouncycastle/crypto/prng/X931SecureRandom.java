@@ -2,23 +2,17 @@ package org.bouncycastle.crypto.prng;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
-
-public class SP800SecureRandom
+public class X931SecureRandom
     extends SecureRandom
 {
-    private final DRBGProvider drbgProvider;
     private final boolean predictionResistant;
     private final SecureRandom randomSource;
-    private final EntropySource entropySource;
+    private final X931RNG drbg;
 
-    private SP80090DRBG drbg;
-
-    SP800SecureRandom(SecureRandom randomSource, EntropySource entropySource, DRBGProvider drbgProvider, boolean predictionResistant)
+    X931SecureRandom(SecureRandom randomSource, X931RNG drbg, boolean predictionResistant)
     {
         this.randomSource = randomSource;
-        this.entropySource = entropySource;
-        this.drbgProvider = drbgProvider;
+        this.drbg = drbg;
         this.predictionResistant = predictionResistant;
     }
 
@@ -49,16 +43,11 @@ public class SP800SecureRandom
     {
         synchronized (this)
         {
-            if (drbg == null)
-            {
-                drbg = drbgProvider.get(entropySource);
-            }
-
             // check if a reseed is required...
-            if (drbg.generate(bytes, null, predictionResistant) < 0)
+            if (drbg.generate(bytes, predictionResistant) < 0)
             {
-                drbg.reseed(null);
-                drbg.generate(bytes, null, predictionResistant);
+                drbg.reseed();
+                drbg.generate(bytes, predictionResistant);
             }
         }
     }

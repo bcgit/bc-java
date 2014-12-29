@@ -11,6 +11,7 @@ public class RegressionTest
         new HashDRBGTest(),
         new HMacDRBGTest(),
         new SP800RandomTest(),
+        new X931Test(),
         new FixedSecureRandomTest()
     };
 
