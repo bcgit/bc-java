@@ -1,6 +1,5 @@
 package org.bouncycastle.mail.smime.test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,7 +10,6 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.mail.MessagingException;
@@ -283,7 +281,7 @@ public class NewSMIMEEnvelopedTest
 
         MimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(msg, res);
+        SMIMETestUtil.verifyMessageBytes(msg, res);
     }
 
     public void testDotNetEncMailMatch()
@@ -386,7 +384,7 @@ public class NewSMIMEEnvelopedTest
 
         MimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(msg, res);
+        SMIMETestUtil.verifyMessageBytes(msg, res);
     }
     
     public void testTwoRecipients()
@@ -414,7 +412,7 @@ public class NewSMIMEEnvelopedTest
         
         FileBackedMimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContentStream(new JceKeyTransEnvelopedRecipient(_reciKP2.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(_msg, res);
+        SMIMETestUtil.verifyMessageBytes(_msg, res);
         
         m = new SMIMEEnvelopedParser(mp);
 
@@ -427,7 +425,7 @@ public class NewSMIMEEnvelopedTest
  
         res = SMIMEUtil.toMimeBodyPart(recipient.getContentStream(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(_msg, res);
+        SMIMETestUtil.verifyMessageBytes(_msg, res);
         
         res.dispose();
     }
@@ -455,7 +453,7 @@ public class NewSMIMEEnvelopedTest
 
         MimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(msg, res);
+        SMIMETestUtil.verifyMessageBytes(msg, res);
     }
     
     private void verifyParserAlgorithm(
@@ -481,7 +479,7 @@ public class NewSMIMEEnvelopedTest
 
         MimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 
-        verifyMessageBytes(msg, res);
+        SMIMETestUtil.verifyMessageBytes(msg, res);
     }
 
     private RecipientId getRecipientId(
@@ -491,21 +489,5 @@ public class NewSMIMEEnvelopedTest
         RecipientId          recId = new JceKeyTransRecipientId(cert);
 
         return recId;
-    }
-    
-    
-    private void verifyMessageBytes(MimeBodyPart a, MimeBodyPart b) 
-        throws IOException, MessagingException
-    {
-        ByteArrayOutputStream _baos = new ByteArrayOutputStream();
-        a.writeTo(_baos);
-        _baos.close();
-        byte[] _msgBytes = _baos.toByteArray();
-        _baos = new ByteArrayOutputStream();
-        b.writeTo(_baos);
-        _baos.close();
-        byte[] _resBytes = _baos.toByteArray();
-        
-        assertEquals(true, Arrays.equals(_msgBytes, _resBytes));
     }
 }

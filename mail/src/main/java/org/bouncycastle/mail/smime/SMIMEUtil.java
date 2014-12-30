@@ -6,9 +6,6 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -47,24 +44,6 @@ public class SMIMEUtil
         }
 
         return !contentTransferEncoding.equalsIgnoreCase("binary");
-    }
-
-    public static Provider getProvider(String providerName)
-        throws NoSuchProviderException
-    {
-        if (providerName != null)
-        {
-            Provider prov = Security.getProvider(providerName);
-
-            if (prov != null)
-            {
-                return prov;
-            }
-
-            throw new NoSuchProviderException("provider " + providerName + " not found.");
-        }
-
-        return null;
     }
 
     static class LineOutputStream extends FilterOutputStream
