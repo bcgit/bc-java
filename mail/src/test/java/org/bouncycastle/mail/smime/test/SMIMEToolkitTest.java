@@ -240,7 +240,7 @@ public class SMIMEToolkitTest
     {
         SMIMEToolkit toolkit = new SMIMEToolkit(new BcDigestCalculatorProvider());
 
-        MimeBodyPart res = toolkit.encrypt(msg, new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC), new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build());
+        MimeBodyPart res = toolkit.encrypt(msg, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
 
         Assert.assertTrue(toolkit.isEncrypted(res));
 
@@ -255,7 +255,7 @@ public class SMIMEToolkitTest
         SMIMEToolkit toolkit = new SMIMEToolkit(new BcDigestCalculatorProvider());
 
         MimeMessage message = makeMimeMessage(msg);
-        MimeBodyPart res = toolkit.encrypt(message, new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC), new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build());
+        MimeBodyPart res = toolkit.encrypt(message, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
 
         Assert.assertTrue(toolkit.isEncrypted(res));
 
@@ -293,7 +293,7 @@ public class SMIMEToolkitTest
 
         MimeMultipart smm = toolkit.sign(msg, new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", signerKey, signerCert));
 
-        return toolkit.encrypt(smm, new JceKeyTransRecipientInfoGenerator(recipientCert).setProvider(BC), new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build());
+        return toolkit.encrypt(smm, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(recipientCert).setProvider(BC));
     }
 
     public void testSignedMessageGenerationMultipart()

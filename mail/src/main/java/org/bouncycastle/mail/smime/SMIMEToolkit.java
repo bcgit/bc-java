@@ -305,12 +305,12 @@ public class SMIMEToolkit
      * Encrypt the passed in MIME part returning a new encrypted MIME part.
      *
      * @param mimePart the part to be encrypted.
-     * @param recipientGenerator  the generator for the target recipient.
      * @param contentEncryptor the encryptor to use for the actual message content.
+     * @param recipientGenerator  the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
-    public MimeBodyPart encrypt(MimeBodyPart mimePart, RecipientInfoGenerator recipientGenerator, OutputEncryptor contentEncryptor)
+    public MimeBodyPart encrypt(MimeBodyPart mimePart, OutputEncryptor contentEncryptor, RecipientInfoGenerator recipientGenerator)
         throws SMIMEException
     {
         SMIMEEnvelopedGenerator envGen = new SMIMEEnvelopedGenerator();
@@ -324,12 +324,12 @@ public class SMIMEToolkit
      * Encrypt the passed in MIME multi-part returning a new encrypted MIME part.
      *
      * @param multiPart the multi-part to be encrypted.
-     * @param recipientGenerator  the generator for the target recipient.
      * @param contentEncryptor the encryptor to use for the actual message content.
+     * @param recipientGenerator  the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
-    public MimeBodyPart encrypt(MimeMultipart multiPart, RecipientInfoGenerator recipientGenerator, OutputEncryptor contentEncryptor)
+    public MimeBodyPart encrypt(MimeMultipart multiPart, OutputEncryptor contentEncryptor, RecipientInfoGenerator recipientGenerator)
         throws SMIMEException, MessagingException
     {
         SMIMEEnvelopedGenerator envGen = new SMIMEEnvelopedGenerator();
@@ -347,12 +347,12 @@ public class SMIMEToolkit
      * Encrypt the passed in MIME message returning a new encrypted MIME part.
      *
      * @param message the multi-part to be encrypted.
-     * @param recipientGenerator  the generator for the target recipient.
      * @param contentEncryptor the encryptor to use for the actual message content.
+     * @param recipientGenerator  the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
-    public MimeBodyPart encrypt(MimeMessage message, RecipientInfoGenerator recipientGenerator, OutputEncryptor contentEncryptor)
+    public MimeBodyPart encrypt(MimeMessage message, OutputEncryptor contentEncryptor, RecipientInfoGenerator recipientGenerator)
         throws SMIMEException
     {
         SMIMEEnvelopedGenerator envGen = new SMIMEEnvelopedGenerator();
