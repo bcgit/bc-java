@@ -269,9 +269,16 @@ public class TlsBlockCipher
             byte[] calculatedMac = readMac.calculateMac(seqNo, type, ciphertext, offset, len - macSize);
 
             boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
-
             if (badMac)
             {
+                /*
+                 * RFC 7366 3. The MAC SHALL be evaluated before any further processing such as
+                 * decryption is performed, and if the MAC verification fails, then processing SHALL
+                 * terminate immediately. For TLS, a fatal bad_record_mac MUST be generated [2]. For
+                 * DTLS, the record MUST be discarded, and a fatal bad_record_mac MAY be generated
+                 * [4]. This immediate response to a bad MAC eliminates any timing channels that may
+                 * be available through the use of manipulated packet data.
+                 */
                 throw new TlsFatalAlert(AlertDescription.bad_record_mac);
             }
         }
@@ -291,6 +298,7 @@ public class TlsBlockCipher
 
         // If there's anything wrong with the padding, this will return zero
         int totalPad = checkPaddingConstantTime(ciphertext, offset, blocks_length, blockSize, encryptThenMAC ? 0 : macSize);
+        boolean badMac = (totalPad == 0);
 
         int dec_output_length = blocks_length - totalPad;
 
@@ -303,12 +311,12 @@ public class TlsBlockCipher
             byte[] calculatedMac = readMac.calculateMacConstantTime(seqNo, type, ciphertext, offset, macInputLen,
                 blocks_length - macSize, randomData);
 
-            boolean badMac = !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+            badMac |= !Arrays.constantTimeAreEqual(calculatedMac, receivedMac);
+        }
 
-            if (badMac || totalPad == 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.bad_record_mac);
-            }
+        if (badMac)
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
         return Arrays.copyOfRange(ciphertext, offset, offset + dec_output_length);
