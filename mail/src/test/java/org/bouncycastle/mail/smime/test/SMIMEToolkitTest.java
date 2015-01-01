@@ -1,9 +1,11 @@
 package org.bouncycastle.mail.smime.test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +43,11 @@ import org.bouncycastle.mail.smime.SMIMEException;
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMEToolkit;
+import org.bouncycastle.openssl.jcajce.JcaPKIXIdentityBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import org.bouncycastle.pkix.jcajce.JcaPKIXIdentity;
+import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 
 public class SMIMEToolkitTest
@@ -210,12 +215,6 @@ public class SMIMEToolkitTest
 
         Assert.assertTrue(toolkit.isValidSignature(smm, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
-        Properties props = System.getProperties();
-        Session session = Session.getDefaultInstance(props, null);
-
-        Address fromUser = new InternetAddress("\"Eric H. Echidna\"<eric@bouncycastle.org>");
-        Address toUser = new InternetAddress("example@bouncycastle.org");
-
         MimeMessage body = makeMimeMessage(smm);
 
         Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
@@ -235,6 +234,35 @@ public class SMIMEToolkitTest
         Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
     }
 
+    public void testSignedMessageVerificationEncapsulatedWithPKIXIdentity()
+        throws Exception
+    {
+        JcaPKIXIdentity identity = openIdentityResource("smimeTKkey.pem", "smimeTKcert.pem");
+
+        SMIMEToolkit toolkit = new SMIMEToolkit(new BcDigestCalculatorProvider());
+
+        List certList = new ArrayList();
+
+        certList.add(identity.getCertificate());
+
+        Store certs = new CollectionStore(certList);
+
+        SMIMESignedGenerator gen = new SMIMESignedGenerator();
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", identity.getPrivateKey(), identity.getX509Certificate()));
+
+        gen.addCertificates(certs);
+
+        MimeBodyPart res = gen.generateEncapsulated(msg);
+
+        Assert.assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(identity.getCertificate())));
+
+        MimeMessage body = makeMimeMessage(res);
+
+        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(identity.getCertificate())));
+        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(identity.getX509Certificate())));
+    }
+
     public void testEncryptedMimeBodyPart()
         throws Exception
     {
@@ -245,6 +273,22 @@ public class SMIMEToolkitTest
         Assert.assertTrue(toolkit.isEncrypted(res));
 
         MimeBodyPart dec = toolkit.decrypt(res, new JceKeyTransRecipientId(_reciCert), new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        SMIMETestUtil.verifyMessageBytes(msg, dec);
+    }
+
+    public void testEncryptedMimeBodyPartWithPKIXIdentity()
+        throws Exception
+    {
+        JcaPKIXIdentity identity = openIdentityResource("smimeTKkey.pem", "smimeTKcert.pem");
+
+        SMIMEToolkit toolkit = new SMIMEToolkit(new BcDigestCalculatorProvider());
+
+        MimeBodyPart res = toolkit.encrypt(msg, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(identity.getX509Certificate()).setProvider(BC));
+
+        Assert.assertTrue(toolkit.isEncrypted(res));
+
+        MimeBodyPart dec = toolkit.decrypt(res, identity.getRecipientId(), new JceKeyTransEnvelopedRecipient(identity.getPrivateKey()).setProvider(BC));
 
         SMIMETestUtil.verifyMessageBytes(msg, dec);
     }
@@ -434,6 +478,17 @@ public class SMIMEToolkitTest
         gen.addCertificates(certs);
 
         return gen.generateEncapsulated(msg);
+    }
+
+    private JcaPKIXIdentity openIdentityResource(
+        String          keyFileName,
+        String          certFileName)
+        throws IOException, CertificateException
+    {
+        InputStream keyRes = this.getClass().getResourceAsStream(keyFileName);
+        InputStream certRes = this.getClass().getResourceAsStream(certFileName);
+
+        return new JcaPKIXIdentityBuilder().setProvider(BC).build(keyRes, certRes);
     }
 
     public static void main(String args[])

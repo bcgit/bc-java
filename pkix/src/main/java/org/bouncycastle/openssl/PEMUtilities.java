@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.util.Integers;
 
-public final class PEMUtilities
+final class PEMUtilities
 {
     private static final Map KEYSIZES = new HashMap();
     private static final Set PKCS5_SCHEME_1 = new HashSet();
