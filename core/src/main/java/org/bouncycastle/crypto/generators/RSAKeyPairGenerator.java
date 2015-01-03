@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.generators;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
@@ -7,8 +9,6 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.math.ec.WNafUtil;
-
-import java.math.BigInteger;
 
 /**
  * an RSA key pair generator.
@@ -27,96 +27,121 @@ public class RSAKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        BigInteger p, q, n, d, e, pSub1, qSub1, phi;
+        AsymmetricCipherKeyPair result = null;
+        boolean done = false;
 
-        //
-        // p and q values should have a length of half the strength in bits
-        //
-        int strength = param.getStrength();
-        int qBitlength = strength >>> 1;
-        int pBitlength = strength - qBitlength;
-        int mindiffbits = strength / 3;
-        int minWeight = strength >>> 2;
-
-        e = param.getPublicExponent();
-
-        // TODO Consider generating safe primes for p, q (see DHParametersHelper.generateSafePrimes)
-        // (then p-1 and q-1 will not consist of only small factors - see "Pollard's algorithm")
-
-        p = chooseRandomPrime(pBitlength, e);
-
-        //
-        // generate a modulus of the required length
-        //
-        for (;;)
+        while (!done)
         {
-            q = chooseRandomPrime(qBitlength, e);
+            BigInteger p, q, n, d, e, pSub1, qSub1, phi, lcm, dLowerBound;
 
-            // p and q should not be too close together (or equal!)
-            BigInteger diff = q.subtract(p).abs();
-            if (diff.bitLength() < mindiffbits)
+            //
+            // p and q values should have a length of half the strength in bits
+            //
+            int strength = param.getStrength();
+            int pbitlength = (strength + 1) / 2;
+            int qbitlength = strength - pbitlength;
+            int mindiffbits = strength / 3;
+            int minWeight = strength >> 2;
+
+            // d lower bound is 2^(strength / 2)
+            dLowerBound = BigInteger.valueOf(2).pow(strength / 2);
+
+            e = param.getPublicExponent();
+
+            // TODO Consider generating safe primes for p, q (see DHParametersHelper.generateSafePrimes)
+            // (then p-1 and q-1 will not consist of only small factors - see "Pollard's algorithm")
+
+            p = chooseRandomPrime(pbitlength, e);
+
+            //
+            // generate a modulus of the required length
+            //
+            for (;;)
+            {
+                q = chooseRandomPrime(qbitlength, e);
+
+                // p and q should not be too close together (or equal!)
+                BigInteger diff = q.subtract(p).abs();
+                if (diff.bitLength() < mindiffbits)
+                {
+                    continue;
+                }
+
+                //
+                // calculate the modulus
+                //
+                n = p.multiply(q);
+
+                if (n.bitLength() != strength)
+                {
+                    //
+                    // if we get here our primes aren't big enough, make the largest
+                    // of the two p and try again
+                    //
+                    p = p.max(q);
+                    continue;
+                }
+
+	            /*
+	             * Require a minimum weight of the NAF representation, since low-weight composites may
+	             * be weak against a version of the number-field-sieve for factoring.
+	             *
+	             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
+	             */
+                if (WNafUtil.getNafWeight(n) < minWeight)
+                {
+                    p = chooseRandomPrime(pbitlength, e);
+                    continue;
+                }
+
+                break;
+            }
+
+            if (p.compareTo(q) < 0)
+            {
+                phi = p;
+                p = q;
+                q = phi;
+            }
+
+            pSub1 = p.subtract(ONE);
+            qSub1 = q.subtract(ONE);
+            phi = pSub1.multiply(qSub1);
+            lcm = phi.divide(pSub1.gcd(qSub1));
+
+            //
+            // calculate the private exponent
+            //
+            d = e.modInverse(lcm);
+
+            // if d is less than or equal to dLowerBound, we need to start over
+            // also, for backward compatibility, if d is not the same as
+            // e.modInverse(phi), we need to start over
+
+            if (!d.equals(e.modInverse(phi)) || d.compareTo(dLowerBound) <= 0)
             {
                 continue;
             }
-
-            //
-            // calculate the modulus
-            //
-            n = p.multiply(q);
-
-            if (n.bitLength() != strength) 
+            else
             {
-                //
-                // if we get here our primes aren't big enough, make the largest
-                // of the two p and try again
-                //
-                p = p.max(q);
-                continue;
-            } 
-
-            /*
-             * Require a minimum weight of the NAF representation, since low-weight composites may
-             * be weak against a version of the number-field-sieve for factoring.
-             * 
-             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
-             */
-            if (WNafUtil.getNafWeight(n) < minWeight)
-            {
-                p = chooseRandomPrime(pBitlength, e);
-                continue;
+                done = true;
             }
 
-            break;
+            //
+            // calculate the CRT factors
+            //
+            BigInteger dP, dQ, qInv;
+
+            dP = d.remainder(pSub1);
+            dQ = d.remainder(qSub1);
+            qInv = q.modInverse(p);
+
+            result = new AsymmetricCipherKeyPair(
+                new RSAKeyParameters(false, n, e),
+                new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
         }
 
-        if (p.compareTo(q) < 0)
-        {
-            phi = p;
-            p = q;
-            q = phi;
-        }
-
-        pSub1 = p.subtract(ONE);
-        qSub1 = q.subtract(ONE);
-        phi = pSub1.multiply(qSub1);
-
-        //
-        // calculate the private exponent
-        //
-        d = e.modInverse(phi);
-
-        //
-        // calculate the CRT factors
-        //
-        BigInteger dP, dQ, qInv;
-
-        dP = d.remainder(pSub1);
-        dQ = d.remainder(qSub1);
-        qInv = q.modInverse(p);
-
-        return new AsymmetricCipherKeyPair(
-            new RSAKeyParameters(false, n, e),
-            new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
+        return result;
     }
 
     /**

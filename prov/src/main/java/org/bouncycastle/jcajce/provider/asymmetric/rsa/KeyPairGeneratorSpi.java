@@ -23,7 +23,7 @@ public class KeyPairGeneratorSpi
     }
 
     final static BigInteger defaultPublicExponent = BigInteger.valueOf(0x10001);
-    final static int defaultTests = 12;
+    final static int defaultTests = 112;
 
     RSAKeyGenerationParameters param;
     RSAKeyPairGenerator engine;
