@@ -426,7 +426,7 @@ public class NTRUEngine
         System.arraycopy(cM, bLen + 1, cm, 0, cl);
         byte[] p0 = new byte[cM.length - (bLen + 1 + cl)];
         System.arraycopy(cM, bLen + 1 + cl, p0, 0, p0.length);
-        if (!Arrays.areEqual(p0, new byte[p0.length]))
+        if (!Arrays.constantTimeAreEqual(p0, new byte[p0.length]))
         {
            throw new InvalidCipherTextException("The message is not followed by zeroes");
         }
