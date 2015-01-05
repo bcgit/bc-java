@@ -193,7 +193,7 @@ public class EAXBlockCipher
     {
         if (cipherInitialized)
         {
-            throw new IllegalStateException("AAD data cannot be added after encryption/decription processing has begun.");
+            throw new IllegalStateException("AAD data cannot be added after encryption/decryption processing has begun.");
         }
         mac.update(in);
     }
