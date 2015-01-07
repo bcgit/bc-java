@@ -17,8 +17,6 @@ import org.bouncycastle.bcpg.MarkerPacket;
  */
 public class PGPMarker
 {
-    private MarkerPacket p;
-    
     /**
      * Default constructor.
      * 
@@ -29,6 +27,8 @@ public class PGPMarker
         BCPGInputStream in) 
         throws IOException
     {
-        p = (MarkerPacket)in.readPacket();
+     if (!( in.readPacket() instanceof MarkerPacket)){
+    	 throw new IOException("MarkerPacket expected");
+     }
     }
 }

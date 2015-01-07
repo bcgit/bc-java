@@ -25,6 +25,8 @@ public class UserAttributePacket
             v.addElement(sub);
         }
         
+        sIn.close();
+        
         subpackets = new UserAttributeSubpacket[v.size()];
             
         for (int i = 0; i != subpackets.length; i++)

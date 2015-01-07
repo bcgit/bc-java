@@ -383,7 +383,7 @@ public class SignaturePacket
         {
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream bcOut = new BCPGOutputStream(bOut);
-
+            RuntimeException error = null;
             for (int i = 0; i != signature.length; i++)
             {
                 try
@@ -392,9 +392,18 @@ public class SignaturePacket
                 }
                 catch (IOException e)
                 {
-                    throw new RuntimeException("internal error: " + e);
+                	error = new RuntimeException("internal error: " + e);
+                	break;
                 }
             }
+            try {
+				bcOut.close();
+				if (error != null) {
+					throw error;
+				}
+			} catch (IOException e) {
+				  throw new RuntimeException("internal error: " + e,error);
+			}
             return bOut.toByteArray();
         }
         else
@@ -489,6 +498,8 @@ public class SignaturePacket
         }
         else
         {
+        	pOut.close(); // we should close
+        	
             throw new IOException("unknown version: " + version);
         }
         
@@ -506,6 +517,8 @@ public class SignaturePacket
             pOut.write(signatureEncoding);
         }
 
+        pOut.close();
+        
         out.writePacket(SIGNATURE, bOut.toByteArray(), true);
     }
 

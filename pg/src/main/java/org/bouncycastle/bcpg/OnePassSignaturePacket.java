@@ -110,6 +110,8 @@ public class OnePassSignaturePacket
         
         pOut.write(nested);
         
+        pOut.close();
+        
         out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray(), true);
     }
 }
