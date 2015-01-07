@@ -17,6 +17,8 @@ public abstract class ContainedPacket
         
         pOut.writePacket(this);
         
+        pOut.close();
+        
         return bOut.toByteArray();
     }
     
