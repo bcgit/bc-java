@@ -15,7 +15,9 @@ public abstract class BCPGObject
         BCPGOutputStream         pOut = new BCPGOutputStream(bOut);
 
         pOut.writeObject(this);
-
+        // warning eclipse
+        pOut.close();
+        
         return bOut.toByteArray();
     }
 
