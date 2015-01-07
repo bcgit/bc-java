@@ -7,7 +7,7 @@ import java.io.IOException;
  * Basic type for a PGP packet.
  */
 public abstract class ContainedPacket 
-    extends Packet
+    extends Packet implements Encodeable
 {
     public byte[] getEncoded() 
         throws IOException
@@ -19,10 +19,7 @@ public abstract class ContainedPacket
         
         pOut.close();
         
-        return bOut.toByteArray();
+        return BCPGUtil.getEncoded(this);
     }
     
-    public abstract void encode(
-        BCPGOutputStream    pOut)
-        throws IOException;
 }

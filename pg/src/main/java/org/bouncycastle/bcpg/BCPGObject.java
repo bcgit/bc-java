@@ -1,26 +1,16 @@
 package org.bouncycastle.bcpg;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
  * Base class for a PGP object.
  */
-public abstract class BCPGObject
+public abstract class BCPGObject implements Encodeable
 {
     public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        BCPGOutputStream         pOut = new BCPGOutputStream(bOut);
-
-        pOut.writeObject(this);
-        // warning eclipse
-        pOut.close();
-        
-        return bOut.toByteArray();
+        return BCPGUtil.getEncoded(this);
     }
-
-    public abstract void encode(BCPGOutputStream out)
-        throws IOException;
+ 
 }

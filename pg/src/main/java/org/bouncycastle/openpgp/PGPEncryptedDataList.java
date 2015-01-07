@@ -24,7 +24,7 @@ import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
  * All of the objects returned from this holder share a reference to the same encrypted data input
  * stream, which can only be consumed once.
  */
-public class PGPEncryptedDataList
+public class PGPEncryptedDataList implements Iterable
 {
     List                 list = new ArrayList();
     InputStreamPacket    data;
@@ -107,4 +107,9 @@ public class PGPEncryptedDataList
     {
         return list.iterator();
     }
+
+	public Iterator iterator() {
+		// allows for-each loop
+		return list.iterator();
+	}
 }
