@@ -84,6 +84,7 @@ public class RegressionTest
         new OAEPTest(),
         new PSSTest(),
         new CTSTest(),
+        new NISTCTSTest(),
         new CCMTest(),
         new PKCS5Test(),
         new PKCS12Test(),
