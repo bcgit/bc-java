@@ -15,6 +15,8 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.util.*;
+import org.bouncycastle.util.Iterable;
 
 /**
  * Class to hold a single master public key and its subkeys.
@@ -24,6 +26,7 @@ import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
  */
 public class PGPPublicKeyRing
     extends PGPKeyRing
+    implements Iterable
 {
     List keys;
 
@@ -130,7 +133,15 @@ public class PGPPublicKeyRing
     {
         return Collections.unmodifiableList(keys).iterator();
     }
-    
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return getPublicKeys();
+    }
+
     public byte[] getEncoded() 
         throws IOException
     {
