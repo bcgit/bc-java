@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.BigInteger;
 
 /**
@@ -54,12 +54,7 @@ public class ElGamalPublicBCPGKey
     {
         try
         { 
-            ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-            BCPGOutputStream         pgpOut = new BCPGOutputStream(bOut);
-        
-            pgpOut.writeObject(this);
-        
-            return bOut.toByteArray();
+            return super.getEncoded();
         }
         catch (IOException e)
         {

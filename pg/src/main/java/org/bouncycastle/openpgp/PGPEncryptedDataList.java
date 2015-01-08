@@ -26,7 +26,7 @@ import org.bouncycastle.util.Iterable;
  * stream, which can only be consumed once.
  */
 public class PGPEncryptedDataList
-    implements Iterable
+	implements Iterable
 {
     List                 list = new ArrayList();
     InputStreamPacket    data;

@@ -15,7 +15,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 
-public abstract class PGPKeyRing
+public abstract class PGPKeyRing implements Iterable
 {
     PGPKeyRing()
     {
@@ -106,6 +106,11 @@ public abstract class PGPKeyRing
         * @return Iterator
         */
     public abstract Iterator getPublicKeys();
+    
+    public Iterator iterator() {
+    	// i like to use for each
+    	return getPublicKeys();
+    }
 
     /**
         * Return the public key referred to by the passed in keyID if it
