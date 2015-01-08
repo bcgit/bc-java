@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
+import org.bouncycastle.util.Iterable;
 
 /**
  * Class to hold a single master secret key and its subkeys.
@@ -28,6 +29,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
  */
 public class PGPSecretKeyRing
     extends PGPKeyRing
+    implements Iterable
 {    
     List keys;
     List extraPubKeys;
@@ -257,6 +259,14 @@ public class PGPSecretKeyRing
 
             k.encode(outStream);
         }
+    }
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return getSecretKeys();
     }
 
     /**

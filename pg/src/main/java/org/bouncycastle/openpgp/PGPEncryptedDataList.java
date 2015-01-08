@@ -10,6 +10,7 @@ import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
+import org.bouncycastle.util.Iterable;
 
 /**
  * A holder for a list of PGP encryption method packets and the encrypted data associated with them.
@@ -24,7 +25,8 @@ import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
  * All of the objects returned from this holder share a reference to the same encrypted data input
  * stream, which can only be consumed once.
  */
-public class PGPEncryptedDataList implements Iterable
+public class PGPEncryptedDataList
+	implements Iterable
 {
     List                 list = new ArrayList();
     InputStreamPacket    data;
@@ -92,14 +94,6 @@ public class PGPEncryptedDataList implements Iterable
     }
 
     /**
-     * @deprecated misspelt - use getEncryptedDataObjects()
-     */
-    public Iterator getEncyptedDataObjects()
-    {
-        return list.iterator();
-    }
-
-    /**
      * Returns an iterator over the encryption method objects held in this list, in the order they
      * appeared in the stream they are read from.
      */
@@ -108,8 +102,11 @@ public class PGPEncryptedDataList implements Iterable
         return list.iterator();
     }
 
-	public Iterator iterator() {
-		// allows for-each loop
-		return list.iterator();
-	}
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return getEncryptedDataObjects();
+    }
 }
