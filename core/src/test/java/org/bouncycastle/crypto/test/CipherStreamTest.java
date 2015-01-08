@@ -44,6 +44,7 @@ import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.NISTCTSBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
@@ -72,7 +73,7 @@ public class CipherStreamTest
         testReadWrite(cipher, params, false);
         testReadWrite(cipher, params, true);
 
-        if (!(cipher instanceof CTSBlockCipher))
+        if (!(cipher instanceof CTSBlockCipher || cipher instanceof NISTCTSBlockCipher))
         {
             testWriteReadEmpty(cipher, params, false);
             testWriteReadEmpty(cipher, params, true);
@@ -538,6 +539,12 @@ public class CipherStreamTest
         if (blockSize <= 16 && streamSize >= blockSize)
         {
             testMode(new CTSBlockCipher(cipher1), key);
+        }
+        if (blockSize <= 16 && streamSize >= blockSize)
+        {
+            testMode(new NISTCTSBlockCipher(NISTCTSBlockCipher.CS1, cipher1), key);
+            testMode(new NISTCTSBlockCipher(NISTCTSBlockCipher.CS2, cipher1), key);
+            testMode(new NISTCTSBlockCipher(NISTCTSBlockCipher.CS3, cipher1), key);
         }
         if (blockSize == 8 || blockSize == 16)
         {
