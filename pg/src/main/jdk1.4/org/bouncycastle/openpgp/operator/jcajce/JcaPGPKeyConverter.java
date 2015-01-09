@@ -113,17 +113,21 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(elSpec);
             case PublicKeyAlgorithmTags.EC:
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
+                X9ECParameters ecdhParams = PGPUtil.getX9Parameters(ecdhK.getCurveOID());
+                ECPoint ecdhPoint = PGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
                 ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
-                    ecdhK.getPoint(),
-                    convertX9Parameters(ecdhK.getCurveOID(), NISTNamedCurves.getByOID(ecdhK.getCurveOID())));
+                    ecdhPoint,
+                    convertX9Parameters(ecdhK.getCurveOID(), ecdhParams));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePublic(ecDhSpec);
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
+                X9ECParameters ecdsaParams = PGPUtil.getX9Parameters(ecdsaK.getCurveOID());
+                ECPoint ecdsaPoint = PGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
                 ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
-                    ecdsaK.getPoint(),
-                    convertX9Parameters(ecdsaK.getCurveOID(), NISTNamedCurves.getByOID(ecdsaK.getCurveOID())));
+                    ecdsaPoint,
+                    convertX9Parameters(ecdsaK.getCurveOID(), ecdsaParams));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePublic(ecDsaSpec);
