@@ -62,13 +62,13 @@ public class BcPGPPBETest
         Date      date)
         throws Exception
     {
-        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        PGPObjectFactory         pgpF = new BcPGPObjectFactory(message);
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
         
-        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);
+        PGPObjectFactory         pgpFact = new BcPGPObjectFactory(clear);
         
         PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
         

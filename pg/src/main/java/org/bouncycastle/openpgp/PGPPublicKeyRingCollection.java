@@ -14,14 +14,15 @@ import java.util.Map;
 
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Strings;
 
 /**
  * Often a PGP key ring file is made up of a succession of master/sub-key key rings.
  * If you want to read an entire public key file in one hit this is the class for you.
  */
-public class PGPPublicKeyRingCollection 
+public class PGPPublicKeyRingCollection
+    implements Iterable
 {
     private Map   pubRings = new HashMap();
     private List  order = new ArrayList();
@@ -32,24 +33,6 @@ public class PGPPublicKeyRingCollection
     {
         this.pubRings = pubRings;
         this.order = order;
-    }
-
-    /**
-     * @deprecated use JcePGPPublicKeyRingCollection or BcPGPPublicKeyRingCollection.
-     */
-    public PGPPublicKeyRingCollection(byte[] encoding)
-        throws IOException, PGPException
-    {
-        this(encoding, new BcKeyFingerprintCalculator());
-    }
-
-    /**
-     * @deprecated use JcePGPPublicKeyRingCollection or BcPGPPublicKeyRingCollection.
-     */
-    public PGPPublicKeyRingCollection(InputStream in)
-        throws IOException, PGPException
-    {
-        this(in, new BcKeyFingerprintCalculator());
     }
 
     public PGPPublicKeyRingCollection(
@@ -387,5 +370,13 @@ public class PGPPublicKeyRingCollection
         }
         
         return new PGPPublicKeyRingCollection(newPubRings, newOrder);
+    }
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return pubRings.values().iterator();
     }
 }

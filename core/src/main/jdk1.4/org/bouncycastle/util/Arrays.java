@@ -973,10 +973,10 @@ public final class Arrays
     /**
      * Iterator backed by a specific array.
      */
-    public static class Iterator<T>
-        implements java.util.Iterator<T>
+    public static class Iterator
+        implements java.util.Iterator
     {
-        private final T[] dataArray;
+        private final Object[] dataArray;
 
         private int position = 0;
 
@@ -988,7 +988,7 @@ public final class Arrays
          *
          * @param dataArray array backing the iterator.
          */
-        public Iterator(T[] dataArray)
+        public Iterator(Object[] dataArray)
         {
             this.dataArray = dataArray;
         }
@@ -998,7 +998,7 @@ public final class Arrays
             return position < dataArray.length;
         }
 
-        public T next()
+        public Object next()
         {
             return dataArray[position++];
         }
