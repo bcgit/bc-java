@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.EphemeralKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -84,7 +85,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             else
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = NISTNamedCurves.getByOID(ecKey.getCurveOID());
+                X9ECParameters x9Params = BcUtil.getX9Parameters(ecKey.getCurveOID());
                 ECDomainParameters ecParams = new ECDomainParameters(x9Params.getCurve(), x9Params.getG(), x9Params.getN());
 
                 // Generate the ephemeral key pair
@@ -103,7 +104,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                 ECPrivateKeyParameters ephPriv = (ECPrivateKeyParameters)ephKp.getKeyPair().getPrivate();
 
-                ECPoint S = ecKey.getPoint().multiply(ephPriv.getD()).normalize();
+                ECPoint S = BcUtil.decodePoint(ecKey.getEncodedPoint(), x9Params.getCurve()).multiply(ephPriv.getD()).normalize();
 
                 RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
 

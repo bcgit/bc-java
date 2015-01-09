@@ -34,7 +34,7 @@ public class ECDSAPublicBCPGKey
            BigInteger encodedPoint)
         throws IOException
     {
-           super(oid, encodedPoint);
-       }
+        super(oid, encodedPoint);
+    }
 
 }

@@ -52,6 +52,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
 import org.bouncycastle.jce.spec.ElGamalPublicKeySpec;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKdfParameters;
@@ -115,17 +116,21 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(elSpec);
             case PublicKeyAlgorithmTags.EC:
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
+                X9ECParameters ecdhParams = PGPUtil.getX9Parameters(ecdhK.getCurveOID());
+                ECPoint ecdhPoint = PGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
                 ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
-                    new java.security.spec.ECPoint(ecdhK.getPoint().getAffineXCoord().toBigInteger(), ecdhK.getPoint().getAffineYCoord().toBigInteger()),
-                    getX9Parameters(ecdhK.getCurveOID()));
+                    new java.security.spec.ECPoint(ecdhPoint.getAffineXCoord().toBigInteger(), ecdhPoint.getAffineYCoord().toBigInteger()),
+                    getECParameterSpec(ecdhK.getCurveOID(), ecdhParams));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePublic(ecDhSpec);
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
+                X9ECParameters ecdsaParams = PGPUtil.getX9Parameters(ecdsaK.getCurveOID());
+                ECPoint ecdsaPoint = PGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
                 ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
-                    new java.security.spec.ECPoint(ecdsaK.getPoint().getAffineXCoord().toBigInteger(), ecdsaK.getPoint().getAffineYCoord().toBigInteger()),
-                    getX9Parameters(ecdsaK.getCurveOID()));
+                    new java.security.spec.ECPoint(ecdsaPoint.getAffineXCoord().toBigInteger(), ecdsaPoint.getAffineYCoord().toBigInteger()),
+                    getECParameterSpec(ecdsaK.getCurveOID(), ecdsaParams));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePublic(ecDsaSpec);
@@ -281,7 +286,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
                                                     ecdhK.getX(),
-                                                    getX9Parameters(ecdhPub.getCurveOID()));
+                                                    getECParameterSpec(ecdhPub.getCurveOID()));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePrivate(ecDhSpec);
@@ -290,7 +295,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdsaK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDsaSpec = new ECPrivateKeySpec(
                                                     ecdsaK.getX(),
-                                                    getX9Parameters(ecdsaPub.getCurveOID()));
+                                                    getECParameterSpec(ecdsaPub.getCurveOID()));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePrivate(ecDsaSpec);
@@ -363,15 +368,14 @@ public class JcaPGPKeyConverter
         return new PGPPrivateKey(pub.getKeyID(), pub.getPublicKeyPacket(), privPk);
     }
 
-    private ECParameterSpec getX9Parameters(ASN1ObjectIdentifier curveOid)
+    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid)
     {
-        X9ECParameters x9 = CustomNamedCurves.getByOID(curveOid);
-        if (x9 == null)
-        {
-            x9 = ECNamedCurveTable.getByOID(curveOid);
-        }
+        return getECParameterSpec(curveOid, PGPUtil.getX9Parameters(curveOid));
+    }
 
-        return new ECNamedCurveSpec(curveOid.getId(), x9.getCurve(), x9.getG(), x9.getN(),
-            x9.getH(), x9.getSeed());
+    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid, X9ECParameters x9Params)
+    {
+        return new ECNamedCurveSpec(curveOid.getId(), x9Params.getCurve(), x9Params.getG(), x9Params.getN(),
+            x9Params.getH(), x9Params.getSeed());
     }
 }

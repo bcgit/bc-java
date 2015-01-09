@@ -93,7 +93,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = NISTNamedCurves.getByOID(ecKey.getCurveOID());
+                X9ECParameters x9Params = PGPUtil.getX9Parameters(ecKey.getCurveOID());
                 ECDomainParameters ecParams = new ECDomainParameters(x9Params.getCurve(), x9Params.getG(), x9Params.getN());
 
                 // Generate the ephemeral key pair
@@ -112,7 +112,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
                 ECPrivateKeyParameters ephPriv = (ECPrivateKeyParameters)ephKp.getKeyPair().getPrivate();
 
-                ECPoint S = ecKey.getPoint().multiply(ephPriv.getD()).normalize();
+                ECPoint S = PGPUtil.decodePoint(ecKey.getEncodedPoint(), x9Params.getCurve()).multiply(ephPriv.getD()).normalize();
 
                 RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(digestCalculatorProviderBuilder.build().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
 

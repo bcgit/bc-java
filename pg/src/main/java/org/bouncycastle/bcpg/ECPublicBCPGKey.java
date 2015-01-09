@@ -21,7 +21,7 @@ public abstract class ECPublicBCPGKey
     implements BCPGKey
 {
     ASN1ObjectIdentifier oid;
-    ECPoint point;
+    BigInteger point;
 
     /**
      * @param in the stream to read the packet from.
@@ -31,14 +31,14 @@ public abstract class ECPublicBCPGKey
         throws IOException
     {
         this.oid = ASN1ObjectIdentifier.getInstance(ASN1Primitive.fromByteArray(readBytesOfEncodedLength(in)));
-        this.point = decodePoint(new MPInteger(in).getValue(), oid);
+        this.point = new MPInteger(in).getValue();
     }
 
     protected ECPublicBCPGKey(
         ASN1ObjectIdentifier oid,
         ECPoint point)
     {
-        this.point = point.normalize();
+        this.point = new BigInteger(1, point.getEncoded());
         this.oid = oid;
     }
 
@@ -47,7 +47,7 @@ public abstract class ECPublicBCPGKey
         BigInteger encodedPoint)
         throws IOException
     {
-        this.point = decodePoint(encodedPoint, oid);
+        this.point = encodedPoint;
         this.oid = oid;
     }
 
@@ -90,14 +90,14 @@ public abstract class ECPublicBCPGKey
         byte[] oid = this.oid.getEncoded();
         out.write(oid, 1, oid.length - 1);
 
-        MPInteger point = new MPInteger(new BigInteger(1, this.point.getEncoded()));
+        MPInteger point = new MPInteger(this.point);
         out.writeObject(point);
     }
 
     /**
      * @return point
      */
-    public ECPoint getPoint()
+    public BigInteger getEncodedPoint()
     {
         return point;
     }
@@ -126,26 +126,5 @@ public abstract class ECPublicBCPGKey
         buffer[1] = (byte)length;
 
         return buffer;
-    }
-
-    private static ECPoint decodePoint(
-        BigInteger encodedPoint,
-        ASN1ObjectIdentifier oid)
-        throws IOException
-    {
-        X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
-        if (x9 == null)
-        {
-            x9 = ECNamedCurveTable.getByOID(oid);
-            if (x9 == null)
-            {
-                throw new IOException(oid.getId() + " does not match any known curve.");
-            }
-        }
-        if (!ECAlgorithms.isFpCurve(x9.getCurve()))
-        {
-            throw new IOException("Only prime field curves are supported.");
-        }
-        return x9.getCurve().decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
     }
 }

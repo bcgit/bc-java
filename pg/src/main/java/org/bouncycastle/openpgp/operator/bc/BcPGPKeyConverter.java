@@ -159,14 +159,9 @@ public class BcPGPKeyConverter
             case PGPPublicKey.ECDH:
             case PGPPublicKey.ECDSA:
                 ECPublicBCPGKey ecPub = (ECPublicBCPGKey)publicPk.getKey();
+                X9ECParameters x9 = BcUtil.getX9Parameters(ecPub.getCurveOID());
 
-                X9ECParameters x9 = CustomNamedCurves.getByOID(ecPub.getCurveOID());
-                if (x9 == null)
-                {
-                    x9 = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
-                }
-
-                return new ECPublicKeyParameters(ecPub.getPoint(),
+                return new ECPublicKeyParameters(BcUtil.decodePoint(ecPub.getEncodedPoint(), x9.getCurve()),
                     new ECNamedDomainParameters(ecPub.getCurveOID(), x9.getCurve(), x9.getG(), x9.getN(), x9.getH()));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
