@@ -1,16 +1,26 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.OpenPGPCFBBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.BigIntegers;
 
 class BcUtil
 {
@@ -71,5 +81,24 @@ class BcUtil
         c.init(forEncryption, new ParametersWithIV(new KeyParameter(key), iv));
 
         return c;
+    }
+
+    static X9ECParameters getX9Parameters(ASN1ObjectIdentifier curveOID)
+    {
+        X9ECParameters x9 = CustomNamedCurves.getByOID(curveOID);
+        if (x9 == null)
+        {
+            x9 = ECNamedCurveTable.getByOID(curveOID);
+        }
+
+        return x9;
+    }
+
+    static ECPoint decodePoint(
+        BigInteger encodedPoint,
+        ECCurve    curve)
+        throws IOException
+    {
+        return curve.decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
     }
 }
