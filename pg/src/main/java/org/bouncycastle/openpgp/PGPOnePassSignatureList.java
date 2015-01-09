@@ -1,9 +1,15 @@
 package org.bouncycastle.openpgp;
 
+import java.util.Iterator;
+
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Iterable;
+
 /**
  * Holder for a list of PGPOnePassSignatures
  */
 public class PGPOnePassSignatureList
+    implements Iterable
 {
     PGPOnePassSignature[]    sigs;
     
@@ -36,5 +42,13 @@ public class PGPOnePassSignatureList
     public boolean isEmpty()
     {
         return (sigs.length == 0);
+    }
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return new Arrays.Iterator(sigs);
     }
 }

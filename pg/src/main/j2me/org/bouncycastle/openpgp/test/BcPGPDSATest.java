@@ -348,7 +348,7 @@ public class BcPGPDSATest
 
         sGen.generate().encode(bOut);
 
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        PGPObjectFactory        pgpFact = new BcPGPObjectFactory(bOut.toByteArray());
 
         PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
         PGPOnePassSignature     ops = p1.get(0);
@@ -408,7 +408,7 @@ public class BcPGPDSATest
         int ch;
 
 
-        PGPObjectFactory        pgpFact = new PGPObjectFactory(sig1);
+        PGPObjectFactory        pgpFact = new BcPGPObjectFactory(sig1);
 //          compressed data not supported
 //        PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
 //
@@ -472,7 +472,7 @@ public class BcPGPDSATest
         //
         // verify generated signature - canconical text
         //
-        pgpFact = new PGPObjectFactory(bOut.toByteArray());
+        pgpFact = new BcPGPObjectFactory(bOut.toByteArray());
 
     
         p1 = (PGPOnePassSignatureList)pgpFact.nextObject();

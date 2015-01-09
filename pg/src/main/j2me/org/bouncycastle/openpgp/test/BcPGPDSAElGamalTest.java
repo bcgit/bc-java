@@ -141,7 +141,7 @@ public class BcPGPDSAElGamalTest
             //
             // Read the public key
             //
-            PGPObjectFactory    pgpFact = new PGPObjectFactory(testPubKeyRing);
+            PGPObjectFactory    pgpFact = new BcPGPObjectFactory(testPubKeyRing);
             
             PGPPublicKeyRing        pgpPub = (PGPPublicKeyRing)pgpFact.nextObject();
 
@@ -194,7 +194,7 @@ public class BcPGPDSAElGamalTest
             //
             // verify generated signature
             //
-            pgpFact = new PGPObjectFactory(bOut.toByteArray());
+            pgpFact = new BcPGPObjectFactory(bOut.toByteArray());
             
             PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
             
@@ -279,7 +279,7 @@ public class BcPGPDSAElGamalTest
             //
             byte[]    text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
             
-            PGPObjectFactory pgpF = new PGPObjectFactory(encMessage);
+            PGPObjectFactory pgpF = new BcPGPObjectFactory(encMessage);
 
             PGPEncryptedDataList            encList = (PGPEncryptedDataList)pgpF.nextObject();
         
@@ -287,7 +287,7 @@ public class BcPGPDSAElGamalTest
 
             InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(pgpPrivKey));
                      
-            pgpFact = new PGPObjectFactory(clear);
+            pgpFact = new BcPGPObjectFactory(clear);
             /* No compressed data support
             PGPLiteralData    ld = (PGPLiteralData)pgpFact.nextObject();
         
@@ -376,7 +376,7 @@ public class BcPGPDSAElGamalTest
 
             cOut.close();
 
-            pgpF = new PGPObjectFactory(cbOut.toByteArray());
+            pgpF = new BcPGPObjectFactory(cbOut.toByteArray());
 
             encList = (PGPEncryptedDataList)pgpF.nextObject();
         
@@ -431,7 +431,7 @@ public class BcPGPDSAElGamalTest
                 {
                     byte[] kEnc = pgpKey.getEncoded();
 
-                    PGPObjectFactory objF = new PGPObjectFactory(kEnc);
+                    PGPObjectFactory objF = new BcPGPObjectFactory(kEnc);
 
                     PGPPublicKey k = (PGPPublicKey)objF.nextObject();
 

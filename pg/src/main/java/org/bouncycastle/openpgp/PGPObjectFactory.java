@@ -4,14 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
-import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
-import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.util.Iterable;
 
 /**
  * General class for reading a PGP object stream.
@@ -36,18 +35,10 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
  * </ul>
  */
 public class PGPObjectFactory
+    implements Iterable
 {
     private BCPGInputStream in;
     private KeyFingerPrintCalculator fingerPrintCalculator;
-
-    /**
-     * @deprecated use {@link JcaPGPObjectFactory} or {@link BcPGPObjectFactory}
-     */
-    public PGPObjectFactory(
-        InputStream in)
-    {
-        this(in, new BcKeyFingerprintCalculator());
-    }
 
     /**
      * Create an object factory suitable for reading PGP objects such as keys, key rings and key
@@ -62,15 +53,6 @@ public class PGPObjectFactory
     {
         this.in = new BCPGInputStream(in);
         this.fingerPrintCalculator = fingerPrintCalculator;
-    }
-
-    /**
-     * @deprecated use JcaPGPObjectFactory or BcPGPObjectFactory
-     */
-    public PGPObjectFactory(
-        byte[] bytes)
-    {
-        this(new ByteArrayInputStream(bytes));
     }
 
     /**
@@ -171,5 +153,47 @@ public class PGPObjectFactory
         }
 
         throw new IOException("unknown object in stream: " + in.nextPacketTag());
+    }
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return new Iterator()
+        {
+            private Object obj = getObject();
+
+            public boolean hasNext()
+            {
+                return obj != null;
+            }
+
+            public Object next()
+            {
+                Object rv = obj;
+
+                obj = getObject();;
+
+                return rv;
+            }
+
+            public void remove()
+            {
+                throw new UnsupportedOperationException("Cannot remove element from factory.");
+            }
+
+            private Object getObject()
+            {
+                try
+                {
+                    return PGPObjectFactory.this.nextObject();
+                }
+                catch (IOException e)
+                {
+                    throw new PGPRuntimeOperationException("Iterator failed to get next object: " + e.getMessage(), e);
+                }
+            }
+        };
     }
 }
