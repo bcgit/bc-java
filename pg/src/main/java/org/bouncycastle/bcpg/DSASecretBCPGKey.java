@@ -51,13 +51,8 @@ public class DSASecretBCPGKey
     public byte[] getEncoded() 
     {
         try
-        { 
-            ByteArrayOutputStream  bOut = new ByteArrayOutputStream();
-            BCPGOutputStream       pgpOut = new BCPGOutputStream(bOut);
-        
-            pgpOut.writeObject(this);
-        
-            return bOut.toByteArray();
+        {
+            return super.getEncoded();
         }
         catch (IOException e)
         {
