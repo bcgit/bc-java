@@ -16,6 +16,8 @@ public abstract class BCPGObject
 
         pOut.writeObject(this);
 
+        pOut.close();
+
         return bOut.toByteArray();
     }
 
