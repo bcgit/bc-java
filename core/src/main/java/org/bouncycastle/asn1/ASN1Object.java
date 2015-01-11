@@ -3,11 +3,13 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Encodable;
+
 /**
  * Base class for defining an ASN.1 object.
  */
 public abstract class ASN1Object
-    implements ASN1Encodable
+    implements ASN1Encodable, Encodable
 {
     /**
      * Return the default BER or DER encoding for this object.
