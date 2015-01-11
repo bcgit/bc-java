@@ -1,9 +1,12 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Encodable;
+
 /**
  * base interface for a PGP key
  */
 public interface BCPGKey
+    extends Encodable
 {
     /**
      * Return the base format for this key - in the case of the symmetric keys it will generally

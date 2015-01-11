@@ -3,11 +3,14 @@ package org.bouncycastle.bcpg;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Encodable;
+
 /**
  * Basic type for a PGP packet.
  */
 public abstract class ContainedPacket 
     extends Packet
+    implements Encodable
 {
     public byte[] getEncoded() 
         throws IOException
