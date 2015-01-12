@@ -2,8 +2,8 @@ package org.bouncycastle.util;
 
 import java.util.Collection;
 
-public interface Store<T>
+public interface Store
 {
-    Collection<T> getMatches(Selector<T> selector)
+    Collection getMatches(Selector selector)
         throws StoreException;
 }
