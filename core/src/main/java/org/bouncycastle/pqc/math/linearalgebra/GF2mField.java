@@ -156,6 +156,10 @@ public class GF2mField
      */
     public int exp(int a, int k)
     {
+        if (k == 0)
+        {
+            return 1;
+        }
         if (a == 0)
         {
             return 0;
