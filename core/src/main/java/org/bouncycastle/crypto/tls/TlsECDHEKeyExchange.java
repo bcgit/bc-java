@@ -43,73 +43,10 @@ public class TlsECDHEKeyExchange
     public byte[] generateServerKeyExchange()
         throws IOException
     {
-        /*
-         * First we try to find a supported named curve from the client's list.
-         */
-        int namedCurve = -1;
-        if (namedCurves == null)
-        {
-            // TODO Let the peer choose the default named curve
-            namedCurve = NamedCurve.secp256r1;
-        }
-        else
-        {
-            for (int i = 0; i < namedCurves.length; ++i)
-            {
-                int entry = namedCurves[i];
-                if (NamedCurve.isValid(entry) && TlsECCUtils.isSupportedNamedCurve(entry))
-                {
-                    namedCurve = entry;
-                    break;
-                }
-            }
-        }
-
-        ECDomainParameters curve_params = null;
-        if (namedCurve >= 0)
-        {
-            curve_params = TlsECCUtils.getParametersForNamedCurve(namedCurve);
-        }
-        else
-        {
-            /*
-             * If no named curves are suitable, check if the client supports explicit curves.
-             */
-            if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
-            {
-                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
-            }
-            else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
-            {
-                curve_params = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
-            }
-        }
-
-        if (curve_params == null)
-        {
-            /*
-             * NOTE: We shouldn't have negotiated ECDHE key exchange since we apparently can't find
-             * a suitable curve.
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        AsymmetricCipherKeyPair kp = TlsECCUtils.generateECKeyPair(context.getSecureRandom(), curve_params);
-        this.ecAgreePrivateKey = (ECPrivateKeyParameters)kp.getPrivate();
-
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        if (namedCurve < 0)
-        {
-            TlsECCUtils.writeExplicitECParameters(clientECPointFormats, curve_params, buf);
-        }
-        else
-        {
-            TlsECCUtils.writeNamedECParameters(namedCurve, buf);
-        }
-
-        ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters)kp.getPublic();
-        TlsECCUtils.writeECPoint(clientECPointFormats, ecPublicKey.getQ(), buf);
+        this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(), namedCurves,
+            clientECPointFormats, buf);
 
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
