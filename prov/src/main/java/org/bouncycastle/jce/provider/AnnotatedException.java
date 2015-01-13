@@ -8,14 +8,14 @@ public class AnnotatedException
 {
     private Throwable _underlyingException;
 
-    AnnotatedException(String string, Throwable e)
+    public AnnotatedException(String string, Throwable e)
     {
         super(string);
 
         _underlyingException = e;
     }
 
-    AnnotatedException(String string)
+    public AnnotatedException(String string)
     {
         this(string, null);
     }

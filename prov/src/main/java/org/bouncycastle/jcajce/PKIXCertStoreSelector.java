@@ -13,8 +13,8 @@ import org.bouncycastle.util.Selector;
  * 
  * @see org.bouncycastle.util.Selector
  */
-public class PKIXCertStoreSelector
-    implements Selector
+public class PKIXCertStoreSelector<T extends Certificate>
+    implements Selector<T>
 {
     public static class Builder
     {
@@ -25,7 +25,7 @@ public class PKIXCertStoreSelector
             this.baseSelector = (CertSelector)certSelector.clone();
         }
 
-        public PKIXCertStoreSelector build()
+        public PKIXCertStoreSelector<? extends Certificate> build()
         {
             return new PKIXCertStoreSelector(baseSelector);
         }
@@ -38,9 +38,9 @@ public class PKIXCertStoreSelector
         this.baseSelector = baseSelector;
     }
 
-    public boolean match(Object cert)
+    public boolean match(Certificate cert)
     {
-        return baseSelector.match((Certificate)cert);
+        return baseSelector.match(cert);
     }
 
     public Object clone()
@@ -48,7 +48,7 @@ public class PKIXCertStoreSelector
         return new PKIXCertStoreSelector(baseSelector);
     }
 
-    public static Collection getCertificates(final PKIXCertStoreSelector selector, CertStore certStore)
+    public static Collection<? extends Certificate> getCertificates(final PKIXCertStoreSelector selector, CertStore certStore)
         throws CertStoreException
     {
         return certStore.getCertificates(new CertSelector()

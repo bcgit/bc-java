@@ -18,11 +18,13 @@ import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Encodable;
 
 /**
  * Carrier for a CRMF CertReqMsg.
  */
 public class CertificateRequestMessage
+    implements Encodable
 {
     public static final int popRaVerified = ProofOfPossession.TYPE_RA_VERIFIED;
     public static final int popSigningKey = ProofOfPossession.TYPE_SIGNING_KEY;

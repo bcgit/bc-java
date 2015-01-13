@@ -13,6 +13,7 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Encodable;
 
 /**
  * containing class for an CMS Digested Data object
@@ -24,6 +25,7 @@ import org.bouncycastle.util.Arrays;
  * </pre>
  */
 public class CMSDigestedData
+    implements Encodable
 {
     private ContentInfo  contentInfo;
     private DigestedData digestedData;

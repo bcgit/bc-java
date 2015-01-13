@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class SignerInformationStore
+    implements Iterable
 {
     private List all = new ArrayList();
     private Map table = new HashMap();
@@ -126,5 +127,13 @@ public class SignerInformationStore
 
             return list == null ? new ArrayList() : new ArrayList(list);
         }
+    }
+
+    /**
+     * Support method for Iterable where available.
+     */
+    public Iterator iterator()
+    {
+        return getSigners().iterator();
     }
 }

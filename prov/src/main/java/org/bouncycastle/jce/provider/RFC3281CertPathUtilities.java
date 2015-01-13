@@ -5,6 +5,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
@@ -13,11 +14,14 @@ import java.security.cert.CertPathBuilderResult;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorResult;
+import java.security.cert.CertSelector;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CRL;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,9 +40,12 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TargetInformation;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.jcajce.PKIXCRLStore;
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
+import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
-import org.bouncycastle.x509.ExtendedPKIXParameters;
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.x509.PKIXAttrCertChecker;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CertStoreSelector;
@@ -60,7 +67,7 @@ class RFC3281CertPathUtilities
 
     protected static void processAttrCert7(X509AttributeCertificate attrCert,
         CertPath certPath, CertPath holderCertPath,
-        ExtendedPKIXParameters pkixParams) throws CertPathValidatorException
+        PKIXExtendedParameters pkixParams, Set attrCertCheckers) throws CertPathValidatorException
     {
         // TODO:
         // AA Controls
@@ -90,7 +97,7 @@ class RFC3281CertPathUtilities
             }
         }
         set.remove(TARGET_INFORMATION);
-        for (Iterator it = pkixParams.getAttrCertCheckers().iterator(); it
+        for (Iterator it = attrCertCheckers.iterator(); it
             .hasNext();)
         {
             ((PKIXAttrCertChecker) it.next()).check(attrCert, certPath,
@@ -120,8 +127,8 @@ class RFC3281CertPathUtilities
      *             status cannot be checked or some error occurs.
      */
     protected static void checkCRLs(X509AttributeCertificate attrCert,
-        ExtendedPKIXParameters paramsPKIX, X509Certificate issuerCert,
-        Date validDate, List certPathCerts) throws CertPathValidatorException
+        PKIXExtendedParameters paramsPKIX, X509Certificate issuerCert,
+        Date validDate, List certPathCerts, Provider provider) throws CertPathValidatorException
     {
         if (paramsPKIX.isRevocationEnabled())
         {
@@ -140,11 +147,12 @@ class RFC3281CertPathUtilities
                         "CRL distribution point extension could not be read.",
                         e);
                 }
+
+                List crlStores = new ArrayList();
+
                 try
                 {
-                    CertPathValidatorUtilities
-                        .addAdditionalStoresFromCRLDistributionPoint(crldp,
-                            paramsPKIX);
+                    crlStores.addAll(CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap()));
                 }
                 catch (AnnotatedException e)
                 {
@@ -152,6 +160,16 @@ class RFC3281CertPathUtilities
                         "No additional CRL locations could be decoded from CRL distribution point extension.",
                         e);
                 }
+
+                PKIXExtendedParameters.Builder bldr = new PKIXExtendedParameters.Builder(paramsPKIX);
+
+                for (Iterator it = crlStores.iterator(); it.hasNext(); )
+                {
+                    bldr.addCRLStore((PKIXCRLStore)crlStores);
+                }
+
+                paramsPKIX = bldr.build();
+
                 CertStatus certStatus = new CertStatus();
                 ReasonsMask reasonsMask = new ReasonsMask();
 
@@ -176,11 +194,12 @@ class RFC3281CertPathUtilities
                             && certStatus.getCertStatus() == CertStatus.UNREVOKED
                             && !reasonsMask.isAllReasons(); i++)
                         {
-                            ExtendedPKIXParameters paramsPKIXClone = (ExtendedPKIXParameters) paramsPKIX
-                                .clone();
+                            PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX
+                                    .clone();
+
                             checkCRL(dps[i], attrCert, paramsPKIXClone,
                                 validDate, issuerCert, certStatus, reasonsMask,
-                                certPathCerts);
+                                certPathCerts, provider);
                             validCrlFound = true;
                         }
                     }
@@ -226,10 +245,10 @@ class RFC3281CertPathUtilities
                             new DistributionPointName(0, new GeneralNames(
                                 new GeneralName(GeneralName.directoryName,
                                     issuer))), null, null);
-                        ExtendedPKIXParameters paramsPKIXClone = (ExtendedPKIXParameters) paramsPKIX
+                        PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters) paramsPKIX
                             .clone();
                         checkCRL(dp, attrCert, paramsPKIXClone, validDate,
-                            issuerCert, certStatus, reasonsMask, certPathCerts);
+                            issuerCert, certStatus, reasonsMask, certPathCerts, provider);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -278,10 +297,10 @@ class RFC3281CertPathUtilities
     }
 
     protected static void additionalChecks(X509AttributeCertificate attrCert,
-        ExtendedPKIXParameters pkixParams) throws CertPathValidatorException
+        Set prohibitedACAttributes, Set necessaryACAttributes) throws CertPathValidatorException
     {
         // 1
-        for (Iterator it = pkixParams.getProhibitedACAttributes().iterator(); it
+        for (Iterator it = prohibitedACAttributes.iterator(); it
             .hasNext();)
         {
             String oid = (String) it.next();
@@ -292,7 +311,7 @@ class RFC3281CertPathUtilities
                         + oid + ".");
             }
         }
-        for (Iterator it = pkixParams.getNecessaryACAttributes().iterator(); it
+        for (Iterator it = necessaryACAttributes.iterator(); it
             .hasNext();)
         {
             String oid = (String) it.next();
@@ -306,7 +325,7 @@ class RFC3281CertPathUtilities
     }
 
     protected static void processAttrCert5(X509AttributeCertificate attrCert,
-        ExtendedPKIXParameters pkixParams) throws CertPathValidatorException
+        PKIXExtendedParameters pkixParams) throws CertPathValidatorException
     {
         try
         {
@@ -326,9 +345,9 @@ class RFC3281CertPathUtilities
     }
 
     protected static void processAttrCert4(X509Certificate acIssuerCert,
-        ExtendedPKIXParameters pkixParams) throws CertPathValidatorException
+        Set trustedACIssuers) throws CertPathValidatorException
     {
-        Set set = pkixParams.getTrustedACIssuers();
+        Set set = trustedACIssuers;
         boolean trusted = false;
         for (Iterator it = set.iterator(); it.hasNext();)
         {
@@ -348,7 +367,7 @@ class RFC3281CertPathUtilities
     }
 
     protected static void processAttrCert3(X509Certificate acIssuerCert,
-        ExtendedPKIXParameters pkixParams) throws CertPathValidatorException
+        PKIXExtendedParameters pkixParams) throws CertPathValidatorException
     {
         if (acIssuerCert.getKeyUsage() != null
             && (!acIssuerCert.getKeyUsage()[0] && !acIssuerCert.getKeyUsage()[1]))
@@ -364,7 +383,7 @@ class RFC3281CertPathUtilities
     }
 
     protected static CertPathValidatorResult processAttrCert2(
-        CertPath certPath, ExtendedPKIXParameters pkixParams)
+        CertPath certPath, PKIXExtendedParameters pkixParams)
         throws CertPathValidatorException
     {
         CertPathValidator validator = null;
@@ -417,7 +436,7 @@ class RFC3281CertPathUtilities
      *             </ul>
      */
     protected static CertPath processAttrCert1(
-        X509AttributeCertificate attrCert, ExtendedPKIXParameters pkixParams)
+        X509AttributeCertificate attrCert, PKIXExtendedParameters pkixParams)
         throws CertPathValidatorException
     {
         CertPathBuilderResult result = null;
@@ -425,7 +444,7 @@ class RFC3281CertPathUtilities
         Set holderPKCs = new HashSet();
         if (attrCert.getHolder().getIssuer() != null)
         {
-            X509CertStoreSelector selector = new X509CertStoreSelector();
+            X509CertSelector selector = new X509CertSelector();
             selector.setSerialNumber(attrCert.getHolder().getSerialNumber());
             Principal[] principals = attrCert.getHolder().getIssuer();
             for (int i = 0; i < principals.length; i++)
@@ -438,7 +457,7 @@ class RFC3281CertPathUtilities
                             .getEncoded());
                     }
                     holderPKCs.addAll(CertPathValidatorUtilities
-                        .findCertificates(selector, pkixParams.getStores()));
+                        .findCertificates(new PKIXCertStoreSelector.Builder(selector).build(), pkixParams.getCertStores()));
                 }
                 catch (AnnotatedException e)
                 {
@@ -472,7 +491,7 @@ class RFC3281CertPathUtilities
                             .getEncoded());
                     }
                     holderPKCs.addAll(CertPathValidatorUtilities
-                        .findCertificates(selector, pkixParams.getStores()));
+                        .findCertificates(new PKIXCertStoreSelector.Builder(selector).build(), pkixParams.getCertStores()));
                 }
                 catch (AnnotatedException e)
                 {
@@ -493,14 +512,14 @@ class RFC3281CertPathUtilities
             }
         }
         // verify cert paths for PKCs
-        ExtendedPKIXBuilderParameters params = (ExtendedPKIXBuilderParameters) ExtendedPKIXBuilderParameters
-            .getInstance(pkixParams);
+        PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(pkixParams);
+
         CertPathValidatorException lastException = null;
         for (Iterator it = holderPKCs.iterator(); it.hasNext();)
         {
             X509CertStoreSelector selector = new X509CertStoreSelector();
             selector.setCertificate((X509Certificate) it.next());
-            params.setTargetConstraints(selector);
+            paramsBldr.setTargetConstraints(new PKIXCertStoreSelector.Builder(selector).build());
             CertPathBuilder builder = null;
             try
             {
@@ -518,8 +537,7 @@ class RFC3281CertPathUtilities
             }
             try
             {
-                result = builder.build(ExtendedPKIXBuilderParameters
-                    .getInstance(params));
+                result = builder.build(new PKIXExtendedBuilderParameters.Builder(paramsBldr.build()).build());
             }
             catch (CertPathBuilderException e)
             {
@@ -558,9 +576,9 @@ class RFC3281CertPathUtilities
      *             cannot be checked or some error occurs.
      */
     private static void checkCRL(DistributionPoint dp,
-        X509AttributeCertificate attrCert, ExtendedPKIXParameters paramsPKIX,
+        X509AttributeCertificate attrCert, PKIXExtendedParameters paramsPKIX,
         Date validDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts) throws AnnotatedException
+        ReasonsMask reasonMask, List certPathCerts, Provider provider) throws AnnotatedException
     {
 
         /*
@@ -584,7 +602,7 @@ class RFC3281CertPathUtilities
         /*
          * We always get timely valid CRLs, so there is no step (a) (1).
          * "locally cached" CRLs are assumed to be in getStore(), additional
-         * CRLs must be enabled in the ExtendedPKIXParameters and are in
+         * CRLs must be enabled in the PKIXExtendedParameters and are in
          * getAdditionalStore()
          */
 
@@ -618,8 +636,7 @@ class RFC3281CertPathUtilities
                 }
 
                 // (f)
-                Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert,
-                    null, null, paramsPKIX, certPathCerts);
+                Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, provider);
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 
@@ -628,8 +645,7 @@ class RFC3281CertPathUtilities
                 if (paramsPKIX.isUseDeltasEnabled())
                 {
                     // get delta CRLs
-                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(
-                        currentDate, paramsPKIX, crl);
+                    Set deltaCRLs = CertPathValidatorUtilities.getDeltaCRLs(currentDate, crl, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
                     // we only want one valid delta CRL
                     // (h)
                     deltaCRL = RFC3280CertPathUtilities.processCRLH(deltaCRLs,
@@ -649,7 +665,7 @@ class RFC3281CertPathUtilities
                  * the CRL vality time
                  */
 
-                if (paramsPKIX.getValidityModel() != ExtendedPKIXParameters.CHAIN_VALIDITY_MODEL)
+                if (paramsPKIX.getValidityModel() != PKIXExtendedParameters.CHAIN_VALIDITY_MODEL)
                 {
                     /*
                      * if a certificate has expired, but was revoked, it is not

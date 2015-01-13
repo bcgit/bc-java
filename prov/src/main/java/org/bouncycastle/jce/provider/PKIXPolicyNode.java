@@ -165,4 +165,9 @@ public class PKIXPolicyNode
         
         return _node;
     }
+
+    public void setExpectedPolicies(Set expectedPolicies)
+    {
+        this.expectedPolicies = expectedPolicies;
+    }
 }
