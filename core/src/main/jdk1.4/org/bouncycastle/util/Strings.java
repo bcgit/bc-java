@@ -326,22 +326,22 @@ public final class Strings
 
         public boolean add(String s)
         {
-            return this.add(s);
+            return list.add(s);
         }
 
         public String get(int index)
-                {
-                    return (String)this.get(index);
-                }
+        {
+            return (String)list.get(index);
+        }
 
         public String set(int index, String element)
         {
-            return (String)this.set(index, element);
+            return (String)list.set(index, element);
         }
 
         public void add(int index, String element)
         {
-            this.add(index, element);
+            list.add(index, element);
         }
 
         public int size()
@@ -370,9 +370,9 @@ public final class Strings
         {
             String[] strs = new String[to - from];
 
-            for (int i = to; i != strs.length && i != to; i++)
+            for (int i = from; i != this.size() && i != to; i++)
             {
-                strs[i - to] = this.get(i);
+                strs[i - from] = this.get(i);
             }
 
             return strs;
