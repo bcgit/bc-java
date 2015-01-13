@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.operator.InputExpander;
 import org.bouncycastle.operator.InputExpanderProvider;
+import org.bouncycastle.util.Encodable;
 
 /**
  * containing class for an CMS Compressed Data object
@@ -19,6 +20,7 @@ import org.bouncycastle.operator.InputExpanderProvider;
  * </pre>
  */
 public class CMSCompressedData
+    implements Encodable
 {
     ContentInfo                 contentInfo;
     CompressedData              comData;

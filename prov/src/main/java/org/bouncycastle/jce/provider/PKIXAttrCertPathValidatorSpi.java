@@ -1,15 +1,20 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorResult;
 import java.security.cert.CertPathValidatorSpi;
+import java.security.cert.PKIXParameters;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
@@ -25,6 +30,20 @@ public class PKIXAttrCertPathValidatorSpi
     extends CertPathValidatorSpi
 {
 
+    private final Provider provider;
+
+    public PKIXAttrCertPathValidatorSpi()
+    {
+        if (Security.getProvider("BC") != null)
+        {
+            this.provider = Security.getProvider("BC");
+        }
+        else
+        {
+            this.provider = new BouncyCastleProvider();
+        }
+    }
+
     /**
      * Validates an attribute certificate with the given certificate path.
      * 
@@ -38,30 +57,56 @@ public class PKIXAttrCertPathValidatorSpi
      * necessary to correctly validate this attribute certificate.
      * <p>
      * The attribute certificate issuer must be added to the trusted attribute
-     * issuers with {@link ExtendedPKIXParameters#setTrustedACIssuers(Set)}.
+     * issuers with {@link org.bouncycastle.x509.ExtendedPKIXParameters#setTrustedACIssuers(java.util.Set)}.
      * 
      * @param certPath The certificate path which belongs to the attribute
      *            certificate issuer public key certificate.
      * @param params The PKIX parameters.
      * @return A <code>PKIXCertPathValidatorResult</code> of the result of
      *         validating the <code>certPath</code>.
-     * @throws InvalidAlgorithmParameterException if <code>params</code> is
+     * @throws java.security.InvalidAlgorithmParameterException if <code>params</code> is
      *             inappropriate for this validator.
-     * @throws CertPathValidatorException if the verification fails.
+     * @throws java.security.cert.CertPathValidatorException if the verification fails.
      */
     public CertPathValidatorResult engineValidate(CertPath certPath,
         CertPathParameters params) throws CertPathValidatorException,
         InvalidAlgorithmParameterException
     {
-        if (!(params instanceof ExtendedPKIXParameters))
+        if (!(params instanceof ExtendedPKIXParameters || params instanceof PKIXExtendedParameters))
         {
             throw new InvalidAlgorithmParameterException(
                 "Parameters must be a "
                     + ExtendedPKIXParameters.class.getName() + " instance.");
         }
-        ExtendedPKIXParameters pkixParams = (ExtendedPKIXParameters) params;
+        Set attrCertCheckers = new HashSet();
+        Set prohibitedACAttrbiutes = new HashSet();
+        Set necessaryACAttributes = new HashSet();
+        Set trustedACIssuers = new HashSet();
 
-        Selector certSelect = pkixParams.getTargetConstraints();
+        PKIXExtendedParameters paramsPKIX;
+        if (params instanceof PKIXParameters)
+        {
+            PKIXExtendedParameters.Builder paramsPKIXBldr = new PKIXExtendedParameters.Builder((PKIXParameters)params);
+
+            if (params instanceof ExtendedPKIXParameters)
+            {
+                ExtendedPKIXParameters extPKIX = (ExtendedPKIXParameters)params;
+
+                paramsPKIXBldr.setUseDeltasEnabled(extPKIX.isUseDeltasEnabled());
+                paramsPKIXBldr.setValidityModel(extPKIX.getValidityModel());
+                attrCertCheckers = extPKIX.getAttrCertCheckers();
+                prohibitedACAttrbiutes = extPKIX.getProhibitedACAttributes();
+                necessaryACAttributes = extPKIX.getNecessaryACAttributes();
+            }
+
+            paramsPKIX = paramsPKIXBldr.build();
+        }
+        else
+        {
+            paramsPKIX = (PKIXExtendedParameters)params;
+        }
+
+        Selector certSelect = paramsPKIX.getTargetConstraints();
         if (!(certSelect instanceof X509AttributeCertStoreSelector))
         {
             throw new InvalidAlgorithmParameterException(
@@ -69,31 +114,31 @@ public class PKIXAttrCertPathValidatorSpi
                     + X509AttributeCertStoreSelector.class.getName() + " for "
                     + this.getClass().getName() + " class.");
         }
+
         X509AttributeCertificate attrCert = ((X509AttributeCertStoreSelector) certSelect)
             .getAttributeCert();
 
-        CertPath holderCertPath = RFC3281CertPathUtilities.processAttrCert1(attrCert, pkixParams);
-        CertPathValidatorResult result = RFC3281CertPathUtilities.processAttrCert2(certPath, pkixParams);
+        CertPath holderCertPath = RFC3281CertPathUtilities.processAttrCert1(attrCert, paramsPKIX);
+        CertPathValidatorResult result = RFC3281CertPathUtilities.processAttrCert2(certPath, paramsPKIX);
         X509Certificate issuerCert = (X509Certificate) certPath
             .getCertificates().get(0);
-        RFC3281CertPathUtilities.processAttrCert3(issuerCert, pkixParams);
-        RFC3281CertPathUtilities.processAttrCert4(issuerCert, pkixParams);
-        RFC3281CertPathUtilities.processAttrCert5(attrCert, pkixParams);
+        RFC3281CertPathUtilities.processAttrCert3(issuerCert, paramsPKIX);
+        RFC3281CertPathUtilities.processAttrCert4(issuerCert, trustedACIssuers);
+        RFC3281CertPathUtilities.processAttrCert5(attrCert, paramsPKIX);
         // 6 already done in X509AttributeCertStoreSelector
-        RFC3281CertPathUtilities.processAttrCert7(attrCert, certPath, holderCertPath, pkixParams);
-        RFC3281CertPathUtilities.additionalChecks(attrCert, pkixParams);
+        RFC3281CertPathUtilities.processAttrCert7(attrCert, certPath, holderCertPath, paramsPKIX, attrCertCheckers);
+        RFC3281CertPathUtilities.additionalChecks(attrCert, prohibitedACAttrbiutes, necessaryACAttributes);
         Date date = null;
         try
         {
-            date = CertPathValidatorUtilities
-                .getValidCertDateFromValidityModel(pkixParams, null, -1);
+            date = CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX, null, -1);
         }
         catch (AnnotatedException e)
         {
             throw new ExtCertPathValidatorException(
                 "Could not get validity date from attribute certificate.", e);
         }
-        RFC3281CertPathUtilities.checkCRLs(attrCert, pkixParams, issuerCert, date, certPath.getCertificates());
+        RFC3281CertPathUtilities.checkCRLs(attrCert, paramsPKIX, issuerCert, date, certPath.getCertificates(), provider);
         return result;
     }
 }

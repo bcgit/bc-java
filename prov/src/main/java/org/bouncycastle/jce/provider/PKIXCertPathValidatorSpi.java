@@ -1,7 +1,9 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidatorException;
@@ -23,6 +25,8 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
 
@@ -33,6 +37,19 @@ import org.bouncycastle.x509.ExtendedPKIXParameters;
 public class PKIXCertPathValidatorSpi
         extends CertPathValidatorSpi
 {
+    private final Provider provider;
+
+    public PKIXCertPathValidatorSpi()
+    {
+        if (Security.getProvider("BC") != null)
+        {
+            this.provider = Security.getProvider("BC");
+        }
+        else
+        {
+            this.provider = new BouncyCastleProvider();
+        }
+    }
 
     public CertPathValidatorResult engineValidate(
             CertPath certPath,
@@ -40,21 +57,36 @@ public class PKIXCertPathValidatorSpi
             throws CertPathValidatorException,
             InvalidAlgorithmParameterException
     {
-        if (!(params instanceof PKIXParameters))
+        if (!(params instanceof CertPathParameters))
         {
             throw new InvalidAlgorithmParameterException("Parameters must be a " + PKIXParameters.class.getName()
                     + " instance.");
         }
 
-        ExtendedPKIXParameters paramsPKIX;
-        if (params instanceof ExtendedPKIXParameters)
+        PKIXExtendedParameters paramsPKIX;
+        if (params instanceof PKIXParameters)
         {
-            paramsPKIX = (ExtendedPKIXParameters)params;
+            PKIXExtendedParameters.Builder paramsPKIXBldr = new PKIXExtendedParameters.Builder((PKIXParameters)params);
+
+            if (params instanceof ExtendedPKIXParameters)
+            {
+                ExtendedPKIXParameters extPKIX = (ExtendedPKIXParameters)params;
+
+                paramsPKIXBldr.setUseDeltasEnabled(extPKIX.isUseDeltasEnabled());
+                paramsPKIXBldr.setValidityModel(extPKIX.getValidityModel());
+            }
+
+            paramsPKIX = paramsPKIXBldr.build();
+        }
+        else if (params instanceof PKIXExtendedBuilderParameters)
+        {
+            paramsPKIX = ((PKIXExtendedBuilderParameters)params).getBaseParameters();
         }
         else
         {
-            paramsPKIX = ExtendedPKIXParameters.getInstance((PKIXParameters)params);
+            paramsPKIX = (PKIXExtendedParameters)params;
         }
+
         if (paramsPKIX.getTrustAnchors() == null)
         {
             throw new InvalidAlgorithmParameterException(
@@ -272,7 +304,7 @@ public class PKIXCertPathValidatorSpi
             //
 
             RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, index, workingPublicKey,
-                verificationAlreadyPerformed, workingIssuerName, sign);
+                verificationAlreadyPerformed, workingIssuerName, sign, provider);
 
             RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator);
 
@@ -362,7 +394,7 @@ public class PKIXCertPathValidatorSpi
                 // (d)
                 try
                 {
-                    workingPublicKey = CertPathValidatorUtilities.getNextWorkingKey(certPath.getCertificates(), index);
+                    workingPublicKey = CertPathValidatorUtilities.getNextWorkingKey(certPath.getCertificates(), index, provider);
                 }
                 catch (CertPathValidatorException e)
                 {

@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Store;
 
 /**
@@ -54,6 +55,7 @@ import org.bouncycastle.util.Store;
  * </pre>
  */
 public class CMSSignedData
+    implements Encodable
 {
     private static final CMSSignedHelper HELPER = CMSSignedHelper.INSTANCE;
     

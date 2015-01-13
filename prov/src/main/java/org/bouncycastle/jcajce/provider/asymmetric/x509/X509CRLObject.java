@@ -42,7 +42,6 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.RFC3280CertPathUtilities;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -120,8 +119,8 @@ public class X509CRLObject
             return false;
         }
 
-        extns.remove(RFC3280CertPathUtilities.ISSUING_DISTRIBUTION_POINT);
-        extns.remove(RFC3280CertPathUtilities.DELTA_CRL_INDICATOR);
+        extns.remove(Extension.issuingDistributionPoint.getId());
+        extns.remove(Extension.deltaCRLIndicator.getId());
 
         return !extns.isEmpty();
     }

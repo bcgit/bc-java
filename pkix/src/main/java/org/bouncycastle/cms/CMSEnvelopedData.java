@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Encodable;
 
 /**
  * containing class for an CMS Enveloped Data object
@@ -34,6 +35,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *  </pre>
  */
 public class CMSEnvelopedData
+    implements Encodable
 {
     RecipientInformationStore   recipientInfoStore;
     ContentInfo                 contentInfo;

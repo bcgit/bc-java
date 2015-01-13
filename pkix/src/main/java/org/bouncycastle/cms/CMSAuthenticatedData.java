@@ -14,11 +14,13 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Encodable;
 
 /**
  * containing class for an CMS Authenticated Data object
  */
 public class CMSAuthenticatedData
+    implements Encodable
 {
     RecipientInformationStore   recipientInfoStore;
     ContentInfo                 contentInfo;

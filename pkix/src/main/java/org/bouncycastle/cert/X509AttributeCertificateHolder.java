@@ -21,11 +21,13 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.util.Encodable;
 
 /**
  * Holding class for an X.509 AttributeCertificate structure.
  */
 public class X509AttributeCertificateHolder
+    implements Encodable
 {
     private static Attribute[] EMPTY_ARRAY = new Attribute[0];
     

@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.util.Encodable;
 
 /**
  * <pre>
@@ -30,6 +31,7 @@ import org.bouncycastle.operator.ContentVerifierProvider;
  * </pre>
  */
 public class BasicOCSPResp
+    implements Encodable
 {
     private BasicOCSPResponse   resp;
     private ResponseData        data;

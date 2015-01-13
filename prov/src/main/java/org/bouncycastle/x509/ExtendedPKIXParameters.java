@@ -18,6 +18,8 @@ import java.util.Set;
 
 /**
  * This class extends the PKIXParameters with a validity model parameter.
+ *
+ * @deprecated use PKIXExtendedParameters
  */
 public class ExtendedPKIXParameters
     extends PKIXParameters

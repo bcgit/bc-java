@@ -61,7 +61,6 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrie
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.provider.RFC3280CertPathUtilities;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
@@ -522,19 +521,18 @@ class X509CertificateObject
                 while (e.hasMoreElements())
                 {
                     ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                    String              oidId = oid.getId();
 
-                    if (oidId.equals(RFC3280CertPathUtilities.KEY_USAGE)
-                     || oidId.equals(RFC3280CertPathUtilities.CERTIFICATE_POLICIES)
-                     || oidId.equals(RFC3280CertPathUtilities.POLICY_MAPPINGS)
-                     || oidId.equals(RFC3280CertPathUtilities.INHIBIT_ANY_POLICY)
-                     || oidId.equals(RFC3280CertPathUtilities.CRL_DISTRIBUTION_POINTS)
-                     || oidId.equals(RFC3280CertPathUtilities.ISSUING_DISTRIBUTION_POINT)
-                     || oidId.equals(RFC3280CertPathUtilities.DELTA_CRL_INDICATOR)
-                     || oidId.equals(RFC3280CertPathUtilities.POLICY_CONSTRAINTS)
-                     || oidId.equals(RFC3280CertPathUtilities.BASIC_CONSTRAINTS)
-                     || oidId.equals(RFC3280CertPathUtilities.SUBJECT_ALTERNATIVE_NAME)
-                     || oidId.equals(RFC3280CertPathUtilities.NAME_CONSTRAINTS))
+                    if (oid.equals(Extension.keyUsage)
+                     || oid.equals(Extension.certificatePolicies)
+                     || oid.equals(Extension.policyMappings)
+                     || oid.equals(Extension.inhibitAnyPolicy)
+                     || oid.equals(Extension.cRLDistributionPoints)
+                     || oid.equals(Extension.issuingDistributionPoint)
+                     || oid.equals(Extension.deltaCRLIndicator)
+                     || oid.equals(Extension.policyConstraints)
+                     || oid.equals(Extension.basicConstraints)
+                     || oid.equals(Extension.subjectAlternativeName)
+                     || oid.equals(Extension.nameConstraints))
                     {
                         continue;
                     }
