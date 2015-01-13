@@ -16,7 +16,9 @@ public class PKCS12Key
      */
     public PKCS12Key(char[] password)
     {
-        this.password = password.clone();
+        this.password = new char[password.length];
+
+        System.arraycopy(password, 0, this.password, 0, password.length);
     }
 
     public char[] getPassword()

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public final class Strings
@@ -319,22 +320,38 @@ public final class Strings
     }
 
     private static class StringListImpl
-        extends ArrayList<String>
         implements StringList
     {
+        private List list = new ArrayList();
+
         public boolean add(String s)
         {
             return this.add(s);
         }
 
+        public String get(int index)
+                {
+                    return (String)this.get(index);
+                }
+
         public String set(int index, String element)
         {
-            return this.set(index, element);
+            return (String)this.set(index, element);
         }
 
         public void add(int index, String element)
         {
             this.add(index, element);
+        }
+
+        public int size()
+        {
+            return list.size();
+        }
+
+        public Iterator iterator()
+        {
+            return list.iterator();
         }
 
         public String[] toStringArray()

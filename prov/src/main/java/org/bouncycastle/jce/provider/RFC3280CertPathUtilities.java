@@ -660,7 +660,7 @@ class RFC3280CertPathUtilities
             }
             if (freshestCRL != null)
             {
-                List<PKIXCRLStore> crlStores = new ArrayList<PKIXCRLStore>();
+                List crlStores = new ArrayList();
 
                 crlStores.addAll(paramsPKIX.getCRLStores());
 
@@ -1952,7 +1952,7 @@ class RFC3280CertPathUtilities
         PKIXExtendedParameters.Builder paramsBldr = new PKIXExtendedParameters.Builder(paramsPKIX);
         try
         {
-            List<PKIXCRLStore> extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap());
+            List extras = CertPathValidatorUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, paramsPKIX.getNamedCRLStoreMap());
             for (Iterator it = extras.iterator(); it.hasNext();)
             {
                 paramsBldr.addCRLStore((PKIXCRLStore)it.next());
