@@ -120,7 +120,9 @@ public class PublicKeyPacket
         pOut.write(algorithm);
     
         pOut.writeObject((BCPGObject)key);
-    
+
+        pOut.close();
+
         return bOut.toByteArray();
     }
     

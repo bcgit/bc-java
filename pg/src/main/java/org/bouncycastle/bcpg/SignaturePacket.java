@@ -506,6 +506,8 @@ public class SignaturePacket
             pOut.write(signatureEncoding);
         }
 
+        pOut.close();
+
         out.writePacket(SIGNATURE, bOut.toByteArray(), true);
     }
 

@@ -119,7 +119,9 @@ public class PublicKeyEncSessionPacket
         {
             pOut.write(data[i]);
         }
-        
+
+        pOut.close();
+
         out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray(), true);
     }
 }
