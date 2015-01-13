@@ -84,7 +84,9 @@ public class SymmetricKeyEncSessionPacket
         {
             pOut.write(secKeyData);
         }
-        
+
+        pOut.close();
+
         out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray(), true);
     }
 }

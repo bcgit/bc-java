@@ -19,7 +19,9 @@ public abstract class ContainedPacket
         BCPGOutputStream         pOut = new BCPGOutputStream(bOut);
         
         pOut.writePacket(this);
-        
+
+        pOut.close();
+
         return bOut.toByteArray();
     }
     

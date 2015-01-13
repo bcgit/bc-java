@@ -173,6 +173,8 @@ public class SecretKeyPacket
             pOut.write(secKeyData);
         }
 
+        pOut.close();
+
         return bOut.toByteArray();
     }
     
