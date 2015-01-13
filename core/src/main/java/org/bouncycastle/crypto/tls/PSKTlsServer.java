@@ -2,20 +2,33 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
-public class PSKTlsClient
-    extends AbstractTlsClient
-{
-    protected TlsPSKIdentity pskIdentity;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.params.DHParameters;
 
-    public PSKTlsClient(TlsPSKIdentity pskIdentity)
+public class PSKTlsServer
+    extends AbstractTlsServer
+{
+    protected TlsPSKIdentityManager pskIdentityManager;
+
+    public PSKTlsServer(TlsPSKIdentityManager pskIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), pskIdentity);
+        this(new DefaultTlsCipherFactory(), pskIdentityManager);
     }
 
-    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)
+    public PSKTlsServer(TlsCipherFactory cipherFactory, TlsPSKIdentityManager pskIdentityManager)
     {
         super(cipherFactory);
-        this.pskIdentity = pskIdentity;
+        this.pskIdentityManager = pskIdentityManager;
+    }
+
+    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected DHParameters getDHParameters()
+    {
+        return DHStandardGroups.rfc5114_1024_160;
     }
 
     public int[] getCipherSuites()
@@ -27,6 +40,80 @@ public class PSKTlsClient
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
         };
+    }
+
+    public TlsCredentials getCredentials() throws IOException
+    {
+        switch (selectedCipherSuite)
+        {
+        case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
+        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
+
+        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_ECDHE_PSK_WITH_SALSA20_SHA1:
+
+        case CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CCM:
+        case CipherSuite.TLS_PSK_WITH_AES_128_CCM_8:
+        case CipherSuite.TLS_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CCM:
+        case CipherSuite.TLS_PSK_WITH_AES_256_CCM_8:
+        case CipherSuite.TLS_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_PSK_WITH_SALSA20_SHA1:
+            return null;
+
+        case CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1:
+        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256:
+        case CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384:
+        case CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA:
+        case CipherSuite.TLS_RSA_PSK_WITH_SALSA20_SHA1:
+            return getRSAEncryptionCredentials();
+
+        default:
+            /* Note: internal error here; selected a key exchange we don't implement! */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException
@@ -121,15 +208,6 @@ public class PSKTlsClient
              */
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-    }
-
-    public TlsAuthentication getAuthentication() throws IOException
-    {
-        /*
-         * Note: This method is not called unless a server certificate is sent, which may be the
-         * case e.g. for RSA_PSK key exchange.
-         */
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsCipher getCipher() throws IOException
@@ -262,7 +340,7 @@ public class PSKTlsClient
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
     {
-        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, null, namedCurves,
-            clientECPointFormats, serverECPointFormats);
+        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager,
+            getDHParameters(), namedCurves, clientECPointFormats, serverECPointFormats);
     }
 }
