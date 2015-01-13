@@ -58,6 +58,6 @@ public class ServerDHParams
         BigInteger g = TlsDHUtils.readDHParameter(input);
         BigInteger Ys = TlsDHUtils.readDHParameter(input);
 
-        return new ServerDHParams(new DHPublicKeyParameters(Ys, new DHParameters(p, g)));
+        return new ServerDHParams(TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Ys, new DHParameters(p, g))));
     }
 }
