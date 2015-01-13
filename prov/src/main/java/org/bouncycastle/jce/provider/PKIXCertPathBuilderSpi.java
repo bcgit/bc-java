@@ -226,7 +226,7 @@ public class PKIXCertPathBuilderSpi
             }
             else
             {
-                List<PKIXCertStore> stores = new ArrayList<PKIXCertStore>();
+                List stores = new ArrayList();
 
 
                 stores.addAll(pkixParams.getBaseParameters().getCertificateStores());

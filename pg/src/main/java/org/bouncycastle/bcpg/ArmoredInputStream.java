@@ -3,7 +3,11 @@ package org.bouncycastle.bcpg;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Vector;
+
+import org.bouncycastle.util.StringList;
+import org.bouncycastle.util.Strings;
 
 /**
  * reader for Base64 armored objects - read the headers and then start returning
@@ -107,7 +111,7 @@ public class ArmoredInputStream
     boolean        newLineFound = false;
     boolean        clearText = false;
     boolean        restart = false;
-    Vector         headerList= new Vector();
+    StringList     headerList= Strings.newList();
     int            lastC = 0;
     boolean        isEndOfStream;
     
@@ -163,7 +167,7 @@ public class ArmoredInputStream
         int        last = 0;
         boolean    headerFound = false;
         
-        headerList = new Vector();
+        headerList = Strings.newList();
         
         //
         // if restart we already have a header
@@ -218,7 +222,7 @@ public class ArmoredInputStream
                     {
                         break;
                     }
-                    headerList.addElement(line);
+                    headerList.add(line);
                     buf.setLength(0);
                 }
 
@@ -246,7 +250,7 @@ public class ArmoredInputStream
         
         if (headerList.size() > 0)
         {
-            header = (String)headerList.elementAt(0);
+            header = headerList.get(0);
         }
         
         clearText = "-----BEGIN PGP SIGNED MESSAGE-----".equals(header);
@@ -291,15 +295,8 @@ public class ArmoredInputStream
         {
             return null;
         }
-        
-        String[]    hdrs = new String[headerList.size() - 1];
-        
-        for (int i = 0; i != hdrs.length; i++)
-        {
-            hdrs[i] = (String)headerList.elementAt(i + 1);
-        }
-        
-        return hdrs;
+
+        return headerList.toStringArray(1, headerList.size());
     }
     
     private int readIgnoreSpace() 

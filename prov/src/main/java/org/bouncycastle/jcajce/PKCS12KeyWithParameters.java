@@ -2,6 +2,8 @@ package org.bouncycastle.jcajce;
 
 import javax.crypto.interfaces.PBEKey;
 
+import org.bouncycastle.util.Arrays;
+
 public class PKCS12KeyWithParameters
     extends PKCS12Key implements PBEKey
 {
@@ -19,7 +21,7 @@ public class PKCS12KeyWithParameters
     {
         super(password);
 
-        this.salt = salt.clone();
+        this.salt = Arrays.clone(salt);
         this.iterationCount = iterationCount;
     }
 

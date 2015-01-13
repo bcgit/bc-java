@@ -26,6 +26,7 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
@@ -65,6 +66,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Selector;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
@@ -74,6 +76,7 @@ import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CRLStoreSelector;
 import org.bouncycastle.x509.X509CertStoreSelector;
 import org.bouncycastle.x509.X509Store;
+import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 
 public class CertPathValidatorUtilities
 {
@@ -115,6 +118,49 @@ public class CertPathValidatorUtilities
         "removeFromCRL",
         "privilegeWithdrawn",
         "aACompromise"};
+
+    protected static Collection findCertificates(PKIXCertStoreSelector certSelect,
+                                                     List certStores)
+        throws AnnotatedException
+    {
+        Set certs = new LinkedHashSet();
+        Iterator iter = certStores.iterator();
+
+        while (iter.hasNext())
+        {
+            Object obj = iter.next();
+
+            if (obj instanceof Store)
+            {
+                Store certStore = (Store)obj;
+                try
+                {
+                    certs.addAll(certStore.getMatches(certSelect));
+                }
+                catch (StoreException e)
+                {
+                    throw new AnnotatedException(
+                            "Problem while picking certificates from X.509 store.", e);
+                }
+            }
+            else
+            {
+                CertStore certStore = (CertStore)obj;
+
+                try
+                {
+                    certs.addAll(PKIXCertStoreSelector.getCertificates(certSelect, certStore));
+                }
+                catch (CertStoreException e)
+                {
+                    throw new AnnotatedException(
+                        "Problem while picking certificates from certificate store.",
+                        e);
+                }
+            }
+        }
+        return certs;
+    }
 
     /**
      * Search the given Set of TrustAnchor's for one that is the
