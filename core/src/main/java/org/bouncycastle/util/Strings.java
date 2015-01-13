@@ -324,17 +324,17 @@ public final class Strings
     {
         public boolean add(String s)
         {
-            return this.add(s);
+            return super.add(s);
         }
 
         public String set(int index, String element)
         {
-            return this.set(index, element);
+            return super.set(index, element);
         }
 
         public void add(int index, String element)
         {
-            this.add(index, element);
+            super.add(index, element);
         }
 
         public String[] toStringArray()
@@ -353,9 +353,9 @@ public final class Strings
         {
             String[] strs = new String[to - from];
 
-            for (int i = to; i != strs.length && i != to; i++)
+            for (int i = from; i != this.size() && i != to; i++)
             {
-                strs[i - to] = this.get(i);
+                strs[i - from] = this.get(i);
             }
 
             return strs;
