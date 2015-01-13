@@ -477,6 +477,69 @@ public class TlsECCUtils
         return (ECPrivateKeyParameters) kp.getPrivate();
     }
 
+    // TODO Refactor around ServerECDHParams before making this public
+    static ECPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, int[] namedCurves,
+        short[] ecPointFormats, OutputStream output) throws IOException
+    {
+        /* First we try to find a supported named curve from the client's list. */
+        int namedCurve = -1;
+        if (namedCurves == null)
+        {
+            // TODO Let the peer choose the default named curve
+            namedCurve = NamedCurve.secp256r1;
+        }
+        else
+        {
+            for (int i = 0; i < namedCurves.length; ++i)
+            {
+                int entry = namedCurves[i];
+                if (NamedCurve.isValid(entry) && TlsECCUtils.isSupportedNamedCurve(entry))
+                {
+                    namedCurve = entry;
+                    break;
+                }
+            }
+        }
+
+        ECDomainParameters ecParams = null;
+        if (namedCurve >= 0)
+        {
+            ecParams = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+        }
+        else
+        {
+            /* If no named curves are suitable, check if the client supports explicit curves. */
+            if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
+            {
+                ecParams = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
+            }
+            else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
+            {
+                ecParams = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
+            }
+        }
+
+        if (ecParams == null)
+        {
+            /*
+             * NOTE: We shouldn't have negotiated ECDHE key exchange since we apparently can't find
+             * a suitable curve.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (namedCurve < 0)
+        {
+            TlsECCUtils.writeExplicitECParameters(ecPointFormats, ecParams, output);
+        }
+        else
+        {
+            TlsECCUtils.writeNamedECParameters(namedCurve, output);
+        }
+
+        return generateEphemeralClientKeyExchange(random, ecPointFormats, ecParams, output);
+    }
+
     public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key) throws IOException
     {
         // TODO Check RFC 4492 for validation
