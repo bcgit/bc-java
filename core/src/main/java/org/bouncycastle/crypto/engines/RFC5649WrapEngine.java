@@ -217,6 +217,12 @@ public class RFC5649WrapEngine
 
         // Check the number of padded zeros
         int expectedZeros = upperBound - mli;
+        if (expectedZeros >= paddedPlaintext.length)
+        {
+            isValid = false;
+            expectedZeros = paddedPlaintext.length;
+        }
+
         byte[] zeros = new byte[expectedZeros];
         byte[] pad = new byte[expectedZeros];
         System.arraycopy(paddedPlaintext, paddedPlaintext.length - expectedZeros, pad, 0, expectedZeros);
@@ -225,14 +231,14 @@ public class RFC5649WrapEngine
             isValid = false;
         }
 
-        // Extract the plaintext from the padded plaintext
-        byte[] plaintext = new byte[mli];
-        System.arraycopy(paddedPlaintext, 0, plaintext, 0, plaintext.length);
-
         if (!isValid)
         {
             throw new InvalidCipherTextException("checksum failed");
         }
+
+        // Extract the plaintext from the padded plaintext
+        byte[] plaintext = new byte[mli];
+        System.arraycopy(paddedPlaintext, 0, plaintext, 0, plaintext.length);
 
         return plaintext;
     }
