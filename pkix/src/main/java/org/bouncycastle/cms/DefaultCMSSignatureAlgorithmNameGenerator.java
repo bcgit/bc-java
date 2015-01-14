@@ -46,6 +46,11 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         addEntries(PKCSObjectIdentifiers.sha256WithRSAEncryption, "SHA256", "RSA");
         addEntries(PKCSObjectIdentifiers.sha384WithRSAEncryption, "SHA384", "RSA");
         addEntries(PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512", "RSA");
+
+        addEntries(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd128, "RIPEMD128", "RSA");
+        addEntries(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160, "RIPEMD160", "RSA");
+        addEntries(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd256, "RIPEMD256", "RSA");
+
         addEntries(X9ObjectIdentifiers.ecdsa_with_SHA1, "SHA1", "ECDSA");
         addEntries(X9ObjectIdentifiers.ecdsa_with_SHA224, "SHA224", "ECDSA");
         addEntries(X9ObjectIdentifiers.ecdsa_with_SHA256, "SHA256", "ECDSA");
