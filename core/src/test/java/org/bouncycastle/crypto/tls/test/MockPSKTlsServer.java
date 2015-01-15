@@ -42,6 +42,18 @@ class MockPSKTlsServer
             + AlertDescription.getText(alertDescription));
     }
 
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        byte[] pskIdentity = context.getSecurityParameters().getPskIdentity();
+        if (pskIdentity != null)
+        {
+            String name = Strings.fromUTF8ByteArray(pskIdentity);
+            System.out.println("TLS-PSK server completed handshake for PSK identity: " + name);
+        }
+    }
+
     public int[] getCipherSuites()
     {
         return new int[]{ CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,

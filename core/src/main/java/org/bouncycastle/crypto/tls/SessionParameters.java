@@ -15,6 +15,7 @@ public final class SessionParameters
         private short compressionAlgorithm = -1;
         private byte[] masterSecret = null;
         private Certificate peerCertificate = null;
+        private byte[] pskIdentity = null;
         private byte[] encodedServerExtensions = null;
 
         public Builder()
@@ -26,7 +27,7 @@ public final class SessionParameters
             validate(this.cipherSuite >= 0, "cipherSuite");
             validate(this.compressionAlgorithm >= 0, "compressionAlgorithm");
             validate(this.masterSecret != null, "masterSecret");
-            return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate,
+            return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate, pskIdentity,
                 encodedServerExtensions);
         }
 
@@ -54,8 +55,13 @@ public final class SessionParameters
             return this;
         }
 
-        public Builder setServerExtensions(Hashtable serverExtensions)
-            throws IOException
+        public Builder setPskIdentity(byte[] pskIdentity)
+        {
+            this.pskIdentity = pskIdentity;
+            return this;
+        }
+
+        public Builder setServerExtensions(Hashtable serverExtensions) throws IOException
         {
             if (serverExtensions == null)
             {
@@ -83,15 +89,17 @@ public final class SessionParameters
     private short compressionAlgorithm;
     private byte[] masterSecret;
     private Certificate peerCertificate;
+    private byte[] pskIdentity = null;
     private byte[] encodedServerExtensions;
 
     private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret,
-        Certificate peerCertificate, byte[] encodedServerExtensions)
+        Certificate peerCertificate, byte[] pskIdentity, byte[] encodedServerExtensions)
     {
         this.cipherSuite = cipherSuite;
         this.compressionAlgorithm = compressionAlgorithm;
         this.masterSecret = Arrays.clone(masterSecret);
         this.peerCertificate = peerCertificate;
+        this.pskIdentity = Arrays.clone(pskIdentity);
         this.encodedServerExtensions = encodedServerExtensions;
     }
 
@@ -105,7 +113,7 @@ public final class SessionParameters
 
     public SessionParameters copy()
     {
-        return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate,
+        return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate, pskIdentity,
             encodedServerExtensions);
     }
 
@@ -127,6 +135,11 @@ public final class SessionParameters
     public Certificate getPeerCertificate()
     {
         return peerCertificate;
+    }
+
+    public byte[] getPskIdentity()
+    {
+        return pskIdentity;
     }
 
     public Hashtable readServerExtensions() throws IOException

@@ -385,6 +385,7 @@ public class DTLSClientProtocol
                 .setCompressionAlgorithm(securityParameters.compressionAlgorithm)
                 .setMasterSecret(securityParameters.masterSecret)
                 .setPeerCertificate(serverCertificate)
+                .setPskIdentity(securityParameters.pskIdentity)
                 .build();
 
             state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
