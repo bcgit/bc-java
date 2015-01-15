@@ -236,6 +236,8 @@ public class TlsPSKKeyExchange
 
         TlsUtils.writeOpaque16(psk_identity, output);
 
+        context.getSecurityParameters().pskIdentity = psk_identity;
+
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
             this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(),
@@ -262,6 +264,8 @@ public class TlsPSKKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.unknown_psk_identity);
         }
+
+        context.getSecurityParameters().pskIdentity = psk_identity;
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {

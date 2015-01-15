@@ -173,6 +173,7 @@ public abstract class TlsProtocol
                         .setCompressionAlgorithm(this.securityParameters.compressionAlgorithm)
                         .setMasterSecret(this.securityParameters.masterSecret)
                         .setPeerCertificate(this.peerCertificate)
+                        .setPskIdentity(this.securityParameters.pskIdentity)
                         // TODO Consider filtering extensions that aren't relevant to resumed sessions
                         .setServerExtensions(this.serverExtensions)
                         .build();
