@@ -13,6 +13,7 @@ public class SecurityParameters
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
+    byte[] pskIdentity = null;
 
     // TODO Keep these internal, since it's maybe not the ideal place for them
     short maxFragmentLength = -1;
@@ -84,5 +85,10 @@ public class SecurityParameters
     public byte[] getSessionHash()
     {
         return sessionHash;
+    }
+
+    public byte[] getPskIdentity()
+    {
+        return pskIdentity;
     }
 }

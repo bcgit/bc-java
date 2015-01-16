@@ -63,6 +63,29 @@ class MockPSKTlsClient
             + AlertDescription.getText(alertDescription));
     }
 
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        TlsSession newSession = context.getResumableSession();
+        if (newSession != null)
+        {
+            byte[] newSessionID = newSession.getSessionID();
+            String hex = Hex.toHexString(newSessionID);
+
+            if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
+            {
+                System.out.println("Resumed session: " + hex);
+            }
+            else
+            {
+                System.out.println("Established session: " + hex);
+            }
+
+            this.session = newSession;
+        }
+    }
+
     public int[] getCipherSuites()
     {
         return new int[]{ CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
@@ -107,28 +130,5 @@ class MockPSKTlsClient
                 }
             }
         };
-    }
-
-    public void notifyHandshakeComplete() throws IOException
-    {
-        super.notifyHandshakeComplete();
-
-        TlsSession newSession = context.getResumableSession();
-        if (newSession != null)
-        {
-            byte[] newSessionID = newSession.getSessionID();
-            String hex = Hex.toHexString(newSessionID);
-
-            if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
-            {
-                System.out.println("Resumed session: " + hex);
-            }
-            else
-            {
-                System.out.println("Established session: " + hex);
-            }
-
-            this.session = newSession;
-        }
     }
 }
