@@ -26,7 +26,7 @@ import org.bouncycastle.util.Iterable;
  */
 public class PGPPublicKeyRing
     extends PGPKeyRing
-    implements Iterable
+    implements Iterable<PGPPublicKey>
 {
     List keys;
 
@@ -129,7 +129,7 @@ public class PGPPublicKeyRing
      * 
      * @return Iterator
      */
-    public Iterator getPublicKeys()
+    public Iterator<PGPPublicKey> getPublicKeys()
     {
         return Collections.unmodifiableList(keys).iterator();
     }
@@ -137,7 +137,7 @@ public class PGPPublicKeyRing
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPPublicKey> iterator()
     {
         return getPublicKeys();
     }

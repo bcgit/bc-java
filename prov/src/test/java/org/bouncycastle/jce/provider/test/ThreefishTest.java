@@ -27,14 +27,11 @@ public class ThreefishTest
 
     private static final byte[] TEST_BYTES = new byte[1536];
 
-
-    @Override
     public String getName()
     {
         return "Threefish";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

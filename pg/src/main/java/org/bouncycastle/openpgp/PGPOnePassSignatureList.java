@@ -9,7 +9,7 @@ import org.bouncycastle.util.Iterable;
  * Holder for a list of PGPOnePassSignatures
  */
 public class PGPOnePassSignatureList
-    implements Iterable
+    implements Iterable<PGPOnePassSignature>
 {
     PGPOnePassSignature[]    sigs;
     
@@ -47,7 +47,7 @@ public class PGPOnePassSignatureList
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPOnePassSignature> iterator()
     {
         return new Arrays.Iterator(sigs);
     }
