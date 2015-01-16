@@ -22,7 +22,7 @@ import org.bouncycastle.util.Strings;
  * If you want to read an entire public key file in one hit this is the class for you.
  */
 public class PGPPublicKeyRingCollection
-    implements Iterable
+    implements Iterable<PGPPublicKeyRing>
 {
     private Map   pubRings = new HashMap();
     private List  order = new ArrayList();
@@ -74,7 +74,7 @@ public class PGPPublicKeyRingCollection
     }
     
     public PGPPublicKeyRingCollection(
-        Collection    collection)
+        Collection<PGPPublicKeyRing>    collection)
         throws IOException, PGPException
     {
         Iterator                    it = collection.iterator();
@@ -103,7 +103,7 @@ public class PGPPublicKeyRingCollection
     /**
      * return the public key rings making up this collection.
      */
-    public Iterator getKeyRings()
+    public Iterator<PGPPublicKeyRing> getKeyRings()
     {
         return pubRings.values().iterator();
     }
@@ -115,7 +115,7 @@ public class PGPPublicKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPPublicKeyRing> getKeyRings(
         String    userID) 
         throws PGPException
     {   
@@ -131,7 +131,7 @@ public class PGPPublicKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPPublicKeyRing> getKeyRings(
         String    userID,
         boolean   matchPartial) 
         throws PGPException
@@ -149,7 +149,7 @@ public class PGPPublicKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPPublicKeyRing> getKeyRings(
         String    userID,
         boolean   matchPartial,
         boolean   ignoreCase) 
@@ -375,7 +375,7 @@ public class PGPPublicKeyRingCollection
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPPublicKeyRing> iterator()
     {
         return pubRings.values().iterator();
     }
