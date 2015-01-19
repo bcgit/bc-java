@@ -57,19 +57,19 @@ public class PKCS7Padding
         throws InvalidCipherTextException
     {
         int count = in[in.length - 1] & 0xff;
+        byte countAsbyte = (byte)count;
 
-        if (count > in.length || count == 0)
+        // constant time version
+        boolean failed = (count > in.length | count == 0);
+
+        for (int i = 0; i < in.length; i++)
         {
-            throw new InvalidCipherTextException("pad block corrupted");
+            failed |= (in.length - i <= count) & (in[i] != countAsbyte);
         }
 
-        byte countAsbyte = (byte)count;
-        for (int i = 1; i <= count; i++)
+        if (failed)
         {
-            if (in[in.length - i] != countAsbyte)
-            {
-                throw new InvalidCipherTextException("pad block corrupted");
-            }
+            throw new InvalidCipherTextException("pad block corrupted");
         }
 
         return count;
