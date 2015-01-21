@@ -10,15 +10,15 @@ import org.bouncycastle.util.Arrays;
  */
 public class DANEEntry
 {
-    private static final int CERT_USAGE = 0;
-    private static final int SELECTOR = 1;
-    private static final int MATCHING_TYPE = 2;
+    static final int CERT_USAGE = 0;
+    static final int SELECTOR = 1;
+    static final int MATCHING_TYPE = 2;
 
     private final String domainName;
     private final byte[] flags;
     private final X509CertificateHolder certHolder;
 
-    private DANEEntry(String domainName, byte[] flags, X509CertificateHolder certHolder)
+    DANEEntry(String domainName, byte[] flags, X509CertificateHolder certHolder)
     {
         this.flags = flags;
         this.domainName = domainName;
@@ -49,6 +49,24 @@ public class DANEEntry
     public String getDomainName()
     {
         return domainName;
+    }
+
+    /**
+     * Return the full data string as it would appear in the DNS record - flags + encoding
+     *
+     * @return byte array representing the full data string.
+     * @throws IOException if there is an issue encoding the certificate inside this entry.
+     */
+    public byte[] getRDATA()
+        throws IOException
+    {
+        byte[] certEnc = certHolder.getEncoded();
+        byte[] data = new byte[flags.length + certEnc.length];
+
+        System.arraycopy(flags, 0, data, 0, flags.length);
+        System.arraycopy(certEnc, 0, data, flags.length, certEnc.length);
+
+        return data;
     }
 
     /**
