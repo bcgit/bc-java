@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.Provider;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidatorException;
@@ -28,6 +29,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -63,6 +65,7 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.jcajce.*;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Selector;
@@ -334,6 +337,74 @@ public class CertPathValidatorUtilities
         }
 
         return validDate;
+    }
+
+    protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
+    {
+        Date validDate = paramsPKIX.getDate();
+
+        if (validDate == null)
+        {
+            validDate = new Date();
+        }
+
+        return validDate;
+    }
+
+    /**
+     * Find the issuer certificates of a given certificate.
+     *
+     * @param cert       The certificate for which an issuer should be found.
+     * @return A <code>Collection</code> object containing the issuer
+     *         <code>X509Certificate</code>s. Never <code>null</code>.
+     * @throws AnnotatedException if an error occurs.
+     */
+    static Collection findIssuerCerts(
+        X509Certificate cert,
+        List certStores,
+        List pkixCertStores)
+        throws AnnotatedException
+    {
+        X509CertSelector selector = new X509CertSelector();
+
+        try
+        {
+            selector.setSubject(cert.getIssuerX500Principal().getEncoded());
+        }
+        catch (IOException e)
+        {
+            throw new AnnotatedException(
+                           "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
+        }
+
+        PKIXCertStoreSelector certSelect = new PKIXCertStoreSelector.Builder(selector).build();
+        Set certs = new LinkedHashSet();
+
+        Iterator iter;
+
+        try
+        {
+            List matches = new ArrayList();
+
+            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, certStores));
+            matches.addAll(CertPathValidatorUtilities.findCertificates(certSelect, pkixCertStores));
+
+            iter = matches.iterator();
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException("Issuer certificate cannot be searched.", e);
+        }
+
+        X509Certificate issuer = null;
+        while (iter.hasNext())
+        {
+            issuer = (X509Certificate)iter.next();
+            // issuer cannot be verified because possible DSA inheritance
+            // parameters are missing
+            certs.add(issuer);
+        }
+        return certs;
     }
 
     protected static X500Principal getSubjectPrincipal(X509Certificate cert)
@@ -1118,6 +1189,211 @@ public class CertPathValidatorUtilities
         }
     }
 
+    static List getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp, Map namedCRLStoreMap)
+        throws AnnotatedException
+    {
+        if (crldp != null)
+        {
+            DistributionPoint dps[] = null;
+            try
+            {
+                dps = crldp.getDistributionPoints();
+            }
+            catch (Exception e)
+            {
+                throw new AnnotatedException(
+                    "Distribution points could not be read.", e);
+            }
+            List stores = new ArrayList();
+
+            for (int i = 0; i < dps.length; i++)
+            {
+                DistributionPointName dpn = dps[i].getDistributionPoint();
+                // look for URIs in fullName
+                if (dpn != null)
+                {
+                    if (dpn.getType() == DistributionPointName.FULL_NAME)
+                    {
+                        GeneralName[] genNames = GeneralNames.getInstance(
+                            dpn.getName()).getNames();
+
+                        for (int j = 0; j < genNames.length; j++)
+                        {
+                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[i]);
+                            if (store != null)
+                            {
+                                stores.add(store);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return stores;
+        }
+        else
+        {
+            return Collections.EMPTY_LIST;
+        }
+    }
+
+    /**
+     * Add the CRL issuers from the cRLIssuer field of the distribution point or
+     * from the certificate if not given to the issuer criterion of the
+     * <code>selector</code>.
+     * <p/>
+     * The <code>issuerPrincipals</code> are a collection with a single
+     * <code>X500Principal</code> for <code>X509Certificate</code>s.
+     *
+     * @param dp               The distribution point.
+     * @param issuerPrincipals The issuers of the certificate or attribute
+     *                         certificate which contains the distribution point.
+     * @param selector         The CRL selector.
+     * @throws AnnotatedException if an exception occurs while processing.
+     * @throws ClassCastException if <code>issuerPrincipals</code> does not
+     * contain only <code>X500Principal</code>s.
+     */
+    protected static void getCRLIssuersFromDistributionPoint(
+        DistributionPoint dp,
+        Collection issuerPrincipals,
+        X509CRLSelector selector)
+        throws AnnotatedException
+    {
+        List issuers = new ArrayList();
+        // indirect CRL
+        if (dp.getCRLIssuer() != null)
+        {
+            GeneralName genNames[] = dp.getCRLIssuer().getNames();
+            // look for a DN
+            for (int j = 0; j < genNames.length; j++)
+            {
+                if (genNames[j].getTagNo() == GeneralName.directoryName)
+                {
+                    try
+                    {
+                        issuers.add(new X500Principal(genNames[j].getName()
+                            .toASN1Primitive().getEncoded()));
+                    }
+                    catch (IOException e)
+                    {
+                        throw new AnnotatedException(
+                            "CRL issuer information from distribution point cannot be decoded.",
+                            e);
+                    }
+                }
+            }
+        }
+        else
+        {
+               /*
+                * certificate issuer is CRL issuer, distributionPoint field MUST be
+                * present.
+                */
+            if (dp.getDistributionPoint() == null)
+            {
+                throw new AnnotatedException(
+                    "CRL issuer is omitted from distribution point but no distributionPoint field present.");
+            }
+            // add and check issuer principals
+            for (Iterator it = issuerPrincipals.iterator(); it.hasNext(); )
+            {
+                issuers.add((X500Principal)it.next());
+            }
+        }
+        // TODO: is not found although this should correctly add the rel name. selector of Sun is buggy here or PKI test case is invalid
+        // distributionPoint
+        //        if (dp.getDistributionPoint() != null)
+        //        {
+        //            // look for nameRelativeToCRLIssuer
+        //            if (dp.getDistributionPoint().getType() == DistributionPointName.NAME_RELATIVE_TO_CRL_ISSUER)
+        //            {
+        //                // append fragment to issuer, only one
+        //                // issuer can be there, if this is given
+        //                if (issuers.size() != 1)
+        //                {
+        //                    throw new AnnotatedException(
+        //                        "nameRelativeToCRLIssuer field is given but more than one CRL issuer is given.");
+        //                }
+        //                ASN1Encodable relName = dp.getDistributionPoint().getName();
+        //                Iterator it = issuers.iterator();
+        //                List issuersTemp = new ArrayList(issuers.size());
+        //                while (it.hasNext())
+        //                {
+        //                    Enumeration e = null;
+        //                    try
+        //                    {
+        //                        e = ASN1Sequence.getInstance(
+        //                            new ASN1InputStream(((X500Principal) it.next())
+        //                                .getEncoded()).readObject()).getObjects();
+        //                    }
+        //                    catch (IOException ex)
+        //                    {
+        //                        throw new AnnotatedException(
+        //                            "Cannot decode CRL issuer information.", ex);
+        //                    }
+        //                    ASN1EncodableVector v = new ASN1EncodableVector();
+        //                    while (e.hasMoreElements())
+        //                    {
+        //                        v.add((ASN1Encodable) e.nextElement());
+        //                    }
+        //                    v.add(relName);
+        //                    issuersTemp.add(new X500Principal(new DERSequence(v)
+        //                        .getDEREncoded()));
+        //                }
+        //                issuers.clear();
+        //                issuers.addAll(issuersTemp);
+        //            }
+        //        }
+        Iterator it = issuers.iterator();
+        while (it.hasNext())
+        {
+            try
+            {
+                selector.addIssuerName(((X500Principal)it.next()).getEncoded());
+            }
+            catch (IOException ex)
+            {
+                throw new AnnotatedException(
+                    "Cannot decode CRL issuer information.", ex);
+            }
+        }
+    }
+
+    static List getAdditionalStoresFromAltNames(
+        byte[] issuerAlternativeName,
+        Map altNameCertStoreMap)
+        throws CertificateParsingException
+    {
+        // if in the IssuerAltName extension an URI
+        // is given, add an additional X.509 store
+        if (issuerAlternativeName != null)
+        {
+            GeneralNames issuerAltName = GeneralNames.getInstance(ASN1OctetString.getInstance(issuerAlternativeName).getOctets());
+
+            GeneralName[] names = issuerAltName.getNames();
+            List<PKIXCertStore>  stores = new ArrayList<PKIXCertStore>();
+
+            for (int i = 0; i != names.length; i++)
+            {
+                GeneralName altName = names[i];
+
+                PKIXCertStore altStore = (PKIXCertStore)altNameCertStoreMap.get(altName);
+
+                if (altStore != null)
+                {
+                    stores.add(altStore);
+                }
+            }
+
+            return stores;
+        }
+        else
+        {
+            return Collections.EMPTY_LIST;
+        }
+    }
+
+
     /**
      * Fetches delta CRLs according to RFC 3280 section 5.2.4.
      *
@@ -1371,7 +1647,7 @@ public class CertPathValidatorUtilities
      *         <code>index</code> extended with DSA parameters if applicable.
      * @throws AnnotatedException if DSA parameters cannot be inherited.
      */
-    protected static PublicKey getNextWorkingKey(List certs, int index)
+    protected static PublicKey getNextWorkingKey(List certs, int index, Provider provider)
         throws CertPathValidatorException
     {
         Certificate cert = (Certificate)certs.get(index);
@@ -1482,4 +1758,193 @@ public class CertPathValidatorUtilities
             cert.verify(publicKey, sigProvider);
         }
     }
+
+    protected static Date getValidCertDateFromValidityModel(
+        PKIXExtendedParameters paramsPKIX, CertPath certPath, int index)
+        throws AnnotatedException
+    {
+        if (paramsPKIX.getValidityModel() == PKIXExtendedParameters.CHAIN_VALIDITY_MODEL)
+        {
+            // if end cert use given signing/encryption/... time
+            if (index <= 0)
+            {
+                return CertPathValidatorUtilities.getValidDate(paramsPKIX);
+                // else use time when previous cert was created
+            }
+            else
+            {
+                if (index - 1 == 0)
+                {
+                    ASN1GeneralizedTime dateOfCertgen = null;
+                    try
+                    {
+                        byte[] extBytes = ((X509Certificate)certPath.getCertificates().get(index - 1)).getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
+                        if (extBytes != null)
+                        {
+                            dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        throw new AnnotatedException(
+                            "Date of cert gen extension could not be read.");
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        throw new AnnotatedException(
+                            "Date of cert gen extension could not be read.");
+                    }
+                    if (dateOfCertgen != null)
+                    {
+                        try
+                        {
+                            return dateOfCertgen.getDate();
+                        }
+                        catch (ParseException e)
+                        {
+                            throw new AnnotatedException(
+                                "Date from date of cert gen extension could not be parsed.",
+                                e);
+                        }
+                    }
+                    return ((X509Certificate)certPath.getCertificates().get(
+                        index - 1)).getNotBefore();
+                }
+                else
+                {
+                    return ((X509Certificate)certPath.getCertificates().get(
+                        index - 1)).getNotBefore();
+                }
+            }
+        }
+        else
+        {
+            return getValidDate(paramsPKIX);
+        }
+    }
+
+    protected static Set getDeltaCRLs(Date validityDate,
+                                      X509CRL completeCRL, List<CertStore> certStores, List<PKIXCRLStore> pkixCrlStores)
+        throws AnnotatedException
+    {
+        X509CRLSelector baseDeltaSelect = new X509CRLSelector();
+        // 5.2.4 (a)
+        try
+        {
+            baseDeltaSelect.addIssuerName(CertPathValidatorUtilities
+                .getIssuerPrincipal(completeCRL).getEncoded());
+        }
+        catch (IOException e)
+        {
+            throw new AnnotatedException("Cannot extract issuer from CRL.", e);
+        }
+
+
+
+        BigInteger completeCRLNumber = null;
+        try
+        {
+            ASN1Primitive derObject = CertPathValidatorUtilities.getExtensionValue(completeCRL,
+                CRL_NUMBER);
+            if (derObject != null)
+            {
+                completeCRLNumber = ASN1Integer.getInstance(derObject).getPositiveValue();
+            }
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException(
+                "CRL number extension could not be extracted from CRL.", e);
+        }
+
+        // 5.2.4 (b)
+        byte[] idp = null;
+        try
+        {
+            idp = completeCRL.getExtensionValue(ISSUING_DISTRIBUTION_POINT);
+        }
+        catch (Exception e)
+        {
+            throw new AnnotatedException(
+                "Issuing distribution point extension value could not be read.",
+                e);
+        }
+
+        // 5.2.4 (d)
+
+        baseDeltaSelect.setMinCRLNumber(completeCRLNumber == null ? null : completeCRLNumber
+            .add(BigInteger.valueOf(1)));
+
+        PKIXCRLStoreSelector.Builder selBuilder = new PKIXCRLStoreSelector.Builder(baseDeltaSelect);
+
+        selBuilder.setIssuingDistributionPoint(idp);
+        selBuilder.setIssuingDistributionPointEnabled(true);
+
+        // 5.2.4 (c)
+        selBuilder.setMaxBaseCRLNumber(completeCRLNumber);
+
+        PKIXCRLStoreSelector deltaSelect = selBuilder.build();
+
+        // find delta CRLs
+        Set temp = CRL_UTIL.findCRLs(deltaSelect, validityDate, certStores, pkixCrlStores);
+
+        Set result = new HashSet();
+
+        for (Iterator it = temp.iterator(); it.hasNext(); )
+        {
+            X509CRL crl = (X509CRL)it.next();
+
+            if (isDeltaCRL(crl))
+            {
+                result.add(crl);
+            }
+        }
+
+        return result;
+    }
+    protected static Set getCompleteCRLs(DistributionPoint dp, Object cert,
+                                         Date currentDate, PKIXExtendedParameters paramsPKIX)
+        throws AnnotatedException
+    {
+        X509CRLSelector baseCrlSelect = new X509CRLSelector();
+
+        try
+        {
+            Set issuers = new HashSet();
+
+            issuers.add(getEncodedIssuerPrincipal(cert));
+
+            CertPathValidatorUtilities.getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException(
+                "Could not get issuer information from distribution point.", e);
+        }
+
+        if (cert instanceof X509Certificate)
+        {
+            baseCrlSelect.setCertificateChecking((X509Certificate)cert);
+        }
+
+        PKIXCRLStoreSelector crlSelect = new PKIXCRLStoreSelector.Builder(baseCrlSelect).setCompleteCRLEnabled(true).build();
+
+        Date validityDate = currentDate;
+
+        if (paramsPKIX.getDate() != null)
+        {
+            validityDate = paramsPKIX.getDate();
+        }
+
+        Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
+
+        if (crls.isEmpty())
+        {
+            X509Certificate xCert = (X509Certificate)cert;
+
+            throw new AnnotatedException("No CRLs found for issuer \"" + xCert.getIssuerX500Principal() + "\"");
+        }
+        return crls;
+    }
+
 }

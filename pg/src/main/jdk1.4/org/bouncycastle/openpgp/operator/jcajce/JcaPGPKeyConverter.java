@@ -56,6 +56,7 @@ import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
+import org.bouncycastle.math.ec.ECPoint;
 
 public class JcaPGPKeyConverter
 {
