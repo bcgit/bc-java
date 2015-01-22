@@ -12,13 +12,29 @@ import org.bouncycastle.util.*;
 import org.bouncycastle.util.Iterable;
 
 public class RecipientInformationStore
-    implements Iterable
+    implements Iterable<RecipientInformation>
 {
     private final List all; //ArrayList[RecipientInformation]
     private final Map table = new HashMap(); // HashMap[RecipientID, ArrayList[RecipientInformation]]
 
+    /**
+     * Create a store containing a single RecipientInformation object.
+     *
+     * @param recipientInformation the signer information to contain.
+     */
     public RecipientInformationStore(
-        Collection recipientInfos)
+        RecipientInformation  recipientInformation)
+    {
+        this.all = new ArrayList(1);
+        this.all.add(recipientInformation);
+
+        RecipientId sid = recipientInformation.getRID();
+
+        table.put(sid, all);
+    }
+
+    public RecipientInformationStore(
+        Collection<RecipientInformation> recipientInfos)
     {
         Iterator it = recipientInfos.iterator();
 
@@ -70,7 +86,7 @@ public class RecipientInformationStore
      *
      * @return a collection of recipients.
      */
-    public Collection getRecipients()
+    public Collection<RecipientInformation> getRecipients()
     {
         return new ArrayList(all);
     }
@@ -81,7 +97,7 @@ public class RecipientInformationStore
      * @param selector a recipient id to select against.
      * @return a collection of RecipientInformation objects.
      */
-    public Collection getRecipients(
+    public Collection<Recipient> getRecipients(
         RecipientId selector)
     {
         if (selector instanceof KeyTransRecipientId)
@@ -120,7 +136,7 @@ public class RecipientInformationStore
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<RecipientInformation> iterator()
     {
         return getRecipients().iterator();
     }

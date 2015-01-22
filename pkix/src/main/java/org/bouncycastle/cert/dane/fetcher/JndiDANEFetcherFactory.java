@@ -68,7 +68,7 @@ public class JndiDANEFetcherFactory
         final Hashtable env = new Hashtable();
 
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
-        env.put(Context.AUTHORITATIVE, Boolean.toString(isAuthoritative));
+        env.put(Context.AUTHORITATIVE, isAuthoritative ? "true" : "false"); // JDK compatibility
 
         if (dnsServerList.size() > 0)
         {

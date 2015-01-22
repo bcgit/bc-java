@@ -15,13 +15,14 @@ import java.util.Map;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.Iterable;
 
 /**
  * Often a PGP key ring file is made up of a succession of master/sub-key key rings.
  * If you want to read an entire secret key file in one hit this is the class for you.
  */
 public class PGPSecretKeyRingCollection
-    implements Iterable
+    implements Iterable<PGPSecretKeyRing>
 {
     private Map    secretRings = new HashMap();
     private List   order = new ArrayList();
@@ -73,7 +74,7 @@ public class PGPSecretKeyRingCollection
     }
     
     public PGPSecretKeyRingCollection(
-        Collection    collection)
+        Collection<PGPSecretKeyRing>    collection)
         throws IOException, PGPException
     {
         Iterator                it = collection.iterator();
@@ -101,7 +102,7 @@ public class PGPSecretKeyRingCollection
     /**
      * return the secret key rings making up this collection.
      */
-    public Iterator getKeyRings()
+    public Iterator<PGPSecretKeyRing> getKeyRings()
     {
         return secretRings.values().iterator();
     }
@@ -113,7 +114,7 @@ public class PGPSecretKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPSecretKeyRing> getKeyRings(
         String    userID) 
         throws PGPException
     {   
@@ -129,7 +130,7 @@ public class PGPSecretKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPSecretKeyRing> getKeyRings(
         String    userID,
         boolean   matchPartial) 
         throws PGPException
@@ -147,7 +148,7 @@ public class PGPSecretKeyRingCollection
      * @return an iterator (possibly empty) of key rings which matched.
      * @throws PGPException
      */
-    public Iterator getKeyRings(
+    public Iterator<PGPSecretKeyRing> getKeyRings(
         String    userID,
         boolean   matchPartial,
         boolean   ignoreCase) 
@@ -372,7 +373,7 @@ public class PGPSecretKeyRingCollection
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPSecretKeyRing> iterator()
     {
         return secretRings.values().iterator();
     }

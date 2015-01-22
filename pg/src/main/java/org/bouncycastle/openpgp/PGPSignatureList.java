@@ -9,7 +9,7 @@ import org.bouncycastle.util.Iterable;
  * A list of PGP signatures - normally in the signature block after literal data.
  */
 public class PGPSignatureList
-    implements Iterable
+    implements Iterable<PGPSignature>
 {
     PGPSignature[]    sigs;
     
@@ -47,7 +47,7 @@ public class PGPSignatureList
     /**
      * Support method for Iterable where available.
      */
-    public Iterator iterator()
+    public Iterator<PGPSignature> iterator()
     {
         return new Arrays.Iterator(sigs);
     }

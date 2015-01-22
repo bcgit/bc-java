@@ -9,9 +9,9 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
-import org.junit.Assert;
 
 public class SMIMETestUtil
 {
@@ -69,7 +69,7 @@ public class SMIMETestUtil
         _baos.close();
         byte[] _resBytes = _baos.toByteArray();
 
-        Assert.assertEquals(true, Arrays.areEqual(_msgBytes, _resBytes));
+        TestCase.assertEquals(true, Arrays.areEqual(_msgBytes, _resBytes));
     }
 
     public static void verifyMessageBytes(MimeMessage a, MimeBodyPart b)
@@ -84,6 +84,6 @@ public class SMIMETestUtil
         _baos.close();
         byte[] _resBytes = _baos.toByteArray();
 
-        Assert.assertEquals(true, Arrays.areEqual(_msgBytes, _resBytes));
+        TestCase.assertEquals(true, Arrays.areEqual(_msgBytes, _resBytes));
     }
 }

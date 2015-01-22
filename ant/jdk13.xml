@@ -2,6 +2,8 @@
 
 <project name="crypto1.3" default="build" basedir="..">
 
+    <property file="ant/build.regexp" />
+
     <property name="bc.javac.source" value="1.3" />
     <!-- 1.1 is intended, it is the default value used by JDKs 1.1. thru 1.3 -->
     <property name="bc.javac.target" value="1.1" />
@@ -65,6 +67,7 @@
                 <exclude name="**/PKIXCertPathReviewer.java" />
                 <exclude name="**/PKIXAttrCert*.java" />
                 <exclude name="**/PKIXNameConstraints*.java" />
+                <exclude name="**/PKCS12StoreParameter.java" />
                 <exclude name="**/ExtendedPKIX*.java" />
                 <exclude name="**/RFC3281*.java" />
                 <exclude name="**/CertPathValidatorUtilities.java" />
@@ -220,6 +223,33 @@
         <copy todir="${src.dir}">
             <fileset dir="jce/src" includes="**/*.java" />
         </copy>
+
+        <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
+            <fileset dir="${src.dir}">
+              <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="java.security.cert.CertStore" replace="org.bouncycastle.jce.cert.CertStore" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+              <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="java.security.cert.PKIX" replace="org.bouncycastle.jce.cert.PKIX" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+              <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="java.security.cert.(.*Selector)" replace="org.bouncycastle.jce.cert.\1" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+              <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="java.security.cert.CertPath" replace="org.bouncycastle.jce.cert.CertPath" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+              <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+
     </target>
 
     <target name="build" depends="init">

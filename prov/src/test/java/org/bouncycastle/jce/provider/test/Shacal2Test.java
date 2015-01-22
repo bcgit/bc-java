@@ -78,7 +78,7 @@ public class Shacal2Test
 
             if (!Arrays.areEqual(TEST_BYTES, cleartext))
             {
-                throw new AssertionError("Invalid cleartext.");
+                fail("Invalid cleartext.");
             }
         }
 
