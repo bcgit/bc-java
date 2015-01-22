@@ -493,7 +493,7 @@ public class TlsECCUtils
             for (int i = 0; i < namedCurves.length; ++i)
             {
                 int entry = namedCurves[i];
-                if (NamedCurve.isValid(entry) && TlsECCUtils.isSupportedNamedCurve(entry))
+                if (NamedCurve.isValid(entry) && isSupportedNamedCurve(entry))
                 {
                     namedCurve = entry;
                     break;
@@ -504,18 +504,18 @@ public class TlsECCUtils
         ECDomainParameters ecParams = null;
         if (namedCurve >= 0)
         {
-            ecParams = TlsECCUtils.getParametersForNamedCurve(namedCurve);
+            ecParams = getParametersForNamedCurve(namedCurve);
         }
         else
         {
             /* If no named curves are suitable, check if the client supports explicit curves. */
             if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
             {
-                ecParams = TlsECCUtils.getParametersForNamedCurve(NamedCurve.secp256r1);
+                ecParams = getParametersForNamedCurve(NamedCurve.secp256r1);
             }
             else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
             {
-                ecParams = TlsECCUtils.getParametersForNamedCurve(NamedCurve.sect283r1);
+                ecParams = getParametersForNamedCurve(NamedCurve.sect283r1);
             }
         }
 
@@ -530,11 +530,11 @@ public class TlsECCUtils
 
         if (namedCurve < 0)
         {
-            TlsECCUtils.writeExplicitECParameters(ecPointFormats, ecParams, output);
+            writeExplicitECParameters(ecPointFormats, ecParams, output);
         }
         else
         {
-            TlsECCUtils.writeNamedECParameters(namedCurve, output);
+            writeNamedECParameters(namedCurve, output);
         }
 
         return generateEphemeralClientKeyExchange(random, ecPointFormats, ecParams, output);
