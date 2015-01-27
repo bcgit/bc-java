@@ -76,7 +76,7 @@ public class PrivateKeyInfoFactory
                 params = new X962Parameters(ecP);
             }
 
-            return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(priv.getD(), params));
+            return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(priv.getD(), params, domainParams.getCurve().getOrder().toByteArray().length));
         }
         else
         {

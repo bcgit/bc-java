@@ -48,9 +48,19 @@ public class ECPrivateKey
     }
 
     public ECPrivateKey(
-        BigInteger key)
+        BigInteger key,
+        int orderLength)
     {
-        byte[] bytes = BigIntegers.asUnsignedByteArray(key);
+    	byte[] keyBytes = BigIntegers.asUnsignedByteArray(key);
+    	byte[] bytes;
+    	if (orderLength > 0)
+    	{
+    		bytes = new byte[orderLength];
+    		System.arraycopy(keyBytes, 0, bytes, 0, keyBytes.length);
+    	} else
+    	{
+    		bytes = keyBytes;
+    	}
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -62,17 +72,28 @@ public class ECPrivateKey
 
     public ECPrivateKey(
         BigInteger key,
-        ASN1Encodable parameters)
+        ASN1Encodable parameters,
+        int orderLength)
     {
-        this(key, null, parameters);
+        this(key, null, parameters, orderLength);
     }
 
     public ECPrivateKey(
         BigInteger key,
         DERBitString publicKey,
-        ASN1Encodable parameters)
+        ASN1Encodable parameters,
+        int orderLength)
     {
-        byte[] bytes = BigIntegers.asUnsignedByteArray(key);
+    	byte[] keyBytes = BigIntegers.asUnsignedByteArray(key);
+    	byte[] bytes;
+    	if (orderLength > 0)
+    	{
+    		bytes = new byte[orderLength];
+    		System.arraycopy(keyBytes, 0, bytes, 0, keyBytes.length);
+    	} else
+    	{
+    		bytes = keyBytes;
+    	}
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 

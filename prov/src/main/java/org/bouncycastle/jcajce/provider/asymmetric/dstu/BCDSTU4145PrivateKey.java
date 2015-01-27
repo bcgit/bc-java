@@ -312,14 +312,26 @@ public class BCDSTU4145PrivateKey
 
         PrivateKeyInfo info;
         org.bouncycastle.asn1.sec.ECPrivateKey keyStructure;
-
+        
+        /**
+         * RFC 5915 http://tools.ietf.org/html/rfc5915#page-3:
+         * privateKey is the private key.  It is an octet string of length
+         *     ceiling (log2(n)/8) (where n is the order of the curve) obtained
+         *     from the unsigned integer via the Integer-to-Octet-String-
+         *     Primitive (I2OSP) defined in [RFC3447].
+         */
+        int orderLength = 0;
+        if (ecSpec != null)
+        {
+        	orderLength = ecSpec.getOrder().toByteArray().length;
+        }
         if (publicKey != null)
         {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), publicKey, params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), publicKey, params, orderLength);
         }
         else
         {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), params, orderLength);
         }
 
         try
