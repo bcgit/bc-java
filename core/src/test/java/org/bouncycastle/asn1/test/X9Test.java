@@ -31,13 +31,15 @@ public class X9Test
                 "yUmqLG2UhT0OZgu/hUsclQX+laAh5///////////////9///+XXetBs6YFfDxDIUZSZVECAQED" +
                 "IAADG5xRI+Iki/JrvL20hoDUa7Cggzorv5B9yyqSMjYu");
 
-    private byte[] namedPriv = Base64.decode("MCICAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQEECDAGAgEBBAEK");
+    private byte[] namedPriv = Base64.decode("MD8CAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQEEJTAjAgEBB" +
+                "B4KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
     private byte[] expPriv = Base64.decode(
-                "MIHnAgEAMIHXBgcqhkjOPQIBMIHLAgEBMCkGByqGSM49AQECHn///////////////3///////4"
-              + "AAAAAAAH///////zBXBB5///////////////9///////+AAAAAAAB///////wEHiVXBfoqMGZU"
-              + "sfTLA9anUKMMJQEC1JiHF9m6FattPgMVAH1zdBaP/jRxtgqFdoahlHXTv6L/BB8DZ2iujhi7ks"
-              + "/PAFyUmqLG2UhT0OZgu/hUsclQX+laAh5///////////////9///+XXetBs6YFfDxDIUZSZVEC"
-              + "AQEECDAGAgEBBAEU");
+                "MIIBBAIBADCB1wYHKoZIzj0CATCBywIBATApBgcqhkjOPQEBAh5///////////////9///////" +
+                "+AAAAAAAB///////8wVwQef///////////////f///////gAAAAAAAf//////8BB4lVwX6KjBm" +
+                "VLH0ywPWp1CjDCUBAtSYhxfZuhWrbT4DFQB9c3QWj/40cbYKhXaGoZR107+i/wQfA2doro4Yu5" +
+                "LPzwBclJqixtlIU9DmYLv4VLHJUF/pWgIef///////////////f///l13rQbOmBXw8QyFGUmVR" +
+                "AgEBBCUwIwIBAQQeFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    
  
     private void encodePublicKey()
         throws Exception
@@ -114,7 +116,7 @@ public class X9Test
         //
         X962Parameters          params = new X962Parameters(X9ObjectIdentifiers.prime192v1);
 
-        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(BigInteger.valueOf(10)));
+        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(BigInteger.valueOf(10), ecP.getCurve().getOrder().toByteArray().length));
 
         if (!areEqual(info.getEncoded(), namedPriv))
         {
@@ -133,7 +135,7 @@ public class X9Test
         //
         params = new X962Parameters(ecP);
         
-        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(BigInteger.valueOf(20)));
+        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(BigInteger.valueOf(20), ecP.getCurve().getOrder().toByteArray().length));
 
         if (!areEqual(info.getEncoded(), expPriv))
         {
