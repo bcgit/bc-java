@@ -53,20 +53,36 @@ public class AttributeCertificateHolder
         holder = Holder.getInstance(seq);
     }
 
+    /**
+     * Create a holder using the baseCertificateID element.
+     *
+     * @param issuerName name of associated certificate's issuer.
+     * @param serialNumber serial number of associated certificate.
+     */
     public AttributeCertificateHolder(X500Name issuerName,
         BigInteger serialNumber)
     {
         holder = new Holder(new IssuerSerial(
-            new GeneralNames(new GeneralName(issuerName)),
+            generateGeneralNames(issuerName),
             new ASN1Integer(serialNumber)));
     }
 
+    /**
+     * Create a holder using the baseCertificateID option based on the passed in associated certificate,
+     *
+     * @param cert the certificate to be associated with this holder.
+     */
     public AttributeCertificateHolder(X509CertificateHolder cert)
     {
         holder = new Holder(new IssuerSerial(generateGeneralNames(cert.getIssuer()),
             new ASN1Integer(cert.getSerialNumber())));
     }
 
+    /**
+     * Create a holder using the entityName option based on the passed in principal.
+     *
+     * @param principal the entityName to be associated with the attribute certificate.
+     */
     public AttributeCertificateHolder(X500Name principal)
     {
         holder = new Holder(generateGeneralNames(principal));
