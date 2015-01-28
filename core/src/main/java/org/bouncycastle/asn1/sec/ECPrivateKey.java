@@ -47,10 +47,26 @@ public class ECPrivateKey
         return null;
     }
 
+    /**
+     * @deprecated use constructor which takes orderBitLength to guarantee correct encoding.
+     */
     public ECPrivateKey(
         BigInteger key)
     {
-        byte[] bytes = BigIntegers.asUnsignedByteArray(key);
+        this(key.bitLength(), key);
+    }
+
+    /**
+     * Base constructor.
+     *
+     * @param orderBitLength the bitLength of the order of the curve.
+     * @param key the private key value.
+     */
+    public ECPrivateKey(
+        int        orderBitLength,
+        BigInteger key)
+    {
+        byte[] bytes = BigIntegers.asUnsignedByteArray((orderBitLength + 7) / 8, key);
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -60,6 +76,9 @@ public class ECPrivateKey
         seq = new DERSequence(v);
     }
 
+    /**
+     * @deprecated use constructor which takes orderBitLength to guarantee correct encoding.
+     */
     public ECPrivateKey(
         BigInteger key,
         ASN1Encodable parameters)
@@ -67,12 +86,32 @@ public class ECPrivateKey
         this(key, null, parameters);
     }
 
+    /**
+     * @deprecated use constructor which takes orderBitLength to guarantee correct encoding.
+     */
     public ECPrivateKey(
         BigInteger key,
         DERBitString publicKey,
         ASN1Encodable parameters)
     {
-        byte[] bytes = BigIntegers.asUnsignedByteArray(key);
+        this(key.bitLength(), key, publicKey, parameters);
+    }
+
+    public ECPrivateKey(
+        int orderBitLength,
+        BigInteger key,
+        ASN1Encodable parameters)
+    {
+        this(orderBitLength, key, null, parameters);
+    }
+
+    public ECPrivateKey(
+        int orderBitLength,
+        BigInteger key,
+        DERBitString publicKey,
+        ASN1Encodable parameters)
+    {
+        byte[] bytes = BigIntegers.asUnsignedByteArray((orderBitLength + 7) / 8, key);
 
         ASN1EncodableVector v = new ASN1EncodableVector();
 
