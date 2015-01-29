@@ -31,7 +31,7 @@ public class PSKTlsServer
         return DHStandardGroups.rfc5114_1024_160;
     }
 
-    public int[] getCipherSuites()
+    protected int[] getCipherSuites()
     {
         return new int[]
         {
