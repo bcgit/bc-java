@@ -282,6 +282,7 @@ public class BCDSTU4145PrivateKey
     public byte[] getEncoded()
     {
         X962Parameters params;
+        int orderBitLength;
 
         if (ecSpec instanceof ECNamedCurveSpec)
         {
@@ -291,10 +292,12 @@ public class BCDSTU4145PrivateKey
                 curveOid = new ASN1ObjectIdentifier(((ECNamedCurveSpec)ecSpec).getName());
             }
             params = new X962Parameters(curveOid);
+            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder());
         }
         else if (ecSpec == null)
         {
             params = new X962Parameters(DERNull.INSTANCE);
+            orderBitLength = ECUtil.getOrderBitLength(null);
         }
         else
         {
@@ -308,6 +311,7 @@ public class BCDSTU4145PrivateKey
                 ecSpec.getCurve().getSeed());
 
             params = new X962Parameters(ecP);
+            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder());
         }
 
         PrivateKeyInfo info;
@@ -315,11 +319,11 @@ public class BCDSTU4145PrivateKey
 
         if (publicKey != null)
         {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), publicKey, params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getS(), publicKey, params);
         }
         else
         {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(this.getS(), params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getS(), params);
         }
 
         try
