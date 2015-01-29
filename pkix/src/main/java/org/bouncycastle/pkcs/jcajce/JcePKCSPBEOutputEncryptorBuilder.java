@@ -39,6 +39,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private ASN1ObjectIdentifier keyEncAlgorithm;
     private SecureRandom random;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
+    private int iterationCount = 1024;
 
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier algorithm)
     {
@@ -53,7 +54,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
             this.keyEncAlgorithm = algorithm;
         }
     }
-
+    
     public JcePKCSPBEOutputEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new ProviderJcaJceHelper(provider);
@@ -64,6 +65,13 @@ public class JcePKCSPBEOutputEncryptorBuilder
     public JcePKCSPBEOutputEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new NamedJcaJceHelper(providerName);
+
+        return this;
+    }
+    
+    public JcePKCSPBEOutputEncryptorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
 
         return this;
     }
@@ -96,7 +104,6 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
         final AlgorithmIdentifier encryptionAlg;
         final byte[] salt = new byte[20];
-        final int    iterationCount = 1024;
 
         random.nextBytes(salt);
 
