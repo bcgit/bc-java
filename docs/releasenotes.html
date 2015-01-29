@@ -31,6 +31,7 @@ Release 1.52
 <li>Email based policy constraints in CertPath validation did not include '@'domain.name as a possible match. This has been fixed.</li>
 <li>The Shacal2Engine would throw an ArrayIndexOutOfBoundsException if presented with input longer than a block size. This has been fixed.</li>
 <li>Using PKCS5/PKCS7 with pad values greater than 127 would result in an exception on decryption. This has been fixed.</li>
+<li>EC Private key values could encode to an OCTET STRING which was shorter than that described in RFC 5915/SEC 1. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
