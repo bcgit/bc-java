@@ -58,9 +58,4 @@ public class BcPKCS12MacCalculatorBuilder
 
         return PKCS12PBEUtils.createMacCalculator(algorithmIdentifier.getAlgorithm(), digest, new PKCS12PBEParams(salt, iterationCount), password);
     }
-    
-    public BcPKCS12MacCalculatorBuilder setIterationCount(int iterationCount) {
-        this.iterationCount = iterationCount;
-        return this;
-    }
 }
