@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
+import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -12,6 +13,7 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -212,6 +214,20 @@ public class ECUtil
         }
 
         throw new InvalidKeyException("can't identify EC private key.");
+    }
+
+    public static int getOrderBitLength(BigInteger order)
+    {
+        if (order == null)     // implicitly CA
+        {
+            ECParameterSpec implicitCA = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+
+            return implicitCA.getCurve().getOrder().bitLength();
+        }
+        else
+        {
+            return order.bitLength();
+        }
     }
 
     public static ASN1ObjectIdentifier getNamedCurveOid(
