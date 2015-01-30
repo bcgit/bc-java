@@ -294,12 +294,12 @@ public class BCECPrivateKey
             }
 
             params = new X962Parameters(curveOid);
-            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder());
+            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
         }
         else if (ecSpec == null)
         {
             params = new X962Parameters(DERNull.INSTANCE);
-            orderBitLength = ECUtil.getOrderBitLength(null);
+            orderBitLength = ECUtil.getOrderBitLength(null, this.getS());
         }
         else
         {
@@ -313,7 +313,7 @@ public class BCECPrivateKey
                 ecSpec.getCurve().getSeed());
 
             params = new X962Parameters(ecP);
-            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder());
+            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
         }
         
         PrivateKeyInfo          info;

@@ -70,10 +70,8 @@ public class CramerShoupCoreEngine
      * Return the maximum size for an input block to this engine. For Cramer
      * Shoup this is always one byte less than the key size on encryption, and
      * the same length as the key size on decryption.
-     *
-     * @return maximum size for an input block.
-     * <p/>
      * TODO: correct?
+     * @return maximum size for an input block.
      */
     public int getInputBlockSize()
     {
@@ -93,10 +91,8 @@ public class CramerShoupCoreEngine
      * Return the maximum size for an output block to this engine. For Cramer
      * Shoup this is always one byte less than the key size on decryption, and
      * the same length as the key size on encryption.
-     *
-     * @return maximum size for an output block.
-     * <p/>
      * TODO: correct?
+     * @return maximum size for an output block.
      */
     public int getOutputBlockSize()
     {
