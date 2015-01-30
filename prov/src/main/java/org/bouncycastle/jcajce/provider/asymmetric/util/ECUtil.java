@@ -216,13 +216,18 @@ public class ECUtil
         throw new InvalidKeyException("can't identify EC private key.");
     }
 
-    public static int getOrderBitLength(BigInteger order)
+    public static int getOrderBitLength(BigInteger order, BigInteger privateValue)
     {
         if (order == null)     // implicitly CA
         {
             ECParameterSpec implicitCA = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
 
-            return implicitCA.getCurve().getOrder().bitLength();
+            if (implicitCA == null)
+            {
+                return privateValue.bitLength();   // a guess but better than an exception!
+            }
+
+            return implicitCA.getN().bitLength();
         }
         else
         {

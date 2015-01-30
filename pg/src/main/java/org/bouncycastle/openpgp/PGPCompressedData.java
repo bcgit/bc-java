@@ -46,10 +46,10 @@ public class PGPCompressedData
 
     /**
      * Return the raw input stream contained in the object.
-     * <p/>
+     * <p>
      * Note that this stream is shared with the decompression stream, so consuming the returned
      * stream will affect decompression.
-     *
+     * </p>
      * @return the raw data in the compressed data packet.
      */
     public InputStream getInputStream()

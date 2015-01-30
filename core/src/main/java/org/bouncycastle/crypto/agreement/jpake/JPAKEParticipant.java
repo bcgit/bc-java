@@ -81,9 +81,10 @@ public class JPAKEParticipant
     /**
      * Shared secret.  This only contains the secret between construction
      * and the call to {@link #calculateKeyingMaterial()}.
-     * <p/>
+     * <p>
      * i.e. When {@link #calculateKeyingMaterial()} is called, this buffer overwritten with 0's,
      * and the field is set to null.
+     * </p>
      */
     private char[] password;
 

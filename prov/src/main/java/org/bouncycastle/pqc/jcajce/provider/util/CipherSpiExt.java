@@ -47,13 +47,13 @@ public abstract class CipherSpiExt
      * Before a cipher object is ready for data processing, it has to be
      * initialized according to the desired cryptographic operation, which is
      * specified by the <tt>opMode</tt> parameter.
-     * <p/>
+     * <p>
      * If this cipher (including its underlying mode or padding scheme) requires
      * any random bytes, it will obtain them from <tt>random</tt>.
-     * <p/>
+     * </p><p>
      * Note: If the mode needs an initialization vector, a blank array is used
      * in this case.
-     *
+     * </p>
      * @param opMode the operation mode ({@link #ENCRYPT_MODE} or
      *               {@link #DECRYPT_MODE})
      * @param key    the key
@@ -80,16 +80,16 @@ public abstract class CipherSpiExt
      * Initialize this cipher with a key, a set of algorithm parameters, and a
      * source of randomness. The cipher is initialized for encryption or
      * decryption, depending on the value of <tt>opMode</tt>.
-     * <p/>
+     * <p>
      * If this cipher (including its underlying mode or padding scheme) requires
      * any random bytes, it will obtain them from <tt>random</tt>. Note that
      * when a {@link BlockCipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
-     * <p/>
+     * </p><p>
      * Note: If the mode needs an initialization vector, a try to retrieve it
      * from the AlgorithmParametersSpec is made.
-     *
+     * </p>
      * @param opMode    the operation mode ({@link #ENCRYPT_MODE} or
      *                  {@link #DECRYPT_MODE})
      * @param key       the key
@@ -276,13 +276,13 @@ public abstract class CipherSpiExt
      * Return the length in bytes that an output buffer would need to be in
      * order to hold the result of the next update or doFinal operation, given
      * the input length inputLen (in bytes).
-     * <p/>
+     * <p>
      * This call takes into account any unprocessed (buffered) data from a
      * previous update call, and padding.
-     * <p/>
+     * </p><p>
      * The actual output length of the next update or doFinal call may be
      * smaller than the length returned by this method.
-     *
+     * </p>
      * @param inLen the input length (in bytes)
      * @return the required output buffer size (in bytes)
      */
@@ -293,14 +293,14 @@ public abstract class CipherSpiExt
 
     /**
      * Returns the parameters used with this cipher.
-     * <p/>
+     * <p>
      * The returned parameters may be the same that were used to initialize this
      * cipher, or may contain the default set of parameters or a set of randomly
      * generated parameters used by the underlying cipher implementation
      * (provided that the underlying cipher implementation uses a default set of
      * parameters or creates new parameters if it needs parameters but was not
      * initialized with any).
-     *
+     * </p>
      * @return the parameters used with this cipher, or null if this cipher does
      *         not use any parameters.
      */
@@ -379,7 +379,7 @@ public abstract class CipherSpiExt
     /**
      * Initialize this cipher with a key, a set of algorithm parameters, and a
      * source of randomness for encryption.
-     * <p/>
+     * </p><p>
      * If this cipher requires any algorithm parameters and paramSpec is null,
      * the underlying cipher implementation is supposed to generate the required
      * parameters itself (using provider-specific default or random values) if
@@ -387,11 +387,11 @@ public abstract class CipherSpiExt
      * InvalidAlgorithmParameterException if it is being initialized for
      * decryption. The generated parameters can be retrieved using
      * engineGetParameters or engineGetIV (if the parameter is an IV).
-     * <p/>
+     * </p><p>
      * If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
-     * <p/>
+     * </p><p>
      * Note that when a {@link BlockCipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
@@ -411,7 +411,7 @@ public abstract class CipherSpiExt
     /**
      * Initialize this cipher with a key, a set of algorithm parameters, and a
      * source of randomness for decryption.
-     * <p/>
+     * </p><p>
      * If this cipher requires any algorithm parameters and paramSpec is null,
      * the underlying cipher implementation is supposed to generate the required
      * parameters itself (using provider-specific default or random values) if
@@ -419,11 +419,11 @@ public abstract class CipherSpiExt
      * {@link InvalidAlgorithmParameterException} if it is being initialized for
      * decryption. The generated parameters can be retrieved using
      * engineGetParameters or engineGetIV (if the parameter is an IV).
-     * <p/>
+     * </p><p>
      * If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
-     * <p/>
+     * </p><p>
      * Note that when a {@link BlockCipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
@@ -455,10 +455,10 @@ public abstract class CipherSpiExt
      * Returns the length in bytes that an output buffer would need to be in
      * order to hold the result of the next update or doFinal operation, given
      * the input length inputLen (in bytes).
-     * <p/>
+     * </p><p>
      * This call takes into account any unprocessed (buffered) data from a
      * previous update call, and padding.
-     * <p/>
+     * </p><p>
      * The actual output length of the next update or doFinal call may be
      * smaller than the length returned by this method.
      *
@@ -479,7 +479,7 @@ public abstract class CipherSpiExt
 
     /**
      * Returns the parameters used with this cipher.
-     * <p/>
+     * </p><p>
      * The returned parameters may be the same that were used to initialize this
      * cipher, or may contain the default set of parameters or a set of randomly
      * generated parameters used by the underlying cipher implementation
