@@ -25,6 +25,7 @@ public class BcPKCS12PBEOutputEncryptorBuilder
     private BufferedBlockCipher engine;
     private ASN1ObjectIdentifier algorithm;
     private SecureRandom random;
+    private int iterationCount = 1024;
 
     public BcPKCS12PBEOutputEncryptorBuilder(ASN1ObjectIdentifier algorithm, BlockCipher engine)
     {
@@ -38,6 +39,12 @@ public class BcPKCS12PBEOutputEncryptorBuilder
         this.digest = pbeDigest;
     }
 
+    public BcPKCS12PBEOutputEncryptorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
+        return this;
+    }
+
     public OutputEncryptor build(final char[] password)
     {
         if (random == null)
@@ -46,7 +53,6 @@ public class BcPKCS12PBEOutputEncryptorBuilder
         }
 
         final byte[] salt = new byte[20];
-        final int    iterationCount = 1024;
 
         random.nextBytes(salt);
 
