@@ -39,6 +39,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private ASN1ObjectIdentifier keyEncAlgorithm;
     private SecureRandom random;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
+    private int iterationCount = 1024;
 
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier algorithm)
     {
@@ -83,6 +84,19 @@ public class JcePKCSPBEOutputEncryptorBuilder
         return this;
     }
 
+    /**
+     * Set the iteration count for the PBE calculation.
+     *
+     * @param iterationCount the iteration count to apply to the key creation.
+     * @return the current builder.
+     */
+    public JcePKCSPBEOutputEncryptorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
+
+        return this;
+    }
+
     public OutputEncryptor build(final char[] password)
         throws OperatorCreationException
     {
@@ -96,7 +110,6 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
         final AlgorithmIdentifier encryptionAlg;
         final byte[] salt = new byte[20];
-        final int    iterationCount = 1024;
 
         random.nextBytes(salt);
 
