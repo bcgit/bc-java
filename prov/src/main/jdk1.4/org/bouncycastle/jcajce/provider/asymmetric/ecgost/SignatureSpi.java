@@ -59,14 +59,7 @@ public class SignatureSpi
 
                 publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
 
-                if (publicKey instanceof ECPublicKey)
-                {
-                    param = ECUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in DSA based signer");
-                }
+                param = ECUtil.generatePublicKeyParameter(publicKey);
             }
             catch (Exception e)
             {

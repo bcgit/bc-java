@@ -43,8 +43,6 @@ import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
-import org.bouncycastle.jce.interfaces.ECPrivateKey;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
@@ -284,7 +282,7 @@ public class IESCipher
         // Parse the recipient's key
         if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof ECPublicKey)
+            if (key instanceof PublicKey)
             {
                 this.key = ECUtil.generatePublicKeyParameter((PublicKey)key);
             }
@@ -302,7 +300,7 @@ public class IESCipher
         }
         else if (opmode == Cipher.DECRYPT_MODE || opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof ECPrivateKey)
+            if (key instanceof PrivateKey)
             {
                 this.key = ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             }
