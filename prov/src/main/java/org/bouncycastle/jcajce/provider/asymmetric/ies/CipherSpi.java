@@ -13,6 +13,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.interfaces.DHPrivateKey;
+import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -183,15 +184,16 @@ public class CipherSpi
         CipherParameters pubKey;
         CipherParameters privKey;
 
-        if (ieKey.getPublic() instanceof ECPublicKey)
-        {
-            pubKey = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
-            privKey = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
-        }
-        else
+        if (ieKey.getPublic() instanceof DHPublicKey)
         {
             pubKey = DHUtil.generatePublicKeyParameter(ieKey.getPublic());
             privKey = DHUtil.generatePrivateKeyParameter(ieKey.getPrivate());
+
+        }
+        else
+        {
+            pubKey = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+            privKey = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
         }
 
         this.engineParams = (IESParameterSpec)params;

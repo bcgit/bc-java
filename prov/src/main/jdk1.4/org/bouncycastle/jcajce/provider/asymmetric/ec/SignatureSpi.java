@@ -86,14 +86,7 @@ public class SignatureSpi
     {
         CipherParameters param;
 
-        if (privateKey instanceof ECKey)
-        {
-            param = ECUtil.generatePrivateKeyParameter(privateKey);
-        }
-        else
-        {
-            throw new InvalidKeyException("can't recognise key type in ECDSA based signer");
-        }
+        param = ECUtil.generatePrivateKeyParameter(privateKey);
 
         digest.reset();
 
