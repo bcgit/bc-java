@@ -137,7 +137,9 @@ public class RegressionTest
         new KDFCounterGeneratorTest(),
         new KDFDoublePipelineIteratorGeneratorTest(),
         new KDFFeedbackGeneratorTest(),
-        new CramerShoupTest()
+        new CramerShoupTest(),
+        new BCryptTest(),
+        new OpenBSDBCryptTest()
     };
 
     public static void main(
