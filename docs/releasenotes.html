@@ -33,11 +33,13 @@ Release 1.52
 <li>Using PKCS5/PKCS7 with pad values greater than 127 would result in an exception on decryption. This has been fixed.</li>
 <li>EC Private key values could encode to an OCTET STRING which was shorter than that described in RFC 5915/SEC 1. This has been fixed.</li>
 </ul>
-<h3>2.2.3 Additional Features and Functionality</h3>
+<h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>The CMP support class CMPCertificate restricted the types of certificates that could be added. A more flexible method has been introduced to allow for other certificate types.</li>
 <li>Work has been done to reduce computation requirements for long skips associated with implementations of the SkippingCipher interface.</li>
 <li>AES GCM mode is now supported by CMS EnvelopedData.</li>
+<li>Iteration count is now settable in BcPKCS12MacCalculatorBuilder.</li>
+<li>Support for BCrypt and it's OpenBSD variant has been added to the lightweight API.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
