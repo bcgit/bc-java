@@ -49,6 +49,65 @@ public class BlowfishTest
         return "Blowfish";
     }
 
+    public void performTest()
+        throws Exception
+    {
+        super.performTest();
+
+        testPasswordLengths();
+    }
+
+    private void testPasswordLengths()
+    {
+        BlowfishEngine engine = new BlowfishEngine();
+
+        // 4 byte (32 bit) key is OK
+        engine.init(true, new KeyParameter(new byte[4]));
+
+        // < 4 bytes not OK
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[3]));
+            fail("< 32 bit key should be disallowed");
+        }
+        catch (IllegalArgumentException e)
+        {
+        }
+
+        // 56 byte (448 bit) OK
+        engine.init(true, new KeyParameter(new byte[56]));
+
+        // > 56 bytes not OK
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[57]));
+            fail("> 448");
+        }
+        catch (IllegalArgumentException e)
+        {
+        }
+
+        // Check unrestricted key size version doesn't care
+        engine = BlowfishEngine.uncheckedKeySize();
+
+        // < 4 byte is OK
+        engine.init(true, new KeyParameter(new byte[4]));
+
+        // 0 byte key is never OK
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[0]));
+            fail("0 bit key should be disallowed");
+        }
+        catch (IllegalArgumentException e)
+        {
+        }
+
+        // > 56 bytes is OK
+        engine.init(true, new KeyParameter(new byte[57]));
+
+    }
+
     public static void main(
         String[]    args)
     {
