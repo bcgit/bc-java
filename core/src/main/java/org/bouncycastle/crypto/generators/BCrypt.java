@@ -586,7 +586,7 @@ public final class BCrypt
         Arrays.fill(salt32Bit2, 0);
 
         int rounds = 1 << cost;
-        for (int i = 0; i < rounds; i++)
+        for (int i = 0; i != rounds; i++)        // rounds may be negative if cost is 31
         {
             // state <- ExpandKey(state, 0, key);
             cyclicXorKey(psw);
@@ -598,6 +598,7 @@ public final class BCrypt
             processTable(0, 0, P);
             processTable(P[P_SZ - 2], P[P_SZ - 1], S);
         }
+
         // encrypt magicString 64 times
         return encryptMagicString();
     }
