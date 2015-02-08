@@ -229,26 +229,57 @@ public abstract class ECCurve
      */
     public void normalizeAll(ECPoint[] points)
     {
-        checkPoints(points);
+        normalizeAll(points, 0, points.length, null);
+    }
 
-        if (this.getCoordinateSystem() == ECCurve.COORD_AFFINE)
+    /**
+     * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+     * coordinates reflect those of the equivalent point in an affine coordinate system. Where more
+     * than one point is to be normalized, this method will generally be more efficient than
+     * normalizing each point separately. An (optional) z-scaling factor can be applied; effectively
+     * each z coordinate is scaled by this value prior to normalization (but only one
+     * actual multiplication is needed).
+     * 
+     * @param points
+     *            An array of points that will be updated in place with their normalized versions,
+     *            where necessary
+     * @param off
+     *            The start of the range of points to normalize
+     * @param len
+     *            The length of the range of points to normalize
+     * @param iso
+     *            The (optional) z-scaling factor - can be null
+     */
+    public void normalizeAll(ECPoint[] points, int off, int len, ECFieldElement iso)
+    {
+        checkPoints(points, off, len);
+
+        switch (this.getCoordinateSystem())
         {
+        case ECCurve.COORD_AFFINE:
+        case ECCurve.COORD_LAMBDA_AFFINE:
+        {
+            if (iso != null)
+            {
+                throw new IllegalArgumentException("'iso' not valid for affine coordinates");
+            }
             return;
+        }
         }
 
         /*
          * Figure out which of the points actually need to be normalized
          */
-        ECFieldElement[] zs = new ECFieldElement[points.length];
-        int[] indices = new int[points.length];
+        ECFieldElement[] zs = new ECFieldElement[len];
+        int[] indices = new int[len];
         int count = 0;
-        for (int i = 0; i < points.length; ++i)
+        for (int i = 0; i < len; ++i)
         {
-            ECPoint p = points[i];
-            if (null != p && !p.isNormalized())
+            ECPoint p = points[off + i];
+            if (null != p && (iso != null || !p.isNormalized()))
             {
                 zs[count] = p.getZCoord(0);
-                indices[count++] = i;
+                indices[count++] = off + i;
             }
         }
 
@@ -257,7 +288,7 @@ public abstract class ECCurve
             return;
         }
 
-        ECAlgorithms.montgomeryTrick(zs, 0, count);
+        ECAlgorithms.montgomeryTrick(zs, 0, count, iso);
 
         for (int j = 0; j < count; ++j)
         {
@@ -414,14 +445,23 @@ public abstract class ECCurve
 
     protected void checkPoints(ECPoint[] points)
     {
+        checkPoints(points, 0, points.length);
+    }
+
+    protected void checkPoints(ECPoint[] points, int off, int len)
+    {
         if (points == null)
         {
             throw new IllegalArgumentException("'points' cannot be null");
         }
-
-        for (int i = 0; i < points.length; ++i)
+        if (off < 0 || len < 0 || (off > (points.length - len)))
         {
-            ECPoint point = points[i];
+            throw new IllegalArgumentException("invalid range specified for 'points'");
+        }
+
+        for (int i = 0; i < len; ++i)
+        {
+            ECPoint point = points[off + i];
             if (null != point && this != point.getCurve())
             {
                 throw new IllegalArgumentException("'points' entries must be null or on this curve");
