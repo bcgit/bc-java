@@ -375,7 +375,7 @@ public class CTRSP800DRBG
 
         _engine.init(true, new KeyParameter(expandKey(_Key)));
 
-        for (int i = 0; i < output.length / out.length; i++)
+        for (int i = 0; i <= output.length / out.length; i++)
         {
             addOneTo(_V);
 
