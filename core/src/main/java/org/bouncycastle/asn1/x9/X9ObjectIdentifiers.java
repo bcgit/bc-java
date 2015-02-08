@@ -63,78 +63,78 @@ public interface X9ObjectIdentifiers
     /**
      * Named curves base
      * <p>
-     * OID: 1.2.840.10045.1
+     * OID: 1.2.840.10045.3
      */
     static final ASN1ObjectIdentifier ellipticCurve = ansi_X9_62.branch("3");
 
     /**
      * Two Curves
      * <p>
-     * OID: 1.2.840.10045.1.0
+     * OID: 1.2.840.10045.3.0
      */
     static final ASN1ObjectIdentifier  cTwoCurve = ellipticCurve.branch("0");
 
-    /** Two Curve c2pnb163v1, OID: 1.2.840.10045.1.0.1 */
+    /** Two Curve c2pnb163v1, OID: 1.2.840.10045.3.0.1 */
     static final ASN1ObjectIdentifier c2pnb163v1 = cTwoCurve.branch("1");
-    /** Two Curve c2pnb163v2, OID: 1.2.840.10045.1.0.2 */
+    /** Two Curve c2pnb163v2, OID: 1.2.840.10045.3.0.2 */
     static final ASN1ObjectIdentifier c2pnb163v2 = cTwoCurve.branch("2");
-    /** Two Curve c2pnb163v3, OID: 1.2.840.10045.1.0.3 */
+    /** Two Curve c2pnb163v3, OID: 1.2.840.10045.3.0.3 */
     static final ASN1ObjectIdentifier c2pnb163v3 = cTwoCurve.branch("3");
-    /** Two Curve c2pnb176w1, OID: 1.2.840.10045.1.0.4 */
+    /** Two Curve c2pnb176w1, OID: 1.2.840.10045.3.0.4 */
     static final ASN1ObjectIdentifier c2pnb176w1 = cTwoCurve.branch("4");
-    /** Two Curve c2tnb191v1, OID: 1.2.840.10045.1.0.5 */
+    /** Two Curve c2tnb191v1, OID: 1.2.840.10045.3.0.5 */
     static final ASN1ObjectIdentifier c2tnb191v1 = cTwoCurve.branch("5");
-    /** Two Curve c2tnb191v2, OID: 1.2.840.10045.1.0.6 */
+    /** Two Curve c2tnb191v2, OID: 1.2.840.10045.3.0.6 */
     static final ASN1ObjectIdentifier c2tnb191v2 = cTwoCurve.branch("6");
-    /** Two Curve c2tnb191v3, OID: 1.2.840.10045.1.0.7 */
+    /** Two Curve c2tnb191v3, OID: 1.2.840.10045.3.0.7 */
     static final ASN1ObjectIdentifier c2tnb191v3 = cTwoCurve.branch("7");
-    /** Two Curve c2onb191v4, OID: 1.2.840.10045.1.0.8 */
+    /** Two Curve c2onb191v4, OID: 1.2.840.10045.3.0.8 */
     static final ASN1ObjectIdentifier c2onb191v4 = cTwoCurve.branch("8");
-    /** Two Curve c2onb191v5, OID: 1.2.840.10045.1.0.9 */
+    /** Two Curve c2onb191v5, OID: 1.2.840.10045.3.0.9 */
     static final ASN1ObjectIdentifier c2onb191v5 = cTwoCurve.branch("9");
-    /** Two Curve c2pnb208w1, OID: 1.2.840.10045.1.0.10 */
+    /** Two Curve c2pnb208w1, OID: 1.2.840.10045.3.0.10 */
     static final ASN1ObjectIdentifier c2pnb208w1 = cTwoCurve.branch("10");
-    /** Two Curve c2tnb239v1, OID: 1.2.840.10045.1.0.11 */
+    /** Two Curve c2tnb239v1, OID: 1.2.840.10045.3.0.11 */
     static final ASN1ObjectIdentifier c2tnb239v1 = cTwoCurve.branch("11");
-    /** Two Curve c2tnb239v2, OID: 1.2.840.10045.1.0.12 */
+    /** Two Curve c2tnb239v2, OID: 1.2.840.10045.3.0.12 */
     static final ASN1ObjectIdentifier c2tnb239v2 = cTwoCurve.branch("12");
-    /** Two Curve c2tnb239v3, OID: 1.2.840.10045.1.0.13 */
+    /** Two Curve c2tnb239v3, OID: 1.2.840.10045.3.0.13 */
     static final ASN1ObjectIdentifier c2tnb239v3 = cTwoCurve.branch("13");
-    /** Two Curve c2onb239v4, OID: 1.2.840.10045.1.0.14 */
+    /** Two Curve c2onb239v4, OID: 1.2.840.10045.3.0.14 */
     static final ASN1ObjectIdentifier c2onb239v4 = cTwoCurve.branch("14");
-    /** Two Curve c2onb239v5, OID: 1.2.840.10045.1.0.15 */
+    /** Two Curve c2onb239v5, OID: 1.2.840.10045.3.0.15 */
     static final ASN1ObjectIdentifier c2onb239v5 = cTwoCurve.branch("15");
-    /** Two Curve c2pnb272w1, OID: 1.2.840.10045.1.0.16 */
+    /** Two Curve c2pnb272w1, OID: 1.2.840.10045.3.0.16 */
     static final ASN1ObjectIdentifier c2pnb272w1 = cTwoCurve.branch("16");
-    /** Two Curve c2pnb304w1, OID: 1.2.840.10045.1.0.17 */
+    /** Two Curve c2pnb304w1, OID: 1.2.840.10045.3.0.17 */
     static final ASN1ObjectIdentifier c2pnb304w1 = cTwoCurve.branch("17");
-    /** Two Curve c2tnb359v1, OID: 1.2.840.10045.1.0.18 */
+    /** Two Curve c2tnb359v1, OID: 1.2.840.10045.3.0.18 */
     static final ASN1ObjectIdentifier c2tnb359v1 = cTwoCurve.branch("18");
-    /** Two Curve c2pnb368w1, OID: 1.2.840.10045.1.0.19 */
+    /** Two Curve c2pnb368w1, OID: 1.2.840.10045.3.0.19 */
     static final ASN1ObjectIdentifier c2pnb368w1 = cTwoCurve.branch("19");
-    /** Two Curve c2tnb431r1, OID: 1.2.840.10045.1.0.20 */
+    /** Two Curve c2tnb431r1, OID: 1.2.840.10045.3.0.20 */
     static final ASN1ObjectIdentifier c2tnb431r1 = cTwoCurve.branch("20");
 
     /**
      * Prime Curves
      * <p>
-     * OID: 1.2.840.10045.1.1
+     * OID: 1.2.840.10045.3.1
      */
     static final ASN1ObjectIdentifier primeCurve = ellipticCurve.branch("1");
 
-    /** Prime Curve prime192v1, OID: 1.2.840.10045.1.1.1 */
+    /** Prime Curve prime192v1, OID: 1.2.840.10045.3.1.1 */
     static final ASN1ObjectIdentifier prime192v1 = primeCurve.branch("1");
-    /** Prime Curve prime192v2, OID: 1.2.840.10045.1.1.2 */
+    /** Prime Curve prime192v2, OID: 1.2.840.10045.3.1.2 */
     static final ASN1ObjectIdentifier prime192v2 = primeCurve.branch("2");
-    /** Prime Curve prime192v3, OID: 1.2.840.10045.1.1.3 */
+    /** Prime Curve prime192v3, OID: 1.2.840.10045.3.1.3 */
     static final ASN1ObjectIdentifier prime192v3 = primeCurve.branch("3");
-    /** Prime Curve prime239v1, OID: 1.2.840.10045.1.1.4 */
+    /** Prime Curve prime239v1, OID: 1.2.840.10045.3.1.4 */
     static final ASN1ObjectIdentifier prime239v1 = primeCurve.branch("4");
-    /** Prime Curve prime239v2, OID: 1.2.840.10045.1.1.5 */
+    /** Prime Curve prime239v2, OID: 1.2.840.10045.3.1.5 */
     static final ASN1ObjectIdentifier prime239v2 = primeCurve.branch("5");
-    /** Prime Curve prime239v3, OID: 1.2.840.10045.1.1.6 */
+    /** Prime Curve prime239v3, OID: 1.2.840.10045.3.1.6 */
     static final ASN1ObjectIdentifier prime239v3 = primeCurve.branch("6");
-    /** Prime Curve prime256v1, OID: 1.2.840.10045.1.1.7 */
+    /** Prime Curve prime256v1, OID: 1.2.840.10045.3.1.7 */
     static final ASN1ObjectIdentifier prime256v1 = primeCurve.branch("7");
 
     /**
