@@ -377,15 +377,18 @@ public class CTRSP800DRBG
 
         for (int i = 0; i <= output.length / out.length; i++)
         {
-            addOneTo(_V);
-
-            _engine.processBlock(_V, 0, out, 0);
-
             int bytesToCopy = ((output.length - i * out.length) > out.length)
                     ? out.length
                     : (output.length - i * _V.length);
 
-            System.arraycopy(out, 0, output, i * out.length, bytesToCopy);
+            if (bytesToCopy != 0)
+            {
+                addOneTo(_V);
+
+                _engine.processBlock(_V, 0, out, 0);
+
+                System.arraycopy(out, 0, output, i * out.length, bytesToCopy);
+            }
         }
 
         CTR_DRBG_Update(additionalInput, _Key, _V);
