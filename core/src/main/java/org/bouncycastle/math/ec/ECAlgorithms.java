@@ -124,6 +124,11 @@ public class ECAlgorithms
 
     public static void montgomeryTrick(ECFieldElement[] zs, int off, int len)
     {
+        montgomeryTrick(zs, off, len, null);
+    }
+
+    public static void montgomeryTrick(ECFieldElement[] zs, int off, int len, ECFieldElement scale)
+    {
         /*
          * Uses the "Montgomery Trick" to invert many field elements, with only a single actual
          * field inversion. See e.g. the paper:
@@ -140,7 +145,14 @@ public class ECAlgorithms
             c[i] = c[i - 1].multiply(zs[off + i]);
         }
 
-        ECFieldElement u = c[--i].invert();
+        --i;
+
+        if (scale != null)
+        {
+            c[i] = c[i].multiply(scale);
+        }
+
+        ECFieldElement u = c[i].invert();
 
         while (i > 0)
         {
