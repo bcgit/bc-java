@@ -381,7 +381,7 @@ public class CMSSignedData
                     for  (Iterator cIt = counterSigners.iterator(); cIt.hasNext();)
                     {
                         SignerInformation counterSigner = (SignerInformation)cIt.next();
-                        SignerInformationVerifier counterVerifier = verifierProvider.get(signer.getSID());
+                        SignerInformationVerifier counterVerifier = verifierProvider.get(counterSigner.getSID());
 
                         if (!counterSigner.verify(counterVerifier))
                         {
