@@ -310,7 +310,7 @@ public class SignedMailValidator
                 {
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
                         "SignedMailValidator.noSigningTime");
-                    errors.add(msg);
+                    notifications.add(msg);
                     signTime = new Date();
                 }
                 else
