@@ -519,7 +519,14 @@ public class NewSignedDataTest
     }
 
     public static void main(String args[])
+        throws Exception
     {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        init();
 
         junit.textui.TestRunner.run(NewSignedDataTest.class);
     }
@@ -1294,7 +1301,7 @@ public class NewSignedDataTest
 
         SignerInformationStore counterSigners = gen.generateCounterSigners(origSigner);
 
-        SignerInformation signer1 = SignerInformation.addCounterSigners(origSigner, counterSigners);
+        final SignerInformation signer1 = SignerInformation.addCounterSigners(origSigner, counterSigners);
 
         List signers = new ArrayList();
 
@@ -1316,15 +1323,19 @@ public class NewSignedDataTest
                 {
                     return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert);
                 }
-                else
+                else if (_origCert.getSerialNumber().equals(signerId.getSerialNumber()))
                 {
                     return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origCert);
+                }
+                else
+                {
+                    throw new IllegalStateException("no signerID matched");
                 }
             }
         };
 
         // verify sig and counter sig.
-        assertFalse(s.verifySignatures(vProv, false));
+        assertTrue(s.verifySignatures(vProv, false));
     }
 
     private void rsaPSSTest(String signatureAlgorithmName)
