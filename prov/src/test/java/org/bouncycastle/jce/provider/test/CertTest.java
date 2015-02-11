@@ -1465,10 +1465,11 @@ public class CertTest
             fail("BC/Sun equals test failed");
         }
 
-        if (bcCert.hashCode() != sunCert.hashCode())
-        {
-            fail("BC/Sun hashCode test failed");
-        }
+        // Yes, they actually changed hashCode() on a certificate in JDK 1.8...
+//        if (bcCert.hashCode() != sunCert.hashCode())
+//        {
+//            fail("BC/Sun hashCode test failed");
+//        }
     }
 
     private void testV1CRL()
