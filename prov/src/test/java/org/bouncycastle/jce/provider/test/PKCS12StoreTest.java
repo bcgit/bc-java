@@ -35,7 +35,7 @@ import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.SafeBag;
-import org.bouncycastle.jcajce.provider.config.PKCS12StoreParameter;
+import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -660,6 +660,34 @@ public class PKCS12StoreTest
         }
 
         ASN1Encodable outer = new ASN1StreamParser(data).readObject();
+        if (!(outer instanceof DERSequenceParser))
+        {
+            fail("Failed DER encoding test.");
+        }
+
+
+        //
+        // save test using LoadStoreParameter  - old version
+        //
+        bOut = new ByteArrayOutputStream();
+
+        storeParam = new org.bouncycastle.jcajce.provider.config.PKCS12StoreParameter(bOut, passwd, true);
+
+        store.store(storeParam);
+
+        data = bOut.toByteArray();
+
+        stream = new ByteArrayInputStream(data);
+        store.load(stream, passwd);
+
+        key = (PrivateKey)store.getKey(pName, null);
+
+        if (!((RSAPrivateKey)key).getModulus().equals(mod))
+        {
+            fail("Modulus doesn't match.");
+        }
+
+        outer = new ASN1StreamParser(data).readObject();
         if (!(outer instanceof DERSequenceParser))
         {
             fail("Failed DER encoding test.");
