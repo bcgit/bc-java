@@ -108,7 +108,7 @@ public final class RC5
 
             try
             {
-                params = AlgorithmParameters.getInstance("RC5", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("RC5");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

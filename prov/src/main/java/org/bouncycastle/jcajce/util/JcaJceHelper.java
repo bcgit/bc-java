@@ -58,5 +58,5 @@ public interface JcaJceHelper
         throws NoSuchAlgorithmException, NoSuchProviderException;
 
     CertificateFactory createCertificateFactory(String algorithm)
-        throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException;
+        throws NoSuchProviderException, CertificateException;
 }

@@ -25,7 +25,11 @@ import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
-import org.bouncycastle.crypto.modes.*;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.CCMBlockCipher;
+import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
@@ -36,7 +40,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Integers;
 
 public final class AES
@@ -357,7 +360,7 @@ public final class AES
 
             try
             {
-                params = AlgorithmParameters.getInstance("AES", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("AES");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)
@@ -395,7 +398,7 @@ public final class AES
 
             try
             {
-                params = AlgorithmParameters.getInstance("CCM", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("CCM");
                 params.init(new CCMParameters(iv, 12).getEncoded());
             }
             catch (Exception e)
@@ -433,7 +436,7 @@ public final class AES
 
             try
             {
-                params = AlgorithmParameters.getInstance("GCM", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("GCM");
                 params.init(new GCMParameters(nonce, 12).getEncoded());
             }
             catch (Exception e)

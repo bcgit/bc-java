@@ -60,6 +60,8 @@ import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class BaseBlockCipher
     extends BaseWrapCipher
@@ -184,7 +186,7 @@ public class BaseBlockCipher
             {
                 try
                 {
-                    engineParams = AlgorithmParameters.getInstance(pbeAlgorithm, BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams = createParametersInstance(pbeAlgorithm);
                     engineParams.init(pbeSpec);
                 }
                 catch (Exception e)
@@ -203,7 +205,7 @@ public class BaseBlockCipher
 
                 try
                 {
-                    engineParams = AlgorithmParameters.getInstance(name, BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams = createParametersInstance(name);
                     engineParams.init(ivParam.getIV());
                 }
                 catch (Exception e)
@@ -215,7 +217,7 @@ public class BaseBlockCipher
             {
                 try
                 {
-                    engineParams = AlgorithmParameters.getInstance("GCM", BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams = createParametersInstance("GCM");
                     engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize()).getEncoded());
                 }
                 catch (Exception e)

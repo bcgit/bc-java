@@ -81,7 +81,7 @@ public final class CAST5
 
             try
             {
-                params = AlgorithmParameters.getInstance("CAST5", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("CAST5");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

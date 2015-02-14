@@ -14,8 +14,10 @@ import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -46,6 +48,8 @@ import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.crypto.io.MacInputStream;
 import org.bouncycastle.crypto.io.MacOutputStream;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -87,6 +91,8 @@ public class BcKeyStoreSpi
     protected SecureRandom    random = new SecureRandom();
 
     protected int              version;
+
+    private final JcaJceHelper helper = new BCJcaJceHelper();
 
     public BcKeyStoreSpi(int version)
     {
@@ -361,7 +367,7 @@ public class BcKeyStoreSpi
 
         try
         {
-            CertificateFactory cFact = CertificateFactory.getInstance(type, BouncyCastleProvider.PROVIDER_NAME);
+            CertificateFactory cFact = helper.createCertificateFactory(type);
             ByteArrayInputStream bIn = new ByteArrayInputStream(cEnc);
 
             return cFact.generateCertificate(bIn);
@@ -436,11 +442,11 @@ public class BcKeyStoreSpi
             switch (keyType)
             {
             case KEY_PRIVATE:
-                return KeyFactory.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME).generatePrivate(spec);
+                return helper.createKeyFactory(algorithm).generatePrivate(spec);
             case KEY_PUBLIC:
-                return KeyFactory.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME).generatePublic(spec);
+                return  helper.createKeyFactory(algorithm).generatePublic(spec);
             case KEY_SECRET:
-                return SecretKeyFactory.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME).generateSecret(spec);
+                return  helper.createSecretKeyFactory(algorithm).generateSecret(spec);
             default:
                 throw new IOException("Key type " + keyType + " not recognised!");
             }
@@ -462,10 +468,10 @@ public class BcKeyStoreSpi
         try
         {
             PBEKeySpec          pbeSpec = new PBEKeySpec(password);
-            SecretKeyFactory    keyFact = SecretKeyFactory.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME);
+            SecretKeyFactory    keyFact = helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec    defParams = new PBEParameterSpec(salt, iterationCount);
 
-            Cipher cipher = Cipher.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME);
+            Cipher cipher = helper.createCipher(algorithm);
 
             cipher.init(mode, keyFact.generateSecret(pbeSpec), defParams);
 
@@ -1038,6 +1044,18 @@ public class BcKeyStoreSpi
             cOut.write(dig);
     
             cOut.close();
+        }
+    }
+
+    static Provider getBouncyCastleProvider()
+    {
+        if (Security.getProvider("BC") != null)
+        {
+            return Security.getProvider("BC");
+        }
+        else
+        {
+            return new BouncyCastleProvider();
         }
     }
 

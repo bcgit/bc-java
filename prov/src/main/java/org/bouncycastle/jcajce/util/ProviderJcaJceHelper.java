@@ -99,7 +99,7 @@ public class ProviderJcaJceHelper
     }
 
     public CertificateFactory createCertificateFactory(String algorithm)
-        throws NoSuchAlgorithmException, CertificateException
+        throws CertificateException
     {
         return CertificateFactory.getInstance(algorithm, provider);
     }

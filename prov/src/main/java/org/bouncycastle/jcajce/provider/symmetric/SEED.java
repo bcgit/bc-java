@@ -24,7 +24,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class SEED
 {
@@ -127,7 +126,7 @@ public final class SEED
 
             try
             {
-                params = AlgorithmParameters.getInstance("SEED", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("SEED");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

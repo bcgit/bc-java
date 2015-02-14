@@ -136,7 +136,7 @@ public final class RC6
 
             try
             {
-                params = AlgorithmParameters.getInstance("RC6", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("RC6");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

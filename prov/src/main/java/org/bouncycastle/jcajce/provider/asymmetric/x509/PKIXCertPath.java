@@ -34,7 +34,8 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.SignedData;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -45,6 +46,8 @@ import org.bouncycastle.util.io.pem.PemWriter;
 public  class PKIXCertPath
     extends CertPath
 {
+    private final JcaJceHelper helper = new BCJcaJceHelper();
+
     static final List certPathEncodings;
 
     static
@@ -180,7 +183,7 @@ public  class PKIXCertPath
                 }
                 Enumeration e = ((ASN1Sequence)derObject).getObjects();
                 certificates = new ArrayList();
-                CertificateFactory certFactory = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
+                CertificateFactory certFactory = helper.createCertificateFactory("X.509");
                 while (e.hasMoreElements())
                 {
                     ASN1Encodable element = (ASN1Encodable)e.nextElement();
@@ -193,7 +196,7 @@ public  class PKIXCertPath
             {
                 inStream = new BufferedInputStream(inStream);
                 certificates = new ArrayList();
-                CertificateFactory certFactory= CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
+                CertificateFactory certFactory= helper.createCertificateFactory("X.509");
                 Certificate cert;
                 while ((cert = certFactory.generateCertificate(inStream)) != null)
                 {
@@ -213,7 +216,7 @@ public  class PKIXCertPath
         {
             throw new CertificateException("BouncyCastle provider not found while trying to get a CertificateFactory:\n" + ex.toString());
         }
-        
+
         this.certificates = sortCerts(certificates);
     }
     

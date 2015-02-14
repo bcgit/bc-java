@@ -5,6 +5,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -85,7 +86,7 @@ public class BaseStreamCipher
             {
                 try
                 {
-                    AlgorithmParameters engineParams = AlgorithmParameters.getInstance(pbeAlgorithm, BouncyCastleProvider.PROVIDER_NAME);
+                    AlgorithmParameters engineParams = createParametersInstance(pbeAlgorithm);
                     engineParams.init(pbeSpec);
 
                     return engineParams;

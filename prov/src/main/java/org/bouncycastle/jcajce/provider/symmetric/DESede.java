@@ -31,7 +31,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class DESede
 {
@@ -267,7 +266,7 @@ public final class DESede
 
             try
             {
-                params = AlgorithmParameters.getInstance("DES", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("DES");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

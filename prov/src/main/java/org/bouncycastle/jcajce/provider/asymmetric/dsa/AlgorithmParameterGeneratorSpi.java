@@ -11,10 +11,10 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
 import org.bouncycastle.crypto.params.DSAParameterGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAlgorithmParameterGeneratorSpi;
 
 public class AlgorithmParameterGeneratorSpi
-    extends java.security.AlgorithmParameterGeneratorSpi
+    extends BaseAlgorithmParameterGeneratorSpi
 {
     protected SecureRandom random;
     protected int strength = 1024;
@@ -90,7 +90,7 @@ public class AlgorithmParameterGeneratorSpi
 
         try
         {
-            params = AlgorithmParameters.getInstance("DSA", BouncyCastleProvider.PROVIDER_NAME);
+            params = createParametersInstance("DSA");
             params.init(new DSAParameterSpec(p.getP(), p.getQ(), p.getG()));
         }
         catch (Exception e)

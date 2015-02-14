@@ -22,11 +22,15 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class PSSSignatureSpi
     extends SignatureSpi
 {
+    private final JcaJceHelper helper = new BCJcaJceHelper();
+
     private AlgorithmParameters engineParams;
     private PSSParameterSpec paramSpec;
     private PSSParameterSpec originalSpec;
@@ -234,7 +238,7 @@ public class PSSSignatureSpi
             {
                 try
                 {
-                    engineParams = AlgorithmParameters.getInstance("PSS", BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams = helper.createAlgorithmParameters("PSS");
                     engineParams.init(paramSpec);
                 }
                 catch (Exception e)

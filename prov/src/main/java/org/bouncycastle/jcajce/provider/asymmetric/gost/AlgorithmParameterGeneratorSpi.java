@@ -7,12 +7,12 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.generators.GOST3410ParametersGenerator;
 import org.bouncycastle.crypto.params.GOST3410Parameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAlgorithmParameterGeneratorSpi;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
 
 public abstract class AlgorithmParameterGeneratorSpi
-    extends java.security.AlgorithmParameterGeneratorSpi
+    extends BaseAlgorithmParameterGeneratorSpi
 {
     protected SecureRandom random;
     protected int strength = 1024;
@@ -52,7 +52,7 @@ public abstract class AlgorithmParameterGeneratorSpi
 
         try
         {
-            params = AlgorithmParameters.getInstance("GOST3410", BouncyCastleProvider.PROVIDER_NAME);
+            params = createParametersInstance("GOST3410");
             params.init(new GOST3410ParameterSpec(new GOST3410PublicKeyParameterSetSpec(p.getP(), p.getQ(), p.getA())));
         }
         catch (Exception e)
