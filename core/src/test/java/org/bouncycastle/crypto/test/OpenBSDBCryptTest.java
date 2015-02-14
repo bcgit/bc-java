@@ -79,7 +79,6 @@ public class OpenBSDBCryptTest
         return "OpenBSDBCrypt";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

@@ -70,7 +70,7 @@ public class OpenBSDBCrypt
         sb.append('$');
         sb.append(version);
         sb.append('$');
-        sb.append(String.format("%02d", cost));
+        sb.append(cost < 10 ? ("0" + cost) : Integer.toString(cost));
         sb.append('$');
         sb.append(encodeData(salt));
 
