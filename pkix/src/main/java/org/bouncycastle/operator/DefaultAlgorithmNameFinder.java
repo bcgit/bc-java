@@ -7,12 +7,16 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cms.CMSEnvelopedGenerator;
 
 public class DefaultAlgorithmNameFinder
     implements AlgorithmNameFinder
@@ -74,6 +78,19 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(X9ObjectIdentifiers.ecdsa_with_SHA384, "SHA384WITHECDSA");
         algorithms.put(X9ObjectIdentifiers.ecdsa_with_SHA512, "SHA512WITHECDSA");
         algorithms.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1WITHDSA");
+
+        algorithms.put(PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC");
+        algorithms.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE-3KEY/CBC");
+        algorithms.put(NISTObjectIdentifiers.id_aes128_ECB, "AES-128/ECB");
+        algorithms.put(NISTObjectIdentifiers.id_aes192_ECB, "AES-192/ECB");
+        algorithms.put(NISTObjectIdentifiers.id_aes256_ECB, "AES-256/ECB");
+        algorithms.put(NISTObjectIdentifiers.id_aes128_CBC, "AES-128/CBC");
+        algorithms.put(NISTObjectIdentifiers.id_aes192_CBC, "AES-192/CBC");
+        algorithms.put(NISTObjectIdentifiers.id_aes256_CBC, "AES-256/CBC");
+        algorithms.put(NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA-128/CBC");
+        algorithms.put(NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-128/CBC");
+        algorithms.put(NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-128/CBC");
+        algorithms.put(KISAObjectIdentifiers.id_seedCBC, "SEED/CBC");
     }
 
     public boolean hasAlgorithmName(ASN1ObjectIdentifier objectIdentifier)
