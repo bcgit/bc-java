@@ -17,7 +17,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class Shacal2
 {
@@ -84,7 +83,7 @@ public final class Shacal2
 
             try
             {
-                params = AlgorithmParameters.getInstance("Shacal2", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("Shacal2");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

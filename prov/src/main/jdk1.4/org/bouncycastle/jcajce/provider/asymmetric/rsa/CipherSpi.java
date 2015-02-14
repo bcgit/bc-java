@@ -33,10 +33,14 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class CipherSpi
     extends BaseCipherSpi
 {
+    private final JcaJceHelper     helper = new BCJcaJceHelper();
+
     private AsymmetricBlockCipher cipher;
     private AlgorithmParameterSpec paramSpec;
     private AlgorithmParameters engineParams;
@@ -112,7 +116,7 @@ public class CipherSpi
             {
                 try
                 {
-                    engineParams = AlgorithmParameters.getInstance("OAEP", BouncyCastleProvider.PROVIDER_NAME);
+                    engineParams = helper.createAlgorithmParameters("OAEP");
                     engineParams.init(paramSpec);
                 }
                 catch (Exception e)

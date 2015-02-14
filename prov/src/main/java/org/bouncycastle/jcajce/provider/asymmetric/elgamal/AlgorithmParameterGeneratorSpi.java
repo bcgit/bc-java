@@ -10,10 +10,10 @@ import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.crypto.generators.ElGamalParametersGenerator;
 import org.bouncycastle.crypto.params.ElGamalParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAlgorithmParameterGeneratorSpi;
 
 public class AlgorithmParameterGeneratorSpi
-    extends java.security.AlgorithmParameterGeneratorSpi
+    extends BaseAlgorithmParameterGeneratorSpi
 {
     protected SecureRandom random;
     protected int strength = 1024;
@@ -63,7 +63,7 @@ public class AlgorithmParameterGeneratorSpi
 
         try
         {
-            params = AlgorithmParameters.getInstance("ElGamal", BouncyCastleProvider.PROVIDER_NAME);
+            params = createParametersInstance("ElGamal");
             params.init(new DHParameterSpec(p.getP(), p.getG(), l));
         }
         catch (Exception e)

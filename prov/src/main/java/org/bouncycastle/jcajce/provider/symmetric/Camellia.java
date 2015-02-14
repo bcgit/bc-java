@@ -25,7 +25,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class Camellia
 {
@@ -169,7 +168,7 @@ public final class Camellia
 
             try
             {
-                params = AlgorithmParameters.getInstance("Camellia", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("Camellia");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

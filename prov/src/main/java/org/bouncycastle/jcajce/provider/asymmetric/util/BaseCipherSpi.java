@@ -25,6 +25,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public abstract class BaseCipherSpi
@@ -41,6 +43,7 @@ public abstract class BaseCipherSpi
                                         RC5ParameterSpec.class
                                     };
 
+    private final JcaJceHelper helper = new BCJcaJceHelper();
 
     protected AlgorithmParameters     engineParams = null;
 
@@ -78,6 +81,12 @@ public abstract class BaseCipherSpi
     protected AlgorithmParameters engineGetParameters()
     {
         return null;
+    }
+
+    protected final AlgorithmParameters createParametersInstance(String algorithm)
+        throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        return helper.createAlgorithmParameters(algorithm);
     }
 
     protected void engineSetMode(
@@ -186,7 +195,7 @@ public abstract class BaseCipherSpi
         {
             try
             {
-                KeyFactory kf = KeyFactory.getInstance(wrappedKeyAlgorithm, BouncyCastleProvider.PROVIDER_NAME);
+                KeyFactory kf = helper.createKeyFactory(wrappedKeyAlgorithm);
 
                 if (wrappedKeyType == Cipher.PUBLIC_KEY)
                 {
@@ -197,17 +206,17 @@ public abstract class BaseCipherSpi
                     return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
                 }
             }
-            catch (NoSuchProviderException e)
-            {
-                throw new InvalidKeyException("Unknown key type " + e.getMessage());
-            }
             catch (NoSuchAlgorithmException e)
             {
                 throw new InvalidKeyException("Unknown key type " + e.getMessage());
             }
-            catch (InvalidKeySpecException e2)
+            catch (InvalidKeySpecException e)
             {
-                throw new InvalidKeyException("Unknown key type " + e2.getMessage());
+                throw new InvalidKeyException("Unknown key type " + e.getMessage());
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new InvalidKeyException("Unknown key type " + e.getMessage());
             }
 
             throw new InvalidKeyException("Unknown key type " + wrappedKeyType);

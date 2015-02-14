@@ -23,17 +23,19 @@ import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.IESParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 
 public class CipherSpi
     extends javax.crypto.CipherSpi
 {
+    private final JcaJceHelper     helper = new BCJcaJceHelper();
+
     private IESEngine cipher;
     private int                     state = -1;
     private ByteArrayOutputStream   buffer = new ByteArrayOutputStream();
@@ -117,7 +119,7 @@ public class CipherSpi
 
                 try
                 {
-                    engineParam = AlgorithmParameters.getInstance(name, BouncyCastleProvider.PROVIDER_NAME);
+                    engineParam = helper.createAlgorithmParameters(name);
                     engineParam.init(engineParams);
                 }
                 catch (Exception e)

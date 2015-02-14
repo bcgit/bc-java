@@ -25,7 +25,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class IDEA
 {
@@ -104,7 +103,7 @@ public final class IDEA
 
             try
             {
-                params = AlgorithmParameters.getInstance("IDEA", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("IDEA");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)

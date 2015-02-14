@@ -20,7 +20,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public final class Noekeon
 {
@@ -105,7 +104,7 @@ public final class Noekeon
 
             try
             {
-                params = AlgorithmParameters.getInstance("Noekeon", BouncyCastleProvider.PROVIDER_NAME);
+                params = createParametersInstance("Noekeon");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)
