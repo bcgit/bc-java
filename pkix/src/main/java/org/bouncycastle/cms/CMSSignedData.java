@@ -380,10 +380,7 @@ public class CMSSignedData
 
                     for  (Iterator cIt = counterSigners.iterator(); cIt.hasNext();)
                     {
-                        SignerInformation counterSigner = (SignerInformation)cIt.next();
-                        SignerInformationVerifier counterVerifier = verifierProvider.get(counterSigner.getSID());
-
-                        if (!counterSigner.verify(counterVerifier))
+                        if (!verifyCounterSignature((SignerInformation)cIt.next(), verifierProvider))
                         {
                             return false;
                         }
@@ -393,6 +390,28 @@ public class CMSSignedData
             catch (OperatorCreationException e)
             {
                 throw new CMSException("failure in verifier provider: " + e.getMessage(), e);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean verifyCounterSignature(SignerInformation counterSigner, SignerInformationVerifierProvider verifierProvider)
+        throws OperatorCreationException, CMSException
+    {
+        SignerInformationVerifier counterVerifier = verifierProvider.get(counterSigner.getSID());
+
+        if (!counterSigner.verify(counterVerifier))
+        {
+            return false;
+        }
+
+        Collection counterSigners = counterSigner.getCounterSignatures().getSigners();
+        for  (Iterator cIt = counterSigners.iterator(); cIt.hasNext();)
+        {
+            if (!verifyCounterSignature((SignerInformation)cIt.next(), verifierProvider))
+            {
+                return false;
             }
         }
 
