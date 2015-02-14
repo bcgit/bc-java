@@ -4,9 +4,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
@@ -17,56 +15,9 @@ import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.DigestCalculator;
-import org.bouncycastle.util.Integers;
 
 class CMSEnvelopedHelper
 {
-    static final CMSEnvelopedHelper INSTANCE = new CMSEnvelopedHelper();
-
-    private static final Map KEYSIZES = new HashMap();
-    private static final Map BASE_CIPHER_NAMES = new HashMap();
-    private static final Map CIPHER_ALG_NAMES = new HashMap();
-    private static final Map MAC_ALG_NAMES = new HashMap();
-
-    static
-    {
-        KEYSIZES.put(CMSEnvelopedGenerator.DES_EDE3_CBC, Integers.valueOf(192));
-        KEYSIZES.put(CMSEnvelopedGenerator.AES128_CBC, Integers.valueOf(128));
-        KEYSIZES.put(CMSEnvelopedGenerator.AES192_CBC, Integers.valueOf(192));
-        KEYSIZES.put(CMSEnvelopedGenerator.AES256_CBC, Integers.valueOf(256));
-
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.DES_EDE3_CBC,  "DESEDE");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES128_CBC,  "AES");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES192_CBC,  "AES");
-        BASE_CIPHER_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AES");
-
-        CIPHER_ALG_NAMES.put(CMSEnvelopedGenerator.DES_EDE3_CBC,  "DESEDE/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSEnvelopedGenerator.AES128_CBC,  "AES/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSEnvelopedGenerator.AES192_CBC,  "AES/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AES/CBC/PKCS5Padding");
-
-        MAC_ALG_NAMES.put(CMSEnvelopedGenerator.DES_EDE3_CBC,  "DESEDEMac");
-        MAC_ALG_NAMES.put(CMSEnvelopedGenerator.AES128_CBC,  "AESMac");
-        MAC_ALG_NAMES.put(CMSEnvelopedGenerator.AES192_CBC,  "AESMac");
-        MAC_ALG_NAMES.put(CMSEnvelopedGenerator.AES256_CBC,  "AESMac");
-    }
-
-
-
-    int getKeySize(String oid)
-    {
-        Integer keySize = (Integer)KEYSIZES.get(oid);
-
-        if (keySize == null)
-        {
-            throw new IllegalArgumentException("no keysize for " + oid);
-        }
-
-        return keySize.intValue();
-    }
-
-
-
     static RecipientInformationStore buildRecipientInformationStore(
         ASN1Set recipientInfos, AlgorithmIdentifier messageAlgorithm, CMSSecureReadable secureReadable)
     {
