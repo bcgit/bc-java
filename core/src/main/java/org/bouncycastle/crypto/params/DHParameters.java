@@ -84,8 +84,7 @@ public class DHParameters
     {
         if (l != 0)
         {
-            BigInteger bigL = BigInteger.valueOf(2L ^ (l - 1));
-            if (bigL.compareTo(p) == 1)
+            if (l > p.bitLength())
             {
                 throw new IllegalArgumentException("when l value specified, it must satisfy 2^(l-1) <= p");
             }
