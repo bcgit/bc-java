@@ -72,7 +72,6 @@ class TlsTestClientImpl
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
-    
     {
         if (alertLevel == AlertLevel.fatal && firstFatalAlertConnectionEnd == -1)
         {
@@ -83,8 +82,8 @@ class TlsTestClientImpl
         if (TlsTestConfig.DEBUG)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-                + ")");
+            out.println("TLS client raised alert: " + AlertLevel.getText(alertLevel)
+                + ", " + AlertDescription.getText(alertDescription));
             if (message != null)
             {
                 out.println("> " + message);
@@ -107,8 +106,8 @@ class TlsTestClientImpl
         if (TlsTestConfig.DEBUG)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS client received alert (AlertLevel." + alertLevel + ", AlertDescription."
-                + alertDescription + ")");
+            out.println("TLS client received alert: " + AlertLevel.getText(alertLevel)
+                + ", " + AlertDescription.getText(alertDescription));
         }
     }
 
@@ -134,7 +133,10 @@ class TlsTestClientImpl
 
                 Certificate[] chain = serverCertificate.getCertificateList();
 
-                if (isEmpty || !chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server.pem")))
+                // TODO Cache test resources?
+                if (isEmpty || !(chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server.pem"))
+                    || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server-dsa.pem"))
+                    || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server-ecdsa.pem"))))
                 {
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
@@ -170,29 +172,9 @@ class TlsTestClientImpl
                     return null;
                 }
 
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-                Vector sigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
-                if (sigAlgs != null)
-                {
-                    for (int i = 0; i < sigAlgs.size(); ++i)
-                    {
-                        SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
-                            sigAlgs.elementAt(i);
-                        if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
-                        {
-                            signatureAndHashAlgorithm = sigAlg;
-                            break;
-                        }
-                    }
-
-                    if (signatureAndHashAlgorithm == null)
-                    {
-                        return null;
-                    }
-                }
-
-                final TlsSignerCredentials signerCredentials = TlsTestUtils.loadSignerCredentials(context, new String[]{
-                    "x509-client.pem", "x509-ca.pem" }, "x509-client-key.pem", signatureAndHashAlgorithm);
+                final TlsSignerCredentials signerCredentials = TlsTestUtils.loadSignerCredentials(context,
+                    certificateRequest.getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
+                    "x509-client.pem", "x509-client-key.pem");
 
                 if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_VALID)
                 {

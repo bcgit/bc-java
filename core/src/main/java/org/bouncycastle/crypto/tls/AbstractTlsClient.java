@@ -116,27 +116,7 @@ public abstract class AbstractTlsClient
         {
             // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
 
-            short[] hashAlgorithms = new short[]{ HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1 };
-
-            // TODO Sort out ECDSA signatures and add them as the preferred option here
-            short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa };
-
-            this.supportedSignatureAlgorithms = new Vector();
-            for (int i = 0; i < hashAlgorithms.length; ++i)
-            {
-                for (int j = 0; j < signatureAlgorithms.length; ++j)
-                {
-                    this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
-                        signatureAlgorithms[j]));
-                }
-            }
-
-            /*
-             * RFC 5264 7.4.3. Currently, DSA [DSS] may only be used with SHA-1.
-             */
-            this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1,
-                SignatureAlgorithm.dsa));
+            this.supportedSignatureAlgorithms = TlsUtils.getDefaultSupportedSignatureAlgorithms();
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
