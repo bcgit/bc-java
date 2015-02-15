@@ -311,7 +311,11 @@ public class SignedMailValidator
                     ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
                         "SignedMailValidator.noSigningTime");
                     notifications.add(msg);
-                    signTime = new Date();
+                    signTime = pkixParam.getDate();
+                    if (signTime == null)
+                    {
+                        signTime = new Date();
+                    }
                 }
                 else
                 {
