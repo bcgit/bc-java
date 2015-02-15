@@ -11,6 +11,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
+import org.bouncycastle.util.test.TestFailedException;
 import org.bouncycastle.util.test.TestResult;
 
 /**
@@ -30,7 +31,17 @@ public class AESWrapTest
         byte[]  in,
         byte[]  out)
     {
-        Wrapper wrapper = new AESWrapEngine();
+        wrapTest(id, kek, in, out, false);
+    }
+
+    private void wrapTest(
+        int     id,
+        byte[]  kek,
+        byte[]  in,
+        byte[]  out,
+        boolean useReverseDirection)
+    {
+        Wrapper wrapper = new AESWrapEngine(useReverseDirection);
 
         wrapper.init(true, new KeyParameter(kek));
 
@@ -41,6 +52,10 @@ public class AESWrapTest
             {
                 fail("failed wrap test " + id  + " expected " + new String(Hex.encode(out)) + " got " + new String(Hex.encode(cText)));
             }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -56,6 +71,10 @@ public class AESWrapTest
             {
                 fail("failed unwrap test " + id  + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText)));
             }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -158,6 +177,11 @@ public class AESWrapTest
         byte[]  in6 = Hex.decode("00112233445566778899aabbccddeeff000102030405060708090a0b0c0d0e0f");
         byte[]  out6 = Hex.decode("28c9f404c4b810f4cbccb35cfb87f8263f5786e2d80ed326cbc7f0e71a99f43bfb988b9b7a02dd21");
         wrapTest(6, kek6, in6, out6);
+
+        byte[]  kek7 = Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        byte[]  in7 = Hex.decode("00112233445566778899aabbccddeeff000102030405060708090a0b0c0d0e0f");
+        byte[]  out7 = Hex.decode("cba01acbdb4c7c39fa59babb383c485f318837208731a81c735b5be6ba710375a1159e26a9b57228");
+        wrapTest(7, kek7, in7, out7, true);
 
         Wrapper      wrapper = new AESWrapEngine();
         KeyParameter key = new KeyParameter(new byte[16]);
