@@ -9,9 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
-import java.security.Provider;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
@@ -237,37 +235,11 @@ class X509CertificateObject
 
     /**
      * return a more "meaningful" representation for the signature algorithm used in
-     * the certficate.
+     * the certificate.
      */
     public String getSigAlgName()
     {
-        Provider    prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
-
-        if (prov != null)
-        {
-            String      algName = prov.getProperty("Alg.Alias.Signature." + this.getSigAlgOID());
-
-            if (algName != null)
-            {
-                return algName;
-            }
-        }
-
-        Provider[] provs = Security.getProviders();
-
-        //
-        // search every provider looking for a real algorithm
-        //
-        for (int i = 0; i != provs.length; i++)
-        {
-            String algName = provs[i].getProperty("Alg.Alias.Signature." + this.getSigAlgOID());
-            if (algName != null)
-            {
-                return algName;
-            }
-        }
-
-        return this.getSigAlgOID();
+        return X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
     }
 
     /**

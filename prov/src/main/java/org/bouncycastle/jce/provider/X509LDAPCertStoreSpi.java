@@ -45,7 +45,7 @@ import org.bouncycastle.jce.X509LDAPCertStoreParameters;
  * information of the subject (for all kind of certificates) or issuer (for
  * CRLs), respectively, if a X509CertSelector is given with that details. For
  * CRLs, CA certificates and cross certificates a coarse search is made only for
- * entries with that content to get more possibly matchign results.
+ * entries with that content to get more possibly matching results.
  */
 public class X509LDAPCertStoreSpi
     extends CertStoreSpi
