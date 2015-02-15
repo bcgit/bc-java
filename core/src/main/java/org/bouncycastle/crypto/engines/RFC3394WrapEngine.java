@@ -21,6 +21,7 @@ public class RFC3394WrapEngine
     implements Wrapper
 {
     private BlockCipher     engine;
+    private boolean         wrapCipherMode;
     private KeyParameter    param;
     private boolean         forWrapping;
 
@@ -28,9 +29,26 @@ public class RFC3394WrapEngine
                               (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6,
                               (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6 };
 
+    /**
+     * Create a RFC 3394 WrapEngine specifying the encrypt for wrapping, decrypt for unwrapping.
+     *
+     * @param engine the block cipher to be used for wrapping.
+     */
     public RFC3394WrapEngine(BlockCipher engine)
     {
+        this(engine, false);
+    }
+
+    /**
+     * Create a RFC 3394 WrapEngine specifying the direction for wrapping and unwrapping..
+     *
+     * @param engine the block cipher to be used for wrapping.
+     * @param useReverseDirection true if engine should be used in decryption mode for wrapping, false otherwise.
+     */
+    public RFC3394WrapEngine(BlockCipher engine, boolean useReverseDirection)
+    {
         this.engine = engine;
+        this.wrapCipherMode = (useReverseDirection) ? false : true;
     }
 
     public void init(
@@ -87,7 +105,7 @@ public class RFC3394WrapEngine
         System.arraycopy(iv, 0, block, 0, iv.length);
         System.arraycopy(in, inOff, block, iv.length, inLen);
 
-        engine.init(true, param);
+        engine.init(wrapCipherMode, param);
 
         for (int j = 0; j != 6; j++)
         {
@@ -140,7 +158,7 @@ public class RFC3394WrapEngine
         System.arraycopy(in, inOff, a, 0, iv.length);
         System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
 
-        engine.init(false, param);
+        engine.init(!wrapCipherMode, param);
 
         n = n - 1;
 
