@@ -49,8 +49,8 @@ import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -72,10 +72,10 @@ public class SignedMailValidator
 
     private static final Class DEFAULT_CERT_PATH_REVIEWER = PKIXCertPathReviewer.class;
 
-    private static final String EXT_KEY_USAGE = X509Extensions.ExtendedKeyUsage
+    private static final String EXT_KEY_USAGE = Extension.extendedKeyUsage
         .getId();
 
-    private static final String SUBJECT_ALTERNATIVE_NAME = X509Extensions.SubjectAlternativeName
+    private static final String SUBJECT_ALTERNATIVE_NAME = Extension.subjectAlternativeName
         .getId();
 
     private static final int shortKeyLength = 512;
@@ -748,7 +748,7 @@ public class SignedMailValidator
                 {
                     throw new IllegalStateException(e.toString());
                 }
-                byte[] authKeyIdentBytes = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+                byte[] authKeyIdentBytes = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
                 if (authKeyIdentBytes != null)
                 {
                     try
