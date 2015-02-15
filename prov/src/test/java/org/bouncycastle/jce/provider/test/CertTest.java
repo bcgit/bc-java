@@ -33,6 +33,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestFailedException;
 
 public class CertTest
     extends SimpleTest
@@ -1208,7 +1209,8 @@ public class CertTest
 
     public void checkSelfSignedCertificate(
         int     id,
-        byte[]  bytes)
+        byte[]  bytes,
+        String  sigAlgName)
     {
         ByteArrayInputStream    bIn;
         String                  dump = "";
@@ -1224,7 +1226,16 @@ public class CertTest
             PublicKey    k = cert.getPublicKey();
 
             cert.verify(k);
+            if (sigAlgName != null && !sigAlgName.equals(((X509Certificate)cert).getSigAlgName()))
+            {
+                fail("sigAlgName not matched on certificate: " + sigAlgName);
+            }
+
             // System.out.println(cert);
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -1352,6 +1363,12 @@ public class CertTest
         {
             fail("PKCS7 crl not read");
         }
+
+        if (!"SHA256WITHRSA".equals(crl.getSigAlgName()))
+        {
+            fail("signature ID not matched in CRL: " + crl.getSigAlgName());
+        }
+
         Collection col = cf.generateCertificates(new ByteArrayInputStream(info.getEncoded()));
         if (col.size() != 1 || !col.contains(cert))
         {
@@ -1488,7 +1505,6 @@ public class CertTest
 
         jceCRL.verify(jceIssuer.getPublicKey());
 
-
         // verify CRL with BC provider
         CertificateFactory bcFac = CertificateFactory.getInstance("X.509", "BC");
 
@@ -1500,6 +1516,16 @@ public class CertTest
         jceCRL.verify(bcIssuer.getPublicKey());
 
         bcCRL.verify(bcIssuer.getPublicKey());
+
+        if (!"SHA1WITHRSA".equals(bcCRL.getSigAlgName()))
+        {
+            fail("signature ID not matched in CRL");
+        }
+
+        if (!"SHA1WITHRSA".equals(bcIssuer.getSigAlgName()))
+        {
+            fail("signature ID not matched in certificate");
+        }
     }
 
     private void testCertPathEncAvailableTest()
@@ -1544,24 +1570,24 @@ public class CertTest
         checkComparison(cert1);
 
         checkKeyUsage(8, keyUsage);
-        checkSelfSignedCertificate(9, uncompressedPtEC);
+        checkSelfSignedCertificate(9, uncompressedPtEC, "ECDSA");
         checkNameCertificate(10, nameCert);
 
-        checkSelfSignedCertificate(11, probSelfSignedCert);
-        checkSelfSignedCertificate(12, gostCA1);
-        checkSelfSignedCertificate(13, gostCA2);
-        checkSelfSignedCertificate(14, gost341094base);
-        checkSelfSignedCertificate(15, gost34102001base);
-        checkSelfSignedCertificate(16, gost341094A);
-        checkSelfSignedCertificate(17, gost341094B);
-        checkSelfSignedCertificate(18, gost34102001A);
+        checkSelfSignedCertificate(11, probSelfSignedCert, "SHA1WITHRSA");
+        checkSelfSignedCertificate(12, gostCA1, "GOST3410");
+        checkSelfSignedCertificate(13, gostCA2, "GOST3411WITHECGOST3410");
+        checkSelfSignedCertificate(14, gost341094base, "GOST3410");
+        checkSelfSignedCertificate(15, gost34102001base, "GOST3411WITHECGOST3410");
+        checkSelfSignedCertificate(16, gost341094A, "GOST3410");
+        checkSelfSignedCertificate(17, gost341094B, "GOST3410");
+        checkSelfSignedCertificate(18, gost34102001A, "GOST3411WITHECGOST3410");
 
         try
         {
-            checkSelfSignedCertificate(19, uaczo1);
-            checkSelfSignedCertificate(20, uaczo2);
-            checkSelfSignedCertificate(21, uaczo3);
-            checkSelfSignedCertificate(22, uaczo4);
+            checkSelfSignedCertificate(19, uaczo1, "GOST3411WITHDSTU4145LE");
+            checkSelfSignedCertificate(20, uaczo2, "GOST3411WITHDSTU4145LE");
+            checkSelfSignedCertificate(21, uaczo3, "GOST3411WITHDSTU4145LE");
+            checkSelfSignedCertificate(22, uaczo4, "GOST3411WITHDSTU4145LE");
         }
         catch (Exception e)
         {
