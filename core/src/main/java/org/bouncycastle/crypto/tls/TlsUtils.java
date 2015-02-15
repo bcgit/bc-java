@@ -708,6 +708,24 @@ public class TlsUtils
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
     }
 
+    public static Vector getDefaultSupportedSignatureAlgorithms()
+    {
+        short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
+            HashAlgorithm.sha384, HashAlgorithm.sha512 };
+        short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.dsa,
+            SignatureAlgorithm.ecdsa };
+
+        Vector result = new Vector();
+        for (int i = 0; i < signatureAlgorithms.length; ++i)
+        {
+            for (int j = 0; j < hashAlgorithms.length; ++j)
+            {
+                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+            }
+        }
+        return result;
+    }
+
     public static byte[] getExtensionData(Hashtable extensions, Integer extensionType)
     {
         return extensions == null ? null : (byte[])extensions.get(extensionType);

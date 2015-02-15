@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.tls.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -12,6 +13,7 @@ import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.DefaultTlsAgreementCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
+import org.bouncycastle.crypto.tls.SignatureAlgorithm;
 import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAgreementCredentials;
 import org.bouncycastle.crypto.tls.TlsContext;
@@ -103,6 +105,39 @@ public class TlsTestUtils
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         return new DefaultTlsSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
+    }
+
+    static TlsSignerCredentials loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
+        short signatureAlgorithm, String certResource, String keyResource)
+        throws IOException
+    {
+        /*
+         * TODO Note that this code fails to provide default value for the client supported
+         * algorithms if it wasn't sent.
+         */
+     
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
+        if (supportedSignatureAlgorithms != null)
+        {
+            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            {
+                SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)
+                    supportedSignatureAlgorithms.elementAt(i);
+                if (alg.getSignature() == SignatureAlgorithm.rsa)
+                {
+                    signatureAndHashAlgorithm = alg;
+                    break;
+                }
+            }
+
+            if (signatureAndHashAlgorithm == null)
+            {
+                return null;
+            }
+        }
+
+        return TlsTestUtils.loadSignerCredentials(context, new String[]{
+            certResource, "x509-ca.pem" }, keyResource, signatureAndHashAlgorithm);
     }
 
     static Certificate loadCertificateChain(String[] resources)

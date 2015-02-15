@@ -11,7 +11,6 @@ import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
-import org.bouncycastle.crypto.tls.HashAlgorithm;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
 import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
@@ -60,29 +59,19 @@ public class MockDTLSServer
 
     public CertificateRequest getCertificateRequest() throws IOException
     {
-        Vector serverSigAlgs = null;
+        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
+            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
+        Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
         {
-            short[] hashAlgorithms = new short[]{ HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1 };
-            short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa };
-
-            serverSigAlgs = new Vector();
-            for (int i = 0; i < hashAlgorithms.length; ++i)
-            {
-                for (int j = 0; j < signatureAlgorithms.length; ++j)
-                {
-                    serverSigAlgs.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
-                        signatureAlgorithms[j]));
-                }
-            }
+            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
         }
 
         Vector certificateAuthorities = new Vector();
         certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
 
-        return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, serverSigAlgs, certificateAuthorities);
+        return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
     public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate)

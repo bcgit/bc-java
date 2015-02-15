@@ -11,10 +11,8 @@ import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.ConnectionEnd;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
-import org.bouncycastle.crypto.tls.HashAlgorithm;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
-import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
 import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
@@ -74,8 +72,8 @@ class TlsTestServerImpl
         if (TlsTestConfig.DEBUG)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS server raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-                + ")");
+            out.println("TLS server raised alert: " + AlertLevel.getText(alertLevel)
+                + ", " + AlertDescription.getText(alertDescription));
             if (message != null)
             {
                 out.println("> " + message);
@@ -98,8 +96,8 @@ class TlsTestServerImpl
         if (TlsTestConfig.DEBUG)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS server received alert (AlertLevel." + alertLevel + ", AlertDescription."
-                + alertDescription + ")");
+            out.println("TLS server received alert: " + AlertLevel.getText(alertLevel)
+                + ", " + AlertDescription.getText(alertDescription));
         }
     }
 
@@ -122,29 +120,19 @@ class TlsTestServerImpl
             return null;
         }
 
-        Vector serverSigAlgs = null;
+        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
+            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
+        Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
         {
-            short[] hashAlgorithms = new short[]{ HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                HashAlgorithm.sha224, HashAlgorithm.sha1 };
-            short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa };
-
-            serverSigAlgs = new Vector();
-            for (int i = 0; i < hashAlgorithms.length; ++i)
-            {
-                for (int j = 0; j < signatureAlgorithms.length; ++j)
-                {
-                    serverSigAlgs.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i],
-                        signatureAlgorithms[j]));
-                }
-            }
+            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
         }
 
         Vector certificateAuthorities = new Vector();
         certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
 
-        return new CertificateRequest(new short[]{ ClientCertificateType.rsa_sign }, serverSigAlgs, certificateAuthorities);
+        return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
     public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate)
@@ -163,7 +151,10 @@ class TlsTestServerImpl
 
         Certificate[] chain = clientCertificate.getCertificateList();
 
-        if (!isEmpty && !chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client.pem")))
+        // TODO Cache test resources?
+        if (!isEmpty && !(chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client.pem"))
+            || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client-dsa.pem"))
+            || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client-ecdsa.pem"))))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
@@ -181,42 +172,27 @@ class TlsTestServerImpl
         }
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials()
-        throws IOException
+    protected TlsSignerCredentials getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{"x509-server.pem", "x509-ca.pem"},
+        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.dsa,
+            "x509-server-dsa.pem", "x509-server-key-dsa.pem");
+    }
+
+    protected TlsSignerCredentials getECDSASignerCredentials() throws IOException
+    {
+        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa,
+            "x509-server-ecdsa.pem", "x509-server-key-ecdsa.pem");
+    }
+
+    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException
+    {
+        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server.pem", "x509-ca.pem" },
             "x509-server-key.pem");
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials()
-        throws IOException
+    protected TlsSignerCredentials getRSASignerCredentials() throws IOException
     {
-        /*
-         * TODO Note that this code fails to provide default value for the client supported
-         * algorithms if it wasn't sent.
-         */
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-        Vector sigAlgs = supportedSignatureAlgorithms;
-        if (sigAlgs != null)
-        {
-            for (int i = 0; i < sigAlgs.size(); ++i)
-            {
-                SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
-                    sigAlgs.elementAt(i);
-                if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
-                {
-                    signatureAndHashAlgorithm = sigAlg;
-                    break;
-                }
-            }
-
-            if (signatureAndHashAlgorithm == null)
-            {
-                return null;
-            }
-        }
-
-        return TlsTestUtils.loadSignerCredentials(context, new String[]{"x509-server.pem", "x509-ca.pem"},
-            "x509-server-key.pem", signatureAndHashAlgorithm);
+        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
+            "x509-server.pem", "x509-server-key.pem");
     }
 }
