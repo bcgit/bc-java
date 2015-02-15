@@ -42,7 +42,7 @@ public class TlsDHEKeyExchange
 
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        this.dhAgreeServerPrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
+        this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
             this.dhParameters, buf);
 
         /*
@@ -102,7 +102,8 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.dhAgreeServerPublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
+        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
+        this.dhParameters = dhAgreePublicKey.getParameters();
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)

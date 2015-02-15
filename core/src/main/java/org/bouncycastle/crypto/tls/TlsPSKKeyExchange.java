@@ -189,6 +189,7 @@ public class TlsPSKKeyExchange
             ServerDHParams serverDHParams = ServerDHParams.parse(input);
 
             this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(serverDHParams.getPublicKey());
+            this.dhParameters = dhAgreePublicKey.getParameters();
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
@@ -241,7 +242,7 @@ public class TlsPSKKeyExchange
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
             this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(),
-                dhAgreePublicKey.getParameters(), output);
+                dhParameters, output);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
