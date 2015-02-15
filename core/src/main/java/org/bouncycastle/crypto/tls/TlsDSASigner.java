@@ -71,9 +71,7 @@ public abstract class TlsDSASigner
             throw new IllegalStateException();
         }
 
-        // TODO For TLS 1.2+, lift the SHA-1 restriction here
-        if (algorithm != null
-            && (algorithm.getHash() != HashAlgorithm.sha1 || algorithm.getSignature() != getSignatureAlgorithm()))
+        if (algorithm != null && algorithm.getSignature() != getSignatureAlgorithm())
         {
             throw new IllegalStateException();
         }
