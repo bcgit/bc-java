@@ -745,7 +745,16 @@ class X509CertificateObject
         InvalidKeyException, NoSuchProviderException, SignatureException
     {
         String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
-        Signature signature = Signature.getInstance(sigName, sigProvider);
+        Signature signature;
+
+        if (sigProvider  != null)
+        {
+            signature = Signature.getInstance(sigName, sigProvider);
+        }
+        else
+        {
+            signature = Signature.getInstance(sigName);
+        }
         
         checkSignature(key, signature);
     }
