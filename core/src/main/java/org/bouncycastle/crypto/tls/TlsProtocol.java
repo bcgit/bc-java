@@ -651,7 +651,7 @@ public abstract class TlsProtocol
             }
         }
 
-        throw new IOException(TLS_ERROR_MESSAGE);
+        throw new IOException(TLS_ERROR_MESSAGE, cause);
     }
 
     protected void invalidateSession()

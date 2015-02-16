@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
+import org.bouncycastle.crypto.agreement.srp.SRP6GroupParameters;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
@@ -23,14 +24,6 @@ public class SRP6Test extends SimpleTest
     {
         return new BigInteger(1, Hex.decode(hex));
     }
-    
-    // 1024 bit example prime from RFC5054 and corresponding generator
-    private static final BigInteger N_1024 = fromHex("EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C"
-            + "9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE4"
-            + "8E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B29"
-            + "7BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9A"
-            + "FD5138FE8376435B9FC61D2FC0EB06E3");
-    private static final BigInteger g_1024 = BigInteger.valueOf(2);
 
     private final SecureRandom random = new SecureRandom();
 
@@ -43,9 +36,9 @@ public class SRP6Test extends SimpleTest
     {
         rfc5054AppendixBTestVectors();
 
-        testMutualVerification(N_1024, g_1024);
-        testClientCatchesBadB(N_1024, g_1024);
-        testServerCatchesBadA(N_1024, g_1024);
+        testMutualVerification(SRP6GroupParameters.PRIME_1024, SRP6GroupParameters.GENERATOR_1024);
+        testClientCatchesBadB(SRP6GroupParameters.PRIME_1024, SRP6GroupParameters.GENERATOR_1024);
+        testServerCatchesBadA(SRP6GroupParameters.PRIME_1024, SRP6GroupParameters.GENERATOR_1024);
 
         testWithRandomParams(256);
         testWithRandomParams(384);
@@ -57,8 +50,8 @@ public class SRP6Test extends SimpleTest
         byte[] I = "alice".getBytes("UTF8");
         byte[] P = "password123".getBytes("UTF8");
         byte[] s = Hex.decode("BEB25379D1A8581EB5A727673A2441EE");
-        BigInteger N = N_1024;
-        BigInteger g = g_1024;
+        BigInteger N = SRP6GroupParameters.PRIME_1024;
+        BigInteger g = SRP6GroupParameters.GENERATOR_1024;
         BigInteger a = fromHex("60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393");
         BigInteger b = fromHex("E487CB59D31AC550471E81F00F6928E01DDA08E974A004F49E61F5D105284D20");
 
