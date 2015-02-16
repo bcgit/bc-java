@@ -87,7 +87,7 @@ public class CertPathLoopTest
     /**
      * Creates a collection cert store
      */
-    static CertStore getStore(Collection<?> col)
+    static CertStore getStore(Collection col)
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException
     {
         CertStoreParameters csp = new CollectionCertStoreParameters(col);
