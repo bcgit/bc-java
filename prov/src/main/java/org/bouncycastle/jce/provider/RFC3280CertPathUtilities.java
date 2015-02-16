@@ -541,7 +541,7 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                throw new AnnotatedException("Internal error.", e);
+                throw new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
             {

@@ -54,6 +54,7 @@ import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.PrincipalUtil;
+import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
@@ -494,6 +495,14 @@ public class RFC3280CertPathUtilities
             }
             try
             {
+                // we've somehow ended up trying to validate a path with the same target as
+                // the one we're already on, something is badly wrong.
+                if (paramsPKIX.getTargetConstraints().match(signingCert))
+                {
+                    throw new AnnotatedException("CertPath loop detected, attempting to re-validate ["
+                                          + signingCert.getIssuerX500Principal() + ", " + signingCert.getSerialNumber() + "]");
+                }
+
                 CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
                 selector = new X509CertStoreSelector();
                 selector.setCertificate(signingCert);
@@ -524,7 +533,7 @@ public class RFC3280CertPathUtilities
             }
             catch (CertPathBuilderException e)
             {
-                throw new AnnotatedException("Internal error.", e);
+                throw new AnnotatedException("CertPath for CRL signer failed to validate.", e);
             }
             catch (CertPathValidatorException e)
             {
@@ -532,7 +541,7 @@ public class RFC3280CertPathUtilities
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e.getMessage());
+                throw new AnnotatedException(e.getMessage());
             }
         }
 
