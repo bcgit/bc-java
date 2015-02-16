@@ -137,6 +137,9 @@ public class PKIXCertPathValidatorSpi
             throw new CertPathValidatorException("Trust anchor for certification path not found.", null, certPath, -1);
         }
 
+        // RFC 5280 - CRLs must originate from the same trust anchor as the target certificate.
+        paramsPKIX = new PKIXExtendedParameters.Builder(paramsPKIX).setTrustAnchor(trust).build();
+
         //
         // (e), (f), (g) are part of the paramsPKIX object.
         //
