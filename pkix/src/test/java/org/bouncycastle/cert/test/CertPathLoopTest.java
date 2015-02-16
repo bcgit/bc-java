@@ -27,7 +27,6 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -192,7 +191,7 @@ public class CertPathLoopTest
         /**
          * Serial number counter
          */
-        private AtomicInteger counter = new AtomicInteger();
+        private int counter = 1;
 
         /**
          * Constructor
@@ -217,10 +216,9 @@ public class CertPathLoopTest
             //reserved for future use (another test case)
             ContentSigner thisAcSigner = caCertSigner;
             //reserved for future use (another test case)
-            AtomicInteger currentCounter = counter;
             //First certificate: Certificate authority (BasicConstraints=true) but not CRLSigner
             X509CertificateHolder certH = new X509v3CertificateBuilder(
-                issuer, new BigInteger(Integer.toString(currentCounter.incrementAndGet())), notBefore, notAfter, acSubject, getPublicKeyInfo(caCertKp.getPublic()))
+                issuer, BigInteger.valueOf(counter++), notBefore, notAfter, acSubject, getPublicKeyInfo(caCertKp.getPublic()))
                 .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
                 .addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign))
                 .build(thisAcSigner);
@@ -233,7 +231,7 @@ public class CertPathLoopTest
             caCrlSigner = new JcaContentSignerBuilder("SHA1withRSA").build(caCrlKp.getPrivate());
             //second certificate: CRLSigner but not Certificate authority (BasicConstraints=false)
             certH = new X509v3CertificateBuilder(
-                issuer, new BigInteger(Integer.toString(currentCounter.incrementAndGet())), notBefore, notAfter, acSubject, getPublicKeyInfo(caCrlKp.getPublic()))
+                issuer, BigInteger.valueOf(counter++), notBefore, notAfter, acSubject, getPublicKeyInfo(caCrlKp.getPublic()))
                 .addExtension(Extension.basicConstraints, false, new BasicConstraints(false))
                 .addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.cRLSign))
                 .build(thisAcSigner);
@@ -259,7 +257,7 @@ public class CertPathLoopTest
             gc.add(GregorianCalendar.DAY_OF_YEAR, 1);
             Date notAfter = gc.getTime();
             //serial
-            BigInteger certSerial = new BigInteger(Integer.toString(counter.incrementAndGet()));
+            BigInteger certSerial = BigInteger.valueOf(counter++);
             //Distinct name based on the serial
             X500Name subject = new X500Name("CN=EU_" + certSerial.toString());
             //End user certificate, not allowed to do anything
