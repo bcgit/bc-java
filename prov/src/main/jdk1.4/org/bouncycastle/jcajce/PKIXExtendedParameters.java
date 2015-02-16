@@ -5,6 +5,7 @@ import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -59,6 +60,7 @@ public class PKIXExtendedParameters
         private boolean revocationEnabled;
         private int validityModel = PKIX_VALIDITY_MODEL;
         private boolean useDeltas = false;
+        private Set<TrustAnchor> trustAnchors;
 
         public Builder(PKIXParameters baseParameters)
         {
@@ -71,6 +73,7 @@ public class PKIXExtendedParameters
             Date checkDate = baseParameters.getDate();
             this.date = (checkDate == null) ? new Date() : checkDate;
             this.revocationEnabled = baseParameters.isRevocationEnabled();
+            this.trustAnchors = baseParameters.getTrustAnchors();
         }
 
         public Builder(PKIXExtendedParameters baseParameters)
@@ -78,13 +81,14 @@ public class PKIXExtendedParameters
             this.baseParameters = baseParameters.baseParameters;
             this.date = baseParameters.date;
             this.targetConstraints = baseParameters.targetConstraints;
-            this.extraCertStores = new ArrayList(baseParameters.extraCertStores);
-            this.namedCertificateStoreMap = new HashMap(baseParameters.namedCertificateStoreMap);
-            this.extraCRLStores = new ArrayList(baseParameters.extraCRLStores);
-            this.namedCRLStoreMap = new HashMap(baseParameters.namedCRLStoreMap);
+            this.extraCertStores = new ArrayList<PKIXCertStore>(baseParameters.extraCertStores);
+            this.namedCertificateStoreMap = new HashMap<GeneralName, PKIXCertStore>(baseParameters.namedCertificateStoreMap);
+            this.extraCRLStores = new ArrayList<PKIXCRLStore>(baseParameters.extraCRLStores);
+            this.namedCRLStoreMap = new HashMap<GeneralName, PKIXCRLStore>(baseParameters.namedCRLStoreMap);
             this.useDeltas = baseParameters.useDeltas;
             this.validityModel = baseParameters.validityModel;
             this.revocationEnabled = baseParameters.isRevocationEnabled();
+            this.trustAnchors = baseParameters.getTrustAnchors();
         }
 
         public Builder addCertificateStore(PKIXCertStore store)
@@ -156,6 +160,32 @@ public class PKIXExtendedParameters
             this.revocationEnabled = revocationEnabled;
         }
 
+        /**
+         * Set the trustAnchor to be used with these parameters.
+         *
+         * @param trustAnchor the trust anchor end-entity and CRLs must be based on.
+         * @return the current builder.
+         */
+        public Builder setTrustAnchor(TrustAnchor trustAnchor)
+        {
+            this.trustAnchors = Collections.singleton(trustAnchor);
+
+            return this;
+        }
+
+        /**
+         * Set the set of trustAnchors to be used with these parameters.
+         *
+         * @param trustAnchors  a set of trustAnchors, one of which a particular end-entity and it's associated CRLs must be based on.
+         * @return the current builder.
+         */
+        public Builder setTrustAnchors(Set<TrustAnchor> trustAnchors)
+        {
+            this.trustAnchors = trustAnchors;
+
+            return this;
+        }
+
         public PKIXExtendedParameters build()
         {
             return new PKIXExtendedParameters(this);
@@ -172,6 +202,7 @@ public class PKIXExtendedParameters
     private final boolean revocationEnabled;
     private final boolean useDeltas;
     private final int validityModel;
+    private final Set trustAnchors;
 
     private PKIXExtendedParameters(Builder builder)
     {
@@ -185,6 +216,7 @@ public class PKIXExtendedParameters
         this.revocationEnabled = builder.revocationEnabled;
         this.useDeltas = builder.useDeltas;
         this.validityModel = builder.validityModel;
+        this.trustAnchors = Collections.unmodifiableSet(builder.trustAnchors);
     }
 
     public List getCertificateStores()
@@ -260,7 +292,7 @@ public class PKIXExtendedParameters
 
     public Set getTrustAnchors()
     {
-        return baseParameters.getTrustAnchors();
+        return trustAnchors;
     }
 
     public Set getInitialPolicies()

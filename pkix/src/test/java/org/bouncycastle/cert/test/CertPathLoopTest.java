@@ -21,6 +21,7 @@ import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -45,8 +46,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.test.SimpleTest;
-
-import static java.util.Collections.singleton;
 
 
 /**
@@ -116,7 +115,7 @@ public class CertPathLoopTest
         target.setCertificate(caA.makeNewCert());
         //create control parameters
         PKIXBuilderParameters params = new PKIXBuilderParameters(taSet, target);
-        params.addCertStore(getStore(singleton(target.getCertificate())));
+        params.addCertStore(getStore(Collections.singleton(target.getCertificate())));
         params.addCertStore(getStore(otherList));
         //enable revocation check
         params.setRevocationEnabled(true);

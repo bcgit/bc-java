@@ -40,20 +40,34 @@ public class PKIXCertPathValidatorSpi
             throws CertPathValidatorException,
             InvalidAlgorithmParameterException
     {
-        if (!(params instanceof PKIXParameters))
-        {
+       if (!(params instanceof CertPathParameters))
+       {
             throw new InvalidAlgorithmParameterException("Parameters must be a " + PKIXParameters.class.getName()
                     + " instance.");
-        }
+       }
 
-        ExtendedPKIXParameters paramsPKIX;
-        if (params instanceof ExtendedPKIXParameters)
+        PKIXExtendedParameters paramsPKIX;
+        if (params instanceof PKIXParameters)
         {
-            paramsPKIX = (ExtendedPKIXParameters)params;
+            PKIXExtendedParameters.Builder paramsPKIXBldr = new PKIXExtendedParameters.Builder((PKIXParameters)params);
+
+            if (params instanceof ExtendedPKIXParameters)
+            {
+                ExtendedPKIXParameters extPKIX = (ExtendedPKIXParameters)params;
+
+                paramsPKIXBldr.setUseDeltasEnabled(extPKIX.isUseDeltasEnabled());
+                paramsPKIXBldr.setValidityModel(extPKIX.getValidityModel());
+            }
+
+            paramsPKIX = paramsPKIXBldr.build();
+        }
+        else if (params instanceof PKIXExtendedBuilderParameters)
+        {
+            paramsPKIX = ((PKIXExtendedBuilderParameters)params).getBaseParameters();
         }
         else
         {
-            paramsPKIX = ExtendedPKIXParameters.getInstance((PKIXParameters)params);
+            paramsPKIX = (PKIXExtendedParameters)params;
         }
         if (paramsPKIX.getTrustAnchors() == null)
         {
@@ -104,6 +118,9 @@ public class PKIXCertPathValidatorSpi
         {
             throw new CertPathValidatorException("Trust anchor for certification path not found.", null, certPath, -1);
         }
+ 
+        // RFC 5280 - CRLs must originate from the same trust anchor as the target certificate.
+        paramsPKIX = new PKIXExtendedParameters.Builder(paramsPKIX).setTrustAnchor(trust).build();
 
         //
         // (e), (f), (g) are part of the paramsPKIX object.
