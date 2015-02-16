@@ -502,11 +502,11 @@ class RFC3280CertPathUtilities
             {
                  // we've somehow ended up trying to validate a path with the same target as
                 // the one we're already on, something is badly wrong.
-                if (paramsPKIX.getTargetConstraints().match(signingCert))
-                {
-                    throw new AnnotatedException("CertPath loop detected, attempting to re-validate ["
-                                          + signingCert.getIssuerX500Principal() + ", " + signingCert.getSerialNumber() + "]");
-                }
+//                if (paramsPKIX.getTargetConstraints().match(signingCert))
+//                {
+//                    throw new AnnotatedException("CertPath loop detected, attempting to re-validate ["
+//                                          + signingCert.getIssuerX500Principal() + ", " + signingCert.getSerialNumber() + "]");
+//                }
 
                 CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", fipsProvider);
                 X509CertSelector tmpCertSelector = new X509CertSelector();
@@ -547,10 +547,10 @@ class RFC3280CertPathUtilities
             {
                 throw new AnnotatedException("Public key of issuer certificate of CRL could not be retrieved.", e);
             }
-            catch (AnnotatedException e)
-            {
-                throw e;
-            }
+//            catch (AnnotatedException e)
+//            {
+//                throw e;
+//            }
             catch (Exception e)
             {
                 throw new AnnotatedException(e.getMessage());
