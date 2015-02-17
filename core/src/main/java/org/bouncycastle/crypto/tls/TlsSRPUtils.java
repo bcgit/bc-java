@@ -2,8 +2,12 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.Hashtable;
 
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 
 public class TlsSRPUtils
@@ -44,5 +48,35 @@ public class TlsSRPUtils
         TlsProtocol.assertEmpty(buf);
 
         return identity;
+    }
+
+    public static BigInteger readSRPParameter(InputStream input) throws IOException
+    {
+        return new BigInteger(1, TlsUtils.readOpaque16(input));
+    }
+
+    public static void writeSRPParameter(BigInteger x, OutputStream output) throws IOException
+    {
+        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(x), output);
+    }
+
+    public static boolean isSRPCipherSuite(int cipherSuite)
+    {
+        switch (cipherSuite)
+        {
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
+            return true;
+
+        default:
+            return false;
+        }
     }
 }

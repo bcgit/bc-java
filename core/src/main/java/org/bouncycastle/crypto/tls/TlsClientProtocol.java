@@ -380,23 +380,17 @@ public class TlsClientProtocol
                     /*
                      * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
                      */
-                    SignatureAndHashAlgorithm signatureAndHashAlgorithm;
+                    SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+                        getContext(), signerCredentials);
+
                     byte[] hash;
-
-                    if (TlsUtils.isTLSv12(getContext()))
+                    if (signatureAndHashAlgorithm == null)
                     {
-                        signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
-                        if (signatureAndHashAlgorithm == null)
-                        {
-                            throw new TlsFatalAlert(AlertDescription.internal_error);
-                        }
-
-                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+                        hash = securityParameters.getSessionHash();
                     }
                     else
                     {
-                        signatureAndHashAlgorithm = null;
-                        hash = securityParameters.getSessionHash();
+                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
                     }
 
                     byte[] signature = signerCredentials.generateCertificateSignature(hash);

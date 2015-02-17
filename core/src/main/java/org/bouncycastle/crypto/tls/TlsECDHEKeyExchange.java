@@ -51,24 +51,10 @@ public class TlsECDHEKeyExchange
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm;
-        Digest d;
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+            context, serverCredentials);
 
-        if (TlsUtils.isTLSv12(context))
-        {
-            signatureAndHashAlgorithm = serverCredentials.getSignatureAndHashAlgorithm();
-            if (signatureAndHashAlgorithm == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            d = TlsUtils.createHash(signatureAndHashAlgorithm.getHash());
-        }
-        else
-        {
-            signatureAndHashAlgorithm = null;
-            d = new CombinedHash();
-        }
+        Digest d = TlsUtils.createHash(signatureAndHashAlgorithm);
 
         SecurityParameters securityParameters = context.getSecurityParameters();
         d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);

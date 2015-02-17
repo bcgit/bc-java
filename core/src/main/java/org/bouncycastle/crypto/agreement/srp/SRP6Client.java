@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.params.SRP6GroupParameters;
 
 /**
  * Implements the client side SRP-6a protocol. Note that this class is stateful, and therefore NOT threadsafe.
@@ -49,6 +50,11 @@ public class SRP6Client
         this.g = g;
         this.digest = digest;
         this.random = random;
+    }
+
+    public void init(SRP6GroupParameters group, Digest digest, SecureRandom random)
+    {
+        init(group.getN(), group.getG(), digest, random);
     }
 
     /**

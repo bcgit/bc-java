@@ -43,6 +43,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
@@ -128,7 +129,7 @@ class RFC3281CertPathUtilities
      */
     protected static void checkCRLs(X509AttributeCertificate attrCert,
         PKIXExtendedParameters paramsPKIX, X509Certificate issuerCert,
-        Date validDate, List certPathCerts, Provider provider) throws CertPathValidatorException
+        Date validDate, List certPathCerts, JcaJceHelper helper) throws CertPathValidatorException
     {
         if (paramsPKIX.isRevocationEnabled())
         {
@@ -199,7 +200,7 @@ class RFC3281CertPathUtilities
 
                             checkCRL(dps[i], attrCert, paramsPKIXClone,
                                 validDate, issuerCert, certStatus, reasonsMask,
-                                certPathCerts, provider);
+                                certPathCerts, helper);
                             validCrlFound = true;
                         }
                     }
@@ -248,7 +249,7 @@ class RFC3281CertPathUtilities
                         PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters) paramsPKIX
                             .clone();
                         checkCRL(dp, attrCert, paramsPKIXClone, validDate,
-                            issuerCert, certStatus, reasonsMask, certPathCerts, provider);
+                            issuerCert, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -578,7 +579,7 @@ class RFC3281CertPathUtilities
     private static void checkCRL(DistributionPoint dp,
         X509AttributeCertificate attrCert, PKIXExtendedParameters paramsPKIX,
         Date validDate, X509Certificate issuerCert, CertStatus certStatus,
-        ReasonsMask reasonMask, List certPathCerts, Provider provider) throws AnnotatedException
+        ReasonsMask reasonMask, List certPathCerts, JcaJceHelper helper) throws AnnotatedException
     {
 
         /*
@@ -636,7 +637,7 @@ class RFC3281CertPathUtilities
                 }
 
                 // (f)
-                Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, provider);
+                Set keys = RFC3280CertPathUtilities.processCRLF(crl, attrCert, null, null, paramsPKIX, certPathCerts, helper);
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 

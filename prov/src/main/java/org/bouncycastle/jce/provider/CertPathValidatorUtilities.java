@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
@@ -37,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.security.auth.x500.X500Principal;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -51,6 +48,8 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -66,6 +65,7 @@ import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -158,7 +158,7 @@ class CertPathValidatorUtilities
         Exception invalidKeyEx = null;
 
         X509CertSelector certSelectX509 = new X509CertSelector();
-        X500Principal certIssuer = getEncodedIssuerPrincipal(cert);
+        X500Name certIssuer = PrincipalUtils.getEncodedIssuerPrincipal(cert);
 
         try
         {
@@ -189,7 +189,7 @@ class CertPathValidatorUtilities
             {
                 try
                 {
-                    X500Principal caName = new X500Principal(trust.getCAName());
+                    X500Name caName = PrincipalUtils.getCA(trust);
                     if (certIssuer.equals(caName))
                     {
                         trustPublicKey = trust.getCAPublicKey();
@@ -266,25 +266,6 @@ class CertPathValidatorUtilities
         }
     }
 
-    /**
-     * Returns the issuer of an attribute certificate or certificate.
-     *
-     * @param cert The attribute certificate or certificate.
-     * @return The issuer as <code>X500Principal</code>.
-     */
-    protected static X500Principal getEncodedIssuerPrincipal(
-        Object cert)
-    {
-        if (cert instanceof X509Certificate)
-        {
-            return ((X509Certificate)cert).getIssuerX500Principal();
-        }
-        else
-        {
-            return (X500Principal)((X509AttributeCertificate)cert).getIssuer().getPrincipals()[0];
-        }
-    }
-
     protected static Date getValidDate(PKIXExtendedParameters paramsPKIX)
     {
         Date validDate = paramsPKIX.getDate();
@@ -295,11 +276,6 @@ class CertPathValidatorUtilities
         }
 
         return validDate;
-    }
-
-    protected static X500Principal getSubjectPrincipal(X509Certificate cert)
-    {
-        return cert.getSubjectX500Principal();
     }
 
     protected static boolean isSelfIssued(X509Certificate cert)
@@ -346,11 +322,6 @@ class CertPathValidatorUtilities
         {
             throw new AnnotatedException("exception processing extension " + oid, e);
         }
-    }
-
-    protected static X500Principal getIssuerPrincipal(X509CRL crl)
-    {
-        return crl.getIssuerX500Principal();
     }
 
     protected static AlgorithmIdentifier getAlgorithmIdentifier(
@@ -765,7 +736,7 @@ class CertPathValidatorUtilities
      * <code>selector</code>.
      * <p/>
      * The <code>issuerPrincipals</code> are a collection with a single
-     * <code>X500Principal</code> for <code>X509Certificate</code>s.
+     * <code>X500Name</code> for <code>X509Certificate</code>s.
      *
      * @param dp               The distribution point.
      * @param issuerPrincipals The issuers of the certificate or attribute
@@ -773,7 +744,7 @@ class CertPathValidatorUtilities
      * @param selector         The CRL selector.
      * @throws AnnotatedException if an exception occurs while processing.
      * @throws ClassCastException if <code>issuerPrincipals</code> does not
-     * contain only <code>X500Principal</code>s.
+     * contain only <code>X500Name</code>s.
      */
     protected static void getCRLIssuersFromDistributionPoint(
         DistributionPoint dp,
@@ -793,7 +764,7 @@ class CertPathValidatorUtilities
                 {
                     try
                     {
-                        issuers.add(new X500Principal(genNames[j].getName()
+                        issuers.add(X500Name.getInstance(genNames[j].getName()
                             .toASN1Primitive().getEncoded()));
                     }
                     catch (IOException e)
@@ -819,7 +790,7 @@ class CertPathValidatorUtilities
             // add and check issuer principals
             for (Iterator it = issuerPrincipals.iterator(); it.hasNext(); )
             {
-                issuers.add((X500Principal)it.next());
+                issuers.add(it.next());
             }
         }
         // TODO: is not found although this should correctly add the rel name. selector of Sun is buggy here or PKI test case is invalid
@@ -871,7 +842,7 @@ class CertPathValidatorUtilities
         {
             try
             {
-                selector.addIssuerName(((X500Principal)it.next()).getEncoded());
+                selector.addIssuerName(((X500Name)it.next()).getEncoded());
             }
             catch (IOException ex)
             {
@@ -915,19 +886,19 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Principal certIssuer = crl_entry.getCertificateIssuer();
+            X500Name certIssuer = X500Name.getInstance(crl_entry.getCertificateIssuer().getEncoded());
 
             if (certIssuer == null)
             {
-                certIssuer = getIssuerPrincipal(crl);
+                certIssuer = PrincipalUtils.getIssuerPrincipal(crl);
             }
 
-            if (!getEncodedIssuerPrincipal(cert).equals(certIssuer))
+            if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
             {
                 return;
             }
         }
-        else if (!getEncodedIssuerPrincipal(cert).equals(getIssuerPrincipal(crl)))
+        else if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(PrincipalUtils.getIssuerPrincipal(crl)))
         {
             return;  // not for our issuer, ignore
         }
@@ -1000,8 +971,7 @@ class CertPathValidatorUtilities
         // 5.2.4 (a)
         try
         {
-            baseDeltaSelect.addIssuerName(CertPathValidatorUtilities
-                .getIssuerPrincipal(completeCRL).getEncoded());
+            baseDeltaSelect.addIssuerName(PrincipalUtils.getIssuerPrincipal(completeCRL).getEncoded());
         }
         catch (IOException e)
         {
@@ -1107,7 +1077,7 @@ class CertPathValidatorUtilities
         {
             Set issuers = new HashSet();
 
-            issuers.add(getEncodedIssuerPrincipal(cert));
+            issuers.add(PrincipalUtils.getEncodedIssuerPrincipal(cert));
 
             CertPathValidatorUtilities.getCRLIssuersFromDistributionPoint(dp, issuers, baseCrlSelect);
         }
@@ -1133,12 +1103,8 @@ class CertPathValidatorUtilities
 
         Set crls = CRL_UTIL.findCRLs(crlSelect, validityDate, paramsPKIX.getCertStores(), paramsPKIX.getCRLStores());
 
-        if (crls.isEmpty())
-        {
-            X509Certificate xCert = (X509Certificate)cert;
+        checkCRLsNotEmpty(crls, cert);
 
-            throw new AnnotatedException("No CRLs found for issuer \"" + xCert.getIssuerX500Principal() + "\"");
-        }
         return crls;
     }
 
@@ -1227,7 +1193,7 @@ class CertPathValidatorUtilities
      *         <code>index</code> extended with DSA parameters if applicable.
      * @throws AnnotatedException if DSA parameters cannot be inherited.
      */
-    protected static PublicKey getNextWorkingKey(List certs, int index, Provider fipsProvider)
+    protected static PublicKey getNextWorkingKey(List certs, int index, JcaJceHelper helper)
         throws CertPathValidatorException
     {
         Certificate cert = (Certificate)certs.get(index);
@@ -1260,7 +1226,7 @@ class CertPathValidatorUtilities
                 dsaPubKey.getY(), dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
             try
             {
-                KeyFactory keyFactory = KeyFactory.getInstance("DSA", fipsProvider);
+                KeyFactory keyFactory = helper.createKeyFactory("DSA");
                 return keyFactory.generatePublic(dsaPubKeySpec);
             }
             catch (Exception exception)
@@ -1289,7 +1255,7 @@ class CertPathValidatorUtilities
 
         try
         {
-            selector.setSubject(cert.getIssuerX500Principal().getEncoded());
+            selector.setSubject(PrincipalUtils.getIssuerPrincipal(cert).getEncoded());
         }
         catch (IOException e)
         {
@@ -1338,6 +1304,26 @@ class CertPathValidatorUtilities
         else
         {
             cert.verify(publicKey, sigProvider);
+        }
+    }
+
+    static void checkCRLsNotEmpty(Set crls, Object cert)
+        throws AnnotatedException
+    {
+        if (crls.isEmpty())
+        {
+            if (cert instanceof X509AttributeCertificate)
+            {
+                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
+
+                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
+            }
+            else
+            {
+                X509Certificate xCert = (X509Certificate)cert;
+
+                throw new AnnotatedException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
+            }
         }
     }
 }
