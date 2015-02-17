@@ -262,7 +262,7 @@ public class X500NameTest
         val1.addElement("feedback-crypto@bouncycastle.org");
 
         name1 = new X500Name(ord1, val1);
-        
+
         Vector values = name1.getValues();
         if (!compareVectors(values, val1))
         {
@@ -566,7 +566,7 @@ public class X500NameTest
         {
             fail("failed X509DefaultEntryConverter test got " + converted + " expected: " + hexEncodedString);
         }
-        
+
         //
         // try a weird value
         //
@@ -667,6 +667,12 @@ public class X500NameTest
         if (BCStyle.INSTANCE.oidToAttrNames(new ASN1ObjectIdentifier("1.2.1")).length != 0)
         {
             fail("unknown oid matched aliases!");
+        }
+
+        if (!new X500Name("CN=\"  CA1 -   CP.04.03\", OU=Testing, OU=Dod, O=U.S. Government, C=US")
+            .equals(new X500Name("CN=\"ca1 - CP.04.03  \", OU=Testing, OU=Dod, O=U.S. Government, C=US")))
+        {
+            fail("padded equality test failed");
         }
     }
 
