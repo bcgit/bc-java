@@ -65,7 +65,6 @@ import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
-import org.bouncycastle.jcajce.provider.asymmetric.x509.X509CRLEntryObject;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.jce.provider.AnnotatedException;
@@ -1065,7 +1064,7 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Principal certIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
+            X500Principal certIssuer = crl_entry.getCertificateIssuer();
 
             if (certIssuer == null)
             {

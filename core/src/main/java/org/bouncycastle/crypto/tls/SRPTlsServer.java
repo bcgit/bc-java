@@ -3,70 +3,100 @@ package org.bouncycastle.crypto.tls;
 import java.io.IOException;
 import java.util.Hashtable;
 
-import org.bouncycastle.util.Arrays;
-
-public class SRPTlsClient
-    extends AbstractTlsClient
+public class SRPTlsServer
+    extends AbstractTlsServer
 {
-    protected TlsSRPGroupVerifier groupVerifier;
+    protected TlsSRPIdentityManager srpIdentityManager;
 
-    protected byte[] identity;
-    protected byte[] password;
+    protected byte[] srpIdentity = null;
+    protected TlsSRPLoginParameters loginParameters = null;
 
-    public SRPTlsClient(byte[] identity, byte[] password)
+    public SRPTlsServer(TlsSRPIdentityManager srpIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
+        this(new DefaultTlsCipherFactory(), srpIdentityManager);
     }
 
-    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
-    {
-        this(cipherFactory, new DefaultTlsSRPGroupVerifier(), identity, password);
-    }
-
-    public SRPTlsClient(TlsCipherFactory cipherFactory, TlsSRPGroupVerifier groupVerifier,
-        byte[] identity, byte[] password)
+    public SRPTlsServer(TlsCipherFactory cipherFactory, TlsSRPIdentityManager srpIdentityManager)
     {
         super(cipherFactory);
-        this.groupVerifier = groupVerifier;
-        this.identity = Arrays.clone(identity);
-        this.password = Arrays.clone(password);
+        this.srpIdentityManager = srpIdentityManager;
     }
 
-    protected boolean requireSRPServerExtension()
+    protected TlsSignerCredentials getDSASignerCredentials()
+        throws IOException
     {
-        // No explicit guidance in RFC 5054; by default an (empty) extension from server is optional
-        return false;
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public int[] getCipherSuites()
+    protected TlsSignerCredentials getRSASignerCredentials()
+        throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected int[] getCipherSuites()
     {
         return new int[]
         {
-            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA
+            CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA
         };
     }
 
-    public Hashtable getClientExtensions()
-        throws IOException
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
     {
-        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-        TlsSRPUtils.addSRPExtension(clientExtensions, this.identity);
-        return clientExtensions;
+        super.processClientExtensions(clientExtensions);
+
+        this.srpIdentity = TlsSRPUtils.getSRPExtension(clientExtensions);
     }
 
-    public void processServerExtensions(Hashtable serverExtensions)
-        throws IOException
+    public int getSelectedCipherSuite() throws IOException
     {
-        if (!TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsSRPUtils.EXT_SRP,
-            AlertDescription.illegal_parameter))
+        int cipherSuite = super.getSelectedCipherSuite();
+
+        if (TlsSRPUtils.isSRPCipherSuite(cipherSuite))
         {
-            if (requireSRPServerExtension())
+            if (srpIdentity != null)
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                this.loginParameters = srpIdentityManager.getLoginParameters(srpIdentity);
+            }
+
+            if (loginParameters == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.unknown_psk_identity);
             }
         }
 
-        super.processServerExtensions(serverExtensions);
+        return cipherSuite;
+    }
+
+    public TlsCredentials getCredentials() throws IOException
+    {
+        switch (selectedCipherSuite)
+        {
+        case CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA:
+            return null;
+
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA:
+            return getDSASignerCredentials();
+
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA:
+            return getRSASignerCredentials();
+
+        default:
+            /* Note: internal error here; selected a key exchange we don't implement! */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public TlsKeyExchange getKeyExchange()
@@ -97,15 +127,6 @@ public class SRPTlsClient
              */
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-    }
-
-    public TlsAuthentication getAuthentication() throws IOException
-    {
-        /*
-         * Note: This method is not called unless a server certificate is sent, which may be the
-         * case e.g. for SRP_DSS or SRP_RSA key exchange.
-         */
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsCipher getCipher()
@@ -140,6 +161,6 @@ public class SRPTlsClient
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, groupVerifier, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, loginParameters);
     }
 }

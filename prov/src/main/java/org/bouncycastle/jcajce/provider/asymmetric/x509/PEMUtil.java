@@ -6,7 +6,7 @@ import java.io.InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.util.encoders.Base64;
 
-public class PEMUtil
+class PEMUtil
 {
     private final String _header1;
     private final String _header2;

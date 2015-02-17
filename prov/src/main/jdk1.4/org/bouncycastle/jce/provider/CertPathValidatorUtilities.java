@@ -1544,21 +1544,7 @@ public class CertPathValidatorUtilities
 
         Set crls = CRL_UTIL.findCRLs(crlselect, paramsPKIX, currentDate);
 
-        if (crls.isEmpty())
-        {
-            if (cert instanceof X509AttributeCertificate)
-            {
-                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
-            }
-            else
-            {
-                X509Certificate xCert = (X509Certificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + xCert.getIssuerX500Principal() + "\"");
-            }
-        }
+        checkCrlsN
         return crls;
     }
 

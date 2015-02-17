@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
@@ -29,19 +31,10 @@ import org.bouncycastle.x509.X509AttributeCertificate;
 public class PKIXAttrCertPathValidatorSpi
     extends CertPathValidatorSpi
 {
-
-    private final Provider provider;
+    private final JcaJceHelper helper = new BCJcaJceHelper();
 
     public PKIXAttrCertPathValidatorSpi()
     {
-        if (Security.getProvider("BC") != null)
-        {
-            this.provider = Security.getProvider("BC");
-        }
-        else
-        {
-            this.provider = new BouncyCastleProvider();
-        }
     }
 
     /**
@@ -138,7 +131,7 @@ public class PKIXAttrCertPathValidatorSpi
             throw new ExtCertPathValidatorException(
                 "Could not get validity date from attribute certificate.", e);
         }
-        RFC3281CertPathUtilities.checkCRLs(attrCert, paramsPKIX, issuerCert, date, certPath.getCertificates(), provider);
+        RFC3281CertPathUtilities.checkCRLs(attrCert, paramsPKIX, issuerCert, date, certPath.getCertificates(), helper);
         return result;
     }
 }

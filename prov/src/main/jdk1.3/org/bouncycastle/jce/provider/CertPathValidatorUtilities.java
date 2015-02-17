@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.Object;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -63,6 +64,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.PrincipalUtil;
+import org.bouncycastle.jce.provider.AnnotatedException;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.StoreException;
 import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
@@ -1200,21 +1202,7 @@ catch (Exception e)
 
         Set crls = CRL_UTIL.findCRLs(crlselect, paramsPKIX, currentDate);
 
-        if (crls.isEmpty())
-        {
-            if (cert instanceof X509AttributeCertificate)
-            {
-                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
-            }
-            else
-            {
-                X509Certificate xCert = (X509Certificate)cert;
-
-                throw new AnnotatedException("No CRLs found for issuer \"" + xCert.getIssuerDN() + "\"");
-            }
-        }
+        checkCRLsNotEmpty(crls, cert);
         return crls;
     }
 
@@ -1412,6 +1400,26 @@ catch (Exception e)
         else
         {
             cert.verify(publicKey, sigProvider);
+        }
+    }
+
+    private static void checkCRLsNotEmpty(Set crls, Object cert)
+        throws AnnotatedException
+    {
+        if (crls.isEmpty())
+        {
+            if (cert instanceof X509AttributeCertificate)
+            {
+                X509AttributeCertificate aCert = (X509AttributeCertificate)cert;
+
+                throw new AnnotatedException("No CRLs found for issuer \"" + aCert.getIssuer().getPrincipals()[0] + "\"");
+            }
+            else
+            {
+                X509Certificate xCert = (X509Certificate)cert;
+
+                throw new AnnotatedException("No CRLs found for issuer \"" + RFC4519Style.INSTANCE.toString(PrincipalUtils.getIssuerPrincipal(xCert)) + "\"");
+            }
         }
     }
 }

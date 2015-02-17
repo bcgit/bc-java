@@ -30,7 +30,7 @@ import org.bouncycastle.asn1.x509.TBSCertList;
  * ReasonCode Hode Instruction Code Invalidity Date Certificate Issuer
  * (critical)
  */
-public class X509CRLEntryObject extends X509CRLEntry
+class X509CRLEntryObject extends X509CRLEntry
 {
     private TBSCertList.CRLEntry c;
 

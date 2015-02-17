@@ -3,10 +3,8 @@ package org.bouncycastle.jce.provider;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
-import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateExpiredException;
@@ -29,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-
-import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -62,6 +58,8 @@ import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
 
@@ -139,15 +137,13 @@ class RFC3280CertPathUtilities
                     ASN1EncodableVector vec = new ASN1EncodableVector();
                     try
                     {
-                        Enumeration e = ASN1Sequence.getInstance(
-                            ASN1Sequence.fromByteArray(CertPathValidatorUtilities.getIssuerPrincipal(crl)
-                                .getEncoded())).getObjects();
+                        Enumeration e = ASN1Sequence.getInstance(PrincipalUtils.getIssuerPrincipal(crl)).getObjects();
                         while (e.hasMoreElements())
                         {
                             vec.add((ASN1Encodable)e.nextElement());
                         }
                     }
-                    catch (IOException e)
+                    catch (Exception e)
                     {
                         throw new AnnotatedException("Could not read CRL issuer.", e);
                     }
@@ -176,7 +172,7 @@ class RFC3280CertPathUtilities
                             genNames = new GeneralName[1];
                             try
                             {
-                                genNames[0] = new GeneralName(X500Name.getInstance(CertPathValidatorUtilities
+                                genNames[0] = new GeneralName(X500Name.getInstance(PrincipalUtils
                                     .getEncodedIssuerPrincipal(cert).getEncoded()));
                             }
                             catch (Exception e)
@@ -301,7 +297,16 @@ class RFC3280CertPathUtilities
                 isIndirect = true;
             }
         }
-        byte[] issuerBytes = CertPathValidatorUtilities.getIssuerPrincipal(crl).getEncoded();
+        byte[] issuerBytes;
+
+        try
+        {
+            issuerBytes = PrincipalUtils.getIssuerPrincipal(crl).getEncoded();
+        }
+        catch (IOException e)
+        {
+            throw new AnnotatedException("Exception encoding CRL issuer: " + e.getMessage(), e);
+        }
 
         boolean matchIssuer = false;
         if (dp.getCRLIssuer() != null)
@@ -336,8 +341,8 @@ class RFC3280CertPathUtilities
         }
         else
         {
-            if (CertPathValidatorUtilities.getIssuerPrincipal(crl).equals(
-                CertPathValidatorUtilities.getEncodedIssuerPrincipal(cert)))
+            if (PrincipalUtils.getIssuerPrincipal(crl).equals(
+                PrincipalUtils.getEncodedIssuerPrincipal(cert)))
             {
                 matchIssuer = true;
             }
@@ -445,7 +450,7 @@ class RFC3280CertPathUtilities
         PublicKey defaultCRLSignKey,
         PKIXExtendedParameters paramsPKIX,
         List certPathCerts,
-        Provider fipsProvider)
+        JcaJceHelper helper)
         throws AnnotatedException
     {
         // (f)
@@ -454,7 +459,7 @@ class RFC3280CertPathUtilities
         X509CertSelector certSelector = new X509CertSelector();
         try
         {
-            byte[] issuerPrincipal = CertPathValidatorUtilities.getIssuerPrincipal(crl).getEncoded();
+            byte[] issuerPrincipal = PrincipalUtils.getIssuerPrincipal(crl).getEncoded();
             certSelector.setSubject(issuerPrincipal);
         }
         catch (IOException e)
@@ -500,7 +505,7 @@ class RFC3280CertPathUtilities
             }
             try
             {
-                CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", fipsProvider);
+                PKIXCertPathBuilderSpi builder = new PKIXCertPathBuilderSpi();
                 X509CertSelector tmpCertSelector = new X509CertSelector();
                 tmpCertSelector.setCertificate(signingCert);
 
@@ -527,9 +532,9 @@ class RFC3280CertPathUtilities
 
                 PKIXExtendedBuilderParameters extParams = new PKIXExtendedBuilderParameters.Builder(paramsBuilder.build()).build();
 
-                List certs = builder.build(extParams).getCertPath().getCertificates();
+                List certs = builder.engineBuild(extParams).getCertPath().getCertificates();
                 validCerts.add(signingCert);
-                validKeys.add(CertPathValidatorUtilities.getNextWorkingKey(certs, 0, fipsProvider));
+                validKeys.add(CertPathValidatorUtilities.getNextWorkingKey(certs, 0, helper));
             }
             catch (CertPathBuilderException e)
             {
@@ -701,7 +706,7 @@ class RFC3280CertPathUtilities
 
         try
         {
-            crlselect.addIssuerName(crl.getIssuerX500Principal().getEncoded());
+            crlselect.addIssuerName(PrincipalUtils.getIssuerPrincipal(crl).getEncoded());
         }
         catch (IOException e)
         {
@@ -771,7 +776,7 @@ class RFC3280CertPathUtilities
         if (pkixParams.isUseDeltasEnabled())
         {
             // (c) (1)
-            if (!deltaCRL.getIssuerX500Principal().equals(completeCRL.getIssuerX500Principal()))
+            if (!PrincipalUtils.getIssuerPrincipal(deltaCRL).equals(PrincipalUtils.getIssuerPrincipal(completeCRL)))
             {
                 throw new AnnotatedException("Complete CRL issuer does not match delta CRL issuer.");
             }
@@ -1187,13 +1192,12 @@ class RFC3280CertPathUtilities
         //
         if (!(CertPathValidatorUtilities.isSelfIssued(cert) && (i < n)))
         {
-            X500Principal principal = CertPathValidatorUtilities.getSubjectPrincipal(cert);
-            ASN1InputStream aIn = new ASN1InputStream(principal.getEncoded());
+            X500Name principal = PrincipalUtils.getSubjectPrincipal(cert);
             ASN1Sequence dns;
 
             try
             {
-                dns = DERSequence.getInstance(aIn.readObject());
+                dns = DERSequence.getInstance(principal.getEncoded());
             }
             catch (Exception e)
             {
@@ -1478,9 +1482,9 @@ class RFC3280CertPathUtilities
         int index,
         PublicKey workingPublicKey,
         boolean verificationAlreadyPerformed,
-        X500Principal workingIssuerName,
+        X500Name workingIssuerName,
         X509Certificate sign,
-        Provider fipsProvider)
+        JcaJceHelper helper)
         throws ExtCertPathValidatorException
     {
         List certs = certPath.getCertificates();
@@ -1531,7 +1535,7 @@ class RFC3280CertPathUtilities
             try
             {
                 checkCRLs(paramsPKIX, cert, CertPathValidatorUtilities.getValidCertDateFromValidityModel(paramsPKIX,
-                    certPath, index), sign, workingPublicKey, certs, fipsProvider);
+                    certPath, index), sign, workingPublicKey, certs, helper);
             }
             catch (AnnotatedException e)
             {
@@ -1547,9 +1551,9 @@ class RFC3280CertPathUtilities
         //
         // (a) (4) name chaining
         //
-        if (!CertPathValidatorUtilities.getEncodedIssuerPrincipal(cert).equals(workingIssuerName))
+        if (!PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(workingIssuerName))
         {
-            throw new ExtCertPathValidatorException("IssuerName(" + CertPathValidatorUtilities.getEncodedIssuerPrincipal(cert)
+            throw new ExtCertPathValidatorException("IssuerName(" + PrincipalUtils.getEncodedIssuerPrincipal(cert)
                 + ") does not match SubjectName(" + workingIssuerName + ") of signing certificate.", null,
                 certPath, index);
         }
@@ -1758,7 +1762,7 @@ class RFC3280CertPathUtilities
         CertStatus certStatus,
         ReasonsMask reasonMask,
         List certPathCerts,
-        Provider fipsProvider)
+        JcaJceHelper helper)
         throws AnnotatedException
     {
         Date currentDate = new Date(System.currentTimeMillis());
@@ -1802,7 +1806,7 @@ class RFC3280CertPathUtilities
 
                 // (f)
                 Set keys = RFC3280CertPathUtilities.processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey,
-                    paramsPKIX, certPathCerts, fipsProvider);
+                    paramsPKIX, certPathCerts, helper);
                 // (g)
                 PublicKey key = RFC3280CertPathUtilities.processCRLG(crl, keys);
 
@@ -1934,7 +1938,7 @@ class RFC3280CertPathUtilities
         X509Certificate sign,
         PublicKey workingPublicKey,
         List certPathCerts,
-        Provider fipsProvider)
+        JcaJceHelper helper)
         throws AnnotatedException
     {
         AnnotatedException lastException = null;
@@ -1986,7 +1990,7 @@ class RFC3280CertPathUtilities
                 {
                     try
                     {
-                        checkCRL(dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, fipsProvider);
+                        checkCRL(dps[i], finalParams, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask, certPathCerts, helper);
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
@@ -2015,7 +2019,7 @@ class RFC3280CertPathUtilities
                 ASN1Primitive issuer = null;
                 try
                 {
-                    issuer = new ASN1InputStream(CertPathValidatorUtilities.getEncodedIssuerPrincipal(cert).getEncoded())
+                    issuer = new ASN1InputStream(PrincipalUtils.getEncodedIssuerPrincipal(cert).getEncoded())
                         .readObject();
                 }
                 catch (Exception e)
@@ -2026,7 +2030,7 @@ class RFC3280CertPathUtilities
                     new GeneralName(GeneralName.directoryName, issuer))), null, null);
                 PKIXExtendedParameters paramsPKIXClone = (PKIXExtendedParameters)paramsPKIX.clone();
                 checkCRL(dp, paramsPKIXClone, cert, validDate, sign, workingPublicKey, certStatus, reasonsMask,
-                    certPathCerts, fipsProvider);
+                    certPathCerts, helper);
                 validCrlFound = true;
             }
             catch (AnnotatedException e)

@@ -45,6 +45,8 @@ import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.parsers.DHIESPublicKeyParser;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
@@ -55,7 +57,7 @@ import org.bouncycastle.util.Strings;
 public class IESCipher
     extends CipherSpi
 {
-    private final Provider provider = getBouncyCastleProvider();
+    private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private IESEngine engine;
     private int state = -1;
@@ -110,7 +112,7 @@ public class IESCipher
         {
             try
             {
-                engineParam = AlgorithmParameters.getInstance("IES", provider);
+                engineParam = helper.createAlgorithmParameters("IES");
                 engineParam.init(engineSpec);
             }
             catch (Exception e)
@@ -467,18 +469,6 @@ public class IESCipher
         System.arraycopy(buf, 0, output, outputOffset, buf.length);
         return buf.length;
 
-    }
-
-    private static Provider getBouncyCastleProvider()
-    {
-        if (Security.getProvider("BC") != null)
-        {
-            return Security.getProvider("BC");
-        }
-        else
-        {
-            return new BouncyCastleProvider();
-        }
     }
 
     /**

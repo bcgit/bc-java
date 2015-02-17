@@ -44,6 +44,9 @@ import org.bouncycastle.util.io.Streams;
 public class TlsUtils
 {
     public static final byte[] EMPTY_BYTES = new byte[0];
+    public static final short[] EMPTY_SHORTS = new short[0];
+    public static final int[] EMPTY_INTS = new int[0];
+    public static final long[] EMPTY_LONGS = new long[0];
 
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
 
@@ -726,6 +729,22 @@ public class TlsUtils
         return result;
     }
 
+    public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(TlsContext context,
+        TlsSignerCredentials signerCredentials)
+        throws IOException
+    {
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
+        if (TlsUtils.isTLSv12(context))
+        {
+            signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+            if (signatureAndHashAlgorithm == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+        return signatureAndHashAlgorithm;
+    }
+
     public static byte[] getExtensionData(Hashtable extensions, Integer extensionType)
     {
         return extensions == null ? null : (byte[])extensions.get(extensionType);
@@ -1114,6 +1133,13 @@ public class TlsUtils
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
+    }
+
+    public static Digest createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        return signatureAndHashAlgorithm == null
+            ?   new CombinedHash()
+            :   createHash(signatureAndHashAlgorithm.getHash());
     }
 
     public static Digest cloneHash(short hashAlgorithm, Digest hash)
