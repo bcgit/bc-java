@@ -6,12 +6,14 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
+import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -23,14 +25,6 @@ public class SRP6Test extends SimpleTest
     {
         return new BigInteger(1, Hex.decode(hex));
     }
-    
-    // 1024 bit example prime from RFC5054 and corresponding generator
-    private static final BigInteger N_1024 = fromHex("EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C"
-            + "9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE4"
-            + "8E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B29"
-            + "7BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9A"
-            + "FD5138FE8376435B9FC61D2FC0EB06E3");
-    private static final BigInteger g_1024 = BigInteger.valueOf(2);
 
     private final SecureRandom random = new SecureRandom();
 
@@ -43,9 +37,9 @@ public class SRP6Test extends SimpleTest
     {
         rfc5054AppendixBTestVectors();
 
-        testMutualVerification(N_1024, g_1024);
-        testClientCatchesBadB(N_1024, g_1024);
-        testServerCatchesBadA(N_1024, g_1024);
+        testMutualVerification(SRP6StandardGroups.rfc5054_1024);
+        testClientCatchesBadB(SRP6StandardGroups.rfc5054_1024);
+        testServerCatchesBadA(SRP6StandardGroups.rfc5054_1024);
 
         testWithRandomParams(256);
         testWithRandomParams(384);
@@ -57,8 +51,8 @@ public class SRP6Test extends SimpleTest
         byte[] I = "alice".getBytes("UTF8");
         byte[] P = "password123".getBytes("UTF8");
         byte[] s = Hex.decode("BEB25379D1A8581EB5A727673A2441EE");
-        BigInteger N = N_1024;
-        BigInteger g = g_1024;
+        BigInteger N = SRP6StandardGroups.rfc5054_1024.getN();
+        BigInteger g = SRP6StandardGroups.rfc5054_1024.getG();
         BigInteger a = fromHex("60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393");
         BigInteger b = fromHex("E487CB59D31AC550471E81F00F6928E01DDA08E974A004F49E61F5D105284D20");
 
@@ -163,13 +157,10 @@ public class SRP6Test extends SimpleTest
         paramGen.init(bits, 25, random);
         DHParameters parameters = paramGen.generateParameters();
 
-        BigInteger g = parameters.getG();
-        BigInteger p = parameters.getP();
-
-        testMutualVerification(p, g);
+        testMutualVerification(new SRP6GroupParameters(parameters.getP(), parameters.getG()));
     }
-    
-    private void testMutualVerification(BigInteger N, BigInteger g) throws CryptoException
+
+    private void testMutualVerification(SRP6GroupParameters group) throws CryptoException
     {
         byte[] I = "username".getBytes();
         byte[] P = "password".getBytes();
@@ -177,14 +168,14 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
-        gen.init(N, g, new SHA256Digest());
+        gen.init(group, new SHA256Digest());
         BigInteger v = gen.generateVerifier(s, I, P);
 
         SRP6Client client = new SRP6Client();
-        client.init(N, g, new SHA256Digest(), random);
+        client.init(group, new SHA256Digest(), random);
 
         SRP6Server server = new SRP6Server();
-        server.init(N, g, v, new SHA256Digest(), random);
+        server.init(group, v, new SHA256Digest(), random);
 
         BigInteger A = client.generateClientCredentials(s, I, P);
         BigInteger B = server.generateServerCredentials();
@@ -198,7 +189,7 @@ public class SRP6Test extends SimpleTest
         }
     }
 
-    private void testClientCatchesBadB(BigInteger N, BigInteger g)
+    private void testClientCatchesBadB(SRP6GroupParameters group)
     {
         byte[] I = "username".getBytes();
         byte[] P = "password".getBytes();
@@ -206,7 +197,7 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6Client client = new SRP6Client();
-        client.init(N, g, new SHA256Digest(), random);
+        client.init(group, new SHA256Digest(), random);
 
         client.generateClientCredentials(s, I, P);
 
@@ -222,7 +213,7 @@ public class SRP6Test extends SimpleTest
 
         try
         {
-            client.calculateSecret(N);
+            client.calculateSecret(group.getN());
             fail("Client failed to detect invalid value for 'B'");
         }
         catch (CryptoException e)
@@ -231,7 +222,7 @@ public class SRP6Test extends SimpleTest
         }
     }
 
-    private void testServerCatchesBadA(BigInteger N, BigInteger g)
+    private void testServerCatchesBadA(SRP6GroupParameters group)
     {
         byte[] I = "username".getBytes();
         byte[] P = "password".getBytes();
@@ -239,11 +230,11 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
-        gen.init(N, g, new SHA256Digest());
+        gen.init(group, new SHA256Digest());
         BigInteger v = gen.generateVerifier(s, I, P);
 
         SRP6Server server = new SRP6Server();
-        server.init(N, g, v, new SHA256Digest(), random);
+        server.init(group, v, new SHA256Digest(), random);
 
         server.generateServerCredentials();
 
@@ -259,7 +250,7 @@ public class SRP6Test extends SimpleTest
 
         try
         {
-            server.calculateSecret(N);
+            server.calculateSecret(group.getN());
             fail("Client failed to detect invalid value for 'A'");
         }
         catch (CryptoException e)

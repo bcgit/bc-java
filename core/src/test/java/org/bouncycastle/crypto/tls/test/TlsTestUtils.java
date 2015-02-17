@@ -123,7 +123,7 @@ public class TlsTestUtils
             {
                 SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)
                     supportedSignatureAlgorithms.elementAt(i);
-                if (alg.getSignature() == SignatureAlgorithm.rsa)
+                if (alg.getSignature() == signatureAlgorithm)
                 {
                     signatureAndHashAlgorithm = alg;
                     break;
