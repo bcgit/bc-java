@@ -57,17 +57,17 @@ class MockSRPTlsServer
             + AlertDescription.getText(alertDescription));
     }
 
-//    public void notifyHandshakeComplete() throws IOException
-//    {
-//        super.notifyHandshakeComplete();
-//
-//        byte[] pskIdentity = context.getSecurityParameters().getPskIdentity();
-//        if (pskIdentity != null)
-//        {
-//            String name = Strings.fromUTF8ByteArray(pskIdentity);
-//            System.out.println("TLS-SRP server completed handshake for PSK identity: " + name);
-//        }
-//    }
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        byte[] srpIdentity = context.getSecurityParameters().getSRPIdentity();
+        if (srpIdentity != null)
+        {
+            String name = Strings.fromUTF8ByteArray(srpIdentity);
+            System.out.println("TLS-SRP server completed handshake for SRP identity: " + name);
+        }
+    }
 
     protected ProtocolVersion getMaximumVersion()
     {
