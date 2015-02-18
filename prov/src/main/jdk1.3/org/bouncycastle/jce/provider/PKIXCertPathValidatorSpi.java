@@ -18,15 +18,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.jce.X509Principal;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.ExtendedPKIXParameters;
-import org.bouncycastle.jcajce.PKIXExtendedParameters;
-import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 
 /**
  * CertPathValidatorSpi implementation for X.509 Certificate validation � la RFC
@@ -35,6 +36,11 @@ import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 public class PKIXCertPathValidatorSpi
         extends CertPathValidatorSpi
 {
+    private final JcaJceHelper helper = new BCJcaJceHelper();
+
+    public PKIXCertPathValidatorSpi()
+    {
+    }
 
     public CertPathValidatorResult engineValidate(
             CertPath certPath,
@@ -42,11 +48,11 @@ public class PKIXCertPathValidatorSpi
             throws CertPathValidatorException,
             InvalidAlgorithmParameterException
     {
-       if (!(params instanceof CertPathParameters))
-       {
+        if (!(params instanceof CertPathParameters))
+        {
             throw new InvalidAlgorithmParameterException("Parameters must be a " + PKIXParameters.class.getName()
                     + " instance.");
-       }
+        }
 
         PKIXExtendedParameters paramsPKIX;
         if (params instanceof PKIXParameters)
@@ -71,6 +77,7 @@ public class PKIXCertPathValidatorSpi
         {
             paramsPKIX = (PKIXExtendedParameters)params;
         }
+
         if (paramsPKIX.getTrustAnchors() == null)
         {
             throw new InvalidAlgorithmParameterException(
@@ -120,7 +127,7 @@ public class PKIXCertPathValidatorSpi
         {
             throw new CertPathValidatorException("Trust anchor for certification path not found.", null, certPath, -1);
         }
- 
+
         // RFC 5280 - CRLs must originate from the same trust anchor as the target certificate.
         paramsPKIX = new PKIXExtendedParameters.Builder(paramsPKIX).setTrustAnchor(trust).build();
 
@@ -205,19 +212,19 @@ public class PKIXCertPathValidatorSpi
         // (g), (h), (i), (j)
         //
         PublicKey workingPublicKey;
-        X509Principal workingIssuerName;
+        X500Name workingIssuerName;
 
         X509Certificate sign = trust.getTrustedCert();
         try
         {
             if (sign != null)
             {
-                workingIssuerName = CertPathValidatorUtilities.getSubjectPrincipal(sign);
+                workingIssuerName = PrincipalUtils.getSubjectPrincipal(sign);
                 workingPublicKey = sign.getPublicKey();
             }
             else
             {
-                workingIssuerName = new X509Principal(trust.getCAName());
+                workingIssuerName = PrincipalUtils.getCA(trust);
                 workingPublicKey = trust.getCAPublicKey();
             }
         }
@@ -237,7 +244,7 @@ public class PKIXCertPathValidatorSpi
             throw new ExtCertPathValidatorException(
                     "Algorithm identifier of public key of trust anchor could not be read.", e, certPath, -1);
         }
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
         ASN1Encodable workingPublicKeyParameters = workingAlgId.getParameters();
 
         //
@@ -291,7 +298,7 @@ public class PKIXCertPathValidatorSpi
             //
 
             RFC3280CertPathUtilities.processCertA(certPath, paramsPKIX, index, workingPublicKey,
-                verificationAlreadyPerformed, workingIssuerName, sign);
+                verificationAlreadyPerformed, workingIssuerName, sign, helper);
 
             RFC3280CertPathUtilities.processCertBC(certPath, index, nameConstraintValidator);
 
@@ -376,12 +383,12 @@ public class PKIXCertPathValidatorSpi
                 sign = cert;
 
                 // (c)
-                workingIssuerName = CertPathValidatorUtilities.getSubjectPrincipal(sign);
+                workingIssuerName = PrincipalUtils.getSubjectPrincipal(sign);
 
                 // (d)
                 try
                 {
-                    workingPublicKey = CertPathValidatorUtilities.getNextWorkingKey(certPath.getCertificates(), index);
+                    workingPublicKey = CertPathValidatorUtilities.getNextWorkingKey(certPath.getCertificates(), index, helper);
                 }
                 catch (CertPathValidatorException e)
                 {
@@ -390,7 +397,7 @@ public class PKIXCertPathValidatorSpi
 
                 workingAlgId = CertPathValidatorUtilities.getAlgorithmIdentifier(workingPublicKey);
                 // (f)
-                workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
                 // (e)
                 workingPublicKeyParameters = workingAlgId.getParameters();
             }

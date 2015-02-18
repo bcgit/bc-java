@@ -399,10 +399,6 @@ class OperatorHelper
         {
             throw new OpCertificateException("cannot get encoded form of certificate: " + e.getMessage(), e);
         }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new OpCertificateException("cannot create certificate factory: " + e.getMessage(), e);
-        }
         catch (NoSuchProviderException e)
         {
             throw new OpCertificateException("cannot find factory provider: " + e.getMessage(), e);
