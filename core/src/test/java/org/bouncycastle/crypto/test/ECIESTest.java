@@ -158,7 +158,7 @@ public class ECIESTest
         }
     }
 
-    private void doEphemeralTest(byte[] iv)
+    private void doEphemeralTest(byte[] iv, final boolean usePointCompression)
         throws Exception
     {
         BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
@@ -193,7 +193,7 @@ public class ECIESTest
         {
             public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
             {
-                return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded();
+                return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(usePointCompression);
             }
         });
 
@@ -365,8 +365,10 @@ public class ECIESTest
 
         doTest(p1, p2);
 
-        doEphemeralTest(null);
-        doEphemeralTest(TWOFISH_IV);
+        doEphemeralTest(null, false);
+        doEphemeralTest(null, true);
+        doEphemeralTest(TWOFISH_IV, false);
+        doEphemeralTest(TWOFISH_IV, true);
     }
 
     public static void main(

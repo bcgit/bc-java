@@ -110,9 +110,8 @@ public class IESEngine
         extractParams(params);
     }
 
-
     /**
-     * Initialise the encryptor.
+     * Initialise the decryptor.
      *
      * @param publicKey      the recipient's/sender's public key parameters
      * @param params         encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
@@ -367,7 +366,6 @@ public class IESEngine
             throw new InvalidCipherTextException("Invalid MAC.");
         }
 
-
         // Output the message.
         return Arrays.copyOfRange(M, 0, len);
     }
@@ -418,9 +416,7 @@ public class IESEngine
         byte[] VZ;
         if (V.length != 0)
         {
-            VZ = new byte[V.length + Z.length];
-            System.arraycopy(V, 0, VZ, 0, V.length);
-            System.arraycopy(Z, 0, VZ, V.length, Z.length);
+            VZ = Arrays.concatenate(V, Z);
         }
         else
         {
