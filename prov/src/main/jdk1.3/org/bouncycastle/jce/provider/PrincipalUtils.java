@@ -9,7 +9,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.asn1.x509.TBSCertList;
-import org.bouncycastle.asn1.x509.X500Name;
+import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.x509.X509AttributeCertificate;
 
 class PrincipalUtils
@@ -22,7 +22,7 @@ class PrincipalUtils
 
             return X500Name.getInstance(tbsCert.getSubject());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new IllegalStateException(e.toString());
         }
@@ -36,9 +36,9 @@ class PrincipalUtils
 
             return X500Name.getInstance(tbsCertList.getIssuer());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
-            throw new CRLException(e.toString());
+            throw new IllegalStateException(e.toString());
         }
     }
 
@@ -50,7 +50,7 @@ class PrincipalUtils
 
             return X500Name.getInstance(tbsCert.getIssuer());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new IllegalStateException(e.toString());
         }
