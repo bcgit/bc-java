@@ -406,6 +406,14 @@ public class IESCipher
 
         final byte[] V;
 
+        if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
+        {
+            if (engineSpec.getPointCompression())
+            {
+                engine.setPointCompression(true);
+            }
+        }
+
         if (otherKeyParameter != null)
         {
             try

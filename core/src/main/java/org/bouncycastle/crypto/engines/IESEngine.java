@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
@@ -44,6 +45,9 @@ public class IESEngine
     private EphemeralKeyPairGenerator keyPairGenerator;
     private KeyParser keyParser;
     private byte[] IV;
+    private byte[] compressedEphemeralPublicKey;
+    private boolean usePointCompression = false;
+    private int numEphemeralPubKeyBytes;
 
     /**
      * set up for use with stream mode, where the key derivation function
@@ -141,6 +145,14 @@ public class IESEngine
         this.keyParser = publicKeyParser;
 
         extractParams(params);
+    }
+
+    /**
+     * @param usePointCompression if true then processBlock() outputs compressed EC coordinates
+     */
+    public void setPointCompression(boolean usePointCompression)
+    {
+        this.usePointCompression = usePointCompression;
     }
 
     private void extractParams(CipherParameters params)
@@ -256,11 +268,18 @@ public class IESEngine
         mac.doFinal(T, 0);
 
 
-        // Output the triple (V,C,T).
-        byte[] Output = new byte[V.length + len + T.length];
-        System.arraycopy(V, 0, Output, 0, V.length);
-        System.arraycopy(C, 0, Output, V.length, len);
-        System.arraycopy(T, 0, Output, V.length + len, T.length);
+        // Output the triple (V,C,T) where
+        //   V is the ephemeral public key
+        //   C is the ciphertext
+        //   T is the authentication tag
+        byte[] ephPublicKey = V;
+        if (usePointCompression) {
+            ephPublicKey = compressedEphemeralPublicKey;
+        }
+        byte[] Output = new byte[ephPublicKey.length + len + T.length];
+        System.arraycopy(ephPublicKey, 0, Output, 0, ephPublicKey.length);
+        System.arraycopy(C, 0, Output, ephPublicKey.length, len);
+        System.arraycopy(T, 0, Output, ephPublicKey.length + len, T.length);
         return Output;
     }
 
@@ -282,7 +301,7 @@ public class IESEngine
         if (cipher == null)
         {
             // Streaming mode.
-            K1 = new byte[inLen - V.length - mac.getMacSize()];
+            K1 = new byte[inLen - numEphemeralPubKeyBytes - mac.getMacSize()];
             K2 = new byte[param.getMacKeySize() / 8];
             K = new byte[K1.length + K2.length];
 
@@ -303,7 +322,7 @@ public class IESEngine
 
             for (int i = 0; i != K1.length; i++)
             {
-                M[i] = (byte)(in_enc[inOff + V.length + i] ^ K1[i]);
+                M[i] = (byte)(in_enc[inOff + numEphemeralPubKeyBytes + i] ^ K1[i]);
             }
 
             len = K1.length;
@@ -329,8 +348,8 @@ public class IESEngine
                 cipher.init(false, new KeyParameter(K1));    
             }
 
-            M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
-            len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
+            M = new byte[cipher.getOutputSize(inLen - numEphemeralPubKeyBytes - mac.getMacSize())];
+            len = cipher.processBytes(in_enc, inOff + numEphemeralPubKeyBytes, inLen - numEphemeralPubKeyBytes - mac.getMacSize(), M, 0);
             len += cipher.doFinal(M, len);
         }
 
@@ -350,7 +369,7 @@ public class IESEngine
 
         byte[] T2 = new byte[T1.length];
         mac.init(new KeyParameter(K2));
-        mac.update(in_enc, inOff + V.length, inLen - V.length - T2.length);
+        mac.update(in_enc, inOff + numEphemeralPubKeyBytes, inLen - numEphemeralPubKeyBytes - T2.length);
 
         if (P2 != null)
         {
@@ -387,6 +406,15 @@ public class IESEngine
 
                 this.privParam = ephKeyPair.getKeyPair().getPrivate();
                 this.V = ephKeyPair.getEncodedPublicKey();
+
+                // take a copy of the compressed ephemeral public key in case usePointCompression is true
+                // when it comes time to return the encrypted V,C,T triple.
+                AsymmetricKeyParameter publicKey = ephKeyPair.getKeyPair().getPublic();
+                if (publicKey instanceof ECPublicKeyParameters) {
+                    this.compressedEphemeralPublicKey = ((ECPublicKeyParameters)publicKey).getQ().getEncoded(true);
+                } else {
+                    // this path should never be taken
+                }
             }
         }
         else
@@ -404,8 +432,16 @@ public class IESEngine
                     throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
                 }
 
-                int encLength = (inLen - bIn.available());
-                this.V = Arrays.copyOfRange(in, inOff, inOff + encLength);
+                numEphemeralPubKeyBytes = (inLen - bIn.available());
+                if (pubParam instanceof ECPublicKeyParameters) {
+                    this.V = ((ECPublicKeyParameters)pubParam).getQ().getEncoded(false);
+                    // getEncoded(false) gives the full-fat (uncompressed) version of the
+                    // ephemeral key. but when reading bytes out of the incoming encrypted V,C,T
+                    // triple you still need the correct offset, which will be different to
+                    // V.length if V was a compressed ECPoint
+                } else {
+                    this.V = Arrays.copyOfRange(in, inOff, inOff + numEphemeralPubKeyBytes);
+                }
             }
         }
 
