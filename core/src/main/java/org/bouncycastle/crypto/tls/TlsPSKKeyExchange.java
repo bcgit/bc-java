@@ -237,7 +237,7 @@ public class TlsPSKKeyExchange
 
         TlsUtils.writeOpaque16(psk_identity, output);
 
-        context.getSecurityParameters().pskIdentity = psk_identity;
+        context.getSecurityParameters().pskIdentity = Arrays.clone(psk_identity);
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
