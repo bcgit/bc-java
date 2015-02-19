@@ -431,11 +431,12 @@ public class IESCipher
             ECKeyPairGenerator gen = new ECKeyPairGenerator();
             gen.init(new ECKeyGenerationParameters(ecParams, random));
 
+            final boolean usePointCompression = engineSpec.getPointCompression();
             EphemeralKeyPairGenerator kGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder()
             {
                 public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
                 {
-                    return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded();
+                    return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(usePointCompression);
                 }
             });
 
