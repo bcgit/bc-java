@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.TeeInputStream;
 
@@ -76,11 +77,13 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         this.srpClient = new SRP6Client();
     }
 
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPLoginParameters loginParameters)
+    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity,
+        TlsSRPLoginParameters loginParameters)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
         this.tlsSigner = createSigner(keyExchange);
+        this.identity = identity;
         this.srpServer = new SRP6Server();
         this.srpGroup = loginParameters.getGroup();
         this.srpVerifier = loginParameters.getVerifier();
@@ -260,6 +263,8 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
     {
         BigInteger A = srpClient.generateClientCredentials(srpSalt, identity, password);
         TlsSRPUtils.writeSRPParameter(A, output);
+
+        context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
@@ -276,6 +281,8 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
+
+        context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
     }
 
     public byte[] generatePremasterSecret() throws IOException

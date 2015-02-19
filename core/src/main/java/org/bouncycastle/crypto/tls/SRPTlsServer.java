@@ -161,6 +161,6 @@ public class SRPTlsServer
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, loginParameters);
+        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, srpIdentity, loginParameters);
     }
 }

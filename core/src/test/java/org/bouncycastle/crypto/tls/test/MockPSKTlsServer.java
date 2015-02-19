@@ -46,7 +46,7 @@ class MockPSKTlsServer
     {
         super.notifyHandshakeComplete();
 
-        byte[] pskIdentity = context.getSecurityParameters().getPskIdentity();
+        byte[] pskIdentity = context.getSecurityParameters().getPSKIdentity();
         if (pskIdentity != null)
         {
             String name = Strings.fromUTF8ByteArray(pskIdentity);
