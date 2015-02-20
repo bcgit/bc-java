@@ -43,9 +43,6 @@ public class RSAKeyPairGenerator
             int mindiffbits = strength / 3;
             int minWeight = strength >> 2;
 
-            // d lower bound is 2^(strength / 2)
-            dLowerBound = BigInteger.valueOf(2).pow(strength / 2);
-
             e = param.getPublicExponent();
 
             // TODO Consider generating safe primes for p, q (see DHParametersHelper.generateSafePrimes)
@@ -118,7 +115,7 @@ public class RSAKeyPairGenerator
             // also, for backward compatibility, if d is not the same as
             // e.modInverse(phi), we need to start over
 
-            if (!d.equals(e.modInverse(phi)) || d.compareTo(dLowerBound) <= 0)
+            if (d.bitLength() <= qbitlength || !d.equals(e.modInverse(phi)))
             {
                 continue;
             }
