@@ -413,22 +413,26 @@ public class IESEngine
         byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
 
         // Create input to KDF.  
-        byte[] VZ;
         if (V.length != 0)
         {
-            VZ = Arrays.concatenate(V, Z);
+            byte[] VZ = Arrays.concatenate(V, Z);
+            Arrays.fill(Z, (byte)0);
+            Z = VZ;
         }
-        else
+
+        try
         {
-            VZ = Z;
+            // Initialise the KDF.
+            KDFParameters kdfParam = new KDFParameters(Z, param.getDerivationV());
+            kdf.init(kdfParam);
+
+            return forEncryption
+                ? encryptBlock(in, inOff, inLen)
+                : decryptBlock(in, inOff, inLen);
         }
-
-        // Initialise the KDF.
-        KDFParameters kdfParam = new KDFParameters(VZ, param.getDerivationV());
-        kdf.init(kdfParam);
-
-        return forEncryption
-            ? encryptBlock(in, inOff, inLen)
-            : decryptBlock(in, inOff, inLen);
+        finally
+        {
+            Arrays.fill(Z, (byte)0);
+        }
     }
 }
