@@ -63,14 +63,14 @@ public class SecP521R1Curve extends ECCurve.AbstractFp
         return new SecP521R1FieldElement(x);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
     {
-        return new SecP521R1Point(this, x, y, withCompression);
+        return new SecP521R1Point(this, x, y);
     }
 
-    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+    protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
     {
-        return new SecP521R1Point(this, x, y, zs, withCompression);
+        return new SecP521R1Point(this, x, y, zs);
     }
 
     public ECPoint getInfinity()

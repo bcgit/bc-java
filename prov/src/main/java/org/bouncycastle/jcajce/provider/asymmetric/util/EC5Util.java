@@ -123,14 +123,13 @@ public class EC5Util
     }
 
     public static org.bouncycastle.jce.spec.ECParameterSpec convertSpec(
-        ECParameterSpec ecSpec,
-        boolean withCompression)
+        ECParameterSpec ecSpec)
     {
         ECCurve curve = convertCurve(ecSpec.getCurve());
 
         return new org.bouncycastle.jce.spec.ECParameterSpec(
             curve,
-            convertPoint(curve, ecSpec.getGenerator(), withCompression),
+            convertPoint(curve, ecSpec.getGenerator()),
             ecSpec.getOrder(),
             BigInteger.valueOf(ecSpec.getCofactor()),
             ecSpec.getCurve().getSeed());
@@ -138,17 +137,15 @@ public class EC5Util
 
     public static org.bouncycastle.math.ec.ECPoint convertPoint(
         ECParameterSpec ecSpec,
-        ECPoint point,
-        boolean withCompression)
+        ECPoint point)
     {
-        return convertPoint(convertCurve(ecSpec.getCurve()), point, withCompression);
+        return convertPoint(convertCurve(ecSpec.getCurve()), point);
     }
 
     public static org.bouncycastle.math.ec.ECPoint convertPoint(
         ECCurve curve,
-        ECPoint point,
-        boolean withCompression)
+        ECPoint point)
     {
-        return curve.createPoint(point.getAffineX(), point.getAffineY(), withCompression);
+        return curve.createPoint(point.getAffineX(), point.getAffineY());
     }
 }

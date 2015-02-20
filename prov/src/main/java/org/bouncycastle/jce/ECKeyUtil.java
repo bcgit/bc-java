@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECParameterSpec;
 
 /**
  * Utility class to allow conversion of EC key parameters to explicit from named
@@ -85,11 +86,12 @@ public class ECKeyUtil
 
                     curveParams = ECUtil.getNamedCurveByOid(oid);
                     // ignore seed value due to JDK bug
-                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH());
+                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG_X9(), curveParams.getN(), curveParams.getH(), null);
                 }
                 else if (params.isImplicitlyCA())
                 {
-                    curveParams = new X9ECParameters(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
+                    ECParameterSpec ecImplicitlyCa = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+                    curveParams = new X9ECParameters(ecImplicitlyCa.getCurve(), ecImplicitlyCa.getG(), ecImplicitlyCa.getN(), ecImplicitlyCa.getH());
                 }
                 else
                 {
@@ -175,11 +177,12 @@ public class ECKeyUtil
 
                     curveParams = ECUtil.getNamedCurveByOid(oid);
                     // ignore seed value due to JDK bug
-                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH());
+                    curveParams = new X9ECParameters(curveParams.getCurve(), curveParams.getG_X9(), curveParams.getN(), curveParams.getH(), null);
                 }
                 else if (params.isImplicitlyCA())
                 {
-                    curveParams = new X9ECParameters(BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getCurve(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getG(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getN(), BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa().getH());
+                    ECParameterSpec ecImplicitlyCa = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+                    curveParams = new X9ECParameters(ecImplicitlyCa.getCurve(), ecImplicitlyCa.getG(), ecImplicitlyCa.getN(), ecImplicitlyCa.getH());
                 }
                 else
                 {

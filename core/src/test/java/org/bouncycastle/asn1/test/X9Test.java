@@ -75,7 +75,9 @@ public class X9Test
 
         X9ECPoint               x9P = new X9ECPoint(ecP.getCurve(), p);
 
-        if (!Arrays.areEqual(p.getOctets(), x9P.getPoint().getEncoded()))
+        // NOTE: points no longer track compression internally; X9ECPoint retains the encoding it's constructed with
+//        if (!Arrays.areEqual(p.getOctets(), x9P.getPoint().getEncoded()))
+        if (!x9P.isPointCompressed())
         {
             fail("point encoding not preserved");
         }

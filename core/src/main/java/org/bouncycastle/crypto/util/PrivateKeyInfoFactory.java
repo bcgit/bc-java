@@ -69,6 +69,7 @@ public class PrivateKeyInfoFactory
             }
             else
             {
+                // TODO No option for point compression here
                 X9ECParameters ecP = new X9ECParameters(
                     domainParams.getCurve(),
                     domainParams.getG(),

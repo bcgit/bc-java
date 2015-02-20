@@ -119,7 +119,7 @@ public class ECTest
             fail("y uncompressed incorrectly");
         }
 
-        byte[] encoding = p.getEncoded();
+        byte[] encoding = p.getEncoded(true);
 
         if (!areEqual(encoding, Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")))
         {

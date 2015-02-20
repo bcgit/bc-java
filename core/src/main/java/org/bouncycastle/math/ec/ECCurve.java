@@ -115,39 +115,16 @@ public abstract class ECCurve
         return p;
     }
 
-    /**
-     * @deprecated per-point compression property will be removed, use {@link #validatePoint(BigInteger, BigInteger)}
-     * and refer {@link ECPoint#getEncoded(boolean)}
-     */
-    public ECPoint validatePoint(BigInteger x, BigInteger y, boolean withCompression)
-    {
-        ECPoint p = createPoint(x, y, withCompression);
-        if (!p.isValid())
-        {
-            throw new IllegalArgumentException("Invalid point coordinates");
-        }
-        return p;
-    }
-
     public ECPoint createPoint(BigInteger x, BigInteger y)
     {
-        return createPoint(x, y, false);
-    }
-
-    /**
-     * @deprecated per-point compression property will be removed, use {@link #createPoint(BigInteger, BigInteger)}
-     * and refer {@link ECPoint#getEncoded(boolean)}
-     */
-    public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
-    {
-        return createRawPoint(fromBigInteger(x), fromBigInteger(y), withCompression);
+        return createRawPoint(fromBigInteger(x), fromBigInteger(y));
     }
 
     protected abstract ECCurve cloneCurve();
 
-    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression);
+    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y);
 
-    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression);
+    protected abstract ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs);
 
     protected ECMultiplier createDefaultMultiplier()
     {
@@ -214,7 +191,7 @@ public abstract class ECCurve
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
 
-        return validatePoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
+        return validatePoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger());
     }
 
     /**
@@ -517,7 +494,7 @@ public abstract class ECCurve
                 y = y.negate();
             }
 
-            return this.createRawPoint(x, y, true);
+            return this.createRawPoint(x, y);
         }
     }
 
@@ -605,14 +582,14 @@ public abstract class ECCurve
             return new ECFieldElement.Fp(this.q, this.r, x);
         }
 
-        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
         {
-            return new ECPoint.Fp(this, x, y, withCompression);
+            return new ECPoint.Fp(this, x, y);
         }
 
-        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
         {
-            return new ECPoint.Fp(this, x, y, zs, withCompression);
+            return new ECPoint.Fp(this, x, y, zs);
         }
 
         public ECPoint importPoint(ECPoint p)
@@ -627,8 +604,7 @@ public abstract class ECCurve
                     return new ECPoint.Fp(this,
                         fromBigInteger(p.x.toBigInteger()),
                         fromBigInteger(p.y.toBigInteger()),
-                        new ECFieldElement[]{ fromBigInteger(p.zs[0].toBigInteger()) },
-                        p.withCompression);
+                        new ECFieldElement[]{ fromBigInteger(p.zs[0].toBigInteger()) });
                 default:
                     break;
                 }
@@ -923,7 +899,7 @@ public abstract class ECCurve
             return new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3, x);
         }
 
-        public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
+        public ECPoint createPoint(BigInteger x, BigInteger y)
         {
             ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
 
@@ -952,17 +928,17 @@ public abstract class ECCurve
             }
             }
 
-            return createRawPoint(X, Y, withCompression);
+            return createRawPoint(X, Y);
         }
 
-        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
         {
-            return new ECPoint.F2m(this, x, y, withCompression);
+            return new ECPoint.F2m(this, x, y);
         }
 
-        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs, boolean withCompression)
+        protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, ECFieldElement[] zs)
         {
-            return new ECPoint.F2m(this, x, y, zs, withCompression);
+            return new ECPoint.F2m(this, x, y, zs);
         }
 
         public ECPoint getInfinity()
@@ -1057,7 +1033,7 @@ public abstract class ECCurve
                 throw new IllegalArgumentException("Invalid point compression");
             }
 
-            return this.createRawPoint(x, y, true);
+            return this.createRawPoint(x, y);
         }
 
         /**

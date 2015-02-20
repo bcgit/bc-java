@@ -63,6 +63,7 @@ public class SubjectPublicKeyInfoFactory
             }
             else
             {
+                // TODO No option for point compression here
                 X9ECParameters ecP = new X9ECParameters(
                     domainParams.getCurve(),
                     domainParams.getG(),
@@ -73,6 +74,7 @@ public class SubjectPublicKeyInfoFactory
                 params = new X962Parameters(ecP);
             }
 
+            // TODO No option for point compression here
             ASN1OctetString p = (ASN1OctetString)new X9ECPoint(pub.getQ()).toASN1Primitive();
 
             return new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());

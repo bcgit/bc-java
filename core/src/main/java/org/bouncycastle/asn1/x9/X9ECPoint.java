@@ -14,11 +14,20 @@ public class X9ECPoint
     extends ASN1Object
 {
     ECPoint p;
+    ASN1OctetString encoding;
 
     public X9ECPoint(
         ECPoint p)
     {
+        this(p, false);
+    }
+
+    public X9ECPoint(
+        ECPoint p,
+        boolean compressed)
+    {
         this.p = p.normalize();
+        this.encoding = new DEROctetString(p.getEncoded(compressed));
     }
 
     public X9ECPoint(
@@ -26,11 +35,23 @@ public class X9ECPoint
         ASN1OctetString  s)
     {
         this.p = c.decodePoint(s.getOctets());
+        this.encoding = new DEROctetString(s.getOctets());
+    }
+
+    public ASN1OctetString getPointEncoding()
+    {
+        return encoding;
     }
 
     public ECPoint getPoint()
     {
         return p;
+    }
+
+    public boolean isPointCompressed()
+    {
+        byte[] octets = encoding.getOctets();
+        return octets != null && octets.length > 0 && (octets[0] == 2 || octets[0] == 3);
     }
 
     /**
@@ -43,6 +64,6 @@ public class X9ECPoint
      */
     public ASN1Primitive toASN1Primitive()
     {
-        return new DEROctetString(p.getEncoded());
+        return encoding;
     }
 }

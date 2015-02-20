@@ -85,7 +85,7 @@ public class KeyPairGeneratorSpi
             this.ecParams = params;
 
             ECCurve curve = EC5Util.convertCurve(p.getCurve());
-            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
+            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator());
 
             param = new ECKeyGenerationParameters(new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), random);
 
@@ -122,7 +122,7 @@ public class KeyPairGeneratorSpi
             java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
 
             ECCurve curve = EC5Util.convertCurve(p.getCurve());
-            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
+            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator());
 
             param = new ECKeyGenerationParameters(new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), random);
 
