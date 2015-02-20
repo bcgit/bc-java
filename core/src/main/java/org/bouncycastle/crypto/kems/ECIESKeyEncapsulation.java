@@ -136,22 +136,13 @@ public class ECIESKeyEncapsulation
         ECPoint gTilde = ghTilde[0], hTilde = ghTilde[1];
 
         // Encode the ephemeral public key
-        byte[] C = gTilde.getEncoded();
+        byte[] C = gTilde.getEncoded(false);
         System.arraycopy(C, 0, out, outOff, C.length);
 
         // Encode the shared secret value
         byte[] PEH = hTilde.getAffineXCoord().getEncoded();
 
-        // Initialise the KDF
-        byte[] kdfInput = SingleHashMode ? Arrays.concatenate(C, PEH) : PEH;
-        kdf.init(new KDFParameters(kdfInput, null));
-
-        // Generate the secret key
-        byte[] K = new byte[keyLen];
-        kdf.generateBytes(K, 0, K.length);
-
-        // Return the ciphertext
-        return new KeyParameter(K);
+        return deriveKey(keyLen, C, PEH);
     }
 
     /**
@@ -214,15 +205,7 @@ public class ECIESKeyEncapsulation
         // Encode the shared secret value
         byte[] PEH = hTilde.getAffineXCoord().getEncoded();
 
-        // Initialise the KDF
-        byte[] kdfInput = SingleHashMode ? Arrays.concatenate(C, PEH) : PEH;
-        kdf.init(new KDFParameters(kdfInput, null));
-
-        // Generate the secret key
-        byte[] K = new byte[keyLen];
-        kdf.generateBytes(K, 0, K.length);
-
-        return new KeyParameter(K);
+        return deriveKey(keyLen, C, PEH);
     }
 
     /**
@@ -240,5 +223,32 @@ public class ECIESKeyEncapsulation
     protected ECMultiplier createBasePointMultiplier()
     {
         return new FixedPointCombMultiplier();
+    }
+
+    protected KeyParameter deriveKey(int keyLen, byte[] C, byte[] PEH)
+    {
+        byte[] kdfInput = PEH;
+        if (SingleHashMode)
+        {
+            kdfInput = Arrays.concatenate(C, PEH);
+            Arrays.fill(PEH, (byte)0);
+        }
+
+        try
+        {
+            // Initialise the KDF
+            kdf.init(new KDFParameters(kdfInput, null));
+    
+            // Generate the secret key
+            byte[] K = new byte[keyLen];
+            kdf.generateBytes(K, 0, K.length);
+
+            // Return the ciphertext
+            return new KeyParameter(K);
+        }
+        finally
+        {
+            Arrays.fill(kdfInput, (byte)0);
+        }
     }
 }
