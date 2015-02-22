@@ -10,9 +10,10 @@ import org.bouncycastle.asn1.dvcs.TargetEtcChain;
 /**
  * Data piece of DVCS request to VPKC service (Verify Public Key Certificates).
  * It contains VPKC-specific interface.
- * <p/>
+ * <p>
  * This objects are constructed internally,
  * to build DVCS request to VPKC service use VPKCRequestBuilder.
+ * </p>
  */
 public class VPKCRequestData
     extends DVCSRequestData

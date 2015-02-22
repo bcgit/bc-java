@@ -13,9 +13,10 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS client.
- * <p/>
+ * <p>
  * Please refer to GnuTLSSetup.html or OpenSSLSetup.html (under 'docs'), and x509-*.pem files in
  * this package (under 'src/test/resources') for help configuring an external TLS client.
+ * </p>
  */
 public class TlsServerTest
 {

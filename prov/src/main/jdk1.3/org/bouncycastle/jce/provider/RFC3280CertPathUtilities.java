@@ -69,7 +69,7 @@ class RFC3280CertPathUtilities
     /**
      * If the complete CRL includes an issuing distribution point (IDP) CRL
      * extension check the following:
-     * <p/>
+     * <p>
      * (i) If the distribution point name is present in the IDP CRL extension
      * and the distribution field is present in the DP, then verify that one of
      * the names in the IDP matches one of the names in the DP. If the
@@ -78,17 +78,17 @@ class RFC3280CertPathUtilities
      * names in the IDP matches one of the names in the cRLIssuer field of the
      * DP.
      * </p>
-     * <p/>
+     * <p>
      * (ii) If the onlyContainsUserCerts boolean is asserted in the IDP CRL
      * extension, verify that the certificate does not include the basic
      * constraints extension with the cA boolean asserted.
      * </p>
-     * <p/>
+     * <p>
      * (iii) If the onlyContainsCACerts boolean is asserted in the IDP CRL
      * extension, verify that the certificate includes the basic constraints
      * extension with the cA boolean asserted.
      * </p>
-     * <p/>
+     * <p>
      * (iv) Verify that the onlyContainsAttributeCerts boolean is not asserted.
      * </p>
      *

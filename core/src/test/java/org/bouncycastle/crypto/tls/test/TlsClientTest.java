@@ -14,9 +14,10 @@ import org.bouncycastle.crypto.tls.TlsClientProtocol;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS server.
- * <p/>
+ * <p>
  * Please refer to GnuTLSSetup.html or OpenSSLSetup.html (under 'docs'), and x509-*.pem files in
  * this package (under 'src/test/resources') for help configuring an external TLS server.
+ * </p>
  */
 public class TlsClientTest
 {

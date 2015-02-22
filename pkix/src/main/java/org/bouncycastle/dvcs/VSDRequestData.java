@@ -8,9 +8,10 @@ import org.bouncycastle.cms.CMSSignedData;
  * Data piece of DVCS request to VSD service (Verify Signed Document).
  * It contains VSD-specific selector interface.
  * Note: the request should contain CMS SignedData object as message.
- * <p/>
+ * <p>
  * This objects are constructed internally,
  * to build DVCS request to VSD service use VSDRequestBuilder.
+ * </p>
  */
 public class VSDRequestData
     extends DVCSRequestData

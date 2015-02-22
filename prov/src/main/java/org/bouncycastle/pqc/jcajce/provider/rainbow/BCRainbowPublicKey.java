@@ -15,19 +15,20 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * This class implements CipherParameters and PublicKey.
- * <p/>
+ * <p>
  * The public key in Rainbow consists of n - v1 polynomial components of the
  * private key's F and the field structure of the finite field k.
- * <p/>
+ * </p><p>
  * The quadratic (or mixed) coefficients of the polynomials from the public key
  * are stored in the 2-dimensional array in lexicographical order, requiring n *
  * (n + 1) / 2 entries for each polynomial. The singular terms are stored in a
  * 2-dimensional array requiring n entries per polynomial, the scalar term of
  * each polynomial is stored in a 1-dimensional array.
- * <p/>
+ * </p><p>
  * More detailed information on the public key is to be found in the paper of
  * Jintai Ding, Dieter Schmidt: Rainbow, a New Multivariable Polynomial
  * Signature Scheme. ACNS 2005: 164-175 (http://dx.doi.org/10.1007/11496137_12)
+ * </p>
  */
 public class BCRainbowPublicKey
     implements PublicKey
