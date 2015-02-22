@@ -69,9 +69,9 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
     /**
      * Sets a user defined source of randomness.
-     * <p/>
+     * <p>
      * If no SecureRandom is configured, a default SecureRandom will be used.
-     *
+     * </p>
      * @return the current generator.
      */
     public PBEKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)

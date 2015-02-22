@@ -46,14 +46,14 @@ import org.bouncycastle.x509.X509CertificatePair;
 /**
  * This is a general purpose implementation to get X.509 certificates, CRLs,
  * attribute certificates and cross certificates from a LDAP location.
- * <p/>
+ * <p>
  * At first a search is performed in the ldap*AttributeNames of the
  * {@link org.bouncycastle.jce.X509LDAPCertStoreParameters} with the given
  * information of the subject (for all kind of certificates) or issuer (for
  * CRLs), respectively, if a {@link org.bouncycastle.x509.X509CertStoreSelector} or
  * {@link org.bouncycastle.x509.X509AttributeCertificate} is given with that
  * details.
- * <p/>
+ * </p><p>
  * For the used schemes see:
  * <ul>
  * <li><a href="http://www.ietf.org/rfc/rfc2587.txt">RFC 2587</a>
@@ -61,6 +61,7 @@ import org.bouncycastle.x509.X509CertificatePair;
  * href="http://www3.ietf.org/proceedings/01mar/I-D/pkix-ldap-schema-01.txt">Internet
  * X.509 Public Key Infrastructure Additional LDAP Schema for PKIs and PMIs</a>
  * </ul>
+ * </p>
  */
 public class LDAPStoreHelper
 {
@@ -716,10 +717,10 @@ public class LDAPStoreHelper
 
     /**
      * Returns the revocation list for revoked attribute certificates.
-     * <p/>
+     * <p>
      * The attributeCertificateRevocationList holds a list of attribute
      * certificates that have been revoked.
-     *
+     * </p>
      * @param selector The CRL selector to use to find the CRLs.
      * @return A possible empty collection with CRLs.
      * @throws StoreException
@@ -751,10 +752,10 @@ public class LDAPStoreHelper
     /**
      * Returns the revocation list for revoked attribute certificates for an
      * attribute authority
-     * <p/>
+     * <p>
      * The attributeAuthorityList holds a list of AA certificates that have been
      * revoked.
-     *
+     * </p>
      * @param selector The CRL selector to use to find the CRLs.
      * @return A possible empty collection with CRLs
      * @throws StoreException
@@ -848,9 +849,9 @@ public class LDAPStoreHelper
 
     /**
      * Returns attribute certificates for an attribute authority
-     * <p/>
+     * <p>
      * The aAcertificate holds the privileges of an attribute authority.
-     *
+     * </p>
      * @param selector The selector to find the attribute certificates.
      * @return A possible empty collection with attribute certificates.
      * @throws StoreException
@@ -878,11 +879,11 @@ public class LDAPStoreHelper
 
     /**
      * Returns an attribute certificate for an authority
-     * <p/>
+     * <p>
      * The attributeDescriptorCertificate is self signed by a source of
      * authority and holds a description of the privilege and its delegation
      * rules.
-     *
+     * </p>
      * @param selector The selector to find the attribute certificates.
      * @return A possible empty collection with attribute certificates.
      * @throws StoreException
@@ -912,11 +913,11 @@ public class LDAPStoreHelper
 
     /**
      * Returns CA certificates.
-     * <p/>
+     * <p>
      * The cACertificate attribute of a CA's directory entry shall be used to
      * store self-issued certificates (if any) and certificates issued to this
      * CA by CAs in the same realm as this CA.
-     *
+     * </p>
      * @param selector The selector to find the certificates.
      * @return A possible empty collection with certificates.
      * @throws StoreException
@@ -971,9 +972,9 @@ public class LDAPStoreHelper
 
     /**
      * Returns an attribute certificate for an user.
-     * <p/>
+     * <p>
      * The attributeCertificateAttribute holds the privileges of a user
-     *
+     * </p>
      * @param selector The selector to find the attribute certificates.
      * @return A possible empty collection with attribute certificates.
      * @throws StoreException

@@ -76,13 +76,12 @@ public class CipherOutputStream
     /**
      * Flushes this output stream by forcing any buffered output bytes that have already been
      * processed by the encapsulated cipher object to be written out.
-     * <p/>
-     * <p/>
+     * <p>
      * Any bytes buffered by the encapsulated cipher and waiting to be processed by it will not be
      * written out. For example, if the encapsulated cipher is a block cipher, and the total number
      * of bytes written using one of the <code>write</code> methods is less than the cipher's block
      * size, no bytes will be written out.
-     *
+     * </p>
      * @throws java.io.IOException if an I/O error occurs.
      */
     public void flush()

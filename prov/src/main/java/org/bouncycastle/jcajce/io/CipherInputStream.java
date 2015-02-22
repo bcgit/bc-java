@@ -126,9 +126,9 @@ public class CipherInputStream
     /**
      * Reads data from the underlying stream and processes it with the cipher until the cipher
      * outputs data, and then returns up to <code>len</code> bytes in the provided array.
-     * <p/>
+     * <p>
      * If the underlying stream is exhausted by this call, the cipher will be finalised.
-     *
+     * </p>
      * @param b   the buffer into which the data is read.
      * @param off the start offset in the destination array <code>b</code>
      * @param len the maximum number of bytes read.

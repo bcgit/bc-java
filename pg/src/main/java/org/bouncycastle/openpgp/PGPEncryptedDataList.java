@@ -35,10 +35,10 @@ public class PGPEncryptedDataList
     /**
      * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
      * encrytped data packet from the stream.
-     * <p/>
+     * <p>
      * The next packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
-     *
+     * </p>
      * @param pIn the PGP object stream being read.
      * @throws IOException if an error occurs reading from the PGP input.
      */

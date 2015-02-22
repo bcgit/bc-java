@@ -49,13 +49,13 @@ public class X509StoreLDAPCertPairs extends X509StoreSpi
     /**
      * Returns a collection of matching cross certificate pairs from the LDAP
      * location.
-     * <p/>
+     * <p>
      * The selector must be a of type <code>X509CertPairStoreSelector</code>.
      * If it is not an empty collection is returned.
-     * <p/>
-     * <p/>
+     * </p>
+     * <p>
      * The subject should be a reasonable criteria for a selector.
-     *
+     * </p>
      * @param selector The selector to use for finding.
      * @return A collection with the matches.
      * @throws StoreException if an exception occurs while searching.

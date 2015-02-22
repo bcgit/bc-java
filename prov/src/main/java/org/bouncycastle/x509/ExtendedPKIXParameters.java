@@ -44,8 +44,11 @@ public class ExtendedPKIXParameters
     /**
      * Creates an instance of <code>PKIXParameters</code> with the specified
      * <code>Set</code> of most-trusted CAs. Each element of the set is a
-     * {@link TrustAnchor TrustAnchor}. <p/> Note that the <code>Set</code>
+     * {@link TrustAnchor TrustAnchor}.
+     * <p>
+     *     Note that the <code>Set</code>
      * is copied to protect against subsequent modifications.
+     * </p>
      * 
      * @param trustAnchors a <code>Set</code> of <code>TrustAnchor</code>s
      * @throws InvalidAlgorithmParameterException if the specified
