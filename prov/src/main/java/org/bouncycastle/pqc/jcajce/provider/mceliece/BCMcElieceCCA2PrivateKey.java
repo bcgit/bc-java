@@ -250,9 +250,8 @@ public class BCMcElieceCCA2PrivateKey
 
     /**
      * Return the keyData to encode in the SubjectPublicKeyInfo structure.
-     * <p/>
+     * <p>
      * The ASN.1 definition of the key structure is
-     * <p/>
      * <pre>
      *   McEliecePrivateKey ::= SEQUENCE {
      *     m             INTEGER                  -- extension degree of the field
@@ -264,7 +263,7 @@ public class BCMcElieceCCA2PrivateKey
      *     sqRootMatrix  SEQUENCE OF OCTET STRING -- square root matrix
      *   }
      * </pre>
-     *
+     * </p>
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()

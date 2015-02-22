@@ -140,30 +140,29 @@ public class AdmissionSyntax
 
     /**
      * Constructor from ASN1Sequence.
-     * <p/>
+     * <p>
      * The sequence is of type ProcurationSyntax:
-     * <p/>
      * <pre>
      *     AdmissionSyntax ::= SEQUENCE
      *     {
      *       admissionAuthority GeneralName OPTIONAL,
      *       contentsOfAdmissions SEQUENCE OF Admissions
      *     }
-     * <p/>
+     *
      *     Admissions ::= SEQUENCE
      *     {
      *       admissionAuthority [0] EXPLICIT GeneralName OPTIONAL
      *       namingAuthority [1] EXPLICIT NamingAuthority OPTIONAL
      *       professionInfos SEQUENCE OF ProfessionInfo
      *     }
-     * <p/>
+     *
      *     NamingAuthority ::= SEQUENCE
      *     {
      *       namingAuthorityId OBJECT IDENTIFIER OPTIONAL,
      *       namingAuthorityUrl IA5String OPTIONAL,
      *       namingAuthorityText DirectoryString(SIZE(1..128)) OPTIONAL
      *     }
-     * <p/>
+     *
      *     ProfessionInfo ::= SEQUENCE
      *     {
      *       namingAuthority [0] EXPLICIT NamingAuthority OPTIONAL,
@@ -173,7 +172,7 @@ public class AdmissionSyntax
      *       addProfessionInfo OCTET STRING OPTIONAL
      *     }
      * </pre>
-     *
+     * </p>
      * @param seq The ASN.1 sequence.
      */
     private AdmissionSyntax(ASN1Sequence seq)

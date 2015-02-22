@@ -2,8 +2,9 @@ package org.bouncycastle.crypto.tls;
 
 /**
  * RFC 4347 4.1.2.5 Anti-replay
- * <p/>
+ * <p>
  * Support fast rejection of duplicate records by maintaining a sliding receive window
+ * </p>
  */
 class DTLSReplayWindow
 {

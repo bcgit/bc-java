@@ -11,7 +11,7 @@ import org.bouncycastle.util.Strings;
 
 /**
  * Generator for producing literal data packets.
- * <p/>
+ * <p>
  * A PGPLiteralData is used by invoking one of the open functions to create an OutputStream that raw
  * data can be supplied to for encoding:
  * <ul>
@@ -22,14 +22,15 @@ import org.bouncycastle.util.Strings;
  * {@link #open(OutputStream, char, String, Date, byte[])} to create a packet consisting of a series
  * of literal data objects (partials).</li>
  * </ul>
- * <p/>
+ * </p><p>
  * A PGPLiteralDataGenerator is usually used to wrap the OutputStream
  * {@link PGPEncryptedDataGenerator#open(OutputStream, byte[]) obtained} from a
  * {@link PGPEncryptedDataGenerator} or a {@link PGPCompressedDataGenerator}.
- * <p/>
+ * </p><p>
  * Once literal data has been written to the constructed OutputStream, writing of the object stream
  * is completed by closing the OutputStream obtained from the <code>open()</code> method, or
  * equivalently invoking {@link #close()} on this generator.
+ * </p>
  */
 public class PGPLiteralDataGenerator implements StreamGenerator
 {
@@ -65,9 +66,9 @@ public class PGPLiteralDataGenerator implements StreamGenerator
     /**
      * Constructs a generator for literal data objects, specifying to use new or old (PGP 2.6.x
      * compatible) format.
-     * <p/>
+     * <p>
      * This can be used for compatibility with PGP 2.6.x.
-     *
+     * </p>
      * @param oldFormat <code>true</code> to use PGP 2.6.x compatible format.
      */
     public PGPLiteralDataGenerator(
@@ -186,14 +187,14 @@ public class PGPLiteralDataGenerator implements StreamGenerator
     /**
      * Open a literal data packet for the passed in File object, returning an output stream for
      * saving the file contents.
-     * <p/>
+     * <p>
      * This method configures the generator to store the file contents in a single literal data
      * packet, taking the filename and modification time from the file, but does not store the
      * actual file data.
-     * <p/>
+     * </p><p>
      * The stream created can be closed off by either calling close() on the stream or close() on
      * the generator. Closing the returned stream does not close off the OutputStream parameter out.
-     *
+     * </p>
      * @param out the underlying output stream to write the literal data packet to.
      * @param format the format of the literal data that will be written to the output stream (one
      *            of {@link #BINARY}, {@link #TEXT} or {@link #UTF8}).

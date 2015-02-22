@@ -54,9 +54,8 @@ public class Admissions
 
     /**
      * Constructor from ASN1Sequence.
-     * <p/>
+     * <p>
      * The sequence is of type ProcurationSyntax:
-     * <p/>
      * <pre>
      *            Admissions ::= SEQUENCE
      *            {
@@ -65,7 +64,7 @@ public class Admissions
      *              professionInfos SEQUENCE OF ProfessionInfo
      *            }
      * </pre>
-     *
+     * </p>
      * @param seq The ASN.1 sequence.
      */
     private Admissions(ASN1Sequence seq)

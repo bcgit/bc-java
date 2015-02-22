@@ -81,10 +81,10 @@ public abstract class AsymmetricBlockCipher
      * account any unprocessed (buffered) data from a previous update call, and
      * padding. The actual output length of the next update() or doFinal() call
      * may be smaller than the length returned by this method.
-     * <p/>
+     * <p>
      * If the input length plus the length of the buffered data exceeds the
      * maximum length, <tt>0</tt> is returned.
-     *
+     * </p>
      * @param inLen the length of the input
      * @return the length of the ciphertext or <tt>0</tt> if the input is too
      *         long.
@@ -106,16 +106,15 @@ public abstract class AsymmetricBlockCipher
     }
 
     /**
-     * <p/>
      * Returns the parameters used with this cipher.
-     * <p/>
+     * <p>
      * The returned parameters may be the same that were used to initialize this
      * cipher, or may contain the default set of parameters or a set of randomly
      * generated parameters used by the underlying cipher implementation
      * (provided that the underlying cipher implementation uses a default set of
      * parameters or creates new parameters if it needs parameters but was not
      * initialized with any).
-     * <p/>
+     * </p>
      *
      * @return the parameters used with this cipher, or null if this cipher does
      *         not use any parameters.
@@ -128,8 +127,7 @@ public abstract class AsymmetricBlockCipher
     /**
      * Initializes the cipher for encryption by forwarding it to
      * initEncrypt(Key, FlexiSecureRandom).
-     * <p/>
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
@@ -137,7 +135,7 @@ public abstract class AsymmetricBlockCipher
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using engineGetParameters or
      * engineGetIV (if the parameter is an IV).
-     *
+     * </p>
      * @param key the encryption or decryption key.
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
      * cipher.
@@ -159,7 +157,7 @@ public abstract class AsymmetricBlockCipher
     /**
      * Initialize this cipher for encryption by forwarding it to
      * initEncrypt(Key, FlexiSecureRandom, AlgorithmParameterSpec).
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
@@ -167,7 +165,7 @@ public abstract class AsymmetricBlockCipher
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using engineGetParameters or
      * engineGetIV (if the parameter is an IV).
-     *
+     * </p>
      * @param key    the encryption or decryption key.
      * @param random the source of randomness.
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
@@ -210,15 +208,15 @@ public abstract class AsymmetricBlockCipher
     /**
      * This method initializes the AsymmetricBlockCipher with a certain key for
      * data encryption.
-     * <p/>
+     * <p>
      * If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
-     * <p/>
+     * </p><p>
      * Note that when a Cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it
-     * <p/>
+     * </p>
      *
      * @param key          the key which has to be used to encrypt data.
      * @param secureRandom the source of randomness.
@@ -242,7 +240,7 @@ public abstract class AsymmetricBlockCipher
     /**
      * Initialize the cipher for decryption by forwarding it to
      * {@link #initDecrypt(Key, AlgorithmParameterSpec)}.
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
@@ -250,7 +248,7 @@ public abstract class AsymmetricBlockCipher
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using engineGetParameters or
      * engineGetIV (if the parameter is an IV).
-     *
+     * </p>
      * @param key the encryption or decryption key.
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
      * cipher.
@@ -272,15 +270,15 @@ public abstract class AsymmetricBlockCipher
     /**
      * This method initializes the AsymmetricBlockCipher with a certain key for
      * data decryption.
-     * <p/>
+     * <p>
      * If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
-     * <p/>
+     * </p><p>
      * Note that when a Cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it
-     * <p/>
+     * </p>
      *
      * @param key    the key which has to be used to decrypt data.
      * @param params the algorithm parameters.

@@ -189,9 +189,8 @@ public class BCMcEliecePublicKey
 
     /**
      * Return the keyData to encode in the SubjectPublicKeyInfo structure.
-     * <p/>
+     * <p>
      * The ASN.1 definition of the key structure is
-     * <p/>
      * <pre>
      *       McEliecePublicKey ::= SEQUENCE {
      *         n           Integer      -- length of the code
@@ -199,7 +198,7 @@ public class BCMcEliecePublicKey
      *         matrixG     OctetString  -- generator matrix as octet string
      *       }
      * </pre>
-     *
+     * </p>
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()

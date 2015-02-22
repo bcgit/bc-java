@@ -35,8 +35,9 @@ public class CramerShoupParametersGenerator
     /**
      * which generates the p and g values from the given parameters, returning
      * the CramerShoupParameters object.
-     * <p/>
+     * <p>
      * Note: can take a while...
+     * </p>
      */
     public CramerShoupParameters generateParameters()
     {
