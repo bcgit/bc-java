@@ -14,9 +14,10 @@ import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * A password based encryption object.
- * <p/>
+ * <p>
  * PBE encrypted data objects can be {@link #getDataStream(PBEDataDecryptorFactory) decrypted }
  * using a {@link PBEDataDecryptorFactory}.
+ * </p>
  */
 public class PGPPBEEncryptedData
     extends PGPEncryptedData

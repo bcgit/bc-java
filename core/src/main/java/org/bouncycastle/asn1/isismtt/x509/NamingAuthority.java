@@ -70,8 +70,6 @@ public class NamingAuthority
 
     /**
      * Constructor from ASN1Sequence.
-     * <p/>
-     * <p/>
      * <pre>
      *             NamingAuthority ::= SEQUENCE
      *             {

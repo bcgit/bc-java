@@ -54,9 +54,9 @@ public class BcPGPDataEncryptorBuilder
 
     /**
      * Provide a user defined source of randomness.
-     * <p/>
+     * <p>
      * If no SecureRandom is configured, a default SecureRandom will be used.
-     *
+     * </p>
      * @param random the secure random to be used.
      * @return the current builder.
      */

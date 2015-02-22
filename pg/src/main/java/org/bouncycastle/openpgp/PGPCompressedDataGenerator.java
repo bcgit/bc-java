@@ -26,7 +26,7 @@ import org.bouncycastle.bcpg.PacketTags;
  * A PGPCompressedDataGenerator is usually used to wrap the OutputStream
  * {@link PGPEncryptedDataGenerator#open(OutputStream, byte[]) obtained} from a
  * {@link PGPEncryptedDataGenerator} (i.e. to compress data prior to encrypting it).
- * <p/>
+ * </p><p>
  * Raw data is not typically written directly to the OutputStream obtained from a
  * PGPCompressedDataGenerator. The OutputStream is usually wrapped by a
  * {@link PGPLiteralDataGenerator}, which encodes the raw data prior to compression.

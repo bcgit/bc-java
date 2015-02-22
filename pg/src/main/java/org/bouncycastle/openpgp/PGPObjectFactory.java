@@ -14,12 +14,12 @@ import org.bouncycastle.util.Iterable;
 
 /**
  * General class for reading a PGP object stream.
- * <p/>
+ * <p>
  * Note: if this class finds a {@link PGPPublicKey} or a {@link PGPSecretKey} it will create a
  * {@link PGPPublicKeyRing}, or a {@link PGPSecretKeyRing} for each key found. If all you are trying
  * to do is read a key ring file use either {@link PGPPublicKeyRingCollection} or
  * {@link PGPSecretKeyRingCollection}.
- * <p/>
+ * </p><p>
  * This factory supports reading the following types of objects:
  * <ul>
  * <li>{@link PacketTags#SIGNATURE} - produces a {@link PGPSignatureList}</li>
@@ -33,6 +33,7 @@ import org.bouncycastle.util.Iterable;
  * <li>{@link PacketTags#ONE_PASS_SIGNATURE} - produces a {@link PGPOnePassSignatureList}</li>
  * <li>{@link PacketTags#MARKER} - produces a {@link PGPMarker}</li>
  * </ul>
+ * </p>
  */
 public class PGPObjectFactory
     implements Iterable

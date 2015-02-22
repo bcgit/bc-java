@@ -60,9 +60,8 @@ public class PersonalData
 
     /**
      * Constructor from ASN1Sequence.
-     * <p/>
+     * <p>
      * The sequence is of type NameOrPseudonym:
-     * <p/>
      * <pre>
      *     PersonalData ::= SEQUENCE {
      *       nameOrPseudonym NameOrPseudonym,
@@ -73,7 +72,7 @@ public class PersonalData
      *       postalAddress [4] DirectoryString OPTIONAL
      *       }
      * </pre>
-     *
+     * </p>
      * @param seq The ASN.1 sequence.
      */
     private PersonalData(ASN1Sequence seq)

@@ -16,9 +16,9 @@ public class InputStreamPacket
 
     /**
      * Obtains an input stream to read the contents of the packet.
-     * <p/>
+     * <p>
      * Note: you can only read from this once...
-     *
+     * </p>
      * @return the data in this packet.
      */
     public BCPGInputStream getInputStream()

@@ -31,8 +31,9 @@ public class JPAKERound2Payload
 
     /**
      * The zero knowledge proof for x2 * s.
-     * <p/>
+     * <p>
      * This is a two element array, containing {g^v, r} for x2 * s.
+     * </p>
      */
     private final BigInteger[] knowledgeProofForX2s;
 

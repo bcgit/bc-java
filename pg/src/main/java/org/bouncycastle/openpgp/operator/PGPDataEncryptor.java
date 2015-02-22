@@ -4,9 +4,10 @@ import java.io.OutputStream;
 
 /**
  * A data encryptor, combining a cipher instance and an optional integrity check calculator.
- * <p/>
+ * <p>
  * {@link PGPDataEncryptor} instances are generally not constructed directly, but obtained from a
  * {@link PGPDataEncryptorBuilder}.
+ * </p>
  */
 public interface PGPDataEncryptor
 {

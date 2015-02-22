@@ -15,9 +15,10 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * A PGP encrypted data object.
- * <p/>
+ * <p>
  * Encrypted data packets are decrypted using a {@link PGPDataDecryptor} obtained from a
  * {@link PGPDataDecryptorFactory}.
+ * </p>
  */
 public abstract class PGPEncryptedData
     implements SymmetricKeyAlgorithmTags
@@ -93,11 +94,11 @@ public abstract class PGPEncryptedData
 
     /**
      * Return the raw input stream for the data stream.
-     * <p/>
+     * <p>
      * Note this stream is shared with all other encryption methods in the same
      * {@link PGPEncryptedDataList} and with any decryption methods in sub-classes, so consuming
      * this stream will affect decryption.
-     *
+     * </p>
      * @return the encrypted data in this packet.
      */
     public InputStream getInputStream()
@@ -119,9 +120,9 @@ public abstract class PGPEncryptedData
     /**
      * Verifies the integrity of the packet against the modification detection code associated with
      * it in the stream.
-     * <p/>
+     * <p>
      * Note: This can only be called after the message has been read.
-     *
+     * </p>
      * @return <code>true</code> if the message verifies, <code>false</code> otherwise.
      * @throws PGPException if the message is not {@link #isIntegrityProtected() integrity
      *             protected}.

@@ -16,10 +16,11 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 /**
  * A builder for {@link PGPDigestCalculatorProvider} instances that obtain cryptographic primitives
  * using the JCA API.
- * <p/>
+ * <p>
  * By default digest calculator providers obtained from this builder will use the default JCA
  * algorithm lookup mechanisms (i.e. specifying no provider), but a specific provider can be
  * specified prior to building.
+ * </p>
  */
 public class JcaPGPDigestCalculatorProviderBuilder
 {

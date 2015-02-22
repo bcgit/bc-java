@@ -293,11 +293,11 @@ public class PGPUtil
 
     /**
      * Obtains a stream that can be used to read PGP data from the provided stream.
-     * <p/>
+     * <p>
      * If the initial bytes of the underlying stream are binary PGP encodings, then the stream will
      * be returned directly, otherwise an {@link ArmoredInputStream} is used to wrap the provided
      * stream and remove ASCII-Armored encoding.
-     *
+     * </p>
      * @param in the stream to be checked and possibly wrapped.
      * @return a stream that will return PGP binary encoded data.
      * @throws IOException if an error occurs reading the stream, or initalising the
