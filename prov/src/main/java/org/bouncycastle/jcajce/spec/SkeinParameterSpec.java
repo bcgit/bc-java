@@ -218,10 +218,10 @@ public class SkeinParameterSpec
         /**
          * Implements the recommended personalisation format for Skein defined in Section 4.11 of
          * the Skein 1.3 specification.
-         * <p/>
+         * <p>
          * The format is <code>YYYYMMDD email@address distinguisher</code>, encoded to a byte
          * sequence using UTF-8 encoding.
-         *
+         * </p>
          * @param date          the date the personalised application of the Skein was defined.
          * @param emailAddress  the email address of the creation of the personalised application.
          * @param distinguisher an arbitrary personalisation string distinguishing the application.

@@ -52,17 +52,17 @@ public class X509StoreLDAPCerts
 
     /**
      * Returns a collection of matching certificates from the LDAP location.
-     * <p/>
+     * <p>
      * The selector must be a of type <code>X509CertStoreSelector</code>. If
      * it is not an empty collection is returned.
-     * <p/>
+     * </p><p>
      * The implementation searches only for CA certificates, if the method
      * {@link java.security.cert.X509CertSelector#getBasicConstraints()} is
      * greater or equal to 0. If it is -2 only end certificates are searched.
-     * <p/>
+     * </p><p>
      * The subject and the serial number for end certificates should be
      * reasonable criterias for a selector.
-     *
+     * </p>
      * @param selector The selector to use for finding.
      * @return A collection with the matches.
      * @throws StoreException if an exception occurs while searching.

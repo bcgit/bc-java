@@ -48,12 +48,12 @@ public class X509StoreLDAPCRLs extends X509StoreSpi
 
     /**
      * Returns a collection of matching CRLs from the LDAP location.
-     * <p/>
+     * <p>
      * The selector must be a of type <code>X509CRLStoreSelector</code>. If
      * it is not an empty collection is returned.
-     * <p/>
+     * </p><p>
      * The issuer should be a reasonable criteria for a selector.
-     *
+     * </p>
      * @param selector The selector to use for finding.
      * @return A collection with the matches.
      * @throws StoreException if an exception occurs while searching.
