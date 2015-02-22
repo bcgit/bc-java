@@ -37,7 +37,6 @@ public class AlgorithmParametersSpi
 
     /**
      * Return the X.509 ASN.1 structure GOST3410Parameter.
-     * <p/>
      * <pre>
      *  GOST3410Parameter ::= SEQUENCE {
      *                   prime INTEGER, -- p

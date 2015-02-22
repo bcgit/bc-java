@@ -41,8 +41,11 @@ public class PKIXExtendedParameters
      * when the end certificate was signed. The CA (or Root CA) certificate must
      * have been valid, when the CA certificate was signed and so on. So the
      * {@link java.security.cert.PKIXParameters#setDate(java.util.Date)} method sets the time, when
-     * the <em>end certificate</em> must have been valid. <p/> It is used e.g.
+     * the <em>end certificate</em> must have been valid.
+     * <p>
+     * It is used e.g.
      * in the German signature law.
+     * </p>
      */
     public static final int CHAIN_VALIDITY_MODEL = 1;
 

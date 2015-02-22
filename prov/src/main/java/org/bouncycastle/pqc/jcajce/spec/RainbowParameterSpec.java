@@ -7,11 +7,12 @@ import org.bouncycastle.util.Arrays;
 /**
  * This class provides methods for setting and getting the Rainbow-parameters
  * like number of Vinegar-variables in the layers, number of layers and so on.
- * <p/>
+ * <p>
  * More detailed information about the needed parameters for the Rainbow
  * Signature Scheme is to be found in the paper of Jintai Ding, Dieter Schmidt:
  * Rainbow, a New Multivariable Polynomial Signature Scheme. ACNS 2005: 164-175
  * (http://dx.doi.org/10.1007/11496137_12)
+ * </p>
  */
 public class RainbowParameterSpec
     implements AlgorithmParameterSpec

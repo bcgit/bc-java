@@ -18,14 +18,15 @@ import org.bouncycastle.pqc.jcajce.spec.RainbowPrivateKeySpec;
  * The Private key in Rainbow consists of the linear affine maps L1, L2 and the
  * map F, consisting of quadratic polynomials. In this implementation, we
  * denote: L1 = A1*x + b1 L2 = A2*x + b2
- * <p/>
+ * <p>
  * The coefficients of the polynomials in F are stored in 3-dimensional arrays
  * per layer. The indices of these arrays denote the polynomial, and the
  * variables.
- * <p/>
+ * </p><p>
  * More detailed information about the private key is to be found in the paper
  * of Jintai Ding, Dieter Schmidt: Rainbow, a New Multivariable Polynomial
  * Signature Scheme. ACNS 2005: 164-175 (http://dx.doi.org/10.1007/11496137_12)
+ * </p>
  */
 public class BCRainbowPrivateKey
     implements PrivateKey

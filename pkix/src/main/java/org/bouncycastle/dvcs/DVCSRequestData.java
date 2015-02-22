@@ -6,8 +6,9 @@ import org.bouncycastle.asn1.dvcs.Data;
  * Data piece of DVCRequest object (DVCS Data structure).
  * Its contents depend on the service type.
  * Its subclasses define the service-specific interface.
- * <p/>
+ * <p>
  * The concrete objects of DVCRequestData are created by buildDVCRequestData static method.
+ * </p>
  */
 public abstract class DVCSRequestData
 {

@@ -33,7 +33,6 @@ public class AlgorithmParametersSpi
 
     /**
      * Return the X.509 ASN.1 structure DSAParameter.
-     * <p/>
      * <pre>
      *  DSAParameter ::= SEQUENCE {
      *                   prime INTEGER, -- p

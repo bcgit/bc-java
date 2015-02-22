@@ -946,12 +946,12 @@ public class CertPathValidatorUtilities
      * Add the CRL issuers from the cRLIssuer field of the distribution point or
      * from the certificate if not given to the issuer criterion of the
      * <code>selector</code>.
-     * <p/>
+     * <p>
      * The <code>issuerPrincipals</code> are a collection with a single
      * <code>X500Principal</code> for <code>X509Certificate</code>s. For
      * {@link X509AttributeCertificate}s the issuer may contain more than one
      * <code>X500Principal</code>.
-     *
+     * </p>
      * @param dp               The distribution point.
      * @param issuerPrincipals The issuers of the certificate or attribute
      *                         certificate which contains the distribution point.
@@ -1241,10 +1241,10 @@ public class CertPathValidatorUtilities
      * Add the CRL issuers from the cRLIssuer field of the distribution point or
      * from the certificate if not given to the issuer criterion of the
      * <code>selector</code>.
-     * <p/>
+     * <p>
      * The <code>issuerPrincipals</code> are a collection with a single
      * <code>X500Principal</code> for <code>X509Certificate</code>s.
-     *
+     * </p>
      * @param dp               The distribution point.
      * @param issuerPrincipals The issuers of the certificate or attribute
      *                         certificate which contains the distribution point.

@@ -15,14 +15,15 @@ import org.bouncycastle.crypto.io.InvalidCipherTextIOException;
  * A CipherInputStream is composed of an InputStream and a cipher so that read() methods return data
  * that are read in from the underlying InputStream but have been additionally processed by the
  * Cipher. The cipher must be fully initialized before being used by a CipherInputStream.
- * <p/>
+ * <p>
  * For example, if the Cipher is initialized for decryption, the CipherInputStream will attempt to
  * read in data and decrypt them, before returning the decrypted data.
- * <p/>
+ * </p><p>
  * This is a reimplementation of {@link javax.crypto.CipherInputStream} that is safe for use with
  * AEAD block ciphers, and does not silently catch {@link BadPaddingException} and
  * {@link IllegalBlockSizeException} errors. Any errors that occur during {@link Cipher#doFinal()
  * finalisation} are rethrown wrapped in an {@link InvalidCipherTextIOException}.
+ * </p>
  */
 public class CipherInputStream
     extends FilterInputStream
@@ -101,9 +102,9 @@ public class CipherInputStream
     /**
      * Reads data from the underlying stream and processes it with the cipher until the cipher
      * outputs data, and returns the next available byte.
-     * <p/>
+     * <p>
      * If the underlying stream is exhausted by this call, the cipher will be finalised.
-     *
+     * </p>
      * @throws IOException if there was an error closing the input stream.
      * @throws InvalidCipherTextIOException if the data read from the stream was invalid ciphertext
      * (e.g. the cipher is an AEAD cipher and the ciphertext tag check fails).

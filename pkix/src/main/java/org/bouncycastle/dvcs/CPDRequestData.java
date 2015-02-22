@@ -5,9 +5,10 @@ import org.bouncycastle.asn1.dvcs.Data;
 /**
  * Data piece of DVCRequest for CPD service (Certify Possession of Data).
  * It contains CPD-specific selector interface.
- * <p/>
+ * <p>
  * This objects are constructed internally,
  * to build DVCS request to CPD service use CPDRequestBuilder.
+ * </p>
  */
 public class CPDRequestData
     extends DVCSRequestData
