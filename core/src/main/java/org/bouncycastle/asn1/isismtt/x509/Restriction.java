@@ -33,13 +33,12 @@ public class Restriction
 
     /**
      * Constructor from DirectoryString.
-     * <p/>
+     * <p>
      * The DirectoryString is of type RestrictionSyntax:
-     * <p/>
      * <pre>
      *      RestrictionSyntax ::= DirectoryString (SIZE(1..1024))
      * </pre>
-     *
+     * </p>
      * @param restriction A DirectoryString.
      */
     private Restriction(DirectoryString restriction)

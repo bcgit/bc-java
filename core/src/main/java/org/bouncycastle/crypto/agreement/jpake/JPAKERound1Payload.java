@@ -36,15 +36,17 @@ public class JPAKERound1Payload
 
     /**
      * The zero knowledge proof for x1.
-     * <p/>
+     * <p>
      * This is a two element array, containing {g^v, r} for x1.
+     * </p>
      */
     private final BigInteger[] knowledgeProofForX1;
 
     /**
      * The zero knowledge proof for x2.
-     * <p/>
+     * <p>
      * This is a two element array, containing {g^v, r} for x2.
+     * </p>
      */
     private final BigInteger[] knowledgeProofForX2;
 

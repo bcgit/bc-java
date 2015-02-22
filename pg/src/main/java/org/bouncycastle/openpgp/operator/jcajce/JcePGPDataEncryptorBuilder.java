@@ -22,10 +22,11 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 /**
  * {@link PGPDataEncryptorBuilder} implementation that sources cryptographic primitives using the
  * JCE APIs.
- * <p/>
+ * <p>
  * By default, cryptographic primitives will be loaded using the default JCE load order (i.e.
  * without specifying a provider). <br/>
  * A specific provider can be specified using one of the {@link #setProvider(String)} methods.
+ * </p>
  */
 public class JcePGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder

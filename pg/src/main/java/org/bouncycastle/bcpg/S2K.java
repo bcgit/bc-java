@@ -7,11 +7,12 @@ import java.io.InputStream;
 
 /**
  * Parameter specifier for the PGP string-to-key password based key derivation function.
- * <p/>
+ * <p>
  * In iterated mode, S2K takes a single byte iteration count specifier, which is converted to an
  * actual iteration count using a formula that grows the iteration count exponentially as the byte
  * value increases.<br/>
  * e.g. <code>0x01<code> == 1088 iterations, and <code>0xFF</code> == 65,011,712 iterations.
+ * </p>
  */
 public class S2K
     extends BCPGObject

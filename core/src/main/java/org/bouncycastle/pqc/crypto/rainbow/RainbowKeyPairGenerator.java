@@ -119,11 +119,12 @@ public class RainbowKeyPairGenerator
 
     /**
      * This function generates the invertible affine linear map L1 = A1*x + b1
-     * <p/>
+     * <p>
      * The translation part b1, is stored in a separate array. The inverse of
      * the matrix-part of L1 A1inv is also computed here.
-     * <p/>
+     * </p><p>
      * This linear map hides the output of the map F. It is on k^(n-v1).
+     * </p>
      */
     private void generateL1()
     {
@@ -157,11 +158,12 @@ public class RainbowKeyPairGenerator
 
     /**
      * This function generates the invertible affine linear map L2 = A2*x + b2
-     * <p/>
+     * <p>
      * The translation part b2, is stored in a separate array. The inverse of
      * the matrix-part of L2 A2inv is also computed here.
-     * <p/>
+     * </p><p>
      * This linear map hides the output of the map F. It is on k^(n).
+     * </p>
      */
     private void generateL2()
     {
@@ -196,9 +198,10 @@ public class RainbowKeyPairGenerator
     /**
      * This function generates the private map F, which consists of u-1 layers.
      * Each layer consists of oi polynomials where oi = vi[i+1]-vi[i].
-     * <p/>
+     * <p>
      * The methods for the generation of the coefficients of these polynomials
      * are called here.
+     * </p>
      */
     private void generateF()
     {
@@ -212,11 +215,12 @@ public class RainbowKeyPairGenerator
 
     /**
      * This function computes the public key from the private key.
-     * <p/>
+     * <p>
      * The composition of F with L2 is computed, followed by applying L1 to the
      * composition's result. The singular and scalar values constitute to the
      * public key as is, the quadratic terms are compacted in
      * <tt>compactPublicKey()</tt>
+     * </p>
      */
     private void computePublicKey()
     {

@@ -10,14 +10,15 @@ import org.bouncycastle.openpgp.PGPException;
 
 /**
  * PGP style PBE encryption method.
- * <p/>
+ * <p>
  * A pass phrase is used to generate an encryption key using the PGP {@link S2K string-to-key}
  * method. This class always uses the {@link S2K#SALTED_AND_ITERATED salted and iterated form of the
  * S2K algorithm}.
- * <p/>
+ * </p><p>
  * Note that the iteration count provided to this method is a single byte as described by the
  * {@link S2K} algorithm, and the actual iteration count ranges exponentially from
  * <code>0x01<code> == 1088 to <code>0xFF</code> == 65,011,712.
+ * </p>
  */
 public abstract class PBEKeyEncryptionMethodGenerator
     extends PGPKeyEncryptionMethodGenerator
