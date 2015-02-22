@@ -14,10 +14,10 @@ public class ArrayEncoder
     /**
      * Bit string to coefficient conversion table from P1363.1. Also found at
      * {@link http://stackoverflow.com/questions/1562548/how-to-make-a-message-into-a-polynomial}
-     * <p/>
+     * <p>
      * Convert each three-bit quantity to two ternary coefficients as follows, and concatenate the resulting
      * ternary quantities to obtain [the output].
-     * <p/>
+     * </p><p>
      * <code>
      * {0, 0, 0} -> {0, 0}<br/>
      * {0, 0, 1} -> {0, 1}<br/>
@@ -28,16 +28,17 @@ public class ArrayEncoder
      * {1, 1, 0} -> {-1, 0}<br/>
      * {1, 1, 1} -> {-1, 1}<br/>
      * </code>
+     * </p>
      */
     private static final int[] COEFF1_TABLE = {0, 0, 0, 1, 1, 1, -1, -1};
     private static final int[] COEFF2_TABLE = {0, 1, -1, 0, 1, -1, 0, 1};
     /**
      * Coefficient to bit string conversion table from P1363.1. Also found at
      * {@link http://stackoverflow.com/questions/1562548/how-to-make-a-message-into-a-polynomial}
-     * <p/>
+     * <p>
      * Convert each set of two ternary coefficients to three bits as follows, and concatenate the resulting bit
      * quantities to obtain [the output]:
-     * <p/>
+     * </p><p>
      * <code>
      * {-1, -1} -> set "fail" to 1 and set bit string to {1, 1, 1}
      * {-1, 0} -> {1, 1, 0}<br/>
@@ -48,7 +49,8 @@ public class ArrayEncoder
      * {1, -1} -> {1, 0, 1}<br/>
      * {1, 0} -> {0, 1, 1}<br/>
      * {1, 1} -> {1, 0, 0}<br/>
-     * </code>
+     * </code>   \
+     * </p>
      */
     private static final int[] BIT1_TABLE = {1, 1, 1, 0, 0, 0, 1, 0, 1};
     private static final int[] BIT2_TABLE = {1, 1, 1, 1, 0, 0, 0, 1, 0};

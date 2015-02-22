@@ -166,13 +166,13 @@ public class ComputeInField
      * Elimination under the diagonal.
      * This function changes a matrix so that it contains only zeros under the
      * diagonal(Ai,i) using only Gauss-Elimination operations.
-     * <p/>
+     * <p>
      * It is used in solveEquaton as well as in the function for
      * finding an inverse of a matrix: {@link}inverse. Both of them use the
      * Gauss-Elimination Method.
-     * <p/>
+     * </p><p>
      * The result is stored in the global matrix A
-     *
+     * </p>
      * @param usedForInverse This parameter shows if the function is used by the
      *                       solveEquation-function or by the inverse-function and according
      *                       to this creates matrices of different sizes.
@@ -229,10 +229,10 @@ public class ComputeInField
      * Elimination above the diagonal.
      * This function changes a matrix so that it contains only zeros above the
      * diagonal(Ai,i) using only Gauss-Elimination operations.
-     * <p/>
+     * <p>
      * It is used in the inverse-function
      * The result is stored in the global matrix A
-     *
+     * </p>
      * @throws RuntimeException in case a multiplicative inverse of 0 is needed
      */
     private void computeZerosAbove()
@@ -268,10 +268,10 @@ public class ComputeInField
      * of the linear equation system (LES) B*x = b,
      * where A a triangle-matrix is (contains only zeros under the diagonal)
      * and b is a vector
-     * <p/>
+     * <p>
      * If the multiplicative inverse of 0 is needed, an exception is thrown.
      * In this case is the LES not solvable
-     *
+     * </p>
      * @throws RuntimeException in case a multiplicative inverse of 0 is needed
      */
     private void substitute()

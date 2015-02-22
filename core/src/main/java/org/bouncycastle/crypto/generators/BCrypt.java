@@ -627,10 +627,10 @@ public final class BCrypt
 
     /**
      * Calculates the <b>bcrypt</b> hash of a password.
-     * <p/>
+     * <p>
      * This implements the raw <b>bcrypt</b> function as defined in the bcrypt specification, not
      * the crypt encoded version implemented in OpenBSD.
-     *
+     * </p>
      * @param password the password bytes (up to 72 bytes) to use for this invocation.
      * @param salt     the 128 bit salt to use for this invocation.
      * @param cost     the bcrypt cost parameter. The cost of the bcrypt function grows as

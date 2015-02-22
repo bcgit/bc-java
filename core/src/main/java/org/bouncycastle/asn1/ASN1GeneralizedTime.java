@@ -153,7 +153,7 @@ public class ASN1GeneralizedTime
     /**
      * return the time - always in the form of
      * YYYYMMDDhhmmssGMT(+hh:mm|-hh:mm).
-     * <p/>
+     * <p>
      * Normally in a certificate we would expect "Z" rather than "GMT",
      * however adding the "GMT" means we can just use:
      * <pre>
@@ -161,6 +161,7 @@ public class ASN1GeneralizedTime
      * </pre>
      * To read in the time and get a date which is compatible with our local
      * time zone.
+     * </p>
      */
     public String getTime()
     {

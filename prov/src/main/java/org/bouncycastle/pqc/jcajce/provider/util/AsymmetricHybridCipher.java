@@ -66,14 +66,14 @@ public abstract class AsymmetricHybridCipher
 
     /**
      * Return the parameters used with this cipher.
-     * <p/>
+     * <p>
      * The returned parameters may be the same that were used to initialize this
      * cipher, or may contain the default set of parameters or a set of randomly
      * generated parameters used by the underlying cipher implementation
      * (provided that the underlying cipher implementation uses a default set of
      * parameters or creates new parameters if it needs parameters but was not
      * initialized with any).
-     *
+     * </p>
      * @return the parameters used with this cipher, or <tt>null</tt> if this
      *         cipher does not use any parameters.
      */
@@ -103,14 +103,14 @@ public abstract class AsymmetricHybridCipher
     /**
      * Initialize the cipher for encryption by forwarding it to
      * {@link #initEncrypt(Key, AlgorithmParameterSpec, SecureRandom)}.
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
      * or random values) if it is being initialized for encryption, and raise an
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using {@link #getParameters()}.
-     *
+     * </p>
      * @param key the encryption key
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
      * cipher.
@@ -134,14 +134,14 @@ public abstract class AsymmetricHybridCipher
     /**
      * Initialize this cipher for encryption by forwarding it to
      * {@link #initEncrypt(Key, AlgorithmParameterSpec, SecureRandom)}.
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
      * or random values) if it is being initialized for encryption, and raise an
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using {@link #getParameters()}.
-     *
+     * </p>
      * @param key    the encryption key
      * @param random the source of randomness
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
@@ -184,14 +184,14 @@ public abstract class AsymmetricHybridCipher
 
     /**
      * Initialize the cipher with a certain key for data encryption.
-     * <p/>
+     * <p>
      * If this cipher requires any random bytes (e.g., for parameter
      * generation), it will get them from <tt>random</tt>.
-     * <p/>
+     * </p><p>
      * Note that when a Cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
-     *
+     * </p>
      * @param key    the encryption key
      * @param random the source of randomness
      * @param params the algorithm parameters
@@ -214,14 +214,14 @@ public abstract class AsymmetricHybridCipher
     /**
      * Initialize the cipher for decryption by forwarding it to initDecrypt(Key,
      * FlexiSecureRandom).
-     * <p/>
+     * <p>
      * If this cipher requires any algorithm parameters that cannot be derived
      * from the given key, the underlying cipher implementation is supposed to
      * generate the required parameters itself (using provider-specific default
      * or random values) if it is being initialized for encryption, and raise an
      * InvalidKeyException if it is being initialized for decryption. The
      * generated parameters can be retrieved using {@link #getParameters()}.
-     *
+     * </p>
      * @param key the decryption key
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
      * cipher.
@@ -242,14 +242,14 @@ public abstract class AsymmetricHybridCipher
 
     /**
      * Initialize the cipher with a certain key for data decryption.
-     * <p/>
+     * <p>
      * If this cipher requires any random bytes (e.g., for parameter
      * generation), it will get them from <tt>random</tt>.
-     * <p/>
+     * </p><p>
      * Note that when a Cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it
-     *
+     * </p>
      * @param key    the decryption key
      * @param params the algorithm parameters
      * @throws InvalidKeyException if the given key is inappropriate for initializing this
