@@ -36,6 +36,7 @@ public class X931Signer
     static final public int   TRAILER_SHA512      = 0x35CC;
     static final public int   TRAILER_SHA384      = 0x36CC;
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
+    static final public int   TRAILER_SHA224      = 0x38CC;
 
     private static Hashtable  trailerMap          = new Hashtable();
 
@@ -45,6 +46,7 @@ public class X931Signer
         trailerMap.put("RIPEMD160", Integers.valueOf(TRAILER_RIPEMD160));
 
         trailerMap.put("SHA-1", Integers.valueOf(TRAILER_SHA1));
+        trailerMap.put("SHA-224", Integers.valueOf(TRAILER_SHA224));
         trailerMap.put("SHA-256", Integers.valueOf(TRAILER_SHA256));
         trailerMap.put("SHA-384", Integers.valueOf(TRAILER_SHA384));
         trailerMap.put("SHA-512", Integers.valueOf(TRAILER_SHA512));
