@@ -33,11 +33,17 @@ Release 1.52
 <li>Using PKCS5/PKCS7 with pad values greater than 127 would result in an exception on decryption. This has been fixed.</li>
 <li>EC private key values could encode to an OCTET STRING which was shorter than that described in RFC 5915/SEC 1. This has been fixed.</li>
 <li>Providing multiple trust anchors to the CertPath validator could cause a StackOverflowError on an invalid CertPath. This has been fixed.</li>
-<li>TLS: fixed bad-padding handling when encrypt-then-MAC enabled.</li>
+<li>TLS: bad-padding handling when encrypt-then-MAC enabled is now fixed.</li>
+<li>ECDH KeyAgreement.init() was not properly honoring the JCE API in respect to non-null parameters. This has been fixed.</li>
+<li>PKCS symmetric padding now takes into account pad lengths of more than 127 bytes.</li>
+<li>Corrupted input to RFC5649WrapEngine could cause an out of memory error. This has been fixed.</li>
+<li>OSGI import issues for bcmail have been fixed.</li>
+<li>A badly formed issuer in a X.509 certificate could cause a null pointer exception in X509CertificateHolder.toString(). This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>The CMP support class CMPCertificate restricted the types of certificates that could be added. A more flexible method has been introduced to allow for other certificate types.</li>
+<li>Support classes have be added for the DNS based certificate mechanism (DANE) to the PKIX distribution.</li>
 <li>Work has been done to reduce computation requirements for long skips associated with implementations of the SkippingCipher interface.</li>
 <li>AES GCM mode is now supported by CMS EnvelopedData.</li>
 <li>Iteration count is now settable in BcPKCS12MacCalculatorBuilder.</li>
@@ -47,6 +53,20 @@ Release 1.52
 <li>TLS: server-side support for PSK and SRP ciphersuites.</li>
 <li>TLS: (EC)DSA now supports signatures with non-SHA1 digests.</li>
 <li>TLS: support for ECDHE_ECDSA/AES/CCM ciphersuites from RFC 7251.</li>
+<li>Cipher.getIV() now returns nonces for AEAD modes.</li>
+<li>OIDs for dhPublicNumber and dhKeyAgreement are now supported by the provider.</li>
+<li>OIDs for several signature types using the RIPEMD family of digests have been added to the provider.</li>
+<li>JcaJceUtils.getDigestAlgName() has been added to assist in converting OIDs representing message digests into JCA algorithm names.</li>
+<li>BasicOCSPResp.getSignatureAlgorithmID() has been added to allow algorithm indentifier details to be returned from a basic OCSP response.</li>
+<li>Additional OIDs have been added for OCSP.</li>
+<li>X509CRLObject.getSignAlgName() now attempts to return an actual name, rather than an OID for, for the signature algorithm.</li>
+<li>SignedMailValidator now pays attention to the date in the PKIXParameters object if it is set.</li>
+<li>A missing signing time in a signature no longer causes SignedMailValidator to fail a signature, but provide a warning instead.</li>
+<li>An AlgorithmNameFinder implementation has been added to the PKIX API to provide "human friendly" translations of algorithm OIDs.</li>
+</ul>
+<h3>2.1.4 Security Advisory</h3>
+<ul>
+<li>The CTR DRGBs would not populate some bytes in the requested block of random bytes if the size of the block requested was not an exact multiple of the block size of the underlying cipher being used in the DRBG. If you are using the CTR DRBGs with "odd" keysizes, we strongly advise upgrading to this release.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
