@@ -209,7 +209,7 @@ public class X931Signer
             block[block.length - 1] = (byte)trailer;
         }
 
-        block[0] = 0x06;
+        block[0] = 0x6b;
         for (int i = delta - 2; i != 0; i--)
         {
             block[i] = (byte)0xbb;
