@@ -344,6 +344,16 @@ public class PGPSecretKey
     }
     
     /**
+     * Return the S2K object used to encrypt this secret key.
+     *
+     * @return this secret key's s2k object
+     */
+    public S2K getS2K()
+    {
+        return secret.getS2K();
+    }
+    
+    /**
      * Return any user attribute vectors associated with the key.
      * 
      * @return an iterator of PGPUserAttributeSubpacketVector.
