@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.signers.X931Signer;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -57,6 +58,7 @@ public class X931SignerTest
 
         shouldPassSignatureTest1();
         shouldPassSignatureTest2();
+        shouldPassSignatureTest3();
     }
 
     private void shouldPassSignatureTest1()
@@ -98,6 +100,40 @@ public class X931SignerTest
         if (!signer.verifySignature(sig))
         {
             fail("RSA X931 verify test 2 failed.");
+        }
+    }
+
+    private void shouldPassSignatureTest3()
+        throws Exception
+    {
+        BigInteger n = new BigInteger("dcb5686a3d2063a3f9cf7b9b32d2d3765b4c449b09b4960245a9111cd3b0cbd3260496885b8e1fa5db33b03efcc759d9c1afe29d93c6faebc7e0efada334b5b9a29655e2da2c8f11103d8203be311feab7ae88e9f1b2ec7d8fc655d77202b1681dd9717ec0f525b35584987e19539635a1ed23ca482a00149c609a23dc1645fd", 16);
+        BigInteger e = new BigInteger("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dc9f7", 16);
+        BigInteger d = new BigInteger("189d6345099098992e0c9ca5f281e1338092342fa0acc85cc2a111f30f9bd2fb4753cd1a48ef0ddca9bf1af33ec76fb2e23a9fb4896c26f2235b516f7c05ef7ae81e70f4b491a5fedba9b935e9c76d761a813ce7776ff8a1e5efe1166ff2eca26aa900da88c908d51af9de26977fe39719cc781df32216fa41b838f0c63803c3", 16);
+
+        byte[] msg = Hex.decode("911475c6e210ef4ac65b6fe8d2bfe5e01b959771b137c4ef69b88716e0d2ff9ebc1fad0f358c1dd7d50cc99a7b893ac9a6207076f08d8467d9e48c69c683bfe64a44dabaa3f7c243880f6ab7229bf7bb587822314fc5de5131983bfb2eef8b4bc1eac36f353724b567cd1ae8cddd64ddb7057549d5c81ad5fa3b5e751f00abf5");
+        byte[] sig = Hex.decode("02c50ec0ac8a7f38ef5630c396964d6a6daaa7e3083ab5b57fa2a2632f3b70e2e85c8456cd774d45d7e44fcb063f0f04fff9f1e3adfda11272535a92cb59320b190b5ee4261f23d6ceaa925df3a7bfa42e26bf61ea9645d9d64b3c90a820802768a6e209c9f83705375a3867afccc037e8242a98fa4c3db6b2d9877754d47289");
+
+        RSAKeyParameters rsaPublic = new RSAKeyParameters(false, n, e);
+        X931Signer signer = new X931Signer(new RSAEngine(), new SHA1Digest());
+
+        signer.init(true, new RSAKeyParameters(true, n, d));
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.generateSignature();
+
+        if (!Arrays.areEqual(sig, s))
+        {
+            fail("RSA X931 sig test 3 failed.");
+        }
+
+        signer.init(false, rsaPublic);
+
+        signer.update(msg, 0, msg.length);
+
+        if (!signer.verifySignature(sig))
+        {
+            fail("RSA X931 verify test 3 failed.");
         }
     }
 
