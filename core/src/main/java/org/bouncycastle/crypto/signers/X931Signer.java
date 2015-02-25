@@ -174,10 +174,12 @@ public class X931Signer
     {
         createSignatureBlock();
 
-        BigInteger t = new BigInteger(cipher.processBlock(block, 0, block.length));
+        BigInteger t = new BigInteger(1, cipher.processBlock(block, 0, block.length));
         BigInteger nSubT = kParam.getModulus().subtract(t);
 
         clearBlock(block);
+
+        BigInteger v = kParam.getModulus().shiftRight(2);
 
         if (t.compareTo(nSubT) > 0)
         {
