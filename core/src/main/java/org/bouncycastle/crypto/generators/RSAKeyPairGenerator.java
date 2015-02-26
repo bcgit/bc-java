@@ -36,7 +36,7 @@ public class RSAKeyPairGenerator
 
         while (!done)
         {
-            BigInteger p, q, n, d, e, pSub1, qSub1, phi, lcm, dLowerBound;
+            BigInteger p, q, n, d, e, pSub1, qSub1, phi, lcm;
 
             //
             // p and q values should have a length of half the strength in bits
