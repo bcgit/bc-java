@@ -325,6 +325,24 @@ public class PKIXCertPathBuilderSpi
             throw new CertPathValidatorException("Issuer not found", null, null, -1);
         }
 
+        try
+        {
+            byte[] akiExtensionValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
+            if (akiExtensionValue != null)
+            {
+                ASN1OctetString aki = ASN1OctetString.getInstance(akiExtensionValue);
+                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki.getOctets()).getKeyIdentifier();
+                if (authorityKeyIdentifier != null)
+                {
+                    certSelect.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // authority key identifier could not be retrieved from target cert, just search without it
+        }
+
         Iterator iter;
         try
         {

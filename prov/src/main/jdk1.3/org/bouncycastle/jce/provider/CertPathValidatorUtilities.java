@@ -1274,6 +1274,24 @@ class CertPathValidatorUtilities
                            "Subject criteria for certificate selector to find issuer certificate could not be set.", e);
         }
 
+        try
+        {
+            byte[] akiExtensionValue = cert.getExtensionValue(AUTHORITY_KEY_IDENTIFIER);
+            if (akiExtensionValue != null)
+            {
+                ASN1OctetString aki = ASN1OctetString.getInstance(akiExtensionValue);
+                byte[] authorityKeyIdentifier = AuthorityKeyIdentifier.getInstance(aki.getOctets()).getKeyIdentifier();
+                if (authorityKeyIdentifier != null)
+                {
+                    selector.setSubjectKeyIdentifier(new DEROctetString(authorityKeyIdentifier).getEncoded());
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // authority key identifier could not be retrieved from target cert, just search without it
+        }
+
         PKIXCertStoreSelector certSelect = new PKIXCertStoreSelector.Builder(selector).build();
         Set certs = new HashSet();
 

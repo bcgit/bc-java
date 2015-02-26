@@ -16,9 +16,7 @@ import org.bouncycastle.bcpg.PacketTags;
  * A PGPCompressedDataGenerator is used by invoking one of the open functions to create an
  * OutputStream that raw data can be supplied to for compression:
  * <ul>
- * <li>If the length of the data to be written is known in advance, use
- * {@link #open(OutputStream, long)} to create a packet containing a single compressed object.</li>
- * <li>If the length of the data is unknown, use {@link #open(OutputStream, byte[])} to create a
+ * <li>If the data needs to written out in blocks, use {@link #open(OutputStream, byte[])} to create a
  * packet consisting of a series of compressed data objects (partials).</li>
  * </ul>
  * </p>
@@ -33,7 +31,7 @@ import org.bouncycastle.bcpg.PacketTags;
  * </p>
  * <p>
  * Once data for compression has been written to the constructed OutputStream, writing of the object
- * stream is completed by closing the OutputStream obtained from the <code>open()</code> method, or
+ * stream is completed by closing the OutputStream obtained from the <code>#open()</code> method, or
  * equivalently invoking {@link #close()} on this generator.
  * </p>
  */

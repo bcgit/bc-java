@@ -139,7 +139,8 @@ public class RegressionTest
         new KDFFeedbackGeneratorTest(),
         new CramerShoupTest(),
         new BCryptTest(),
-        new OpenBSDBCryptTest()
+        new OpenBSDBCryptTest(),
+        new X931SignerTest()
     };
 
     public static void main(
