@@ -1,23 +1,17 @@
 package org.bouncycastle.crypto.test;
 
-import java.io.OutputStream;
 import java.math.BigInteger;
 
-import junit.framework.TestCase;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
-import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.signers.X931Signer;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Test;
 
 public class X931SignerTest
     extends SimpleTest

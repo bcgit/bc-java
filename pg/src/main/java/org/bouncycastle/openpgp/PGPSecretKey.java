@@ -322,7 +322,17 @@ public class PGPSecretKey
     {
         return pub.getKeyID();
     }
-    
+
+    /**
+     * Return the S2K used to process this key
+     *
+     * @return the key's S2K, null if one is not present.
+     */
+    public S2K getS2K()
+    {
+        return secret.getS2K();
+    }
+
     /**
      * Return the public key associated with this key.
      * 
