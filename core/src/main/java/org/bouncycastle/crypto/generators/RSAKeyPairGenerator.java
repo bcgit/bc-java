@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.math.ec.WNafUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * an RSA key pair generator.
@@ -17,6 +18,9 @@ public class RSAKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
     private static final BigInteger ONE = BigInteger.valueOf(1);
+    private static final int[] SPECIAL_E_VALUES = new int[]{ 3, 5, 17, 257, 65537 };
+    private static final int SPECIAL_E_HIGHEST = SPECIAL_E_VALUES[SPECIAL_E_VALUES.length - 1];
+    private static final int SPECIAL_E_BITS = BigInteger.valueOf(SPECIAL_E_HIGHEST).bitLength();
 
     private RSAKeyGenerationParameters param;
 
@@ -111,11 +115,7 @@ public class RSAKeyPairGenerator
             //
             d = e.modInverse(lcm);
 
-            // if d is less than or equal to dLowerBound, we need to start over
-            // also, for backward compatibility, if d is not the same as
-            // e.modInverse(phi), we need to start over
-
-            if (d.bitLength() <= qbitlength || !d.equals(e.modInverse(phi)))
+            if (d.bitLength() <= qbitlength)
             {
                 continue;
             }
@@ -150,10 +150,12 @@ public class RSAKeyPairGenerator
      */
     protected BigInteger chooseRandomPrime(int bitlength, BigInteger e)
     {
+        boolean eIsKnownOddPrime = (e.bitLength() <= SPECIAL_E_BITS) && Arrays.contains(SPECIAL_E_VALUES, e.intValue());
+
         for (;;)
         {
             BigInteger p = new BigInteger(bitlength, 1, param.getRandom());
-            
+
             if (p.mod(e).equals(ONE))
             {
                 continue;
@@ -164,11 +166,11 @@ public class RSAKeyPairGenerator
                 continue;
             }
 
-            if (!e.gcd(p.subtract(ONE)).equals(ONE)) 
+            if (!eIsKnownOddPrime && !e.gcd(p.subtract(ONE)).equals(ONE)) 
             {
                 continue;
             }
-            
+
             return p;
         }
     }
