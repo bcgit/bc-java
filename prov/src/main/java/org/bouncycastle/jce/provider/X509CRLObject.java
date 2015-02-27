@@ -62,7 +62,7 @@ public class X509CRLObject
     private boolean isHashCodeSet = false;
     private int     hashCodeValue;
 
-    static boolean isIndirectCRL(X509CRL crl)
+    public static boolean isIndirectCRL(X509CRL crl)
         throws CRLException
     {
         try
