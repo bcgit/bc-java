@@ -8,8 +8,8 @@ import org.bouncycastle.util.Pack;
 
 public class X931SecureRandomBuilder
 {
-    private final SecureRandom random;
-    private final EntropySourceProvider entropySourceProvider;
+    private SecureRandom random;          // JDK 1.1 complains on final.
+    private EntropySourceProvider entropySourceProvider;
 
     private BlockCipher engine;
     private byte[] dateTimeVector;
