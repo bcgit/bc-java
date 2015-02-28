@@ -27,6 +27,7 @@ then
     tar cf - common.xml midp.xml crypto_env.properties index.html LICENSE.html CONTRIBUTORS.html docs zips | (cd $target && tar xf -)
     ((cd core/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
@@ -108,6 +109,9 @@ then
         rm src/org/bouncycastle/cert/test/BcPKCS10Test.java
         rm src/org/bouncycastle/cert/test/BcAttrCertTest.java
         rm src/org/bouncycastle/cert/test/BcAttrCertSelectorTest.java
+        rm src/org/bouncycastle/cert/test/CertPathLoopTest.java
+        rm src/org/bouncycastle/cert/test/DANETest.java
+        rm src/org/bouncycastle/crypto/test/BigSkippingCipherTest.java
         rm -r src/org/bouncycastle/util/utiltest
         rm -r src/org/bouncycastle/openpgp/examples
         rm src/org/bouncycastle/openpgp/PGPCompressed*
@@ -123,6 +127,8 @@ then
         rm -r src/org/bouncycastle/voms
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
     )
+
+    find $target/src -name "*.java" -exec scripts/trim.sh \{\} \;
 
 
    (2>&1 find $target -name CVS -exec rm -rf \{\} \; ) > /dev/null

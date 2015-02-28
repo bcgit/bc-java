@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
