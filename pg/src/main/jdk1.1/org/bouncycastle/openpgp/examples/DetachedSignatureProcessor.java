@@ -25,6 +25,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
@@ -69,7 +70,7 @@ public class DetachedSignatureProcessor
     {
         in = PGPUtil.getDecoderStream(in);
         
-        PGPObjectFactory    pgpFact = new PGPObjectFactory(in);
+        PGPObjectFactory    pgpFact = new PGPObjectFactory(in, new BcKeyFingerprintCalculator());
         PGPSignatureList    p3;
 
         Object    o = pgpFact.nextObject();
@@ -77,7 +78,7 @@ public class DetachedSignatureProcessor
         {
             PGPCompressedData             c1 = (PGPCompressedData)o;
 
-            pgpFact = new PGPObjectFactory(c1.getDataStream());
+            pgpFact = new PGPObjectFactory(c1.getDataStream(), new BcKeyFingerprintCalculator());
             
             p3 = (PGPSignatureList)pgpFact.nextObject();
         }
@@ -86,7 +87,7 @@ public class DetachedSignatureProcessor
             p3 = (PGPSignatureList)o;
         }
             
-        PGPPublicKeyRingCollection  pgpPubRingCollection = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(keyIn));
+        PGPPublicKeyRingCollection  pgpPubRingCollection = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(keyIn), new BcKeyFingerprintCalculator());
 
 
         InputStream                 dIn = new BufferedInputStream(new FileInputStream(fileName));
