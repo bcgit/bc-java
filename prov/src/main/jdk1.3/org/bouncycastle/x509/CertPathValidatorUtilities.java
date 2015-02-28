@@ -1,4 +1,4 @@
-package org.bouncycastle.jce.provider;
+package org.bouncycastle.x509;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -70,6 +70,11 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.bouncycastle.jce.provider.X509CRLObject;
+import org.bouncycastle.jce.provider.X509CRLEntryObject;
+import org.bouncycastle.jce.provider.AnnotatedException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.PKIXPolicyNode;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -1064,7 +1069,7 @@ class CertPathValidatorUtilities
             return false;
         }
 
-        return critical.contains(RFC3280CertPathUtilities.DELTA_CRL_INDICATOR);
+        return critical.contains(DELTA_CRL_INDICATOR);
     }
 
     /**

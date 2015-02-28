@@ -114,7 +114,7 @@ public class X509CRLEntryObject extends X509CRLEntry
         }
     }
 
-    X509Principal getCertificateIssuer()
+    public X509Principal getCertificateIssuer()
     {
         if (certificateIssuer == null)
         {

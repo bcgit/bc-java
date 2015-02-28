@@ -13,7 +13,7 @@ public class PKIXPolicyNode
 {
     protected List       children;
     protected int        depth;
-    protected Set        expectedPolicies;
+    public Set        expectedPolicies;
     protected PolicyNode parent;
     protected Set        policyQualifiers;
     protected String     validPolicy;

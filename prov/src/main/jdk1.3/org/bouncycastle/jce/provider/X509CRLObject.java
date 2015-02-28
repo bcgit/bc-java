@@ -60,7 +60,7 @@ public class X509CRLObject
     private byte[] sigAlgParams;
     private boolean isIndirect;
 
-    static boolean isIndirectCRL(X509CRL crl)
+    public static boolean isIndirectCRL(X509CRL crl)
         throws CRLException
     {
         try
