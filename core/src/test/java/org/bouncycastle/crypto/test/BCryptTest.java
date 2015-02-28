@@ -70,8 +70,8 @@ public class BCryptTest
         }
 
         // Check BCrypt isn't padding too small (32 bit) keys
-        byte[] hashA = BCrypt.generate(new byte[]{'a'}, salt, 4);
-        byte[] hashA0 = BCrypt.generate(new byte[]{'a', 0}, salt, 4);
+        byte[] hashA = BCrypt.generate(new byte[]{(byte)'a'}, salt, 4);
+        byte[] hashA0 = BCrypt.generate(new byte[]{(byte)'a', (byte)0}, salt, 4);
         if (Arrays.areEqual(hashA, hashA0))
         {
             fail("Small keys should not be 0 padded.");
