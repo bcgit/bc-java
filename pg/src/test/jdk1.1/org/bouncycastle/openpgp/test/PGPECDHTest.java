@@ -31,6 +31,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -146,7 +147,7 @@ public class PGPECDHTest
     private void testDecrypt(PGPSecretKeyRing secretKeyRing)
         throws Exception
     {
-        PGPObjectFactory pgpF = new PGPObjectFactory(testMessage);
+        PGPObjectFactory pgpF = new PGPObjectFactory(testMessage, new BcKeyFingerprintCalculator());
 
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
 
@@ -209,7 +210,7 @@ public class PGPECDHTest
 
         cOut.close();
 
-        PGPObjectFactory pgpF = new PGPObjectFactory(cbOut.toByteArray());
+        PGPObjectFactory pgpF = new PGPObjectFactory(cbOut.toByteArray(), new BcKeyFingerprintCalculator());
 
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
 
@@ -217,7 +218,7 @@ public class PGPECDHTest
 
         InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(ecdhKeyPair.getPrivateKey()));
 
-        pgpF = new PGPObjectFactory(clear);
+        pgpF = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
 
         PGPLiteralData ld = (PGPLiteralData)pgpF.nextObject();
 

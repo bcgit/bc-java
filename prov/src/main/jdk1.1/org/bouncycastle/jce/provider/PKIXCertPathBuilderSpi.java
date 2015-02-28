@@ -13,6 +13,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
+
 /**
  * Implements the PKIX CertPathBuilding algorithem for BouncyCastle.
  * <br />
@@ -23,6 +27,8 @@ import java.util.Set;
 public class PKIXCertPathBuilderSpi
     extends CertPathBuilderSpi
 {
+    private static final String AUTHORITY_KEY_IDENTIFIER = Extension.authorityKeyIdentifier.getId();
+
     /**
      * Build and validate a CertPath using the given parameter.
      *

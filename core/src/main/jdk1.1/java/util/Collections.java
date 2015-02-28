@@ -11,6 +11,15 @@ public class Collections
     {
     }
 
+    public static Set singleton(Object o)
+    {
+        Set rv = new HashSet();
+
+        rv.add(o);
+
+        return rv;
+    }
+
     public static Collection unmodifiableCollection(Collection c)
     {
         return new UnmodifiableCollection(c);

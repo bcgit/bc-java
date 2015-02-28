@@ -45,6 +45,7 @@ then
      | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (cd core/src/test/jdk1.1 && tar cf - org) \
      | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
+    find $artifacts/lcrypto-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
     (
         cd $artifacts/lcrypto-jdk11-$base;
 
@@ -74,6 +75,7 @@ then
         rm -r src/org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
         rm -r src/org/bouncycastle/crypto/test/AESWrapPadTest.java
         rm -r src/org/bouncycastle/crypto/test/SipHashTest.java
+        rm src/org/bouncycastle/crypto/test/BigSkippingCipherTest.java
 
         (2>&1 javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
             -header "$HEADER" \
@@ -193,6 +195,8 @@ then
     ((cd prov/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
     ((cd prov/src/main/java && tar cf - org/bouncycastle/jce/exception ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
 
+    find $artifacts/jce-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
+    find $artifacts/jce-jdk11-$base -name "*.java" -exec scripts/useseccert.sh \{\} \;
 
     (
     cd $artifacts/jce-jdk11-$base; mkdir classes; mkdir javadoc;
@@ -212,6 +216,7 @@ then
     rm src/org/bouncycastle/jcajce/provider/config/*Permission.java
     rm -rf src/org/bouncycastle/jcajce/provider/asymmetric/dstu
     rm src/org/bouncycastle/jcajce/provider/asymmetric/DSTU*
+    rm -rf src/org/bouncycastle/jcajce/PKCS12StoreParameter.java
     rm src/org/bouncycastle/jce/provider/test/DHTest.java
     rm src/org/bouncycastle/jce/provider/test/DSATest.java
     rm src/org/bouncycastle/jce/provider/test/ECIESTest.java
@@ -268,6 +273,8 @@ then
     rm -rf src/org/bouncycastle/util/encoders/test
     rm -rf src/org/bouncycastle/util/utiltest
     rm -rf src/org/bouncycastle/x509/PKIXCertPathReviewer.java
+    rm -rf src/org/bouncycastle/x509/CertPathValidatorUtilities.java
+    rm -rf src/org/bouncycastle/x509/PrincipalUtils.java
     rm -rf src/org/bouncycastle/x509/CertPathReviewerException.java
     rm -rf src/org/bouncycastle/x509/ExtendedPKIX*.java
     rm -rf src/org/bouncycastle/x509/util/LDAPStoreHelper.java
@@ -435,6 +442,8 @@ then
     ((cd pkix/src/test/jdk1.3 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
     ((cd pkix/src/test/jdk1.1 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
     ((cd pkix/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+    find $artifacts/bcpkix-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
+    find $artifacts/bcpkix-jdk11-$base -name "*.java" -exec scripts/useseccert.sh \{\} \;
     (
     cd $artifacts/bcpkix-jdk11-$base; mkdir classes; mkdir javadoc;
 
@@ -462,6 +471,10 @@ then
     rm -rf src/org/bouncycastle/openssl/test
     rm -rf src/org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf src/org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm src/org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactory.java
+    rm src/org/bouncycastle/cert/test/CertPathLoopTest.java
+
+
     find src -name AllTests.java -exec rm {} \;
 
     javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
@@ -521,6 +534,7 @@ then
     ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    find $artifacts/bcpg-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
     (
     cd $artifacts/bcpg-jdk11-$base; mkdir classes; mkdir javadoc;
 
