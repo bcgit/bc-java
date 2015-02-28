@@ -1,4 +1,4 @@
-package org.bouncycastle.jce.provider;
+package org.bouncycastle.x509;
 
 import org.bouncycastle.jce.cert.TrustAnchor;
 import java.security.cert.X509CRL;
