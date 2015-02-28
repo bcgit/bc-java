@@ -155,12 +155,14 @@
                 <exclude name="**/cavp/**" />
                 <exclude name="**/KDFFeedbackGeneratorTest.java" />
                 <exclude name="**/KDFDoublePipelineIteratorGeneratorTest.java" />
+                <exclude name="**/PSSTest.java" />
                 <exclude name="**/KDFCounterGeneratorTest.java" />
                 <exclude name="**/jce/provider/test/AEADTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/SunProviderTest.java" />
                 <exclude name="**/NullProviderTest.java" />
+                <exclude name="**/CertPathLoopTest.java" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />
@@ -210,15 +212,17 @@
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" />
+            <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" />
+        </copy>
+        <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.3" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.3" includes="**/*.java" />
             <fileset dir="pkix/src/main/jdk1.3" includes="**/*.java" />
             <fileset dir="core/src/test/jdk1.3" includes="**/*.java" />
-            <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" />
             <fileset dir="prov/src/test/jdk1.3" includes="**/*.java" />
-            <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java" />
             <fileset dir="pkix/src/test/jdk1.3" includes="**/*.java" />
-            <fileset dir="mail/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}">
             <fileset dir="jce/src" includes="**/*.java" />

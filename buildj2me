@@ -24,7 +24,7 @@ then
     mkdir -p $target
     mkdir $target/javadoc
     mkdir $target/src
-    tar cf - common.xml midp.xml crypto_env.properties index.html LICENSE.html CONTRIBUTORS.html docs zips | (cd $target && tar xf -)
+    tar cf - index.html LICENSE.html CONTRIBUTORS.html docs zips | (cd $target && tar xf -)
     ((cd core/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
