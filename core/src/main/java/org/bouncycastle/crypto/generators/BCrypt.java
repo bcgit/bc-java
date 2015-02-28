@@ -1,8 +1,7 @@
 package org.bouncycastle.crypto.generators;
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Core of password hashing scheme Bcrypt,
