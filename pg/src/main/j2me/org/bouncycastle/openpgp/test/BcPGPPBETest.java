@@ -14,6 +14,7 @@ import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
@@ -105,13 +106,13 @@ public class BcPGPPBETest
         Date      date)
         throws Exception
     {
-        PGPObjectFactory         pgpF = new PGPObjectFactory(message);
+        PGPObjectFactory         pgpF = new PGPObjectFactory(message, new BcKeyFingerprintCalculator());
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider()));
 
-        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear);;
+        PGPObjectFactory         pgpFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
 
         PGPLiteralData           ld = (PGPLiteralData)pgpFact.nextObject();
 
@@ -295,7 +296,7 @@ public class BcPGPPBETest
         //
         // sample message
         //
-        PGPObjectFactory pgpFact = new PGPObjectFactory(testPBEAsym);
+        PGPObjectFactory pgpFact = new PGPObjectFactory(testPBEAsym, new BcKeyFingerprintCalculator());
 
         PGPEncryptedDataList enc = (PGPEncryptedDataList)pgpFact.nextObject();
 
@@ -303,7 +304,7 @@ public class BcPGPPBETest
 
         InputStream clear = pbe.getDataStream(new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider()));
 
-        pgpFact = new PGPObjectFactory(clear);
+        pgpFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
 
         // Compressed data not supported
 //        PGPLiteralData          ld = (PGPLiteralData)pgpFact.nextObject();
