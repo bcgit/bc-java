@@ -1046,7 +1046,7 @@ class CertPathValidatorUtilities
         CertStatus certStatus)
         throws AnnotatedException
     {
-        X509CRLEntryObject crl_entry = null;
+        X509CRLEntry crl_entry = null;
 
         boolean isIndirect;
         try
@@ -1072,14 +1072,14 @@ class CertPathValidatorUtilities
                 }
             }
 
-            crl_entry = (X509CRLEntryObject)crl.getRevokedCertificate(getSerialNumber(cert));
+            crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
 
             if (crl_entry == null)
             {
                 return;
             }
 
-            X500Principal certIssuer = crl_entry.getCertificateIssuer();
+            X500Principal certIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
 
             if (certIssuer == null)
             {
@@ -1097,7 +1097,7 @@ class CertPathValidatorUtilities
         }
         else
         {
-            crl_entry = (X509CRLEntryObject)crl.getRevokedCertificate(getSerialNumber(cert));
+            crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
 
             if (crl_entry == null)
             {
