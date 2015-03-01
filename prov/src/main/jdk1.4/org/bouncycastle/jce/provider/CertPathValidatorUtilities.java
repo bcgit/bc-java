@@ -71,6 +71,8 @@ import org.bouncycastle.jcajce.*;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.bouncycastle.jce.provider.X509CRLEntryObject;
+import org.bouncycastle.jce.provider.X509CRLObject;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -1109,7 +1111,7 @@ public class CertPathValidatorUtilities
         CertStatus certStatus)
         throws AnnotatedException
     {
-        X509CRLEntryObject crl_entry = null;
+        X509CRLEntry crl_entry = null;
 
         boolean isIndirect;
         try
@@ -1135,14 +1137,14 @@ public class CertPathValidatorUtilities
                 }
             }
 
-            crl_entry = (X509CRLEntryObject)crl.getRevokedCertificate(getSerialNumber(cert));
+            crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
 
             if (crl_entry == null)
             {
                 return;
             }
 
-            X500Principal certIssuer = crl_entry.getCertificateIssuer();
+            X500Principal certIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
 
             if (certIssuer == null)
             {
@@ -1160,7 +1162,7 @@ public class CertPathValidatorUtilities
         }
         else
         {
-            crl_entry = (X509CRLEntryObject)crl.getRevokedCertificate(getSerialNumber(cert));
+            crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
 
             if (crl_entry == null)
             {
