@@ -328,7 +328,7 @@ implementations
 <tr><td><b>VMPCMac</b></td><td>160 bits</td><td>&nbsp;</td></tr>
 </table>
 
-<h4>PBE</h4>
+<h4>PBE and Password Hashing</h4>
 
 <p>
 The base class is <b>PBEParametersGenerator</b> and has the following
@@ -340,6 +340,15 @@ sub-classes
 <tr><td><b>PKCS5S2ParametersGenerator</b></td><td>&nbsp;</td><td>Uses SHA1/Hmac as defined</td></tr>
 <tr><td><b>PKCS12ParametersGenerator</b></td><td>Digest</td><td>&nbsp;</td></tr>
 <tr><td><b>OpenSSLPBEParametersGenerator</b></td><td>&nbsp;</td><td>Uses MD5 as defined</td></tr>
+</table>
+<p>
+The following password hashing schemes are supported:
+</p>
+<table cellpadding=5 cellspacing=0 border=1 width=80%>
+<tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
+<tr><td><b>BCrypt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td><b>OpenBSDBcyrpt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td><b>SCrypt</b></td><td>&nbsp;</td><td>&nbsp;</td></tr>
 </table>
 
 <h4>IESCipher</h4>
@@ -406,14 +415,13 @@ The org.bouncycastle.crypto.ec package contains implementations for a variety of
 <h3>4.4 TLS/DTLS</h3>
 
 <p>
-The org.bouncycastle.crypto.tls package contains implementations for TLS 1.1 and DTLS 1.0.
+The org.bouncycastle.crypto.tls package contains implementations for TLS 1.1, 1.2 and DTLS 1.0, 1.2.
 </p>
 
 <h3>4.5 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers</h3>
 
 <p>
-The org.bouncycastle.crypto.prng package contains implementations for a variety of bit generators including those
-    from SP 800-90A, as well as builders for SecureRandom objects based around them.
+The org.bouncycastle.crypto.prng package contains implementations for a variety of bit generators including those from SP 800-90A and X9.31, as well as builders for SecureRandom objects based around them.
 </p>
 <h3>4.6 ASN.1 package</h3>
 
@@ -730,20 +738,20 @@ change as the draft is finalised.
 
 <p>Examples:
 <ul>
-<li>DESMac
-<li>DESMac/CFB8
-<li>DESedeMac
-<li>DESedeMac/CFB8
-<li>DESedeMac64
-<li>SKIPJACKMac
-<li>SKIPJACKMac/CFB8
-<li>IDEAMac
-<li>IDEAMac/CFB8
-<li>RC2Mac
-<li>RC2Mac/CFB8
-<li>RC5Mac
-<li>RC5Mac/CFB8
-<li>ISO9797ALG3Mac
+<li>DESMac</li>
+<li>DESMac/CFB8</li>
+<li>DESedeMac</li>
+<li>DESedeMac/CFB8</li>
+<li>DESedeMac64</li>
+<li>SKIPJACKMac</li>
+<li>SKIPJACKMac/CFB8</li>
+<li>IDEAMac</li>
+<li>IDEAMac/CFB8</li>
+<li>RC2Mac</li>
+<li>RC2Mac/CFB8</li>
+<li>RC5Mac</li>
+<li>RC5Mac/CFB8</li>
+<li>ISO9797ALG3Mac</li>
 </ul>
 
 
@@ -752,59 +760,72 @@ change as the draft is finalised.
 <p>Schemes:
 <ul>
 <li>DSTU4145</li>
-<li>GOST3411withGOST3410 (GOST3411withGOST3410-94)
-<li>GOST3411withECGOST3410 (GOST3411withGOST3410-2001)
-<li>MD2withRSA
-<li>MD5withRSA
-<li>SHA1withRSA
-<li>RIPEMD128withRSA
-<li>RIPEMD160withRSA
-<li>RIPEMD160withECDSA
-<li>RIPEMD256withRSA
-<li>SHA1withDSA
-<li>SHA224withDSA
-<li>SHA256withDSA
-<li>SHA384withDSA
-<li>SHA512withDSA
-<li>SHA1withDetDSA
-<li>SHA224withDetDSA
-<li>SHA256withDetDSA
-<li>SHA384withDetDSA
-<li>SHA512withDetDSA
-<li>NONEwithDSA
-<li>SHA1withDetECDSA
-<li>SHA224withDetECDSA
-<li>SHA256withDetECDSA
-<li>SHA384withDetECDSA
-<li>SHA512withDetECDSA
-<li>SHA1withECDSA
-<li>NONEwithECDSA
-<li>SHA224withECDSA
-<li>SHA256withECDSA
-<li>SHA384withECDSA
-<li>SHA512withECDSA
-<li>SHA1withECNR
-<li>SHA224withECNR
-<li>SHA256withECNR
-<li>SHA384withECNR
-<li>SHA512withECNR
-<li>SHA224withRSA
-<li>SHA256withRSA
-<li>SHA384withRSA
-<li>SHA512withRSA
-<li>SHA1withRSAandMGF1
-<li>SHA256withRSAandMGF1
-<li>SHA384withRSAandMGF1
-<li>SHA512withRSAandMGF1
+<li>GOST3411withGOST3410 (GOST3411withGOST3410-94)</li>
+<li>GOST3411withECGOST3410 (GOST3411withGOST3410-2001)</li>
+<li>MD2withRSA</li>
+<li>MD5withRSA</li>
+<li>SHA1withRSA</li>
+<li>RIPEMD128withRSA</li>
+<li>RIPEMD160withRSA</li>
+<li>RIPEMD160withECDSA</li>
+<li>RIPEMD256withRSA</li>
+<li>SHA1withDSA</li>
+<li>SHA224withDSA</li>
+<li>SHA256withDSA</li>
+<li>SHA384withDSA</li>
+<li>SHA512withDSA</li>
+<li>SHA1withDetDSA</li>
+<li>SHA224withDetDSA</li>
+<li>SHA256withDetDSA</li>
+<li>SHA384withDetDSA</li>
+<li>SHA512withDetDSA</li>
+<li>NONEwithDSA</li>
+<li>SHA1withDetECDSA</li>
+<li>SHA224withDetECDSA</li>
+<li>SHA256withDetECDSA</li>
+<li>SHA384withDetECDSA</li>
+<li>SHA512withDetECDSA</li>
+<li>SHA1withECDSA</li>
+<li>NONEwithECDSA</li>
+<li>SHA224withECDSA</li>
+<li>SHA256withECDSA</li>
+<li>SHA384withECDSA</li>
+<li>SHA512withECDSA</li>
+<li>SHA1withECNR</li>
+<li>SHA224withECNR</li>
+<li>SHA256withECNR</li>
+<li>SHA384withECNR</li>
+<li>SHA512withECNR</li>
+<li>SHA224withRSA</li>
+<li>SHA256withRSA</li>
+<li>SHA384withRSA</li>
+<li>SHA512withRSA</li>
+<li>SHA1withRSAandMGF1</li>
+<li>SHA256withRSAandMGF1</li>
+<li>SHA384withRSAandMGF1</li>
+<li>SHA512withRSAandMGF1</li>
+<li>SHA1withRSA/ISO9796-2</li>
+<li>RIPEMD160withRSA/ISO9796-2</li>
+<li>SHA1withRSA/X9.31</li>
+<li>SHA224withRSA/X9.31</li>
+<li>SHA256withRSA/X9.31</li>
+<li>SHA384withRSA/X9.31</li>
+<li>SHA512withRSA/X9.31</li>
+<li>RIPEMD128withRSA/X9.31</li>
+<li>RIPEMD160withRSA/X9.31</li>
+<li>WHIRLPOOLwithRSA/X9.31</li>
 </ul>
 
-<h4>PBE</h4>
+<h4>Password Hashing and PBE</h4>
 
 <p>Schemes:
 <ul>
-<li>PKCS5S1, any Digest, any symmetric Cipher, ASCII 
-<li>PKCS5S2, SHA1/HMac, any symmetric Cipher, ASCII, UTF8
-<li>PKCS12, any Digest, any symmetric Cipher, Unicode 
+<li>BCrypt</li>
+<li>OpenBSDBcyrpt</li>
+<li>SCrypt</li>
+<li>PKCS5S1, any Digest, any symmetric Cipher, ASCII </li>
+<li>PKCS5S2, SHA1/HMac, any symmetric Cipher, ASCII, UTF8</li>
+<li>PKCS12, any Digest, any symmetric Cipher, Unicode </li>
 </ul>
 
 <p>
