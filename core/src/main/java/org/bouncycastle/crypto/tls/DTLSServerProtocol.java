@@ -129,6 +129,7 @@ public class DTLSServerProtocol
         }
 
         handshake.notifyHelloComplete();
+        recordLayer.resetDiscoveredPeerVersion();
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
