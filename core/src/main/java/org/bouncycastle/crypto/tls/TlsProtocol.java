@@ -287,9 +287,11 @@ public abstract class TlsProtocol
                         break;
                     case HandshakeType.finished:
                     {
-                        if (this.expected_verify_data == null)
+                        TlsContext ctx = getContext();
+                        if (this.expected_verify_data == null
+                            && ctx.getSecurityParameters().getMasterSecret() != null)
                         {
-                            this.expected_verify_data = createVerifyData(!getContext().isServer());
+                            this.expected_verify_data = createVerifyData(!ctx.isServer());
                         }
 
                         // NB: Fall through to next case label
@@ -673,6 +675,11 @@ public abstract class TlsProtocol
     protected void processFinishedMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        if (expected_verify_data == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         assertEmpty(buf);
