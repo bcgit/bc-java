@@ -183,6 +183,11 @@ public class TlsServerProtocol
 
                 break;
             }
+            case CS_END:
+            {
+                refuseRenegotiation();
+                break;
+            }
             default:
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
