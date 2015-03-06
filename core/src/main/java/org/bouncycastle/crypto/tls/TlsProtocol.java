@@ -108,6 +108,15 @@ public abstract class TlsProtocol
     {
     }
 
+    protected void checkReceivedChangeCipherSpec(boolean expected)
+        throws IOException
+    {
+        if (expected != receivedChangeCipherSpec)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
     protected void cleanupHandshake()
     {
         if (this.expected_verify_data != null)
@@ -275,6 +284,8 @@ public abstract class TlsProtocol
                      * Read the message.
                      */
                     byte[] buf = handshakeQueue.removeData(len, 4);
+
+                    checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
 
                     /*
                      * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
