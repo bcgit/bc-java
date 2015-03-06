@@ -833,6 +833,20 @@ public abstract class TlsProtocol
         return maxFragmentLength;
     }
 
+    protected void refuseRenegotiation() throws IOException
+    {
+        /*
+         * RFC 5746 4.5 SSLv3 clients that refuse renegotiation SHOULD use a fatal
+         * handshake_failure alert.
+         */
+        if (TlsUtils.isSSL(getContext()))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        raiseWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
+    }
+
     /**
      * Make sure the InputStream 'buf' now empty. Fail otherwise.
      *
