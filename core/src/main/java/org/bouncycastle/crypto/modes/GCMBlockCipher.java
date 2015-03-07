@@ -329,21 +329,30 @@ public class GCMBlockCipher
         }
 
         int extra = bufOff;
-        if (!forEncryption)
+
+        if (forEncryption)
+        {
+            if (out.length < (outOff + extra + macSize))
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
+        }
+        else
         {
             if (extra < macSize)
             {
                 throw new InvalidCipherTextException("data too short");
             }
             extra -= macSize;
-        }
 
-        if (extra > 0)
-        {
             if (out.length < (outOff + extra))
             {
                 throw new OutputLengthException("Output buffer too short");
             }
+        }
+
+        if (extra > 0)
+        {
             gCTRPartial(bufBlock, 0, extra, out, outOff);
         }
 
@@ -409,10 +418,6 @@ public class GCMBlockCipher
 
         if (forEncryption)
         {
-            if (out.length < (outOff + extra + macSize))
-            {
-                throw new OutputLengthException("Output buffer too short");
-            }
             // Append T to the message
             System.arraycopy(macBlock, 0, out, outOff + bufOff, macSize);
             resultLen += macSize;
