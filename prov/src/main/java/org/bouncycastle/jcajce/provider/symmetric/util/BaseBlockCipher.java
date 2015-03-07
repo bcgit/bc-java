@@ -843,10 +843,15 @@ public class BaseBlockCipher
         int     outputOffset)
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
+        int     len = 0;
+
+        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
+        {
+            throw new ShortBufferException("output buffer too short for input.");
+        }
+
         try
         {
-            int     len = 0;
-
             if (inputLen != 0)
             {
                 len = cipher.processBytes(input, inputOffset, inputLen, output, outputOffset);
