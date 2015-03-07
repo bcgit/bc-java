@@ -108,6 +108,15 @@ public abstract class TlsProtocol
     {
     }
 
+    protected void checkReceivedChangeCipherSpec(boolean expected)
+        throws IOException
+    {
+        if (expected != receivedChangeCipherSpec)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
     protected void cleanupHandshake()
     {
         if (this.expected_verify_data != null)
@@ -276,6 +285,8 @@ public abstract class TlsProtocol
                      */
                     byte[] buf = handshakeQueue.removeData(len, 4);
 
+                    checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
+
                     /*
                      * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
                      * starting at client hello up to, but not including, this finished message.
@@ -287,9 +298,11 @@ public abstract class TlsProtocol
                         break;
                     case HandshakeType.finished:
                     {
-                        if (this.expected_verify_data == null)
+                        TlsContext ctx = getContext();
+                        if (this.expected_verify_data == null
+                            && ctx.getSecurityParameters().getMasterSecret() != null)
                         {
-                            this.expected_verify_data = createVerifyData(!getContext().isServer());
+                            this.expected_verify_data = createVerifyData(!ctx.isServer());
                         }
 
                         // NB: Fall through to next case label
@@ -673,6 +686,11 @@ public abstract class TlsProtocol
     protected void processFinishedMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        if (expected_verify_data == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
 
         assertEmpty(buf);
@@ -824,6 +842,20 @@ public abstract class TlsProtocol
             }
         }
         return maxFragmentLength;
+    }
+
+    protected void refuseRenegotiation() throws IOException
+    {
+        /*
+         * RFC 5746 4.5 SSLv3 clients that refuse renegotiation SHOULD use a fatal
+         * handshake_failure alert.
+         */
+        if (TlsUtils.isSSL(getContext()))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        raiseWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 
     /**
