@@ -136,8 +136,8 @@ public class TlsTestUtils
             }
         }
 
-        return TlsTestUtils.loadSignerCredentials(context, new String[]{
-            certResource, "x509-ca.pem" }, keyResource, signatureAndHashAlgorithm);
+        return loadSignerCredentials(context, new String[]{ certResource, "x509-ca.pem" },
+            keyResource, signatureAndHashAlgorithm);
     }
 
     static Certificate loadCertificateChain(String[] resources)

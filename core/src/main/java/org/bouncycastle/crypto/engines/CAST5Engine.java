@@ -361,12 +361,12 @@ public class CAST5Engine
         int blockSize = getBlockSize();
         if ((inOff + blockSize) > in.length)
         {
-            throw new DataLengthException("Input buffer too short");
+            throw new DataLengthException("input buffer too short");
         }
 
         if ((outOff + blockSize) > out.length)
         {
-            throw new OutputLengthException("Output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         if (_encrypting)
