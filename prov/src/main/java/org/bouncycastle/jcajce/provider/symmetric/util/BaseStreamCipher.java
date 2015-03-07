@@ -346,8 +346,14 @@ public class BaseStreamCipher
         int     inputOffset,
         int     inputLen,
         byte[]  output,
-        int     outputOffset) 
+        int     outputOffset)
+        throws ShortBufferException
     {
+        if (outputOffset + inputLen > output.length)
+        {
+            throw new ShortBufferException("output buffer too short for input.");
+        }
+
         if (inputLen != 0)
         {
             cipher.processBytes(input, inputOffset, inputLen, output, outputOffset);
