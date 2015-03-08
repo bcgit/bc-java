@@ -36,7 +36,7 @@ public class RSAKeyPairGenerator
 
         while (!done)
         {
-            BigInteger p, q, n, d, e, pSub1, qSub1, phi, lcm;
+            BigInteger p, q, n, d, e, pSub1, qSub1, gcd, lcm;
 
             //
             // p and q values should have a length of half the strength in bits
@@ -100,15 +100,16 @@ public class RSAKeyPairGenerator
 
             if (p.compareTo(q) < 0)
             {
-                phi = p;
+                gcd = p;
                 p = q;
-                q = phi;
+                q = gcd;
             }
 
             pSub1 = p.subtract(ONE);
             qSub1 = q.subtract(ONE);
-            phi = pSub1.multiply(qSub1);
-            lcm = phi.divide(pSub1.gcd(qSub1));
+//            phi = pSub1.multiply(qSub1);
+            gcd = pSub1.gcd(qSub1);
+            lcm = pSub1.divide(gcd).multiply(qSub1);
 
             //
             // calculate the private exponent
