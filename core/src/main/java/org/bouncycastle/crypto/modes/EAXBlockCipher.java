@@ -193,7 +193,7 @@ public class EAXBlockCipher
     {
         if (cipherInitialized)
         {
-            throw new IllegalStateException("AAD data cannot be added after encryption/decription processing has begun.");
+            throw new IllegalStateException("AAD data cannot be added after encryption/decryption processing has begun.");
         }
         mac.update(in);
     }
@@ -267,13 +267,13 @@ public class EAXBlockCipher
         }
         else
         {
-            if (out.length < (outOff + extra - macSize))
-            {
-                throw new OutputLengthException("Output buffer too short");
-            }
             if (extra < macSize)
             {
                 throw new InvalidCipherTextException("data too short");
+            }
+            if (out.length < (outOff + extra - macSize))
+            {
+                throw new OutputLengthException("Output buffer too short");
             }
             if (extra > macSize)
             {
