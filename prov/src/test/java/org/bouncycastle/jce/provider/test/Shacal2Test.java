@@ -45,42 +45,45 @@ public class Shacal2Test
 
     private static final int KEY_SIZE_BITS = 512;
 
-        private static final byte[] TEST_BYTES = new byte[ 1536 ];
+    private static final byte[] TEST_BYTES = new byte[1536];
 
-        private static final char[] TEST_PASSWORD = new char[ 1536 ];
+    private static final char[] TEST_PASSWORD = new char[1536];
 
-        static
+    static
+    {
+        new SecureRandom().nextBytes(TEST_BYTES);
+        int total = TEST_PASSWORD.length;
+        for (char c = 'A'; c <= 'Z' && total > 0; TEST_PASSWORD[TEST_PASSWORD.length - total] = c, c++, total--)
         {
-            new SecureRandom().nextBytes( TEST_BYTES );
-            int total = TEST_PASSWORD.length;
-            for ( char c = 'A'; c <= 'Z' && total > 0; TEST_PASSWORD[TEST_PASSWORD.length - total] = c, c++, total-- );
+            ;
         }
+    }
 
-        private void blockTest()
-            throws Exception
+    private void blockTest()
+        throws Exception
+    {
+        final byte[] salt = new byte[KEY_SIZE_BITS / 8];
+        new SecureRandom().nextBytes(salt);
+
+        final KeySpec keySpec = new PBEKeySpec(TEST_PASSWORD, salt, 262144, KEY_SIZE_BITS);
+        final SecretKey secretKey = new SecretKeySpec(SecretKeyFactory.getInstance("PBKDF2", "BC").
+            generateSecret(keySpec).getEncoded(), "Shacal2");
+
+        final Cipher cipher = Cipher.getInstance("Shacal2/CBC/ISO10126Padding", "BC");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        final byte[] iv = cipher.getIV();
+        final byte[] ciphertext = cipher.doFinal(TEST_BYTES);
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+
+        final byte[] cleartext = cipher.doFinal(ciphertext);
+
+        if (!Arrays.areEqual(TEST_BYTES, cleartext))
         {
-            final byte[] salt = new byte[KEY_SIZE_BITS / 8];
-            new SecureRandom().nextBytes(salt);
-
-            final KeySpec keySpec = new PBEKeySpec(TEST_PASSWORD, salt, 262144, KEY_SIZE_BITS);
-            final SecretKey secretKey = new SecretKeySpec(SecretKeyFactory.getInstance("PBKDF2", "BC").
-                generateSecret(keySpec).getEncoded(), "Shacal2");
-
-            final Cipher cipher = Cipher.getInstance("Shacal2/CBC/ISO10126Padding", "BC");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-
-            final byte[] iv = cipher.getIV();
-            final byte[] ciphertext = cipher.doFinal(TEST_BYTES);
-
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
-
-            final byte[] cleartext = cipher.doFinal(ciphertext);
-
-            if (!Arrays.areEqual(TEST_BYTES, cleartext))
-            {
-                fail("Invalid cleartext.");
-            }
+            fail("Invalid cleartext.");
         }
+    }
 
     public void testECB(
         int strength,
