@@ -33,6 +33,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestFailedException;
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -670,6 +671,8 @@ public class BlockCipherTest
                 bytes[i] = (byte)dIn.read();
             }
             dIn.readFully(bytes, input.length / 2, bytes.length - input.length / 2);
+
+            dIn.close();
         }
         catch (Exception e)
         {
@@ -679,6 +682,40 @@ public class BlockCipherTest
         if (!areEqual(bytes, input))
         {
             fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
+        }
+
+        //
+        // short buffer test
+        //
+        try
+        {
+            byte[] out1 = new byte[input.length / 2];
+
+            try
+            {
+                in.doFinal(output, 0, output.length, out1, 0);
+
+                fail("ShortBufferException not triggered");
+            }
+            catch (ShortBufferException e)
+            {
+                byte[] out2 = new byte[in.getOutputSize(output.length)];
+
+                int count = in.doFinal(output, 0, output.length, out2, 0);
+
+                if (!areEqual(out2, count, input))
+                {
+                    fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
+                }
+            }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            fail("" + algorithm + " failed short buffer decryption - " + e.toString());
         }
     }
 
@@ -694,6 +731,24 @@ public class BlockCipherTest
         {
             return true;
         }
+    }
+
+    private boolean areEqual(byte[] a, int aLen, byte[] b)
+    {
+        if (b.length != aLen)
+        {
+            return false;
+        }
+
+        for (int i = 0; i != aLen; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void testExceptions()

@@ -20,6 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestFailedException;
 
 /**
  * check that cipher input/output streams are working correctly
@@ -109,10 +110,11 @@ public class CipherStreamTest
             kGen = KeyGenerator.getInstance(name.substring(0, name.indexOf('/')), "BC");
         }
 
+        byte[]                  data = lCode.getBytes();
         Cipher                  in = Cipher.getInstance(name, "BC");
         Cipher                  out = Cipher.getInstance(name, "BC");
         Key                     key = kGen.generateKey();
-        ByteArrayInputStream    bIn = new ByteArrayInputStream(lCode.getBytes());
+        ByteArrayInputStream    bIn = new ByteArrayInputStream(data);
         ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
 
         in.init(Cipher.ENCRYPT_MODE, key);
@@ -146,6 +148,61 @@ public class CipherStreamTest
         {
             fail("Failed - decrypted data doesn't match.");
         }
+
+
+        //
+        // short buffer test
+        //
+        try
+        {
+            byte[] enc = in.doFinal(data);
+            byte[] out1 = new byte[enc.length / 2];
+
+            try
+            {
+                out.doFinal(enc, 0, enc.length, out1, 0);
+
+                fail("ShortBufferException not triggered");
+            }
+            catch (ShortBufferException e)
+            {
+                byte[] out2 = new byte[in.getOutputSize(enc.length)];
+
+                int count = out.doFinal(enc, 0, enc.length, out2, 0);
+
+                if (!areEqual(out2, count, data))
+                {
+                    fail("" + name + " failed decryption - expected " + new String(Hex.encode(data)) + " got " + new String(Hex.encode(out2)));
+                }
+            }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            fail("" + name + " failed short buffer decryption - " + e.toString());
+        }
+    }
+
+
+    private boolean areEqual(byte[] a, int aLen, byte[] b)
+    {
+        if (b.length != aLen)
+        {
+            return false;
+        }
+
+        for (int i = 0; i != aLen; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void testAlgorithm(String name, byte[] keyBytes, byte[] iv, byte[] plainText, byte[] cipherText)
