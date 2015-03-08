@@ -734,7 +734,7 @@ public class TlsUtils
         throws IOException
     {
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-        if (TlsUtils.isTLSv12(context))
+        if (isTLSv12(context))
         {
             signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
             if (signatureAndHashAlgorithm == null)
