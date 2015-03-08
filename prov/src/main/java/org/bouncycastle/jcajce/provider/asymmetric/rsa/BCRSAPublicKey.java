@@ -153,11 +153,7 @@ public class BCRSAPublicKey
         {
             algorithmIdentifier = AlgorithmIdentifier.getInstance(in.readObject());
         }
-        catch (OptionalDataException e)
-        {
-            algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
-        }
-        catch (EOFException e)
+        catch (Exception e)
         {
             algorithmIdentifier = DEFAULT_ALGORITHM_IDENTIFIER;
         }
