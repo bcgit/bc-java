@@ -107,7 +107,7 @@ public class MockDTLSClient
                 throws IOException
             {
                 Certificate[] chain = serverCertificate.getCertificateList();
-                System.out.println("Received server certificate chain of length " + chain.length);
+                System.out.println("DTLS client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
                     Certificate entry = chain[i];
