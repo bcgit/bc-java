@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;

@@ -3,13 +3,17 @@ package org.bouncycastle.crypto.tls.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 
 public class DTLSTestSuite extends TestSuite
 {
     // Make the access to constants less verbose 
     static abstract class C extends TlsTestConfig {}
+
+    public DTLSTestSuite()
+    {
+        super("DTLS");
+    }
 
     public static Test suite()
     {
