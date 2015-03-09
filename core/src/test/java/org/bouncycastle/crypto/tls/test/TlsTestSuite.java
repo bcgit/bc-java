@@ -11,6 +11,11 @@ public class TlsTestSuite extends TestSuite
     // Make the access to constants less verbose 
     static abstract class C extends TlsTestConfig {}
 
+    public TlsTestSuite()
+    {
+        super("TLS");
+    }
+
     public static Test suite()
     {
         TlsTestSuite testSuite = new TlsTestSuite();
