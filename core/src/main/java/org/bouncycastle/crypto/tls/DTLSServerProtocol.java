@@ -574,6 +574,12 @@ public class DTLSServerProtocol
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParameters();
 
+        /*
+         * TODO[session-hash]
+         * 
+         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
+         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         */
         securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
 
         context.setClientVersion(client_version);
