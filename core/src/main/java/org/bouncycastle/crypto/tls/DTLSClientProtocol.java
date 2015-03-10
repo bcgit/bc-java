@@ -45,7 +45,7 @@ public class DTLSClientProtocol
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.clientContext, client, ContentType.handshake);
 
         TlsSession sessionToResume = state.client.getSessionToResume();
-        if (sessionToResume != null)
+        if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
             if (sessionParameters != null)
@@ -153,6 +153,8 @@ public class DTLSClientProtocol
             }
 
             Hashtable sessionServerExtensions = state.sessionParameters.readServerExtensions();
+
+            // TODO Check encrypt-then-MAC extension and maybe others
 
             securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
 
@@ -445,8 +447,6 @@ public class DTLSClientProtocol
         // Integer -> byte[]
         state.clientExtensions = client.getClientExtensions();
 
-        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
-
         // Cipher Suites (and SCSV)
         {
             /*
@@ -676,17 +676,6 @@ public class DTLSClientProtocol
         Hashtable serverExtensions = TlsProtocol.readExtensions(buf);
 
         /*
-         * draft-ietf-tls-session-hash-01 5.2. If a server receives the "extended_master_secret"
-         * extension, it MUST include the "extended_master_secret" extension in its ServerHello
-         * message.
-         */
-        boolean serverSentExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
-        if (serverSentExtendedMasterSecret != securityParameters.extendedMasterSecret)
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-
-        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.
@@ -720,17 +709,6 @@ public class DTLSClientProtocol
                 if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension);
-                }
-
-                /*
-                 * draft-ietf-tls-session-hash-01 5.2. Implementation note: if the server decides to
-                 * proceed with resumption, the extension does not have any effect. Requiring the
-                 * extension to be included anyway makes the extension negotiation logic easier,
-                 * because it does not depend on whether resumption is accepted or not.
-                 */
-                if (extType.equals(TlsExtensionsUtils.EXT_extended_master_secret))
-                {
-                    continue;
                 }
 
                 /*
@@ -789,6 +767,8 @@ public class DTLSClientProtocol
 
             securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
 
+            securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+
             state.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.clientExtensions, serverExtensions,
                 AlertDescription.illegal_parameter);
 
@@ -800,6 +780,13 @@ public class DTLSClientProtocol
             state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(serverExtensions,
                 TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
         }
+
+        /*
+         * TODO[session-hash]
+         * 
+         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
+         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         */
 
         state.client.notifySecureRenegotiation(state.secure_renegotiation);
 

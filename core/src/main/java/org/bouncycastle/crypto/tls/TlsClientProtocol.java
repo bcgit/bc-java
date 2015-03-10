@@ -61,7 +61,7 @@ public class TlsClientProtocol
         this.recordStream.init(tlsClientContext);
 
         TlsSession sessionToResume = tlsClient.getSessionToResume();
-        if (sessionToResume != null)
+        if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
             if (sessionParameters != null)
@@ -643,17 +643,6 @@ public class TlsClientProtocol
         this.serverExtensions = readExtensions(buf);
 
         /*
-         * draft-ietf-tls-session-hash-01 5.2. If a server receives the "extended_master_secret"
-         * extension, it MUST include the "extended_master_secret" extension in its ServerHello
-         * message.
-         */
-        boolean serverSentExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
-        if (serverSentExtendedMasterSecret != securityParameters.extendedMasterSecret)
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-
-        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message.
          * 
@@ -689,17 +678,6 @@ public class TlsClientProtocol
                 if (null == TlsUtils.getExtensionData(this.clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension);
-                }
-
-                /*
-                 * draft-ietf-tls-session-hash-01 5.2. Implementation note: if the server decides to
-                 * proceed with resumption, the extension does not have any effect. Requiring the
-                 * extension to be included anyway makes the extension negotiation logic easier,
-                 * because it does not depend on whether resumption is accepted or not.
-                 */
-                if (extType.equals(TlsExtensionsUtils.EXT_extended_master_secret))
-                {
-                    continue;
                 }
 
                 /*
@@ -757,8 +735,6 @@ public class TlsClientProtocol
 
             sessionClientExtensions = null;
             sessionServerExtensions = this.sessionParameters.readServerExtensions();
-
-            this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
         }
 
         this.securityParameters.cipherSuite = selectedCipherSuite;
@@ -780,6 +756,8 @@ public class TlsClientProtocol
 
             this.securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
 
+            this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
+
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
                 sessionServerExtensions, AlertDescription.illegal_parameter);
 
@@ -798,6 +776,13 @@ public class TlsClientProtocol
                     AlertDescription.illegal_parameter);
         }
 
+        /*
+         * TODO[session-hash]
+         * 
+         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
+         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         */
+        
         if (sessionClientExtensions != null)
         {
             this.tlsClient.processServerExtensions(sessionServerExtensions);
@@ -857,8 +842,6 @@ public class TlsClientProtocol
         }
 
         this.clientExtensions = this.tlsClient.getClientExtensions();
-
-        this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
 
