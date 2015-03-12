@@ -109,7 +109,7 @@ public class TlsTestCase extends TestCase
         }
     }
 
-    protected  void logException(Exception e)
+    protected void logException(Exception e)
     {
         if (TlsTestConfig.DEBUG)
         {

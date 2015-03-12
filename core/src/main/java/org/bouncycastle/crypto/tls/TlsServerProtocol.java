@@ -527,6 +527,12 @@ public class TlsServerProtocol
          */
         this.clientExtensions = readExtensions(buf);
 
+        /*
+         * TODO[session-hash]
+         * 
+         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
+         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         */
         this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
 
         getContextAdmin().setClientVersion(client_version);

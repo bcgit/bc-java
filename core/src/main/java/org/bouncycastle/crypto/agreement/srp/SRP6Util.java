@@ -60,6 +60,7 @@ public class SRP6Util
 
         return val;
     }
+
     /** 
 	 * Computes the client evidence message (M1) according to the standard routine:
 	 * M1 = H( A | B | S )
@@ -106,7 +107,7 @@ public class SRP6Util
         digest.doFinal(output, 0);
         return new BigInteger(1, output);
 	}
-	
+
 	private static BigInteger hashPaddedTriplet(Digest digest, BigInteger N, BigInteger n1, BigInteger n2, BigInteger n3){
         int padLength = (N.bitLength() + 7) / 8;
 

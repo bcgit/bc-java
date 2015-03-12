@@ -7,14 +7,11 @@ import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.SignerWithRecovery;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * X9.31-1998 - signing using a hash.
@@ -175,20 +172,11 @@ public class X931Signer
         createSignatureBlock();
 
         BigInteger t = new BigInteger(1, cipher.processBlock(block, 0, block.length));
-        BigInteger nSubT = kParam.getModulus().subtract(t);
-
         clearBlock(block);
 
-        BigInteger v = kParam.getModulus().shiftRight(2);
+        t = t.min(kParam.getModulus().subtract(t));
 
-        if (t.compareTo(nSubT) > 0)
-        {
-            return BigIntegers.asUnsignedByteArray((kParam.getModulus().bitLength() + 7) / 8, nSubT);
-        }
-        else
-        {
-            return BigIntegers.asUnsignedByteArray((kParam.getModulus().bitLength() + 7) / 8, t);
-        }
+        return BigIntegers.asUnsignedByteArray((kParam.getModulus().bitLength() + 7) / 8, t);
     }
 
     private void createSignatureBlock()
@@ -238,14 +226,14 @@ public class X931Signer
         BigInteger t = new BigInteger(block);
         BigInteger f;
 
-        if (t.mod(BigInteger.valueOf(16)).equals(BigInteger.valueOf(12)))
+        if ((t.intValue() & 15) == 12)
         {
              f = t;
         }
         else
         {
             t = kParam.getModulus().subtract(t);
-            if (t.mod(BigInteger.valueOf(16)).equals(BigInteger.valueOf(12)))
+            if ((t.intValue() & 15) == 12)
             {
                  f = t;
             }

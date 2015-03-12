@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.crypto.tls.AlertDescription;
@@ -14,7 +13,6 @@ import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.MaxFragmentLength;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
-import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
@@ -76,8 +74,7 @@ class MockTlsClient
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
-        // TODO[draft-ietf-tls-session-hash-01] Enable once code-point assigned (only for compatible server though)
-//        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
+        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         return clientExtensions;
@@ -118,29 +115,8 @@ class MockTlsClient
                     return null;
                 }
 
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-                Vector sigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
-                if (sigAlgs != null)
-                {
-                    for (int i = 0; i < sigAlgs.size(); ++i)
-                    {
-                        SignatureAndHashAlgorithm sigAlg = (SignatureAndHashAlgorithm)
-                            sigAlgs.elementAt(i);
-                        if (sigAlg.getSignature() == SignatureAlgorithm.rsa)
-                        {
-                            signatureAndHashAlgorithm = sigAlg;
-                            break;
-                        }
-                    }
-
-                    if (signatureAndHashAlgorithm == null)
-                    {
-                        return null;
-                    }
-                }
-
-                return TlsTestUtils.loadSignerCredentials(context, new String[] { "x509-client.pem", "x509-ca.pem" },
-                    "x509-client-key.pem", signatureAndHashAlgorithm);
+                return TlsTestUtils.loadSignerCredentials(context, certificateRequest.getSupportedSignatureAlgorithms(),
+                    SignatureAlgorithm.rsa, "x509-client.pem", "x509-client-key.pem");
             }
         };
     }
