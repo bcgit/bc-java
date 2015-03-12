@@ -337,6 +337,15 @@ public abstract class AbstractTlsServer
         }
     }
 
+    public TlsCipher getCipher()
+        throws IOException
+    {
+        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
+        int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
+
+        return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
+    }
+
     public NewSessionTicket getNewSessionTicket()
         throws IOException
     {
