@@ -23,20 +23,38 @@ public class DTLSTestCase extends TestCase
 
     protected final TlsTestConfig config;
 
+    public DTLSTestCase(String name)
+    {
+        super(name);
+
+        this.config = null;
+    }
+
     public DTLSTestCase(TlsTestConfig config, String name)
     {
+        super(name);
+
         checkDTLSVersion(config.clientMinimumVersion);
         checkDTLSVersion(config.clientOfferVersion);
         checkDTLSVersion(config.serverMaximumVersion);
         checkDTLSVersion(config.serverMinimumVersion);
 
         this.config = config;
+    }
 
-        setName(name);
+    public void testDummy()
+    {
+        // Avoid "No tests found" warning from junit
     }
 
     protected void runTest() throws Throwable
     {
+        // Disable the test if it is not being run via DTLSTestSuite
+        if (config == null)
+        {
+            return;
+        }
+
         SecureRandom secureRandom = new SecureRandom();
 
         DTLSClientProtocol clientProtocol = new DTLSClientProtocol(secureRandom);
