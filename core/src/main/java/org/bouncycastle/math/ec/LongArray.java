@@ -11,8 +11,10 @@ class LongArray
     /*
      * This expands 8 bit indices into 16 bit contents (high bit 14), by inserting 0s between bits.
      * In a binary field, this operation is the same as squaring an 8 bit number.
+     * 
+     * NOTE: All entries are positive so sign-extension is not an issue.
      */
-    private static final int[] INTERLEAVE2_TABLE = new int[]
+    private static final short[] INTERLEAVE2_TABLE = new short[]
     {
         0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014, 0x0015,
         0x0040, 0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055,
