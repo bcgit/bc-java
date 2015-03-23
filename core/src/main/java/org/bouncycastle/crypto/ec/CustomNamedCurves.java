@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.ec;
 import java.math.BigInteger;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -231,25 +232,36 @@ public class CustomNamedCurves
     static final Hashtable nameToOID = new Hashtable();
     static final Hashtable oidToCurve = new Hashtable();
     static final Hashtable oidToName = new Hashtable();
+    static final Vector names = new Vector();
 
     static void defineCurve(String name, X9ECParametersHolder holder)
     {
+        names.addElement(name);
+        name = Strings.toLowerCase(name);
         nameToCurve.put(name, holder);
     }
 
     static void defineCurveWithOID(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        nameToCurve.put(name, holder);
-        nameToOID.put(name, oid);
+        names.addElement(name);
         oidToName.put(oid, name);
         oidToCurve.put(oid, holder);
+        name = Strings.toLowerCase(name);
+        nameToOID.put(name, oid);
+        nameToCurve.put(name, holder);
     }
 
-    static void defineCurveAlias(String alias, ASN1ObjectIdentifier oid)
+    static void defineCurveAlias(String name, ASN1ObjectIdentifier oid)
     {
-        alias = Strings.toLowerCase(alias);
-        nameToOID.put(alias, oid);
-        nameToCurve.put(alias, oidToCurve.get(oid));
+        Object curve = oidToCurve.get(oid);
+        if (curve == null)
+        {
+            throw new IllegalStateException();
+        }
+
+        name = Strings.toLowerCase(name);
+        nameToOID.put(name, oid);
+        nameToCurve.put(name, curve);
     }
 
     static
@@ -315,6 +327,6 @@ public class CustomNamedCurves
      */
     public static Enumeration getNames()
     {
-        return nameToCurve.keys();
+        return names.elements();
     }
 }
