@@ -211,6 +211,11 @@ public abstract class Nat
         return new int[len];
     }
 
+    public static long[] create64(int len)
+    {
+        return new long[len];
+    }
+
     public static int dec(int len, int[] z)
     {
         for (int i = 0; i < len; ++i)
@@ -691,6 +696,17 @@ public abstract class Nat
         return c >>> 31;
     }
 
+    public static long shiftUpBit64(int len, long[] x, int xOff, long c, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            long next = x[xOff + i];
+            z[zOff + i] = (next << 1) | (c >>> 63);
+            c = next;
+        }
+        return c >>> 63;
+    }
+
     public static int shiftUpBits(int len, int[] z, int bits, int c)
     {
 //        assert bits > 0 && bits < 32;
@@ -715,6 +731,18 @@ public abstract class Nat
         return c >>> -bits;
     }
 
+    public static long shiftUpBits64(int len, long[] z, int zOff, int bits, long c)
+    {
+//        assert bits > 0 && bits < 64;
+        for (int i = 0; i < len; ++i)
+        {
+            long next = z[zOff + i];
+            z[zOff + i] = (next << bits) | (c >>> -bits);
+            c = next;
+        }
+        return c >>> -bits;
+    }
+
     public static int shiftUpBits(int len, int[] x, int bits, int c, int[] z)
     {
 //        assert bits > 0 && bits < 32;
@@ -733,6 +761,18 @@ public abstract class Nat
         for (int i = 0; i < len; ++i)
         {
             int next = x[xOff + i];
+            z[zOff + i] = (next << bits) | (c >>> -bits);
+            c = next;
+        }
+        return c >>> -bits;
+    }
+
+    public static long shiftUpBits64(int len, long[] x, int xOff, int bits, long c, long[] z, int zOff)
+    {
+//        assert bits > 0 && bits < 64;
+        for (int i = 0; i < len; ++i)
+        {
+            long next = x[xOff + i];
             z[zOff + i] = (next << bits) | (c >>> -bits);
             c = next;
         }

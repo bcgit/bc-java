@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.Pack;
 
-public abstract class Nat192
+public abstract class Nat160
 {
     private static final long M = 0xFFFFFFFFL;
 
@@ -25,9 +25,6 @@ public abstract class Nat192
         c >>>= 32;
         c += (x[4] & M) + (y[4] & M);
         z[4] = (int)c;
-        c >>>= 32;
-        c += (x[5] & M) + (y[5] & M);
-        z[5] = (int)c;
         c >>>= 32;
         return (int)c;
     }
@@ -50,9 +47,6 @@ public abstract class Nat192
         c += (x[4] & M) + (y[4] & M) + (z[4] & M);
         z[4] = (int)c;
         c >>>= 32;
-        c += (x[5] & M) + (y[5] & M) + (z[5] & M);
-        z[5] = (int)c;
-        c >>>= 32;
         return (int)c;
     }
 
@@ -74,9 +68,6 @@ public abstract class Nat192
         c += (x[4] & M) + (z[4] & M);
         z[4] = (int)c;
         c >>>= 32;
-        c += (x[5] & M) + (z[5] & M);
-        z[5] = (int)c;
-        c >>>= 32;
         return (int)c;
     }
 
@@ -97,9 +88,6 @@ public abstract class Nat192
         c >>>= 32;
         c += (x[xOff + 4] & M) + (z[zOff + 4] & M);
         z[zOff + 4] = (int)c;
-        c >>>= 32;
-        c += (x[xOff + 5] & M) + (z[zOff + 5] & M);
-        z[zOff + 5] = (int)c;
         c >>>= 32;
         return (int)c;
     }
@@ -127,10 +115,6 @@ public abstract class Nat192
         u[uOff + 4] = (int)c;
         v[vOff + 4] = (int)c;
         c >>>= 32;
-        c += (u[uOff + 5] & M) + (v[vOff + 5] & M);
-        u[uOff + 5] = (int)c;
-        v[vOff + 5] = (int)c;
-        c >>>= 32;
         return (int)c;
     }
 
@@ -141,34 +125,16 @@ public abstract class Nat192
         z[2] = x[2];
         z[3] = x[3];
         z[4] = x[4];
-        z[5] = x[5];
-    }
-
-    public static void copy64(long[] x, long[] z)
-    {
-        z[0] = x[0];
-        z[1] = x[1];
-        z[2] = x[2];
     }
 
     public static int[] create()
     {
-        return new int[6];
-    }
-
-    public static long[] create64()
-    {
-        return new long[3];
+        return new int[5];
     }
 
     public static int[] createExt()
     {
-        return new int[12];
-    }
-
-    public static long[] createExt64()
-    {
-        return new long[6];
+        return new int[10];
     }
 
     public static boolean diff(int[] x, int xOff, int[] y, int yOff, int[] z, int zOff)
@@ -187,19 +153,7 @@ public abstract class Nat192
 
     public static boolean eq(int[] x, int[] y)
     {
-        for (int i = 5; i >= 0; --i)
-        {
-            if (x[i] != y[i])
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean eq64(long[] x, long[] y)
-    {
-        for (int i = 2; i >= 0; --i)
+        for (int i = 4; i >= 0; --i)
         {
             if (x[i] != y[i])
             {
@@ -211,7 +165,7 @@ public abstract class Nat192
 
     public static int[] fromBigInteger(BigInteger x)
     {
-        if (x.signum() < 0 || x.bitLength() > 192)
+        if (x.signum() < 0 || x.bitLength() > 160)
         {
             throw new IllegalArgumentException();
         }
@@ -226,23 +180,6 @@ public abstract class Nat192
         return z;
     }
 
-    public static long[] fromBigInteger64(BigInteger x)
-    {
-        if (x.signum() < 0 || x.bitLength() > 192)
-        {
-            throw new IllegalArgumentException();
-        }
-
-        long[] z = create64();
-        int i = 0;
-        while (x.signum() != 0)
-        {
-            z[i++] = x.longValue();
-            x = x.shiftRight(64);
-        }
-        return z;
-    }
-
     public static int getBit(int[] x, int bit)
     {
         if (bit == 0)
@@ -250,7 +187,7 @@ public abstract class Nat192
             return x[0] & 1;
         }
         int w = bit >> 5;
-        if (w < 0 || w >= 6)
+        if (w < 0 || w >= 5)
         {
             return 0;
         }
@@ -260,7 +197,7 @@ public abstract class Nat192
 
     public static boolean gte(int[] x, int[] y)
     {
-        for (int i = 5; i >= 0; --i)
+        for (int i = 4; i >= 0; --i)
         {
             int x_i = x[i] ^ Integer.MIN_VALUE;
             int y_i = y[i] ^ Integer.MIN_VALUE;
@@ -274,7 +211,7 @@ public abstract class Nat192
 
     public static boolean gte(int[] x, int xOff, int[] y, int yOff)
     {
-        for (int i = 5; i >= 0; --i)
+        for (int i = 4; i >= 0; --i)
         {
             int x_i = x[xOff + i] ^ Integer.MIN_VALUE;
             int y_i = y[yOff + i] ^ Integer.MIN_VALUE;
@@ -292,25 +229,9 @@ public abstract class Nat192
         {
             return false;
         }
-        for (int i = 1; i < 6; ++i)
+        for (int i = 1; i < 5; ++i)
         {
             if (x[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isOne64(long[] x)
-    {
-        if (x[0] != 1L)
-        {
-            return false;
-        }
-        for (int i = 1; i < 3; ++i)
-        {
-            if (x[i] != 0L)
             {
                 return false;
             }
@@ -320,21 +241,9 @@ public abstract class Nat192
 
     public static boolean isZero(int[] x)
     {
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             if (x[i] != 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isZero64(long[] x)
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            if (x[i] != 0L)
             {
                 return false;
             }
@@ -349,7 +258,6 @@ public abstract class Nat192
         long y_2 = y[2] & M;
         long y_3 = y[3] & M;
         long y_4 = y[4] & M;
-        long y_5 = y[5] & M;
 
         {
             long c = 0, x_0 = x[0] & M;
@@ -368,13 +276,10 @@ public abstract class Nat192
             c += x_0 * y_4;
             zz[4] = (int)c;
             c >>>= 32;
-            c += x_0 * y_5;
             zz[5] = (int)c;
-            c >>>= 32;
-            zz[6] = (int)c;
         }
 
-        for (int i = 1; i < 6; ++i)
+        for (int i = 1; i < 5; ++i)
         {
             long c = 0, x_i = x[i] & M;
             c += x_i * y_0 + (zz[i + 0] & M);
@@ -392,10 +297,7 @@ public abstract class Nat192
             c += x_i * y_4 + (zz[i + 4] & M);
             zz[i + 4] = (int)c;
             c >>>= 32;
-            c += x_i * y_5 + (zz[i + 5] & M);
             zz[i + 5] = (int)c;
-            c >>>= 32;
-            zz[i + 6] = (int)c;
         }
     }
 
@@ -406,7 +308,6 @@ public abstract class Nat192
         long y_2 = y[yOff + 2] & M;
         long y_3 = y[yOff + 3] & M;
         long y_4 = y[yOff + 4] & M;
-        long y_5 = y[yOff + 5] & M;
 
         {
             long c = 0, x_0 = x[xOff + 0] & M;
@@ -425,13 +326,10 @@ public abstract class Nat192
             c += x_0 * y_4;
             zz[zzOff + 4] = (int)c;
             c >>>= 32;
-            c += x_0 * y_5;
             zz[zzOff + 5] = (int)c;
-            c >>>= 32;
-            zz[zzOff + 6] = (int)c;
         }
 
-        for (int i = 1; i < 6; ++i)
+        for (int i = 1; i < 5; ++i)
         {
             ++zzOff;
             long c = 0, x_i = x[xOff + i] & M;
@@ -450,10 +348,7 @@ public abstract class Nat192
             c += x_i * y_4 + (zz[zzOff + 4] & M);
             zz[zzOff + 4] = (int)c;
             c >>>= 32;
-            c += x_i * y_5 + (zz[zzOff + 5] & M);
             zz[zzOff + 5] = (int)c;
-            c >>>= 32;
-            zz[zzOff + 6] = (int)c;
         }
     }
 
@@ -464,10 +359,9 @@ public abstract class Nat192
         long y_2 = y[2] & M;
         long y_3 = y[3] & M;
         long y_4 = y[4] & M;
-        long y_5 = y[5] & M;
 
         long zc = 0;
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             long c = 0, x_i = x[i] & M;
             c += x_i * y_0 + (zz[i + 0] & M);
@@ -485,11 +379,8 @@ public abstract class Nat192
             c += x_i * y_4 + (zz[i + 4] & M);
             zz[i + 4] = (int)c;
             c >>>= 32;
-            c += x_i * y_5 + (zz[i + 5] & M);
+            c += zc + (zz[i + 5] & M);
             zz[i + 5] = (int)c;
-            c >>>= 32;
-            c += zc + (zz[i + 6] & M);
-            zz[i + 6] = (int)c;
             zc = c >>> 32;
         }
         return (int)zc;
@@ -502,10 +393,9 @@ public abstract class Nat192
         long y_2 = y[yOff + 2] & M;
         long y_3 = y[yOff + 3] & M;
         long y_4 = y[yOff + 4] & M;
-        long y_5 = y[yOff + 5] & M;
 
         long zc = 0;
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             long c = 0, x_i = x[xOff + i] & M;
             c += x_i * y_0 + (zz[zzOff + 0] & M);
@@ -523,11 +413,8 @@ public abstract class Nat192
             c += x_i * y_4 + (zz[zzOff + 4] & M);
             zz[zzOff + 4] = (int)c;
             c >>>= 32;
-            c += x_i * y_5 + (zz[zzOff + 5] & M);
+            c += zc + (zz[zzOff + 5] & M);
             zz[zzOff + 5] = (int)c;
-            c >>>= 32;
-            c += zc + (zz[zzOff + 6] & M);
-            zz[zzOff + 6] = (int)c;
             zc = c >>> 32;
             ++zzOff;
         }
@@ -559,18 +446,14 @@ public abstract class Nat192
         c += wVal * x4 + x3 + (y[yOff + 4] & M);
         z[zOff + 4] = (int)c;
         c >>>= 32;
-        long x5 = x[xOff + 5] & M;
-        c += wVal * x5 + x4 + (y[yOff + 5] & M);
-        z[zOff + 5] = (int)c;
-        c >>>= 32;
-        c += x5;
+        c += x4;
         return c;
     }
 
     public static int mulWordAddExt(int x, int[] yy, int yyOff, int[] zz, int zzOff)
     {
-        // assert yyOff <= 6;
-        // assert zzOff <= 6;
+        // assert yyOff <= 5;
+        // assert zzOff <= 5;
         long c = 0, xVal = x & M;
         c += xVal * (yy[yyOff + 0] & M) + (zz[zzOff + 0] & M);
         zz[zzOff + 0] = (int)c;
@@ -587,16 +470,13 @@ public abstract class Nat192
         c += xVal * (yy[yyOff + 4] & M) + (zz[zzOff + 4] & M);
         zz[zzOff + 4] = (int)c;
         c >>>= 32;
-        c += xVal * (yy[yyOff + 5] & M) + (zz[zzOff + 5] & M);
-        zz[zzOff + 5] = (int)c;
-        c >>>= 32;
         return (int)c;
     }
 
     public static int mul33DWordAdd(int x, long y, int[] z, int zOff)
     {
         // assert x >>> 31 == 0;
-        // assert zOff <= 2;
+        // assert zOff <= 1;
 
         long c = 0, xVal = x & M;
         long y00 = y & M;
@@ -613,13 +493,13 @@ public abstract class Nat192
         c += (z[zOff + 3] & M);
         z[zOff + 3] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : Nat.incAt(6, z, zOff, 4);
+        return c == 0 ? 0 : Nat.incAt(5, z, zOff, 4);
     }
 
     public static int mul33WordAdd(int x, int y, int[] z, int zOff)
     {
         // assert x >>> 31 == 0;
-        // assert zOff <= 3;
+        // assert zOff <= 2;
 
         long c = 0, xVal = x & M, yVal = y & M;
         c += yVal * xVal + (z[zOff + 0] & M);
@@ -631,12 +511,12 @@ public abstract class Nat192
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : Nat.incAt(6, z, zOff, 3);
+        return c == 0 ? 0 : Nat.incAt(5, z, zOff, 3);
     }
 
     public static int mulWordDwordAdd(int x, long y, int[] z, int zOff)
     {
-        // assert zOff <= 3;
+        // assert zOff <= 2;
         long c = 0, xVal = x & M;
         c += xVal * (y & M) + (z[zOff + 0] & M);
         z[zOff + 0] = (int)c;
@@ -647,7 +527,21 @@ public abstract class Nat192
         c += (z[zOff + 2] & M);
         z[zOff + 2] = (int)c;
         c >>>= 32;
-        return c == 0 ? 0 : Nat.incAt(6, z, zOff, 3);
+        return c == 0 ? 0 : Nat.incAt(5, z, zOff, 3);
+    }
+
+    public static int mulWordsAdd(int x, int y, int[] z, int zOff)
+    {
+        // assert zOff <= 3;
+
+        long c = 0, xVal = x & M, yVal = y & M;
+        c += yVal * xVal + (z[zOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>>= 32;
+        c += (z[zOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>>= 32;
+        return c == 0 ? 0 : Nat.incAt(5, z, zOff, 2);
     }
 
     public static int mulWord(int x, int[] y, int[] z, int zOff)
@@ -660,7 +554,7 @@ public abstract class Nat192
             z[zOff + i] = (int)c;
             c >>>= 32;
         }
-        while (++i < 6);
+        while (++i < 5);
         return (int)c;
     }
 
@@ -671,7 +565,7 @@ public abstract class Nat192
 
         int c = 0, w;
         {
-            int i = 5, j = 12;
+            int i = 4, j = 10;
             do
             {
                 long xVal = (x[i--] & M);
@@ -739,28 +633,13 @@ public abstract class Nat192
             c = w >>> 31;
             zz_5 += (zz_4 >>> 32) + x_4 * x_1;
             zz_6 += (zz_5 >>> 32) + x_4 * x_2;
-            zz_5 &= M;
             zz_7 += (zz_6 >>> 32) + x_4 * x_3;
-            zz_6 &= M;
             zz_8 += zz_7 >>> 32;
-            zz_7 &= M;
         }
 
-        long x_5 = x[5] & M;
-        long zz_9 = zz[9] & M;
-        long zz_10 = zz[10] & M;
-        {
-            zz_5 += x_5 * x_0;
-            w = (int)zz_5;
-            zz[5] = (w << 1) | c;
-            c = w >>> 31;
-            zz_6 += (zz_5 >>> 32) + x_5 * x_1;
-            zz_7 += (zz_6 >>> 32) + x_5 * x_2;
-            zz_8 += (zz_7 >>> 32) + x_5 * x_3;
-            zz_9 += (zz_8 >>> 32) + x_5 * x_4;
-            zz_10 += zz_9 >>> 32;
-        }
-
+        w = (int)zz_5;
+        zz[5] = (w << 1) | c;
+        c = w >>> 31;
         w = (int)zz_6;
         zz[6] = (w << 1) | c;
         c = w >>> 31;
@@ -770,14 +649,8 @@ public abstract class Nat192
         w = (int)zz_8;
         zz[8] = (w << 1) | c;
         c = w >>> 31;
-        w = (int)zz_9;
+        w = zz[9] + (int)(zz_8 >> 32);
         zz[9] = (w << 1) | c;
-        c = w >>> 31;
-        w = (int)zz_10;
-        zz[10] = (w << 1) | c;
-        c = w >>> 31;
-        w = zz[11] + (int)(zz_10 >> 32);
-        zz[11] = (w << 1) | c;
     }
 
     public static void square(int[] x, int xOff, int[] zz, int zzOff)
@@ -787,7 +660,7 @@ public abstract class Nat192
 
         int c = 0, w;
         {
-            int i = 5, j = 12;
+            int i = 4, j = 10;
             do
             {
                 long xVal = (x[xOff + i--] & M);
@@ -855,28 +728,13 @@ public abstract class Nat192
             c = w >>> 31;
             zz_5 += (zz_4 >>> 32) + x_4 * x_1;
             zz_6 += (zz_5 >>> 32) + x_4 * x_2;
-            zz_5 &= M;
             zz_7 += (zz_6 >>> 32) + x_4 * x_3;
-            zz_6 &= M;
             zz_8 += zz_7 >>> 32;
-            zz_7 &= M;
         }
 
-        long x_5 = x[xOff + 5] & M;
-        long zz_9 = zz[zzOff + 9] & M;
-        long zz_10 = zz[zzOff + 10] & M;
-        {
-            zz_5 += x_5 * x_0;
-            w = (int)zz_5;
-            zz[zzOff + 5] = (w << 1) | c;
-            c = w >>> 31;
-            zz_6 += (zz_5 >>> 32) + x_5 * x_1;
-            zz_7 += (zz_6 >>> 32) + x_5 * x_2;
-            zz_8 += (zz_7 >>> 32) + x_5 * x_3;
-            zz_9 += (zz_8 >>> 32) + x_5 * x_4;
-            zz_10 += zz_9 >>> 32;
-        }
-
+        w = (int)zz_5;
+        zz[zzOff + 5] = (w << 1) | c;
+        c = w >>> 31;
         w = (int)zz_6;
         zz[zzOff + 6] = (w << 1) | c;
         c = w >>> 31;
@@ -886,14 +744,8 @@ public abstract class Nat192
         w = (int)zz_8;
         zz[zzOff + 8] = (w << 1) | c;
         c = w >>> 31;
-        w = (int)zz_9;
+        w = zz[zzOff + 9] + (int)(zz_8 >> 32);
         zz[zzOff + 9] = (w << 1) | c;
-        c = w >>> 31;
-        w = (int)zz_10;
-        zz[zzOff + 10] = (w << 1) | c;
-        c = w >>> 31;
-        w = zz[zzOff + 11] + (int)(zz_10 >> 32);
-        zz[zzOff + 11] = (w << 1) | c;
     }
 
     public static int sub(int[] x, int[] y, int[] z)
@@ -913,9 +765,6 @@ public abstract class Nat192
         c >>= 32;
         c += (x[4] & M) - (y[4] & M);
         z[4] = (int)c;
-        c >>= 32;
-        c += (x[5] & M) - (y[5] & M);
-        z[5] = (int)c;
         c >>= 32;
         return (int)c;
     }
@@ -938,9 +787,6 @@ public abstract class Nat192
         c += (x[xOff + 4] & M) - (y[yOff + 4] & M);
         z[zOff + 4] = (int)c;
         c >>= 32;
-        c += (x[xOff + 5] & M) - (y[yOff + 5] & M);
-        z[zOff + 5] = (int)c;
-        c >>= 32;
         return (int)c;
     }
 
@@ -961,9 +807,6 @@ public abstract class Nat192
         c >>= 32;
         c += (z[4] & M) - (x[4] & M) - (y[4] & M);
         z[4] = (int)c;
-        c >>= 32;
-        c += (z[5] & M) - (x[5] & M) - (y[5] & M);
-        z[5] = (int)c;
         c >>= 32;
         return (int)c;
     }
@@ -986,9 +829,6 @@ public abstract class Nat192
         c += (z[4] & M) - (x[4] & M);
         z[4] = (int)c;
         c >>= 32;
-        c += (z[5] & M) - (x[5] & M);
-        z[5] = (int)c;
-        c >>= 32;
         return (int)c;
     }
 
@@ -1010,35 +850,18 @@ public abstract class Nat192
         c += (z[zOff + 4] & M) - (x[xOff + 4] & M);
         z[zOff + 4] = (int)c;
         c >>= 32;
-        c += (z[zOff + 5] & M) - (x[xOff + 5] & M);
-        z[zOff + 5] = (int)c;
-        c >>= 32;
         return (int)c;
     }
 
     public static BigInteger toBigInteger(int[] x)
     {
-        byte[] bs = new byte[24];
-        for (int i = 0; i < 6; ++i)
+        byte[] bs = new byte[20];
+        for (int i = 0; i < 5; ++i)
         {
             int x_i = x[i];
             if (x_i != 0)
             {
-                Pack.intToBigEndian(x_i, bs, (5 - i) << 2);
-            }
-        }
-        return new BigInteger(1, bs);
-    }
-
-    public static BigInteger toBigInteger64(long[] x)
-    {
-        byte[] bs = new byte[24];
-        for (int i = 0; i < 3; ++i)
-        {
-            long x_i = x[i];
-            if (x_i != 0L)
-            {
-                Pack.longToBigEndian(x_i, bs, (2 - i) << 3);
+                Pack.intToBigEndian(x_i, bs, (4 - i) << 2);
             }
         }
         return new BigInteger(1, bs);
@@ -1051,6 +874,5 @@ public abstract class Nat192
         z[2] = 0;
         z[3] = 0;
         z[4] = 0;
-        z[5] = 0;
     }
 }
