@@ -386,11 +386,11 @@ class Tnaf
 
     /**
      * Applies the operation <code>&tau;()</code> to an
-     * <code>ECPoint.F2m</code>. 
-     * @param p The ECPoint.F2m to which <code>&tau;()</code> is applied.
+     * <code>ECPoint.AbstractF2m</code>. 
+     * @param p The ECPoint.AbstractF2m to which <code>&tau;()</code> is applied.
      * @return <code>&tau;(p)</code>
      */
-    public static ECPoint.F2m tau(ECPoint.F2m p)
+    public static ECPoint.AbstractF2m tau(ECPoint.AbstractF2m p)
     {
         return p.tau();
     }
@@ -405,7 +405,7 @@ class Tnaf
      * @throws IllegalArgumentException if the given ECCurve is not a Koblitz
      * curve.
      */
-    public static byte getMu(ECCurve.F2m curve)
+    public static byte getMu(ECCurve.AbstractF2m curve)
     {
         if (!curve.isKoblitz())
         {
@@ -418,6 +418,16 @@ class Tnaf
         }
 
         return 1;
+    }
+
+    public static byte getMu(ECFieldElement curveA)
+    {
+        return (byte)(curveA.isZero() ? -1 : 1);
+    }
+
+    public static byte getMu(int curveA)
+    {
+        return (byte)(curveA == 0 ? -1 : 1);
     }
 
     /**
@@ -525,18 +535,36 @@ class Tnaf
      * @throws IllegalArgumentException if <code>curve</code> is not a
      * Koblitz curve (Anomalous Binary Curve, ABC).
      */
-    public static BigInteger[] getSi(ECCurve.F2m curve)
+    public static BigInteger[] getSi(ECCurve.AbstractF2m curve)
     {
         if (!curve.isKoblitz())
         {
             throw new IllegalArgumentException("si is defined for Koblitz curves only");
         }
 
-        int m = curve.getM();
+        int m = curve.getFieldSize();
         int a = curve.getA().toBigInteger().intValue();
-        byte mu = curve.getMu();
+        byte mu = getMu(a);
         int shifts = getShiftsForCofactor(curve.getCofactor());
         int index = m + 3 - a;
+        BigInteger[] ui = getLucas(mu, index, false);
+        if (mu == 1)
+        {
+            ui[0] = ui[0].negate();
+            ui[1] = ui[1].negate();
+        }
+
+        BigInteger dividend0 = ECConstants.ONE.add(ui[1]).shiftRight(shifts);
+        BigInteger dividend1 = ECConstants.ONE.add(ui[0]).shiftRight(shifts).negate();
+
+        return new BigInteger[] { dividend0, dividend1 };
+    }
+
+    public static BigInteger[] getSi(int fieldSize, int curveA, BigInteger cofactor)
+    {
+        byte mu = getMu(curveA);
+        int shifts = getShiftsForCofactor(cofactor);
+        int index = fieldSize + 3 - curveA;
         BigInteger[] ui = getLucas(mu, index, false);
         if (mu == 1)
         {
@@ -616,69 +644,76 @@ class Tnaf
     }
 
     /**
-     * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}
+     * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.AbstractF2m ECPoint.AbstractF2m}
      * by a <code>BigInteger</code> using the reduced <code>&tau;</code>-adic
      * NAF (RTNAF) method.
-     * @param p The ECPoint.F2m to multiply.
+     * @param p The ECPoint.AbstractF2m to multiply.
      * @param k The <code>BigInteger</code> by which to multiply <code>p</code>.
      * @return <code>k * p</code>
      */
-    public static ECPoint.F2m multiplyRTnaf(ECPoint.F2m p, BigInteger k)
+    public static ECPoint.AbstractF2m multiplyRTnaf(ECPoint.AbstractF2m p, BigInteger k)
     {
-        ECCurve.F2m curve = (ECCurve.F2m) p.getCurve();
-        int m = curve.getM();
-        byte a = (byte) curve.getA().toBigInteger().intValue();
-        byte mu = curve.getMu();
+        ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m) p.getCurve();
+        int m = curve.getFieldSize();
+        int a = curve.getA().toBigInteger().intValue();
+        byte mu = getMu(a);
         BigInteger[] s = curve.getSi();
-        ZTauElement rho = partModReduction(k, m, a, s, mu, (byte)10);
+        ZTauElement rho = partModReduction(k, m, (byte)a, s, mu, (byte)10);
 
         return multiplyTnaf(p, rho);
     }
 
     /**
-     * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}
+     * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.AbstractF2m ECPoint.AbstractF2m}
      * by an element <code>&lambda;</code> of <code><b>Z</b>[&tau;]</code>
      * using the <code>&tau;</code>-adic NAF (TNAF) method.
-     * @param p The ECPoint.F2m to multiply.
+     * @param p The ECPoint.AbstractF2m to multiply.
      * @param lambda The element <code>&lambda;</code> of
      * <code><b>Z</b>[&tau;]</code>.
      * @return <code>&lambda; * p</code>
      */
-    public static ECPoint.F2m multiplyTnaf(ECPoint.F2m p, ZTauElement lambda)
+    public static ECPoint.AbstractF2m multiplyTnaf(ECPoint.AbstractF2m p, ZTauElement lambda)
     {
-        ECCurve.F2m curve = (ECCurve.F2m)p.getCurve();
-        byte mu = curve.getMu();
+        ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m)p.getCurve();
+        byte mu = getMu(curve.getA());
         byte[] u = tauAdicNaf(mu, lambda);
 
-        ECPoint.F2m q = multiplyFromTnaf(p, u);
+        ECPoint.AbstractF2m q = multiplyFromTnaf(p, u);
 
         return q;
     }
 
     /**
-    * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.F2m ECPoint.F2m}
+    * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.AbstractF2m ECPoint.AbstractF2m}
     * by an element <code>&lambda;</code> of <code><b>Z</b>[&tau;]</code>
     * using the <code>&tau;</code>-adic NAF (TNAF) method, given the TNAF
     * of <code>&lambda;</code>.
-    * @param p The ECPoint.F2m to multiply.
+    * @param p The ECPoint.AbstractF2m to multiply.
     * @param u The the TNAF of <code>&lambda;</code>..
     * @return <code>&lambda; * p</code>
     */
-    public static ECPoint.F2m multiplyFromTnaf(ECPoint.F2m p, byte[] u)
+    public static ECPoint.AbstractF2m multiplyFromTnaf(ECPoint.AbstractF2m p, byte[] u)
     {
-        ECCurve.F2m curve = (ECCurve.F2m)p.getCurve();
-        ECPoint.F2m q = (ECPoint.F2m) curve.getInfinity();
+        ECCurve curve = p.getCurve();
+        ECPoint.AbstractF2m q = (ECPoint.AbstractF2m)curve.getInfinity();
+        ECPoint.AbstractF2m pNeg = (ECPoint.AbstractF2m)p.negate();
+        int tauCount = 0;
         for (int i = u.length - 1; i >= 0; i--)
         {
-            q = tau(q);
-            if (u[i] == 1)
+            ++tauCount;
+            byte ui = u[i];
+            if (ui != 0)
             {
-                q = (ECPoint.F2m)q.addSimple(p);
+                q = q.tauPow(tauCount);
+                tauCount = 0;
+
+                ECPoint x = ui > 0 ? p : pNeg;
+                q = (ECPoint.AbstractF2m)q.add(x);
             }
-            else if (u[i] == -1)
-            {
-                q = (ECPoint.F2m)q.subtractSimple(p);
-            }
+        }
+        if (tauCount > 0)
+        {
+            q = q.tauPow(tauCount);
         }
         return q;
     }
@@ -794,26 +829,17 @@ class Tnaf
      * @param a The parameter <code>a</code> of the elliptic curve.
      * @return The precomputation array for <code>p</code>. 
      */
-    public static ECPoint.F2m[] getPreComp(ECPoint.F2m p, byte a)
+    public static ECPoint.AbstractF2m[] getPreComp(ECPoint.AbstractF2m p, byte a)
     {
-        ECPoint.F2m[] pu;
-        pu = new ECPoint.F2m[16];
-        pu[1] = p;
-        byte[][] alphaTnaf;
-        if (a == 0)
-        {
-            alphaTnaf = Tnaf.alpha0Tnaf;
-        }
-        else
-        {
-            // a == 1
-            alphaTnaf = Tnaf.alpha1Tnaf;
-        }
+        byte[][] alphaTnaf = (a == 0) ? Tnaf.alpha0Tnaf : Tnaf.alpha1Tnaf;
+
+        ECPoint.AbstractF2m[] pu = new ECPoint.AbstractF2m[(alphaTnaf.length + 1) >>> 1];
+        pu[0] = p;
 
         int precompLen = alphaTnaf.length;
-        for (int i = 3; i < precompLen; i = i + 2)
+        for (int i = 3; i < precompLen; i += 2)
         {
-            pu[i] = Tnaf.multiplyFromTnaf(p, alphaTnaf[i]);
+            pu[i >>> 1] = Tnaf.multiplyFromTnaf(p, alphaTnaf[i]);
         }
 
         p.getCurve().normalizeAll(pu);
