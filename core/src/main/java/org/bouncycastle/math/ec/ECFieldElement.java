@@ -59,6 +59,16 @@ public abstract class ECFieldElement
         return square().add(x.multiply(y));
     }
 
+    public ECFieldElement squarePow(int pow)
+    {
+        ECFieldElement r = this;
+        for (int i = 0; i < pow; ++i)
+        {
+            r = r.square();
+        }
+        return r;
+    }
+
     public boolean testBitZero()
     {
         return toBigInteger().testBit(0);
@@ -766,6 +776,11 @@ public abstract class ECFieldElement
             return new F2m(m, ks, aa);
         }
 
+        public ECFieldElement squarePow(int pow)
+        {
+            return pow < 1 ? this : new F2m(m, ks, x.modSquareN(pow, m, ks));
+        }
+
         public ECFieldElement invert()
         {
             return new ECFieldElement.F2m(this.m, this.ks, this.x.modInverse(m, ks));
@@ -773,14 +788,7 @@ public abstract class ECFieldElement
 
         public ECFieldElement sqrt()
         {
-            LongArray x1 = this.x;
-            if (x1.isOne() || x1.isZero())
-            {
-                return this;
-            }
-
-            LongArray x2 = x1.modSquareN(m - 1, m, ks);
-            return new ECFieldElement.F2m(m, ks, x2);
+            return (x.isZero() || x.isOne()) ? this : squarePow(m - 1);
         }
 
         /**
