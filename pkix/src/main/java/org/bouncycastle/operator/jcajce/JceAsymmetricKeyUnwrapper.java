@@ -30,6 +30,7 @@ public class JceAsymmetricKeyUnwrapper
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private Map extraMappings = new HashMap();
     private PrivateKey privKey;
+    private boolean unwrappedKeyMustBeEncodable;
 
     public JceAsymmetricKeyUnwrapper(AlgorithmIdentifier algorithmIdentifier, PrivateKey privKey)
     {
@@ -48,6 +49,21 @@ public class JceAsymmetricKeyUnwrapper
     public JceAsymmetricKeyUnwrapper setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+
+        return this;
+    }
+
+    /**
+     * Flag that unwrapping must produce a key that will return a meaningful value from a call to Key.getEncoded().
+     * This is important if you are using a HSM for unwrapping and using a software based provider for
+     * with the unwrapped key. Default value: false.
+     *
+     * @param unwrappedKeyMustBeEncodable true if getEncoded() should return key bytes, false if not necessary.
+     * @return this recipient.
+     */
+    public JceAsymmetricKeyUnwrapper setMustProduceEncodableUnwrappedKey(boolean unwrappedKeyMustBeEncodable)
+    {
+        this.unwrappedKeyMustBeEncodable = unwrappedKeyMustBeEncodable;
 
         return this;
     }
@@ -93,19 +109,38 @@ public class JceAsymmetricKeyUnwrapper
                 {
                     keyCipher.init(Cipher.UNWRAP_MODE, privKey);
                 }
+
                 sKey = keyCipher.unwrap(encryptedKey, helper.getKeyAlgorithmName(encryptedKeyAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
+
+                // check key will work with a software provider.
+                if (unwrappedKeyMustBeEncodable)
+                {
+                    try
+                    {
+                        byte[] keyBytes = sKey.getEncoded();
+
+                        if (keyBytes == null || keyBytes.length == 0)
+                        {
+                            sKey = null;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        sKey = null; // try doing a decrypt
+                    }
+                }
             }
             catch (GeneralSecurityException e)
-            {
+            {   // try decrypt
             }
             catch (IllegalStateException e)
-            {
+            {   // try decrypt
             }
             catch (UnsupportedOperationException e)
-            {
+            {   // try decrypt
             }
             catch (ProviderException e)
-            {
+            {    // try decrypt
             }
 
             // some providers do not support UNWRAP (this appears to be only for asymmetric algorithms)

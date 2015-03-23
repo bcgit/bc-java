@@ -23,6 +23,7 @@ public abstract class JceKeyTransRecipient
     protected EnvelopedDataHelper contentHelper = helper;
     protected Map extraMappings = new HashMap();
     protected boolean validateKeySize = false;
+    protected boolean unwrappedKeyMustBeEncodable;
 
     public JceKeyTransRecipient(PrivateKey recipientKey)
     {
@@ -93,6 +94,21 @@ public abstract class JceKeyTransRecipient
     }
 
     /**
+     * Flag that unwrapping must produce a key that will return a meaningful value from a call to Key.getEncoded().
+     * This is important if you are using a HSM for unwrapping and using a software based provider for
+     * decrypting the content. Default value: false.
+     *
+     * @param unwrappedKeyMustBeEncodable true if getEncoded() should return key bytes, false if not necessary.
+     * @return this recipient.
+     */
+    public JceKeyTransRecipient setMustProduceEncodableUnwrappedKey(boolean unwrappedKeyMustBeEncodable)
+    {
+        this.unwrappedKeyMustBeEncodable = unwrappedKeyMustBeEncodable;
+
+        return this;
+    }
+
+    /**
      * Set the provider to use for content processing.  If providerName is null a "no provider" search will be
      *  used to satisfy getInstance calls.
      *
@@ -125,7 +141,7 @@ public abstract class JceKeyTransRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        JceAsymmetricKeyUnwrapper unwrapper = helper.createAsymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey);
+        JceAsymmetricKeyUnwrapper unwrapper = helper.createAsymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey).setMustProduceEncodableUnwrappedKey(unwrappedKeyMustBeEncodable);
 
         if (!extraMappings.isEmpty())
         {
