@@ -110,6 +110,8 @@ public class TlsServerProtocol
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
+                recordStream.notifyHelloComplete();
+
                 Vector serverSupplementalData = tlsServer.getServerSupplementalData();
                 if (serverSupplementalData != null)
                 {
@@ -653,18 +655,20 @@ public class TlsServerProtocol
     {
         HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
 
-        ProtocolVersion server_version = tlsServer.getServerVersion();
-        if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            ProtocolVersion server_version = tlsServer.getServerVersion();
+            if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+    
+            recordStream.setReadVersion(server_version);
+            recordStream.setWriteVersion(server_version);
+            recordStream.setRestrictReadVersion(true);
+            getContextAdmin().setServerVersion(server_version);
+    
+            TlsUtils.writeVersion(server_version, message);
         }
-
-        recordStream.setReadVersion(server_version);
-        recordStream.setWriteVersion(server_version);
-        recordStream.setRestrictReadVersion(true);
-        getContextAdmin().setServerVersion(server_version);
-
-        TlsUtils.writeVersion(server_version, message);
 
         message.write(this.securityParameters.serverRandom);
 
@@ -678,7 +682,7 @@ public class TlsServerProtocol
         if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
+            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -759,12 +763,6 @@ public class TlsServerProtocol
             writeExtensions(message, serverExtensions);
         }
 
-        if (securityParameters.maxFragmentLength >= 0)
-        {
-            int plainTextLimit = 1 << (8 + securityParameters.maxFragmentLength);
-            recordStream.setPlaintextLimit(plainTextLimit);
-        }
-
         securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
 
         /*
@@ -773,9 +771,9 @@ public class TlsServerProtocol
          */
         securityParameters.verifyDataLength = 12;
 
-        message.writeToRecordStream();
+        applyMaxFragmentLengthExtension();
 
-        recordStream.notifyHelloComplete();
+        message.writeToRecordStream();
     }
 
     protected void sendServerHelloDoneMessage()

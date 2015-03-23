@@ -108,6 +108,21 @@ public abstract class TlsProtocol
     {
     }
 
+    protected void applyMaxFragmentLengthExtension()
+        throws IOException
+    {
+        if (securityParameters.maxFragmentLength >= 0)
+        {
+            if (!MaxFragmentLength.isValid(securityParameters.maxFragmentLength))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error); 
+            }
+    
+            int plainTextLimit = 1 << (8 + securityParameters.maxFragmentLength);
+            recordStream.setPlaintextLimit(plainTextLimit);
+        }
+    }
+
     protected void checkReceivedChangeCipherSpec(boolean expected)
         throws IOException
     {
@@ -178,12 +193,12 @@ public abstract class TlsProtocol
                 if (this.sessionParameters == null)
                 {
                     this.sessionParameters = new SessionParameters.Builder()
-                        .setCipherSuite(this.securityParameters.cipherSuite)
-                        .setCompressionAlgorithm(this.securityParameters.compressionAlgorithm)
-                        .setMasterSecret(this.securityParameters.masterSecret)
+                        .setCipherSuite(this.securityParameters.getCipherSuite())
+                        .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
+                        .setMasterSecret(this.securityParameters.getMasterSecret())
                         .setPeerCertificate(this.peerCertificate)
-                        .setPSKIdentity(this.securityParameters.pskIdentity)
-                        .setSRPIdentity(this.securityParameters.srpIdentity)
+                        .setPSKIdentity(this.securityParameters.getPSKIdentity())
+                        .setSRPIdentity(this.securityParameters.getSRPIdentity())
                         // TODO Consider filtering extensions that aren't relevant to resumed sessions
                         .setServerExtensions(this.serverExtensions)
                         .build();
@@ -834,9 +849,11 @@ public abstract class TlsProtocol
         throws IOException
     {
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-        if (maxFragmentLength >= 0 && !this.resumedSession)
+        if (maxFragmentLength >= 0)
         {
-            if (maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions))
+            if (!MaxFragmentLength.isValid(maxFragmentLength)
+                || (!this.resumedSession && maxFragmentLength != TlsExtensionsUtils
+                    .getMaxFragmentLengthExtension(clientExtensions)))
             {
                 throw new TlsFatalAlert(alertDescription);
             }
