@@ -645,6 +645,18 @@ public abstract class ECCurve
 
     public static abstract class AbstractF2m extends ECCurve
     {
+        public static BigInteger inverse(int m, int[] ks, BigInteger x)
+        {
+            return new LongArray(x).modInverse(m, ks).toBigInteger();
+        }
+
+        /**
+         * The auxiliary values <code>s<sub>0</sub></code> and
+         * <code>s<sub>1</sub></code> used for partial modular reduction for
+         * Koblitz curves.
+         */
+        private BigInteger[] si = null;
+
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
             if (k1 == 0)
@@ -678,6 +690,61 @@ public abstract class ECCurve
         protected AbstractF2m(int m, int k1, int k2, int k3)
         {
             super(buildField(m, k1, k2, k3));
+        }
+
+        public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
+        {
+            ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
+
+            switch (this.getCoordinateSystem())
+            {
+            case COORD_LAMBDA_AFFINE:
+            case COORD_LAMBDA_PROJECTIVE:
+            {
+                if (X.isZero())
+                {
+                    if (!Y.square().equals(this.getB()))
+                    {
+                        throw new IllegalArgumentException();
+                    }
+                }
+                else
+                {
+                    // Y becomes Lambda (X + Y/X) here
+                    Y = Y.divide(X).add(X);
+                }
+                break;
+            }
+            default:
+            {
+                break;
+            }
+            }
+
+            return createRawPoint(X, Y, withCompression);
+        }
+
+        /**
+         * @return the auxiliary values <code>s<sub>0</sub></code> and
+         * <code>s<sub>1</sub></code> used for partial modular reduction for
+         * Koblitz curves.
+         */
+        synchronized BigInteger[] getSi()
+        {
+            if (si == null)
+            {
+                si = Tnaf.getSi(this);
+            }
+            return si;
+        }
+
+        /**
+         * Returns true if this is a Koblitz curve (ABC curve).
+         * @return true if this is a Koblitz curve (ABC curve), false otherwise
+         */
+        public boolean isKoblitz()
+        {
+            return order != null && cofactor != null && b.isOne() && (a.isZero() || a.isOne());
         }
     }
 
@@ -724,19 +791,6 @@ public abstract class ECCurve
          * The point at infinity on this curve.
          */
         private ECPoint.F2m infinity;  // can't be final - JDK 1.1
-
-        /**
-         * The parameter <code>&mu;</code> of the elliptic curve if this is
-         * a Koblitz curve.
-         */
-        private byte mu = 0;
-
-        /**
-         * The auxiliary values <code>s<sub>0</sub></code> and
-         * <code>s<sub>1</sub></code> used for partial modular reduction for
-         * Koblitz curves.
-         */
-        private BigInteger[] si = null;
 
         /**
          * Constructor for Trinomial Polynomial Basis (TPB).
@@ -923,38 +977,6 @@ public abstract class ECCurve
             return new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3, x);
         }
 
-        public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
-        {
-            ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
-
-            switch (this.getCoordinateSystem())
-            {
-            case COORD_LAMBDA_AFFINE:
-            case COORD_LAMBDA_PROJECTIVE:
-            {
-                if (X.isZero())
-                {
-                    if (!Y.square().equals(this.getB()))
-                    {
-                        throw new IllegalArgumentException();
-                    }
-                }
-                else
-                {
-                    // Y becomes Lambda (X + Y/X) here
-                    Y = Y.divide(X).add(X);
-                }
-                break;
-            }
-            default:
-            {
-                break;
-            }
-            }
-
-            return createRawPoint(X, Y, withCompression);
-        }
-
         protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y, boolean withCompression)
         {
             return new ECPoint.F2m(this, x, y, withCompression);
@@ -968,44 +990,6 @@ public abstract class ECCurve
         public ECPoint getInfinity()
         {
             return infinity;
-        }
-
-        /**
-         * Returns true if this is a Koblitz curve (ABC curve).
-         * @return true if this is a Koblitz curve (ABC curve), false otherwise
-         */
-        public boolean isKoblitz()
-        {
-            return order != null && cofactor != null && b.isOne() && (a.isZero() || a.isOne());
-        }
-
-        /**
-         * Returns the parameter <code>&mu;</code> of the elliptic curve.
-         * @return <code>&mu;</code> of the elliptic curve.
-         * @throws IllegalArgumentException if the given ECCurve is not a
-         * Koblitz curve.
-         */
-        synchronized byte getMu()
-        {
-            if (mu == 0)
-            {
-                mu = Tnaf.getMu(this);
-            }
-            return mu;
-        }
-
-        /**
-         * @return the auxiliary values <code>s<sub>0</sub></code> and
-         * <code>s<sub>1</sub></code> used for partial modular reduction for
-         * Koblitz curves.
-         */
-        synchronized BigInteger[] getSi()
-        {
-            if (si == null)
-            {
-                si = Tnaf.getSi(this);
-            }
-            return si;
         }
 
         /**
@@ -1087,7 +1071,7 @@ public abstract class ECCurve
                 ECFieldElement t = fromBigInteger(new BigInteger(m, rand));
                 z = zeroElement;
                 ECFieldElement w = beta;
-                for (int i = 1; i <= m - 1; i++)
+                for (int i = 1; i < m; i++)
                 {
                     ECFieldElement w2 = w.square();
                     z = z.square().add(w2.multiply(t));
