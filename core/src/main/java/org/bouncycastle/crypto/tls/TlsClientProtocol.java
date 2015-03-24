@@ -232,23 +232,9 @@ public class TlsClientProtocol
                 receiveServerHelloMessage(buf);
                 this.connection_state = CS_SERVER_HELLO;
 
-                if (this.securityParameters.maxFragmentLength >= 0)
-                {
-                    int plainTextLimit = 1 << (8 + this.securityParameters.maxFragmentLength);
-                    recordStream.setPlaintextLimit(plainTextLimit);
-                }
-
-                this.securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(),
-                    this.securityParameters.getCipherSuite());
-
-                /*
-                 * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
-                 * verify_data_length has a verify_data_length equal to 12. This includes all
-                 * existing cipher suites.
-                 */
-                this.securityParameters.verifyDataLength = 12;
-
                 this.recordStream.notifyHelloComplete();
+
+                applyMaxFragmentLengthExtension();
 
                 if (this.resumedSession)
                 {
@@ -567,27 +553,29 @@ public class TlsClientProtocol
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        if (server_version.isDTLS())
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            ProtocolVersion server_version = TlsUtils.readVersion(buf);
+            if (server_version.isDTLS())
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+    
+            // Check that this matches what the server is sending in the record layer
+            if (!server_version.equals(this.recordStream.getReadVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+    
+            ProtocolVersion client_version = getContext().getClientVersion();
+            if (!server_version.isEqualOrEarlierVersionOf(client_version))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+    
+            this.recordStream.setWriteVersion(server_version);
+            getContextAdmin().setServerVersion(server_version);
+            this.tlsClient.notifyServerVersion(server_version);
         }
-
-        // Check that this matches what the server is sending in the record layer
-        if (!server_version.equals(this.recordStream.getReadVersion()))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        ProtocolVersion client_version = getContext().getClientVersion();
-        if (!server_version.isEqualOrEarlierVersionOf(client_version))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        this.recordStream.setWriteVersion(server_version);
-        getContextAdmin().setServerVersion(server_version);
-        this.tlsClient.notifyServerVersion(server_version);
 
         /*
          * Read the server random
@@ -599,9 +587,7 @@ public class TlsClientProtocol
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
         this.tlsClient.notifySessionID(this.selectedSessionID);
-
         this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
             && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
 
@@ -613,11 +599,10 @@ public class TlsClientProtocol
         if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
             || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
             || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, server_version))
+            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
         this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
 
         /*
@@ -629,7 +614,6 @@ public class TlsClientProtocol
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
         this.tlsClient.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
@@ -742,19 +726,20 @@ public class TlsClientProtocol
 
         if (sessionServerExtensions != null)
         {
-            /*
-             * RFC 7366 3. If a server receives an encrypt-then-MAC request extension from a client
-             * and then selects a stream or Authenticated Encryption with Associated Data (AEAD)
-             * ciphersuite, it MUST NOT send an encrypt-then-MAC response extension back to the
-             * client.
-             */
-            boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
-            if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(selectedCipherSuite))
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                /*
+                 * RFC 7366 3. If a server receives an encrypt-then-MAC request extension from a client
+                 * and then selects a stream or Authenticated Encryption with Associated Data (AEAD)
+                 * ciphersuite, it MUST NOT send an encrypt-then-MAC response extension back to the
+                 * client.
+                 */
+                boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
+                if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(selectedCipherSuite))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+                this.securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
             }
-
-            this.securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
 
             this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
 
@@ -787,6 +772,16 @@ public class TlsClientProtocol
         {
             this.tlsClient.processServerExtensions(sessionServerExtensions);
         }
+
+        this.securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(),
+            this.securityParameters.getCipherSuite());
+
+        /*
+         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
+         * verify_data_length has a verify_data_length equal to 12. This includes all
+         * existing cipher suites.
+         */
+        this.securityParameters.verifyDataLength = 12;
     }
 
     protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify)

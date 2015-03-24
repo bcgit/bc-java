@@ -188,12 +188,12 @@ public abstract class ECPoint
         return copy;
     }
 
-    protected final ECFieldElement getRawXCoord()
+    public final ECFieldElement getRawXCoord()
     {
         return x;
     }
 
-    protected final ECFieldElement getRawYCoord()
+    public final ECFieldElement getRawYCoord()
     {
         return y;
     }
@@ -1418,6 +1418,153 @@ public abstract class ECPoint
             ECFieldElement rhs = X.add(A).multiply(X.square()).add(B);
             return lhs.equals(rhs);
         }
+
+        public ECPoint scaleX(ECFieldElement scale)
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            int coord = this.getCurveCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            {
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
+
+                ECFieldElement X2 = X.multiply(scale);
+                ECFieldElement L2 = L.add(X).divide(scale).add(X2);
+
+                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
+            }
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(), Z = this.getRawZCoords()[0]; // earlier JDK
+
+                // We scale the Z coordinate also, to avoid an inversion
+                ECFieldElement X2 = X.multiply(scale.square());
+                ECFieldElement L2 = L.add(X).add(X2);
+                ECFieldElement Z2 = Z.multiply(scale);
+
+                return this.getCurve().createRawPoint(X2, L2, new ECFieldElement[]{ Z2 }, this.withCompression); // earlier JDK
+            }
+            default:
+            {
+                return super.scaleX(scale);
+            }
+            }
+        }
+
+        public ECPoint scaleY(ECFieldElement scale)
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            int coord = this.getCurveCoordinateSystem();
+
+            switch (coord)
+            {
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
+
+                // Y is actually Lambda (X + Y/X) here
+                ECFieldElement L2 = L.add(X).multiply(scale).add(X);
+
+                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
+            }
+            default:
+            {
+                return super.scaleY(scale);
+            }
+            }
+        }
+
+        public ECPoint subtract(ECPoint b)
+        {
+            if (b.isInfinity())
+            {
+                return this;
+            }
+
+            // Add -b
+            return add(b.negate());
+        }
+
+        public ECPoint.AbstractF2m tau()
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            ECCurve curve = this.getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            ECFieldElement X1 = this.x;
+
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            {
+                ECFieldElement Y1 = this.y;
+                return (ECPoint.AbstractF2m)curve.createRawPoint(X1.square(), Y1.square(), this.withCompression);
+            }
+            case ECCurve.COORD_HOMOGENEOUS:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                ECFieldElement Y1 = this.y, Z1 = this.zs[0];
+                return (ECPoint.AbstractF2m)curve.createRawPoint(X1.square(), Y1.square(),
+                    new ECFieldElement[]{ Z1.square() }, this.withCompression);
+            }
+            default:
+            {
+                throw new IllegalStateException("unsupported coordinate system");
+            }
+            }
+        }
+
+        public ECPoint.AbstractF2m tauPow(int pow)
+        {
+            if (this.isInfinity())
+            {
+                return this;
+            }
+
+            ECCurve curve = this.getCurve();
+            int coord = curve.getCoordinateSystem();
+
+            ECFieldElement X1 = this.x;
+
+            switch (coord)
+            {
+            case ECCurve.COORD_AFFINE:
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            {
+                ECFieldElement Y1 = this.y;
+                return (ECPoint.AbstractF2m)curve.createRawPoint(X1.squarePow(pow), Y1.squarePow(pow), this.withCompression);
+            }
+            case ECCurve.COORD_HOMOGENEOUS:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
+            {
+                ECFieldElement Y1 = this.y, Z1 = this.zs[0];
+                return (ECPoint.AbstractF2m)curve.createRawPoint(X1.squarePow(pow), Y1.squarePow(pow),
+                    new ECFieldElement[]{ Z1.squarePow(pow) }, this.withCompression);
+            }
+            default:
+            {
+                throw new IllegalStateException("unsupported coordinate system");
+            }
+            }
+        }
     }
 
     /**
@@ -1520,74 +1667,6 @@ public abstract class ECPoint
             }
         }
 
-        public ECPoint scaleX(ECFieldElement scale)
-        {
-            if (this.isInfinity())
-            {
-                return this;
-            }
-
-            int coord = this.getCurveCoordinateSystem();
-
-            switch (coord)
-            {
-            case ECCurve.COORD_LAMBDA_AFFINE:
-            {
-                // Y is actually Lambda (X + Y/X) here
-                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
-
-                ECFieldElement X2 = X.multiply(scale);
-                ECFieldElement L2 = L.add(X).divide(scale).add(X2);
-
-                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
-            }
-            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-            {
-                // Y is actually Lambda (X + Y/X) here
-                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(), Z = this.getRawZCoords()[0]; // earlier JDK
-
-                // We scale the Z coordinate also, to avoid an inversion
-                ECFieldElement X2 = X.multiply(scale.square());
-                ECFieldElement L2 = L.add(X).add(X2);
-                ECFieldElement Z2 = Z.multiply(scale);
-
-                return this.getCurve().createRawPoint(X2, L2, new ECFieldElement[]{ Z2 }, this.withCompression); // earlier JDK
-            }
-            default:
-            {
-                return super.scaleX(scale);
-            }
-            }
-        }
-
-        public ECPoint scaleY(ECFieldElement scale)
-        {
-            if (this.isInfinity())
-            {
-                return this;
-            }
-
-            int coord = this.getCurveCoordinateSystem();
-
-            switch (coord)
-            {
-            case ECCurve.COORD_LAMBDA_AFFINE:
-            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-            {
-                ECFieldElement X = this.getRawXCoord(), L = this.getRawYCoord(); // earlier JDK
-
-                // Y is actually Lambda (X + Y/X) here
-                ECFieldElement L2 = L.add(X).multiply(scale).add(X);
-
-                return this.getCurve().createRawPoint(X, L2, this.getRawZCoords(), this.withCompression); // earlier JDK
-            }
-            default:
-            {
-                return super.scaleY(scale);
-            }
-            }
-        }
-
         protected boolean getCompressionYTilde()
         {
             ECFieldElement X = this.getRawXCoord();
@@ -1613,44 +1692,7 @@ public abstract class ECPoint
             }
         }
 
-        /**
-         * Check, if two <code>ECPoint</code>s can be added or subtracted.
-         * @param a The first <code>ECPoint</code> to check.
-         * @param b The second <code>ECPoint</code> to check.
-         * @throws IllegalArgumentException if <code>a</code> and <code>b</code>
-         * cannot be added.
-         */
-        private static void checkPoints(ECPoint a, ECPoint b)
-        {
-            // Check, if points are on the same curve
-            if (a.curve != b.curve)
-            {
-                throw new IllegalArgumentException("Only points on the same "
-                        + "curve can be added or subtracted");
-            }
-
-//            ECFieldElement.F2m.checkFieldElements(a.x, b.x);
-        }
-
-        /* (non-Javadoc)
-         * @see org.bouncycastle.math.ec.ECPoint#add(org.bouncycastle.math.ec.ECPoint)
-         */
         public ECPoint add(ECPoint b)
-        {
-            checkPoints(this, b);
-            return addSimple((ECPoint.F2m)b);
-        }
-
-        /**
-         * Adds another <code>ECPoints.F2m</code> to <code>this</code> without
-         * checking if both points are on the same curve. Used by multiplication
-         * algorithms, because there all points are a multiple of the same point
-         * and hence the checks can be omitted.
-         * @param b The other <code>ECPoints.F2m</code> to add to
-         * <code>this</code>.
-         * @return <code>this + b</code>
-         */
-        public ECPoint.F2m addSimple(ECPoint.F2m b)
         {
             if (this.isInfinity())
             {
@@ -1679,10 +1721,10 @@ public abstract class ECPoint
                 {
                     if (dy.isZero())
                     {
-                        return (ECPoint.F2m)twice();
+                        return twice();
                     }
 
-                    return (ECPoint.F2m)curve.getInfinity();
+                    return curve.getInfinity();
                 }
 
                 ECFieldElement L = dy.divide(dx);
@@ -1710,10 +1752,10 @@ public abstract class ECPoint
                 {
                     if (U.isZero())
                     {
-                        return (ECPoint.F2m)twice();
+                        return twice();
                     }
 
-                    return (ECPoint.F2m)curve.getInfinity();
+                    return curve.getInfinity();
                 }
 
                 ECFieldElement VSq = V.square();
@@ -1735,10 +1777,10 @@ public abstract class ECPoint
                 {
                     if (X2.isZero())
                     {
-                        return (ECPoint.F2m)curve.getInfinity();
+                        return curve.getInfinity();
                     }
 
-                    return b.addSimple(this);
+                    return b.add(this);
                 }
 
                 ECFieldElement L1 = this.y, Z1 = this.zs[0];
@@ -1767,10 +1809,10 @@ public abstract class ECPoint
                 {
                     if (A.isZero())
                     {
-                        return (ECPoint.F2m)twice();
+                        return twice();
                     }
 
-                    return (ECPoint.F2m)curve.getInfinity();
+                    return curve.getInfinity();
                 }
 
                 ECFieldElement X3, L3, Z3;
@@ -1823,68 +1865,6 @@ public abstract class ECPoint
                 }
 
                 return new ECPoint.F2m(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
-            }
-            default:
-            {
-                throw new IllegalStateException("unsupported coordinate system");
-            }
-            }
-        }
-
-        /* (non-Javadoc)
-         * @see org.bouncycastle.math.ec.ECPoint#subtract(org.bouncycastle.math.ec.ECPoint)
-         */
-        public ECPoint subtract(ECPoint b)
-        {
-            checkPoints(this, b);
-            return subtractSimple((ECPoint.F2m)b);
-        }
-
-        /**
-         * Subtracts another <code>ECPoints.F2m</code> from <code>this</code>
-         * without checking if both points are on the same curve. Used by
-         * multiplication algorithms, because there all points are a multiple
-         * of the same point and hence the checks can be omitted.
-         * @param b The other <code>ECPoints.F2m</code> to subtract from
-         * <code>this</code>.
-         * @return <code>this - b</code>
-         */
-        public ECPoint.F2m subtractSimple(ECPoint.F2m b)
-        {
-            if (b.isInfinity())
-            {
-                return this;
-            }
-
-            // Add -b
-            return addSimple((ECPoint.F2m)b.negate());
-        }
-
-        public ECPoint.F2m tau()
-        {
-            if (this.isInfinity())
-            {
-                return this;
-            }
-
-            ECCurve curve = this.getCurve();
-            int coord = curve.getCoordinateSystem();
-
-            ECFieldElement X1 = this.x;
-
-            switch (coord)
-            {
-            case ECCurve.COORD_AFFINE:
-            case ECCurve.COORD_LAMBDA_AFFINE:
-            {
-                ECFieldElement Y1 = this.y;
-                return new ECPoint.F2m(curve, X1.square(), Y1.square(), this.withCompression);
-            }
-            case ECCurve.COORD_HOMOGENEOUS:
-            case ECCurve.COORD_LAMBDA_PROJECTIVE:
-            {
-                ECFieldElement Y1 = this.y, Z1 = this.zs[0];
-                return new ECPoint.F2m(curve, X1.square(), Y1.square(), new ECFieldElement[]{ Z1.square() }, this.withCompression);
             }
             default:
             {
