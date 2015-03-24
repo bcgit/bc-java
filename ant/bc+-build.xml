@@ -162,6 +162,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.gpg" />
                 </copy>
                 <packJar jarbase="${artifacts.jars.dir}/@{target}">
                     <manifest-element>
@@ -188,6 +189,7 @@
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
                             <include name="**/*.rsp" />
+                            <include name="**/*.gpg" />
                             <include name="**/*.properties" />
                         </fileset>
                     </fileset-element>
@@ -267,6 +269,9 @@
             srcdir="${lcrypto.target.src.dir}"
             destdir="${lcrypto.target.classes.dir}"
             debug="${release.debug}">
+            <classpath>
+                <path refid="project.classpath" /> 
+            </classpath>
         </javac>
     </target>
 
@@ -650,6 +655,7 @@
              <fileset dir="${src.dir}" includes="**/*.csr" />
              <fileset dir="${src.dir}" includes="**/*.txt" />
              <fileset dir="${src.dir}" includes="**/*.rsp" />
+             <fileset dir="${src.dir}" includes="**/*.gpg" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
              <fileset dir="${src.dir}" includes="**/*.properties" />
              <fileset dir="${src.dir}" includes="**/*.message" />
