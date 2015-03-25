@@ -42,7 +42,7 @@ public class NamedCurveTest
         CURVE_NAMES.put("secp224r1", "secp224r1");
         CURVE_NAMES.put("B-409", SECNamedCurves.getName(NISTNamedCurves.getOID("B-409")));   // nist
         CURVE_NAMES.put("P-521", SECNamedCurves.getName(NISTNamedCurves.getOID("P-521")));
-        CURVE_NAMES.put("brainpoolp160r1", "brainpoolp160r1");         // TeleTrusT
+        CURVE_NAMES.put("brainpoolP160r1", "brainpoolP160r1");         // TeleTrusT
 
         CURVE_ALIASES.put("secp192r1", "prime192v1");
         CURVE_ALIASES.put("secp256r1", "prime256v1");
@@ -295,7 +295,7 @@ public class NamedCurveTest
         testCurve("secp224r1");
         testCurve("B-409");   // nist
         testCurve("P-521");
-        testCurve("brainpoolp160r1");    // TeleTrusT
+        testCurve("brainpoolP160r1");    // TeleTrusT
 
         for (Enumeration en = X962NamedCurves.getNames(); en.hasMoreElements();)
         {
