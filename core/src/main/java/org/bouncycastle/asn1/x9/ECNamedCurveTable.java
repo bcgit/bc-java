@@ -100,12 +100,17 @@ public class ECNamedCurveTable
             ecP = SECNamedCurves.getByOID(oid);
         }
 
+        // NOTE: All the NIST curves are currently from SEC, so no point in redundant OID lookup
+
         if (ecP == null)
         {
             ecP = TeleTrusTNamedCurves.getByOID(oid);
         }
 
-        // NOTE: All the NIST curves are currently from SEC, so no point in redundant OID lookup
+        if (ecP == null)
+        {
+            ecP = ANSSINamedCurves.getByOID(oid);
+        }
 
         return ecP;
     }
