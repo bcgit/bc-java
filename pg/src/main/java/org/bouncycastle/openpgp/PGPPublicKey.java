@@ -209,7 +209,17 @@ public class PGPPublicKey
     {
         if (publicPk.getVersion() > 3)
         {
-            return (int)(this.getValidSeconds() / (24 * 60 * 60));
+            long delta = this.getValidSeconds() % (24 * 60 * 60);
+            int days = (int)(this.getValidSeconds() / (24 * 60 * 60));
+
+            if (delta > 0)
+            {
+                return days + 1;
+            }
+            else
+            {
+                return days;
+            }
         }
         else
         {
