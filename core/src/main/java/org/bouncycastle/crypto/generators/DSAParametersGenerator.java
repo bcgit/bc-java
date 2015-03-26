@@ -244,7 +244,7 @@ public class DSAParametersGenerator
             BigInteger U = new BigInteger(1, output).mod(ONE.shiftLeft(N - 1));
 
 // 7. q = 2^(N–1) + U + 1 – ( U mod 2).
-            BigInteger q = ONE.shiftLeft(N - 1).add(U).add(ONE).subtract(U.mod(TWO));
+            BigInteger q = U.setBit(0).setBit(N - 1);
 
 // 8. Test whether or not q is prime as specified in Appendix C.3.
             // TODO Review C.3 for primality checking
