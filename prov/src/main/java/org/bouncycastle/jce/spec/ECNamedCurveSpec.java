@@ -42,7 +42,7 @@ public class ECNamedCurveSpec
         {
             Polynomial poly = ((PolynomialExtensionField)field).getMinimalPolynomial();
             int[] exponents = poly.getExponentsPresent();
-            int[] ks = Arrays.reverse(Arrays.copyOfRange(exponents, 1, exponents.length - 2));
+            int[] ks = Arrays.reverse(Arrays.copyOfRange(exponents, 1, exponents.length - 1));
             return new ECFieldF2m(poly.getDegree(), ks);
         }
     }
