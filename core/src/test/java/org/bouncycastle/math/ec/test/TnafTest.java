@@ -40,7 +40,7 @@
 //    private void implTestMultiplyTnaf(String curveName) {
 //        X9ECParameters x9ECParameters = SECNamedCurves.getByName(curveName);
 //
-//        ECCurve.F2m curve = (ECCurve.F2m)x9ECParameters.getCurve();
+//        ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m)x9ECParameters.getCurve();
 //        BigInteger n = curve.getN();
 //
 //        // The generator is multiplied by random b to get random q

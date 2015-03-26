@@ -11,14 +11,23 @@ public class ECAlgorithms
 {
     public static boolean isF2mCurve(ECCurve c)
     {
-        FiniteField field = c.getField();
+        return isF2mField(c.getField());
+    }
+
+    public static boolean isF2mField(FiniteField field)
+    {
         return field.getDimension() > 1 && field.getCharacteristic().equals(ECConstants.TWO)
             && field instanceof PolynomialExtensionField;
     }
 
     public static boolean isFpCurve(ECCurve c)
     {
-        return c.getField().getDimension() == 1;
+        return isFpField(c.getField());
+    }
+
+    public static boolean isFpField(FiniteField field)
+    {
+        return field.getDimension() == 1;
     }
 
     public static ECPoint sumOfMultiplies(ECPoint[] ps, BigInteger[] ks)
@@ -67,7 +76,7 @@ public class ECAlgorithms
         // Point multiplication for Koblitz curves (using WTNAF) beats Shamir's trick
         if (cp instanceof ECCurve.F2m)
         {
-            ECCurve.F2m f2mCurve = (ECCurve.F2m)cp;
+            ECCurve.AbstractF2m f2mCurve = (ECCurve.AbstractF2m)cp;
             if (f2mCurve.isKoblitz())
             {
                 return validatePoint(P.multiply(a).add(Q.multiply(b)));

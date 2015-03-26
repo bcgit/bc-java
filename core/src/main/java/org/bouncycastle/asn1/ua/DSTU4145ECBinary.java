@@ -49,6 +49,10 @@ public class DSTU4145ECBinary
         {
             f = new DSTU4145BinaryField(exponents[4], exponents[1], exponents[2], exponents[3]);
         }
+        else
+        {
+            throw new IllegalArgumentException("curve must have a trinomial or pentanomial basis");
+        }
 
         a = new ASN1Integer(curve.getA().toBigInteger());
         b = new DEROctetString(curve.getB().getEncoded());

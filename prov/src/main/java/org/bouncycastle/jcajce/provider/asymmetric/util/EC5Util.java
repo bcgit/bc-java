@@ -18,6 +18,10 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.field.FiniteField;
+import org.bouncycastle.math.field.Polynomial;
+import org.bouncycastle.math.field.PolynomialExtensionField;
+import org.bouncycastle.util.Arrays;
 
 public class EC5Util
 {
@@ -42,30 +46,12 @@ public class EC5Util
         ECCurve curve, 
         byte[]  seed)
     {
+        ECField field = convertField(curve.getField());
+        BigInteger a = curve.getA().toBigInteger(), b = curve.getB().toBigInteger();
+
         // TODO: the Sun EC implementation doesn't currently handle the seed properly
         // so at the moment it's set to null. Should probably look at making this configurable
-        if (ECAlgorithms.isFpCurve(curve))
-        {
-            return new EllipticCurve(new ECFieldFp(curve.getField().getCharacteristic()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-        }
-        else
-        {
-            ECCurve.F2m curveF2m = (ECCurve.F2m)curve;
-            int ks[];
-            
-            if (curveF2m.isTrinomial())
-            {
-                ks = new int[] { curveF2m.getK1() };
-                
-                return new EllipticCurve(new ECFieldF2m(curveF2m.getM(), ks), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-            }
-            else
-            {
-                ks = new int[] { curveF2m.getK3(), curveF2m.getK2(), curveF2m.getK1() };
-                
-                return new EllipticCurve(new ECFieldF2m(curveF2m.getM(), ks), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null);
-            } 
-        }
+        return new EllipticCurve(field, a, b, null);
     }
 
     public static ECCurve convertCurve(
@@ -92,6 +78,21 @@ public class EC5Util
             int m = fieldF2m.getM();
             int ks[] = ECUtil.convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
             return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b); 
+        }
+    }
+
+    public static ECField convertField(FiniteField field)
+    {
+        if (ECAlgorithms.isFpField(field))
+        {
+            return new ECFieldFp(field.getCharacteristic());
+        }
+        else //if (ECAlgorithms.isF2mField(curveField))
+        {
+            Polynomial poly = ((PolynomialExtensionField)field).getMinimalPolynomial();
+            int[] exponents = poly.getExponentsPresent();
+            int[] ks = Arrays.reverse(Arrays.copyOfRange(exponents, 1, exponents.length - 2));
+            return new ECFieldF2m(poly.getDegree(), ks);
         }
     }
 
