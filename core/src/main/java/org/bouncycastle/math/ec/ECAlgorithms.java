@@ -74,7 +74,7 @@ public class ECAlgorithms
         Q = importPoint(cp, Q);
 
         // Point multiplication for Koblitz curves (using WTNAF) beats Shamir's trick
-        if (cp instanceof ECCurve.F2m)
+        if (cp instanceof ECCurve.AbstractF2m)
         {
             ECCurve.AbstractF2m f2mCurve = (ECCurve.AbstractF2m)cp;
             if (f2mCurve.isKoblitz())
