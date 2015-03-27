@@ -204,6 +204,7 @@ public class PGPPublicKey
     /**
      * @return number of valid days from creation time - zero means no
      * expiry.
+     * @deprecated use getValidSeconds(): greater than version 3 keys may be valid for less than a day.
      */
     public int getValidDays()
     {
@@ -212,9 +213,9 @@ public class PGPPublicKey
             long delta = this.getValidSeconds() % (24 * 60 * 60);
             int days = (int)(this.getValidSeconds() / (24 * 60 * 60));
 
-            if (delta > 0)
+            if (delta > 0 && days == 0)
             {
-                return days + 1;
+                return 1;
             }
             else
             {
