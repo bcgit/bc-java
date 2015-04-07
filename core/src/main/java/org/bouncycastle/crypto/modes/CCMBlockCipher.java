@@ -277,7 +277,9 @@ public class CCMBlockCipher
 
             calculateMac(in, inOff, inLen, macBlock);
 
-            ctrCipher.processBlock(macBlock, 0, macBlock, 0);   // S0
+            byte[] encMac = new byte[blockSize];
+
+            ctrCipher.processBlock(macBlock, 0, encMac, 0);   // S0
 
             while (inIndex < (inOff + inLen - blockSize))                 // S1...
             {
@@ -294,7 +296,7 @@ public class CCMBlockCipher
 
             System.arraycopy(block, 0, output, outIndex, inLen + inOff - inIndex);
 
-            System.arraycopy(macBlock, 0, output, outOff + inLen, macSize);
+            System.arraycopy(encMac, 0, output, outOff + inLen, macSize);
         }
         else
         {
