@@ -210,11 +210,7 @@ public class BcPGPKeyConverter
                 ECPublicBCPGKey ecPub = (ECPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecPriv = (ECSecretBCPGKey)privPk;
 
-                X9ECParameters x9 = CustomNamedCurves.getByOID(ecPub.getCurveOID());
-                if (x9 == null)
-                {
-                    x9 = ECNamedCurveTable.getByOID(ecPub.getCurveOID());
-                }
+                X9ECParameters x9 = BcUtil.getX9Parameters(ecPub.getCurveOID());
 
                 return new ECPrivateKeyParameters(ecPriv.getX(),
                     new ECNamedDomainParameters(ecPub.getCurveOID(), x9.getCurve(), x9.getG(), x9.getN(), x9.getH()));
