@@ -232,6 +232,17 @@ public interface PKCSObjectIdentifiers
     static final ASN1ObjectIdentifier id_alg                  = id_smime.branch("3");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.9 */
     static final ASN1ObjectIdentifier id_alg_PWRI_KEK         = id_alg.branch("9");
+    /**
+     * <pre>
+     * -- RSA-KEM Key Transport Algorithm
+     *
+     * id-rsa-kem OID ::= {
+     *      iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+     *      pkcs-9(9) smime(16) alg(3) 14
+     *   }
+     * </pre>
+     */
+    static final ASN1ObjectIdentifier id_rsa_KEM              = id_alg.branch("14");
 
     //
     // id-cti OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
