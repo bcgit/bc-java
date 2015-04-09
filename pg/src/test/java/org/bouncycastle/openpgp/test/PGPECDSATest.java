@@ -269,6 +269,11 @@ public class PGPECDSATest
             }
         }
 
+        if (pubKeyRing.getPublicKey().getBitStrength() != 256)
+        {
+            fail("incorrect bit strength returned");
+        }
+
         //
         // Read the private key
         //
