@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -80,10 +81,9 @@ public class JceSymmetricKeyWrapper
     {
         String algorithm = key.getAlgorithm();
 
-        if (algorithm.startsWith("DES"))
+        if (algorithm.startsWith("DES") || algorithm.startsWith("TripleDES"))
         {
-            return new AlgorithmIdentifier(new ASN1ObjectIdentifier(
-                    "1.2.840.113549.1.9.16.3.6"), DERNull.INSTANCE);
+            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, DERNull.INSTANCE);
         }
         else if (algorithm.startsWith("RC2"))
         {
