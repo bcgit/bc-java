@@ -31,7 +31,7 @@ public class ECDHPublicBCPGKey
             throw new IllegalStateException("kdf parameters size of 3 expected.");
         }
 
-        in.read(kdfParameters);
+        in.readFully(kdfParameters);
 
         reserved = kdfParameters[0];
         hashFunctionId = kdfParameters[1];
