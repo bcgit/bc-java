@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.operator.ContentSigner;
 
 /**
@@ -149,22 +148,6 @@ public class X509v2CRLBuilder
     public X509v2CRLBuilder addCRLEntry(BigInteger userCertificateSerial, Date revocationDate, int reason, Date invalidityDate)
     {
         tbsGen.addCRLEntry(new ASN1Integer(userCertificateSerial), new Time(revocationDate), reason, new ASN1GeneralizedTime(invalidityDate));
-
-        return this;
-    }
-   
-    /**
-     * Add a CRL entry with extensions.
-     *
-     * @param userCertificateSerial serial number of revoked certificate.
-     * @param revocationDate date of certificate revocation.
-     * @param extensions extension set to be associated with this CRLEntry.
-     * @return the current builder.
-     * @deprecated use method taking Extensions
-     */
-    public X509v2CRLBuilder addCRLEntry(BigInteger userCertificateSerial, Date revocationDate, X509Extensions extensions)
-    {
-        tbsGen.addCRLEntry(new ASN1Integer(userCertificateSerial), new Time(revocationDate), Extensions.getInstance(extensions));
 
         return this;
     }
