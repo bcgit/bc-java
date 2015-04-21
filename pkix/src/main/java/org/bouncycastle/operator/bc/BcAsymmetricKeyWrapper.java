@@ -47,7 +47,7 @@ public abstract class BcAsymmetricKeyWrapper
         try
         {
             byte[] keyEnc = OperatorUtils.getKeyBytes(encryptionKey);
-            keyEncryptionCipher.init(true, publicKey);
+            keyEncryptionCipher.init(true, params);
             return keyEncryptionCipher.processBlock(keyEnc, 0, keyEnc.length);
         }
         catch (InvalidCipherTextException e)
