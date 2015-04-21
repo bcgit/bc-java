@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.security.auth.x500.X500Principal;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -889,11 +891,16 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Name certIssuer = X500Name.getInstance(crl_entry.getCertificateIssuer().getEncoded());
+            X500Principal certificateIssuer = crl_entry.getCertificateIssuer();
 
-            if (certIssuer == null)
+            X500Name certIssuer;
+            if (certificateIssuer == null)
             {
                 certIssuer = PrincipalUtils.getIssuerPrincipal(crl);
+            }
+            else
+            {
+                certIssuer = X500Name.getInstance(certificateIssuer.getEncoded());
             }
 
             if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))

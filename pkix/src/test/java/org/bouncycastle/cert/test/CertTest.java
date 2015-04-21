@@ -2864,7 +2864,7 @@ public class CertTest
         }
 
         crlEntry = crl.getRevokedCertificate(BigInteger.valueOf(130));
-        if (!crlEntry.getCertificateIssuer().equals(new X500Principal(caName.getEncoded())))
+        if (!(new X500Principal(caName.getEncoded())).equals(crlEntry.getCertificateIssuer()))
         {
             fail("JCA 2 certificate issuer incorrect");
         }
