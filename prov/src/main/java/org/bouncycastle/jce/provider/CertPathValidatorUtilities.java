@@ -715,7 +715,7 @@ class CertPathValidatorUtilities
 
                         for (int j = 0; j < genNames.length; j++)
                         {
-                            PKIXCRLStore store = namedCRLStoreMap.get(genNames[i]);
+                            PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
                             if (store != null)
                             {
                                 stores.add(store);
