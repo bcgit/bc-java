@@ -2,7 +2,10 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Vector;
+
+import org.bouncycastle.util.Arrays;
 
 /**
  * ASN.1 <code>SEQUENCE</code> and <code>SEQUENCE OF</code> constructs.
@@ -53,6 +56,7 @@ import java.util.Vector;
  */
 public abstract class ASN1Sequence
     extends ASN1Primitive
+    implements org.bouncycastle.util.Iterable<ASN1Encodable>
 {
     protected Vector seq = new Vector();
 
@@ -378,5 +382,10 @@ public abstract class ASN1Sequence
     public String toString() 
     {
         return seq.toString();
+    }
+
+    public Iterator<ASN1Encodable> iterator()
+    {
+        return new Arrays.Iterator<ASN1Encodable>(toArray());
     }
 }
