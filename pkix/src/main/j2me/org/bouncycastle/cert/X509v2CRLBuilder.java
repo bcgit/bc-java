@@ -117,22 +117,6 @@ public class X509v2CRLBuilder
 
         return this;
     }
-   
-    /**
-     * Add a CRL entry with extensions.
-     *
-     * @param userCertificateSerial serial number of revoked certificate.
-     * @param revocationDate date of certificate revocation.
-     * @param extensions extension set to be associated with this CRLEntry.
-     * @return the current builder.
-     * @deprecated use method taking Extensions
-     */
-    public X509v2CRLBuilder addCRLEntry(BigInteger userCertificateSerial, Date revocationDate, X509Extensions extensions)
-    {
-        tbsGen.addCRLEntry(new ASN1Integer(userCertificateSerial), new Time(revocationDate), Extensions.getInstance(extensions));
-
-        return this;
-    }
 
     /**
      * Add a CRL entry with extensions.
