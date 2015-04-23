@@ -36,6 +36,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.GnuDivertToCardSecretKeyEncryptor;
 
 /**
  * general class to handle and construct  a PGP secret key object.
@@ -735,6 +736,9 @@ public class PGPSecretKey
             }
             else
             {
+                if(s2kUsage == SecretKeyPacket.USAGE_NONE) {
+                    s2kUsage = SecretKeyPacket.USAGE_SHA1;
+                }
                 keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
 
                 iv = newKeyEncryptor.getCipherIV();
