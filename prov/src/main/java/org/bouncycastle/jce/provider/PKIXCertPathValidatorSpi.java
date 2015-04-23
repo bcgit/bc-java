@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -435,6 +436,7 @@ public class PKIXCertPathValidatorSpi
             criticalExtensions.remove(RFC3280CertPathUtilities.SUBJECT_ALTERNATIVE_NAME);
             criticalExtensions.remove(RFC3280CertPathUtilities.NAME_CONSTRAINTS);
             criticalExtensions.remove(RFC3280CertPathUtilities.CRL_DISTRIBUTION_POINTS);
+            criticalExtensions.remove(Extension.extendedKeyUsage.getId());
         }
         else
         {
