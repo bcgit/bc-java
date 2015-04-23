@@ -66,6 +66,23 @@ public class ExtensionsGenerator
     }
 
     /**
+     * Add a given extension.
+     *
+     * @param extension the full extension value.
+     */
+    public void addExtension(
+        Extension extension)
+    {
+        if (extensions.containsKey(extension.getExtnId()))
+        {
+            throw new IllegalArgumentException("extension " + extension.getExtnId() + " already added");
+        }
+
+        extOrdering.addElement(extension.getExtnId());
+        extensions.put(extension.getExtnId(), extension);
+    }
+
+    /**
      * Return true if there are no extension present in this generator.
      *
      * @return true if empty, false otherwise
