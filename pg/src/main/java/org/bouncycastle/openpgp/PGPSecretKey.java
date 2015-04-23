@@ -661,7 +661,7 @@ public class PGPSecretKey
         byte[]      keyData;
         int         newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
 
-        if (newKeyEncryptor == null || newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
+        if (newKeyEncryptor == null || (newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL  && !(newKeyEncryptor instanceof GnuDivertToCardSecretKeyEncryptor)))
         {
             s2kUsage = SecretKeyPacket.USAGE_NONE;
             if (key.secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1)   // SHA-1 hash, need to rewrite checksum
