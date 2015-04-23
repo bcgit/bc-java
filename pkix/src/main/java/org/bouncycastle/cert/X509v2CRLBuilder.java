@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.TBSCertList;
@@ -223,6 +224,21 @@ public class X509v2CRLBuilder
         throws CertIOException
     {
         extGenerator.addExtension(oid, isCritical, encodedValue);
+
+        return this;
+    }
+
+    /**
+     * Add a given extension field for the standard extensions tag (tag 3).
+     *
+     * @param extension the full extension value.
+     * @return this builder object.
+     */
+    public X509v2CRLBuilder addExtension(
+        Extension extension)
+        throws CertIOException
+    {
+        extGenerator.addExtension(extension);
 
         return this;
     }

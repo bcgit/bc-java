@@ -126,6 +126,21 @@ public class X509v3CertificateBuilder
     }
 
     /**
+     * Add a given extension field for the standard extensions tag (tag 3).
+     *
+     * @param extension the full extension value.
+     * @return this builder object.
+     */
+    public X509v3CertificateBuilder addExtension(
+        Extension extension)
+        throws CertIOException
+    {
+        extGenerator.addExtension(extension);
+
+        return this;
+    }
+
+    /**
      * Add a given extension field for the standard extensions tag (tag 3) using a byte encoding of the
      * extension value.
      *
