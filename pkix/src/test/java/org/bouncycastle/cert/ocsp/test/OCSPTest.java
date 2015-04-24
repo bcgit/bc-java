@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
@@ -282,7 +281,7 @@ public class OCSPTest
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
         String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
-        GeneralName origName = new GeneralName(new X509Name(origDN));
+        GeneralName origName = new GeneralName(new X500Name(origDN));
 
         //
         // general id value for our test issuer cert and a serial number.
@@ -472,7 +471,7 @@ public class OCSPTest
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
         String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
-        GeneralName origName = new GeneralName(new X509Name(origDN));
+        GeneralName origName = new GeneralName(new X500Name(origDN));
 
         //
         // general id value for our test issuer cert and a serial number.
@@ -702,7 +701,7 @@ public class OCSPTest
         X509CertificateHolder testCert = new JcaX509CertificateHolder(OCSPTestUtil.makeCertificate(signKP, signDN, signKP, signDN));
 
         String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
-        GeneralName origName = new GeneralName(new X509Name(origDN));
+        GeneralName origName = new GeneralName(new X500Name(origDN));
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
         //
