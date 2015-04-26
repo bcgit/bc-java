@@ -49,12 +49,6 @@ public class PKIXCertPathValidatorSpi
             throws CertPathValidatorException,
             InvalidAlgorithmParameterException
     {
-        if (!(params instanceof CertPathParameters))
-        {
-            throw new InvalidAlgorithmParameterException("Parameters must be a " + PKIXParameters.class.getName()
-                    + " instance.");
-        }
-
         PKIXExtendedParameters paramsPKIX;
         if (params instanceof PKIXParameters)
         {
@@ -74,9 +68,13 @@ public class PKIXCertPathValidatorSpi
         {
             paramsPKIX = ((PKIXExtendedBuilderParameters)params).getBaseParameters();
         }
-        else
+        else if (params instanceof PKIXExtendedParameters)
         {
             paramsPKIX = (PKIXExtendedParameters)params;
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("Parameters must be a " + PKIXParameters.class.getName() + " instance.");
         }
 
         if (paramsPKIX.getTrustAnchors() == null)
