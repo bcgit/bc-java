@@ -494,7 +494,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            return new SimpleTestResult(false, dump + System.getProperty("line.separator") + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            return new SimpleTestResult(false, dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
         }
 
         return new SimpleTestResult(true, getName() + ": " + id + " Okay");
@@ -524,7 +524,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            return new SimpleTestResult(false, dump + System.getProperty("line.separator") + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            return new SimpleTestResult(false, dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
         }
 
         return new SimpleTestResult(true, getName() + ": " + id + " Okay");
@@ -556,7 +556,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            return new SimpleTestResult(false, dump + System.getProperty("line.separator") + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            return new SimpleTestResult(false, dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
         }
 
         return new SimpleTestResult(true, getName() + ": " + id + " Okay");
@@ -585,7 +585,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            return new SimpleTestResult(false, dump + System.getProperty("line.separator") + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            return new SimpleTestResult(false, dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
         }
 
         return new SimpleTestResult(true, getName() + ": " + id + " Okay");
@@ -1057,7 +1057,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            return new SimpleTestResult(false, dump + System.getProperty("line.separator") + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            return new SimpleTestResult(false, dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
         }
 
         return new SimpleTestResult(true, getName() + ": " + id + " Okay");

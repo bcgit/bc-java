@@ -1204,7 +1204,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1233,7 +1233,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1264,7 +1264,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1292,7 +1292,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1891,7 +1891,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -2650,7 +2650,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
         }
     }
 

@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.util.Strings;
 
 /**
  * The following extensions are listed in RFC 2459 as relevant to CRL Entries
@@ -259,7 +260,7 @@ public class X509CRLEntryObject extends X509CRLEntry
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
 
         buf.append("      userCertificate: ").append(this.getSerialNumber()).append(nl);
         buf.append("       revocationDate: ").append(this.getRevocationDate()).append(nl);

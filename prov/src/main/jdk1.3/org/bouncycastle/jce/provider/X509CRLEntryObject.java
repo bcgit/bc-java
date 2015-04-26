@@ -235,7 +235,7 @@ public class X509CRLEntryObject extends X509CRLEntry
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
 
         buf.append("      userCertificate: ").append(this.getSerialNumber()).append(nl);
         buf.append("       revocationDate: ").append(this.getRevocationDate()).append(nl);

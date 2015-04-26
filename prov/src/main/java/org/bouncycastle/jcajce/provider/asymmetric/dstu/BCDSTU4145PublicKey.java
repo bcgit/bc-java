@@ -38,6 +38,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Point;
+import org.bouncycastle.util.Strings;
 
 public class BCDSTU4145PublicKey
     implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
@@ -378,7 +379,7 @@ public class BCDSTU4145PublicKey
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
 
         buf.append("EC Public Key").append(nl);
         buf.append("            X: ").append(this.q.getAffineXCoord().toBigInteger().toString(16)).append(nl);

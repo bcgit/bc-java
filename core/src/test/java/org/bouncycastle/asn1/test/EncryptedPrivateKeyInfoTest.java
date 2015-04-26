@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.util.ASN1Dump;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -102,7 +103,7 @@ public class EncryptedPrivateKeyInfoTest
 
                 ASN1Primitive obj = aIn.readObject();
     
-                fail("test " + id + " length mismatch - expected " + sample.length + System.getProperty("line.separator") + ASN1Dump.dumpAsString(info) + " got " + bytes.length + System.getProperty("line.separator") + ASN1Dump.dumpAsString(obj));
+                fail("test " + id + " length mismatch - expected " + sample.length + Strings.lineSeparator() + ASN1Dump.dumpAsString(info) + " got " + bytes.length + Strings.lineSeparator() + ASN1Dump.dumpAsString(obj));
             }
             catch (Exception e)
             {

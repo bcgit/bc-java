@@ -62,6 +62,7 @@ import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class X509CertificateObject
@@ -653,7 +654,7 @@ public class X509CertificateObject
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
-        String          nl = System.getProperty("line.separator");
+        String          nl = Strings.lineSeparator();
 
         buf.append("  [0]         Version: ").append(this.getVersion()).append(nl);
         buf.append("         SerialNumber: ").append(this.getSerialNumber()).append(nl);

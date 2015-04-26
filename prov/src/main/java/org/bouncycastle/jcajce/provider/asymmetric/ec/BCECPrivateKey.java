@@ -35,6 +35,7 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Strings;
 
 public class BCECPrivateKey
     implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
@@ -418,7 +419,7 @@ public class BCECPrivateKey
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
-        String          nl = System.getProperty("line.separator");
+        String          nl = Strings.lineSeparator();
 
         buf.append("EC Private Key").append(nl);
         buf.append("             S: ").append(this.d.toString(16)).append(nl);

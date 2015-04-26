@@ -23,6 +23,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -95,16 +96,16 @@ public class DSTU4145Test
         if (!r.equals(sig[0]))
         {
             fail(
-                ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r + System.getProperty("line.separator")
+                ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
         }
 
         if (!s.equals(sig[1]))
         {
             fail(
-                ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s + System.getProperty("line.separator")
+                ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
         }
     }
@@ -157,16 +158,16 @@ public class DSTU4145Test
         if (!r.equals(sig[0]))
         {
             fail(
-                ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r + System.getProperty("line.separator")
+                ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
         }
 
         if (!s.equals(sig[1]))
         {
             fail(
-                ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s + System.getProperty("line.separator")
+                ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
         }
     }

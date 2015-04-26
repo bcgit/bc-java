@@ -32,6 +32,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERVisibleString;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class ASN1Dump
@@ -50,7 +51,7 @@ public class ASN1Dump
         ASN1Primitive obj,
         StringBuffer    buf)
     {
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
         if (obj instanceof ASN1Sequence)
         {
             Enumeration     e = ((ASN1Sequence)obj).getObjects();
@@ -353,7 +354,7 @@ public class ASN1Dump
 
     private static String dumpBinaryDataAsString(String indent, byte[] bytes)
     {
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
         StringBuffer buf = new StringBuffer();
 
         indent += TAB;
