@@ -206,7 +206,7 @@ public class BasicOCSPRespBuilder
         Date                nextUpdate,
         Extensions          singleExtensions)
     {
-        this.addResponse(certID, certStatus, thisUpdate, nextUpdate, singleExtensions);
+        list.add(new ResponseObject(certID, certStatus, thisUpdate, nextUpdate, singleExtensions));
 
         return this;
     }
