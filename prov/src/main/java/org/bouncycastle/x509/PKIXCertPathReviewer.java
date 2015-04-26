@@ -639,7 +639,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 if (maxPathLength <= 0)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pathLenghtExtended");
+                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pathLengthExtended");
                     addError(msg);
                 }
                 maxPathLength--;
