@@ -44,16 +44,6 @@ public class PKIXCertPathBuilderSpi
     public CertPathBuilderResult engineBuild(CertPathParameters params)
         throws CertPathBuilderException, InvalidAlgorithmParameterException
     {
-        if (!(params instanceof PKIXBuilderParameters)
-            && !(params instanceof ExtendedPKIXBuilderParameters)
-            && !(params instanceof PKIXExtendedBuilderParameters))
-        {
-            throw new InvalidAlgorithmParameterException(
-                "Parameters must be an instance of "
-                    + PKIXBuilderParameters.class.getName() + " or "
-                    + PKIXExtendedBuilderParameters.class.getName() + ".");
-        }
-
         PKIXExtendedBuilderParameters paramsPKIX;
         if (params instanceof PKIXBuilderParameters)
         {
@@ -81,9 +71,16 @@ public class PKIXCertPathBuilderSpi
 
             paramsPKIX = paramsBldrPKIXBldr.build();
         }
-        else
+        else if (params instanceof PKIXExtendedBuilderParameters)
         {
             paramsPKIX = (PKIXExtendedBuilderParameters)params;
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException(
+                "Parameters must be an instance of "
+                    + PKIXBuilderParameters.class.getName() + " or "
+                    + PKIXExtendedBuilderParameters.class.getName() + ".");
         }
 
         Collection targets;
