@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.bouncycastle.util.Strings;
+
 /**
  * Output stream that writes data in ASCII Armored format.
  */
