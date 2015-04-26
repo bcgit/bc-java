@@ -1,8 +1,10 @@
 package org.bouncycastle.util.test;
 
+import org.bouncycastle.util.Strings;
+
 public class SimpleTestResult implements TestResult
 {
-    private static final String SEPARATOR = System.getProperty("line.separator");
+    private static final String SEPARATOR = Strings.lineSeparator();
 
     private boolean             success;
     private String              message;

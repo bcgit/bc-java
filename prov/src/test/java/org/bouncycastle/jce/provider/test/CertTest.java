@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1141,7 +1142,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1170,7 +1171,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1201,7 +1202,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1239,7 +1240,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1263,7 +1264,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }

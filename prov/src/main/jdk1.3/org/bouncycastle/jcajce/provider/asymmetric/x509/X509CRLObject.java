@@ -373,7 +373,7 @@ class X509CRLObject
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
 
         buf.append("              Version: ").append(this.getVersion()).append(
             nl);

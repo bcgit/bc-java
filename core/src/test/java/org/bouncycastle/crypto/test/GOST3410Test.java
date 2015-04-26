@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.params.GOST3410KeyGenerationParameters;
 import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.GOST3410Signer;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.NumberParsing;
@@ -104,16 +105,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -207,16 +208,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -351,16 +352,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -495,16 +496,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -639,16 +640,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -782,16 +783,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -925,16 +926,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -1069,16 +1070,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -1212,16 +1213,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -1355,16 +1356,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 
@@ -1498,16 +1499,16 @@ public class GOST3410Test
             if (!r.equals(sig[0]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": r component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + r.toString(16) + System.getProperty("line.separator")
+                    + ": r component wrong." + Strings.lineSeparator()
+                    + " expecting: " + r.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[0].toString(16));
             }
 
             if (!s.equals(sig[1]))
             {
                 return new SimpleTestResult(false, getName()
-                    + ": s component wrong." + System.getProperty("line.separator")
-                    + " expecting: " + s.toString(16) + System.getProperty("line.separator")
+                    + ": s component wrong." + Strings.lineSeparator()
+                    + " expecting: " + s.toString(16) + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
             }
 

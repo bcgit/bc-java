@@ -85,7 +85,7 @@ public class ArmoredOutputStream
     boolean         clearText = false;
     boolean         newLine = false;
 
-    String          nl = System.getProperty("line.separator");
+    String          nl = Strings.lineSeparator();
 
     String          type;
     String          headerStart = "-----BEGIN PGP ";

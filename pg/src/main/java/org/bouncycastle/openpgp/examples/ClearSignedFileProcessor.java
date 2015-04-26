@@ -192,7 +192,7 @@ public class ClearSignedFileProcessor
 
     private static byte[] getLineSeparator()
     {
-        String nl = System.getProperty("line.separator");
+        String nl = Strings.lineSeparator();
         byte[] nlBytes = new byte[nl.length()];
 
         for (int i = 0; i != nlBytes.length; i++)

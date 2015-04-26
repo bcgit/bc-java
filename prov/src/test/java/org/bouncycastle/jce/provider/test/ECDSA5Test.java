@@ -54,6 +54,7 @@ import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -147,15 +148,15 @@ public class ECDSA5Test
 
         if (!r.equals(sig[0]))
         {
-            fail("r component wrong." + System.getProperty("line.separator")
-                + " expecting: " + r + System.getProperty("line.separator")
+            fail("r component wrong." + Strings.lineSeparator()
+                + " expecting: " + r + Strings.lineSeparator()
                 + " got      : " + sig[0]);
         }
 
         if (!s.equals(sig[1]))
         {
-            fail("s component wrong." + System.getProperty("line.separator")
-                + " expecting: " + s + System.getProperty("line.separator")
+            fail("s component wrong." + Strings.lineSeparator()
+                + " expecting: " + s + Strings.lineSeparator()
                 + " got      : " + sig[1]);
         }
     }
@@ -275,15 +276,15 @@ public class ECDSA5Test
 
         if (!r.equals(sig[0]))
         {
-            fail("r component wrong." + System.getProperty("line.separator")
-                + " expecting: " + r + System.getProperty("line.separator")
+            fail("r component wrong." + Strings.lineSeparator()
+                + " expecting: " + r + Strings.lineSeparator()
                 + " got      : " + sig[0]);
         }
 
         if (!s.equals(sig[1]))
         {
-            fail("s component wrong." + System.getProperty("line.separator")
-                + " expecting: " + s + System.getProperty("line.separator")
+            fail("s component wrong." + Strings.lineSeparator()
+                + " expecting: " + s + Strings.lineSeparator()
                 + " got      : " + sig[1]);
         }
     }

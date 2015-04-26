@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.util.Strings;
 
 public class JDKDSAPublicKey
     implements DSAPublicKey
@@ -126,7 +127,7 @@ public class JDKDSAPublicKey
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
-        String          nl = System.getProperty("line.separator");
+        String          nl = Strings.lineSeparator();
 
         buf.append("DSA Public Key").append(nl);
         buf.append("            y: ").append(this.getY().toString(16)).append(nl);

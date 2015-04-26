@@ -390,7 +390,7 @@ public class BCECGOST3410PublicKey
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
-        String          nl = System.getProperty("line.separator");
+        String          nl = Strings.lineSeparator();
 
         buf.append("EC Public Key").append(nl);
         buf.append("            X: ").append(this.getQ().getX().toBigInteger().toString(16)).append(nl);

@@ -71,6 +71,7 @@ import org.bouncycastle.operator.bc.BcDSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcDSAContentVerifierProviderBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
 public class BcCertTest
@@ -471,7 +472,7 @@ public class BcCertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -813,7 +814,7 @@ public class BcCertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString());
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString());
         }
 
     }

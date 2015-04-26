@@ -93,6 +93,7 @@ import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1200,7 +1201,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1229,7 +1230,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1260,7 +1261,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1288,7 +1289,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -1887,7 +1888,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": "+ id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": "+ id + " failed - exception " + e.toString(), e);
         }
 
     }
@@ -2647,7 +2648,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + System.getProperty("line.separator") + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
         }
     }
 
