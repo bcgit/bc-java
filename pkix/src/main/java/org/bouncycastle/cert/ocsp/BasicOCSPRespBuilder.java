@@ -130,7 +130,7 @@ public class BasicOCSPRespBuilder
         CertificateID       certID,
         CertificateStatus   certStatus)
     {
-        list.add(new ResponseObject(certID, certStatus, new Date(), null, null));
+        this.addResponse(certID, certStatus, new Date(), null, null);
 
         return this;
     }
@@ -145,9 +145,9 @@ public class BasicOCSPRespBuilder
     public BasicOCSPRespBuilder addResponse(
         CertificateID       certID,
         CertificateStatus   certStatus,
-        Extensions      singleExtensions)
+        Extensions          singleExtensions)
     {
-        list.add(new ResponseObject(certID, certStatus, new Date(), null, singleExtensions));
+        this.addResponse(certID, certStatus, new Date(), null, singleExtensions);
 
         return this;
     }
@@ -164,13 +164,32 @@ public class BasicOCSPRespBuilder
         CertificateID       certID,
         CertificateStatus   certStatus,
         Date                nextUpdate,
-        Extensions      singleExtensions)
+        Extensions          singleExtensions)
     {
-        list.add(new ResponseObject(certID, certStatus, new Date(), nextUpdate, singleExtensions));
+        this.addResponse(certID, certStatus, new Date(), nextUpdate, singleExtensions);
 
         return this;
     }
-    
+
+    /**
+     * Add a response for a particular Certificate ID.
+     *
+     * @param certID certificate ID details
+     * @param thisUpdate date this response was valid on
+     * @param nextUpdate date when next update should be requested
+     * @param certStatus status of the certificate - null if okay
+     */
+    public BasicOCSPRespBuilder addResponse(
+        CertificateID       certID,
+        CertificateStatus   certStatus,
+        Date                thisUpdate,
+        Date                nextUpdate)
+    {
+        this.addResponse(certID, certStatus, thisUpdate, nextUpdate, null);
+
+        return this;
+    }
+
     /**
      * Add a response for a particular Certificate ID.
      * 
@@ -185,9 +204,9 @@ public class BasicOCSPRespBuilder
         CertificateStatus   certStatus,
         Date                thisUpdate,
         Date                nextUpdate,
-        Extensions      singleExtensions)
+        Extensions          singleExtensions)
     {
-        list.add(new ResponseObject(certID, certStatus, thisUpdate, nextUpdate, singleExtensions));
+        this.addResponse(certID, certStatus, thisUpdate, nextUpdate, singleExtensions);
 
         return this;
     }
