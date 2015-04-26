@@ -26,7 +26,7 @@ public final class Strings
            }
            catch (Exception ef)
            {
-               LINE_SEPARATOR = "\n";   // we're desperate use this...
+               LINE_SEPARATOR = "\n";   // we're desperate, use this...
            }
        }
     }
