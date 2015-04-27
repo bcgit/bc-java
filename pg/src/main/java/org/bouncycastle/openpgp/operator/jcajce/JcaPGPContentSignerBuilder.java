@@ -13,6 +13,7 @@ import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -142,8 +143,8 @@ public class JcaPGPContentSignerBuilder
                     return signature.sign();
                 }
                 catch (SignatureException e)
-                {    // TODO: need a specific runtime exception for PGP operators.
-                    throw new IllegalStateException("unable to create signature");
+                {
+                    throw new PGPRuntimeOperationException("Unable to create signature: " + e.getMessage(), e);
                 }
             }
 
