@@ -50,7 +50,8 @@ public class DERApplicationSpecific
 
         byte[] data = primitive.getEncoded(ASN1Encoding.DER);
 
-        this.isConstructed = explicit || (primitive instanceof ASN1Set || primitive instanceof ASN1Sequence);
+        this.isConstructed = explicit || (primitive instanceof ASN1Set || primitive instanceof ASN1Sequence
+            || primitive instanceof ASN1TaggedObject || primitive instanceof ASN1Choice || primitive instanceof BEROctetString);
         this.tag = tag;
 
         if (explicit)
