@@ -109,7 +109,7 @@ public class SMIMESignedParser
         {
             OutputStream   out = new BufferedOutputStream(new FileOutputStream(backingFile));
 
-            SMIMEUtil.outputBodyPart(out, bodyPart, defaultContentTransferEncoding);
+            SMIMEUtil.outputBodyPart(out, true, bodyPart, defaultContentTransferEncoding);
 
             out.close();
 

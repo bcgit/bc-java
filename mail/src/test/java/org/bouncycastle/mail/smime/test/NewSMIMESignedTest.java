@@ -29,6 +29,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -1189,6 +1190,29 @@ public class NewSMIMESignedTest
         SMIMESigned s = new SMIMESigned((MimeMultipart)message.getContent());
 
         verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
+    public void testDoubleNlCanonical()
+        throws Exception
+    {
+        MimeMessage message = loadMessage("3nnn_smime.eml");
+
+        SMIMESigned s = new SMIMESigned((MimeMultipart)message.getContent());
+
+        Collection              c = s.getSignerInfos().getSigners();
+        Iterator                it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation   signer = (SignerInformation)it.next();
+            Collection          certCollection = s.getCertificates().getMatches(signer.getSID());
+
+            Iterator        certIt = certCollection.iterator();
+            X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
+
+            // in this case the sig is invalid, but it's the lack of an exception from the content digest we're looking for
+            Assert.assertFalse(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
+        }
     }
 
     public void testSignAttachmentOnly()

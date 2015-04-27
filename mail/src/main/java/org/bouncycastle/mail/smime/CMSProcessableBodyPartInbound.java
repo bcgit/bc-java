@@ -51,7 +51,7 @@ public class CMSProcessableBodyPartInbound
     {
         try
         {
-            SMIMEUtil.outputBodyPart(out, bodyPart, defaultContentTransferEncoding);
+            SMIMEUtil.outputBodyPart(out, true, bodyPart, defaultContentTransferEncoding);
         }
         catch (MessagingException e)
         {
