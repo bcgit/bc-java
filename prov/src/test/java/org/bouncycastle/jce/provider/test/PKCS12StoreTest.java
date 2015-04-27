@@ -470,6 +470,66 @@ public class PKCS12StoreTest
       + "CgYGKoUDAgIJBQAEIJbGZorQsNM63+xozwEI561cTFVCbyHAEEpkvF3eijT8"
       + "BAgY5sDtkrVeBQICCAA=");
 
+    byte[] certChainCycle = Base64.decode(
+        "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"
+      + "GOtPKKbIhe5YCbkCAgQA");
+
     /**
      * we generate a self signed certificate for the sake of testing - RSA
      */
@@ -1175,6 +1235,17 @@ public class PKCS12StoreTest
         }
     }
 
+    private void testChainCycle()
+        throws Exception
+    {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+
+        // initialize key store
+        keyStore.load(new ByteArrayInputStream(certChainCycle), "test".toCharArray());
+
+        keyStore.getEntry("cycle", new KeyStore.PasswordProtection("test".toCharArray()));
+    }
+
     public String getName()
     {
         return "PKCS12Store";
@@ -1185,6 +1256,7 @@ public class PKCS12StoreTest
     {
         testPKCS12Store();
         testGOSTStore();
+        testChainCycle();
 
         // converter tests
 
