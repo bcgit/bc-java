@@ -56,6 +56,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -68,6 +69,7 @@ class X509CertificateObject
     extends X509Certificate
     implements PKCS12BagAttributeCarrier
 {
+    private JcaJceHelper bcHelper;
     private org.bouncycastle.asn1.x509.Certificate    c;
     private BasicConstraints            basicConstraints;
     private boolean[]                   keyUsage;
@@ -77,9 +79,11 @@ class X509CertificateObject
     private PKCS12BagAttributeCarrier   attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
     public X509CertificateObject(
+        JcaJceHelper bcHelper,
         org.bouncycastle.asn1.x509.Certificate    c)
         throws CertificateParsingException
     {
+        this.bcHelper = bcHelper;
         this.c = c;
 
         try
@@ -729,7 +733,7 @@ class X509CertificateObject
         
         try
         {
-            signature = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
+            signature = bcHelper.createSignature(sigName);
         }
         catch (Exception e)
         {
@@ -748,7 +752,7 @@ class X509CertificateObject
         String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
         Signature signature;
 
-        if (sigProvider  != null)
+        if (sigProvider != null)
         {
             signature = Signature.getInstance(sigName, sigProvider);
         }
