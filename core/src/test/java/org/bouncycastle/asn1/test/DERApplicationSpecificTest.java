@@ -5,6 +5,8 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -34,9 +36,59 @@ public class DERApplicationSpecificTest
         return "DERApplicationSpecific";
     }
 
+    private void testTaggedObject()
+                throws Exception
+    {
+        // boolean explicit, int tagNo, ASN1Encodable obj
+        boolean explicit = false;
+
+        // Type1 ::= VisibleString
+        DERVisibleString type1 = new DERVisibleString("Jones");
+        if (!Arrays.areEqual(Hex.decode("1A054A6F6E6573"), type1.getEncoded()))
+        {
+            fail("ERROR: expected value doesn't match!");
+        }
+
+        // Type2 ::= [APPLICATION 3] IMPLICIT Type1
+        explicit = false;
+        DERApplicationSpecific type2 = new DERApplicationSpecific(explicit, 3, type1);
+        // type2.isConstructed()
+        if (!Arrays.areEqual(Hex.decode("43054A6F6E6573"), type2.getEncoded()))
+        {
+            fail("ERROR: expected value doesn't match!");
+        }
+
+        // Type3 ::= [2] Type2
+        explicit = true;
+        DERTaggedObject type3 = new DERTaggedObject(explicit, 2, type2);
+        if (!Arrays.areEqual(Hex.decode("A20743054A6F6E6573"), type3.getEncoded()))
+        {
+            fail("ERROR: expected value doesn't match!");
+        }
+
+        // Type4 ::= [APPLICATION 7] IMPLICIT Type3
+        explicit = false;
+        DERApplicationSpecific type4 = new DERApplicationSpecific(explicit, 7, type3);
+        if (!Arrays.areEqual(Hex.decode("670743054A6F6E6573"), type4.getEncoded()))
+        {
+            fail("ERROR: expected value doesn't match!");
+        }
+
+        // Type5 ::= [2] IMPLICIT Type2
+        explicit = false;
+        DERTaggedObject type5 = new DERTaggedObject(explicit, 2, type2);
+        // type5.isConstructed()
+        if (!Arrays.areEqual(Hex.decode("82054A6F6E6573"), type5.getEncoded()))
+        {
+            fail("ERROR: expected value doesn't match!");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        testTaggedObject();
+
         ASN1Integer value = new ASN1Integer(9);
 
         DERApplicationSpecific tagged = new DERApplicationSpecific(false, 3, value);
