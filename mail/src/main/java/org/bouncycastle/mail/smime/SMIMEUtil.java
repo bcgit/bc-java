@@ -17,8 +17,8 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSTypedStream;
-import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
 
@@ -258,6 +258,7 @@ public class SMIMEUtil
 
     static void outputBodyPart(
         OutputStream out,
+        boolean      topLevel,
         BodyPart     bodyPart,
         String       defaultContentTransferEncoding) 
         throws MessagingException, IOException
@@ -291,20 +292,23 @@ public class SMIMEUtil
                 {
                     lOut.writeln(boundary);
                     BodyPart part = mp.getBodyPart(i);
-                    outputBodyPart(out, part, defaultContentTransferEncoding);
+                    outputBodyPart(out, false, part, defaultContentTransferEncoding);
                     if (!(part.getContent() instanceof MimeMultipart))
                     {
                         lOut.writeln();       // CRLF terminator needed
                     }
                     else
-                    {
+                    {                        // output nested preamble
                         outputPostamble(lOut, mimePart, boundary, part);
                     }
                 }
 
                 lOut.writeln(boundary + "--");
-     
-                outputPostamble(lOut, mimePart, mp.getCount(), boundary);
+
+                if (topLevel)
+                {
+                    outputPostamble(lOut, mimePart, mp.getCount(), boundary);
+                }
 
                 return;
             }
@@ -504,7 +508,7 @@ public class SMIMEUtil
     {
         try
         {
-            return new IssuerAndSerialNumber(PrincipalUtil.getIssuerX509Principal(cert), cert.getSerialNumber());        
+            return new IssuerAndSerialNumber(new JcaX509CertificateHolder(cert).getIssuer(), cert.getSerialNumber());
         }
         catch (Exception e)
         {
