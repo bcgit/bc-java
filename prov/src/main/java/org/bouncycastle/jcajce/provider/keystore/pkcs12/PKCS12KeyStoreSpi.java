@@ -446,14 +446,21 @@ public class PKCS12KeyStoreSpi
                     }
                 }
 
-                cs.addElement(c);
-                if (nextC != c)     // self signed - end of the chain
+                if (cs.contains(c))
                 {
-                    c = nextC;
+                    c = null;          // we've got a certificate chain loop time to stop
                 }
                 else
                 {
-                    c = null;
+                    cs.addElement(c);
+                    if (nextC != c)     // self signed - end of the chain
+                    {
+                        c = nextC;
+                    }
+                    else
+                    {
+                        c = null;
+                    }
                 }
             }
 
