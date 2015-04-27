@@ -40,8 +40,8 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -57,6 +57,7 @@ import org.bouncycastle.util.encoders.Hex;
 class X509CRLObject
     extends X509CRL
 {
+    private JcaJceHelper bcHelper;
     private CertificateList c;
     private String sigAlgName;
     private byte[] sigAlgParams;
@@ -81,9 +82,11 @@ class X509CRLObject
     }
 
     protected X509CRLObject(
+        JcaJceHelper bcHelper,
         CertificateList c)
         throws CRLException
     {
+        this.bcHelper = bcHelper;
         this.c = c;
         
         try
@@ -203,21 +206,27 @@ class X509CRLObject
     }
 
     public void verify(PublicKey key)
-        throws CRLException,  NoSuchAlgorithmException,
-            InvalidKeyException, NoSuchProviderException, SignatureException
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        verify(key, BouncyCastleProvider.PROVIDER_NAME);
+        Signature sig;
+
+        try
+        {
+            sig = bcHelper.createSignature(getSigAlgName());
+        }
+        catch (Exception e)
+        {
+            sig = Signature.getInstance(getSigAlgName());
+        }
+
+        doVerify(key, sig);
     }
 
     public void verify(PublicKey key, String sigProvider)
         throws CRLException, NoSuchAlgorithmException,
-            InvalidKeyException, NoSuchProviderException, SignatureException
+        InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
-        {
-            throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
-        }
-
         Signature sig;
 
         if (sigProvider != null)
@@ -229,6 +238,18 @@ class X509CRLObject
             sig = Signature.getInstance(getSigAlgName());
         }
 
+        doVerify(key, sig);
+    }
+
+    private void doVerify(PublicKey key, Signature sig)
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
+        {
+            throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
+        }
+
         sig.initVerify(key);
         sig.update(this.getTBSCertList());
 
@@ -237,6 +258,7 @@ class X509CRLObject
             throw new SignatureException("CRL does not verify with supplied public key.");
         }
     }
+
 
     public int getVersion()
     {
