@@ -27,9 +27,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import junit.framework.Assert;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Test;
 
 public class CertPathValidatorTest
     extends SimpleTest
@@ -272,6 +274,41 @@ public class CertPathValidatorTest
             (PKIXCertPathValidatorResult) cpv.validate(cp, param);
     }
 
+    public void testEmptyPath()
+        throws Exception
+    {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+        X509Certificate rootCert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(CertPathTest.rootCertBin));
+
+        List list = new ArrayList();
+        list.add(rootCert);
+        CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
+        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+
+        List certchain = new ArrayList();
+        CertPath cp = CertificateFactory.getInstance("X.509","BC").generateCertPath(certchain);
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(rootCert, null));
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX","BC");
+        PKIXParameters param = new PKIXParameters(trust);
+        param.addCertStore(store);
+        MyChecker checker = new MyChecker();
+        param.addCertPathChecker(checker);
+
+        try
+        {
+            cpv.validate(cp, param);
+        }
+        catch (CertPathValidatorException e)
+        {
+            if (!"Certification path is empty.".equals(e.getMessage()))
+            {
+                fail("message mismatch");
+            }
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -373,6 +410,7 @@ public class CertPathValidatorTest
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();
         validateWithExtendedKeyUsage();
+        testEmptyPath();
     }
 
         // extended key usage chain
