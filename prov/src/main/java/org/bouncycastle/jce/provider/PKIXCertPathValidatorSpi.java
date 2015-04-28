@@ -95,7 +95,7 @@ public class PKIXCertPathValidatorSpi
 
         if (certs.isEmpty())
         {
-            throw new CertPathValidatorException("Certification path is empty.", null, certPath, 0);
+            throw new CertPathValidatorException("Certification path is empty.", null, certPath, -1);
         }
 
         //
