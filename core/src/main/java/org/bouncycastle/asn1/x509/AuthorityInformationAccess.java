@@ -43,7 +43,12 @@ public class AuthorityInformationAccess
 
         return null;
     }
- 
+
+    public static AuthorityInformationAccess fromExtensions(Extensions extensions)
+    {
+         return AuthorityInformationAccess.getInstance(extensions.getExtensionParsedValue(Extension.authorityInfoAccess));
+    }
+
     private AuthorityInformationAccess(
         ASN1Sequence   seq)
     {
