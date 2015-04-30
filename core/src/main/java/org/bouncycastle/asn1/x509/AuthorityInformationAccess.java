@@ -68,7 +68,14 @@ public class AuthorityInformationAccess
     public AuthorityInformationAccess(
         AccessDescription description)
     {
-        this.descriptions = new AccessDescription[]{ description };
+        this(new AccessDescription[]{ description });
+    }
+
+    public AuthorityInformationAccess(
+        AccessDescription[] descriptions)
+    {
+        this.descriptions = new AccessDescription[descriptions.length];
+        System.arraycopy(descriptions, 0, this.descriptions, 0, descriptions.length);
     }
 
     /**
