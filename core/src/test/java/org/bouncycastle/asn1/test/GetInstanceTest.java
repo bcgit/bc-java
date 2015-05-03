@@ -819,8 +819,8 @@ public class GetInstanceTest
         PolicyQualifierInfo.getInstance(null);
         PrivateKeyUsagePeriod.getInstance(null);
         doFullGetInstanceTest(RoleSyntax.class, new RoleSyntax(new GeneralNames(new GeneralName(new X500Name("CN=Test"))), new GeneralName(GeneralName.uniformResourceIdentifier, "http://bc")));
-        RSAPublicKeyStructure.getInstance(null);
-        RSAPublicKeyStructure.getInstance(null);
+        org.bouncycastle.asn1.pkcs.RSAPublicKey.getInstance(null);
+        RSAPublicKey.getInstance(null);
         SubjectDirectoryAttributes.getInstance(null);
         SubjectKeyIdentifier.getInstance(null);
         SubjectKeyIdentifier.getInstance(null);

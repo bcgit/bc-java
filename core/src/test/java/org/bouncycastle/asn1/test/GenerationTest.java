@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAPublicKey;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -102,7 +103,7 @@ public class GenerationTest
         gen.setSignature(new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
 
         SubjectPublicKeyInfo    info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
-                                                     new RSAPublicKeyStructure(BigInteger.valueOf(1), BigInteger.valueOf(2)));
+                                                     new RSAPublicKey(BigInteger.valueOf(1), BigInteger.valueOf(2)));
 
         gen.setSubjectPublicKeyInfo(info);
 
