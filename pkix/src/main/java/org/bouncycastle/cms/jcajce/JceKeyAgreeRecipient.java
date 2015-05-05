@@ -27,8 +27,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipient;
-import org.bouncycastle.jce.spec.MQVPrivateKeySpec;
-import org.bouncycastle.jce.spec.MQVPublicKeySpec;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 
 public abstract class JceKeyAgreeRecipient
     implements KeyAgreeRecipient
@@ -118,16 +117,22 @@ public abstract class JceKeyAgreeRecipient
             KeyFactory fact = helper.createKeyFactory(keyEncAlg.getAlgorithm());
             PublicKey ephemeralKey = fact.generatePublic(pubSpec);
 
-            senderPublicKey = new MQVPublicKeySpec(senderPublicKey, ephemeralKey);
-            receiverPrivateKey = new MQVPrivateKeySpec(receiverPrivateKey, receiverPrivateKey);
+            KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
+
+            agreement.init(receiverPrivateKey, new MQVParameterSpec(null, receiverPrivateKey, ephemeralKey));
+            agreement.doPhase(senderPublicKey, true);
+
+            return agreement.generateSecret(wrapAlg.getId());
         }
+        else
+        {
+            KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
 
-        KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
+            agreement.init(receiverPrivateKey);
+            agreement.doPhase(senderPublicKey, true);
 
-        agreement.init(receiverPrivateKey);
-        agreement.doPhase(senderPublicKey, true);
-
-        return agreement.generateSecret(wrapAlg.getId());
+            return agreement.generateSecret(wrapAlg.getId());
+        }
     }
 
     private Key unwrapSessionKey(ASN1ObjectIdentifier wrapAlg, SecretKey agreedKey, ASN1ObjectIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)

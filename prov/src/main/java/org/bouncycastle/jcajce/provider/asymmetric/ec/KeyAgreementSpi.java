@@ -36,6 +36,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.MQVPrivateKey;
@@ -90,6 +91,7 @@ public class KeyAgreementSpi
     private ECDomainParameters     parameters;
     private BasicAgreement         agreement;
     private DerivationFunction     kdf;
+    private MQVParameterSpec       mqvParameters;
 
     private byte[] bigIntToBytes(
         BigInteger    r)
@@ -127,19 +129,25 @@ public class KeyAgreementSpi
         {
             if (!(key instanceof MQVPublicKey))
             {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                    + getSimpleName(MQVPublicKey.class) + " for doPhase");
+                ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
+                    ECUtil.generatePublicKeyParameter((PublicKey)key);
+                ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
+                    ECUtil.generatePublicKeyParameter(mqvParameters.getOtherPartyEphemeralKey());
+
+                pubKey = new MQVPublicParameters(staticKey, ephemKey);
             }
+            else
+            {
+                MQVPublicKey mqvPubKey = (MQVPublicKey)key;
+                ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
+                    ECUtil.generatePublicKeyParameter(mqvPubKey.getStaticKey());
+                ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
+                    ECUtil.generatePublicKeyParameter(mqvPubKey.getEphemeralKey());
 
-            MQVPublicKey mqvPubKey = (MQVPublicKey)key;
-            ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
-                ECUtil.generatePublicKeyParameter(mqvPubKey.getStaticKey());
-            ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
-                ECUtil.generatePublicKeyParameter(mqvPubKey.getEphemeralKey());
+                pubKey = new MQVPublicParameters(staticKey, ephemKey);
 
-            pubKey = new MQVPublicParameters(staticKey, ephemKey);
-
-            // TODO Validate that all the keys are using the same parameters?
+                // TODO Validate that all the keys are using the same parameters?
+            }
         }
         else
         {
@@ -245,12 +253,12 @@ public class KeyAgreementSpi
         SecureRandom            random) 
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (params != null)
+        if (params != null && !(params instanceof MQVParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
-        initFromKey(key);
+        initFromKey(key, params);
     }
 
     protected void engineInit(
@@ -258,31 +266,55 @@ public class KeyAgreementSpi
         SecureRandom    random) 
         throws InvalidKeyException
     {
-        initFromKey(key);
+        initFromKey(key, null);
     }
 
-    private void initFromKey(Key key)
+    private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
         throws InvalidKeyException
     {
         if (agreement instanceof ECMQVBasicAgreement)
         {
-            if (!(key instanceof MQVPrivateKey))
+            mqvParameters = null;
+            if (!(key instanceof MQVPrivateKey) && !(parameterSpec instanceof MQVParameterSpec))
             {
                 throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                    + getSimpleName(MQVPrivateKey.class) + " for initialisation");
+                    + getSimpleName(MQVParameterSpec.class) + " for initialisation");
             }
 
-            MQVPrivateKey mqvPrivKey = (MQVPrivateKey)key;
-            ECPrivateKeyParameters staticPrivKey = (ECPrivateKeyParameters)
-                ECUtil.generatePrivateKeyParameter(mqvPrivKey.getStaticPrivateKey());
-            ECPrivateKeyParameters ephemPrivKey = (ECPrivateKeyParameters)
-                ECUtil.generatePrivateKeyParameter(mqvPrivKey.getEphemeralPrivateKey());
-
-            ECPublicKeyParameters ephemPubKey = null;
-            if (mqvPrivKey.getEphemeralPublicKey() != null)
+            ECPrivateKeyParameters staticPrivKey;
+            ECPrivateKeyParameters ephemPrivKey;
+            ECPublicKeyParameters ephemPubKey;
+            if (key instanceof MQVPrivateKey)
             {
-                ephemPubKey = (ECPublicKeyParameters)
-                    ECUtil.generatePublicKeyParameter(mqvPrivKey.getEphemeralPublicKey());
+                MQVPrivateKey mqvPrivKey = (MQVPrivateKey)key;
+                staticPrivKey = (ECPrivateKeyParameters)
+                    ECUtil.generatePrivateKeyParameter(mqvPrivKey.getStaticPrivateKey());
+                ephemPrivKey = (ECPrivateKeyParameters)
+                    ECUtil.generatePrivateKeyParameter(mqvPrivKey.getEphemeralPrivateKey());
+
+                ephemPubKey = null;
+                if (mqvPrivKey.getEphemeralPublicKey() != null)
+                {
+                    ephemPubKey = (ECPublicKeyParameters)
+                        ECUtil.generatePublicKeyParameter(mqvPrivKey.getEphemeralPublicKey());
+                }
+            }
+            else
+            {
+                MQVParameterSpec mqvParameterSpec = (MQVParameterSpec)parameterSpec;
+
+                staticPrivKey = (ECPrivateKeyParameters)
+                    ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+                ephemPrivKey = (ECPrivateKeyParameters)
+                    ECUtil.generatePrivateKeyParameter(mqvParameterSpec.getEphemeralPrivateKey());
+
+                ephemPubKey = null;
+                if (mqvParameterSpec.getEphemeralPublicKey() != null)
+                {
+                    ephemPubKey = (ECPublicKeyParameters)
+                        ECUtil.generatePublicKeyParameter(mqvParameterSpec.getEphemeralPublicKey());
+                }
+                mqvParameters = mqvParameterSpec;
             }
 
             MQVPrivateParameters localParams = new MQVPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
