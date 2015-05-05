@@ -20,7 +20,6 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * Note: 
  * <ul>
- * <li>this is based on a draft, and as such is subject to change - don't use this class for anything requiring long term storage.
  * <li>if you are using this to wrap triple-des keys you need to set the
  * parity bits on the key and, if it's a two-key triple-des key, pad it
  * yourself.
