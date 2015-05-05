@@ -15,8 +15,8 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * Wrap keys according to
- * <A HREF="http://www.ietf.org/internet-drafts/draft-ietf-smime-key-wrap-01.txt">
- * draft-ietf-smime-key-wrap-01.txt</A>.
+ * <A HREF="https://www.ietf.org/rfc/rfc3217.txt">
+ * RFC 3217</A>.
  * <p>
  * Note: 
  * <ul>
