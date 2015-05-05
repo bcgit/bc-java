@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jce.spec.MQVPrivateKeySpec;
 import org.bouncycastle.jce.spec.MQVPublicKeySpec;
 import org.bouncycastle.operator.GenericKey;
@@ -123,28 +125,23 @@ public class JceKeyAgreeRecipientInfoGenerator
 
         ASN1ObjectIdentifier keyAgreementOID = keyAgreeAlgorithm.getAlgorithm();
 
-        if (keyAgreementOID.getId().equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
-        {           
-            senderPrivateKey = new MQVPrivateKeySpec(
-                senderPrivateKey, ephemeralKP.getPrivate(), ephemeralKP.getPublic());
-        }
-
         ASN1EncodableVector recipientEncryptedKeys = new ASN1EncodableVector();
         for (int i = 0; i != recipientIDs.size(); i++)
         {
             PublicKey recipientPublicKey = (PublicKey)recipientKeys.get(i);
             KeyAgreeRecipientIdentifier karId = (KeyAgreeRecipientIdentifier)recipientIDs.get(i);
 
+            AlgorithmParameterSpec agreementParamSpec = null;
             if (keyAgreementOID.getId().equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
             {
-                recipientPublicKey = new MQVPublicKeySpec(recipientPublicKey, recipientPublicKey);
+                agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey);
             }
 
             try
             {
                 // Use key agreement to choose a wrap key for this recipient
                 KeyAgreement keyAgreement = helper.createKeyAgreement(keyAgreementOID);
-                keyAgreement.init(senderPrivateKey, random);
+                keyAgreement.init(senderPrivateKey, agreementParamSpec, random);
                 keyAgreement.doPhase(recipientPublicKey, true);
                 SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncryptionAlgorithm.getAlgorithm().getId());
 

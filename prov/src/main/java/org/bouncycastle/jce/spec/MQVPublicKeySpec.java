@@ -7,6 +7,7 @@ import org.bouncycastle.jce.interfaces.MQVPublicKey;
 
 /**
  * Static/ephemeral public key pair for use with ECMQV key agreement
+ * @deprecated use MQVParameterSpec
  */
 public class MQVPublicKeySpec
     implements KeySpec, MQVPublicKey
