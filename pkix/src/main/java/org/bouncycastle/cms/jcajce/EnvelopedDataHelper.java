@@ -302,7 +302,7 @@ public class EnvelopedDataHelper
         }
         catch (GeneralSecurityException e)
         {
-            throw new CMSException("cannot create key pair generator: " + e.getMessage(), e);
+            throw new CMSException("cannot create key agreement: " + e.getMessage(), e);
         }
     }
 
