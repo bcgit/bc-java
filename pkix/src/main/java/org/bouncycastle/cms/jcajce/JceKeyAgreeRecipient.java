@@ -28,6 +28,7 @@ import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipient;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 
 public abstract class JceKeyAgreeRecipient
     implements KeyAgreeRecipient
@@ -106,8 +107,7 @@ public abstract class JceKeyAgreeRecipient
         if (agreeAlg.equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
         {
             byte[] ukmEncoding = userKeyingMaterial.getOctets();
-            MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(
-                ASN1Primitive.fromByteArray(ukmEncoding));
+            MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(ukmEncoding);
 
             SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(
                                                 getPrivateKeyAlgorithmIdentifier(),
@@ -119,7 +119,9 @@ public abstract class JceKeyAgreeRecipient
 
             KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
 
-            agreement.init(receiverPrivateKey, new MQVParameterSpec(null, receiverPrivateKey, ephemeralKey));
+            byte[] ukmKeyingMaterial = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
+
+            agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial));
             agreement.doPhase(senderPublicKey, true);
 
             return agreement.generateSecret(wrapAlg.getId());
@@ -128,7 +130,15 @@ public abstract class JceKeyAgreeRecipient
         {
             KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
 
-            agreement.init(receiverPrivateKey);
+            if (userKeyingMaterial != null)
+            {
+                agreement.init(receiverPrivateKey, new UserKeyingMaterialSpec(userKeyingMaterial.getOctets()));
+            }
+            else
+            {
+                agreement.init(receiverPrivateKey);
+            }
+
             agreement.doPhase(senderPublicKey, true);
 
             return agreement.generateSecret(wrapAlg.getId());
