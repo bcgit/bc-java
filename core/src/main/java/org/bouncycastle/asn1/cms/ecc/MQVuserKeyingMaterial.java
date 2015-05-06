@@ -81,17 +81,16 @@ public class MQVuserKeyingMaterial
     public static MQVuserKeyingMaterial getInstance(
         Object obj)
     {
-        if (obj == null || obj instanceof MQVuserKeyingMaterial)
+        if (obj instanceof MQVuserKeyingMaterial)
         {
             return (MQVuserKeyingMaterial)obj;
         }
-
-        if (obj instanceof ASN1Sequence)
+        else if (obj != null)
         {
-            return new MQVuserKeyingMaterial((ASN1Sequence)obj);
+            return new MQVuserKeyingMaterial(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("Invalid MQVuserKeyingMaterial: " + obj.getClass().getName());
+        return null;
     }
 
     public OriginatorPublicKey getEphemeralPublicKey()
