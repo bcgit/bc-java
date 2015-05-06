@@ -9,6 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -761,6 +762,27 @@ class X509CertificateObject
             signature = Signature.getInstance(sigName);
         }
         
+        checkSignature(key, signature);
+    }
+
+    public final void verify(
+        PublicKey   key,
+        Provider sigProvider)
+        throws CertificateException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        String    sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
+        Signature signature;
+
+        if (sigProvider != null)
+        {
+            signature = Signature.getInstance(sigName, sigProvider);
+        }
+        else
+        {
+            signature = Signature.getInstance(sigName);
+        }
+
         checkSignature(key, signature);
     }
 

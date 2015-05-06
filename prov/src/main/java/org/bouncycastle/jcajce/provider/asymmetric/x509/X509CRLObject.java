@@ -6,6 +6,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -241,6 +242,24 @@ class X509CRLObject
         doVerify(key, sig);
     }
 
+    public void verify(PublicKey key, Provider sigProvider)
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        Signature sig;
+
+        if (sigProvider != null)
+        {
+            sig = Signature.getInstance(getSigAlgName(), sigProvider);
+        }
+        else
+        {
+            sig = Signature.getInstance(getSigAlgName());
+        }
+
+        doVerify(key, sig);
+    }
+
     private void doVerify(PublicKey key, Signature sig)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException, SignatureException
@@ -258,7 +277,6 @@ class X509CRLObject
             throw new SignatureException("CRL does not verify with supplied public key.");
         }
     }
-
 
     public int getVersion()
     {
