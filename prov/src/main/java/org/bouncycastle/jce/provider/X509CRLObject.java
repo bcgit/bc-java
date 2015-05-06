@@ -6,6 +6,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -202,21 +203,27 @@ public class X509CRLObject
     }
 
     public void verify(PublicKey key)
-        throws CRLException,  NoSuchAlgorithmException,
-            InvalidKeyException, NoSuchProviderException, SignatureException
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        verify(key, BouncyCastleProvider.PROVIDER_NAME);
+        Signature sig;
+
+        try
+        {
+            sig = Signature.getInstance(getSigAlgName(), BouncyCastleProvider.PROVIDER_NAME);
+        }
+        catch (Exception e)
+        {
+            sig = Signature.getInstance(getSigAlgName());
+        }
+
+        doVerify(key, sig);
     }
 
     public void verify(PublicKey key, String sigProvider)
         throws CRLException, NoSuchAlgorithmException,
-            InvalidKeyException, NoSuchProviderException, SignatureException
+        InvalidKeyException, NoSuchProviderException, SignatureException
     {
-        if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
-        {
-            throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
-        }
-
         Signature sig;
 
         if (sigProvider != null)
@@ -226,6 +233,36 @@ public class X509CRLObject
         else
         {
             sig = Signature.getInstance(getSigAlgName());
+        }
+
+        doVerify(key, sig);
+    }
+
+    public void verify(PublicKey key, Provider sigProvider)
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        Signature sig;
+
+        if (sigProvider != null)
+        {
+            sig = Signature.getInstance(getSigAlgName(), sigProvider);
+        }
+        else
+        {
+            sig = Signature.getInstance(getSigAlgName());
+        }
+
+        doVerify(key, sig);
+    }
+
+    private void doVerify(PublicKey key, Signature sig)
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
+        {
+            throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
         }
 
         sig.initVerify(key);

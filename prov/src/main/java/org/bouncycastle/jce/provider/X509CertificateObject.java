@@ -788,6 +788,27 @@ public class X509CertificateObject
         checkSignature(key, signature);
     }
 
+    public final void verify(
+        PublicKey   key,
+        Provider    sigProvider)
+        throws CertificateException, NoSuchAlgorithmException,
+        InvalidKeyException, NoSuchProviderException, SignatureException
+    {
+        String sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
+        Signature signature;
+
+        if (sigProvider != null)
+        {
+            signature = Signature.getInstance(sigName, sigProvider);
+        }
+        else
+        {
+            signature = Signature.getInstance(sigName);
+        }
+
+        checkSignature(key, signature);
+    }
+
     private void checkSignature(
         PublicKey key, 
         Signature signature) 
