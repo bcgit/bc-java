@@ -3,10 +3,12 @@ package org.bouncycastle.asn1.ess;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.IssuerSerial;
@@ -79,7 +81,7 @@ public class OtherCertID
         if (otherCertHash.toASN1Primitive() instanceof ASN1OctetString)
         {
             // SHA-1
-            return new AlgorithmIdentifier("1.3.14.3.2.26");
+            return new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
         }
         else
         {
