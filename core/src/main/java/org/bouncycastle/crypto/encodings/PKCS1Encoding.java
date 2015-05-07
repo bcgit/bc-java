@@ -121,8 +121,11 @@ public class PKCS1Encoding
         }
         else
         {
-            this.random = new SecureRandom();
             kParam = (AsymmetricKeyParameter)param;
+            if (!kParam.isPrivate() && forEncryption)
+            {
+                this.random = new SecureRandom();
+            }
         }
 
         engine.init(forEncryption, param);
