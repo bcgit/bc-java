@@ -792,7 +792,7 @@ public class X509CertificateObject
         PublicKey   key,
         Provider    sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException
+        InvalidKeyException, SignatureException
     {
         String sigName = X509SignatureUtil.getSignatureName(c.getSignatureAlgorithm());
         Signature signature;
