@@ -30,6 +30,7 @@ Release 1.53
 <li>PGPPublicKey.getBitStrength() always returned 0 for EC keys. This has been fixed.</li>
 <li>A PKCS12 key store containing a looping certificate chain could cause an OutOfMemoryException. This has been fixed.</li>
 <li>Nested multiparts with irregular post-amble could cause verification issues for the SMIMESigned classes. This has been fixed.</li>
+<li>CMSSignedData now supports verification of signed attributes where the calculated digest uses a different algorithm from the digest used in the signature.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
