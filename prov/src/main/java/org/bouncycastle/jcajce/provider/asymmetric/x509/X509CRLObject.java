@@ -244,7 +244,7 @@ class X509CRLObject
 
     public void verify(PublicKey key, Provider sigProvider)
         throws CRLException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException
+        InvalidKeyException, SignatureException
     {
         Signature sig;
 
@@ -262,7 +262,7 @@ class X509CRLObject
 
     private void doVerify(PublicKey key, Signature sig)
         throws CRLException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException
+        InvalidKeyException, SignatureException
     {
         if (!c.getSignatureAlgorithm().equals(c.getTBSCertList().getSignature()))
         {
