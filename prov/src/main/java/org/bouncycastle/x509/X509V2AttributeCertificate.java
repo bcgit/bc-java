@@ -180,7 +180,7 @@ public class X509V2AttributeCertificate
             throw new CertificateException("Signature algorithm in certificate info not same as outer certificate");
         }
 
-        signature = Signature.getInstance(cert.getSignatureAlgorithm().getObjectId().getId(), provider);
+        signature = Signature.getInstance(cert.getSignatureAlgorithm().getAlgorithm().getId(), provider);
 
         signature.initVerify(key);
 

@@ -827,7 +827,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             try
             {
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
                 workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
@@ -1083,7 +1083,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 workingPublicKey = getNextWorkingKey(certs, index);
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
                 workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (CertPathValidatorException ex)
