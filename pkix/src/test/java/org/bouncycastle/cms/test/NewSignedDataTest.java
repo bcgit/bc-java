@@ -25,6 +25,8 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -63,9 +65,7 @@ import org.bouncycastle.cms.jcajce.JcaSignerId;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -512,6 +512,48 @@ public class NewSignedDataTest
         + "mMg0f0iMS4W8LjNPorjRB+kIosa1deAGPhq0eJ8yr0/s2QR2/WFD5P4aXc8I"
         + "KWleklnIImS3zqiPrq6tl2Bm8DZj7vXlTOwmraSQxUwzCKwYob1yGvNOUQTq"
         + "pG6jxn7jgDawHU1+WjWQe4Q34/pWeGLysxTraMa+Ug9kPe+jy/qRX2xwvKBZ");
+
+    private static byte[] mixedSignedData = Base64.decode(
+              "d4IHBDCCBwAGCSqGSIb3DQEHAqCCBvEwggbtAgEDMQ8wDQYJYIZIAWUDBAID"
+            + "BQAwgbcGCSqEEAGHbgEUAaCBqQSBpjCBowIBADANBglghkgBZQMEAgMFADCB"
+            + "jjBFAgEBBEBIqiDnc0uJgjc1nZX/CyEaB3/j3fbR5Pjxs2/jSQhBy71N0Oh9"
+            + "i5+ZbfvoeUjHeMz0Q4m71H6XuoCIlsQJOor0MEUCAQIEQHhPBcHkCK5QugOE"
+            + "1GPQN/oRNpKlAp1l6Lr/LvSewiKbnWRKT2o3GmIZwuFflzblyiKZwxV+c8kj"
+            + "i4oQmOEhQvSgggQKMIIEBjCCAm6gAwIBAgIBPTANBgkqhkiG9w0BAQsFADBw"
+            + "MQswCQYDVQQGEwJQTDESMBAGA1UECgwJSUNBTyBDU0NBMQ4wDAYDVQQLDAVN"
+            + "U1dpQTE9MDsGA1UEAww0U3lzdGVtIFd5ZGF3YW5pYSBQYXN6cG9ydMOzdyB6"
+            + "IERhbnltaSBCaW9tZXRyeWN6bnltaTAeFw0wNzAzMjcwOTA4MDlaFw0xODAz"
+            + "MjYyMzU5NTlaMFoxCzAJBgNVBAYTAlBMMRIwEAYDVQQKDAlJQ0FPIENTQ0Ex"
+            + "ITAfBgNVBAsMGFBhc3Nwb3J0IERvY3VtZW50IFNpZ25lcjEUMBIGA1UEAwwL"
+            + "Q1BEIE1TV0lBXzgwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCP"
+            + "IvVr66gZQUpLVLxwMedLZMkYqUFhR+qxrDjGYJgy0fVYvds8u6QF+WyLRvGQ"
+            + "BJGjZ+hqXiDVtM2+ljmZm4C4wpDfZVE1e5w6lv8pKctnr1ZTorI0GsbdWIgi"
+            + "oi21WIRdpY9Rwc6gxjVLVlhwqNGhp9NRS2RDnoqy5iCLWXQ7BzlvuALqK0E1"
+            + "e/k96j3kCQ4SOES1fOreR6chFxOfhSrlo5ed6+z+YiM+rErtKAHZtYTUS6qk"
+            + "uC5SMEMDchbPd6eoYJtN5g0IEyyREm9EdLSK38L2Ln29hnVPqlMJ3ewfIRG9"
+            + "+LZ0mv3Bno9yle56tT9Vt2OBZs2MAOsFZQ66Q7+3AgMBAAGjQTA/MA4GA1Ud"
+            + "DwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFEdS9KeSt+Ls"
+            + "eDNSRSjve8QVpj2WMA0GCSqGSIb3DQEBCwUAA4IBgQA7NXSJWoYIuRJANJVR"
+            + "+DhsvA/NOIE0c4W++xUZVY+2/abKXU7AJHdzI4pS6AOtYav2JxOnISITi3D6"
+            + "s453T/Z0gwRY6p1kUjXtHiVj6iCIal8DCYB0voAZrKl1rZWyINiMKjugNGyy"
+            + "vD6RHMuoKer07uKkgmusV23FIZaCQTPsP6sb2N5QDmfIp5lywJ+rMpJKXKoY"
+            + "Dtu7Aouhveg7DgOpUvIKFdc4eY1MYAzPTD8w2vTGTDuNjaL5cZD2HHvYl9i+"
+            + "vhD99nQWTbKStVI6Q0C2Dw3oFONKkH5O7L5bD38C6x9EBW5nGOWrSs+yP9Q1"
+            + "FNEE49snnayvctrRga2qRBK9av8c406GyFOGfnJcl82cl9KWkLGf8aIfnSzq"
+            + "FnhkDHKd9KocRX+dRFdBB5uxC0zm/XtIqB1TbTx3J88O5Ool55zFw0ECz/NX"
+            + "ecpKwk42uKOEOUcN4Etx09OuSn2+WU2ngW/CHc/T5kS3U61U5vsoTVJT3uTS"
+            + "1uRRYzcMcDc8+kwxggINMIICCQIBATB1MHAxCzAJBgNVBAYTAlBMMRIwEAYD"
+            + "VQQKDAlJQ0FPIENTQ0ExDjAMBgNVBAsMBU1TV2lBMT0wOwYDVQQDDDRTeXN0"
+            + "ZW0gV3lkYXdhbmlhIFBhc3pwb3J0w7N3IHogRGFueW1pIEJpb21ldHJ5Y3pu"
+            + "eW1pAgE9MA0GCWCGSAFlAwQCAwUAoGswGAYJKoZIhvcNAQkDMQsGCSqEEAGH"
+            + "bgEUATBPBgkqhkiG9w0BCQQxQgRAc6WCN4gqBWPSabO9SgkLfD2hTZeYU+cQ"
+            + "vbMeZW/em0v4/r0ggaustPjLW1Qmx8QWnfMHgEuojCVpyPLOYEBpZzANBgkq"
+            + "hkiG9w0BAQUFAASCAQAQBbSJOZFDx7uU2sQE1zkB5Vvds329kO+NY7ueWnGN"
+            + "a5GaIs2ri1g1xZSDsz+QWRoT4sIIV5CmiWx6lPHxWv3be1xtfVux9KqRZgEy"
+            + "xPQdANyDHaqqJr01ROQuKUJfqVSqiGe4/Udd0nFcBT9DyQWLn3HinOriEZga"
+            + "HxxN0ZjpoIEiPa+NIth1W+W3Z7yt4JUM/zX0iyhza/bPHbPOLrsXZAhGy/qn"
+            + "/JNmKBiVxuxZYYHI20CZHrgjb+ARczWuOJuBVEGEgbW/t7hMVX8X+MPAzZek"
+            + "Ndi9ZfkurEeYdDpGluYBH910/P95ibG8nrJyTaoxhmOJhJ/o/SO54m8oDlI0");
 
     public NewSignedDataTest(String name)
     {
@@ -2006,6 +2048,31 @@ public class NewSignedDataTest
         CMSSignedData rsData = new CMSSignedData(sData.getEncoded());
 
         assertEquals(2, rsData.getCertificates().getMatches(null).size());
+    }
+
+    public void testMixed()
+        throws Exception
+    {
+        DERApplicationSpecific derApplicationSpecific = (DERApplicationSpecific)ASN1Primitive.fromByteArray(mixedSignedData);
+
+        CMSSignedData s = new CMSSignedData(new ByteArrayInputStream(derApplicationSpecific.getContents()));
+
+        Store certs = s.getCertificates();
+
+        SignerInformationStore  signers = s.getSignerInfos();
+        Collection              c = signers.getSigners();
+        Iterator                it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation   signer = (SignerInformation)it.next();
+            Collection          certCollection = certs.getMatches(signer.getSID());
+
+            Iterator        certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+        }
     }
 
     private void testSample(String sigName)
