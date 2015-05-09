@@ -197,7 +197,7 @@ public class PKCS10CertRequestTest
             fail("Failed verify check EC uncompressed encoded.");
         }
         
-        if (!req.getSignatureAlgorithm().getObjectId().equals(algOid))
+        if (!req.getSignatureAlgorithm().getAlgorithm().equals(algOid))
         {
             fail("ECDSA oid incorrect.");
         }
@@ -282,7 +282,7 @@ public class PKCS10CertRequestTest
             fail("Failed verify check EC uncompressed encoded.");
         }
 
-        if (!req.getSignatureAlgorithm().getObjectId().equals(algOid))
+        if (!req.getSignatureAlgorithm().getAlgorithm().equals(algOid))
         {
             fail("ECDSA oid incorrect.");
         }
@@ -332,7 +332,7 @@ public class PKCS10CertRequestTest
             fail("Failed verify check EC encoded.");
         }
 
-        if (!req.getSignatureAlgorithm().getObjectId().equals(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001))
+        if (!req.getSignatureAlgorithm().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001))
         {
             fail("ECGOST oid incorrect.");
         }
@@ -389,7 +389,7 @@ public class PKCS10CertRequestTest
             fail("Failed verify check PSS encoded.");
         }
 
-        if (!req.getSignatureAlgorithm().getObjectId().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        if (!req.getSignatureAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
         {
             fail("PSS oid incorrect.");
         }

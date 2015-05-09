@@ -82,9 +82,9 @@ public class PKCS12Util
         {
             int itCount = mData.getIterationCount().intValue();
             byte[] data = ASN1OctetString.getInstance(info.getContent()).getOctets();
-            byte[] res = calculatePbeMac(mData.getMac().getAlgorithmId().getObjectId(), mData.getSalt(), itCount, passwd, data, provider);
+            byte[] res = calculatePbeMac(mData.getMac().getAlgorithmId().getAlgorithm(), mData.getSalt(), itCount, passwd, data, provider);
 
-            AlgorithmIdentifier algId = new AlgorithmIdentifier(mData.getMac().getAlgorithmId().getObjectId(), DERNull.INSTANCE);
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(mData.getMac().getAlgorithmId().getAlgorithm(), DERNull.INSTANCE);
             DigestInfo dInfo = new DigestInfo(algId, res);
 
             mData = new MacData(dInfo, mData.getSalt(), itCount);

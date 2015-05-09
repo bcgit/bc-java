@@ -70,7 +70,7 @@ public class ECKeyUtil
         {
             SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(ASN1Primitive.fromByteArray(key.getEncoded()));
 
-            if (info.getAlgorithmId().getObjectId().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+            if (info.getAlgorithmId().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
             {
                 throw new IllegalArgumentException("cannot convert GOST key to explicit parameters.");
             }
@@ -160,7 +160,7 @@ public class ECKeyUtil
         {
             PrivateKeyInfo info = PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(key.getEncoded()));
 
-            if (info.getAlgorithmId().getObjectId().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+            if (info.getAlgorithmId().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
             {
                 throw new UnsupportedEncodingException("cannot convert GOST key to explicit parameters.");
             }

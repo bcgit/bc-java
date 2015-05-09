@@ -5,6 +5,7 @@ import java.util.Random;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -38,7 +39,7 @@ public class LDSSecurityObjectUnitTest
     public void performTest() 
         throws Exception
     {
-        AlgorithmIdentifier  algoId = new AlgorithmIdentifier("1.3.14.3.2.26");
+        AlgorithmIdentifier  algoId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.3.14.3.2.26"));
         DataGroupHash[] datas = new DataGroupHash[2];
       
         datas[0] = new DataGroupHash(1, new DEROctetString(generateHash()));
