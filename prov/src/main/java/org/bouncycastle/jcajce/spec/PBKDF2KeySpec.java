@@ -18,7 +18,7 @@ public class PBKDF2KeySpec
      * @param password password to use as the seed of the PBE key generator.
      * @param salt salt to use in the generator,
      * @param iterationCount iteration count to use in the generator.
-     * @param keySize size of the key to be generated.
+     * @param keySize size of the key to be generated (in bits).
      * @param prf identifier and parameters for the PRF algorithm to use.
      */
     public PBKDF2KeySpec(char[] password, byte[] salt, int iterationCount, int keySize, AlgorithmIdentifier prf)
