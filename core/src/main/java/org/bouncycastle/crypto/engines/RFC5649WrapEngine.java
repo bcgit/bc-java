@@ -133,7 +133,7 @@ public class RFC5649WrapEngine
             Wrapper wrapper = new RFC3394WrapEngine(engine);
             ParametersWithIV paramsWithIV = new ParametersWithIV(param, iv);
             wrapper.init(true, paramsWithIV);
-            return wrapper.wrap(paddedPlaintext, inOff, paddedPlaintext.length);
+            return wrapper.wrap(paddedPlaintext, 0, paddedPlaintext.length);
         }
 
     }
