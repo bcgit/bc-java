@@ -85,7 +85,7 @@ public class X9ECParameters
         ECPoint     g,
         BigInteger  n)
     {
-        this(curve, g, n, ONE, null);
+        this(curve, g, n, null, null);
     }
 
     public X9ECParameters(
@@ -154,11 +154,6 @@ public class X9ECParameters
 
     public BigInteger getH()
     {
-        if (h == null)
-        {
-            return ONE;        // TODO - this should be calculated, it will cause issues with custom curves.
-        }
-
         return h;
     }
 
@@ -184,7 +179,7 @@ public class X9ECParameters
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(1));
+        v.add(new ASN1Integer(ONE));
         v.add(fieldID);
         v.add(new X9Curve(curve, seed));
         v.add(new X9ECPoint(g));
