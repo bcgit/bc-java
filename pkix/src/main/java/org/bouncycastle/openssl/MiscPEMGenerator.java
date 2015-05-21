@@ -85,6 +85,12 @@ public class MiscPEMGenerator
 
             encoding = ((X509CRLHolder)o).getEncoded();
         }
+        else if (o instanceof X509TrustedCertificateBlock)
+        {
+            type = "TRUSTED CERTIFICATE";
+
+            encoding = ((X509TrustedCertificateBlock)o).getEncoded();
+        }
         else if (o instanceof PrivateKeyInfo)
         {
             PrivateKeyInfo info = (PrivateKeyInfo)o;
