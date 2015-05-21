@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -24,18 +26,21 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.CertificateTrustBlock;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
@@ -226,7 +231,7 @@ public class ParserTest
         // PKCS7
         //
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        PEMWriter             pWrt = new PEMWriter(new OutputStreamWriter(bOut));
+        JcaPEMWriter pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
 
         pWrt.writeObject(d);
 
@@ -315,6 +320,54 @@ public class ParserTest
                 fail("decryption of private key data check failed");
             }
         }
+
+        pemRd = openPEMResource("trusted_cert.pem");
+
+        X509TrustedCertificateBlock trusted = (X509TrustedCertificateBlock)pemRd.readObject();
+
+        checkTrustedCert(trusted);
+
+        StringWriter stringWriter = new StringWriter();
+
+        pWrt = new JcaPEMWriter(stringWriter);
+
+        pWrt.writeObject(trusted);
+
+        pWrt.close();
+
+        pemRd = new PEMParser(new StringReader(stringWriter.toString()));
+
+        trusted = (X509TrustedCertificateBlock)pemRd.readObject();
+
+        checkTrustedCert(trusted);
+    }
+
+    private void checkTrustedCert(X509TrustedCertificateBlock trusted)
+    {
+        CertificateTrustBlock trustBlock = trusted.getTrustBlock();
+
+        if (!"Fred".equals(trustBlock.getAlias()))
+        {
+            fail("alias not found");
+        }
+
+        if (trustBlock.getUses().size() != 3)
+        {
+            fail("key purpose usages wrong size");
+        }
+        if (!trustBlock.getUses().contains(KeyPurposeId.id_kp_OCSPSigning))
+        {
+            fail("key purpose use not found");
+        }
+
+        if (trustBlock.getProhibitions().size() != 1)
+        {
+            fail("key purpose prohibitions wrong size");
+        }
+        if (!trustBlock.getProhibitions().contains(KeyPurposeId.id_kp_clientAuth))
+        {
+            fail("key purpose prohibition not found");
+        }
     }
 
     private void keyPairTest(
@@ -324,7 +377,7 @@ public class ParserTest
     {
         PEMParser pemRd;
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        PEMWriter             pWrt = new PEMWriter(new OutputStreamWriter(bOut));
+        JcaPEMWriter             pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
         
         pWrt.writeObject(pair.getPublic());
         
@@ -343,7 +396,7 @@ public class ParserTest
         }
         
         bOut = new ByteArrayOutputStream();
-        pWrt = new PEMWriter(new OutputStreamWriter(bOut));
+        pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
         
         pWrt.writeObject(pair.getPrivate());
         

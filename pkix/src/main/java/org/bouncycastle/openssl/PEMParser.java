@@ -63,7 +63,7 @@ public class PEMParser
         parsers.put("CERTIFICATE REQUEST", new PKCS10CertificationRequestParser());
         parsers.put("NEW CERTIFICATE REQUEST", new PKCS10CertificationRequestParser());
         parsers.put("CERTIFICATE", new X509CertificateParser());
-        parsers.put("TRUSTED CERTIFICATE", new X509CertificateParser());
+        parsers.put("TRUSTED CERTIFICATE", new X509TrustedCertificateParser());
         parsers.put("X509 CERTIFICATE", new X509CertificateParser());
         parsers.put("X509 CRL", new X509CRLParser());
         parsers.put("PKCS7", new PKCS7Parser());
@@ -336,6 +336,29 @@ public class PEMParser
             try
             {
                 return new X509CertificateHolder(obj.getContent());
+            }
+            catch (Exception e)
+            {
+                throw new PEMException("problem parsing cert: " + e.toString(), e);
+            }
+        }
+    }
+
+    private class X509TrustedCertificateParser
+        implements PemObjectParser
+    {
+        /**
+         * Reads in a X509Certificate.
+         *
+         * @return the X509Certificate
+         * @throws java.io.IOException if an I/O error occured
+         */
+        public Object parseObject(PemObject obj)
+            throws IOException
+        {
+            try
+            {
+                return new X509TrustedCertificateBlock(obj.getContent());
             }
             catch (Exception e)
             {
