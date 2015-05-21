@@ -235,13 +235,25 @@ public class BCECPublicKey
             curve = ecP.getCurve();
             ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
 
-            this.ecSpec = new ECParameterSpec(
+            if (ecP.getH() != null)
+            {
+                this.ecSpec = new ECParameterSpec(
                     ellipticCurve,
                     new ECPoint(
-                            ecP.getG().getAffineXCoord().toBigInteger(),
-                            ecP.getG().getAffineYCoord().toBigInteger()),
+                        ecP.getG().getAffineXCoord().toBigInteger(),
+                        ecP.getG().getAffineYCoord().toBigInteger()),
                     ecP.getN(),
                     ecP.getH().intValue());
+            }
+            else
+            {
+                this.ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    new ECPoint(
+                        ecP.getG().getAffineXCoord().toBigInteger(),
+                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    ecP.getN(), 1);      // TODO: not strictly correct... need to fix the test data...
+            }
         }
 
         DERBitString    bits = info.getPublicKeyData();
