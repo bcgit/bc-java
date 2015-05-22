@@ -14,14 +14,10 @@ import java.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.jcajce.JcaX509AttributeCertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.openssl.PEMEncryptor;
-import org.bouncycastle.x509.X509AttributeCertificate;
-import org.bouncycastle.x509.X509V2AttributeCertificate;
 
 /**
  * PEM generator for the original set of PEM objects used in Open SSL.
@@ -83,14 +79,6 @@ public class JcaMiscPEMGenerator
         else if (o instanceof PublicKey)
         {
             return SubjectPublicKeyInfo.getInstance(((PublicKey)o).getEncoded());
-        }
-        else if (o instanceof X509AttributeCertificate)
-        {
-            return new JcaX509AttributeCertificateHolder((X509V2AttributeCertificate)o);
-        }
-        else if (o instanceof PKCS10CertificationRequest)
-        {
-            return new org.bouncycastle.pkcs.PKCS10CertificationRequest(((PKCS10CertificationRequest)o).getEncoded());
         }
 
         return o;

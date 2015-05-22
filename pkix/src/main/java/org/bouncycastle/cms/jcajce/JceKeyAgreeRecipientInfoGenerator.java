@@ -38,8 +38,6 @@ import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
-import org.bouncycastle.jce.spec.MQVPrivateKeySpec;
-import org.bouncycastle.jce.spec.MQVPublicKeySpec;
 import org.bouncycastle.operator.GenericKey;
 
 public class JceKeyAgreeRecipientInfoGenerator
