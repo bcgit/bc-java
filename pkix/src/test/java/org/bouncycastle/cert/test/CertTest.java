@@ -97,7 +97,6 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 public class CertTest
     extends SimpleTest
@@ -2032,7 +2031,7 @@ public class CertTest
 
         if (ext != null)
         {
-            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -2117,7 +2116,7 @@ public class CertTest
 
         if (ext != null)
         {
-            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -3004,6 +3003,15 @@ public class CertTest
         }
 
         return extGen.generate();
+    }
+
+    private static ASN1Primitive fromExtensionValue(
+        byte[]  encodedValue)
+        throws IOException
+    {
+        ASN1OctetString octs = (ASN1OctetString)ASN1Primitive.fromByteArray(encodedValue);
+
+        return ASN1Primitive.fromByteArray(octs.getOctets());
     }
 
     public static void main(
