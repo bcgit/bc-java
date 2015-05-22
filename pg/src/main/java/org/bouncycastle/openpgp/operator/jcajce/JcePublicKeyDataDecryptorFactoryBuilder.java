@@ -7,6 +7,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 
 import javax.crypto.Cipher;
+import javax.crypto.interfaces.DHKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
@@ -19,7 +20,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.jce.interfaces.ElGamalKey;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -195,8 +195,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
         else
         {
-            ElGamalKey k = (ElGamalKey)privKey;
-            int size = (k.getParameters().getP().bitLength() + 7) / 8;
+            DHKey k = (DHKey)privKey;
+            int size = (k.getParams().getP().bitLength() + 7) / 8;
             byte[] tmp = new byte[size];
 
             byte[] bi = secKeyData[0]; // encoded MPI

@@ -54,9 +54,16 @@ class OperatorHelper
 
             final Cipher c = createStreamCipher(encAlgorithm, withIntegrityPacket);
 
-            byte[] iv = new byte[c.getBlockSize()];
+            if (withIntegrityPacket)
+            {
+                byte[] iv = new byte[c.getBlockSize()];
 
-            c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            }
+            else
+            {
+                c.init(Cipher.DECRYPT_MODE, secretKey);
+            }
 
             return new PGPDataDecryptor()
             {

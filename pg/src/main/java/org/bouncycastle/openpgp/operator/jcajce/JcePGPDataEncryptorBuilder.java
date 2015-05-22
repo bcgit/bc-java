@@ -137,11 +137,18 @@ public class JcePGPDataEncryptorBuilder
         {
             c = helper.createStreamCipher(encAlgorithm, withIntegrityPacket);
 
-            byte[] iv = new byte[c.getBlockSize()];
-
             try
             {
-                c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), new IvParameterSpec(iv));
+                if (withIntegrityPacket)
+                {
+                    byte[] iv = new byte[c.getBlockSize()];
+
+                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), new IvParameterSpec(iv));
+                }
+                else
+                {
+                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, keyBytes));
+                }
             }
             catch (InvalidKeyException e)
             {
