@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -168,11 +167,11 @@ public class JcePKCSPBEOutputEncryptorBuilder
                 {
                     if (isPKCS12(encryptionAlg.getAlgorithm()))
                     {
-                        return new GenericKey(encryptionAlg, PBEParametersGenerator.PKCS5PasswordToBytes(password));
+                        return new GenericKey(encryptionAlg, PKCS5PasswordToBytes(password));
                     }
                     else
                     {
-                        return new GenericKey(encryptionAlg, PBEParametersGenerator.PKCS12PasswordToBytes(password));
+                        return new GenericKey(encryptionAlg, PKCS12PasswordToBytes(password));
                     }
                 }
             };
@@ -188,5 +187,61 @@ public class JcePKCSPBEOutputEncryptorBuilder
         return algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds)
             || algorithm.on(BCObjectIdentifiers.bc_pbe_sha1_pkcs12)
             || algorithm.on(BCObjectIdentifiers.bc_pbe_sha256_pkcs12);
+    }
+
+    /**
+     * converts a password to a byte array according to the scheme in
+     * PKCS5 (ascii, no padding)
+     *
+     * @param password a character array representing the password.
+     * @return a byte array representing the password.
+     */
+    private static byte[] PKCS5PasswordToBytes(
+        char[]  password)
+    {
+        if (password != null)
+        {
+            byte[]  bytes = new byte[password.length];
+
+            for (int i = 0; i != bytes.length; i++)
+            {
+                bytes[i] = (byte)password[i];
+            }
+
+            return bytes;
+        }
+        else
+        {
+            return new byte[0];
+        }
+    }
+
+    /**
+     * converts a password to a byte array according to the scheme in
+     * PKCS12 (unicode, big endian, 2 zero pad bytes at the end).
+     *
+     * @param password a character array representing the password.
+     * @return a byte array representing the password.
+     */
+    private static byte[] PKCS12PasswordToBytes(
+        char[]  password)
+    {
+        if (password != null && password.length > 0)
+        {
+                                       // +1 for extra 2 pad bytes.
+            byte[]  bytes = new byte[(password.length + 1) * 2];
+
+            for (int i = 0; i != password.length; i ++)
+            {
+                bytes[i * 2] = (byte)(password[i] >>> 8);
+                bytes[i * 2 + 1] = (byte)password[i];
+            }
+
+            return bytes;
+        }
+        else
+        {
+            return new byte[0];
+        }
     }
 }
