@@ -20,12 +20,17 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
+import javax.crypto.interfaces.DHPrivateKey;
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.DHPrivateKeySpec;
+import javax.crypto.spec.DHPublicKeySpec;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -42,16 +47,10 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
-import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.jce.spec.ElGamalParameterSpec;
-import org.bouncycastle.jce.spec.ElGamalPrivateKeySpec;
-import org.bouncycastle.jce.spec.ElGamalPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
@@ -109,7 +108,7 @@ public class JcaPGPKeyConverter
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
             case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
                 ElGamalPublicBCPGKey elK = (ElGamalPublicBCPGKey)publicPk.getKey();
-                ElGamalPublicKeySpec elSpec = new ElGamalPublicKeySpec(elK.getY(), new ElGamalParameterSpec(elK.getP(), elK.getG()));
+                DHPublicKeySpec elSpec = new DHPublicKeySpec(elK.getY(), elK.getP(), elK.getG());
 
                 fact = helper.createKeyFactory("ElGamal");
 
@@ -178,10 +177,10 @@ public class JcaPGPKeyConverter
 
             bcpgKey = new DSAPublicBCPGKey(dP.getP(), dP.getQ(), dP.getG(), dK.getY());
         }
-        else if (pubKey instanceof ElGamalPublicKey)
+        else if (pubKey instanceof DHPublicKey)
         {
-            ElGamalPublicKey eK = (ElGamalPublicKey)pubKey;
-            ElGamalParameterSpec eS = eK.getParameters();
+            DHPublicKey eK = (DHPublicKey)pubKey;
+            DHParameterSpec eS = eK.getParams();
 
             bcpgKey = new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
         }
@@ -303,7 +302,7 @@ public class JcaPGPKeyConverter
             case PGPPublicKey.ELGAMAL_GENERAL:
                 ElGamalPublicBCPGKey elPub = (ElGamalPublicBCPGKey)pubPk.getKey();
                 ElGamalSecretBCPGKey elPriv = (ElGamalSecretBCPGKey)privPk;
-                ElGamalPrivateKeySpec elSpec = new ElGamalPrivateKeySpec(elPriv.getX(), new ElGamalParameterSpec(elPub.getP(), elPub.getG()));
+                DHPrivateKeySpec elSpec = new DHPrivateKeySpec(elPriv.getX(), elPub.getP(), elPub.getG());
 
                 fact = helper.createKeyFactory("ElGamal");
 
@@ -351,7 +350,7 @@ public class JcaPGPKeyConverter
             break;
         case PGPPublicKey.ELGAMAL_ENCRYPT:
         case PGPPublicKey.ELGAMAL_GENERAL:
-            ElGamalPrivateKey esK = (ElGamalPrivateKey)privKey;
+            DHPrivateKey esK = (DHPrivateKey)privKey;
 
             privPk = new ElGamalSecretBCPGKey(esK.getX());
             break;
