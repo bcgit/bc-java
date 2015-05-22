@@ -76,7 +76,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
 
                         String oid = scheme.getAlgorithm().getId();
 
-                        SecretKey key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(oid, password, salt, iterationCount);
+                        SecretKey key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount);
 
                         cipher = helper.createCipher(oid);
                         AlgorithmParameters algParams = helper.createAlgorithmParameters(oid);
