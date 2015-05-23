@@ -8,7 +8,7 @@ public interface PasswordRecipient
     public static final int PKCS5_SCHEME2 = 0;
     public static final int PKCS5_SCHEME2_UTF8 = 1;
 
-    byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+    byte[] calculateDerivedKey(int schemeID, AlgorithmIdentifier derivationAlgorithm, int keySize)
         throws CMSException;
 
     RecipientOperator getRecipientOperator(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier contentEncryptionAlgorithm, byte[] derivedKey, byte[] encryptedEncryptedContentKey)

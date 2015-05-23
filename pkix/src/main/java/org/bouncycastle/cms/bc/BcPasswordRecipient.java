@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -51,10 +52,11 @@ public abstract class BcPasswordRecipient
         }
     }
 
-    public byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+    public byte[] calculateDerivedKey(int schemeID, AlgorithmIdentifier derivationAlgorithm, int keySize)
         throws CMSException
     {
         PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
+        byte[] encodedPassword = (schemeID == PasswordRecipient.PKCS5_SCHEME2) ? PBEParametersGenerator.PKCS5PasswordToBytes(password) : PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password);
 
         PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator();
 

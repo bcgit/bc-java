@@ -11,19 +11,11 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.JcaJceUtils;
 
 class CMSUtils
 {
-    static TBSCertificateStructure getTBSCertificateStructure(
-        X509Certificate cert)
-        throws CertificateEncodingException
-    {
-            return TBSCertificateStructure.getInstance(cert.getTBSCertificate());
-    }
-
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)
         throws CertificateEncodingException
     {

@@ -105,11 +105,9 @@ public class PasswordRecipientInformation
         AlgorithmIdentifier kekAlg = AlgorithmIdentifier.getInstance(info.getKeyEncryptionAlgorithm());
         AlgorithmIdentifier kekAlgParams = AlgorithmIdentifier.getInstance(kekAlg.getParameters());
 
-        byte[] passwordBytes = CMSUtils.getPasswordBytes(pbeRecipient.getPasswordConversionScheme(), pbeRecipient.getPassword());
-
         int keySize = ((Integer)KEYSIZES.get(kekAlgParams.getAlgorithm())).intValue();
 
-        byte[] derivedKey = pbeRecipient.calculateDerivedKey(passwordBytes, this.getKeyDerivationAlgorithm(), keySize);
+        byte[] derivedKey = pbeRecipient.calculateDerivedKey(pbeRecipient.getPasswordConversionScheme(), this.getKeyDerivationAlgorithm(), keySize);
 
         return pbeRecipient.getRecipientOperator(kekAlgParams, messageAlgorithm, derivedKey, info.getEncryptedKey().getOctets());
     }
