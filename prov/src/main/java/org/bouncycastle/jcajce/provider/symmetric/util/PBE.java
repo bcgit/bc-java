@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PKCS12Key;
 
 public interface PBE
 {
@@ -134,6 +135,69 @@ public interface PBE
             }
     
             return generator;
+        }
+
+        /**
+         * construct a key and iv (if necessary) suitable for use with a
+         * Cipher.
+         */
+        public static CipherParameters makePBEParameters(
+            byte[] pbeKey,
+            int scheme,
+            int digest,
+            int keySize,
+            int ivSize,
+            AlgorithmParameterSpec spec,
+            String targetAlgorithm)
+        {
+            if ((spec == null) || !(spec instanceof PBEParameterSpec))
+            {
+                throw new IllegalArgumentException("Need a PBEParameter spec with a PBE key.");
+            }
+
+            PBEParameterSpec        pbeParam = (PBEParameterSpec)spec;
+            PBEParametersGenerator  generator = makePBEGenerator(scheme, digest);
+            byte[]                  key = pbeKey;
+            CipherParameters        param;
+
+//            if (pbeKey.shouldTryWrongPKCS12())
+//            {
+//                key = new byte[2];
+//            }
+
+            generator.init(key, pbeParam.getSalt(), pbeParam.getIterationCount());
+
+            if (ivSize != 0)
+            {
+                param = generator.generateDerivedParameters(keySize, ivSize);
+            }
+            else
+            {
+                param = generator.generateDerivedParameters(keySize);
+            }
+
+            if (targetAlgorithm.startsWith("DES"))
+            {
+                if (param instanceof ParametersWithIV)
+                {
+                    KeyParameter    kParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+
+                    DESParameters.setOddParity(kParam.getKey());
+                }
+                else
+                {
+                    KeyParameter    kParam = (KeyParameter)param;
+
+                    DESParameters.setOddParity(kParam.getKey());
+                }
+            }
+
+            for (int i = 0; i != key.length; i++)
+            {
+                key[i] = 0;
+            }
+
+            return param;
         }
 
         /**

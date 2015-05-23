@@ -18,6 +18,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
+import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
@@ -58,6 +59,10 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.RC5Parameters;
+import org.bouncycastle.jcajce.PBKDF1Key;
+import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
+import org.bouncycastle.jcajce.PKCS12Key;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -88,6 +93,10 @@ public class BaseBlockCipher
     private ParametersWithIV        ivParam;
     private AEADParameters          aeadParams;
 
+    private int keySizeInBits;
+    private int scheme;
+    private int digest;
+
     private int                     ivLength = 0;
 
     private boolean                 padded;
@@ -115,6 +124,23 @@ public class BaseBlockCipher
         BlockCipher engine)
     {
         baseEngine = engine;
+
+        cipher = new BufferedGenericBlockCipher(engine);
+    }
+
+    protected BaseBlockCipher(
+        BlockCipher engine,
+        int scheme,
+        int digest,
+        int keySizeInBits,
+        int ivLength)
+    {
+        baseEngine = engine;
+
+        this.scheme = scheme;
+        this.digest = digest;
+        this.keySizeInBits = keySizeInBits;
+        this.ivLength = ivLength;
 
         cipher = new BufferedGenericBlockCipher(engine);
     }
@@ -456,7 +482,29 @@ public class BaseBlockCipher
         //
         // a note on iv's - if ivLength is zero the IV gets ignored (we don't use it).
         //
-        if (key instanceof BCPBEKey)
+        if (key instanceof PKCS12Key)
+        {
+            PKCS12Key k = (PKCS12Key)key;
+            pbeSpec = (PBEParameterSpec)params;
+            if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(((PKCS12KeyWithParameters)k).getSalt(), ((PKCS12KeyWithParameters)k).getIterationCount());
+            }
+
+            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+        }
+        else if (key instanceof PBKDF1Key)
+        {
+            PBKDF1Key k = (PBKDF1Key)key;
+            pbeSpec = (PBEParameterSpec)params;
+            if (k instanceof PBKDF1KeyWithParameters && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(((PBKDF1KeyWithParameters)k).getSalt(), ((PBKDF1KeyWithParameters)k).getIterationCount());
+            }
+
+            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S1, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+        }
+        else if (key instanceof BCPBEKey)
         {
             BCPBEKey k = (BCPBEKey)key;
 
@@ -505,6 +553,17 @@ public class BaseBlockCipher
             {
                 ivParam = (ParametersWithIV)param;
             }
+        }
+        else if (key instanceof PBEKey)
+        {
+            PBEKey k = (PBEKey)key;
+            pbeSpec = (PBEParameterSpec)params;
+            if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
+            }
+
+            param = PBE.Util.makePBEParameters(k.getEncoded(), scheme, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
         }
         else if (params == null)
         {
