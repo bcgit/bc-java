@@ -23,7 +23,9 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -33,12 +35,14 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.SecretKeySizeProvider;
@@ -657,6 +661,40 @@ public class EnvelopedDataHelper
         }
 
         throw new IllegalStateException("unknown parameter spec: " + paramSpec);
+    }
+
+    SecretKeyFactory createSecretKeyFactory(String keyFactoryAlgorithm)
+        throws NoSuchProviderException, NoSuchAlgorithmException
+    {
+        return helper.createSecretKeyFactory(keyFactoryAlgorithm);
+    }
+
+    byte[] calculateDerivedKey(int schemeID, char[] password, AlgorithmIdentifier derivationAlgorithm, int keySize)
+        throws CMSException
+    {
+        PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
+
+        try
+        {
+            SecretKeyFactory keyFact;
+
+            if (schemeID == PasswordRecipient.PKCS5_SCHEME2)
+            {
+                keyFact = helper.createSecretKeyFactory("PBKDF2with8BIT");
+            }
+            else
+            {
+                keyFact = helper.createSecretKeyFactory("PBKDF2");
+            }
+
+            SecretKey key = keyFact.generateSecret(new PBEKeySpec(password, params.getSalt(), params.getIterationCount().intValue(), keySize));
+
+            return key.getEncoded();
+        }
+        catch (GeneralSecurityException e)
+        {
+             throw new CMSException("Unable to calculate dervied key from password: " + e.getMessage(), e);
+        }
     }
 
     static interface JCECallback
