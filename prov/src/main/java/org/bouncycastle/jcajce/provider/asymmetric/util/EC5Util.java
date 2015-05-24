@@ -163,6 +163,6 @@ public class EC5Util
         ECPoint point,
         boolean withCompression)
     {
-        return curve.createPoint(point.getAffineX(), point.getAffineY(), withCompression);
+        return curve.createPoint(point.getAffineX(), point.getAffineY());
     }
 }
