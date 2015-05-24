@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.ECDHKEKGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -107,7 +108,7 @@ public class KeyAgreementSpi
     private BasicAgreement         agreement;
     private DerivationFunction     kdf;
     private MQVParameterSpec       mqvParameters;
-    private UserKeyingMaterialSpec ukmParameters;
+    private byte[]                 ukmParameters;
 
     private byte[] bigIntToBytes(
         BigInteger    r)
@@ -234,9 +235,9 @@ public class KeyAgreementSpi
             
             int    keySize = ((Integer)algorithms.get(oidAlgorithm)).intValue();
 
-            if (kdf instanceof ConcatenationKDFGenerator)
+            if (ukmParameters != null)
             {
-                KDFParameters params = new KDFParameters(secret, ukmParameters.getUserKeyingMaterial());
+                KDFParameters params = new KDFParameters(secret, ukmParameters);
 
                 byte[] keyBytes = new byte[keySize / 8];
                 kdf.init(params);
@@ -248,8 +249,11 @@ public class KeyAgreementSpi
                 DHKDFParameters params = new DHKDFParameters(new ASN1ObjectIdentifier(oidAlgorithm), keySize, secret);
 
                 byte[] keyBytes = new byte[keySize / 8];
-                kdf.init(params);
-                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+
+                ECDHKEKGenerator kekGen = new ECDHKEKGenerator(new SHA1Digest());
+
+                kekGen.init(params);
+                kekGen.generateBytes(keyBytes, 0, keyBytes.length);
                 secret = keyBytes;
             }
         }
@@ -353,6 +357,7 @@ public class KeyAgreementSpi
                         ECUtil.generatePublicKeyParameter(mqvParameterSpec.getEphemeralPublicKey());
                 }
                 mqvParameters = mqvParameterSpec;
+                ukmParameters = mqvParameterSpec.getUserKeyingMaterial();
             }
 
             MQVPrivateParameters localParams = new MQVPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
@@ -372,7 +377,7 @@ public class KeyAgreementSpi
 
             ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
-            ukmParameters = (UserKeyingMaterialSpec)parameterSpec;
+            ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
             agreement.init(privKey);
         }
     }
@@ -416,7 +421,7 @@ public class KeyAgreementSpi
     {
         public DHwithSHA1KDF()
         {
-            super("ECDHwithSHA1KDF", new ECDHBasicAgreement(), new ECDHKEKGenerator(new SHA1Digest()));
+            super("ECDHwithSHA1KDF", new ECDHBasicAgreement(), new KDF2BytesGenerator(new SHA1Digest()));
         }
     }
 
@@ -425,7 +430,7 @@ public class KeyAgreementSpi
     {
         public MQVwithSHA1KDF()
         {
-            super("ECMQVwithSHA1KDF", new ECMQVBasicAgreement(), new ECDHKEKGenerator(new SHA1Digest()));
+            super("ECMQVwithSHA1KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(new SHA1Digest()));
         }
     }
 

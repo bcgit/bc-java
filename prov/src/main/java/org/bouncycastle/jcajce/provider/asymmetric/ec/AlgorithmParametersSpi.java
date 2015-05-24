@@ -6,7 +6,9 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 
@@ -15,6 +17,11 @@ public class AlgorithmParametersSpi
 {
     private ECParameterSpec ecParameterSpec;
     private String curveName;
+
+    protected boolean isASN1FormatString(String format)
+    {
+        return format == null || format.equals("ASN.1");
+    }
 
     @Override
     protected void engineInit(AlgorithmParameterSpec algorithmParameterSpec)
@@ -34,14 +41,21 @@ public class AlgorithmParametersSpi
     protected void engineInit(byte[] bytes)
         throws IOException
     {
-
+        engineInit(bytes, "ASN.1");
     }
 
     @Override
-    protected void engineInit(byte[] bytes, String s)
+    protected void engineInit(byte[] bytes, String format)
         throws IOException
     {
-
+        if (isASN1FormatString(format))
+        {
+            ecParameterSpec = EC5Util.convertToSpec(X9ECParameters.getInstance(bytes));
+        }
+        else
+        {
+            throw new IOException("Unknown encoded parameters format in AlgorithmParameters object: " + format);
+        }
     }
 
     @Override
@@ -63,19 +77,43 @@ public class AlgorithmParametersSpi
     protected byte[] engineGetEncoded()
         throws IOException
     {
-        return new byte[0];
+        return engineGetEncoded("ASN.1");
     }
 
     @Override
-    protected byte[] engineGetEncoded(String s)
+    protected byte[] engineGetEncoded(String format)
         throws IOException
     {
-        return new byte[0];
+        if (isASN1FormatString(format))
+        {
+            X962Parameters params;
+
+            if (ecParameterSpec == null)     // implicitly CA
+            {
+                params = new X962Parameters(DERNull.INSTANCE);
+            }
+            else
+            {
+                org.bouncycastle.jce.spec.ECParameterSpec ecSpec = EC5Util.convertSpec(ecParameterSpec, false);
+                X9ECParameters ecP = new X9ECParameters(
+                    ecSpec.getCurve(),
+                    ecSpec.getG(),
+                    ecSpec.getN(),
+                    ecSpec.getH(),
+                    ecSpec.getSeed());
+
+                params = new X962Parameters(ecP);
+            }
+
+            return params.getEncoded();
+        }
+
+        throw new IOException("Unknown parameters format in AlgorithmParameters object: " + format);
     }
 
     @Override
     protected String engineToString()
     {
-        return null;
+        return "EC AlgorithmParameters ";
     }
 }
