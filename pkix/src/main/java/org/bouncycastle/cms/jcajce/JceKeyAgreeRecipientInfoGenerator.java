@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
@@ -10,6 +11,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -22,14 +24,17 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientIdentifier;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
+import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -38,7 +43,11 @@ import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.SecretKeySizeProvider;
+import org.bouncycastle.util.Pack;
 
 public class JceKeyAgreeRecipientInfoGenerator
     extends KeyAgreeRecipientInfoGenerator
@@ -51,6 +60,7 @@ public class JceKeyAgreeRecipientInfoGenerator
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     private SecureRandom random;
     private KeyPair ephemeralKP;
+    private SecretKeySizeProvider keySizeProvider = new DefaultSecretKeySizeProvider();
 
     public JceKeyAgreeRecipientInfoGenerator(ASN1ObjectIdentifier keyAgreementOID, PrivateKey senderPrivateKey, PublicKey senderPublicKey, ASN1ObjectIdentifier keyEncryptionOID)
     {
@@ -129,14 +139,29 @@ public class JceKeyAgreeRecipientInfoGenerator
             PublicKey recipientPublicKey = (PublicKey)recipientKeys.get(i);
             KeyAgreeRecipientIdentifier karId = (KeyAgreeRecipientIdentifier)recipientIDs.get(i);
 
-            AlgorithmParameterSpec agreementParamSpec = null;
-            if (keyAgreementOID.getId().equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
-            {
-                agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey);
-            }
-
             try
             {
+                AlgorithmParameterSpec agreementParamSpec = null;
+
+                if (senderPrivateKey instanceof ECKey || senderPrivateKey.getAlgorithm().startsWith("EC"))
+                {
+                    ECCCMSSharedInfo eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyEncryptionAlgorithm.getAlgorithm(), DERNull.INSTANCE),
+                        null, Pack.intToBigEndian(keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm())));
+
+                    if (keyAgreementOID.getId().equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
+                    {
+                        agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, eccInfo.getEncoded(ASN1Encoding.DER));
+                    }
+                    else
+                    {
+                        agreementParamSpec = new UserKeyingMaterialSpec(eccInfo.getEncoded(ASN1Encoding.DER));
+                    }
+                }
+                else
+                {
+                    agreementParamSpec = null; // TODO
+                }
+
                 // Use key agreement to choose a wrap key for this recipient
                 KeyAgreement keyAgreement = helper.createKeyAgreement(keyAgreementOID);
                 keyAgreement.init(senderPrivateKey, agreementParamSpec, random);
@@ -154,9 +179,13 @@ public class JceKeyAgreeRecipientInfoGenerator
 
                 recipientEncryptedKeys.add(new RecipientEncryptedKey(karId, encryptedKey));
             }
+            catch (IOException e)
+            {
+                throw new CMSException("Cannot perform agreement step: " + e.getMessage(), e);
+            }
             catch (GeneralSecurityException e)
             {
-                throw new CMSException("cannot perform agreement step: " + e.getMessage(), e);
+                throw new CMSException("Cannot perform agreement step: " + e.getMessage(), e);
             }
         }
 
