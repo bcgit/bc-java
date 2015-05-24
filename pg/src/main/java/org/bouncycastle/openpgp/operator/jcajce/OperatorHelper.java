@@ -8,6 +8,7 @@ import java.security.Signature;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
+import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -43,6 +44,12 @@ class OperatorHelper
         throws GeneralSecurityException, PGPException
     {
         return helper.createKeyFactory(algorithm);
+    }
+
+    public KeyAgreement createKeyAgreement(String algorithm)
+        throws GeneralSecurityException
+    {
+        return helper.createKeyAgreement(algorithm);
     }
 
     PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
