@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
+import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
@@ -81,6 +82,41 @@ public class ECNamedCurveTable
         }
 
         return oid;
+    }
+
+    /**
+     * return a X9ECParameters object representing the passed in named
+     * curve.
+     *
+     * @param oid the object id of the curve requested
+     * @return a standard name for the curve.
+     */
+    public static String getName(
+        ASN1ObjectIdentifier oid)
+    {
+        String name = NISTNamedCurves.getName(oid);
+
+        if (name == null)
+        {
+            name = SECNamedCurves.getName(oid);
+        }
+
+        if (name == null)
+        {
+            name = TeleTrusTNamedCurves.getName(oid);
+        }
+
+        if (name == null)
+        {
+            name = X962NamedCurves.getName(oid);
+        }
+
+        if (name == null)
+        {
+            name = ECGOST3410NamedCurves.getName(oid);
+        }
+
+        return name;
     }
 
     /**

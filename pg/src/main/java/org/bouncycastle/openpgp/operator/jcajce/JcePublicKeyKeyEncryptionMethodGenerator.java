@@ -2,29 +2,27 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.crypto.EphemeralKeyPair;
-import org.bouncycastle.crypto.KeyEncoder;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -33,7 +31,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
+import org.bouncycastle.openpgp.operator.RFC6637Utils;
 
 public class JcePublicKeyKeyEncryptionMethodGenerator
     extends PublicKeyKeyEncryptionMethodGenerator
@@ -93,29 +91,21 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 X9ECParameters x9Params = PGPUtil.getX9Parameters(ecKey.getCurveOID());
-                ECDomainParameters ecParams = new ECDomainParameters(x9Params.getCurve(), x9Params.getG(), x9Params.getN());
+
+                KeyPairGenerator kpGen = helper.createKeyPairGenerator("EC");
+
+                kpGen.initialize(new ECGenParameterSpec(ECNamedCurveTable.getName(ecKey.getCurveOID())));
+
+                KeyPair ephKP = kpGen.generateKeyPair();
 
                 // Generate the ephemeral key pair
-                ECKeyPairGenerator gen = new ECKeyPairGenerator();
-                gen.init(new ECKeyGenerationParameters(ecParams, random));
+                KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKey.getPublicKeyPacket()));
 
-                EphemeralKeyPairGenerator kGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder()
-                {
-                    public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
-                    {
-                        return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(false);
-                    }
-                });
+                agreement.init(ephKP.getPrivate(), new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new JcaKeyFingerprintCalculator())));
 
-                EphemeralKeyPair ephKp = kGen.generate();
+                agreement.doPhase(keyConverter.getPublicKey(pubKey), true);
 
-                ECPrivateKeyParameters ephPriv = (ECPrivateKeyParameters)ephKp.getKeyPair().getPrivate();
-
-                ECPoint S = PGPUtil.decodePoint(ecKey.getEncodedPoint(), x9Params.getCurve()).multiply(ephPriv.getD()).normalize();
-
-                RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(digestCalculatorProviderBuilder.build().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-
-                Key key = new SecretKeySpec(rfc6637KDFCalculator.createKey(ecKey.getCurveOID(), S, pubKey.getFingerprint()), "AESWrap");
+                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
 
                 Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
 
@@ -124,7 +114,11 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
 
                 byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
-                byte[] VB = new MPInteger(new BigInteger(1, ephKp.getEncodedPublicKey())).getEncoded();
+
+                java.security.spec.ECPoint wPoint = ((java.security.interfaces.ECPublicKey)ephKP.getPublic()).getW();
+                ECPoint publicPoint = x9Params.getCurve().createPoint(wPoint.getAffineX(), wPoint.getAffineY());
+
+                byte[] VB = new MPInteger(new BigInteger(1, publicPoint.getEncoded(false))).getEncoded();
 
                 byte[] rv = new byte[VB.length + 1 + C.length];
 
@@ -160,6 +154,10 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         catch (IOException e)
         {
             throw new PGPException("unable to encode MPI: " + e.getMessage(), e);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("unable to set up ephemeral keys: " + e.getMessage(), e);
         }
     }
 }

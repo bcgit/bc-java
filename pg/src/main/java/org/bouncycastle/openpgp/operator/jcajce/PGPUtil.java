@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
@@ -142,12 +141,6 @@ class PGPUtil
 
     static X9ECParameters getX9Parameters(ASN1ObjectIdentifier curveOID)
     {
-        X9ECParameters x9 = CustomNamedCurves.getByOID(curveOID);
-        if (x9 == null)
-        {
-            x9 = ECNamedCurveTable.getByOID(curveOID);
-        }
-
-        return x9;
+        return ECNamedCurveTable.getByOID(curveOID);
     }
 }
