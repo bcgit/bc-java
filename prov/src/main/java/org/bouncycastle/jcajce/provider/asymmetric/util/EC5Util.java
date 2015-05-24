@@ -14,6 +14,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
@@ -40,6 +41,18 @@ public class EC5Util
                 customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
             }
         }
+    }
+
+    public static ECParameterSpec convertToSpec(
+        X9ECParameters domainParameters)
+    {
+        return new ECParameterSpec(
+            convertCurve(domainParameters.getCurve(), null),  // JDK 1.5 has trouble with this if it's not null...
+            new ECPoint(
+                domainParameters.getG().getAffineXCoord().toBigInteger(),
+                domainParameters.getG().getAffineYCoord().toBigInteger()),
+            domainParameters.getN(),
+            domainParameters.getH().intValue());
     }
 
     public static EllipticCurve convertCurve(

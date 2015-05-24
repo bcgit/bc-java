@@ -12,10 +12,11 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.util.Date;
 
+import javax.crypto.spec.DHParameterSpec;
+
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -106,7 +107,7 @@ public class DSAElGamalKeyRingGenerator
         BigInteger          g = new BigInteger("153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc", 16);
         BigInteger          p = new BigInteger("9494fec095f3b85ee286542b3836fc81a5dd0a0349b4c239dd38744d488cf8e31db8bcb7d33b41abb9e5a33cca9144b1cef332c94bf0573bf047a3aca98cdf3b", 16);
             
-        ElGamalParameterSpec         elParams = new ElGamalParameterSpec(p, g);
+        DHParameterSpec elParams = new DHParameterSpec(p, g);
             
         elgKpg.initialize(elParams);
         

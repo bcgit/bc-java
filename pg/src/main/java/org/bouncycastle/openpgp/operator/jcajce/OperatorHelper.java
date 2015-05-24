@@ -1,9 +1,13 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.InputStream;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Signature;
 
 import javax.crypto.Cipher;
@@ -50,6 +54,12 @@ class OperatorHelper
         throws GeneralSecurityException
     {
         return helper.createKeyAgreement(algorithm);
+    }
+
+    public KeyPairGenerator createKeyPairGenerator(String algorithm)
+        throws GeneralSecurityException
+    {
+        return helper.createKeyPairGenerator(algorithm);
     }
 
     PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
@@ -210,5 +220,11 @@ class OperatorHelper
         }
 
         return createSignature(PGPUtil.getDigestName(hashAlgorithm) + "with" + encAlg);
+    }
+
+    public AlgorithmParameters createAlgorithmParameters(String algorithm)
+        throws NoSuchProviderException, NoSuchAlgorithmException
+    {
+        return helper.createAlgorithmParameters(algorithm);
     }
 }
