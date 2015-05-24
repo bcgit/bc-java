@@ -26,17 +26,21 @@ import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
+import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.ECDHKEKGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.MQVPrivateKey;
@@ -55,6 +59,7 @@ public class KeyAgreementSpi
 {
     private static final X9IntegerConverter converter = new X9IntegerConverter();
     private static final Hashtable algorithms = new Hashtable();
+    private static final Hashtable algorithmNames = new Hashtable();
     private static final Hashtable oids = new Hashtable();
     private static final Hashtable des = new Hashtable();
 
@@ -75,6 +80,16 @@ public class KeyAgreementSpi
         algorithms.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), i192);
         algorithms.put(OIWObjectIdentifiers.desCBC.getId(), i64);
 
+        algorithmNames.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), "AES");
+        algorithmNames.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), "AES");
+        algorithmNames.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), "AES");
+        algorithmNames.put(NISTObjectIdentifiers.id_aes128_wrap.getId(), "AES");
+        algorithmNames.put(NISTObjectIdentifiers.id_aes192_wrap.getId(), "AES");
+        algorithmNames.put(NISTObjectIdentifiers.id_aes256_wrap.getId(), "AES");
+        algorithmNames.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), "DESEDE");
+        algorithmNames.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DESEDE");
+        algorithmNames.put(OIWObjectIdentifiers.desCBC.getId(), "DES");
+
         oids.put("DESEDE", PKCSObjectIdentifiers.des_EDE3_CBC);
         oids.put("AES", NISTObjectIdentifiers.id_aes256_CBC);
         oids.put("DES", OIWObjectIdentifiers.desCBC);
@@ -92,6 +107,7 @@ public class KeyAgreementSpi
     private BasicAgreement         agreement;
     private DerivationFunction     kdf;
     private MQVParameterSpec       mqvParameters;
+    private UserKeyingMaterialSpec ukmParameters;
 
     private byte[] bigIntToBytes(
         BigInteger    r)
@@ -218,12 +234,24 @@ public class KeyAgreementSpi
             
             int    keySize = ((Integer)algorithms.get(oidAlgorithm)).intValue();
 
-            DHKDFParameters params = new DHKDFParameters(new ASN1ObjectIdentifier(oidAlgorithm), keySize, secret);
+            if (kdf instanceof ConcatenationKDFGenerator)
+            {
+                KDFParameters params = new KDFParameters(secret, ukmParameters.getUserKeyingMaterial());
 
-            byte[] keyBytes = new byte[keySize / 8];
-            kdf.init(params);
-            kdf.generateBytes(keyBytes, 0, keyBytes.length);
-            secret = keyBytes;
+                byte[] keyBytes = new byte[keySize / 8];
+                kdf.init(params);
+                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+                secret = keyBytes;
+            }
+            else
+            {
+                DHKDFParameters params = new DHKDFParameters(new ASN1ObjectIdentifier(oidAlgorithm), keySize, secret);
+
+                byte[] keyBytes = new byte[keySize / 8];
+                kdf.init(params);
+                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+                secret = keyBytes;
+            }
         }
         else
         {
@@ -244,7 +272,17 @@ public class KeyAgreementSpi
             DESParameters.setOddParity(secret);
         }
 
-        return new SecretKeySpec(secret, algorithm);
+        return new SecretKeySpec(secret, getAlgorithmName(algorithm));
+    }
+
+    private String getAlgorithmName(String algorithm)
+    {
+        if (algorithmNames.containsKey(algorithm))
+        {
+            return (String)algorithmNames.get(algorithm);
+        }
+
+        return algorithm;
     }
 
     protected void engineInit(
@@ -253,7 +291,7 @@ public class KeyAgreementSpi
         SecureRandom            random) 
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (params != null && !(params instanceof MQVParameterSpec))
+        if (params != null && !(params instanceof MQVParameterSpec || params instanceof UserKeyingMaterialSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
@@ -334,7 +372,7 @@ public class KeyAgreementSpi
 
             ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
-
+            ukmParameters = (UserKeyingMaterialSpec)parameterSpec;
             agreement.init(privKey);
         }
     }
@@ -388,6 +426,24 @@ public class KeyAgreementSpi
         public MQVwithSHA1KDF()
         {
             super("ECMQVwithSHA1KDF", new ECMQVBasicAgreement(), new ECDHKEKGenerator(new SHA1Digest()));
+        }
+    }
+
+    public static class DHwithSHA1CKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA1CKDF()
+        {
+            super("DHwithSHA1CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA1Digest()));
+        }
+    }
+
+    public static class DHwithSHA256CKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA256CKDF()
+        {
+            super("DHwithSHA256CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA256Digest()));
         }
     }
 }

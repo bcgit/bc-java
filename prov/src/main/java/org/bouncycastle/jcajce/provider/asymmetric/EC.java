@@ -28,6 +28,9 @@ public class EC
             provider.addAlgorithm("KeyAgreement." + X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$MQVwithSHA1KDF");
             provider.addAlgorithm("KeyAgreement.ECDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDF");
 
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA1CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256CKDF");
+
             registerOid(provider, X9ObjectIdentifiers.id_ecPublicKey, "EC", new KeyFactorySpi.EC());
             // TODO Should this be an alias for ECDH?
             registerOid(provider, X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme, "EC", new KeyFactorySpi.EC());
