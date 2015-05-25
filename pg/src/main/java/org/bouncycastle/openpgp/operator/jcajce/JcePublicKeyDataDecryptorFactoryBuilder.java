@@ -1,22 +1,27 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.interfaces.ECPrivateKey;
+import java.util.Date;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -28,9 +33,14 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
+import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.encoders.Hex;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
+        // "Anonymous Sender    ", which is the octet sequence
+    private static final byte[] ANONYMOUS_SENDER = Hex.decode("416E6F6E796D6F75732053656E64657220202020");
+
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
@@ -116,7 +126,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
              {
                  if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
                  {
-                     return decryptSessionData(privKey.getPrivateKeyDataPacket(), privKey.getPublicKeyPacket(), secKeyData);
+                     return decryptSessionData(keyConverter, privKey, secKeyData);
                  }
 
                  return decryptSessionData(keyAlgorithm, keyConverter.getPrivateKey(privKey), secKeyData);
@@ -130,9 +140,10 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
          };
     }
 
-    private byte[] decryptSessionData(BCPGKey privateKeyPacket, PublicKeyPacket pubKeyData, byte[][] secKeyData)
+    private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[][] secKeyData)
         throws PGPException
     {
+        PublicKeyPacket pubKeyData = privKey.getPublicKeyPacket();
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
         X9ECParameters x9Params = NISTNamedCurves.getByOID(ecKey.getCurveOID());
 
@@ -147,15 +158,25 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
         System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyEnc.length);
 
-        Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
-
-        ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privateKeyPacket).getX()).normalize();
-
-        RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(digestCalculatorProviderBuilder.build().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-        Key key = new SecretKeySpec(rfc6637KDFCalculator.createKey(ecKey.getCurveOID(), S, fingerprintCalculator.calculateFingerprint(pubKeyData)), "AESWrap");
+        ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
         try
         {
+            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+
+            KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+
+            ECPrivateKey privateKey = (ECPrivateKey)converter.getPrivateKey(privKey);
+
+            agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
+
+            agreement.doPhase(converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator)), true);
+
+            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+
+            Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+
             c.init(Cipher.UNWRAP_MODE, key);
 
             Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
@@ -167,6 +188,18 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             throw new PGPException("error setting asymmetric cipher", e);
         }
         catch (NoSuchAlgorithmException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+        catch (IOException e)
         {
             throw new PGPException("error setting asymmetric cipher", e);
         }
@@ -236,4 +269,20 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             throw new PGPException("exception decrypting session data", e);
         }
     }
+    private static int getKeyLen(int algID)
+        throws PGPException
+    {
+        switch (algID)
+        {
+        case SymmetricKeyAlgorithmTags.AES_128:
+            return 16;
+        case SymmetricKeyAlgorithmTags.AES_192:
+            return 24;
+        case SymmetricKeyAlgorithmTags.AES_256:
+            return 32;
+        default:
+            throw new PGPException("unknown symmetric algorithm ID: " + algID);
+        }
+    }
+
 }

@@ -1,7 +1,11 @@
 package org.bouncycastle.openssl.jcajce;
 
+import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -9,17 +13,15 @@ import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMException;
@@ -50,6 +52,12 @@ class PEMUtilities
         KEYSIZES.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), Integers.valueOf(128));
         KEYSIZES.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), Integers.valueOf(192));
         KEYSIZES.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), Integers.valueOf(256));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC4.getId(), Integers.valueOf(128));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC4, Integers.valueOf(40));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd2_KeyTripleDES_CBC, Integers.valueOf(128));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC, Integers.valueOf(192));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC, Integers.valueOf(128));
+        KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, Integers.valueOf(40));
     }
 
     static int getKeySize(String algorithm)
@@ -77,16 +85,14 @@ class PEMUtilities
         return algOid.getId().startsWith(PKCSObjectIdentifiers.pkcs_12PbeIds.getId());
     }
 
-    public static SecretKey generateSecretKeyForPKCS5Scheme2(String algorithm, char[] password, byte[] salt, int iterationCount)
+    public static SecretKey generateSecretKeyForPKCS5Scheme2(JcaJceHelper helper, String algorithm, char[] password, byte[] salt, int iterationCount)
+        throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException
     {
-        PBEParametersGenerator generator = new PKCS5S2ParametersGenerator();
+        SecretKeyFactory keyGen = helper.createSecretKeyFactory("PBKDF2with8BIT");
 
-        generator.init(
-            PBEParametersGenerator.PKCS5PasswordToBytes(password),
-            salt,
-            iterationCount);
+        SecretKey sKey = keyGen.generateSecret(new PBEKeySpec(password, salt, iterationCount, PEMUtilities.getKeySize(algorithm)));
 
-        return new SecretKeySpec(((KeyParameter)generator.generateDerivedParameters(PEMUtilities.getKeySize(algorithm))).getKey(), algorithm);
+        return new SecretKeySpec(sKey.getEncoded(), algorithm);
     }
 
     static byte[] crypt(
@@ -125,7 +131,6 @@ class PEMUtilities
             padding = "NoPadding";
         }
 
-
         // Figure out algorithm and key size.
         if (dekAlgName.startsWith("DES-EDE"))
         {
@@ -133,17 +138,17 @@ class PEMUtilities
             // "DES-EDE" is actually des2 in OpenSSL-speak!
             // "DES-EDE3" is des3.
             boolean des2 = !dekAlgName.startsWith("DES-EDE3");
-            sKey = getKey(password, alg, 24, iv, des2);
+            sKey = getKey(helper, password, alg, 24, iv, des2);
         }
         else if (dekAlgName.startsWith("DES-"))
         {
             alg = "DES";
-            sKey = getKey(password, alg, 8, iv);
+            sKey = getKey(helper, password, alg, 8, iv);
         }
         else if (dekAlgName.startsWith("BF-"))
         {
             alg = "Blowfish";
-            sKey = getKey(password, alg, 16, iv);
+            sKey = getKey(helper, password, alg, 16, iv);
         }
         else if (dekAlgName.startsWith("RC2-"))
         {
@@ -157,7 +162,7 @@ class PEMUtilities
             {
                 keyBits = 64;
             }
-            sKey = getKey(password, alg, keyBits / 8, iv);
+            sKey = getKey(helper, password, alg, keyBits / 8, iv);
             if (paramSpec == null) // ECB block mode
             {
                 paramSpec = new RC2ParameterSpec(keyBits);
@@ -194,7 +199,7 @@ class PEMUtilities
             {
                 throw new EncryptionException("unknown AES encryption with private key");
             }
-            sKey = getKey(password, "AES", keyBits / 8, salt);
+            sKey = getKey(helper, password, "AES", keyBits / 8, salt);
         }
         else
         {
@@ -225,33 +230,43 @@ class PEMUtilities
     }
 
     private static SecretKey getKey(
+        JcaJceHelper helper,
         char[]  password,
         String  algorithm,
         int     keyLength,
         byte[]  salt)
+        throws PEMException
     {
-        return getKey(password, algorithm, keyLength, salt, false);
+        return getKey(helper, password, algorithm, keyLength, salt, false);
     }
 
     private static SecretKey getKey(
+        JcaJceHelper helper,
         char[]  password,
         String  algorithm,
         int     keyLength,
         byte[]  salt,
         boolean des2)
+        throws PEMException
     {
-        OpenSSLPBEParametersGenerator   pGen = new OpenSSLPBEParametersGenerator();
-
-        pGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(password), salt);
-
-        KeyParameter keyParam;
-        keyParam = (KeyParameter) pGen.generateDerivedParameters(keyLength * 8);
-        byte[] key = keyParam.getKey();
-        if (des2 && key.length >= 24)
+        try
         {
-            // For DES2, we must copy first 8 bytes into the last 8 bytes.
-            System.arraycopy(key, 0, key, 16, 8);
+            PBEKeySpec spec = new PBEKeySpec(password, salt, 1, keyLength * 8);
+            SecretKeyFactory keyFactory = helper.createSecretKeyFactory("OpenSSLPBKDF");
+
+            byte[] key = keyFactory.generateSecret(spec).getEncoded();
+
+            if (des2 && key.length >= 24)
+            {
+                // For DES2, we must copy first 8 bytes into the last 8 bytes.
+                System.arraycopy(key, 0, key, 16, 8);
+            }
+
+            return new SecretKeySpec(key, algorithm);
         }
-        return new SecretKeySpec(key, algorithm);
+        catch (GeneralSecurityException e)
+        {
+            throw new PEMException("Unable to create OpenSSL PBDKF: " + e.getMessage(), e);
+        }
     }
 }

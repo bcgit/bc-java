@@ -13,6 +13,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Calculator for the EC based KDF algorithm described in RFC 6637
+ * @deprecated this class is no longer required and will be removed.
  */
 public class RFC6637KDFCalculator
 {

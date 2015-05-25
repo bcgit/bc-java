@@ -776,9 +776,9 @@ public class PfxPduTest
 
         PKCS8EncryptedPrivateKeyInfoBuilder builder = new JcaPKCS8EncryptedPrivateKeyInfoBuilder(privKey);
 
-        PKCS8EncryptedPrivateKeyInfo priv = builder.build(new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).build(passwd));
+        PKCS8EncryptedPrivateKeyInfo priv = builder.build(new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(passwd));
 
-        PrivateKeyInfo info = priv.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().build(passwd));
+        PrivateKeyInfo info = priv.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build(passwd));
 
         assertTrue(Arrays.areEqual(info.getEncoded(), privKey.getEncoded()));
     }
