@@ -462,10 +462,8 @@ public class TlsDHUtils
         return (DHPrivateKeyParameters)kp.getPrivate();
     }
 
-    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException
+    public static DHParameters validateDHParameters(DHParameters params) throws IOException
     {
-        BigInteger Y = key.getY();
-        DHParameters params = key.getParameters();
         BigInteger p = params.getP();
         BigInteger g = params.getG();
 
@@ -477,7 +475,16 @@ public class TlsDHUtils
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        if (Y.compareTo(TWO) < 0 || Y.compareTo(p.subtract(TWO)) > 0)
+
+        return params;
+    }
+
+    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException
+    {
+        DHParameters params = validateDHParameters(key.getParameters());
+
+        BigInteger Y = key.getY();
+        if (Y.compareTo(TWO) < 0 || Y.compareTo(params.getP().subtract(TWO)) > 0)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
