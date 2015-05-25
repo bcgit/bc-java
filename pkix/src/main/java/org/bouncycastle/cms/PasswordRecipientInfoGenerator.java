@@ -17,7 +17,8 @@ import org.bouncycastle.operator.GenericKey;
 public abstract class PasswordRecipientInfoGenerator
     implements RecipientInfoGenerator
 {
-    private char[] password;
+    protected char[] password;
+
     private AlgorithmIdentifier keyDerivationAlgorithm;
     private ASN1ObjectIdentifier kekAlgorithm;
     private SecureRandom random;
@@ -93,9 +94,7 @@ public abstract class PasswordRecipientInfoGenerator
             keyDerivationAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, 1024));
         }
 
-        byte[] encodedPassword = CMSUtils.getPasswordBytes(schemeID, password);
-
-        byte[] derivedKey = calculateDerivedKey(encodedPassword, keyDerivationAlgorithm, keySize);
+        byte[] derivedKey = calculateDerivedKey(schemeID, keyDerivationAlgorithm, keySize);
 
         AlgorithmIdentifier kekAlgorithmId = new AlgorithmIdentifier(kekAlgorithm, new DEROctetString(iv));
 
@@ -114,7 +113,7 @@ public abstract class PasswordRecipientInfoGenerator
             keyEncryptionAlgorithm, encryptedKey));
     }
 
-    protected abstract byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+    protected abstract byte[] calculateDerivedKey(int schemeID, AlgorithmIdentifier derivationAlgorithm, int keySize)
         throws CMSException;
 
     protected abstract byte[] generateEncryptedBytes(AlgorithmIdentifier algorithm, byte[] derivedKey, GenericKey contentEncryptionKey)

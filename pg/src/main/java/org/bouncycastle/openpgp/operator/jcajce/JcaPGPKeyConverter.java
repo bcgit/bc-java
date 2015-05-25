@@ -1,6 +1,9 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -13,9 +16,11 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
+import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
@@ -31,6 +36,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -50,7 +56,6 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
@@ -368,13 +373,18 @@ public class JcaPGPKeyConverter
     }
 
     private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid)
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidParameterSpecException
     {
         return getECParameterSpec(curveOid, PGPUtil.getX9Parameters(curveOid));
     }
 
     private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid, X9ECParameters x9Params)
+        throws InvalidParameterSpecException, NoSuchProviderException, NoSuchAlgorithmException
     {
-        return new ECNamedCurveSpec(curveOid.getId(), x9Params.getCurve(), x9Params.getG(), x9Params.getN(),
-            x9Params.getH(), x9Params.getSeed());
+        AlgorithmParameters params = helper.createAlgorithmParameters("EC");
+
+        params.init(new ECGenParameterSpec(ECNamedCurveTable.getName(curveOid)));
+
+        return params.getParameterSpec(ECParameterSpec.class);
     }
 }

@@ -88,8 +88,8 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(NISTObjectIdentifiers.id_aes192_CBC, "AES-192/CBC");
         algorithms.put(NISTObjectIdentifiers.id_aes256_CBC, "AES-256/CBC");
         algorithms.put(NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA-128/CBC");
-        algorithms.put(NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-128/CBC");
-        algorithms.put(NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-128/CBC");
+        algorithms.put(NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-192/CBC");
+        algorithms.put(NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-256/CBC");
         algorithms.put(KISAObjectIdentifiers.id_seedCBC, "SEED/CBC");
     }
 

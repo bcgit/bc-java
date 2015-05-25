@@ -200,7 +200,7 @@ public final class DESede
     {
         public PBEWithSHAAndDES3Key()
         {
-            super(new CBCBlockCipher(new DESedeEngine()));
+            super(new CBCBlockCipher(new DESedeEngine()), PKCS12, SHA1, 192, 8);
         }
     }
 
@@ -212,7 +212,7 @@ public final class DESede
     {
         public PBEWithSHAAndDES2Key()
         {
-            super(new CBCBlockCipher(new DESedeEngine()));
+            super(new CBCBlockCipher(new DESedeEngine()), PKCS12, SHA1, 128, 8);
         }
     }
 

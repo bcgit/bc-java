@@ -286,7 +286,7 @@ public class ParserTest
         doNoPasswordTest();
 
         // encrypted private key test
-        InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build("password".toCharArray());
+        InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("password".toCharArray());
         pemRd = openPEMResource("enckey.pem");
 
         PKCS8EncryptedPrivateKeyInfo encPrivKeyInfo = (PKCS8EncryptedPrivateKeyInfo)pemRd.readObject();

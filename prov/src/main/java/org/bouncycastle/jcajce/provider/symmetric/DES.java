@@ -394,7 +394,7 @@ public final class DES
     {
         public PBEWithMD2()
         {
-            super(new CBCBlockCipher(new DESEngine()));
+            super(new CBCBlockCipher(new DESEngine()), PKCS5S1, MD2, 64, 8);
         }
     }
 
@@ -406,7 +406,7 @@ public final class DES
     {
         public PBEWithMD5()
         {
-            super(new CBCBlockCipher(new DESEngine()));
+            super(new CBCBlockCipher(new DESEngine()), PKCS5S1, MD5, 64, 8);
         }
     }
 
@@ -418,7 +418,7 @@ public final class DES
     {
         public PBEWithSHA1()
         {
-            super(new CBCBlockCipher(new DESEngine()));
+            super(new CBCBlockCipher(new DESEngine()), PKCS5S1, SHA1, 64, 8);
         }
     }
     

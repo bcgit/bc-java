@@ -161,10 +161,10 @@ public class JceOpenSSLPKCS8EncryptorBuilder
                 throw new OperatorCreationException(e.getMessage(), e);
             }
 
-            key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(algOID.getId(), password, salt, iterationCount);
-
             try
             {
+                key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount);
+
                 cipher.init(Cipher.ENCRYPT_MODE, key, params);
             }
             catch (GeneralSecurityException e)
