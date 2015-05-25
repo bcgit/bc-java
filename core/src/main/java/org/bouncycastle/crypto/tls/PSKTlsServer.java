@@ -28,7 +28,7 @@ public class PSKTlsServer
 
     protected DHParameters getDHParameters()
     {
-        return DHStandardGroups.rfc5114_1024_160;
+        return DHStandardGroups.rfc5114_2048_256;
     }
 
     protected int[] getCipherSuites()
