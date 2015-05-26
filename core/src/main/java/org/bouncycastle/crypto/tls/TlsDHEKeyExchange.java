@@ -89,7 +89,7 @@ public class TlsDHEKeyExchange
         }
 
         this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
-        this.dhParameters = dhAgreePublicKey.getParameters();
+        this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)
