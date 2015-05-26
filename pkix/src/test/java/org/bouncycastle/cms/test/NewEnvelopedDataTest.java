@@ -1233,14 +1233,36 @@ public class NewEnvelopedDataTest
         confirmNumberRecipients(recipients, 1);
     }
 
-    public void testECMQVKeyAgree()
+    public void testKDFAgreements()
         throws Exception
     {
         byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
 
+        doTryAgreement(data, CMSAlgorithm.ECDH_SHA1KDF);
+        doTryAgreement(data, CMSAlgorithm.ECDH_SHA224KDF);
+        doTryAgreement(data, CMSAlgorithm.ECDH_SHA256KDF);
+        doTryAgreement(data, CMSAlgorithm.ECDH_SHA384KDF);
+        doTryAgreement(data, CMSAlgorithm.ECDH_SHA512KDF);
+
+        doTryAgreement(data, CMSAlgorithm.ECCDH_SHA1KDF);
+        doTryAgreement(data, CMSAlgorithm.ECCDH_SHA224KDF);
+        doTryAgreement(data, CMSAlgorithm.ECCDH_SHA256KDF);
+        doTryAgreement(data, CMSAlgorithm.ECCDH_SHA384KDF);
+        doTryAgreement(data, CMSAlgorithm.ECCDH_SHA512KDF);
+
+        doTryAgreement(data, CMSAlgorithm.ECMQV_SHA1KDF);
+        doTryAgreement(data, CMSAlgorithm.ECMQV_SHA224KDF);
+        doTryAgreement(data, CMSAlgorithm.ECMQV_SHA256KDF);
+        doTryAgreement(data, CMSAlgorithm.ECMQV_SHA384KDF);
+        doTryAgreement(data, CMSAlgorithm.ECMQV_SHA512KDF);
+    }
+
+    private void doTryAgreement(byte[] data, ASN1ObjectIdentifier algorithm)
+        throws CertificateEncodingException, CMSException, NoSuchProviderException, IOException
+    {
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
 
-        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECMQV_SHA1KDF,
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(algorithm,
             _origEcKP.getPrivate(), _origEcKP.getPublic(),
             CMSAlgorithm.AES128_WRAP).addRecipient(_reciEcCert).setProvider(BC));
 
