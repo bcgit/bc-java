@@ -5,17 +5,38 @@ import java.security.AlgorithmParameters;
 import java.security.Provider;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.JcaJceUtils;
 
 class CMSUtils
 {
+    private static final Set mqvAlgs = new HashSet();
+
+    static
+    {
+        mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
+        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
+        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme);
+        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme);
+        mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme);
+    }
+
+    static boolean isMQV(ASN1ObjectIdentifier algorithm)
+    {
+        return mqvAlgs.contains(algorithm);
+    }
+
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)
         throws CertificateEncodingException
     {

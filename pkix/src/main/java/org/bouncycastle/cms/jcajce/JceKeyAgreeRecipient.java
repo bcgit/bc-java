@@ -17,26 +17,18 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipient;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.SecretKeySizeProvider;
-import org.bouncycastle.util.Pack;
 
 public abstract class JceKeyAgreeRecipient
     implements KeyAgreeRecipient
@@ -111,12 +103,9 @@ public abstract class JceKeyAgreeRecipient
         PublicKey senderPublicKey, ASN1OctetString userKeyingMaterial, PrivateKey receiverPrivateKey)
         throws CMSException, GeneralSecurityException, IOException
     {
-        String agreeAlg = keyEncAlg.getAlgorithm().getId();
-
-        if (agreeAlg.equals(CMSEnvelopedGenerator.ECMQV_SHA1KDF))
+        if (CMSUtils.isMQV(keyEncAlg.getAlgorithm()))
         {
-            byte[] ukmEncoding = userKeyingMaterial.getOctets();
-            MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(ukmEncoding);
+            MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(userKeyingMaterial.getOctets());
 
             SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(
                                                 getPrivateKeyAlgorithmIdentifier(),
@@ -130,9 +119,7 @@ public abstract class JceKeyAgreeRecipient
 
             byte[] ukmKeyingMaterial = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
 
-            ECCCMSSharedInfo eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(wrapAlg, DERNull.INSTANCE), ukmKeyingMaterial, Pack.intToBigEndian(keySizeProvider.getKeySize(wrapAlg)));
-
-            agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, eccInfo.getEncoded(ASN1Encoding.DER)));
+            agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial));
             agreement.doPhase(senderPublicKey, true);
 
             return agreement.generateSecret(wrapAlg.getId());
@@ -140,25 +127,12 @@ public abstract class JceKeyAgreeRecipient
         else
         {
             KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
-            UserKeyingMaterialSpec userKeyingMaterialSpec;
 
-            if (receiverPrivateKey instanceof ECKey || receiverPrivateKey.getAlgorithm().startsWith("EC"))
-            {
-                ECCCMSSharedInfo eccInfo;
-                if (userKeyingMaterial != null)
-                {
-                    eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(wrapAlg, DERNull.INSTANCE), userKeyingMaterial.getOctets(), Pack.intToBigEndian(keySizeProvider.getKeySize(wrapAlg)));
-                }
-                else
-                {
-                    eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(wrapAlg, DERNull.INSTANCE), null, Pack.intToBigEndian(keySizeProvider.getKeySize(wrapAlg)));
-                }
+            UserKeyingMaterialSpec userKeyingMaterialSpec = null;
 
-                userKeyingMaterialSpec = new UserKeyingMaterialSpec(eccInfo.getEncoded(ASN1Encoding.DER));
-            }
-            else
+            if (userKeyingMaterial != null)
             {
-                userKeyingMaterialSpec = null; // TODO
+                userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
             }
 
             agreement.init(receiverPrivateKey, userKeyingMaterialSpec);

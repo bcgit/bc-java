@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
@@ -43,7 +44,24 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  SEED_WRAP       = KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap;
 
     public static final ASN1ObjectIdentifier  ECDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECCDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme;
     public static final ASN1ObjectIdentifier  ECMQV_SHA1KDF   = X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme;
+
+    public static final ASN1ObjectIdentifier  ECDH_SHA224KDF    = SECObjectIdentifiers.dhSinglePass_stdDH_sha224kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECCDH_SHA224KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha224kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECMQV_SHA224KDF   = SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme;
+
+    public static final ASN1ObjectIdentifier  ECDH_SHA256KDF    = SECObjectIdentifiers.dhSinglePass_stdDH_sha256kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECCDH_SHA256KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha256kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECMQV_SHA256KDF   = SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme;
+
+    public static final ASN1ObjectIdentifier  ECDH_SHA384KDF    = SECObjectIdentifiers.dhSinglePass_stdDH_sha384kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECCDH_SHA384KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha384kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECMQV_SHA384KDF   = SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme;
+
+    public static final ASN1ObjectIdentifier  ECDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECCDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme;
+    public static final ASN1ObjectIdentifier  ECMQV_SHA512KDF   = SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme;
 
     public static final ASN1ObjectIdentifier  SHA1 = OIWObjectIdentifiers.idSHA1;
     public static final ASN1ObjectIdentifier  SHA224 = NISTObjectIdentifiers.id_sha224;
