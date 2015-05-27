@@ -213,12 +213,7 @@ public class PBKDF2Params
      */
     public AlgorithmIdentifier getPrf()
     {
-        if (prf != null)
-        {
-            return prf;
-        }
-
-        return algid_hmacWithSHA1;
+        return prf != null ? prf : algid_hmacWithSHA1;
     }
 
     /**
@@ -238,7 +233,7 @@ public class PBKDF2Params
             v.add(keyLength);
         }
 
-        if (prf != null && !prf.equals(algid_hmacWithSHA1))
+        if (!isDefaultPrf())
         {
             v.add(prf);
         }
