@@ -530,6 +530,26 @@ public class PKCS12StoreTest
       + "ITAJBgUrDgMCGgUABBSsUQPThQeWi8r3oQZ22tcQW2dDqgQUSOpRzALP2lIV"
       + "GOtPKKbIhe5YCbkCAgQA");
 
+    byte[] gostOpenSSLIntegerDPfx = Base64.decode(
+        "MIIC/wIBAzCCAsUGCSqGSIb3DQEHAaCCArYEggKyMIICrjCCAc8GCSqGSIb3"
+      + "DQEHBqCCAcAwggG8AgEAMIIBtQYJKoZIhvcNAQcBMBwGCiqGSIb3DQEMAQYw"
+      + "DgQIb1OLAOp7o6ACAggAgIIBiFSfDqzkF2Lv9arM6fdxKrixa9Zu8sGkrsbN"
+      + "1mYEPYRRJFyfTHB2cOn4yl2I6Ldo9m9GKtnTGGYugMTAFLdBNe0f7X0c4fjr"
+      + "norM2ODUDfzuqI0a54DLwixvV4U9Q0qakLKQJDAHnCSsWu7N8tRktpYt9oIZ"
+      + "3sVJ9r01+yxBrDOapAqT3UtaFILSiUU94Zdyehu9hmL3cq33s7Y+orfESC8A"
+      + "O7OYYks7c6sEjNsvUHag2bC3GClzEapiboIs2F2vb12NoiQ0skU3dbO7Jr1T"
+      + "P6qkjBYFvG31c3vG8pNxJ7iwJr5+FonJ6uVg3y8EmYCROD5Eyd0MeGaa+eBr"
+      + "z/CPFaaM50NT6RAL3CTmfqOEzOlXE2qyKZiPD65TxowbjYOmDh8Tb/mfOQUK"
+      + "hx8Tgzttk0CHHHZmUQkMm0RXDj/n07JaeGuQJQ1pK/3Wg7ejfGxj7eFgzmPU"
+      + "jOhIAAe/fwOkxUC8quv/+db/L+EeSQBSEyacU5MliXwOPVytMUOP4pFMtonw"
+      + "C6NzBU5JMIHYBgkqhkiG9w0BBwGggcoEgccwgcQwgcEGCyqGSIb3DQEMCgEC"
+      + "oHIwcDAcBgoqhkiG9w0BDAEDMA4ECF6BMzmkD7DbAgIIAARQlev2YN09882U"
+      + "niwvu9nMIgS3hmjSlqlpkf5aYQLosSy5eaOWCq0Vskqgv5i+77vKyQYcKOH0"
+      + "VnQYu98kWUgZy4fNfesufL+m3d29LX/JGdoxPjAXBgkqhkiG9w0BCRQxCh4I"
+      + "AHQAZQBzAHQwIwYJKoZIhvcNAQkVMRYEFIaC9GvZM/XUGW4U50bkjCfsTrW8"
+      + "MDEwITAJBgUrDgMCGgUABBT3iAwuHw7KQXrl09gBkHaUVbOoBAQIIm90qua1"
+      + "2i4CAggA");
+
     /**
      * we generate a self signed certificate for the sake of testing - RSA
      */
@@ -615,6 +635,29 @@ public class PKCS12StoreTest
         if (!sig.verify(signature))
         {
             fail("key test failed in GOST store");
+        }
+
+        KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
+
+        ks.load(new ByteArrayInputStream(gostOpenSSLIntegerDPfx), "password".toCharArray());
+
+        PrivateKey key = (PrivateKey)ks.getKey("test", "password".toCharArray());
+
+        X509Certificate cert = (X509Certificate)ks.getCertificate("test");
+
+        sig.initSign(key);
+
+        sig.update(data);
+
+        signature = sig.sign();
+
+        sig.initVerify(cert.getPublicKey());
+
+        sig.update(data);
+
+        if (!sig.verify(signature))
+        {
+            fail("key test failed in 2nd GOST store");
         }
     }
 

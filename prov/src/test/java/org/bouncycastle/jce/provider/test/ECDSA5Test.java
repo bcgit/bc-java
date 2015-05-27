@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -33,6 +34,8 @@ import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.KeyAgreement;
+
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -40,6 +43,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
@@ -48,11 +52,13 @@ import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jce.ECKeyUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -889,6 +895,78 @@ public class ECDSA5Test
         }
     }
 
+    /**
+    COUNT = 1
+    dsCAVS = 00000179557decd75b797bea9db656ce99c03a6e0ab13804b5b589644f7db41ceba05c3940c300361061074ca72a828428d9198267fa0b75e1e3e785a0ff20e839414be0
+    QsCAVSx = 000001ce7da31681d5f176f3618f205969b9142520363dd26a596866c89988c932e3ce01904d12d1e9b105462e56163dbe7658ba3c472bf1f3c8165813295393ae346764
+    QsCAVSy = 000000e70d6e55b76ebd362ff071ab819315593cec650276209a9fdc2c1c48e03c35945f04e74d958cabd3f5e4d1f096a991e807a8f9d217de306a6b561038ca15aea4b9
+    NonceEphemCAVS = 4214a1a0a1d11679ae22f98d7ae483c1a74008a9cd7f7cf71b1f373a4226f5c58eb621ec56e2537797c01750dcbff07f613b9c58774f9af32aebeadd2226140dc7d56b1aa95c93ab1ec4412e2d0e42cdaac7bf9da3ddbf19fbb1edd0556d9c5a339808905fe8defd8b57ff8f34788192cc0cf7df17d1f351d69ac979a3a495931c287fb8
+    dsIUT = 000000c14895dfcc5a6b24994828cfd0a0cc0a881a70173a3eb05c57b098046c8e60a868f6176284aa346eff1fd1b8b879052c5a6d5fd0ae146b35ed7ecee32e294103cd
+    QsIUTx = 00000174a658695049db59f6bbe2ad23e1753bf58384a56fc9b3dec13eb873b33e1f4dbd24b6b4ca05a9a11ad531f6d99e9430a774980e8a8d9fd2d1e2a0d76fe3dd36c7
+    QsIUTy = 00000030639849e1df341973db44e7bbba5bb597884a439f9ce54620c3ca73a9804cc26fcda3aaf73ae5a11d5b325cae0e95cfafe1985c6c2fdb892722e7dd2c5d744cf3
+    deIUT = 00000138f54e986c7b44f49da389fa9f61bb7265f0cebdeddf09d47c72e55186e2520965fc2c31bb9c0a557e3c28e02a751f097e413c4252c7b0d22452d89f9ac314bc6e
+    QeIUTx = 000001b9fbce9c9ebb31070a4a4ac7af54ec9189c1f98948cd24ca0a5029217e4784d3c8692da08a6a512d1c9875d20d8e03664c148fa5d34bbac6d42e499ee5dbf01120
+    QeIUTy = 000000994a714b6d09afa896dbba9b4f436ab3cdb0d11dcd2aad28b7ba35d6fa6be537b6ffb0f9bf5fe1d594b8f8b8829687c9395c3d938c873f26c7100888c3aca2d59a
+    OI = a1b2c3d4e54341565369646dbb63a273c81e0aad02f92699bf7baa28fd4509145b0096746894e98e209a85ecb415b8
+    CAVSTag = 4ade5dc983cc1cf61c90fdbf726fa6a88e9bf411bbaf0015db06ff4348560e4d
+    Z = 019a19a0a99f60221ee23323b3317292e8c10d57ba04e0b33f6241979ec3895945eed0bdcbc59ab576e7047061f0d63d1aaf78b1d442028605aa1c0f963a3bc9d61a
+    MacData = 4b435f315f55a1b2c3d4e543415653696401b9fbce9c9ebb31070a4a4ac7af54ec9189c1f98948cd24ca0a5029217e4784d3c8692da08a6a512d1c9875d20d8e03664c148fa5d34bbac6d42e499ee5dbf0112000994a714b6d09afa896dbba9b4f436ab3cdb0d11dcd2aad28b7ba35d6fa6be537b6ffb0f9bf5fe1d594b8f8b8829687c9395c3d938c873f26c7100888c3aca2d59a4214a1a0a1d11679ae22f98d7ae483c1a74008a9cd7f7cf71b1f373a4226f5c58eb621ec56e2537797c01750dcbff07f613b9c58774f9af32aebeadd2226140dc7d56b1aa95c93ab1ec4412e2d0e42cdaac7bf9da3ddbf19fbb1edd0556d9c5a339808905fe8defd8b57ff8f34788192cc0cf7df17d1f351d69ac979a3a495931c287fb8
+    DKM = 0744e1774149a8b8f88d3a1e20ac1517efd2f54ba4b5f178de99f33b68eea426
+    Result = P (14 - DKM value should have leading 0 nibble )
+    */
+    public void testMQVwithHMACOnePass()
+        throws Exception
+    {
+        AlgorithmParameters algorithmParameters = AlgorithmParameters.getInstance("EC", "BC");
+
+        algorithmParameters.init(new ECGenParameterSpec("P-521"));
+
+        ECParameterSpec ecSpec = algorithmParameters.getParameterSpec(ECParameterSpec.class);
+        KeyFactory keyFact = KeyFactory.getInstance("EC", "BC");
+
+        ECPrivateKey dsCAVS = (ECPrivateKey)keyFact.generatePrivate(new ECPrivateKeySpec(new BigInteger("00000179557decd75b797bea9db656ce99c03a6e0ab13804b5b589644f7db41ceba05c3940c300361061074ca72a828428d9198267fa0b75e1e3e785a0ff20e839414be0", 16), ecSpec));
+        ECPublicKey  qsCAVS = (ECPublicKey)keyFact.generatePublic(new ECPublicKeySpec(new ECPoint(
+                            new BigInteger("000001ce7da31681d5f176f3618f205969b9142520363dd26a596866c89988c932e3ce01904d12d1e9b105462e56163dbe7658ba3c472bf1f3c8165813295393ae346764", 16),
+                            new BigInteger("000000e70d6e55b76ebd362ff071ab819315593cec650276209a9fdc2c1c48e03c35945f04e74d958cabd3f5e4d1f096a991e807a8f9d217de306a6b561038ca15aea4b9", 16)), ecSpec));
+
+        ECPrivateKey dsIUT = (ECPrivateKey)keyFact.generatePrivate(new ECPrivateKeySpec(new BigInteger("000000c14895dfcc5a6b24994828cfd0a0cc0a881a70173a3eb05c57b098046c8e60a868f6176284aa346eff1fd1b8b879052c5a6d5fd0ae146b35ed7ecee32e294103cd", 16), ecSpec));
+        ECPublicKey  qsIUT = (ECPublicKey)keyFact.generatePublic(new ECPublicKeySpec(new ECPoint(
+                            new BigInteger("00000174a658695049db59f6bbe2ad23e1753bf58384a56fc9b3dec13eb873b33e1f4dbd24b6b4ca05a9a11ad531f6d99e9430a774980e8a8d9fd2d1e2a0d76fe3dd36c7", 16),
+                            new BigInteger("00000030639849e1df341973db44e7bbba5bb597884a439f9ce54620c3ca73a9804cc26fcda3aaf73ae5a11d5b325cae0e95cfafe1985c6c2fdb892722e7dd2c5d744cf3", 16)), ecSpec));
+
+        ECPrivateKey deIUT = (ECPrivateKey)keyFact.generatePrivate(new ECPrivateKeySpec(new BigInteger("00000138f54e986c7b44f49da389fa9f61bb7265f0cebdeddf09d47c72e55186e2520965fc2c31bb9c0a557e3c28e02a751f097e413c4252c7b0d22452d89f9ac314bc6e", 16), ecSpec));
+        ECPublicKey  qeIUT = (ECPublicKey)keyFact.generatePublic(new ECPublicKeySpec(new ECPoint(
+            new BigInteger("000001b9fbce9c9ebb31070a4a4ac7af54ec9189c1f98948cd24ca0a5029217e4784d3c8692da08a6a512d1c9875d20d8e03664c148fa5d34bbac6d42e499ee5dbf01120", 16),
+            new BigInteger("000000994a714b6d09afa896dbba9b4f436ab3cdb0d11dcd2aad28b7ba35d6fa6be537b6ffb0f9bf5fe1d594b8f8b8829687c9395c3d938c873f26c7100888c3aca2d59a", 16)), ecSpec));
+
+        KeyAgreement uAgree = KeyAgreement.getInstance("ECMQVwithSHA512CKDF", "BC");
+
+        uAgree.init(dsCAVS, new MQVParameterSpec(dsCAVS, qeIUT, Hex.decode("a1b2c3d4e54341565369646dbb63a273c81e0aad02f92699bf7baa28fd4509145b0096746894e98e209a85ecb415b8")));
+
+
+        KeyAgreement vAgree = KeyAgreement.getInstance("ECMQVwithSHA512CKDF", "BC");
+        vAgree.init(dsIUT, new MQVParameterSpec(deIUT, qsCAVS, Hex.decode("a1b2c3d4e54341565369646dbb63a273c81e0aad02f92699bf7baa28fd4509145b0096746894e98e209a85ecb415b8")));
+
+        //
+        // agreement
+        //
+        uAgree.doPhase(qsIUT, true);
+        vAgree.doPhase(qsCAVS, true);
+
+        byte[] ux = uAgree.generateSecret(PKCSObjectIdentifiers.id_hmacWithSHA512.getId()).getEncoded();
+        byte[] vx = vAgree.generateSecret(PKCSObjectIdentifiers.id_hmacWithSHA512.getId()).getEncoded();
+
+        if (!Arrays.areEqual(ux, vx))
+        {
+            fail("agreement values don't match");
+        }
+
+        if (!Arrays.areEqual(Hex.decode("0744e1774149a8b8f88d3a1e20ac1517efd2f54ba4b5f178de99f33b68eea426"), Arrays.copyOfRange(ux, 0, 32)))
+        {
+            fail("agreement values not correct");
+        }
+    }
+
     protected BigInteger[] derDecode(
         byte[]  encoding)
         throws IOException
@@ -923,6 +1001,7 @@ public class ECDSA5Test
         testNamedCurveParameterPreservation();
         testNamedCurveSigning();
         testBSI();
+        testMQVwithHMACOnePass();
     }
 
     public static void main(
