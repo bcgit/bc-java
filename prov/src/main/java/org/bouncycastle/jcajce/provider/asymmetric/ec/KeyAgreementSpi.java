@@ -93,6 +93,11 @@ public class KeyAgreementSpi
         algorithms.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), i192);
         algorithms.put(OIWObjectIdentifiers.desCBC.getId(), i64);
 
+        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA1.getId(), Integers.valueOf(160));
+        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA256.getId(), i256);
+        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA384.getId(), Integers.valueOf(384));
+        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA512.getId(), Integers.valueOf(512));
+
         algorithmNames.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), "AES");
         algorithmNames.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), "AES");
         algorithmNames.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), "AES");
@@ -644,7 +649,7 @@ public class KeyAgreementSpi
     {
         public DHwithSHA1CKDF()
         {
-            super("DHwithSHA1CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA1Digest()));
+            super("ECDHwithSHA1CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA1Digest()));
         }
     }
 
@@ -653,7 +658,70 @@ public class KeyAgreementSpi
     {
         public DHwithSHA256CKDF()
         {
-            super("DHwithSHA256CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA256Digest()));
+            super("ECDHwithSHA256CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA256Digest()));
+        }
+    }
+
+    public static class DHwithSHA384CKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA384CKDF()
+        {
+            super("ECDHwithSHA384CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA384Digest()));
+        }
+    }
+
+    public static class DHwithSHA512CKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA512CKDF()
+        {
+            super("ECDHwithSHA512CKDF", new ECDHCBasicAgreement(), new ConcatenationKDFGenerator(new SHA512Digest()));
+        }
+    }
+
+    public static class MQVwithSHA1CKDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA1CKDF()
+        {
+            super("ECMQVwithSHA1CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(new SHA1Digest()));
+        }
+    }
+
+    public static class MQVwithSHA224CKDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA224CKDF()
+        {
+            super("ECMQVwithSHA224CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(new SHA224Digest()));
+        }
+    }
+
+    public static class MQVwithSHA256CKDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA256CKDF()
+        {
+            super("ECMQVwithSHA256CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(new SHA256Digest()));
+        }
+    }
+
+    public static class MQVwithSHA384CKDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA384CKDF()
+        {
+            super("ECMQVwithSHA384CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(new SHA384Digest()));
+        }
+    }
+
+    public static class MQVwithSHA512CKDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA512CKDF()
+        {
+            super("ECMQVwithSHA512CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(new SHA512Digest()));
         }
     }
 }

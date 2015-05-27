@@ -80,10 +80,11 @@ public class ConcatenationKDFGenerator
         {
             throw new DataLengthException("output buffer too small");
         }
-        
+
         byte[]  hashBuf = new byte[hLen];
         byte[]  C = new byte[4];
         int     counter = 1;
+        int     outputLen = 0;
 
         digest.reset();
 
@@ -91,20 +92,21 @@ public class ConcatenationKDFGenerator
         {
             do
             {
-                ItoOSP(counter++, C);
+                ItoOSP(counter, C);
 
                 digest.update(C, 0, C.length);
                 digest.update(shared, 0, shared.length);
                 digest.update(otherInfo, 0, otherInfo.length);
 
                 digest.doFinal(hashBuf, 0);
-    
-                System.arraycopy(hashBuf, 0, out, outOff + (counter - 1) * hLen, hLen);
+
+                System.arraycopy(hashBuf, 0, out, outOff + outputLen, hLen);
+                outputLen += hLen;
             }
-            while (counter < (len / hLen));
+            while ((counter++) < (len / hLen));
         }
 
-        if (((counter - 1) * hLen) < len)
+        if (outputLen < len)
         {
             ItoOSP(counter, C);
 
@@ -114,7 +116,7 @@ public class ConcatenationKDFGenerator
 
             digest.doFinal(hashBuf, 0);
 
-            System.arraycopy(hashBuf, 0, out, outOff + (counter - 1) * hLen, len - ((counter - 1) * hLen));
+            System.arraycopy(hashBuf, 0, out, outOff + outputLen, len - outputLen);
         }
 
         return len;
