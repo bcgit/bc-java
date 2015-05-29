@@ -56,6 +56,37 @@ public class DESedeParameters
     }
 
     /**
+     * return true if the passed in key is a real 2/3 part DES-EDE key.
+     *
+     * @param key bytes making up the key
+     * @param offset offset into the byte array the key starts at
+     */
+    public static boolean isRealEDEKey(byte[] key, int offset)
+    {
+        return key.length == 16 ? isReal2Key(key, offset) : isReal3Key(key, offset);
+    }
+
+    /**
+     * return true if the passed in key is a real 2 part DES-EDE key.
+     *
+     * @param key bytes making up the key
+     * @param offset offset into the byte array the key starts at
+     */
+    public static boolean isReal2Key(byte[] key, int offset)
+    {
+        boolean isValid = false;
+        for (int i = offset; i != offset + 8; i++)
+        {
+            if (key[i] != key[i + 8])
+            {
+                isValid = true;
+            }
+        }
+
+        return isValid;
+    }
+
+    /**
      * return true if the passed in key is a real 3 part DES-EDE key.
      *
      * @param key bytes making up the key
