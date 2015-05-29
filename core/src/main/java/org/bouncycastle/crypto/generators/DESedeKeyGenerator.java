@@ -49,7 +49,7 @@ public class DESedeKeyGenerator
 
             DESedeParameters.setOddParity(newKey);
         }
-        while (DESedeParameters.isWeakKey(newKey, 0, newKey.length));
+        while (DESedeParameters.isWeakKey(newKey, 0, newKey.length) || (strength == 24 && !DESedeParameters.isReal3Key(newKey, 0)));
 
         return newKey;
     }

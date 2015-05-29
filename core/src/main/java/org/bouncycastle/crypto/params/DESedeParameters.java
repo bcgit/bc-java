@@ -54,4 +54,25 @@ public class DESedeParameters
     {
         return isWeakKey(key, offset, key.length - offset);
     }
+
+    /**
+     * return true if the passed in key is a real 3 part DES-EDE key.
+     *
+     * @param key bytes making up the key
+     * @param offset offset into the byte array the key starts at
+     */
+    public static boolean isReal3Key(byte[] key, int offset)
+    {
+        boolean isValid = false;
+        for (int i = offset; i != offset + 8; i++)
+        {
+            if (key[i] != key[i + 8] && key[i] != key[i + 16] && key[i + 8] != key[i + 16])
+            {
+                isValid = true;
+            }
+        }
+
+        return isValid;
+    }
+
 }
