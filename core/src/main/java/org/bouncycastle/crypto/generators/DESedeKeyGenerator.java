@@ -6,6 +6,8 @@ import org.bouncycastle.crypto.params.DESedeParameters;
 public class DESedeKeyGenerator
     extends DESKeyGenerator
 {
+    private static final int MAX_IT = 20;
+
     /**
      * initialise the key generator - if strength is set to zero
      * the key generated will be 192 bits in size, otherwise
@@ -42,6 +44,7 @@ public class DESedeKeyGenerator
     public byte[] generateKey()
     {
         byte[]  newKey = new byte[strength];
+        int     count = 0;
 
         do
         {
@@ -49,7 +52,12 @@ public class DESedeKeyGenerator
 
             DESedeParameters.setOddParity(newKey);
         }
-        while (DESedeParameters.isWeakKey(newKey, 0, newKey.length) || (strength == 24 && !DESedeParameters.isReal3Key(newKey, 0)));
+        while (++count < MAX_IT && (DESedeParameters.isWeakKey(newKey, 0, newKey.length) || !DESedeParameters.isRealEDEKey(newKey, 0)));
+
+        if (DESedeParameters.isWeakKey(newKey, 0, newKey.length) || !DESedeParameters.isRealEDEKey(newKey, 0))
+        {
+            throw new IllegalStateException("Unable to generate DES-EDE key");
+        }
 
         return newKey;
     }
