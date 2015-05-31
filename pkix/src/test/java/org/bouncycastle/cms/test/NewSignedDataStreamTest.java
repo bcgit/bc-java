@@ -942,13 +942,13 @@ public class NewSignedDataStreamTest
 
         assertEquals(4, sp.getVersion());
 
-//        store = sp.getAttributeCertificates();
-//
-//        Collection coll = store.getMatches(null);
-//
-//        assertEquals(1, coll.size());
-//
-//        assertTrue(coll.contains(new JcaX509AttributeCertificateHolder(attrCert)));
+        store = sp.getAttributeCertificates();
+
+        Collection coll = store.getMatches(null);
+
+        assertEquals(1, coll.size());
+
+        assertTrue(coll.contains(attrCert));
     }
 
     public void testSignerStoreReplacement()
