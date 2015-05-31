@@ -28,6 +28,8 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PKCS12Key;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -183,12 +185,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
             try
             {
-                PBEKeySpec pbeSpec = new PBEKeySpec(password);
-                PBEParameterSpec defParams = new PBEParameterSpec(salt, iterationCount);
-
-                key = secKeyFact.generateSecret(pbeSpec);
-
-                cipher.init(Cipher.ENCRYPT_MODE, key, defParams);
+                cipher.init(Cipher.ENCRYPT_MODE, new PKCS12KeyWithParameters(password, salt, iterationCount));
             }
             catch (GeneralSecurityException e)
             {
