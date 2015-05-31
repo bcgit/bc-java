@@ -222,40 +222,6 @@ public class NewSignedDataStreamTest
         sp.close();
     }
 
-//    public void testEarlyInvalidKeyException() throws Exception
-//    {
-//        try
-//        {
-//            CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
-//            gen.addSigner( _origKP.getPrivate(), _origCert,
-//                "DSA", // DOESN'T MATCH KEY ALG
-//                CMSSignedDataStreamGenerator.DIGEST_SHA1, BC);
-//
-//            fail("Expected InvalidKeyException in addSigner");
-//        }
-//        catch (InvalidKeyException e)
-//        {
-//            // Ignore
-//        }
-//    }
-
-//    public void testEarlyNoSuchAlgorithmException() throws Exception
-//    {
-//        try
-//        {
-//            CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
-//            gen.addSigner( _origKP.getPrivate(), _origCert,
-//                CMSSignedDataStreamGenerator.DIGEST_SHA1, // BAD OID!
-//                CMSSignedDataStreamGenerator.DIGEST_SHA1, BC);
-//
-//            fail("Expected NoSuchAlgorithmException in addSigner");
-//        }
-//        catch (NoSuchAlgorithmException e)
-//        {
-//            // Ignore
-//        }
-//    }
-
     public void testSha1EncapsulatedSignature()
         throws Exception
     {
