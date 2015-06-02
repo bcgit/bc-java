@@ -110,17 +110,19 @@ public class PSSSigner
             }
         }
 
-        cipher.init(forSigning, params);
-
         RSAKeyParameters kParam;
 
         if (params instanceof RSABlindingParameters)
         {
             kParam = ((RSABlindingParameters)params).getPublicKey();
+
+            cipher.init(forSigning, param);   // pass on random
         }
         else
         {
             kParam = (RSAKeyParameters)params;
+
+            cipher.init(forSigning, params);
         }
         
         emBits = kParam.getModulus().bitLength() - 1;

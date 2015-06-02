@@ -140,7 +140,8 @@ public class RegressionTest
         new CramerShoupTest(),
         new BCryptTest(),
         new OpenBSDBCryptTest(),
-        new X931SignerTest()
+        new X931SignerTest(),
+        new Blake2bDigestTest()
     };
 
     public static void main(
