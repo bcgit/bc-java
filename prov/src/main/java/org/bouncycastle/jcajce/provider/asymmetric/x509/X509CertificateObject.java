@@ -561,38 +561,41 @@ class X509CertificateObject
             return true;
         }
 
-        if (!(o instanceof Certificate))
+        if (o instanceof X509CertificateObject)
         {
-            return false;
+            X509CertificateObject other = (X509CertificateObject)o;
+
+            if (this.hashValueSet && other.hashValueSet)
+            {
+                if (this.hashValue != other.hashValue)
+                {
+                    return false;
+                }
+            }
+
+            return this.c.equals(other.c);
         }
 
-        Certificate other = (Certificate)o;
-
-        try
-        {
-            byte[] b1 = this.getEncoded();
-            byte[] b2 = other.getEncoded();
-
-            return Arrays.areEqual(b1, b2);
-        }
-        catch (CertificateEncodingException e)
-        {
-            return false;
-        }
+        return super.equals(o);
     }
-    
+
     public synchronized int hashCode()
     {
         if (!hashValueSet)
         {
-            hashValue = calculateHashCode();
+            hashValue = super.hashCode();
             hashValueSet = true;
         }
 
         return hashValue;
     }
-    
-    private int calculateHashCode()
+
+    /**
+     * Returns the original hash code for Certificates pre-JDK 1.8.
+     *
+     * @return the pre-JDK 1.8 hashcode calculation.
+     */
+    public int originalHashCode()
     {
         try
         {

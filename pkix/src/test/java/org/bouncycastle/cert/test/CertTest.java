@@ -1626,6 +1626,26 @@ public class CertTest
         }
     }
 
+    private void checkComparison(byte[] encCert)
+        throws NoSuchProviderException, CertificateException
+    {
+        CertificateFactory bcFact = CertificateFactory.getInstance("X.509", "BC");
+        CertificateFactory sunFact = CertificateFactory.getInstance("X.509", "SUN");
+
+        X509Certificate bcCert = (X509Certificate)bcFact.generateCertificate(new ByteArrayInputStream(encCert));
+        X509Certificate sunCert = (X509Certificate)sunFact.generateCertificate(new ByteArrayInputStream(encCert));
+
+        if (!bcCert.equals(sunCert) || !sunCert.equals(bcCert))
+        {
+            fail("BC/Sun equals test failed");
+        }
+
+        if (bcCert.hashCode() != sunCert.hashCode())
+        {
+            fail("BC/Sun hashCode test failed");
+        }
+    }
+
     private X500NameBuilder createStdBuilder()
     {
         X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
@@ -2942,6 +2962,9 @@ public class CertTest
         checkCertificate(5, cert5);
         checkCertificate(6, oldEcdsa);
         checkCertificate(7, cert7);
+
+        checkComparison(cert1);
+        checkComparison(cert2);
 
         checkKeyUsage(8, keyUsage);
         checkSelfSignedCertificate(9, uncompressedPtEC);
