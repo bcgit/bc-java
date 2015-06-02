@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigInteger;
@@ -26,8 +26,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 public class PGPUnicodeTest
     extends TestCase
 {
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     public void setUp()
     {
         if (Security.getProvider("BC") == null)
@@ -126,7 +124,7 @@ public class PGPUnicodeTest
             // XXX The password text file must not have the UTF-8 BOM !
             // Ref: http://stackoverflow.com/questions/2223882/whats-different-between-utf-8-and-utf-8-without-bom
 
-            FileInputStream passwordFile = new FileInputStream(getDataHome() + "passphrase_cyr.txt");
+            InputStream passwordFile = this.getClass().getResourceAsStream("unicode/" + "passphrase_cyr.txt");
             Reader reader = new InputStreamReader(passwordFile, Charset.forName("UTF-8"));
             BufferedReader in = new BufferedReader(reader);
             String passphrase = in.readLine();
@@ -149,21 +147,7 @@ public class PGPUnicodeTest
         String keyName)
         throws Exception
     {
-        FileInputStream fIn = new FileInputStream(getDataHome() + keyName);
-
-        return new PGPSecretKeyRingCollection(fIn, new JcaKeyFingerprintCalculator());
-    }
-
-    private String getDataHome()
-    {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-
-        return dataHome + "/openpgp/unicode/";
+        return new PGPSecretKeyRingCollection(this.getClass().getResourceAsStream("unicode/" + keyName), new JcaKeyFingerprintCalculator());
     }
 
     public static void main (String[] args)
