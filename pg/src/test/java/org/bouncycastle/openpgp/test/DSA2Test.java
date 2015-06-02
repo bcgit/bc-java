@@ -38,8 +38,6 @@ import org.bouncycastle.util.test.UncloseableOutputStream;
 public class DSA2Test
     extends TestCase
 {
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     public void setUp()
     {
         if (Security.getProvider("BC") == null)
@@ -242,39 +240,21 @@ public class DSA2Test
         String sigName)
         throws Exception
     {
-        FileInputStream fIn = new FileInputStream(getDataHome() + "/sigs/" + sigName);
-
-        return new JcaPGPObjectFactory(fIn);
+        return new JcaPGPObjectFactory(this.getClass().getResourceAsStream("dsa/sigs/" + sigName));
     }
 
     private PGPPublicKeyRing loadPublicKey(
         String keyName)
         throws Exception
     {
-        FileInputStream fIn = new FileInputStream(getDataHome() + "/keys/" + keyName);
-
-        return new PGPPublicKeyRing(fIn, new JcaKeyFingerprintCalculator());
+        return new PGPPublicKeyRing(this.getClass().getResourceAsStream("dsa/keys/" + keyName), new JcaKeyFingerprintCalculator());
     }
 
     private PGPSecretKeyRing loadSecretKey(
         String keyName)
         throws Exception
     {
-        FileInputStream fIn = new FileInputStream(getDataHome() + "/keys/" + keyName);
-
-        return new PGPSecretKeyRing(fIn, new JcaKeyFingerprintCalculator());
-    }
-
-    private String getDataHome()
-    {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-
-        return dataHome + "/openpgp/dsa";
+        return new PGPSecretKeyRing(this.getClass().getResourceAsStream("dsa/keys/" + keyName), new JcaKeyFingerprintCalculator());
     }
 
     public static void main (String[] args)
