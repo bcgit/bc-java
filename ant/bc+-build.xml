@@ -163,6 +163,8 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.gpg" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pub" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.sec" />
                 </copy>
                 <packJar jarbase="${artifacts.jars.dir}/@{target}">
                     <manifest-element>
@@ -190,6 +192,8 @@
                             <include name="**/*.txt" />
                             <include name="**/*.rsp" />
                             <include name="**/*.gpg" />
+                            <include name="**/*.pub" />
+                            <include name="**/*.sec" />
                             <include name="**/*.properties" />
                         </fileset>
                     </fileset-element>
@@ -656,6 +660,8 @@
              <fileset dir="${src.dir}" includes="**/*.txt" />
              <fileset dir="${src.dir}" includes="**/*.rsp" />
              <fileset dir="${src.dir}" includes="**/*.gpg" />
+             <fileset dir="${src.dir}" includes="**/*.pub" />
+             <fileset dir="${src.dir}" includes="**/*.sec" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
              <fileset dir="${src.dir}" includes="**/*.properties" />
              <fileset dir="${src.dir}" includes="**/*.message" />
