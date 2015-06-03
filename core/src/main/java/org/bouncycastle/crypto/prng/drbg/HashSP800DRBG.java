@@ -75,7 +75,7 @@ public class HashSP800DRBG
         // 5. reseed_counter = 1.
         // 6. Return V, C, and reseed_counter as the initial_working_state
 
-        byte[] entropy = entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
         byte[] seed = Utils.hash_df(_digest, seedMaterial, _seedLength);
 
@@ -180,6 +180,16 @@ public class HashSP800DRBG
         return numberOfBits;
     }
 
+    private byte[] getEntropy()
+    {
+        byte[] entropy = _entropySource.getEntropy();
+        if (entropy.length < (_securityStrength + 7) / 8)
+        {
+            throw new IllegalStateException("Insufficient entropy provided by entropy source");
+        }
+        return entropy;
+    }
+
     // this will always add the shorter length byte array mathematically to the
     // longer length byte array.
     // be careful....
@@ -221,7 +231,7 @@ public class HashSP800DRBG
         // 6. Return V, C, and reseed_counter for the new_working_state.
         //
         // Comment: Precede with a byte of all zeros.
-        byte[] entropy = _entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(ONE, _V, entropy, additionalInput);
         byte[] seed = Utils.hash_df(_digest, seedMaterial, _seedLength);
 
