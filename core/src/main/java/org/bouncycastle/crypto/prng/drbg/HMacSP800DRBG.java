@@ -19,6 +19,7 @@ public class HMacSP800DRBG
     private long   _reseedCounter;
     private EntropySource _entropySource;
     private Mac _hMac;
+    private int _securityStrength;
 
     /**
      * Construct a SP800-90A Hash DRBG.
@@ -43,10 +44,11 @@ public class HMacSP800DRBG
             throw new IllegalArgumentException("Not enough entropy for security strength required");
         }
 
+        _securityStrength = securityStrength;
         _entropySource = entropySource;
         _hMac = hMac;
 
-        byte[] entropy = entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
 
         _K = new byte[hMac.getMacSize()];
@@ -171,11 +173,22 @@ public class HMacSP800DRBG
       */
     public void reseed(byte[] additionalInput)
     {
-        byte[] entropy = _entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, additionalInput);
 
         hmac_DRBG_Update(seedMaterial);
 
         _reseedCounter = 1;
+    }
+
+    private byte[] getEntropy()
+    {
+        byte[] entropy = _entropySource.getEntropy();
+
+        if (entropy.length < (_securityStrength + 7) / 8)
+        {
+            throw new IllegalStateException("Insufficient entropy provided by entropy source");
+        }
+        return entropy;
     }
 }
