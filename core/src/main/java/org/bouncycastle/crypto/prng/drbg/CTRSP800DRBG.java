@@ -21,7 +21,8 @@ public class CTRSP800DRBG
     private BlockCipher           _engine;
     private int                   _keySizeInBits;
     private int                   _seedLength;
-    
+    private int                   _securityStrength;
+
     // internal state
     private byte[]                _Key;
     private byte[]                _V;
@@ -46,6 +47,7 @@ public class CTRSP800DRBG
         _engine = engine;     
         
         _keySizeInBits = keySizeInBits;
+        _securityStrength = securityStrength;
         _seedLength = keySizeInBits + engine.getBlockSize() * 8;
         _isTDEA = isTDEA(engine);
 
@@ -64,7 +66,7 @@ public class CTRSP800DRBG
             throw new IllegalArgumentException("Not enough entropy for security strength required");
         }
 
-        byte[] entropy = entropySource.getEntropy();  // Get_entropy_input
+        byte[] entropy = getEntropy();  // Get_entropy_input
 
         CTR_DRBG_Instantiate_algorithm(entropy, nonce, personalizationString);
     }
@@ -113,9 +115,9 @@ public class CTRSP800DRBG
         System.arraycopy(temp, key.length, v, 0, v.length);
     }
     
-    private void CTR_DRBG_Reseed_algorithm(EntropySource entropy, byte[] additionalInput) 
+    private void CTR_DRBG_Reseed_algorithm(byte[] additionalInput)
     {
-        byte[] seedMaterial = Arrays.concatenate(entropy.getEntropy(), additionalInput);
+        byte[] seedMaterial = Arrays.concatenate(getEntropy(), additionalInput);
 
         seedMaterial = Block_Cipher_df(seedMaterial, _seedLength);
 
@@ -142,7 +144,17 @@ public class CTRSP800DRBG
             longer[longer.length - i] = (byte)res;
         }
     } 
-    
+
+    private byte[] getEntropy()
+    {
+        byte[] entropy = _entropySource.getEntropy();
+        if (entropy.length < (_securityStrength + 7) / 8)
+        {
+            throw new IllegalStateException("Insufficient entropy provided by entropy source");
+        }
+        return entropy;
+    }
+
     // -- Internal state migration ---
     
     private static final byte[] K_BITS = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
@@ -357,7 +369,7 @@ public class CTRSP800DRBG
 
         if (predictionResistant)
         {
-            CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
+            CTR_DRBG_Reseed_algorithm(additionalInput);
             additionalInput = null;
         }
 
@@ -405,7 +417,7 @@ public class CTRSP800DRBG
       */
     public void reseed(byte[] additionalInput)
     {
-        CTR_DRBG_Reseed_algorithm(_entropySource, additionalInput);
+        CTR_DRBG_Reseed_algorithm(additionalInput);
     }
 
     private boolean isTDEA(BlockCipher cipher)
