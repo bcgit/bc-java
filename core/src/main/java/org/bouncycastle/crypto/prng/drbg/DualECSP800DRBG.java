@@ -118,7 +118,7 @@ public class DualECSP800DRBG
             throw new IllegalArgumentException("EntropySource must provide between " + securityStrength + " and " + MAX_ENTROPY_LENGTH + " bits");
         }
 
-        byte[] entropy = entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(entropy, nonce, personalizationString);
 
         for (int i = 0; i != pointSet.length; i++)
@@ -267,12 +267,22 @@ public class DualECSP800DRBG
             throw new IllegalArgumentException("Additional input string too large");
         }
 
-        byte[] entropy = _entropySource.getEntropy();
+        byte[] entropy = getEntropy();
         byte[] seedMaterial = Arrays.concatenate(pad8(_s, _seedlen), entropy, additionalInput);
 
         _s = Utils.hash_df(_digest, seedMaterial, _seedlen);
 
         _reseedCounter = 0;
+    }
+
+    private byte[] getEntropy()
+    {
+        byte[] entropy = _entropySource.getEntropy();
+        if (entropy.length < (_securityStrength + 7) / 8)
+        {
+            throw new IllegalStateException("Insufficient entropy provided by entropy source");
+        }
+        return entropy;
     }
 
     private byte[] xor(byte[] a, byte[] b)
