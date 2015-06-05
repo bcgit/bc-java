@@ -32,19 +32,13 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
-import org.bouncycastle.util.encoders.Hex;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
-        // "Anonymous Sender    ", which is the octet sequence
-    private static final byte[] ANONYMOUS_SENDER = Hex.decode("416E6F6E796D6F75732053656E64657220202020");
-
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
-    private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
     private JcaKeyFingerprintCalculator fingerprintCalculator = new JcaKeyFingerprintCalculator();
 
     public JcePublicKeyDataDecryptorFactoryBuilder()
@@ -269,20 +263,4 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             throw new PGPException("exception decrypting session data", e);
         }
     }
-    private static int getKeyLen(int algID)
-        throws PGPException
-    {
-        switch (algID)
-        {
-        case SymmetricKeyAlgorithmTags.AES_128:
-            return 16;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            return 24;
-        case SymmetricKeyAlgorithmTags.AES_256:
-            return 32;
-        default:
-            throw new PGPException("unknown symmetric algorithm ID: " + algID);
-        }
-    }
-
 }
