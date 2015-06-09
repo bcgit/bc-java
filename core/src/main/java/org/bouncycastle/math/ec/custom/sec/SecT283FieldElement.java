@@ -14,7 +14,7 @@ public class SecT283FieldElement extends ECFieldElement
 
     public SecT283FieldElement(BigInteger x)
     {
-        if (x == null || x.signum() < 0)
+        if (x == null || x.signum() < 0 || x.bitLength() > 283)
         {
             throw new IllegalArgumentException("x value invalid for SecT283FieldElement");
         }

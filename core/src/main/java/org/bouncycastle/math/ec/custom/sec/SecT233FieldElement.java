@@ -13,7 +13,7 @@ public class SecT233FieldElement extends ECFieldElement
 
     public SecT233FieldElement(BigInteger x)
     {
-        if (x == null || x.signum() < 0)
+        if (x == null || x.signum() < 0 || x.bitLength() > 233)
         {
             throw new IllegalArgumentException("x value invalid for SecT233FieldElement");
         }
