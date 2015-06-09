@@ -14,7 +14,7 @@ public class SecT409FieldElement extends ECFieldElement
 
     public SecT409FieldElement(BigInteger x)
     {
-        if (x == null || x.signum() < 0)
+        if (x == null || x.signum() < 0 || x.bitLength() > 409)
         {
             throw new IllegalArgumentException("x value invalid for SecT409FieldElement");
         }
