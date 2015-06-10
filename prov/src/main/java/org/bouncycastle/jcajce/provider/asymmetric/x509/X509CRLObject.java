@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.IllegalFormatCodePointException;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -561,7 +562,7 @@ class X509CRLObject
     {
         if (!cert.getType().equals("X.509"))
         {
-            throw new RuntimeException("X.509 CRL used with non X.509 Cert");
+            throw new IllegalArgumentException("X.509 CRL used with non X.509 Cert");
         }
 
         Enumeration certs = c.getRevokedCertificateEnumeration();
@@ -602,7 +603,7 @@ class X509CRLObject
                         }
                         catch (CertificateEncodingException e)
                         {
-                            throw new RuntimeException("Cannot process certificate");
+                            throw new IllegalArgumentException("Cannot process certificate: " + e.getMessage());
                         }
                     }
 
