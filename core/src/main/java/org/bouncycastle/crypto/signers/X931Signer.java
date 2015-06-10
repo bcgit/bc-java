@@ -61,7 +61,7 @@ public class X931Signer
 
     /**
      * Generate a signer for the with either implicit or explicit trailers
-     * for ISO9796-2.
+     * for X9.31
      *
      * @param cipher base cipher to use for signature creation/verification
      * @param digest digest to use.
