@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.x509;
 
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -132,7 +133,7 @@ public class TBSCertList
 
         public Object nextElement()
         {
-            return null;   // TODO: check exception handling
+            throw new NoSuchElementException("Empty Enumeration");
         }
     }
 
