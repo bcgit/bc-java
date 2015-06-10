@@ -1,4 +1,9 @@
+/***************************************************************/
+/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
+/***************************************************************/
 package org.bouncycastle.asn1.x9;
+
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -10,33 +15,48 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * @deprecated use ValidationParams
+ * ValidationParams ::= SEQUENCE {
+ *    seed         BIT STRING,
+ *    pgenCounter  INTEGER
+ * }
  */
-public class DHValidationParms extends ASN1Object
+public class ValidationParams
+    extends ASN1Object
 {
     private DERBitString seed;
     private ASN1Integer pgenCounter;
 
-    public static DHValidationParms getInstance(ASN1TaggedObject obj, boolean explicit)
+    public static ValidationParams getInstance(ASN1TaggedObject obj, boolean explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
-    public static DHValidationParms getInstance(Object obj)
+    public static ValidationParams getInstance(Object obj)
     {
-        if (obj instanceof DHValidationParms)
+        if (obj instanceof ValidationParams)
         {
-            return (DHValidationParms)obj;
+            return (ValidationParams)obj;
         }
         else if (obj != null)
         {
-            return new DHValidationParms(ASN1Sequence.getInstance(obj));
+            return new ValidationParams(ASN1Sequence.getInstance(obj));
         }
 
         return null;
     }
 
-    public DHValidationParms(DERBitString seed, ASN1Integer pgenCounter)
+    public ValidationParams(byte[] seed, int pgenCounter)
+    {
+        if (seed == null)
+        {
+            throw new IllegalArgumentException("'seed' cannot be null");
+        }
+
+        this.seed = new DERBitString(seed);
+        this.pgenCounter = new ASN1Integer(pgenCounter);
+    }
+
+    public ValidationParams(DERBitString seed, ASN1Integer pgenCounter)
     {
         if (seed == null)
         {
@@ -51,7 +71,7 @@ public class DHValidationParms extends ASN1Object
         this.pgenCounter = pgenCounter;
     }
 
-    private DHValidationParms(ASN1Sequence seq)
+    private ValidationParams(ASN1Sequence seq)
     {
         if (seq.size() != 2)
         {
@@ -62,14 +82,14 @@ public class DHValidationParms extends ASN1Object
         this.pgenCounter = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 
-    public DERBitString getSeed()
+    public byte[] getSeed()
     {
-        return this.seed;
+        return this.seed.getBytes();
     }
 
-    public ASN1Integer getPgenCounter()
+    public BigInteger getPgenCounter()
     {
-        return this.pgenCounter;
+        return this.pgenCounter.getPositiveValue();
     }
 
     public ASN1Primitive toASN1Primitive()
