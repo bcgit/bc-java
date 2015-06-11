@@ -15,7 +15,6 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.jcajce.io.MacOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -31,7 +30,6 @@ public class JcePKCS12MacCalculatorBuilder
     implements PKCS12MacCalculatorBuilder
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
-    private ExtendedDigest digest;
     private ASN1ObjectIdentifier algorithm;
 
     private SecureRandom random;
