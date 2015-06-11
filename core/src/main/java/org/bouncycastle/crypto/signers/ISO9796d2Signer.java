@@ -405,6 +405,7 @@ public class ISO9796d2Signer
 
         byte[]  b = cipher.processBlock(block, 0, block.length);
 
+        fullMessage = (header & 0x20) == 0;
         System.arraycopy(mBuf, 0, recoveredMessage, 0, recoveredMessage.length);
 
         clearBlock(mBuf);
