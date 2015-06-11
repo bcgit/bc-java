@@ -189,7 +189,7 @@ class X509CRLEntryObject extends X509CRLEntry
             }
             catch (Exception e)
             {
-                throw new RuntimeException("error encoding " + e.toString());
+                throw new IllegalStateException("Exception encoding: " + e.toString());
             }
         }
 

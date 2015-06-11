@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 public class DSTU4145Params
     extends ASN1Object
@@ -30,6 +31,12 @@ public class DSTU4145Params
     public DSTU4145Params(ASN1ObjectIdentifier namedCurve)
     {
         this.namedCurve = namedCurve;
+    }
+
+    public DSTU4145Params(ASN1ObjectIdentifier namedCurve, byte[] dke)
+    {
+        this.namedCurve = namedCurve;
+        this.dke = Arrays.clone(dke);
     }
 
     public DSTU4145Params(DSTU4145ECBinary ecbinary)
