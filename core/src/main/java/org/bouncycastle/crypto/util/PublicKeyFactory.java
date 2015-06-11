@@ -20,10 +20,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.asn1.x9.DHDomainParameters;
 import org.bouncycastle.asn1.x9.DHPublicKey;
-import org.bouncycastle.asn1.x9.DHValidationParms;
+import org.bouncycastle.asn1.x9.DomainParameters;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.ValidationParams;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
@@ -96,24 +96,24 @@ public class PublicKeyFactory
 
             BigInteger y = dhPublicKey.getY().getValue();
 
-            DHDomainParameters dhParams = DHDomainParameters.getInstance(algId.getParameters());
+            DomainParameters dhParams = DomainParameters.getInstance(algId.getParameters());
 
-            BigInteger p = dhParams.getP().getValue();
-            BigInteger g = dhParams.getG().getValue();
-            BigInteger q = dhParams.getQ().getValue();
+            BigInteger p = dhParams.getP();
+            BigInteger g = dhParams.getG();
+            BigInteger q = dhParams.getQ();
 
             BigInteger j = null;
             if (dhParams.getJ() != null)
             {
-                j = dhParams.getJ().getValue();
+                j = dhParams.getJ();
             }
 
             DHValidationParameters validation = null;
-            DHValidationParms dhValidationParms = dhParams.getValidationParms();
+            ValidationParams dhValidationParms = dhParams.getValidationParams();
             if (dhValidationParms != null)
             {
-                byte[] seed = dhValidationParms.getSeed().getBytes();
-                BigInteger pgenCounter = dhValidationParms.getPgenCounter().getValue();
+                byte[] seed = dhValidationParms.getSeed();
+                BigInteger pgenCounter = dhValidationParms.getPgenCounter();
 
                 // TODO Check pgenCounter size?
 

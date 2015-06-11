@@ -1,3 +1,6 @@
+/***************************************************************/
+/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
+/***************************************************************/
 package org.bouncycastle.asn1.x9;
 
 import java.math.BigInteger;
@@ -13,37 +16,43 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * @deprecated use DomainParameters
+ * <pre>
+ *    DomainParameters ::= SEQUENCE {
+ *       p                INTEGER,           -- odd prime, p=jq +1
+ *       g                INTEGER,           -- generator, g
+ *       q                INTEGER,           -- factor of p-1
+ *       j                INTEGER OPTIONAL,  -- subgroup factor, j>= 2
+ *       validationParams  ValidationParams OPTIONAL
+ *    }
+ * </pre>
  */
-public class DHDomainParameters
+public class DomainParameters
     extends ASN1Object
 {
     private ASN1Integer p, g, q, j;
-    private DHValidationParms validationParms;
+    private ValidationParams validationParams;
 
-    public static DHDomainParameters getInstance(ASN1TaggedObject obj, boolean explicit)
+    public static DomainParameters getInstance(ASN1TaggedObject obj, boolean explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
-    public static DHDomainParameters getInstance(Object obj)
+    public static DomainParameters getInstance(Object obj)
     {
-        if (obj == null || obj instanceof DHDomainParameters)
+        if (obj instanceof DomainParameters)
         {
-            return (DHDomainParameters)obj;
+            return (DomainParameters)obj;
+        }
+        else if (obj != null)
+        {
+            return new DomainParameters(ASN1Sequence.getInstance(obj));
         }
 
-        if (obj instanceof ASN1Sequence)
-        {
-            return new DHDomainParameters((ASN1Sequence)obj);
-        }
-
-        throw new IllegalArgumentException("Invalid DHDomainParameters: "
-            + obj.getClass().getName());
+        return null;
     }
 
-    public DHDomainParameters(BigInteger p, BigInteger g, BigInteger q, BigInteger j,
-        DHValidationParms validationParms)
+    public DomainParameters(BigInteger p, BigInteger g, BigInteger q, BigInteger j,
+                            ValidationParams validationParams)
     {
         if (p == null)
         {
@@ -61,12 +70,16 @@ public class DHDomainParameters
         this.p = new ASN1Integer(p);
         this.g = new ASN1Integer(g);
         this.q = new ASN1Integer(q);
-        this.j = new ASN1Integer(j);
-        this.validationParms = validationParms;
+
+        if (j != null)
+        {
+            this.j = new ASN1Integer(j);
+        }
+        this.validationParams = validationParams;
     }
 
-    public DHDomainParameters(ASN1Integer p, ASN1Integer g, ASN1Integer q, ASN1Integer j,
-        DHValidationParms validationParms)
+    public DomainParameters(ASN1Integer p, ASN1Integer g, ASN1Integer q, ASN1Integer j,
+                            ValidationParams validationParams)
     {
         if (p == null)
         {
@@ -85,10 +98,10 @@ public class DHDomainParameters
         this.g = g;
         this.q = q;
         this.j = j;
-        this.validationParms = validationParms;
+        this.validationParams = validationParams;
     }
 
-    private DHDomainParameters(ASN1Sequence seq)
+    private DomainParameters(ASN1Sequence seq)
     {
         if (seq.size() < 3 || seq.size() > 5)
         {
@@ -110,7 +123,7 @@ public class DHDomainParameters
 
         if (next != null)
         {
-            this.validationParms = DHValidationParms.getInstance(next.toASN1Primitive());
+            this.validationParams = ValidationParams.getInstance(next.toASN1Primitive());
         }
     }
 
@@ -119,29 +132,34 @@ public class DHDomainParameters
         return e.hasMoreElements() ? (ASN1Encodable)e.nextElement() : null;
     }
 
-    public ASN1Integer getP()
+    public BigInteger getP()
     {
-        return this.p;
+        return this.p.getPositiveValue();
     }
 
-    public ASN1Integer getG()
+    public BigInteger getG()
     {
-        return this.g;
+        return this.g.getPositiveValue();
     }
 
-    public ASN1Integer getQ()
+    public BigInteger getQ()
     {
-        return this.q;
+        return this.q.getPositiveValue();
     }
 
-    public ASN1Integer getJ()
+    public BigInteger getJ()
     {
-        return this.j;
+        if (this.j == null)
+        {
+            return null;
+        }
+
+        return this.j.getPositiveValue();
     }
 
-    public DHValidationParms getValidationParms()
+    public ValidationParams getValidationParams()
     {
-        return this.validationParms;
+        return this.validationParams;
     }
 
     public ASN1Primitive toASN1Primitive()
@@ -156,9 +174,9 @@ public class DHDomainParameters
             v.add(this.j);
         }
 
-        if (this.validationParms != null)
+        if (this.validationParams != null)
         {
-            v.add(this.validationParms);
+            v.add(this.validationParams);
         }
 
         return new DERSequence(v);

@@ -56,16 +56,25 @@ public class AuthEnvelopedData
 
         this.originatorInfo = originatorInfo;
 
-        // TODO
         // "There MUST be at least one element in the collection."
         this.recipientInfos = recipientInfos;
+        if (this.recipientInfos.size() == 0)
+        {
+            throw new IllegalArgumentException("AuthEnvelopedData requires at least 1 RecipientInfo");
+        }
 
         this.authEncryptedContentInfo = authEncryptedContentInfo;
 
-        // TODO
         // "The authAttrs MUST be present if the content type carried in
         // EncryptedContentInfo is not id-data."
         this.authAttrs = authAttrs;
+        if (!authEncryptedContentInfo.getContentType().equals(CMSObjectIdentifiers.data))
+        {
+            if (authAttrs == null || authAttrs.size() == 0)
+            {
+                throw new IllegalArgumentException("authAttrs must be present with non-data content");
+            }
+        }
 
         this.mac = mac;
 
@@ -76,17 +85,19 @@ public class AuthEnvelopedData
      * Constructs AuthEnvelopedData by parsing supplied ASN1Sequence
      * <p>
      * @param seq An ASN1Sequence with AuthEnvelopedData
-     * @deprecated use getInstance().
      */
-    public AuthEnvelopedData(
+    private AuthEnvelopedData(
         ASN1Sequence seq)
     {
         int index = 0;
 
-        // TODO
         // "It MUST be set to 0."
         ASN1Primitive tmp = seq.getObjectAt(index++).toASN1Primitive();
         version = (ASN1Integer)tmp;
+        if (this.version.getValue().intValue() != 0)
+        {
+            throw new IllegalArgumentException("AuthEnvelopedData version number must be 0");
+        }
 
         tmp = seq.getObjectAt(index++).toASN1Primitive();
         if (tmp instanceof ASN1TaggedObject)
@@ -95,9 +106,12 @@ public class AuthEnvelopedData
             tmp = seq.getObjectAt(index++).toASN1Primitive();
         }
 
-        // TODO
         // "There MUST be at least one element in the collection."
         recipientInfos = ASN1Set.getInstance(tmp);
+        if (this.recipientInfos.size() == 0)
+        {
+            throw new IllegalArgumentException("AuthEnvelopedData requires at least 1 RecipientInfo");
+        }
 
         tmp = seq.getObjectAt(index++).toASN1Primitive();
         authEncryptedContentInfo = EncryptedContentInfo.getInstance(tmp);
@@ -110,16 +124,22 @@ public class AuthEnvelopedData
         }
         else
         {
-            // TODO
             // "The authAttrs MUST be present if the content type carried in
             // EncryptedContentInfo is not id-data."
+            if (!authEncryptedContentInfo.getContentType().equals(CMSObjectIdentifiers.data))
+            {
+                if (authAttrs == null || authAttrs.size() == 0)
+                {
+                    throw new IllegalArgumentException("authAttrs must be present with non-data content");
+                }
+            }
         }
 
         mac = ASN1OctetString.getInstance(tmp);
 
         if (seq.size() > index)
         {
-            tmp = seq.getObjectAt(index++).toASN1Primitive();
+            tmp = seq.getObjectAt(index).toASN1Primitive();
             unauthAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
         }
     }
