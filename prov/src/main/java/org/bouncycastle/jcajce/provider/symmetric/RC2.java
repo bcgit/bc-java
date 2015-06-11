@@ -158,7 +158,7 @@ public final class RC2
     {
         public PBEWithSHAAnd128BitRC2()
         {
-            super(new CBCBlockCipher(new RC2Engine()));
+            super(new CBCBlockCipher(new RC2Engine()), PKCS12, SHA1, 128, 8);
         }
     }
 
@@ -170,7 +170,7 @@ public final class RC2
     {
         public PBEWithSHAAnd40BitRC2()
         {
-            super(new CBCBlockCipher(new RC2Engine()));
+            super(new CBCBlockCipher(new RC2Engine()), PKCS12, SHA1, 40, 8);
         }
     }
 
