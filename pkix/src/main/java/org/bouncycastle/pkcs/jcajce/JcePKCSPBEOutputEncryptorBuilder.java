@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -116,17 +117,9 @@ public class JcePKCSPBEOutputEncryptorBuilder
         {
             if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
             {
-                PBEKeySpec pbeSpec = new PBEKeySpec(password);
-
-                SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm.getId());
-
-                PBEParameterSpec defParams = new PBEParameterSpec(salt, iterationCount);
-
-                key = keyFact.generateSecret(pbeSpec);
-
                 cipher = helper.createCipher(algorithm.getId());
 
-                cipher.init(Cipher.ENCRYPT_MODE, key, defParams);
+                cipher.init(Cipher.ENCRYPT_MODE, new PKCS12KeyWithParameters(password, salt, iterationCount));
 
                 encryptionAlg = new AlgorithmIdentifier(algorithm, new PKCS12PBEParams(salt, iterationCount));
             }

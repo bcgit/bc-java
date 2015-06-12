@@ -87,6 +87,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
@@ -608,23 +609,15 @@ public class PKCS12KeyStoreSpi
             if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
             {
                 PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algId.getParameters());
-
-                PBEKeySpec pbeSpec = new PBEKeySpec(password);
-                PrivateKey out;
-
-                SecretKeyFactory keyFact = helper.createSecretKeyFactory(
-                    algorithm.getId());
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
                     pbeParams.getIterations().intValue());
 
-                SecretKey k = keyFact.generateSecret(pbeSpec);
-
-                ((BCPBEKey)k).setTryWrongPKCS12Zero(wrongPKCS12Zero);
-
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
-                cipher.init(Cipher.UNWRAP_MODE, k, defParams);
+                PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
+
+                cipher.init(Cipher.UNWRAP_MODE, key, defParams);
 
                 // we pass "" as the key algorithm type as it is unknown at this point
                 return (PrivateKey)cipher.unwrap(data, "", Cipher.PRIVATE_KEY);
@@ -695,13 +688,10 @@ public class PKCS12KeyStoreSpi
 
             try
             {
-                SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm.getId());
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
                     pbeParams.getIterations().intValue());
-                BCPBEKey key = (BCPBEKey)keyFact.generateSecret(pbeSpec);
-
-                key.setTryWrongPKCS12Zero(wrongPKCS12Zero);
+                PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
 
