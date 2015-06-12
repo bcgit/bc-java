@@ -5,8 +5,6 @@ import java.security.Provider;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -14,6 +12,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
+import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.io.MacOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -63,10 +62,9 @@ public class JcePKCS12MacCalculatorBuilderProvider
 
                     final Mac mac = helper.createMac(algorithm.getId());
 
-                    SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm.getId());
                     PBEParameterSpec defParams = new PBEParameterSpec(pbeParams.getIV(), pbeParams.getIterations().intValue());
-                    PBEKeySpec pbeSpec = new PBEKeySpec(password);
-                    SecretKey key = keyFact.generateSecret(pbeSpec);
+
+                    final SecretKey key = new PKCS12Key(password);
 
                     mac.init(key, defParams);
 

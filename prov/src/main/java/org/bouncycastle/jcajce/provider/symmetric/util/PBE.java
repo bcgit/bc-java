@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.symmetric.util;
 
 import java.security.spec.AlgorithmParameterSpec;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
@@ -21,7 +22,6 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.jcajce.PKCS12Key;
 
 public interface PBE
 {
@@ -277,11 +277,6 @@ public interface PBE
             PBEParametersGenerator  generator = makePBEGenerator(pbeKey.getType(), pbeKey.getDigest());
             byte[]                  key = pbeKey.getEncoded();
             CipherParameters        param;
-    
-            if (pbeKey.shouldTryWrongPKCS12())
-            {
-                key = new byte[2];
-            }
             
             generator.init(key, pbeParam.getSalt(), pbeParam.getIterationCount());
 
@@ -294,7 +289,36 @@ public interface PBE
 
             return param;
         }
-    
+
+        /**
+         * generate a PBE based key suitable for a MAC algorithm, the
+         * key size is chosen according the MAC size, or the hashing algorithm,
+         * whichever is greater.
+         */
+        public static CipherParameters makePBEMacParameters(
+            PBEKeySpec keySpec,
+            int type,
+            int hash,
+            int keySize)
+        {
+            PBEParametersGenerator  generator = makePBEGenerator(type, hash);
+            byte[]                  key;
+            CipherParameters        param;
+
+            key = convertPassword(type, keySpec);
+
+            generator.init(key, keySpec.getSalt(), keySpec.getIterationCount());
+
+            param = generator.generateDerivedMacParameters(keySize);
+
+            for (int i = 0; i != key.length; i++)
+            {
+                key[i] = 0;
+            }
+
+            return param;
+        }
+
         /**
          * construct a key and iv (if necessary) suitable for use with a 
          * Cipher.
@@ -331,31 +355,30 @@ public interface PBE
             return param;
         }
 
-
         /**
          * generate a PBE based key suitable for a MAC algorithm, the
          * key size is chosen according the MAC size, or the hashing algorithm,
          * whichever is greater.
          */
         public static CipherParameters makePBEMacParameters(
-            PBEKeySpec keySpec,
+            SecretKey key,
             int type,
             int hash,
-            int keySize)
+            int keySize,
+            PBEParameterSpec pbeSpec)
         {
             PBEParametersGenerator  generator = makePBEGenerator(type, hash);
-            byte[]                  key;
             CipherParameters        param;
     
-            key = convertPassword(type, keySpec);
+            byte[] keyBytes = key.getEncoded();
             
-            generator.init(key, keySpec.getSalt(), keySpec.getIterationCount());
+            generator.init(key.getEncoded(), pbeSpec.getSalt(), pbeSpec.getIterationCount());
 
             param = generator.generateDerivedMacParameters(keySize);
 
-            for (int i = 0; i != key.length; i++)
+            for (int i = 0; i != keyBytes.length; i++)
             {
-                key[i] = 0;
+                keyBytes[i] = 0;
             }
     
             return param;

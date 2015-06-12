@@ -462,6 +462,7 @@ public class ISO9796d2PSSSigner
 
         recoveredMessage = new byte[messageLength];
 
+        fullMessage = (messageLength <= mBuf.length);
         System.arraycopy(mBuf, 0, recoveredMessage, 0, recoveredMessage.length);
 
         clearBlock(mBuf);

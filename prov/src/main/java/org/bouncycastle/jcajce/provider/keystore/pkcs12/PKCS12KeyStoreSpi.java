@@ -89,7 +89,6 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
-import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -1657,15 +1656,12 @@ public class PKCS12KeyStoreSpi
         byte[] data)
         throws Exception
     {
-        SecretKeyFactory keyFact = helper.createSecretKeyFactory(oid.getId());
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
-        PBEKeySpec pbeSpec = new PBEKeySpec(password);
-        BCPBEKey key = (BCPBEKey)keyFact.generateSecret(pbeSpec);
-        key.setTryWrongPKCS12Zero(wrongPkcs12Zero);
 
         Mac mac = helper.createMac(oid.getId());
-        mac.init(key, defParams);
+        mac.init(new PKCS12Key(password, wrongPkcs12Zero), defParams);
         mac.update(data);
+
         return mac.doFinal();
     }
 
