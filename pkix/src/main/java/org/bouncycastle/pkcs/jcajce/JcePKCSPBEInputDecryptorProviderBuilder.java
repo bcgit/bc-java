@@ -20,7 +20,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -84,12 +84,12 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
         return new InputDecryptorProvider()
         {
             private Cipher cipher;
-            private SecretKey key;
             private AlgorithmIdentifier encryptionAlg;
 
             public InputDecryptor get(final AlgorithmIdentifier algorithmIdentifier)
                 throws OperatorCreationException
             {
+                SecretKey key;
                 ASN1ObjectIdentifier algorithm = algorithmIdentifier.getAlgorithm();
 
                 try
@@ -98,24 +98,9 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                     {
                         PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(algorithmIdentifier.getParameters());
 
-                        PBEKeySpec pbeSpec = new PBEKeySpec(password);
-
-                        SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm.getId());
-
-                        PBEParameterSpec defParams = new PBEParameterSpec(
-                            pbeParams.getIV(),
-                            pbeParams.getIterations().intValue());
-
-                        key = keyFact.generateSecret(pbeSpec);
-
-                        if (key instanceof BCPBEKey)
-                        {
-                            ((BCPBEKey)key).setTryWrongPKCS12Zero(wrongPKCS12Zero);
-                        }
-
                         cipher = helper.createCipher(algorithm.getId());
 
-                        cipher.init(Cipher.DECRYPT_MODE, key, defParams);
+                        cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, wrongPKCS12Zero, pbeParams.getIV(), pbeParams.getIterations().intValue()));
 
                         encryptionAlg = algorithmIdentifier;
                     }

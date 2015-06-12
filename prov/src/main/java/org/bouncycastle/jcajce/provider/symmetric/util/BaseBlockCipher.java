@@ -11,6 +11,7 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -482,13 +483,30 @@ public class BaseBlockCipher
         //
         // a note on iv's - if ivLength is zero the IV gets ignored (we don't use it).
         //
-        if (key instanceof PKCS12Key)
+        if (scheme == PKCS12)
         {
-            PKCS12Key k = (PKCS12Key)key;
-            pbeSpec = (PBEParameterSpec)params;
-            if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
+            SecretKey k;
+            try
             {
-                pbeSpec = new PBEParameterSpec(((PKCS12KeyWithParameters)k).getSalt(), ((PKCS12KeyWithParameters)k).getIterationCount());
+                k = (SecretKey)key;
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("PKCS12 requires a SecretKey/PBEKey");
+            }
+
+            try
+            {
+                pbeSpec = (PBEParameterSpec)params;
+            }
+            catch (Exception e)
+            {
+                throw new InvalidAlgorithmParameterException("PKCS12 requires a PBEParameterSpec");
+            }
+
+            if (k instanceof PBEKey && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(((PBEKey)k).getSalt(), ((PBEKey)k).getIterationCount());
             }
 
             param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
