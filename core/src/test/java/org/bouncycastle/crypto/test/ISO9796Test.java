@@ -261,6 +261,11 @@ public class ISO9796Test
 
         byte[] recovered = new byte[eng.getRecoveredMessage().length];
 
+        if (!eng.hasFullMessage())
+        {
+            fail("full message not detected");
+        }
+
         System.arraycopy(eng.getRecoveredMessage(), 0, recovered, 0, recovered.length);
 
         eng.init(false, pubParameters);
@@ -499,6 +504,11 @@ public class ISO9796Test
 
         data = eng.generateSignature();
 
+        if (!eng.hasFullMessage())
+        {
+            fail("full message not detected");
+        }
+
         byte[] recovered = new byte[eng.getRecoveredMessage().length];
 
         System.arraycopy(eng.getRecoveredMessage(), 0, recovered, 0, recovered.length);
@@ -516,6 +526,11 @@ public class ISO9796Test
         if (!eng.verifySignature(sig7))
         {
             fail("failed ISO9796-2 verify Test 7");
+        }
+
+        if (!eng.hasFullMessage())
+        {
+            fail("full message not detected");
         }
 
         if (!isSameAs(msg7, 0, eng.getRecoveredMessage()))
