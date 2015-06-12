@@ -4,7 +4,7 @@ public abstract class X9ECParametersHolder
 {
     private X9ECParameters params;
 
-    public X9ECParameters getParameters()
+    public synchronized X9ECParameters getParameters()
     {
         if (params == null)
         {
