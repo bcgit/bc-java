@@ -223,7 +223,7 @@ public class X931Signer
             return false;
         }
 
-        BigInteger t = new BigInteger(block);
+        BigInteger t = new BigInteger(1, block);
         BigInteger f;
 
         if ((t.intValue() & 15) == 12)
