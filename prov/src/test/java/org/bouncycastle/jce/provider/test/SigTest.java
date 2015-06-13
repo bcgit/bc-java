@@ -14,6 +14,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
@@ -318,6 +320,15 @@ public class SigTest
         trySig("SHA512WithRSA/X9.31", data, signingKey, verifyKey);
         trySig("WhirlpoolWithRSA/X9.31", data, signingKey, verifyKey);
 
+        KeyFactory keyFact = KeyFactory.getInstance("RSA", "BC");
+
+        BigInteger mod = new BigInteger("f6b18dfb2eb944d8df7e8b8077f8857ffa7a4192ea10cdd87edf7839872d50029ed86fc17c8b90bef725517b7f2f6403559957d0d4220ed8283ebde769d9f7024b84654d7b398d64b582520e6b7a7e07c1aea5eedbfac0474ac239a5ceb6e5e7", 16);
+
+        RSAPublicKey vKey = (RSAPublicKey)keyFact.generatePublic(new RSAPublicKeySpec(mod, new BigInteger("10001", 16)));
+        RSAPrivateKey sKey = (RSAPrivateKey)keyFact.generatePrivate(new RSAPrivateKeySpec(mod, new BigInteger("6af2b6d6fa7e9f76560e0a747b8e66720129175c95d50b289c784d2ac38bc5701d653fade64cab47dee572d9d35dbc414be785166afe59a4dd3e7b5a19e756ed83c56319ece6a3a8a4e8d982526361bb133d49a27c4299a5d717189ebd9159a1", 16)));
+
+        trySig("SHA1WithRSA/X9.31", data, sKey, vKey);
+
         shouldPassSignatureX931Test1();
         shouldPassSignatureX931Test2();
         shouldPassSignatureX931Test3();
@@ -325,7 +336,7 @@ public class SigTest
         //
         // standard vector test - B.1.3 RIPEMD160, implicit.
         //
-        BigInteger  mod = new BigInteger("ffffffff78f6c55506c59785e871211ee120b0b5dd644aa796d82413a47b24573f1be5745b5cd9950f6b389b52350d4e01e90009669a8720bf265a2865994190a661dea3c7828e2e7ca1b19651adc2d5", 16);
+        mod = new BigInteger("ffffffff78f6c55506c59785e871211ee120b0b5dd644aa796d82413a47b24573f1be5745b5cd9950f6b389b52350d4e01e90009669a8720bf265a2865994190a661dea3c7828e2e7ca1b19651adc2d5", 16);
         BigInteger  pub = new BigInteger("03", 16);
         BigInteger  pri = new BigInteger("2aaaaaaa942920e38120ee965168302fd0301d73a4e60c7143ceb0adf0bf30b9352f50e8b9e4ceedd65343b2179005b2f099915e4b0c37e41314bb0821ad8330d23cba7f589e0f129b04c46b67dfce9d", 16);
 
