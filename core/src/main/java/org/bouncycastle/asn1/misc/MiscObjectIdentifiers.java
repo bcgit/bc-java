@@ -63,4 +63,20 @@ public interface MiscObjectIdentifiers
     static final ASN1ObjectIdentifier    entrust                 = new ASN1ObjectIdentifier("1.2.840.113533.7");
     /** NortelNetworks Entrust VersionExtension OID: 1.2.840.113533.7.65.0 */
     static final ASN1ObjectIdentifier    entrustVersionExtension = entrust.branch("65.0");
+
+        //
+    // Ascom
+    //
+    ASN1ObjectIdentifier as_sys_sec_alg_ideaCBC = new ASN1ObjectIdentifier("1.3.6.1.4.1.188.7.1.1.2");
+
+    //
+    // Peter Gutmann's Cryptlib
+    //
+    ASN1ObjectIdentifier cryptlib = new ASN1ObjectIdentifier("1.3.6.1.4.1.3029");
+
+    ASN1ObjectIdentifier cryptlib_algorithm = cryptlib.branch("1");
+    ASN1ObjectIdentifier cryptlib_algorithm_blowfish_ECB = cryptlib_algorithm.branch("1.1");
+    ASN1ObjectIdentifier cryptlib_algorithm_blowfish_CBC = cryptlib_algorithm.branch("1.2");
+    ASN1ObjectIdentifier cryptlib_algorithm_blowfish_CFB = cryptlib_algorithm.branch("1.3");
+    ASN1ObjectIdentifier cryptlib_algorithm_blowfish_OFB = cryptlib_algorithm.branch("1.4");
 }
