@@ -307,7 +307,7 @@ public class SecT283Field
         int k = 48;
         do
         {
-            j = (int)(x >>> k);
+            j  = (int)(x >>> k);
             g  = u[j & 7]
                ^ u[(j >>> 3) & 7] << 3
                ^ u[(j >>> 6) & 7] << 6;
