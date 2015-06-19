@@ -252,7 +252,7 @@ class PEMUtilities
         try
         {
             PBEKeySpec spec = new PBEKeySpec(password, salt, 1, keyLength * 8);
-            SecretKeyFactory keyFactory = helper.createSecretKeyFactory("OpenSSLPBKDF");
+            SecretKeyFactory keyFactory = helper.createSecretKeyFactory("PBKDF-OpenSSL");
 
             byte[] key = keyFactory.generateSecret(spec).getEncoded();
 
