@@ -219,7 +219,7 @@ public class SecT239Field
         int k = 54;
         do
         {
-            j = (int)(x >>> k);
+            j  = (int)(x >>> k);
             g  = u[j & 7]
                ^ u[(j >>> 3) & 7] << 3;
             l ^= (g <<   k);
