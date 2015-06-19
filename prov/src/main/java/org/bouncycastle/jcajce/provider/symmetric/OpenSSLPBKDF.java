@@ -7,23 +7,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.TEAEngine;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
-import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
-import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
-import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
-import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
-import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
-import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.util.Strings;
 
 public final class OpenSSLPBKDF
@@ -37,7 +25,7 @@ public final class OpenSSLPBKDF
     {
         public PBKDF()
         {
-            super("OpenSSLPBKDF", null);
+            super("PBKDF-OpenSSL", null);
         }
 
         protected SecretKey engineGenerateSecret(
@@ -92,7 +80,7 @@ public final class OpenSSLPBKDF
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("SecretKeyFactory.OPENSSLPBKDF", PREFIX + "$PBKDF");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF-OPENSSL", PREFIX + "$PBKDF");
         }
     }
 }

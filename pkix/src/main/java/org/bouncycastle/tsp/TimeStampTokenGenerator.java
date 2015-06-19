@@ -317,7 +317,7 @@ public class TimeStampTokenGenerator
         ASN1Boolean derOrdering = null;
         if (ordering)
         {
-            derOrdering = new ASN1Boolean(ordering);
+            derOrdering = ASN1Boolean.getInstance(ordering);
         }
 
         ASN1Integer  nonce = null;
