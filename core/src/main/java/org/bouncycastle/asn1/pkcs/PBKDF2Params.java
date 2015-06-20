@@ -39,7 +39,7 @@ public class PBKDF2Params
     /**
      * Create PBKDF2Params from the passed in object,
      *
-     * @param obj either PBKDF2Params or an ASN2Sequence.
+     * @param obj either PBKDF2Params or an ASN1Sequence.
      * @return a PBKDF2Params instance.
      */
     public static PBKDF2Params getInstance(
