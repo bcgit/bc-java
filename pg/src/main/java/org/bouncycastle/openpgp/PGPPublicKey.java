@@ -657,13 +657,24 @@ public class PGPPublicKey
             }
         }
     }
-    
+
+    /**
+     * Check whether this (sub)key has a revocation signature on it.
+     *
+     * @return boolean indicating whether this (sub)key has been revoked.
+     * @deprecated this method is poorly named, use hasRevocation().
+     */
+    public boolean isRevoked()
+    {
+        return hasRevocation();
+    }
+
     /**
      * Check whether this (sub)key has a revocation signature on it.
      * 
-     * @return boolean indicating whether this (sub)key has been revoked.
+     * @return boolean indicating whether this (sub)key has had a (possibly invalid) revocation attached..
      */
-    public boolean isRevoked()
+    public boolean hasRevocation()
     {
         int ns = 0;
         boolean revoked = false;
