@@ -5,10 +5,10 @@ import java.math.BigInteger;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat256;
 
-public class SecT239Field
+public class SecT193Field
 {
-    private static final long M47 = -1L >>> 17;
-    private static final long M60 = -1L >>> 4;
+    private static final long M01 = 1L;
+    private static final long M49 = -1L >>> 15;
 
     public static void add(long[] x, long[] y, long[] z)
     {
@@ -27,7 +27,6 @@ public class SecT239Field
         zz[4] = xx[4] ^ yy[4];
         zz[5] = xx[5] ^ yy[5];
         zz[6] = xx[6] ^ yy[6];
-        zz[7] = xx[7] ^ yy[7];
     }
 
     public static void addOne(long[] x, long[] z)
@@ -41,7 +40,7 @@ public class SecT239Field
     public static long[] fromBigInteger(BigInteger x)
     {
         long[] z = Nat256.fromBigInteger64(x);
-        reduce17(z, 0);
+        reduce63(z, 0);
         return z;
     }
 
@@ -61,42 +60,33 @@ public class SecT239Field
 
     public static void reduce(long[] xx, long[] z)
     {
-        long x0 = xx[0], x1 = xx[1], x2 = xx[2], x3 = xx[3];
-        long x4 = xx[4], x5 = xx[5], x6 = xx[6], x7 = xx[7];
+        long x0 = xx[0], x1 = xx[1], x2 = xx[2], x3 = xx[3], x4 = xx[4], x5 = xx[5], x6 = xx[6];
 
-        x3 ^= (x7 <<  17);
-        x4 ^= (x7 >>> 47);
-        x5 ^= (x7 <<  47);
-        x6 ^= (x7 >>> 17);
+        x2 ^= (x6 <<  63);
+        x3 ^= (x6 >>>  1) ^ (x6 <<  14);
+        x4 ^= (x6 >>> 50);
 
-        x2 ^= (x6 <<  17);
-        x3 ^= (x6 >>> 47);
-        x4 ^= (x6 <<  47);
-        x5 ^= (x6 >>> 17);
+        x1 ^= (x5 <<  63);
+        x2 ^= (x5 >>>  1) ^ (x5 <<  14);
+        x3 ^= (x5 >>> 50);
 
-        x1 ^= (x5 <<  17);
-        x2 ^= (x5 >>> 47);
-        x3 ^= (x5 <<  47);
-        x4 ^= (x5 >>> 17);
+        x0 ^= (x4 <<  63);
+        x1 ^= (x4 >>>  1) ^ (x4 <<  14);
+        x2 ^= (x4 >>> 50);
 
-        x0 ^= (x4 <<  17);
-        x1 ^= (x4 >>> 47);
-        x2 ^= (x4 <<  47);
-        x3 ^= (x4 >>> 17);
-
-        long t = x3 >>> 47;
-        z[0]   = x0 ^ t;
-        z[1]   = x1;
-        z[2]   = x2 ^ (t << 30);
-        z[3]   = x3 & M47;
+        long t = x3 >>> 1;
+        z[0]   = x0 ^ t ^ (t <<  15);
+        z[1]   = x1     ^ (t >>> 49);
+        z[2]   = x2;
+        z[3]   = x3 & M01;
     }
 
-    public static void reduce17(long[] z, int zOff)
+    public static void reduce63(long[] z, int zOff)
     {
-        long z3      = z[zOff + 3], t = z3 >>> 47;
-        z[zOff    ] ^= t;
-        z[zOff + 2] ^= (t << 30);
-        z[zOff + 3]  = z3 & M47;
+        long z3      = z[zOff + 3], t = z3 >>> 1;
+        z[zOff    ] ^= t ^ (t <<  15);
+        z[zOff + 1] ^=     (t >>> 49);
+        z[zOff + 3]  = z3 & M01;
     }
 
     public static void square(long[] x, long[] z)
@@ -131,23 +121,25 @@ public class SecT239Field
     protected static void implCompactExt(long[] zz)
     {
         long z0 = zz[0], z1 = zz[1], z2 = zz[2], z3 = zz[3], z4 = zz[4], z5 = zz[5], z6 = zz[6], z7 = zz[7];
-        zz[0] =  z0         ^ (z1 << 60);
-        zz[1] = (z1 >>>  4) ^ (z2 << 56);
-        zz[2] = (z2 >>>  8) ^ (z3 << 52);
-        zz[3] = (z3 >>> 12) ^ (z4 << 48);
-        zz[4] = (z4 >>> 16) ^ (z5 << 44);
-        zz[5] = (z5 >>> 20) ^ (z6 << 40);
-        zz[6] = (z6 >>> 24) ^ (z7 << 36);
-        zz[7] = (z7 >>> 28);
+        zz[0] =  z0         ^ (z1 << 49);
+        zz[1] = (z1 >>> 15) ^ (z2 << 34);
+        zz[2] = (z2 >>> 30) ^ (z3 << 19);
+        zz[3] = (z3 >>> 45) ^ (z4 <<  4)
+                            ^ (z5 << 53);
+        zz[4] = (z4 >>> 60) ^ (z6 << 38)
+              ^ (z5 >>> 11);
+        zz[5] = (z6 >>> 26) ^ (z7 << 23);
+        zz[6] = (z7 >>> 41);
+        zz[7] = 0;
     }
 
     protected static void implExpand(long[] x, long[] z)
     {
         long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
-        z[0] = x0 & M60;
-        z[1] = ((x0 >>> 60) ^ (x1 <<  4)) & M60;
-        z[2] = ((x1 >>> 56) ^ (x2 <<  8)) & M60;
-        z[3] = ((x2 >>> 52) ^ (x3 << 12));
+        z[0] = x0 & M49;
+        z[1] = ((x0 >>> 49) ^ (x1 << 15)) & M49;
+        z[2] = ((x1 >>> 34) ^ (x2 << 30)) & M49;
+        z[3] = ((x2 >>> 19) ^ (x3 << 45));
     }
 
     protected static void implMultiply(long[] x, long[] y, long[] zz)
@@ -200,39 +192,40 @@ public class SecT239Field
 
     protected static void implMulwAcc(long x, long y, long[] z, int zOff)
     {
-//        assert x >>> 60 == 0;
-//        assert y >>> 60 == 0;
+//        assert x >>> 49 == 0;
+//        assert y >>> 49 == 0;
 
         long[] u = new long[8];
-//      u[0] = 0;
+//        u[0] = 0;
         u[1] = y;
         u[2] = u[1] << 1;
         u[3] = u[2] ^  y;
         u[4] = u[2] << 1;
         u[5] = u[4] ^  y;
         u[6] = u[3] << 1;
-        u[7] = u[6] ^  y;
+        u[7] = u[6] ^ y;
 
         int j = (int)x;
         long g, h = 0, l = u[j & 7]
                          ^ (u[(j >>> 3) & 7] << 3);
-        int k = 54;
+        int k = 36;
         do
         {
             j  = (int)(x >>> k);
             g  = u[j & 7]
-               ^ u[(j >>> 3) & 7] << 3;
+               ^ u[(j >>> 3) & 7] << 3
+               ^ u[(j >>> 6) & 7] << 6
+               ^ u[(j >>> 9) & 7] << 9
+               ^ u[(j >>> 12) & 7] << 12;
             l ^= (g <<   k);
             h ^= (g >>> -k);
         }
-        while ((k -= 6) > 0);
+        while ((k -= 15) > 0);
 
-        h ^= ((x & 0x0820820820820820L) & ((y << 4) >> 63)) >>> 5;
+//        assert h >>> 33 == 0;
 
-//        assert h >>> 55 == 0;
-
-        z[zOff    ] ^= l & M60;
-        z[zOff + 1] ^= (l >>> 60) ^ (h << 4);
+        z[zOff    ] ^= l & M49;
+        z[zOff + 1] ^= (l >>> 49) ^ (h << 15);
     }
 
     protected static void implSquare(long[] x, long[] zz)
@@ -240,9 +233,6 @@ public class SecT239Field
         Interleave.expand64To128(x[0], zz, 0);
         Interleave.expand64To128(x[1], zz, 2);
         Interleave.expand64To128(x[2], zz, 4);
-
-        long x3 = x[3];
-        zz[6] = Interleave.expand32to64((int)x3);
-        zz[7] = Interleave.expand16to32((int)(x3 >>> 32)) & 0xFFFFFFFFL;
+        zz[6] = (x[3] & M01);
     }
 }

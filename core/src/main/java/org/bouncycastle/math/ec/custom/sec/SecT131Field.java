@@ -228,8 +228,8 @@ public class SecT131Field
 
     protected static void implMulw(long x, long y, long[] z, int zOff)
     {
-        assert x >>> 45 == 0;
-        assert y >>> 45 == 0;
+//        assert x >>> 45 == 0;
+//        assert y >>> 45 == 0;
 
         long[] u = new long[8];
 //      u[0] = 0;
@@ -248,7 +248,7 @@ public class SecT131Field
         int k = 33;
         do
         {
-            j = (int)(x >>> k);
+            j  = (int)(x >>> k);
             g  = u[j & 7]
                ^ u[(j >>> 3) & 7] << 3
                ^ u[(j >>> 6) & 7] << 6
@@ -258,7 +258,7 @@ public class SecT131Field
         }
         while ((k -= 12) > 0);
 
-        assert h >>> 25 == 0;
+//        assert h >>> 25 == 0;
 
         z[zOff    ] = l & M44;
         z[zOff + 1] = (l >>> 44) ^ (h << 20);

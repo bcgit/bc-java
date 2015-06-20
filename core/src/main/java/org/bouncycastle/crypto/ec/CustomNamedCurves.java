@@ -31,6 +31,8 @@ import org.bouncycastle.math.ec.custom.sec.SecT131R2Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT163K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT163R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT163R2Curve;
+import org.bouncycastle.math.ec.custom.sec.SecT193R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecT193R2Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT233K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT233R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecT239K1Curve;
@@ -437,6 +439,38 @@ public class CustomNamedCurves
     };
 
     /*
+     * sect193r1
+     */
+    static X9ECParametersHolder sect193r1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = Hex.decode("103FAEC74D696E676875615175777FC5B191EF30");
+            ECCurve curve = configureCurve(new SecT193R1Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "01F481BC5F0FF84A74AD6CDF6FDEF4BF6179625372D8C0C5E1"
+                + "0025E399F2903712CCF3EA9E3A1AD17FB0B3201B6AF7CE1B05"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
+    /*
+     * sect193r2
+     */
+    static X9ECParametersHolder sect193r2 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = Hex.decode("10B7B4D696E676875615175137C8A16FD0DA2211");
+            ECCurve curve = configureCurve(new SecT193R2Curve());
+            ECPoint G = curve.decodePoint(Hex.decode("04"
+                + "00D9B67D192E0367C803F39E1A7E82CA14A651350AAE617E8F"
+                + "01CE94335607C304AC29E7DEFBD9CA01F596F927224CDECF6C"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
+    /*
      * sect233k1
      */
     static X9ECParametersHolder sect233k1 = new X9ECParametersHolder()
@@ -644,6 +678,8 @@ public class CustomNamedCurves
         defineCurveWithOID("sect163k1", SECObjectIdentifiers.sect163k1, sect163k1);
         defineCurveWithOID("sect163r1", SECObjectIdentifiers.sect163r1, sect163r1);
         defineCurveWithOID("sect163r2", SECObjectIdentifiers.sect163r2, sect163r2);
+        defineCurveWithOID("sect193r1", SECObjectIdentifiers.sect193r1, sect193r1);
+        defineCurveWithOID("sect193r2", SECObjectIdentifiers.sect193r2, sect193r2);
         defineCurveWithOID("sect233k1", SECObjectIdentifiers.sect233k1, sect233k1);
         defineCurveWithOID("sect233r1", SECObjectIdentifiers.sect233r1, sect233r1);
         defineCurveWithOID("sect239k1", SECObjectIdentifiers.sect239k1, sect239k1);

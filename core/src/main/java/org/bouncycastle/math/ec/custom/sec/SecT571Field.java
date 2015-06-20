@@ -221,7 +221,7 @@ public class SecT571Field
             int k = 60;
             do
             {
-                j = (int)(x >>> k);
+                j  = (int)(x >>> k);
                 g  = u[j & 31];
                 l ^= (g <<   k);
                 h ^= (g >>> -k);
