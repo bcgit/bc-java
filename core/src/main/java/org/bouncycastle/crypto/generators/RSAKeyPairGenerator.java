@@ -30,18 +30,21 @@ public class RSAKeyPairGenerator
         AsymmetricCipherKeyPair result = null;
         boolean done = false;
 
+        //
+        // p and q values should have a length of half the strength in bits
+        //
+        int strength = param.getStrength();
+        int pbitlength = (strength + 1) / 2;
+        int qbitlength = strength - pbitlength;
+        int mindiffbits = strength / 3;
+        int minWeight = strength >> 2;
+
+        // d lower bound is 2^(strength / 2)
+        BigInteger dLowerBound = BigInteger.valueOf(2).pow(strength / 2);
+
         while (!done)
         {
-            BigInteger p, q, n, d, e, pSub1, qSub1, phi, lcm, dLowerBound;
-
-            //
-            // p and q values should have a length of half the strength in bits
-            //
-            int strength = param.getStrength();
-            int pbitlength = (strength + 1) / 2;
-            int qbitlength = strength - pbitlength;
-            int mindiffbits = strength / 3;
-            int minWeight = strength >> 2;
+            BigInteger p, q, n, d, e, pSub1, qSub1, gcd, lcm;
 
             e = param.getPublicExponent();
 
@@ -53,7 +56,7 @@ public class RSAKeyPairGenerator
             //
             // generate a modulus of the required length
             //
-            for (;;)
+            for (; ; )
             {
                 q = chooseRandomPrime(qbitlength, e);
 
@@ -80,7 +83,7 @@ public class RSAKeyPairGenerator
                 }
 
 	            /*
-	             * Require a minimum weight of the NAF representation, since low-weight composites may
+                 * Require a minimum weight of the NAF representation, since low-weight composites may
 	             * be weak against a version of the number-field-sieve for factoring.
 	             *
 	             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
@@ -96,26 +99,22 @@ public class RSAKeyPairGenerator
 
             if (p.compareTo(q) < 0)
             {
-                phi = p;
+                gcd = p;
                 p = q;
-                q = phi;
+                q = gcd;
             }
 
             pSub1 = p.subtract(ONE);
             qSub1 = q.subtract(ONE);
-            phi = pSub1.multiply(qSub1);
-            lcm = phi.divide(pSub1.gcd(qSub1));
+            gcd = pSub1.gcd(qSub1);
+            lcm = pSub1.divide(gcd).multiply(qSub1);
 
             //
             // calculate the private exponent
             //
             d = e.modInverse(lcm);
 
-            // if d is less than or equal to dLowerBound, we need to start over
-            // also, for backward compatibility, if d is not the same as
-            // e.modInverse(phi), we need to start over
-
-            if (d.bitLength() <= qbitlength || !d.equals(e.modInverse(phi)))
+            if (d.compareTo(dLowerBound) <= 0)
             {
                 continue;
             }
