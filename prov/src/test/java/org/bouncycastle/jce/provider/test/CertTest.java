@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +30,8 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -1098,6 +1101,21 @@ public class CertTest
             "AGfsxfTyldQDEOVzD/Uq8Xh4gIHuSqki9mRSjMR19MQtTKRmI9TRHIeTdIZ6l3P7" +
             "jFfGJvTP0E9NYSolx+kM");
 
+    private final String ecPemCert =
+        "-----BEGIN CERTIFICATE-----\n" +
+            "MIIB/jCCAYWgAwIBAgIIdJclisc/elQwCgYIKoZIzj0EAwMwRTELMAkGA1UEBhMC\n" +
+            "VVMxFDASBgNVBAoMC0FmZmlybVRydXN0MSAwHgYDVQQDDBdBZmZpcm1UcnVzdCBQ\n" +
+            "cmVtaXVtIEVDQzAeFw0xMDAxMjkxNDIwMjRaFw00MDEyMzExNDIwMjRaMEUxCzAJ\n" +
+            "BgNVBAYTAlVTMRQwEgYDVQQKDAtBZmZpcm1UcnVzdDEgMB4GA1UEAwwXQWZmaXJt\n" +
+            "VHJ1c3QgUHJlbWl1bSBFQ0MwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQNMF4bFZ0D\n" +
+            "0KF5Nbc6PJJ6yhUczWLznCZcBz3lVPqj1swS6vQUX+iOGasvLkjmrBhDeKzQN8O9\n" +
+            "ss0s5kfiGuZjuD0uL3jET9v0D6RoTFVya5UdThhClXjMNzyR4ptlKymjQjBAMB0G\n" +
+            "A1UdDgQWBBSaryl6wBE1NSZRMADDav5A1a7WPDAPBgNVHRMBAf8EBTADAQH/MA4G\n" +
+            "A1UdDwEB/wQEAwIBBjAKBggqhkjOPQQDAwNnADBkAjAXCfOHiFBar8jAQr9HX/Vs\n" +
+            "aobgxCd05DhT1wV/GzTjxi+zygk8N53X57hG8f2h4nECMEJZh0PUUd+60wkyWs6I\n" +
+            "flc9nF9Ca/UHLbXwgpP5WW+uZPpY5Yse42O+tYHNbwKMeQ==\n" +
+            "-----END CERTIFICATE-----";
+
     private PublicKey dudPublicKey = new PublicKey() 
     {
         public String getAlgorithm()
@@ -1328,6 +1346,20 @@ public class CertTest
         if (col.size() != 1 || !col.contains(crl))
         {
             fail("PEM crl collection not right");
+        }
+
+        cert = readPEMCert(cf, ecPemCert);
+
+        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(cert.getPublicKey().getEncoded());
+
+        AlgorithmParameters ecParams = AlgorithmParameters.getInstance("EC", "BC");
+
+        ecParams.init(pubInfo.getAlgorithm().getParameters().toASN1Primitive().getEncoded());
+
+        if (!new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973", 16)
+            .equals(((ECPublicKey)cert.getPublicKey()).getParameters().getN()))
+        {
+            fail("N incorrect");
         }
     }
 

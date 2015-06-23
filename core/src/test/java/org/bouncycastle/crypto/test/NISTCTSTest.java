@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.NISTCTSBlockCipher;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
@@ -131,7 +130,7 @@ public class NISTCTSTest
 
     public String getName()
     {
-        return "CTS";
+        return "NISTCTS";
     }
 
     public void performTest() 
@@ -148,6 +147,17 @@ public class NISTCTSTest
         testCTS(7, NISTCTSBlockCipher.CS1, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs1NotQuiteTwoBlockOut);
         testCTS(8, NISTCTSBlockCipher.CS2, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs2NotQuiteTwoBlockOut);
         testCTS(9, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs3NotQuiteTwoBlockOut);
+
+        byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
+        byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
+        byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
+
+        testCTS(10, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
+
+        byte[] aes128c = Hex.decode("aafd12f659cae63489b479e5076ddec2");
+        byte[] aesOut1c = Hex.decode("0af33c005a337af55a5149effc5108eaa1ea87de8a8556e8786b8f230da64e56");
+
+        testCTS(11, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(new KeyParameter(aes128c), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1c);
 
         testExceptions();
     }
