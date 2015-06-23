@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.math.ec.ECCurve;
 
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -50,7 +52,11 @@ public class AlgorithmParametersSpi
     {
         if (isASN1FormatString(format))
         {
-            ecParameterSpec = EC5Util.convertToSpec(X9ECParameters.getInstance(bytes));
+            X962Parameters params = X962Parameters.getInstance(bytes);
+
+            ECCurve curve = EC5Util.getCurve(BouncyCastleProvider.CONFIGURATION, params);
+
+            ecParameterSpec = EC5Util.convertToSpec(params, curve);
         }
         else
         {

@@ -11,10 +11,12 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
-import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
@@ -41,6 +43,89 @@ public class EC5Util
                 customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
             }
         }
+    }
+
+    public static ECCurve getCurve(
+        ProviderConfiguration configuration,
+        X962Parameters params)
+    {
+        ECCurve curve;
+
+        if (params.isNamedCurve())
+        {
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
+            X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+
+            curve = ecP.getCurve();
+        }
+        else if (params.isImplicitlyCA())
+        {
+            curve = configuration.getEcImplicitlyCa().getCurve();
+        }
+        else
+        {
+            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+
+            curve = ecP.getCurve();
+        }
+
+        return curve;
+    }
+
+    public static ECParameterSpec convertToSpec(
+        X962Parameters params, ECCurve curve)
+    {
+        ECParameterSpec ecSpec;
+        EllipticCurve ellipticCurve;
+
+        if (params.isNamedCurve())
+        {
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
+            X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+
+            ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
+
+            ecSpec = new ECNamedCurveSpec(
+                ECUtil.getCurveName(oid),
+                ellipticCurve,
+                new ECPoint(
+                    ecP.getG().getAffineXCoord().toBigInteger(),
+                    ecP.getG().getAffineYCoord().toBigInteger()),
+                ecP.getN(),
+                ecP.getH());
+        }
+        else if (params.isImplicitlyCA())
+        {
+            ecSpec = null;
+        }
+        else
+        {
+            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+
+            ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
+
+            if (ecP.getH() != null)
+            {
+                ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    new ECPoint(
+                        ecP.getG().getAffineXCoord().toBigInteger(),
+                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    ecP.getN(),
+                    ecP.getH().intValue());
+            }
+            else
+            {
+                ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    new ECPoint(
+                        ecP.getG().getAffineXCoord().toBigInteger(),
+                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    ecP.getN(), 1);      // TODO: not strictly correct... need to fix the test data...
+            }
+        }
+
+        return ecSpec;
     }
 
     public static ECParameterSpec convertToSpec(
