@@ -153,19 +153,18 @@ public class JcaPublicKeyConverter
                 usage,
                 ((ECFieldFp)params.getCurve().getField()).getP(),
                 params.getCurve().getA(), params.getCurve().getB(),
-                convertPoint(convertCurve(params.getCurve()), params.getGenerator(), false).getEncoded(),
+                convertPoint(convertCurve(params.getCurve()), params.getGenerator()).getEncoded(),
                 params.getOrder(),
-                convertPoint(convertCurve(params.getCurve()), pubKey.getW(), false).getEncoded(),
+                convertPoint(convertCurve(params.getCurve()), pubKey.getW()).getEncoded(),
                 params.getCofactor());
         }
     }
 
     private static org.bouncycastle.math.ec.ECPoint convertPoint(
         ECCurve curve,
-        java.security.spec.ECPoint point,
-        boolean withCompression)
+        java.security.spec.ECPoint point)
     {
-        return curve.createPoint(point.getAffineX(), point.getAffineY(), withCompression);
+        return curve.createPoint(point.getAffineX(), point.getAffineY());
     }
 
     private static ECCurve convertCurve(
