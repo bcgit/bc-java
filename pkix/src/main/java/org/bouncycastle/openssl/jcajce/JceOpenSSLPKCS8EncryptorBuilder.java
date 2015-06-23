@@ -11,9 +11,6 @@ import java.security.SecureRandom;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -28,7 +25,6 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -63,7 +59,6 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     private Cipher cipher;
     private SecureRandom random;
     private AlgorithmParameterGenerator paramGen;
-    private SecretKeyFactory secKeyFact;
     private char[] password;
 
     private SecretKey key;
@@ -131,10 +126,6 @@ public class JceOpenSSLPKCS8EncryptorBuilder
             if (PEMUtilities.isPKCS5Scheme2(algOID))
             {
                 this.paramGen = helper.createAlgorithmParameterGenerator(algOID.getId());
-            }
-            else
-            {
-                this.secKeyFact = helper.createSecretKeyFactory(algOID.getId());
             }
         }
         catch (GeneralSecurityException e)
