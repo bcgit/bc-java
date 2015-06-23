@@ -11,6 +11,7 @@ import java.util.Iterator;
 import javax.crypto.Cipher;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -2355,9 +2356,9 @@ public class PGPKeyRingTest
                 // this should succeed
                 PGPPrivateKey privTmp = pgpKey.extractPrivateKey(null);
 
-                if (pgpKey.getKeyID() != oldKeyID)
+                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_NONE)
                 {
-                    fail("key ID mismatch");
+                    fail("usage/key ID mismatch");
                 }
             }
 
@@ -2379,9 +2380,9 @@ public class PGPKeyRingTest
                 // this should succeed
                 PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
 
-                if (pgpKey.getKeyID() != oldKeyID)
+                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_CHECKSUM)
                 {
-                    fail("key ID mismatch");
+                    fail("usage/key ID mismatch");
                 }
             }
         }
