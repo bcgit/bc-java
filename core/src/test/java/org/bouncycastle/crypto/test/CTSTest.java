@@ -188,12 +188,6 @@ public class CTSTest
         testCTS(5, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
         testCTS(6, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
 
-        byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2");
-        byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
-        byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
-
-        testCTS(4, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
-
         testOldCTS(4, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
         testOldCTS(5, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
         testOldCTS(6, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
@@ -205,7 +199,13 @@ public class CTSTest
 
         testCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, pstErrata);
         testCTS(8, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), aes1Block), aes1Block, pstErrataNonZeroIV);
-        testOldCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
+        testOldCTS(9, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
+
+        byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
+        byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
+        byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
+
+        testCTS(10, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
 
         testExceptions();
     }
