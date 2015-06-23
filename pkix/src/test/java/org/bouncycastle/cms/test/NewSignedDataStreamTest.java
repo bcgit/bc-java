@@ -12,10 +12,12 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -163,7 +165,11 @@ public class NewSignedDataStreamTest
         Store               certStore = sp.getCertificates();
         Store               crlStore = sp.getCRLs();
         SignerInformationStore  signers = sp.getSignerInfos();
-        
+
+        Set digestIDs = new HashSet(sp.getDigestAlgorithmIDs());
+
+        assertTrue(digestIDs.size() > 0);
+
         Collection              c = signers.getSigners();
         Iterator                it = c.iterator();
     
@@ -176,13 +182,16 @@ public class NewSignedDataStreamTest
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
     
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
-            
+
+            digestIDs.remove(signer.getDigestAlgorithmID());
+
             if (contentDigest != null)
             {
                 assertTrue(MessageDigest.isEqual(contentDigest, signer.getContentDigest()));
             }
         }
 
+        assertTrue(digestIDs.size() == 0);
         assertEquals(certStore.getMatches(null).size(), sp.getCertificates().getMatches(null).size());
         assertEquals(crlStore.getMatches(null).size(), sp.getCRLs().getMatches(null).size());
     }

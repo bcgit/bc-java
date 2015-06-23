@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -89,6 +92,7 @@ public class CMSSignedDataParser
     private ASN1ObjectIdentifier    _signedContentType;
     private CMSTypedStream          _signedContent;
     private Map                     digests;
+    private Set<AlgorithmIdentifier> digestAlgorithms;
 
     private SignerInformationStore  _signerInfoStore;
     private ASN1Set                 _certSet, _crlSet;
@@ -145,10 +149,15 @@ public class CMSSignedDataParser
             
             ASN1SetParser digAlgs = _signedData.getDigestAlgorithms();
             ASN1Encodable  o;
-            
+
+            Set<AlgorithmIdentifier> algSet = new HashSet<AlgorithmIdentifier>();
+
             while ((o = digAlgs.readObject()) != null)
             {
                 AlgorithmIdentifier algId = AlgorithmIdentifier.getInstance(o);
+
+                algSet.add(algId);
+
                 try
                 {
                     DigestCalculator calculator = digestCalculatorProvider.get(algId);
@@ -163,6 +172,8 @@ public class CMSSignedDataParser
                      //  ignore
                 }
             }
+
+            digestAlgorithms = Collections.unmodifiableSet(algSet);
 
             //
             // If the message is simply a certificate chain message getContent() may return null.
@@ -212,6 +223,16 @@ public class CMSSignedDataParser
     public int getVersion()
     {
         return _signedData.getVersion().getValue().intValue();
+    }
+
+    /**
+     * Return the digest algorithm identifiers for the SignedData object
+     *
+     * @return the set of digest algorithm identifiers
+     */
+    public Set<AlgorithmIdentifier> getDigestAlgorithmIDs()
+    {
+        return digestAlgorithms;
     }
 
     /**

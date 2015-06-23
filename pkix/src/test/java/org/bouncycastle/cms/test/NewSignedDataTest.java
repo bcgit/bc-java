@@ -14,9 +14,11 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -1545,7 +1547,11 @@ public class NewSignedDataTest
         ASN1InputStream      aIn = new ASN1InputStream(bIn);
         
         s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
-    
+
+        Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
+
+        assertTrue(digestAlgorithms.size() > 0);
+
         certs = s.getCertificates();
     
         SignerInformationStore  signers = s.getSignerInfos();
@@ -1559,9 +1565,13 @@ public class NewSignedDataTest
     
             Iterator        certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
-    
+
+            digestAlgorithms.remove(signer.getDigestAlgorithmID());
+
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
+
+        assertTrue(digestAlgorithms.size() == 0);
 
         //
         // check signer information lookup

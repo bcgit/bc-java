@@ -5,9 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -20,6 +24,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
@@ -298,6 +303,23 @@ public class CMSSignedData
     public Store getOtherRevocationInfo(ASN1ObjectIdentifier otherRevocationInfoFormat)
     {
         return HELPER.getOtherRevocationInfo(otherRevocationInfoFormat, signedData.getCRLs());
+    }
+
+    /**
+     * Return the digest algorithm identifiers for the SignedData object
+     *
+     * @return the set of digest algorithm identifiers
+     */
+    public Set<AlgorithmIdentifier> getDigestAlgorithmIDs()
+    {
+        Set<AlgorithmIdentifier> digests = new HashSet<AlgorithmIdentifier>(signedData.getDigestAlgorithms().size());
+
+        for (Enumeration en = signedData.getDigestAlgorithms().getObjects(); en.hasMoreElements();)
+        {
+            digests.add(AlgorithmIdentifier.getInstance(en.nextElement()));
+        }
+
+        return Collections.unmodifiableSet(digests);
     }
 
     /**
