@@ -12,6 +12,7 @@ import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -20,6 +21,7 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -483,16 +485,37 @@ public class ECPointTest extends TestCase
         {
             String name = (String)it.next();
 
-            X9ECParameters x9ECParameters = ECNamedCurveTable.getByName(name);
-            if (x9ECParameters != null)
+            X9ECParameters x9A = ECNamedCurveTable.getByName(name);
+            X9ECParameters x9B = CustomNamedCurves.getByName(name);
+
+            if (x9A != null && x9B != null)
             {
-                implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9ECParameters);
+                assertEquals(x9A.getCurve().getField(), x9B.getCurve().getField());
+                assertEquals(x9A.getCurve().getA().toBigInteger(), x9B.getCurve().getA().toBigInteger());
+                assertEquals(x9A.getCurve().getB().toBigInteger(), x9B.getCurve().getB().toBigInteger());
+                assertOptionalValuesAgree(x9A.getCurve().getCofactor(), x9B.getCurve().getCofactor());
+                assertOptionalValuesAgree(x9A.getCurve().getOrder(), x9B.getCurve().getOrder());
+
+                assertPointsEqual("Custom curve base-point inconsistency", x9A.getG(), x9B.getG());
+
+                assertEquals(x9A.getH(), x9B.getH());
+                assertEquals(x9A.getN(), x9B.getN());
+                assertOptionalValuesAgree(x9A.getSeed(), x9B.getSeed());
+
+                BigInteger k = new BigInteger(x9A.getN().bitLength(), secRand);
+                ECPoint pA = x9A.getG().multiply(k);
+                ECPoint pB = x9B.getG().multiply(k);
+                assertPointsEqual("Custom curve multiplication inconsistency", pA, pB);
             }
 
-            x9ECParameters = CustomNamedCurves.getByName(name);
-            if (x9ECParameters != null)
+            if (x9A != null)
             {
-                implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9ECParameters);
+                implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9A);
+            }
+
+            if (x9B != null)
+            {
+                implAddSubtractMultiplyTwiceEncodingTestAllCoords(x9B);
             }
         }
     }
@@ -511,7 +534,25 @@ public class ECPointTest extends TestCase
 
     private void assertPointsEqual(String message, ECPoint a, ECPoint b)
     {
+        // NOTE: We intentionally test points for equality in both directions
         assertEquals(message, a, b);
+        assertEquals(message, b, a);
+    }
+
+    private void assertOptionalValuesAgree(Object a, Object b)
+    {
+        if (a != null && b != null)
+        {
+            assertEquals(a, b);
+        }
+    }
+
+    private void assertOptionalValuesAgree(byte[] a, byte[] b)
+    {
+        if (a != null && b != null)
+        {
+            assertTrue(Arrays.areEqual(a, b));
+        }
     }
 
     public static Test suite()
