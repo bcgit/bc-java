@@ -324,6 +324,16 @@ public class PGPSecretKey
     }
 
     /**
+     * Return the S2K usage associated with this key.
+     *
+     * @return the key's S2K usage
+     */
+    public int getS2KUsage()
+    {
+        return secret.getS2KUsage();
+    }
+
+    /**
      * Return the S2K used to process this key
      *
      * @return the key's S2K, null if one is not present.
@@ -682,6 +692,10 @@ public class PGPSecretKey
         }
         else
         {
+            if (s2kUsage == SecretKeyPacket.USAGE_NONE)
+            {
+                s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
+            }
             if (key.secret.getPublicKeyPacket().getVersion() < 4)
             {
                 // Version 2 or 3 - RSA Keys only
