@@ -109,8 +109,7 @@ public class NetscapeCertRequest
             //could potentially alter the bytes
             content = new DERBitString(pkac);
 
-            SubjectPublicKeyInfo pubkeyinfo = new SubjectPublicKeyInfo(
-                    (ASN1Sequence)pkac.getObjectAt(0));
+            SubjectPublicKeyInfo pubkeyinfo = SubjectPublicKeyInfo.getInstance(pkac.getObjectAt(0));
 
             X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(
                     pubkeyinfo).getBytes());

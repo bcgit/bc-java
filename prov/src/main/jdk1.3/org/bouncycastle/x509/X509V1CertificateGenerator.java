@@ -107,8 +107,7 @@ public class X509V1CertificateGenerator
     {
         try
         {
-            tbsGen.setSubjectPublicKeyInfo(new SubjectPublicKeyInfo((ASN1Sequence)new ASN1InputStream(
-                                new ByteArrayInputStream(key.getEncoded())).readObject()));
+            tbsGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(key.getEncoded()));
         }
         catch (Exception e)
         {

@@ -6,7 +6,6 @@ import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -15,7 +14,6 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.PrincipalUtil;
 
 /**
@@ -70,8 +68,7 @@ public class AuthorityKeyIdentifierStructure
             if (certificate.getVersion() != 3)
             {
                 GeneralName          genName = new GeneralName(PrincipalUtil.getIssuerX509Principal(certificate));
-                SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
-                        (ASN1Sequence)new ASN1InputStream(certificate.getPublicKey().getEncoded()).readObject());
+                SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
                 
                 return (ASN1Sequence)new AuthorityKeyIdentifier(
                                info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Object();
@@ -80,7 +77,7 @@ public class AuthorityKeyIdentifierStructure
             {
                 GeneralName             genName = new GeneralName(PrincipalUtil.getIssuerX509Principal(certificate));
                 
-                byte[]                  ext = certificate.getExtensionValue(X509Extensions.SubjectKeyIdentifier.getId());
+                byte[]                  ext = certificate.getExtensionValue(Extension.subjectKeyIdentifier.getId());
                 
                 if (ext != null)
                 {
@@ -91,8 +88,7 @@ public class AuthorityKeyIdentifierStructure
                 }
                 else
                 {
-                    SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
-                            (ASN1Sequence)new ASN1InputStream(certificate.getPublicKey().getEncoded()).readObject());
+                    SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
                     
                     return (ASN1Sequence)new AuthorityKeyIdentifier(
                             info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Object();
@@ -111,8 +107,7 @@ public class AuthorityKeyIdentifierStructure
     {
         try
         {
-            SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
-                                        (ASN1Sequence)new ASN1InputStream(pubKey.getEncoded()).readObject());
+            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
         
             return (ASN1Sequence)new AuthorityKeyIdentifier(info).toASN1Object();
         }

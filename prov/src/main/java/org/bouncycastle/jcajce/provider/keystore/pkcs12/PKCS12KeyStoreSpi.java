@@ -212,8 +212,7 @@ public class PKCS12KeyStoreSpi
     {
         try
         {
-            SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
-                (ASN1Sequence)ASN1Primitive.fromByteArray(pubKey.getEncoded()));
+            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
 
             return new SubjectKeyIdentifier(getDigest(info));
         }

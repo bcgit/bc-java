@@ -2181,11 +2181,7 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                ByteArrayInputStream inStream = new ByteArrayInputStream(
-                        certX509.getPublicKey().getEncoded());
-                ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                SubjectPublicKeyInfo publicKeyInfo = new SubjectPublicKeyInfo(
-                        (ASN1Sequence)derInputStream.readObject());
+                SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(certX509.getPublicKey().getEncoded());
                 AlgorithmIdentifier algInfo = publicKeyInfo.getAlgorithmId();
                 if (!algInfo.getObjectId().equals(subjectKeyAlgID))
                 {

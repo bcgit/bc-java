@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.test;
 
-import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
@@ -28,8 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -296,8 +293,7 @@ public class CertPathLoopTest
         static SubjectPublicKeyInfo getPublicKeyInfo(PublicKey k)
             throws Exception
         {
-            return new SubjectPublicKeyInfo((ASN1Sequence)new ASN1InputStream(
-                new ByteArrayInputStream(k.getEncoded())).readObject());
+            return SubjectPublicKeyInfo.getInstance(k.getEncoded());
         }
     }
 
