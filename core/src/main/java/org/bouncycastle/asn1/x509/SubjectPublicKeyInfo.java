@@ -64,6 +64,9 @@ public class SubjectPublicKeyInfo
         this.algId = algId;
     }
 
+    /**
+     @deprecated use SubjectPublicKeyInfo.getInstance()
+     */
     public SubjectPublicKeyInfo(
         ASN1Sequence  seq)
     {

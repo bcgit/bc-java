@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.ocsp.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -13,8 +12,6 @@ import java.util.Date;
 
 import javax.crypto.KeyGenerator;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
@@ -153,11 +150,7 @@ public class OCSPTestUtil
     private static AuthorityKeyIdentifier createAuthorityKeyId(PublicKey _pubKey)
             throws IOException
     {
-
-        ByteArrayInputStream _bais = new ByteArrayInputStream(_pubKey
-                .getEncoded());
-        SubjectPublicKeyInfo _info = new SubjectPublicKeyInfo(
-                (ASN1Sequence)new ASN1InputStream(_bais).readObject());
+        SubjectPublicKeyInfo _info = SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded());
 
         return new AuthorityKeyIdentifier(_info);
     }
