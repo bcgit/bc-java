@@ -61,6 +61,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.cert.test.PEMData;
 import org.bouncycastle.operator.ContentSigner;
@@ -762,6 +763,10 @@ public class BcCertTest
         assertTrue(cert.isValidOn(new Date()));
 
         assertTrue(cert.isSignatureValid(new BcDSAContentVerifierProviderBuilder(digAlgFinder).build(pubKey)));
+
+        AsymmetricKeyParameter certPubKey = PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
+
+        assertTrue(cert.isSignatureValid(new BcDSAContentVerifierProviderBuilder(digAlgFinder).build(certPubKey)));
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
         CertificateFactory fact = CertificateFactory.getInstance("X.509");
