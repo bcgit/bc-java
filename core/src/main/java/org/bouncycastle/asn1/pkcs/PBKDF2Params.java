@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -31,10 +32,10 @@ public class PBKDF2Params
 {
     private static final AlgorithmIdentifier algid_hmacWithSHA1 = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA1, DERNull.INSTANCE);
 
-    private ASN1OctetString octStr;
-    private ASN1Integer      iterationCount;
-    private ASN1Integer      keyLength;
-    private AlgorithmIdentifier prf;
+    private final ASN1OctetString octStr;
+    private final ASN1Integer iterationCount;
+    private final ASN1Integer keyLength;
+    private final AlgorithmIdentifier prf;
 
     /**
      * Create PBKDF2Params from the passed in object,
@@ -43,7 +44,7 @@ public class PBKDF2Params
      * @return a PBKDF2Params instance.
      */
     public static PBKDF2Params getInstance(
-        Object  obj)
+        Object obj)
     {
         if (obj instanceof PBKDF2Params)
         {
@@ -61,72 +62,77 @@ public class PBKDF2Params
     /**
      * Create a PBKDF2Params with the specified salt, iteration count, and algid-hmacWithSHA1 for the prf.
      *
-     * @param salt  input salt.
+     * @param salt           input salt.
      * @param iterationCount input iteration count.
      */
     public PBKDF2Params(
-        byte[]  salt,
-        int     iterationCount)
+        byte[] salt,
+        int iterationCount)
     {
-        this.octStr = new DEROctetString(salt);
-        this.iterationCount = new ASN1Integer(iterationCount);
+        this(salt, iterationCount, 0);
     }
 
     /**
      * Create a PBKDF2Params with the specified salt, iteration count, keyLength, and algid-hmacWithSHA1 for the prf.
      *
-     * @param salt  input salt.
+     * @param salt           input salt.
      * @param iterationCount input iteration count.
-     * @param keyLength intended key length to be produced.
+     * @param keyLength      intended key length to be produced.
      */
     public PBKDF2Params(
-        byte[]  salt,
-        int     iterationCount,
-        int     keyLength)
+        byte[] salt,
+        int iterationCount,
+        int keyLength)
     {
-        this(salt, iterationCount);
-
-        this.keyLength = new ASN1Integer(keyLength);
+        this(salt, iterationCount, keyLength, null);
     }
 
     /**
      * Create a PBKDF2Params with the specified salt, iteration count, keyLength, and a defined prf.
      *
-     * @param salt  input salt.
+     * @param salt           input salt.
      * @param iterationCount input iteration count.
-     * @param keyLength intended key length to be produced.
-     * @param prf the pseudo-random function to use.
+     * @param keyLength      intended key length to be produced.
+     * @param prf            the pseudo-random function to use.
      */
     public PBKDF2Params(
-        byte[]  salt,
-        int     iterationCount,
-        int     keyLength,
+        byte[] salt,
+        int iterationCount,
+        int keyLength,
         AlgorithmIdentifier prf)
     {
-        this(salt, iterationCount);
+        this.octStr = new DEROctetString(Arrays.clone(salt));
+        this.iterationCount = new ASN1Integer(iterationCount);
 
-        this.keyLength = new ASN1Integer(keyLength);
+        if (keyLength > 0)
+        {
+            this.keyLength = new ASN1Integer(keyLength);
+        }
+        else
+        {
+            this.keyLength = null;
+        }
+
         this.prf = prf;
     }
 
     /**
      * Create a PBKDF2Params with the specified salt, iteration count, and a defined prf.
      *
-     * @param salt  input salt.
+     * @param salt           input salt.
      * @param iterationCount input iteration count.
-     * @param prf the pseudo-random function to use.
+     * @param prf            the pseudo-random function to use.
      */
     public PBKDF2Params(
-        byte[]  salt,
-        int     iterationCount,
+        byte[] salt,
+        int iterationCount,
         AlgorithmIdentifier prf)
     {
-        this(salt, iterationCount);
-        this.prf = prf;
+        this(salt, iterationCount, 0, prf);
     }
 
     private PBKDF2Params(
-        ASN1Sequence  seq)
+        ASN1Sequence seq)
     {
         Enumeration e = seq.getObjects();
 
@@ -158,6 +164,15 @@ public class PBKDF2Params
             {
                 prf = AlgorithmIdentifier.getInstance(o);
             }
+            else
+            {
+                prf = null;
+            }
+        }
+        else
+        {
+            keyLength = null;
+            prf = null;
         }
     }
 
@@ -213,7 +228,12 @@ public class PBKDF2Params
      */
     public AlgorithmIdentifier getPrf()
     {
-        return prf != null ? prf : algid_hmacWithSHA1;
+        if (prf != null)
+        {
+            return prf;
+        }
+
+        return algid_hmacWithSHA1;
     }
 
     /**
@@ -223,7 +243,7 @@ public class PBKDF2Params
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector  v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(octStr);
         v.add(iterationCount);
@@ -233,7 +253,7 @@ public class PBKDF2Params
             v.add(keyLength);
         }
 
-        if (!isDefaultPrf())
+        if (prf != null && !prf.equals(algid_hmacWithSHA1))
         {
             v.add(prf);
         }
