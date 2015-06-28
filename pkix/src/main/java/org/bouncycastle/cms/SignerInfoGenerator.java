@@ -183,13 +183,15 @@ public class SignerInfoGenerator
              */
             ASN1Set signedAttr = null;
 
+            AlgorithmIdentifier digestEncryptionAlgorithm = sigEncAlgFinder.findEncryptionAlgorithm(signer.getAlgorithmIdentifier());
+
             AlgorithmIdentifier digestAlg = null;
 
             if (sAttrGen != null)
             {
                 digestAlg = digester.getAlgorithmIdentifier();
                 calculatedDigest = digester.getDigest();
-                Map parameters = getBaseParameters(contentType, digester.getAlgorithmIdentifier(), calculatedDigest);
+                Map parameters = getBaseParameters(contentType, digester.getAlgorithmIdentifier(), digestEncryptionAlgorithm, calculatedDigest);
                 AttributeTable signed = sAttrGen.getAttributes(Collections.unmodifiableMap(parameters));
 
                 signedAttr = getAttributeSet(signed);
@@ -220,15 +222,13 @@ public class SignerInfoGenerator
             ASN1Set unsignedAttr = null;
             if (unsAttrGen != null)
             {
-                Map parameters = getBaseParameters(contentType, digestAlg, calculatedDigest);
+                Map parameters = getBaseParameters(contentType, digestAlg, digestEncryptionAlgorithm, calculatedDigest);
                 parameters.put(CMSAttributeTableGenerator.SIGNATURE, Arrays.clone(sigBytes));
 
                 AttributeTable unsigned = unsAttrGen.getAttributes(Collections.unmodifiableMap(parameters));
 
                 unsignedAttr = getAttributeSet(unsigned);
             }
-
-            AlgorithmIdentifier digestEncryptionAlgorithm = sigEncAlgFinder.findEncryptionAlgorithm(signer.getAlgorithmIdentifier());
 
             return new SignerInfo(signerIdentifier, digestAlg,
                 signedAttr, digestEncryptionAlgorithm, new DEROctetString(sigBytes), unsignedAttr);
@@ -255,7 +255,7 @@ public class SignerInfoGenerator
         return null;
     }
 
-    private Map getBaseParameters(ASN1ObjectIdentifier contentType, AlgorithmIdentifier digAlgId, byte[] hash)
+    private Map getBaseParameters(ASN1ObjectIdentifier contentType, AlgorithmIdentifier digAlgId, AlgorithmIdentifier sigAlgId, byte[] hash)
     {
         Map param = new HashMap();
 
@@ -265,7 +265,9 @@ public class SignerInfoGenerator
         }
 
         param.put(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER, digAlgId);
+        param.put(CMSAttributeTableGenerator.SIGNATURE_ALGORITHM_IDENTIFIER, sigAlgId);
         param.put(CMSAttributeTableGenerator.DIGEST,  Arrays.clone(hash));
+
         return param;
     }
 

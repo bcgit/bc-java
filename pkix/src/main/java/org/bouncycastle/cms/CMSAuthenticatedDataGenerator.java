@@ -107,7 +107,7 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform digest calculation: " + e.getMessage(), e);
             }
 
-            Map parameters = getBaseParameters(typedData.getContentType(), digestCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest());
+            Map parameters = getBaseParameters(typedData.getContentType(), digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest());
 
             if (authGen == null)
             {

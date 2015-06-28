@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.SignerIdentifier;
@@ -428,6 +429,46 @@ public class SignerInformation
             }
         }
 
+        AttributeTable signedAttrTable = this.getSignedAttributes();
+
+        // RFC 6211 Validate Algorithm Identifier protection attribute if present
+        {
+            AttributeTable unsignedAttrTable = this.getUnsignedAttributes();
+            if (unsignedAttrTable != null && unsignedAttrTable.getAll(CMSAttributes.cmsAlgorithmProtect).size() > 0)
+            {
+                throw new CMSException("A cmsAlgorithmProtect attribute MUST be a signed attribute");
+            }
+            if (signedAttrTable != null)
+            {
+                ASN1EncodableVector protectionAttributes = signedAttrTable.getAll(CMSAttributes.cmsAlgorithmProtect);
+                if (protectionAttributes.size() > 1)
+                {
+                    throw new CMSException("Only one instance of a cmsAlgorithmProtect attribute can be present");
+                }
+
+                if (protectionAttributes.size() > 0)
+                {
+                    Attribute attr = Attribute.getInstance(protectionAttributes.get(0));
+                    if (attr.getAttrValues().size() != 1)
+                    {
+                        throw new CMSException("A cmsAlgorithmProtect attribute MUST contain exactly one value");
+                    }
+
+                    CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(attr.getAttributeValues()[0]);
+
+                    if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), info.getDigestAlgorithm()))
+                    {
+                        throw new CMSException("CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+                    }
+
+                    if (!CMSUtils.isEquivalent(algorithmProtection.getSignatureAlgorithm(), info.getDigestEncryptionAlgorithm()))
+                    {
+                        throw new CMSException("CMS Algorithm Identifier Protection check failed for signatureAlgorithm");
+                    }
+                }
+            }
+        }
+
         // RFC 3852 11.2 Check the message-digest attribute is correct
         {
             ASN1Primitive validMessageDigest = getSingleValuedSignedAttribute(
@@ -457,7 +498,6 @@ public class SignerInformation
 
         // RFC 3852 11.4 Validate countersignature attribute(s)
         {
-            AttributeTable signedAttrTable = this.getSignedAttributes();
             if (signedAttrTable != null
                 && signedAttrTable.getAll(CMSAttributes.counterSignature).size() > 0)
             {
@@ -470,7 +510,7 @@ public class SignerInformation
                 ASN1EncodableVector csAttrs = unsignedAttrTable.getAll(CMSAttributes.counterSignature);
                 for (int i = 0; i < csAttrs.size(); ++i)
                 {
-                    Attribute csAttr = (Attribute)csAttrs.get(i);
+                    Attribute csAttr = Attribute.getInstance(csAttrs.get(i));
                     if (csAttr.getAttrValues().size() < 1)
                     {
                         throw new CMSException("A countersignature attribute MUST contain at least one AttributeValue");

@@ -10,8 +10,10 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.Time;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * Default signed attributes generator.
@@ -90,6 +92,14 @@ public class DefaultSignedAttributeTableGenerator
                 CMSAttributeTableGenerator.DIGEST);
             Attribute attr = new Attribute(CMSAttributes.messageDigest,
                 new DERSet(new DEROctetString(messageDigest)));
+            std.put(attr.getAttrType(), attr);
+        }
+
+        if (!std.contains(CMSAttributes.cmsAlgorithmProtect))
+        {
+            Attribute attr = new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
+                (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER),
+                CMSAlgorithmProtection.SIGNATURE, (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.SIGNATURE_ALGORITHM_IDENTIFIER))));
             std.put(attr.getAttrType(), attr);
         }
 

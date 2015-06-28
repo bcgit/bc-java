@@ -25,9 +25,7 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Store;
 
@@ -236,7 +234,6 @@ public class CMSSignedData
         {
             ASN1Set         s = signedData.getSignerInfos();
             List            signerInfos = new ArrayList();
-            SignatureAlgorithmIdentifierFinder sigAlgFinder = new DefaultSignatureAlgorithmIdentifierFinder();
 
             for (int i = 0; i != s.size(); i++)
             {
@@ -260,6 +257,26 @@ public class CMSSignedData
         }
 
         return signerInfoStore;
+    }
+
+    /**
+     * Return if this is object represents a detached signature.
+     *
+     * @return true if this message represents a detached signature, false otherwise.
+     */
+    public boolean isDetachedSignature()
+    {
+        return signedData.getEncapContentInfo().getContent() == null && signedData.getSignerInfos().size() > 0;
+    }
+
+    /**
+     * Return if this is object represents a certificate management message.
+     *
+     * @return true if the message has no signers or content, false otherwise.
+     */
+    public boolean isCertificateManagementMessage()
+    {
+        return signedData.getEncapContentInfo().getContent() == null && signedData.getSignerInfos().size() == 0;
     }
 
     /**

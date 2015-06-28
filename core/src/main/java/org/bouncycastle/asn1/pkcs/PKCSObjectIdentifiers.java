@@ -199,6 +199,11 @@ public interface PKCSObjectIdentifiers
     /** PKCS#9: 1.2.840.113549.1.9.23.1 */
     static final ASN1ObjectIdentifier    x509Crl                 = crlTypes.branch("1");
 
+    /** RFC 6211 -  id-aa-cmsAlgorithmProtect OBJECT IDENTIFIER ::= {
+            iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+            pkcs9(9) 52 }  */
+    ASN1ObjectIdentifier   id_aa_cmsAlgorithmProtect = pkcs_9.branch("52");
+
     //
     // SMIME capability sub oids.
     //
