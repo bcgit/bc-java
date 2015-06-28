@@ -43,6 +43,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -724,6 +725,34 @@ public class ECDSA5Test
         }
     }
 
+    private void testAlgorithmParameters()
+        throws Exception
+    {
+        AlgorithmParameters algParam = AlgorithmParameters.getInstance("EC", "BC");
+
+        algParam.init(new ECGenParameterSpec("P-256"));
+
+        byte[] encoded = algParam.getEncoded();
+
+        algParam = AlgorithmParameters.getInstance("EC", "BC");
+
+        algParam.init(encoded);
+
+        ECGenParameterSpec genSpec = algParam.getParameterSpec(ECGenParameterSpec.class);
+
+        if (!genSpec.getName().equals("P-256"))
+        {
+            fail("curve name not recovered");
+        }
+
+        ECParameterSpec ecSpec = algParam.getParameterSpec(ECParameterSpec.class);
+
+        if (!ecSpec.getOrder().equals(NISTNamedCurves.getByName("P-256").getN()))
+        {
+            fail("incorrect spec recovered");
+        }
+    }
+
     private void testKeyPairGenerationWithOIDs()
         throws Exception
     {
@@ -1002,6 +1031,7 @@ public class ECDSA5Test
         testNamedCurveSigning();
         testBSI();
         testMQVwithHMACOnePass();
+        testAlgorithmParameters();
     }
 
     public static void main(
