@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
 import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
@@ -23,18 +24,40 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeInputStream;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 class CMSUtils
 {
+    static boolean isEquivalent(AlgorithmIdentifier algId1, AlgorithmIdentifier algId2)
+    {
+        if (algId1 == null || algId2 == null)
+        {
+            return false;
+        }
+
+        if (!algId1.getAlgorithm().equals(algId2.getAlgorithm()))
+        {
+            return false;
+        }
+
+        ASN1Encodable params1 = algId1.getParameters();
+        ASN1Encodable params2 = algId2.getParameters();
+        if (params1 != null)
+        {
+            return params1.equals(params2) || (params1.equals(DERNull.INSTANCE) && params2 == null);
+        }
+
+        return params2 == null || params2.equals(DERNull.INSTANCE);
+    }
+
     static ContentInfo readContentInfo(
         byte[] input)
         throws CMSException

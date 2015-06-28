@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -89,7 +92,6 @@ public class CMSAuthenticatedData
 
         this.macAlg = authData.getMacAlgorithm();
 
-
         this.authAttrs = authData.getAuthAttrs();
         this.mac = authData.getMac().getOctets();
         this.unauthAttrs = authData.getUnauthAttrs();
@@ -111,6 +113,34 @@ public class CMSAuthenticatedData
                 throw new CMSException("a digest calculator provider is required if authenticated attributes are present");
             }
 
+            AttributeTable table = new AttributeTable(authAttrs);
+
+            ASN1EncodableVector protectionAttributes = table.getAll(CMSAttributes.cmsAlgorithmProtect);
+            if (protectionAttributes.size() > 1)
+            {
+                throw new CMSException("Only one instance of a cmsAlgorithmProtect attribute can be present");
+            }
+
+            if (protectionAttributes.size() > 0)
+            {
+                Attribute attr = Attribute.getInstance(protectionAttributes.get(0));
+                if (attr.getAttrValues().size() != 1)
+                {
+                    throw new CMSException("A cmsAlgorithmProtect attribute MUST contain exactly one value");
+                }
+
+                CMSAlgorithmProtection algorithmProtection = CMSAlgorithmProtection.getInstance(attr.getAttributeValues()[0]);
+
+                if (!CMSUtils.isEquivalent(algorithmProtection.getDigestAlgorithm(), authData.getDigestAlgorithm()))
+                {
+                    throw new CMSException("CMS Algorithm Identifier Protection check failed for digestAlgorithm");
+                }
+
+                if (!CMSUtils.isEquivalent(algorithmProtection.getMacAlgorithm(), macAlg))
+                {
+                    throw new CMSException("CMS Algorithm Identifier Protection check failed for macAlgorithm");
+                }
+            }
             try
             {
                 CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(authData.getDigestAlgorithm()), readable);
@@ -207,8 +237,17 @@ public class CMSAuthenticatedData
 
     /**
      * return the ContentInfo
+     * @deprecated use toASN1Structure()
      */
     public ContentInfo getContentInfo()
+    {
+        return contentInfo;
+    }
+
+    /**
+     * return the ContentInfo
+     */
+    public ContentInfo toASN1Structure()
     {
         return contentInfo;
     }

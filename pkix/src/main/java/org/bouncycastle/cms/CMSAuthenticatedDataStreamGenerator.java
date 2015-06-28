@@ -274,7 +274,7 @@ public class CMSAuthenticatedDataStreamGenerator
 
             if (digestCalculator != null)
             {
-                parameters = Collections.unmodifiableMap(getBaseParameters(contentType, digestCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest()));
+                parameters = Collections.unmodifiableMap(getBaseParameters(contentType, digestCalculator.getAlgorithmIdentifier(), macCalculator.getAlgorithmIdentifier(), digestCalculator.getDigest()));
 
                 if (authGen == null)
                 {
