@@ -302,7 +302,7 @@ public class NewAuthenticatedDataTest
         checkData(data, kek, ad);
 
         ContentInfo adInfo = ad.toASN1Structure();
-        AuthenticatedData iAd = AuthenticatedData.getInstance(adInfo.getContent());
+        AuthenticatedData iAd = AuthenticatedData.getInstance(adInfo.getContent().toASN1Primitive().getEncoded());
 
         try
         {
