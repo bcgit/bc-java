@@ -6,6 +6,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -37,6 +38,15 @@ public class AlgorithmParametersSpi
             curveName = ecGenParameterSpec.getName();
             ecParameterSpec = EC5Util.convertToSpec(params);
         }
+        else if (algorithmParameterSpec instanceof ECParameterSpec)
+        {
+            curveName = null;
+            ecParameterSpec = (ECParameterSpec)algorithmParameterSpec;
+        }
+        else
+        {
+            throw new InvalidParameterSpecException("AlgorithmParameterSpec class not recognized: " + algorithmParameterSpec.getClass().getName());
+        }
     }
 
     @Override
@@ -55,6 +65,11 @@ public class AlgorithmParametersSpi
             X962Parameters params = X962Parameters.getInstance(bytes);
 
             ECCurve curve = EC5Util.getCurve(BouncyCastleProvider.CONFIGURATION, params);
+
+            if (params.isNamedCurve())
+            {
+                curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
+            }
 
             ecParameterSpec = EC5Util.convertToSpec(params, curve);
         }
@@ -97,6 +112,10 @@ public class AlgorithmParametersSpi
             if (ecParameterSpec == null)     // implicitly CA
             {
                 params = new X962Parameters(DERNull.INSTANCE);
+            }
+            else if (curveName != null)
+            {
+                params = new X962Parameters(ECNamedCurveTable.getOID(curveName));
             }
             else
             {

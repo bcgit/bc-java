@@ -53,7 +53,7 @@ public class EC5Util
 
         if (params.isNamedCurve())
         {
-            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
+            ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
             X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
 
             curve = ecP.getCurve();
