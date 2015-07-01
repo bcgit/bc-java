@@ -2,8 +2,8 @@ package org.bouncycastle.jcajce.provider.asymmetric.rsa;
 
 import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -178,7 +178,7 @@ public class PSSSignatureSpi
 
     protected void engineSetParameter(
         AlgorithmParameterSpec params)
-        throws InvalidParameterException
+        throws InvalidAlgorithmParameterException
     {
         if (params instanceof PSSParameterSpec)
         {
@@ -188,31 +188,31 @@ public class PSSSignatureSpi
             {
                 if (!DigestFactory.isSameDigest(originalSpec.getDigestAlgorithm(), newParamSpec.getDigestAlgorithm()))
                 {
-                    throw new InvalidParameterException("parameter must be using " + originalSpec.getDigestAlgorithm());
+                    throw new InvalidAlgorithmParameterException("parameter must be using " + originalSpec.getDigestAlgorithm());
                 }
             }
             if (!newParamSpec.getMGFAlgorithm().equalsIgnoreCase("MGF1") && !newParamSpec.getMGFAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1.getId()))
             {
-                throw new InvalidParameterException("unknown mask generation function specified");
+                throw new InvalidAlgorithmParameterException("unknown mask generation function specified");
             }
             
             if (!(newParamSpec.getMGFParameters() instanceof MGF1ParameterSpec))
             {
-                throw new InvalidParameterException("unkown MGF parameters");
+                throw new InvalidAlgorithmParameterException("unknown MGF parameters");
             }
             
             MGF1ParameterSpec mgfParams = (MGF1ParameterSpec)newParamSpec.getMGFParameters();
             
             if (!DigestFactory.isSameDigest(mgfParams.getDigestAlgorithm(), newParamSpec.getDigestAlgorithm()))
             {
-                throw new InvalidParameterException("digest algorithm for MGF should be the same as for PSS parameters.");
+                throw new InvalidAlgorithmParameterException("digest algorithm for MGF should be the same as for PSS parameters.");
             }
             
             Digest newDigest = DigestFactory.getDigest(mgfParams.getDigestAlgorithm());
             
             if (newDigest == null)
             {
-                throw new InvalidParameterException("no match on MGF digest algorithm: "+ mgfParams.getDigestAlgorithm());
+                throw new InvalidAlgorithmParameterException("no match on MGF digest algorithm: "+ mgfParams.getDigestAlgorithm());
             }
 
             this.engineParams = null;
@@ -225,7 +225,7 @@ public class PSSSignatureSpi
         }
         else
         {
-            throw new InvalidParameterException("Only PSSParameterSpec supported");
+            throw new InvalidAlgorithmParameterException("Only PSSParameterSpec supported");
         }
     }
 
