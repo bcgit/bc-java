@@ -124,6 +124,17 @@ public class BouncyCastlePQCProvider
         put(key, value);
     }
 
+    public void addAlgorithm(String type,  ASN1ObjectIdentifier oid, String className)
+    {
+        if (!containsKey(type + "." + className))
+        {
+            throw new IllegalStateException("primary key (" + type + "." + className + ") not found");
+        }
+
+        addAlgorithm(type + "." + oid, className);
+        addAlgorithm(type + ".OID." + oid, className);
+    }
+
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
         keyInfoConverters.put(oid, keyInfoConverter);

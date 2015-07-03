@@ -93,13 +93,13 @@ public class BaseBlockCipher
     private AEADParameters          aeadParams;
 
     private int keySizeInBits;
-    private int scheme;
+    private int scheme = -1;
     private int digest;
 
     private int                     ivLength = 0;
 
     private boolean                 padded;
-
+    private boolean                 fixedIv = true;
     private PBEParameterSpec        pbeSpec = null;
     private String                  pbeAlgorithm = null;
 
@@ -159,6 +159,17 @@ public class BaseBlockCipher
         baseEngine = engine.getUnderlyingCipher();
         ivLength = baseEngine.getBlockSize();
         cipher = new AEADGenericBlockCipher(engine);
+    }
+
+    protected BaseBlockCipher(
+        AEADBlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
+        this.baseEngine = engine.getUnderlyingCipher();
+        this.fixedIv = fixedIv;
+        this.ivLength = ivLength;
+        this.cipher = new AEADGenericBlockCipher(engine);
     }
 
     protected BaseBlockCipher(
@@ -239,7 +250,7 @@ public class BaseBlockCipher
                     engineParams.init(ivParam.getIV());
                 }
                 catch (Exception e)
-                {
+                {                         e.printStackTrace();
                     throw new RuntimeException(e.toString());
                 }
             }
@@ -503,6 +514,10 @@ public class BaseBlockCipher
                 pbeSpec = new PBEParameterSpec(((PBEKey)k).getSalt(), ((PBEKey)k).getIterationCount());
             }
 
+            if (pbeSpec == null && !(k instanceof PBEKey))
+            {
+                throw new InvalidKeyException("Algorithm requires a PBE key");
+            }
             param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
             if (param instanceof ParametersWithIV)
             {
@@ -512,7 +527,11 @@ public class BaseBlockCipher
         else if (key instanceof PBKDF1Key)
         {
             PBKDF1Key k = (PBKDF1Key)key;
-            pbeSpec = (PBEParameterSpec)params;
+
+            if (params instanceof PBEParameterSpec)
+            {
+                pbeSpec = (PBEParameterSpec)params;
+            }
             if (k instanceof PBKDF1KeyWithParameters && pbeSpec == null)
             {
                 pbeSpec = new PBEParameterSpec(((PBKDF1KeyWithParameters)k).getSalt(), ((PBKDF1KeyWithParameters)k).getIterationCount());
@@ -573,6 +592,10 @@ public class BaseBlockCipher
         }
         else if (!(key instanceof RepeatedSecretKeySpec))
         {
+            if (scheme == PKCS5S1 || scheme == PKCS5S1_UTF8 || scheme == PKCS5S2 || scheme == PKCS5S2_UTF8)
+            {
+                throw new InvalidKeyException("Algorithm requires a PBE key");
+            }
             param = new KeyParameter(key.getEncoded());
         }
         else
@@ -586,7 +609,7 @@ public class BaseBlockCipher
             {
                 IvParameterSpec p = (IvParameterSpec)params;
 
-                if (p.getIV().length != ivLength && !isAEADModeName(modeName))
+                if (p.getIV().length != ivLength && !isAEADModeName(modeName) && fixedIv)
                 {
                     throw new InvalidAlgorithmParameterException("IV must be " + ivLength + " bytes long.");
                 }
@@ -766,7 +789,7 @@ public class BaseBlockCipher
         }
         catch (Exception e)
         {
-            throw new InvalidKeyException(e.getMessage());
+            throw new InvalidKeyException(e.getMessage(), e);
         }
     }
 

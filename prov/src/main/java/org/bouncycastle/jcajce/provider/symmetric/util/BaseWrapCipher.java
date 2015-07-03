@@ -8,9 +8,7 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,6 +36,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 
 public abstract class BaseWrapCipher
     extends CipherSpi
@@ -93,7 +92,7 @@ public abstract class BaseWrapCipher
 
     protected byte[] engineGetIV()
     {
-        return (byte[])iv.clone();
+        return Arrays.clone(iv);
     }
 
     protected int engineGetKeySize(

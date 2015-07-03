@@ -250,6 +250,12 @@ public final class BouncyCastleProvider extends Provider
         put(key, value);
     }
 
+    public void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className)
+    {
+        addAlgorithm(type + "." + oid, className);
+        addAlgorithm(type + ".OID." + oid, className);
+    }
+
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
         keyInfoConverters.put(oid, keyInfoConverter);

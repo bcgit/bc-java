@@ -65,11 +65,11 @@ public final class Blowfish
         {
 
             provider.addAlgorithm("Cipher.BLOWFISH", PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher." + MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, PREFIX + "$CBC");
+            provider.addAlgorithm("Cipher", MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, PREFIX + "$CBC");
             provider.addAlgorithm("KeyGenerator.BLOWFISH", PREFIX + "$KeyGen");
-            provider.addAlgorithm("Alg.Alias.KeyGenerator." + MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, "BLOWFISH");
+            provider.addAlgorithm("Alg.Alias.KeyGenerator", MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, "BLOWFISH");
             provider.addAlgorithm("AlgorithmParameters.BLOWFISH", PREFIX + "$AlgParams");
-            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, "BLOWFISH");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters", MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, "BLOWFISH");
 
         }
     }

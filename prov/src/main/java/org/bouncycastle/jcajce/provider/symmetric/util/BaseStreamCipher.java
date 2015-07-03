@@ -163,7 +163,7 @@ public class BaseStreamCipher
 
         if (key instanceof PKCS12Key)
         {
-            PKCS12Key k = (PKCS12KeyWithParameters)key;
+            PKCS12Key k = (PKCS12Key)key;
             pbeSpec = (PBEParameterSpec)params;
             if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
             {
@@ -207,6 +207,10 @@ public class BaseStreamCipher
         }
         else if (params == null)
         {
+            if (digest > 0)
+            {
+                throw new InvalidKeyException("Algorithm requires a PBE key");
+            }
             param = new KeyParameter(key.getEncoded());
         }
         else if (params instanceof IvParameterSpec)

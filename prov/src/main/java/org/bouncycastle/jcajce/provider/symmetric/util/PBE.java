@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.SecretKey;
@@ -149,10 +150,11 @@ public interface PBE
             int ivSize,
             AlgorithmParameterSpec spec,
             String targetAlgorithm)
+            throws InvalidAlgorithmParameterException
         {
             if ((spec == null) || !(spec instanceof PBEParameterSpec))
             {
-                throw new IllegalArgumentException("Need a PBEParameter spec with a PBE key.");
+                throw new InvalidAlgorithmParameterException("Need a PBEParameter spec with a PBE key.");
             }
 
             PBEParameterSpec        pbeParam = (PBEParameterSpec)spec;

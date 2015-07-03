@@ -33,6 +33,8 @@ public interface ConfigurableProvider
 
     void addAlgorithm(String key, String value);
 
+    void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className);
+
     boolean hasAlgorithm(String type, String name);
 
     void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter);
