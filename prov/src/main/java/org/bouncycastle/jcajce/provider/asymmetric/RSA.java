@@ -46,12 +46,12 @@ public class RSA
             provider.addAlgorithm("Cipher.RSA", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/RAW", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/PKCS1", PREFIX + "CipherSpi$PKCS1v1_5Padding");
-            provider.addAlgorithm("Cipher.1.2.840.113549.1.1.1", PREFIX + "CipherSpi$PKCS1v1_5Padding");
-            provider.addAlgorithm("Cipher.2.5.8.1.1", PREFIX + "CipherSpi$PKCS1v1_5Padding");
+            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.rsaEncryption, PREFIX + "CipherSpi$PKCS1v1_5Padding");
+            provider.addAlgorithm("Cipher", X509ObjectIdentifiers.id_ea_rsa, PREFIX + "CipherSpi$PKCS1v1_5Padding");
             provider.addAlgorithm("Cipher.RSA/1", PREFIX + "CipherSpi$PKCS1v1_5Padding_PrivateOnly");
             provider.addAlgorithm("Cipher.RSA/2", PREFIX + "CipherSpi$PKCS1v1_5Padding_PublicOnly");
             provider.addAlgorithm("Cipher.RSA/OAEP", PREFIX + "CipherSpi$OAEPPadding");
-            provider.addAlgorithm("Cipher." + PKCSObjectIdentifiers.id_RSAES_OAEP, PREFIX + "CipherSpi$OAEPPadding");
+            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.id_RSAES_OAEP, PREFIX + "CipherSpi$OAEPPadding");
             provider.addAlgorithm("Cipher.RSA/ISO9796-1", PREFIX + "CipherSpi$ISO9796d1Padding");
 
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//RAW", "RSA");
