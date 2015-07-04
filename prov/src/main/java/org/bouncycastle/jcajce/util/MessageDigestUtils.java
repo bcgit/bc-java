@@ -31,7 +31,7 @@ public class MessageDigestUtils
         digestOidMap.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-128");
         digestOidMap.put(ISOIECObjectIdentifiers.ripemd128, "RIPEMD-128");
         digestOidMap.put(ISOIECObjectIdentifiers.ripemd160, "RIPEMD-160");
-        digestOidMap.put(CryptoProObjectIdentifiers.gostR3411, "GOSTR3411");
+        digestOidMap.put(CryptoProObjectIdentifiers.gostR3411, "GOST3411");
         digestOidMap.put(GNUObjectIdentifiers.Tiger_192, "Tiger");
         digestOidMap.put(ISOIECObjectIdentifiers.whirlpool, "Whirlpool");
     }
