@@ -41,8 +41,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jcajce.util.JcaJceUtils;
 
 class CRMFHelper
 {
@@ -183,7 +183,7 @@ class CRMFHelper
 
                         try
                         {
-                            JcaJceUtils.loadParameters(params, sParams);
+                            AlgorithmParametersUtils.loadParameters(params, sParams);
                         }
                         catch (IOException e)
                         {
@@ -392,7 +392,7 @@ class CRMFHelper
         {
             try
             {
-                asn1Params = JcaJceUtils.extractParameters(params);
+                asn1Params = AlgorithmParametersUtils.extractParameters(params);
             }
             catch (IOException e)
             {

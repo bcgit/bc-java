@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -7,8 +9,6 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-
-import java.security.SecureRandom;
 
 /**
  * an implementation of the RFC 3211 Key Wrap
@@ -87,10 +87,10 @@ public class RFC3211WrapEngine
 
         System.arraycopy(in, inOff, cekBlock, 4, inLen);
 
-        for (int i = inLen + 4; i < cekBlock.length; i++)
-        {
-            cekBlock[i] = (byte)rand.nextInt();
-        }
+        byte[] pad = new byte[cekBlock.length - (inLen + 4)];
+
+        rand.nextBytes(pad);
+        System.arraycopy(pad, 0, cekBlock, inLen + 4, pad.length);
 
         for (int i = 0; i < cekBlock.length; i += blockSize)
         {

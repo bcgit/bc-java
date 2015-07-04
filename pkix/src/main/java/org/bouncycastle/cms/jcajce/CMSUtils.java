@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.jcajce.util.JcaJceUtils;
+import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 
 class CMSUtils
 {
@@ -89,7 +89,7 @@ class CMSUtils
     {
         try
         {
-            return JcaJceUtils.extractParameters(params);
+            return AlgorithmParametersUtils.extractParameters(params);
         }
         catch (IOException e)
         {
@@ -102,7 +102,7 @@ class CMSUtils
     {
         try
         {
-            JcaJceUtils.loadParameters(params, sParams);
+            AlgorithmParametersUtils.loadParameters(params, sParams);
         }
         catch (IOException e)
         {

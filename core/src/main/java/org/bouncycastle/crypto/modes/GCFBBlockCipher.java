@@ -65,7 +65,7 @@ public class GCFBBlockCipher
     public String getAlgorithmName()
     {
         String name = cfbEngine.getAlgorithmName();
-        return name.substring(0, name.indexOf('/') - 1) + "/G" + name.substring(name.indexOf('/') + 1);
+        return name.substring(0, name.indexOf('/')) + "/G" + name.substring(name.indexOf('/') + 1);
     }
 
     public int getBlockSize()

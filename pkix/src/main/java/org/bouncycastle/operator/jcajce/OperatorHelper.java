@@ -38,8 +38,9 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jcajce.util.JcaJceUtils;
+import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.operator.OperatorCreationException;
 
 class OperatorHelper
@@ -242,7 +243,7 @@ class OperatorHelper
 
         try
         {
-            dig = helper.createDigest(JcaJceUtils.getDigestAlgName(digAlgId.getAlgorithm()));
+            dig = helper.createDigest(MessageDigestUtils.getDigestName(digAlgId.getAlgorithm()));
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -312,7 +313,7 @@ class OperatorHelper
             {
                 AlgorithmParameters params = helper.createAlgorithmParameters(algName);
 
-                JcaJceUtils.loadParameters(params, algorithm.getParameters());
+                AlgorithmParametersUtils.loadParameters(params, algorithm.getParameters());
 
                 PSSParameterSpec spec = (PSSParameterSpec)params.getParameterSpec(PSSParameterSpec.class);
                 sig.setParameter(spec);
@@ -336,7 +337,7 @@ class OperatorHelper
             if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                return JcaJceUtils.getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
+                return getDigestName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
             }
         }
 
@@ -346,6 +347,20 @@ class OperatorHelper
         }
 
         return sigAlgId.getAlgorithm().getId();
+    }
+
+    // we need to remove the - to create a correct signature name
+    private static String getDigestName(ASN1ObjectIdentifier oid)
+    {
+        String name = MessageDigestUtils.getDigestName(oid);
+
+        int dIndex = name.indexOf('-');
+        if (dIndex > 0)
+        {
+            return name.substring(0, dIndex) + name.substring(dIndex + 1);
+        }
+
+        return MessageDigestUtils.getDigestName(oid);
     }
 
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
