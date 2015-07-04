@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
@@ -10,11 +12,10 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.security.SecureRandom;
 
 /**
  * Wrap Test based on RFC3211 test vectors
@@ -22,27 +23,9 @@ import java.security.SecureRandom;
 public class RFC3211WrapTest
     extends SimpleTest
 {
-    SecureRandom r1 = new SecureRandom()
-    {
-        int[] ints = { 0xC4, 0x36, 0xF5, 0x41 };
-        int count = 0;
+    SecureRandom r1 = new FixedSecureRandom(Hex.decode("C436F541"));
 
-        public int nextInt()
-        {
-            return ints[count++];
-        }
-    };
-
-    SecureRandom r2 = new SecureRandom()
-    {
-        int[] ints = { 0xFA, 0x06, 0x0A, 0x45 };
-        int count = 0;
-
-        public int nextInt()
-        {
-            return ints[count++];
-        }
-    };
+    SecureRandom r2 = new FixedSecureRandom(Hex.decode("FA060A45"));
 
     public String getName()
     {

@@ -356,9 +356,8 @@ public class AESTest
         byte[]  kek2 = Hex.decode("000102030405060708090a0b0c0d0e0f");
         byte[]  in2 = Hex.decode("00112233445566778899aabbccddeeff");
         byte[]  out2 = Hex.decode("7c8798dfc802553b3f00bb4315e3a087322725c92398b9c112c74d0925c63b61");
-        String  rndData = "68d38e9635962288d4daa1df203e3e2a15adb2f1da8998b72ac24ab1c78cceac";
 
-        wrapTest(2, "AESRFC3211WRAP", kek2,  kek2, new FixedSecureRandom(Hex.decode(rndData + rndData)), in2, out2);
+        wrapTest(2, "AESRFC3211WRAP", kek2,  kek2, new FixedSecureRandom(Hex.decode("9688df2af1b7b1ac9688df2a")), in2, out2);
 
         byte[] kek3 = Hex.decode("5840df6e29b02af1ab493b705bf16ea1ae8338f4dcc176a8");
         byte[] in3 = Hex.decode("c37b7e6492584340bed12207808941155068f738");
