@@ -64,7 +64,10 @@ public interface MiscObjectIdentifiers
     /** NortelNetworks Entrust VersionExtension OID: 1.2.840.113533.7.65.0 */
     static final ASN1ObjectIdentifier    entrustVersionExtension = entrust.branch("65.0");
 
-        //
+    /** cast5CBC OBJECT IDENTIFIER ::= {iso(1) member-body(2) us(840) nt(113533) nsn(7) algorithms(66) 10} SEE RFC 2984 */
+    ASN1ObjectIdentifier    cast5CBC = entrust.branch("66.10");
+
+    //
     // Ascom
     //
     ASN1ObjectIdentifier as_sys_sec_alg_ideaCBC = new ASN1ObjectIdentifier("1.3.6.1.4.1.188.7.1.1.2");

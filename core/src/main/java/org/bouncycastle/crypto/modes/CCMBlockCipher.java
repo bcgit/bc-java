@@ -87,7 +87,7 @@ public class CCMBlockCipher
         }
         else
         {
-            throw new IllegalArgumentException("invalid parameters passed to CCM");
+            throw new IllegalArgumentException("invalid parameters passed to CCM: " + params.getClass().getName());
         }
 
         // NOTE: Very basic support for key re-use, but no performance gain from it
