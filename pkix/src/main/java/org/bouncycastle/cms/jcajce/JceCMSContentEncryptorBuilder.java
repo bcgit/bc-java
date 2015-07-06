@@ -12,6 +12,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
@@ -40,7 +41,6 @@ public class JceCMSContentEncryptorBuilder
     public JceCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID, int keySize)
     {
         this.encryptionOID = encryptionOID;
-        this.keySize = keySize;
 
         int fixedSize = KEY_SIZE_PROVIDER.getKeySize(encryptionOID);
 
@@ -50,6 +50,15 @@ public class JceCMSContentEncryptorBuilder
             {
                 throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
             }
+            this.keySize = 168;
+        }
+        else if (encryptionOID.equals(OIWObjectIdentifiers.desCBC))
+        {
+            if (keySize != 56 && keySize != fixedSize)
+            {
+                throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
+            }
+            this.keySize = 56;
         }
         else
         {
@@ -57,6 +66,7 @@ public class JceCMSContentEncryptorBuilder
             {
                 throw new IllegalArgumentException("incorrect keySize for encryptionOID passed to builder.");
             }
+            this.keySize = keySize;
         }
     }
 
@@ -110,10 +120,6 @@ public class JceCMSContentEncryptorBuilder
             }
             else
             {
-                if (encryptionOID.equals(PKCSObjectIdentifiers.des_EDE3_CBC) && keySize == 192)
-                {
-                    keySize = 168;
-                }
                 keyGen.init(keySize, random);
             }
 
