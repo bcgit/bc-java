@@ -52,6 +52,8 @@ public class BlockCipherTest
         "d4de46d52274dbb029f33b076043f8c40089f906751623de29f33b076043f8c4ac99b90f9396cb04",
         "Blowfish",
         "7870ebe7f6a52803eb9396ba6c5198216ce81d76d8d4c74beb9396ba6c5198211212473b05214e9f",
+        "GOST28147",
+        "0a77f4114451b37d44c5192619b723dd49093d1047c2373544c5192619b723dd06618da5b04d3670",
         "Twofish",
         "70336d9c9718a8a2ced1b19deed973a3c58af7ea71a69e7efc4df082dca581c0839e31468661bcfc57a14899ceeb0253",
         "RC2",
@@ -314,6 +316,26 @@ public class BlockCipherTest
         "c62b233df296283b97f17364d5f69a1ff91f46659cf9856caefd322a936203a7",
         "IDEA/CTR/NoPadding",
         "dd447da3cbdcf81f4694ab7715d79e3f90af5682e8c318b8f7dadbed6b5c9714",
+        "Blowfish/EAX/NoPadding",
+        "bee85ae6512b8a2346d46f7bac31526238091ccc5de75760c9a39628fb45d44a653bfac0",
+        "CAST5/EAX/NoPadding",
+        "85e0dbd3402f2179f96d231315ec73f04f64f1b7ab1347423b9aec51a07a7222e2bc65a3",
+        "GOST28147/EAX/NoPadding",
+        "1416713d52affb595b880be996e838edd377e67dfe822fbb0ff235f1b706e6ce34d68dc5",
+        "IDEA/EAX/NoPadding",
+        "b2e9f3e40954c140ac60423466dee0138f84e879fbde003780202bd83c91571b64df7bb7",
+        "RC2/EAX/NoPadding",
+        "5d1c095de75bd5eef6a5146f7d6c44545807a8b452f7a38e2719a14f1a269709d2eda2d3",
+        "SEED/EAX/NoPadding",
+        "6780f18b2dd1f75a934b5a3e45e8fd44877fd3498a9b919b417b3d8a7c67c6021d74bbaef71841ef",
+        "Serpent/EAX/NoPadding",
+        "8d5ac312ca0d436a0154d56568d39811ccf6bb970012398014fc8a49ed669b117443c0249b07ead8",
+        "Twofish/EAX/NoPadding",
+        "9a90dffe1233a04733fc8869e8ec4cba2fa53d9543f0206825293b1ff102e63f81a60b12204e1fd8",
+        "SHACAL-2/CBC/PKCS7Padding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669b6a81cdec475ed4d2394d7ad771404a52eb52d245a39f0d7d3e8062d3b0f0e54",
+        "SHACAL-2/CBC/TBCPadding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa80876693f17fbe9a5baa88ed21b2e1a863dc449061f40cafadfc3cf73486208f87b9352",
     };
 
     static String[] cipherTests2 =
@@ -330,6 +352,8 @@ public class BlockCipherTest
 
     static String[] cipherTestsLargeBlock =
     {
+        "SHACAL-2/CBC/withCTS",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e18fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b456478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276",
         "Threefish-256",
         "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
             "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
@@ -563,7 +587,7 @@ public class BlockCipherTest
             }
         }
         catch (Exception e)
-        {
+        {                        e.printStackTrace();
             fail("" + algorithm + " failed initialisation - " + e.toString(), e);
         }
 
@@ -594,16 +618,19 @@ public class BlockCipherTest
                 iv = out.getIV();
                 if (iv != null)
                 {
-                    try
+                    if (algorithm.indexOf("EAX") < 0)
                     {
-                        byte[]  nIv = new byte[iv.length - 1];
+                        try
+                        {
+                            byte[] nIv = new byte[iv.length - 1];
 
-                        in.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(nIv));
-                        fail("failed to pick up short IV");
-                    }
-                    catch (InvalidAlgorithmParameterException e)
-                    {
-                        // ignore - this is what we want...
+                            in.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(nIv));
+                            fail("failed to pick up short IV");
+                        }
+                        catch (InvalidAlgorithmParameterException e)
+                        {
+                            // ignore - this is what we want...
+                        }
                     }
 
                     IvParameterSpec    spec;
@@ -617,6 +644,10 @@ public class BlockCipherTest
                     in.init(Cipher.DECRYPT_MODE, key);
                 }
             }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {

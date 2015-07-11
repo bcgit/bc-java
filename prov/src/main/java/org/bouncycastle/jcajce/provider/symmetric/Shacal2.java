@@ -53,7 +53,7 @@ public final class Shacal2
     {
         public KeyGen()
         {
-            super("Shacal2", 512, new CipherKeyGenerator());//key size
+            super("SHACAL-2", 128, new CipherKeyGenerator());//key size
         }
     }
 
@@ -115,9 +115,13 @@ public final class Shacal2
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("Cipher.Shacal2", PREFIX + "$ECB");
+            provider.addAlgorithm("Cipher.SHACAL-2", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.Shacal2", PREFIX + "$KeyGen");        
             provider.addAlgorithm("AlgorithmParameterGenerator.Shacal2", PREFIX + "$AlgParamGen");
         	provider.addAlgorithm("AlgorithmParameters.Shacal2", PREFIX + "$AlgParams");
+            provider.addAlgorithm("KeyGenerator.SHACAL-2", PREFIX + "$KeyGen");
+            provider.addAlgorithm("AlgorithmParameterGenerator.SHACAL-2", PREFIX + "$AlgParamGen");
+        	provider.addAlgorithm("AlgorithmParameters.SHACAL-2", PREFIX + "$AlgParams");
         }
     }
 }
