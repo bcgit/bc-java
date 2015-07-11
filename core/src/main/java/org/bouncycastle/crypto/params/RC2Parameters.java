@@ -1,11 +1,8 @@
 package org.bouncycastle.crypto.params;
 
-import org.bouncycastle.crypto.CipherParameters;
-
 public class RC2Parameters
-    implements CipherParameters
+    extends KeyParameter
 {
-    private byte[]  key;
     private int     bits;
 
     public RC2Parameters(
@@ -18,15 +15,8 @@ public class RC2Parameters
         byte[]  key,
         int     bits)
     {
-        this.key = new byte[key.length];
+        super(key);
         this.bits = bits;
-
-        System.arraycopy(key, 0, this.key, 0, key.length);
-    }
-
-    public byte[] getKey()
-    {
-        return key;
     }
 
     public int getEffectiveKeyBits()
