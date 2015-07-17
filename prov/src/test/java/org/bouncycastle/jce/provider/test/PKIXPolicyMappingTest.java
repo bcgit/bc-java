@@ -277,7 +277,12 @@ public class PKIXPolicyMappingTest
         map = new Hashtable();
         map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
         intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
-        
+
+        if (!"CertificatePolicies: [Policy information: 2.5.29.32.0]".equals(intPolicies.toString()))
+        {
+            fail("1st toString() test");
+        }
+
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
         endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
@@ -326,6 +331,11 @@ public class PKIXPolicyMappingTest
         intPolicies = new CertificatePolicies(new PolicyInformation[]
             { new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.3")),
               new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")) });
+
+        if (!"CertificatePolicies: [Policy information: 2.16.840.1.101.3.2.1.48.3, Policy information: 2.5.29.32.0]".equals(intPolicies.toString()))
+        {
+            fail("2nd toString() test");
+        }
 
         map = new Hashtable();
         map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");

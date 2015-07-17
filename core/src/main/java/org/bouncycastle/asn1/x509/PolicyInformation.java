@@ -65,11 +65,13 @@ public class PolicyInformation
         return policyQualifiers;
     }
     
-    /* 
+    /*
+     * <pre>
      * PolicyInformation ::= SEQUENCE {
      *      policyIdentifier   CertPolicyId,
      *      policyQualifiers   SEQUENCE SIZE (1..MAX) OF
      *              PolicyQualifierInfo OPTIONAL }
+     * </pre>
      */ 
     public ASN1Primitive toASN1Primitive()
     {
@@ -83,5 +85,32 @@ public class PolicyInformation
         }
         
         return new DERSequence(v);
+    }
+
+    public String toString()
+    {
+        StringBuffer sb = new StringBuffer();
+
+        sb.append("Policy information: ");
+        sb.append(policyIdentifier);
+
+        if (policyQualifiers != null)
+        {
+            StringBuffer p = new StringBuffer();
+            for (int i = 0; i < policyQualifiers.size(); i++)
+            {
+                if (p.length() != 0)
+                {
+                    p.append(", ");
+                }
+                p.append(PolicyQualifierInfo.getInstance(policyQualifiers.getObjectAt(i)));
+            }
+
+            sb.append("[");
+            sb.append(p);
+            sb.append("]");
+        }
+
+        return sb.toString();
     }
 }

@@ -17,6 +17,8 @@ import org.bouncycastle.asn1.DERSequence;
  *   PolicyQualifierInfo ::= SEQUENCE {
  *       policyQualifierId  PolicyQualifierId,
  *       qualifier          ANY DEFINED BY policyQualifierId }
+ *
+ *  PolicyQualifierId ::= OBJECT IDENTIFIER ( id-qt-cps | id-qt-unotice )
  * </pre>
  */
 public class PolicyQualifierInfo
