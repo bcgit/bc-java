@@ -109,16 +109,16 @@ public class CertificatePolicies
 
     public String toString()
     {
-        String p = null;
+        StringBuffer p = new StringBuffer();
         for (int i = 0; i < policyInformation.length; i++)
         {
-            if (p != null)
+            if (p.length() != 0)
             {
-                p += ", ";
+                p.append(", ");
             }
-            p += policyInformation[i];
+            p.append(policyInformation[i]);
         }
 
-        return "CertificatePolicies: " + p;
+        return "CertificatePolicies: [" + p + "]";
     }
 }
