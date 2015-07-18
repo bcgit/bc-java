@@ -166,6 +166,8 @@ public abstract class ASN1OctetString
     }
 
     /**
+     * Base constructor.
+     *
      * @param string the octets making up the octet string.
      */
     public ASN1OctetString(

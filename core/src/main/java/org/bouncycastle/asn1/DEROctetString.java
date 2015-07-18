@@ -2,10 +2,15 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Carrier class for a DER encoding OCTET STRING
+ */
 public class DEROctetString
     extends ASN1OctetString
 {
     /**
+     * Base constructor.
+     *
      * @param string the octets making up the octet string.
      */
     public DEROctetString(
@@ -14,6 +19,11 @@ public class DEROctetString
         super(string);
     }
 
+    /**
+     * Constructor from the encoding of an ASN.1 object.
+     *
+     * @param obj the object to be encoded.
+     */
     public DEROctetString(
         ASN1Encodable obj)
         throws IOException
