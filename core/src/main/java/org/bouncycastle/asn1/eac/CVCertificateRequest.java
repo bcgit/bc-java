@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.eac;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -29,16 +30,16 @@ public class CVCertificateRequest
     private static int bodyValid = 0x01;
     private static int signValid = 0x02;
 
-    private CVCertificateRequest(DERApplicationSpecific request)
+    private CVCertificateRequest(ASN1ApplicationSpecific request)
         throws IOException
     {
         if (request.getApplicationTag() == EACTags.AUTHENTIFICATION_DATA)
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
 
-            initCertBody(DERApplicationSpecific.getInstance(seq.getObjectAt(0)));
+            initCertBody(ASN1ApplicationSpecific.getInstance(seq.getObjectAt(0)));
 
-            outerSignature = DERApplicationSpecific.getInstance(seq.getObjectAt(seq.size() - 1)).getContents();
+            outerSignature = ASN1ApplicationSpecific.getInstance(seq.getObjectAt(seq.size() - 1)).getContents();
         }
         else
         {
@@ -46,7 +47,7 @@ public class CVCertificateRequest
         }
     }
 
-    private void initCertBody(DERApplicationSpecific request)
+    private void initCertBody(ASN1ApplicationSpecific request)
         throws IOException
     {
         if (request.getApplicationTag() == EACTags.CARDHOLDER_CERTIFICATE)
@@ -54,7 +55,7 @@ public class CVCertificateRequest
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
             for (Enumeration en = seq.getObjects(); en.hasMoreElements();)
             {
-                DERApplicationSpecific obj = DERApplicationSpecific.getInstance(en.nextElement());
+                ASN1ApplicationSpecific obj = ASN1ApplicationSpecific.getInstance(en.nextElement());
                 switch (obj.getApplicationTag())
                 {
                 case EACTags.CERTIFICATE_CONTENT_TEMPLATE:
@@ -86,7 +87,7 @@ public class CVCertificateRequest
         {
             try
             {
-                return new CVCertificateRequest(DERApplicationSpecific.getInstance(obj));
+                return new CVCertificateRequest(ASN1ApplicationSpecific.getInstance(obj));
             }
             catch (IOException e)
             {

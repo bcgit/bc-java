@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.eac;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
@@ -60,7 +61,7 @@ public class CertificateBody
     public static final int profileType = 0x7f;//Profile type Certificate
     public static final int requestType = 0x0D;// Request type Certificate
 
-    private void setIso7816CertificateBody(DERApplicationSpecific appSpe)
+    private void setIso7816CertificateBody(ASN1ApplicationSpecific appSpe)
         throws IOException
     {
         byte[] content;
@@ -164,7 +165,7 @@ public class CertificateBody
      * @param obj DERApplicationSpecific containing the whole body.
      * @throws IOException if the body is not valid.
      */
-    private CertificateBody(DERApplicationSpecific obj)
+    private CertificateBody(ASN1ApplicationSpecific obj)
         throws IOException
     {
         setIso7816CertificateBody(obj);
@@ -321,7 +322,7 @@ public class CertificateBody
         }
         else if (obj != null)
         {
-            return new CertificateBody(DERApplicationSpecific.getInstance(obj));
+            return new CertificateBody(ASN1ApplicationSpecific.getInstance(obj));
         }
 
         return null;
