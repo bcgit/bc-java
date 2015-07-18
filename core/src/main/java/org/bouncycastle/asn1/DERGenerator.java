@@ -2,31 +2,38 @@ package org.bouncycastle.asn1;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.util.io.Streams;
-
+/**
+ * Basic class for streaming DER encoding generators.
+ */
 public abstract class DERGenerator
     extends ASN1Generator
-{       
+{
     private boolean      _tagged = false;
     private boolean      _isExplicit;
     private int          _tagNo;
-    
+
     protected DERGenerator(
         OutputStream out)
     {
         super(out);
     }
 
+    /**
+     * Create a DER encoding generator for a tagged object.
+     *
+     * @param out the output stream to encode objects to.
+     * @param tagNo the tag number to head the output stream with.
+     * @param isExplicit true if the tagging should be explicit, false otherwise.
+     */
     public DERGenerator(
         OutputStream out,
         int          tagNo,
         boolean      isExplicit)
-    { 
+    {
         super(out);
-        
+
         _tagged = true;
         _isExplicit = isExplicit;
         _tagNo = tagNo;
@@ -79,19 +86,19 @@ public abstract class DERGenerator
         if (_tagged)
         {
             int tagNum = _tagNo | BERTags.TAGGED;
-            
+
             if (_isExplicit)
             {
                 int newTag = _tagNo | BERTags.CONSTRUCTED | BERTags.TAGGED;
 
                 ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                
+
                 writeDEREncoded(bOut, tag, bytes);
-                
+
                 writeDEREncoded(_out, newTag, bOut.toByteArray());
             }
             else
-            {   
+            {
                 if ((tag & BERTags.CONSTRUCTED) != 0)
                 {
                     writeDEREncoded(_out, tagNum | BERTags.CONSTRUCTED, bytes);
@@ -106,14 +113,5 @@ public abstract class DERGenerator
         {
             writeDEREncoded(_out, tag, bytes);
         }
-    }
-    
-    void writeDEREncoded(
-        OutputStream out,
-        int          tag,
-        InputStream  in)
-        throws IOException
-    {
-        writeDEREncoded(out, tag, Streams.readAll(in));
     }
 }
