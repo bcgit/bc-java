@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 public class BERGenerator
@@ -70,18 +69,6 @@ public class BERGenerator
         else
         {
             writeHdr(tag);
-        }
-    }
-    
-    protected void writeBERBody(
-        InputStream contentStream)
-        throws IOException
-    {
-        int ch;
-        
-        while ((ch = contentStream.read()) >= 0)
-        {
-            _out.write(ch);
         }
     }
 

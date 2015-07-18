@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.eac;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
@@ -37,10 +38,10 @@ public class CVCertificate
     /**
      * Sets the values of the certificate (body and signature).
      *
-     * @param appSpe is a DERApplicationSpecific object containing body and signature.
+     * @param appSpe is a ASN1ApplicationSpecific object containing body and signature.
      * @throws IOException if tags or value are incorrect.
      */
-    private void setPrivateData(DERApplicationSpecific appSpe)
+    private void setPrivateData(ASN1ApplicationSpecific appSpe)
         throws IOException
     {
         valid = 0;
@@ -116,7 +117,7 @@ public class CVCertificate
      * @return the Iso7816CertificateStructure represented by the DERApplicationSpecific object.
      * @throws IOException if there is a problem parsing the data.
      */
-    private CVCertificate(DERApplicationSpecific appSpe)
+    private CVCertificate(ASN1ApplicationSpecific appSpe)
         throws IOException
     {
         setPrivateData(appSpe);
@@ -155,7 +156,7 @@ public class CVCertificate
         {
             try
             {
-                return new CVCertificate(DERApplicationSpecific.getInstance(obj));
+                return new CVCertificate(ASN1ApplicationSpecific.getInstance(obj));
             }
             catch (IOException e)
             {
