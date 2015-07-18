@@ -1,6 +1,3 @@
-/***************************************************************/
-/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
-/***************************************************************/
 package org.bouncycastle.asn1;
 
 import java.io.ByteArrayOutputStream;
