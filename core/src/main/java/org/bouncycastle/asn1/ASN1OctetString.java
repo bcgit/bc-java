@@ -70,7 +70,7 @@ import org.bouncycastle.util.encoders.Hex;
  * <p><b>9: Canonical encoding rules</b></p>
  * <p><b>9.1 Length forms</b></p>
  * <p>
- * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is constructed, it shall employ the indefinite-length form.
  * If the encoding is primitive, it shall include the fewest length octets necessary.
  * [Contrast with 8.1.3.2 b).]
  * </p>

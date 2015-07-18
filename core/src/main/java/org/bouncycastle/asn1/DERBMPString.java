@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * DER BMPString object.
+ * Carrier class for DER encoding BMPString object.
  */
 public class DERBMPString
     extends ASN1Primitive

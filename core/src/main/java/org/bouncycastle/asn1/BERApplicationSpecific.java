@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
- * An indefinite length encoding version of an application specific object.
+ * An indefinite-length encoding version of an application specific object.
  */
 public class BERApplicationSpecific
     extends ASN1ApplicationSpecific

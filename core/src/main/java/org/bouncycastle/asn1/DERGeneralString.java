@@ -5,12 +5,22 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Carrier class for a DER encoding GeneralString
+ */
 public class DERGeneralString 
     extends ASN1Primitive
     implements ASN1String
 {
-    private byte[] string;
+    private final byte[] string;
 
+    /**
+     * return a GeneralString from the given object.
+     *
+     * @param obj the object we want converted.
+     * @exception IllegalArgumentException if the object cannot be converted.
+     * @return a DERBMPString instance, or null.
+     */
     public static DERGeneralString getInstance(
         Object obj) 
     {
@@ -35,6 +45,16 @@ public class DERGeneralString
                 + obj.getClass().getName());
     }
 
+    /**
+     * return a GeneralString from a tagged object.
+     *
+     * @param obj the tagged object holding the object we want
+     * @param explicit true if the object is meant to be explicitly
+     *              tagged false otherwise.
+     * @exception IllegalArgumentException if the tagged object cannot
+     *              be converted.
+     * @return a DERGeneralString instance.
+     */
     public static DERGeneralString getInstance(
         ASN1TaggedObject obj, 
         boolean explicit) 
@@ -56,11 +76,21 @@ public class DERGeneralString
         this.string = string;
     }
 
+    /**
+     * Construct a GeneralString from the passed in String.
+     *
+     * @param string the string to be contained in this object.
+     */
     public DERGeneralString(String string) 
     {
         this.string = Strings.toByteArray(string);
     }
-    
+
+    /**
+     * Return a Java String representation of our contained String.
+     *
+     * @return a Java String representing our contents.
+     */
     public String getString() 
     {
         return Strings.fromByteArray(string);
@@ -71,6 +101,11 @@ public class DERGeneralString
         return getString();
     }
 
+    /**
+     * Return a byte array representation of our contained String.
+     *
+     * @return a byte array representing our contents.
+     */
     public byte[] getOctets() 
     {
         return Arrays.clone(string);

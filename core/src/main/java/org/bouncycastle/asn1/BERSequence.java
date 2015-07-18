@@ -3,18 +3,21 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * Carrier class for an indefinite-length SEQUENCE.
+ */
 public class BERSequence
     extends ASN1Sequence
 {
     /**
-     * create an empty sequence
+     * Create an empty sequence
      */
     public BERSequence()
     {
     }
 
     /**
-     * create a sequence containing one object
+     * Create a sequence containing one object
      */
     public BERSequence(
         ASN1Encodable obj)
@@ -23,7 +26,7 @@ public class BERSequence
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a sequence containing a vector of objects.
      */
     public BERSequence(
         ASN1EncodableVector v)
@@ -32,7 +35,7 @@ public class BERSequence
     }
 
     /**
-     * create a sequence containing an array of objects.
+     * Create a sequence containing an array of objects.
      */
     public BERSequence(
         ASN1Encodable[]   array)
@@ -52,8 +55,6 @@ public class BERSequence
         return 2 + length + 2;
     }
 
-    /*
-     */
     void encode(
         ASN1OutputStream out)
         throws IOException
