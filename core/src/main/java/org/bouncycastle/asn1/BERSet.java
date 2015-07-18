@@ -3,17 +3,22 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.util.Enumeration;
 
+/**
+ * Carrier class for an indefinite-length SET.
+ */
 public class BERSet
     extends ASN1Set
 {
     /**
-     * create an empty sequence
+     * Create an empty SET.
      */
     public BERSet()
     {
     }
 
     /**
+     * Create a SET containing one object.
+     *
      * @param obj - a single object that makes up the set.
      */
     public BERSet(
@@ -23,7 +28,8 @@ public class BERSet
     }
 
     /**
-     * @param v - a vector of objects making up the set.
+     * Create a SET containing multiple objects.
+     * @param v a vector of objects making up the set.
      */
     public BERSet(
         ASN1EncodableVector v)
@@ -32,7 +38,8 @@ public class BERSet
     }
 
     /**
-     * create a set from an array of objects.
+     * Create a SET from an array of objects.
+     * @param a an array of ASN.1 objects.
      */
     public BERSet(
         ASN1Encodable[]   a)
@@ -52,8 +59,6 @@ public class BERSet
         return 2 + length + 2;
     }
 
-    /*
-     */
     void encode(
         ASN1OutputStream out)
         throws IOException

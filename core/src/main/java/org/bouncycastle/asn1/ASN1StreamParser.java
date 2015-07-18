@@ -61,7 +61,7 @@ public class ASN1StreamParser
         {
             if (!constructed)
             {
-                throw new IOException("indefinite length primitive encoding encountered");
+                throw new IOException("indefinite-length primitive encoding encountered");
             }
             
             return readIndef(tag);
@@ -144,11 +144,11 @@ public class ASN1StreamParser
         //
         int length = ASN1InputStream.readLength(_in, _limit);
 
-        if (length < 0) // indefinite length method
+        if (length < 0) // indefinite-length method
         {
             if (!isConstructed)
             {
-                throw new IOException("indefinite length primitive encoding encountered");
+                throw new IOException("indefinite-length primitive encoding encountered");
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);

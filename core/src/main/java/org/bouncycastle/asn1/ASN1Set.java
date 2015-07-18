@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -51,7 +50,7 @@ import org.bouncycastle.util.Arrays;
  *
  * <h3>9: Canonical encoding rules</h3>
  * <h4>9.1 Length forms</h4>
- * If the encoding is constructed, it shall employ the indefinite length form.
+ * If the encoding is constructed, it shall employ the indefinite-length form.
  * If the encoding is primitive, it shall include the fewest length octets necessary.
  * [Contrast with 8.1.3.2 b).]
  * <h4>9.3 Set components</h4>
