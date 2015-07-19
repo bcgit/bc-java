@@ -230,11 +230,11 @@ public class ASN1InputStream
         //
         int length = readLength();
 
-        if (length < 0) // indefinite length method
+        if (length < 0) // indefinite-length method
         {
             if (!isConstructed)
             {
-                throw new IOException("indefinite length primitive encoding encountered");
+                throw new IOException("indefinite-length primitive encoding encountered");
             }
 
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);

@@ -18,6 +18,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
@@ -26,6 +27,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
+import org.bouncycastle.crypto.engines.OldIESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
@@ -257,7 +259,7 @@ public class IESCipher
         // Use default parameters (including cipher key size) if none are specified
         if (engineSpec == null)
         {
-            this.engineSpec = IESUtil.guessParameterSpec(engine);
+            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher());
         }
         else if (engineSpec instanceof IESParameterSpec)
         {
@@ -503,51 +505,129 @@ public class IESCipher
         }
     }
 
-    static public class ECIESwithDESede
+    static public class ECIESwithCipher
         extends IESCipher
+    {
+        public ECIESwithCipher(BlockCipher cipher)
+        {
+            super(new IESEngine(new ECDHBasicAgreement(),
+                            new KDF2BytesGenerator(new SHA1Digest()),
+                            new HMac(new SHA1Digest()),
+                            new PaddedBufferedBlockCipher(cipher)));
+        }
+
+        public ECIESwithCipher(BlockCipher cipher, int ivLength)
+        {
+            super(new IESEngine(new ECDHBasicAgreement(),
+                            new KDF2BytesGenerator(new SHA1Digest()),
+                            new HMac(new SHA1Digest()),
+                            new PaddedBufferedBlockCipher(cipher)), ivLength);
+        }
+    }
+
+    static public class ECIESwithDESede
+        extends ECIESwithCipher
     {
         public ECIESwithDESede()
         {
-            super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new DESedeEngine())));
+            super(new DESedeEngine());
         }
     }
 
     static public class ECIESwithAES
-        extends IESCipher
+        extends ECIESwithCipher
     {
         public ECIESwithAES()
         {
-            super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new AESEngine())));
+            super(new AESEngine());
         }
     }
 
     static public class ECIESwithDESedeCBC
-        extends IESCipher
+        extends ECIESwithCipher
     {
         public ECIESwithDESedeCBC()
         {
-            super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new CBCBlockCipher(new DESedeEngine()))), 8);
+            super(new CBCBlockCipher(new DESedeEngine()), 8);
         }
     }
 
     static public class ECIESwithAESCBC
-        extends IESCipher
+        extends ECIESwithCipher
     {
         public ECIESwithAESCBC()
         {
-            super(new IESEngine(new ECDHBasicAgreement(),
+            super(new CBCBlockCipher(new AESEngine()), 16);
+        }
+    }
+
+    /**
+     * Backwards compatibility
+     */
+    static public class OldECIES
+        extends IESCipher
+    {
+        public OldECIES()
+        {
+            super(new OldIESEngine(new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest())));
+        }
+    }
+
+    static public class OldECIESwithCipher
+        extends IESCipher
+    {
+        public OldECIESwithCipher(BlockCipher baseCipher)
+        {
+            super(new OldIESEngine(new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA1Digest()),
                 new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()))), 16);
+                new PaddedBufferedBlockCipher(baseCipher)));
+        }
+
+        public OldECIESwithCipher(BlockCipher baseCipher, int ivLength)
+        {
+            super(new OldIESEngine(new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(baseCipher)), ivLength);
+        }
+    }
+
+    static public class OldECIESwithDESede
+        extends OldECIESwithCipher
+    {
+        public OldECIESwithDESede()
+        {
+            super(new DESedeEngine());
+        }
+    }
+
+    static public class OldECIESwithAES
+        extends OldECIESwithCipher
+    {
+        public OldECIESwithAES()
+        {
+            super(new AESEngine());
+        }
+    }
+
+    static public class OldECIESwithDESedeCBC
+        extends OldECIESwithCipher
+    {
+        public OldECIESwithDESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 8);
+        }
+    }
+
+    static public class OldECIESwithAESCBC
+        extends OldECIESwithCipher
+    {
+        public OldECIESwithAESCBC()
+        {
+            super(new CBCBlockCipher(new AESEngine()), 16);
         }
     }
 }
