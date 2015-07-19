@@ -7,10 +7,8 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
@@ -23,6 +21,7 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
@@ -30,6 +29,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
+import org.bouncycastle.crypto.engines.OldIESEngine;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
@@ -48,7 +48,6 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.IESKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
@@ -74,6 +73,10 @@ public class IESCipher
         this.engine = engine;
     }
 
+    public IESCipher(OldIESEngine engine)
+    {
+        this.engine = engine;
+    }
 
     public int engineGetBlockSize()
     {
@@ -249,7 +252,7 @@ public class IESCipher
         // Use default parameters (including cipher key size) if none are specified
         if (engineSpec == null)
         {
-            this.engineSpec = IESUtil.guessParameterSpec(engine);
+            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher());
         }
         else if (engineSpec instanceof IESParameterSpec)
         {
@@ -507,6 +510,50 @@ public class IESCipher
                 new KDF2BytesGenerator(new SHA1Digest()),
                 new HMac(new SHA1Digest()),
                 new PaddedBufferedBlockCipher(new AESEngine())));
+        }
+    }
+
+    /**
+     * Backwards compatibility.
+     */
+    static public class OldIESwithCipher
+        extends IESCipher
+    {
+        public OldIESwithCipher(BlockCipher baseCipher)
+        {
+            super(new OldIESEngine(new DHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(baseCipher)));
+        }
+    }
+
+    static public class OldIES
+        extends IESCipher
+    {
+        public OldIES()
+        {
+            super(new OldIESEngine(new DHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest())));
+        }
+    }
+
+    static public class OldIESwithDESede
+        extends OldIESwithCipher
+    {
+        public OldIESwithDESede()
+        {
+            super(new DESedeEngine());
+        }
+    }
+
+    static public class OldIESwithAES
+        extends OldIESwithCipher
+    {
+        public OldIESwithAES()
+        {
+            super(new AESEngine());
         }
     }
 }

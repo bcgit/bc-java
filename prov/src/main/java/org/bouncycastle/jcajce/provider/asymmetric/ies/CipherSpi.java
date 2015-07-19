@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.IESEngine;
+import org.bouncycastle.crypto.engines.OldIESEngine;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.IESParameters;
@@ -359,6 +360,18 @@ public class CipherSpi
         public IES()
         {
             super(new IESEngine(
+                   new DHBasicAgreement(),
+                   new KDF2BytesGenerator(new SHA1Digest()),
+                   new HMac(new SHA1Digest())));
+        }
+    }
+
+    static public class OldIES
+        extends CipherSpi
+    {
+        public OldIES()
+        {
+            super(new OldIESEngine(
                    new DHBasicAgreement(),
                    new KDF2BytesGenerator(new SHA1Digest()),
                    new HMac(new SHA1Digest())));

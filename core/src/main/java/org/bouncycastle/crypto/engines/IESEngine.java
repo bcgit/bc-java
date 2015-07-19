@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Support class for constructing integrated encryption ciphers
@@ -232,10 +233,10 @@ public class IESEngine
 
         // Convert the length of the encoding vector into a byte array.
         byte[] P2 = param.getEncodingV();
-        byte[] L2 = new byte[4];
-        if (V.length != 0 && P2 != null)
+        byte[] L2 = null;
+        if (V.length != 0)
         {
-            Pack.intToBigEndian(P2.length * 8, L2, 0);
+            L2 = getLengthTag(P2);
         }
 
 
@@ -336,12 +337,11 @@ public class IESEngine
 
         // Convert the length of the encoding vector into a byte array.
         byte[] P2 = param.getEncodingV();
-        byte[] L2 = new byte[4];
-        if (V.length != 0 && P2 != null)
+        byte[] L2 = null;
+        if (V.length != 0)
         {
-            Pack.intToBigEndian(P2.length * 8, L2, 0);
+            L2 = getLengthTag(P2);
         }
-
 
         // Verify the MAC.
         int end = inOff + inLen;
@@ -434,5 +434,17 @@ public class IESEngine
         {
             Arrays.fill(Z, (byte)0);
         }
+    }
+
+    // as described in Shroup's paper and P1363a
+    protected byte[] getLengthTag(byte[] p2)
+    {
+        byte[] L2 = new byte[8];
+        if (p2 != null)
+        {
+            Pack.longToBigEndian(p2.length * 8L, L2, 0);
+        }
+        System.err.println(Hex.toHexString(L2));
+        return L2;
     }
 }

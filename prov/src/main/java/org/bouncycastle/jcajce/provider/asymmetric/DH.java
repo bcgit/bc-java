@@ -40,6 +40,11 @@ public class DH
             provider.addAlgorithm("Cipher.DHIESWITHAES", PREFIX + "IESCipher$IESwithAES");
             provider.addAlgorithm("Cipher.DHIESWITHDESEDE", PREFIX + "IESCipher$IESwithDESede");
 
+            provider.addAlgorithm("Cipher.OLDDHIES", PREFIX + "IESCipher$OldIES");
+            provider.addAlgorithm("Cipher.OLDDHIESwithAES", PREFIX + "IESCipher$OldIESwithAES");
+            provider.addAlgorithm("Cipher.OLDDHIESWITHAES", PREFIX + "IESCipher$OldIESwithAES");
+            provider.addAlgorithm("Cipher.OLDDHIESWITHDESEDE", PREFIX + "IESCipher$OldIESwithDESede");
+
             registerOid(provider, PKCSObjectIdentifiers.dhKeyAgreement, "DH", new KeyFactorySpi());
             registerOid(provider, X9ObjectIdentifiers.dhpublicnumber, "DH", new KeyFactorySpi());
         }

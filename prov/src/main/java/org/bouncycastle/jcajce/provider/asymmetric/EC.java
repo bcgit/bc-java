@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.AlgorithmParametersSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -129,6 +128,16 @@ public class EC
             provider.addAlgorithm("Cipher.ECIESWITHAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESwithDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESWITHDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
+
+            provider.addAlgorithm("Cipher.OldECIES", PREFIX + "IESCipher$OldECIES");
+            provider.addAlgorithm("Cipher.OldECIESwithAES", PREFIX + "IESCipher$OldECIESwithAES");
+            provider.addAlgorithm("Cipher.OldECIESWITHAES", PREFIX + "IESCipher$OldECIESwithAES");
+            provider.addAlgorithm("Cipher.OldECIESwithDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
+            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
+            provider.addAlgorithm("Cipher.OldECIESwithAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
+            provider.addAlgorithm("Cipher.OldECIESWITHAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
+            provider.addAlgorithm("Cipher.OldECIESwithDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
+            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
 
             provider.addAlgorithm("Signature.ECDSA", PREFIX + "SignatureSpi$ecDSA");
             provider.addAlgorithm("Signature.NONEwithECDSA", PREFIX + "SignatureSpi$ecDSAnone");
