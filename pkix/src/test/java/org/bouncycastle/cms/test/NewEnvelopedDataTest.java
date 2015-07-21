@@ -327,50 +327,51 @@ public class NewEnvelopedDataTest
         }
     }
 
-    public void testRsaKEMS()
-        throws Exception
-    {
-        byte[]          data     = "WallaWallaWashington".getBytes();
-
-        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
-
-        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciKemsCert).setProvider(BC));
-
-        CMSEnvelopedData ed = edGen.generate(
-                                new CMSProcessableByteArray(data),
-                                new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
-
-        RecipientInformationStore  recipients = ed.getRecipientInfos();
-
-
-        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
-
-        Collection  c = recipients.getRecipients();
-
-        assertEquals(2, c.size());
-
-        Iterator    it = c.iterator();
-
-        while (it.hasNext())
-        {
-            RecipientInformation   recipient = (RecipientInformation)it.next();
-
-            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
-
-            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
-
-            assertEquals(true, Arrays.equals(data, recData));
-        }
-
-        RecipientId id = new JceKeyTransRecipientId(_reciCert);
-
-        Collection collection = recipients.getRecipients(id);
-        if (collection.size() != 2)
-        {
-            fail("recipients not matched using general recipient ID.");
-        }
-        assertTrue(collection.iterator().next() instanceof RecipientInformation);
-    }
+    // TODO: add KEMS to provider.
+//    public void testRsaKEMS()
+//        throws Exception
+//    {
+//        byte[]          data     = "WallaWallaWashington".getBytes();
+//
+//        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+//
+//        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciKemsCert).setProvider(BC));
+//
+//        CMSEnvelopedData ed = edGen.generate(
+//                                new CMSProcessableByteArray(data),
+//                                new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+//
+//        RecipientInformationStore  recipients = ed.getRecipientInfos();
+//
+//
+//        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+//
+//        Collection  c = recipients.getRecipients();
+//
+//        assertEquals(2, c.size());
+//
+//        Iterator    it = c.iterator();
+//
+//        while (it.hasNext())
+//        {
+//            RecipientInformation   recipient = (RecipientInformation)it.next();
+//
+//            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+//
+//            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+//
+//            assertEquals(true, Arrays.equals(data, recData));
+//        }
+//
+//        RecipientId id = new JceKeyTransRecipientId(_reciCert);
+//
+//        Collection collection = recipients.getRecipients(id);
+//        if (collection.size() != 2)
+//        {
+//            fail("recipients not matched using general recipient ID.");
+//        }
+//        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+//    }
 
     public void testKeyTrans()
         throws Exception
