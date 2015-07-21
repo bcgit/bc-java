@@ -204,4 +204,21 @@ public interface X9ObjectIdentifiers
     static final ASN1ObjectIdentifier mqv2            = x9_42_schemes.branch("7");
     /** X9.42 MQV1 OID: 1.2.840.10046.3.8 */
     static final ASN1ObjectIdentifier mqv1            = x9_42_schemes.branch("8");
+
+    /**
+     * X9.44
+     * <pre>
+     *    x9-44 OID ::= {
+     *      iso(1) identified-organization(3) tc68(133) country(16) x9(840)
+     *      x9Standards(9) x9-44(44)
+     *   }
+     * </pre>
+     */
+
+    ASN1ObjectIdentifier x9_44 = new ASN1ObjectIdentifier("1.3.133.16.840.9.44");
+
+    ASN1ObjectIdentifier x9_44_components = x9_44.branch("1");
+
+    ASN1ObjectIdentifier id_kdf_kdf2 = x9_44_components.branch("1");
+    ASN1ObjectIdentifier id_kdf_kdf3 = x9_44_components.branch("2");
 }
