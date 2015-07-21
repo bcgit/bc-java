@@ -1,5 +1,9 @@
 package org.bouncycastle.util;
 
+/**
+ * Interface for Memoable objects. Memoable objects allow the taking of a snapshot of their internal state
+ * via the copy() method and then reseting the object back to that state later using the reset() method.
+ */
 public interface Memoable
 {
     /**
@@ -8,7 +12,7 @@ public interface Memoable
      * The returned object may be used simply to store the state, or may be used as a similar object
      * starting from the copied state.
      */
-    public Memoable copy();
+    Memoable copy();
 
     /**
      * Restore a copied object state into this object.
@@ -19,5 +23,5 @@ public interface Memoable
      * @throws ClassCastException if the provided object is not of the correct type.
      * @throws MemoableResetException if the <b>other</b> parameter is in some other way invalid.
      */
-    public void reset(Memoable other);
+    void reset(Memoable other);
 }

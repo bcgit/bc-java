@@ -1,5 +1,8 @@
 package org.bouncycastle.util;
 
+/**
+ * Utility methods for converting byte arrays into ints and longs, and back again.
+ */
 public abstract class Pack
 {
     public static int bigEndianToInt(byte[] bs, int off)
