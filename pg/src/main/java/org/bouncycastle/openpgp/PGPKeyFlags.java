@@ -15,5 +15,7 @@ public interface PGPKeyFlags
 
     public static final int MAYBE_SPLIT = 0x10; // The private component of this key may have been split by a secret-sharing mechanism.
 
+    public static final int CAN_AUTHENTICATE = 0x20; // This key maybe used for authentication.
+
     public static final int MAYBE_SHARED = 0x80; // The private component of this key may be in the possession of more than one person.
 }
