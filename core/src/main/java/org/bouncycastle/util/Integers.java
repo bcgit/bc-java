@@ -1,5 +1,8 @@
 package org.bouncycastle.util;
 
+/**
+ * Utility methods for ints.
+ */
 public class Integers
 {
     public static int rotateLeft(int i, int distance)

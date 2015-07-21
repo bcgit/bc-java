@@ -8,6 +8,9 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
 
+/**
+ * String utilities.
+ */
 public final class Strings
 {
     private static String LINE_SEPARATOR;

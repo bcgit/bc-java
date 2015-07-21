@@ -1,5 +1,8 @@
 package org.bouncycastle.util;
 
+/**
+ * Utility methods for processing String objects containing IP addresses.
+ */
 public class IPAddress
 {
     /**
