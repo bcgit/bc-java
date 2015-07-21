@@ -23,56 +23,57 @@ public class X509ExtensionUtils
 {
     private DigestCalculator calculator;
 
+    /**
+     * Base constructor - for conformance to RFC 5280 use a calculator based on SHA-1.
+     *
+     * @param calculator  a calculator for calculating subject key ids.
+     */
     public X509ExtensionUtils(DigestCalculator calculator)
     {
         this.calculator = calculator;
     }
 
+    /**
+     * Create an AuthorityKeyIdentifier from the passed in arguments.
+     *
+     * @param certHolder the issuer certificate that the AuthorityKeyIdentifier should refer to.
+     * @return an AuthorityKeyIdentifier.
+     */
     public AuthorityKeyIdentifier createAuthorityKeyIdentifier(
         X509CertificateHolder certHolder)
     {
-        if (certHolder.getVersionNumber() != 3)
-        {
-            GeneralName genName = new GeneralName(certHolder.getIssuer());
-            SubjectPublicKeyInfo info = certHolder.getSubjectPublicKeyInfo();
+        GeneralName             genName = new GeneralName(certHolder.getIssuer());
 
-            return new AuthorityKeyIdentifier(
-                           calculateIdentifier(info), new GeneralNames(genName), certHolder.getSerialNumber());
-        }
-        else
-        {
-            GeneralName             genName = new GeneralName(certHolder.getIssuer());
-            Extension ext = certHolder.getExtension(Extension.subjectKeyIdentifier);
-
-            if (ext != null)
-            {
-                ASN1OctetString str = ASN1OctetString.getInstance(ext.getParsedValue());
-
-                return new AuthorityKeyIdentifier(
-                                str.getOctets(), new GeneralNames(genName), certHolder.getSerialNumber());
-            }
-            else
-            {
-                SubjectPublicKeyInfo info = certHolder.getSubjectPublicKeyInfo();
-
-                return new AuthorityKeyIdentifier(
-                        calculateIdentifier(info), new GeneralNames(genName), certHolder.getSerialNumber());
-            }
-        }
+        return new AuthorityKeyIdentifier(
+                getSubjectKeyIdentifier(certHolder), new GeneralNames(genName), certHolder.getSerialNumber());
     }
 
+    /**
+     * Create an AuthorityKeyIdentifier from the passed in SubjectPublicKeyInfo.
+     *
+     * @param publicKeyInfo the SubjectPublicKeyInfo to base the key identifier on.
+     * @return an AuthorityKeyIdentifier.
+     */
     public AuthorityKeyIdentifier createAuthorityKeyIdentifier(SubjectPublicKeyInfo publicKeyInfo)
     {
         return new AuthorityKeyIdentifier(calculateIdentifier(publicKeyInfo));
     }
 
+    /**
+     * Create an AuthorityKeyIdentifier from the passed in arguments.
+     *
+     * @param publicKeyInfo the SubjectPublicKeyInfo to base the key identifier on.
+     * @param generalNames the general names to associate with the issuer cert's issuer.
+     * @param serial the serial number of the issuer cert.
+     * @return an AuthorityKeyIdentifier.
+     */
     public AuthorityKeyIdentifier createAuthorityKeyIdentifier(SubjectPublicKeyInfo publicKeyInfo, GeneralNames generalNames, BigInteger serial)
     {
         return new AuthorityKeyIdentifier(calculateIdentifier(publicKeyInfo), generalNames, serial);
     }
 
     /**
-     * Return a RFC 3280 type 1 key identifier. As in:
+     * Return a RFC 5280 type 1 key identifier. As in:
      * <pre>
      * (1) The keyIdentifier is composed of the 160-bit SHA-1 hash of the
      * value of the BIT STRING subjectPublicKey (excluding the tag,
@@ -88,7 +89,7 @@ public class X509ExtensionUtils
     }
 
     /**
-     * Return a RFC 3280 type 2 key identifier. As in:
+     * Return a RFC 5280 type 2 key identifier. As in:
      * <pre>
      * (2) The keyIdentifier is composed of a four bit type field with
      * the value 0100 followed by the least significant 60 bits of the
@@ -108,6 +109,27 @@ public class X509ExtensionUtils
         id[0] |= 0x40;
 
         return new SubjectKeyIdentifier(id);
+    }
+
+    private byte[] getSubjectKeyIdentifier(X509CertificateHolder certHolder)
+    {
+        if (certHolder.getVersionNumber() != 3)
+        {
+            return calculateIdentifier(certHolder.getSubjectPublicKeyInfo());
+        }
+        else
+        {
+            Extension ext = certHolder.getExtension(Extension.subjectKeyIdentifier);
+
+            if (ext != null)
+            {
+                return ASN1OctetString.getInstance(ext.getParsedValue()).getOctets();
+            }
+            else
+            {
+                return calculateIdentifier(certHolder.getSubjectPublicKeyInfo());
+            }
+        }
     }
 
     private byte[] calculateIdentifier(SubjectPublicKeyInfo publicKeyInfo)

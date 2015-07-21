@@ -1,10 +1,16 @@
 package org.bouncycastle.cert.test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ExtensionUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -20,6 +26,10 @@ public class X509ExtensionUtilsTest
 
     private static byte[] shaID = Hex.decode("d8128a06d6c2feb0865994a2936e7b75b836a021");
     private static byte[] shaTruncID = Hex.decode("436e7b75b836a021");
+
+    private static byte[] v0Cert = Base64.decode("MIIBuTCCASICAQEwDQYJKoZIhvcNAQEFBQAwJTEWMBQGA1UECgwNQm91bmN5IENhc3RsZTELMAkGA1UEBhMCQVUwHhcNMTUwNzIxMjIwNzI3WhcNMTUxMDI5MjIwNzI3WjAlMRYwFAYDVQQKDA1Cb3VuY3kgQ2FzdGxlMQswCQYDVQQGEwJBVTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA9MhYrfDoC69iS/56gdvuwOvXKMsx9dSBZnK9KOnCFtc3fTeVp+61CeExuKXafqz0ZK/5ps0D+RMCOcIZXtXZsdC3CwgVx3k/CHKgrnp51v8sbgFzRrGr68Mp9Dr01wdgxjDCGgToUiBybU8IhsUc2nmwn3+Y+ZoIOvyQDuh3hXUCAwEAATANBgkqhkiG9w0BAQUFAAOBgQDvpEa3KFe7b+y7/MPNloabj6lfwW4vdKk4bg9+yMHFsb62OB8/RP4sJ+XIB91cGYINgA4d511juc9t6t7kEp6GijqWwAUtQfbyhZIO8DsCl96y3RfUag1L7Q3pn0SfyW0NAI8O9eKG/Hl6WmxRlvx3zmKz1bU+VSlnZoYt+6qZyg==");
+    private static byte[] v3Cert = Base64.decode("MIICKzCCAZSgAwIBAgIBAjANBgkqhkiG9w0BAQUFADAlMRYwFAYDVQQKDA1Cb3VuY3kgQ2FzdGxlMQswCQYDVQQGEwJBVTAeFw0xNTA3MjEyMjA3MjdaFw0xNTEwMjkyMjA3MjdaMEMxDDAKBgNVBAMMA0JvYjEOMAwGA1UECwwFU2FsZXMxFjAUBgNVBAoMDUJvdW5jeSBDYXN0bGUxCzAJBgNVBAYTAkFVMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCHpUGlsn0Y+az7XGj3wq+om/kGNbdP+bKE6Du6x92Mq2SC8Fez5RdOkhJJqxk5U8O+Hj9dqoxBkpeqA5NA52agXNz4WlSDBii17U9PPoj7LPXlfXMujf18k/IY71M79/XRjj/xbqNEJQQAH+EHyFMVxFDaOHJ4huL3gq/C7v9tTQIDAQABo00wSzAdBgNVHQ4EFgQUxHM/5+X91RvdmNdbNFZ02Fug92wwHwYDVR0jBBgwFoAU8NRqCpfiTCDshX7mgx4L6KeXxJ0wCQYDVR0TBAIwADANBgkqhkiG9w0BAQUFAAOBgQCvqwjs+9IiWGlLmFc9b+ON7upBb8JCwVh5+Ks7F4waZ5gmLuUXZLEeMDvosSB6bPFgDWSIZsdxn/V4/hUMEJkvfRZJ5J/k1a7Yogi3XyFcE4k1p1W5ZQ+wm+CQwAWmOFdpJUCMsC1h2xJUu9agEPWowdc9P2+LL04ghFq9SnXsYg==");
+
     private X509ExtensionUtils x509ExtensionUtils = new X509ExtensionUtils(new SHA1DigestCalculator());
 
     public String getName()
@@ -44,6 +54,34 @@ public class X509ExtensionUtilsTest
         if (!Arrays.areEqual(shaTruncID, ski.getKeyIdentifier()))
         {
             fail("truncated SHA-1 ID does not match");
+        }
+
+        AuthorityKeyIdentifier authKeyId = x509ExtensionUtils.createAuthorityKeyIdentifier(new X509CertificateHolder(v0Cert));
+        if (!authKeyId.getAuthorityCertIssuer().equals(new GeneralNames(new GeneralName(new X500Name("O=Bouncy Castle, C=AU")))))
+        {
+            fail("v0 issuer not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("f0d46a0a97e24c20ec857ee6831e0be8a797c49d"), authKeyId.getKeyIdentifier()))
+        {
+            fail("v0 keyID not matched");
+        }
+        if (!authKeyId.getAuthorityCertSerialNumber().equals(BigInteger.valueOf(1)))
+        {
+            fail("v0 serial not matched");
+        }
+
+        authKeyId = x509ExtensionUtils.createAuthorityKeyIdentifier(new X509CertificateHolder(v3Cert));
+        if (!authKeyId.getAuthorityCertIssuer().equals(new GeneralNames(new GeneralName(new X500Name("O=Bouncy Castle, C=AU")))))
+        {
+            fail("v3 issuer not matched");
+        }
+        if (!Arrays.areEqual(Hex.decode("c4733fe7e5fdd51bdd98d75b345674d85ba0f76c"), authKeyId.getKeyIdentifier()))
+        {
+            fail("v3 keyID not matched");
+        }
+        if (!authKeyId.getAuthorityCertSerialNumber().equals(BigInteger.valueOf(2)))
+        {
+            fail("v3 serial not matched");
         }
     }
 
