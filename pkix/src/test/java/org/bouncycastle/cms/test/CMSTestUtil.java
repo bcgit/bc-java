@@ -364,6 +364,46 @@ public class CMSTestUtil
         return _cert;
     }
 
+    public static X509Certificate makeCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN, AlgorithmIdentifier keyAlgID)
+        throws GeneralSecurityException, IOException, OperatorCreationException
+    {
+        PrivateKey issPriv = issKP.getPrivate();
+        PublicKey  issPub  = issKP.getPublic();
+        SubjectPublicKeyInfo subPub = SubjectPublicKeyInfo.getInstance(subKP.getPublic().getEncoded());
+
+        X509v3CertificateBuilder v3CertGen = new X509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            new SubjectPublicKeyInfo(keyAlgID, subPub.parsePublicKey()));
+
+        JcaContentSignerBuilder contentSignerBuilder = makeContentSignerBuilder(issPub);
+
+        v3CertGen.addExtension(
+            Extension.subjectKeyIdentifier,
+            false,
+            createSubjectKeyId(subPub));
+
+        v3CertGen.addExtension(
+            Extension.authorityKeyIdentifier,
+            false,
+            createAuthorityKeyId(issPub));
+
+        v3CertGen.addExtension(
+            Extension.basicConstraints,
+            false,
+            new BasicConstraints(false));
+
+        X509Certificate _cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(v3CertGen.build(contentSignerBuilder.build(issPriv)));
+
+        _cert.checkValidity(new Date());
+        _cert.verify(issPub);
+
+        return _cert;
+    }
+
     public static X509Certificate makeOaepCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN, boolean _ca)
         throws GeneralSecurityException, IOException, OperatorCreationException
     {

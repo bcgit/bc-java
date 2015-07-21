@@ -79,8 +79,11 @@ public class JceSymmetricKeyWrapper
 
     private static AlgorithmIdentifier determineKeyEncAlg(SecretKey key)
     {
-        String algorithm = key.getAlgorithm();
+        return determineKeyEncAlg(key.getAlgorithm(), key.getEncoded().length * 8);
+    }
 
+    static AlgorithmIdentifier determineKeyEncAlg(String algorithm, int keySizeInBits)
+    {
         if (algorithm.startsWith("DES") || algorithm.startsWith("TripleDES"))
         {
             return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, DERNull.INSTANCE);
@@ -92,18 +95,17 @@ public class JceSymmetricKeyWrapper
         }
         else if (algorithm.startsWith("AES"))
         {
-            int length = key.getEncoded().length * 8;
             ASN1ObjectIdentifier wrapOid;
 
-            if (length == 128)
+            if (keySizeInBits == 128)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes128_wrap;
             }
-            else if (length == 192)
+            else if (keySizeInBits == 192)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes192_wrap;
             }
-            else if (length == 256)
+            else if (keySizeInBits == 256)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes256_wrap;
             }
@@ -122,18 +124,17 @@ public class JceSymmetricKeyWrapper
         }
         else if (algorithm.startsWith("Camellia"))
         {
-            int length = key.getEncoded().length * 8;
             ASN1ObjectIdentifier wrapOid;
 
-            if (length == 128)
+            if (keySizeInBits == 128)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia128_wrap;
             }
-            else if (length == 192)
+            else if (keySizeInBits == 192)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia192_wrap;
             }
-            else if (length == 256)
+            else if (keySizeInBits == 256)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia256_wrap;
             }

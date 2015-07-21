@@ -3,6 +3,8 @@ package org.bouncycastle.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -14,8 +16,15 @@ public final class Strings
     {
        try
        {
-           // the easy way
-           LINE_SEPARATOR = System.getProperty("line.separator");
+           LINE_SEPARATOR = AccessController.doPrivileged(new PrivilegedAction<String>()
+           {
+               public String run()
+               {
+                   // the easy way
+                   return System.getProperty("line.separator");
+               }
+           });
+
        }
        catch (Exception e)
        {
@@ -26,7 +35,7 @@ public final class Strings
            }
            catch (Exception ef)
            {
-               LINE_SEPARATOR = "\n";   // we're desperate, use this...
+               LINE_SEPARATOR = "\n";   // we're desperate use this...
            }
        }
     }

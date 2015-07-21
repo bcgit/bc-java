@@ -42,6 +42,7 @@ import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Integers;
 
 class OperatorHelper
 {
@@ -49,6 +50,7 @@ class OperatorHelper
     private static final Map asymmetricWrapperAlgNames = new HashMap();
     private static final Map symmetricWrapperAlgNames = new HashMap();
     private static final Map symmetricKeyAlgNames = new HashMap();
+    private static final Map symmetricWrapperKeySizes = new HashMap();
 
     static
     {
@@ -109,6 +111,16 @@ class OperatorHelper
         symmetricWrapperAlgNames.put(KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, "SEEDWrap");
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESede");
 
+        symmetricWrapperKeySizes.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes128_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes192_wrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes256_wrap, Integers.valueOf(256));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia128_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia192_wrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia256_wrap, Integers.valueOf(256));
+        symmetricWrapperKeySizes.put(KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
+
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.aes, "AES");
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes128_CBC, "AES");
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes192_CBC, "AES");
@@ -122,6 +134,16 @@ class OperatorHelper
     OperatorHelper(JcaJceHelper helper)
     {
         this.helper = helper;
+    }
+
+    String getWrappingAlgorithmName(ASN1ObjectIdentifier algOid)
+    {
+        return (String)symmetricWrapperAlgNames.get(algOid);
+    }
+
+    int getKeySizeInBits(ASN1ObjectIdentifier algOid)
+    {
+        return ((Integer)symmetricWrapperKeySizes.get(algOid)).intValue();
     }
 
     Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
