@@ -35,9 +35,14 @@ public class PKIXCRLStoreSelector<T extends CRL>
         private byte[] issuingDistributionPoint = null;
         private boolean issuingDistributionPointEnabled = false;
 
-        public Builder(CRLSelector certSelector)
+        /**
+         * Constructor initializing a builder with a CertSelector.
+         *
+         * @param crlSelector the CertSelector to copy the match details from.
+         */
+        public Builder(CRLSelector crlSelector)
         {
-            this.baseSelector = (CRLSelector)certSelector.clone();
+            this.baseSelector = (CRLSelector)crlSelector.clone();
         }
 
 
@@ -124,6 +129,11 @@ public class PKIXCRLStoreSelector<T extends CRL>
             this.issuingDistributionPoint = Arrays.clone(issuingDistributionPoint);
         }
 
+        /**
+         * Build a selector.
+         *
+         * @return a new PKIXCRLStoreSelector
+         */
         public PKIXCRLStoreSelector<? extends CRL> build()
         {
             return new PKIXCRLStoreSelector(this);

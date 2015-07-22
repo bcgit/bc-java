@@ -27,7 +27,7 @@ public class PKIXExtendedParameters
      * verifies that all involved certificates must have been valid at the
      * current time. The modified PKIX model verifies that all involved
      * certificates were valid at the signing time. Both are indirectly choosen
-     * with the {@link java.security.cert.PKIXParameters#setDate(java.util.Date)} method, so this
+     * with the {@link PKIXParameters#setDate(Date)} method, so this
      * methods sets the Date when <em>all</em> certificates must have been
      * valid.
      */
@@ -40,15 +40,15 @@ public class PKIXExtendedParameters
      * CA certificate which signed the end certificate must have been valid,
      * when the end certificate was signed. The CA (or Root CA) certificate must
      * have been valid, when the CA certificate was signed and so on. So the
-     * {@link java.security.cert.PKIXParameters#setDate(java.util.Date)} method sets the time, when
-     * the <em>end certificate</em> must have been valid.
-     * <p>
-     * It is used e.g.
+     * {@link PKIXParameters#setDate(Date)} method sets the time, when
+     * the <em>end certificate</em> must have been valid. <p/> It is used e.g.
      * in the German signature law.
-     * </p>
      */
     public static final int CHAIN_VALIDITY_MODEL = 1;
 
+    /**
+     * Builder for a PKIXExtendedParameters object.
+     */
     public static class Builder
     {
         private final PKIXParameters baseParameters;

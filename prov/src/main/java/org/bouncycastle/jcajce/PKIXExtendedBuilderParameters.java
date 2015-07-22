@@ -11,11 +11,14 @@ import java.util.Set;
 /**
  * This class contains extended parameters for PKIX certification path builders.
  * 
- * @see java.security.cert.PKIXBuilderParameters
+ * @see PKIXBuilderParameters
  */
 public class PKIXExtendedBuilderParameters
     implements CertPathParameters
 {
+    /**
+     * Builder for a PKIXExtendedBuilderParameters object.
+     */
     public static class Builder
     {
         private final PKIXExtendedParameters baseParameters;
@@ -64,7 +67,7 @@ public class PKIXExtendedBuilderParameters
          *
          * @param maxPathLength the maximum number of non-self-issued intermediate
          *            certificates in the certification path
-         * @throws java.security.InvalidParameterException if <code>maxPathLength</code> is set
+         * @throws InvalidParameterException if <code>maxPathLength</code> is set
          *             to a value less than -1
          *
          * @see #getMaxPathLength

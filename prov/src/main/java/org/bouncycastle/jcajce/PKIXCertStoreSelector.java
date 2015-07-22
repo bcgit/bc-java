@@ -16,15 +16,28 @@ import org.bouncycastle.util.Selector;
 public class PKIXCertStoreSelector<T extends Certificate>
     implements Selector<T>
 {
+    /**
+     * Builder for a selector.
+     */
     public static class Builder
     {
         private final CertSelector baseSelector;
 
+        /**
+         * Constructor initializing a builder with a CertSelector.
+         *
+         * @param certSelector the CertSelector to copy the match details from.
+         */
         public Builder(CertSelector certSelector)
         {
             this.baseSelector = (CertSelector)certSelector.clone();
         }
 
+        /**
+         * Build a selector.
+         *
+         * @return a new PKIXCertStoreSelector
+         */
         public PKIXCertStoreSelector<? extends Certificate> build()
         {
             return new PKIXCertStoreSelector(baseSelector);
