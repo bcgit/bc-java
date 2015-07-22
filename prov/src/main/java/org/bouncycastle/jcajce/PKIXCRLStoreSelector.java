@@ -25,6 +25,9 @@ import org.bouncycastle.util.Selector;
 public class PKIXCRLStoreSelector<T extends CRL>
     implements Selector<T>
 {
+    /**
+     * Builder for a PKIXCRLStoreSelector.
+     */
     public static class Builder
     {
         private final CRLSelector baseSelector;

@@ -17,7 +17,7 @@ public class PKIXCertStoreSelector<T extends Certificate>
     implements Selector<T>
 {
     /**
-     * Builder for a selector.
+     * Builder for a PKIXCertStoreSelector.
      */
     public static class Builder
     {
