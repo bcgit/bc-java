@@ -3,31 +3,30 @@ package org.bouncycastle.jcajce;
 import javax.crypto.interfaces.PBEKey;
 
 import org.bouncycastle.crypto.CharToByteConverter;
-import org.bouncycastle.util.Arrays;
 
 /**
- * A password based key for use with PBKDF1 as defined in PKCS#5 with full PBE parameters.
+ * A password based key for use with PBKDF2 as defined in PKCS#5 with full PBE parameters.
  */
-public class PBKDF1KeyWithParameters
-    extends PBKDF1Key
+public class PBKDF2KeyWithParameters
+    extends PBKDF2Key
     implements PBEKey
 {
     private final byte[] salt;
     private final int iterationCount;
 
     /**
-     * Basic constructor for a password based key with generation parameters for PBKDF1.
+     * Basic constructor for a password based key with generation parameters using FIPS PBKDF.
      *
      * @param password password to use.
-     * @param converter the converter to use to turn the char array into octets.
+     * @param converter converter to use for transforming characters into bytes.
      * @param salt salt for generation algorithm
      * @param iterationCount iteration count for generation algorithm.
      */
-    public PBKDF1KeyWithParameters(char[] password, CharToByteConverter converter, byte[] salt, int iterationCount)
+    public PBKDF2KeyWithParameters(char[] password, CharToByteConverter converter, byte[] salt, int iterationCount)
     {
         super(password, converter);
 
-        this.salt = Arrays.clone(salt);
+        this.salt = salt.clone();
         this.iterationCount = iterationCount;
     }
 

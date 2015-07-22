@@ -1,12 +1,12 @@
 package org.bouncycastle.jcajce;
 
-import javax.crypto.SecretKey;
+import org.bouncycastle.crypto.PasswordConverter;
 
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.jcajce.provider.keystore.PKCS12;
-
+/**
+ * A password based key for use with PKCS#12.
+ */
 public class PKCS12Key
-    implements SecretKey
+    implements PBKDFKey
 {
     private final char[] password;
     private final boolean useWrongZeroLengthConversion;
@@ -35,21 +35,41 @@ public class PKCS12Key
         System.arraycopy(password, 0, this.password, 0, password.length);
     }
 
+    /**
+     * Return a reference to the char[] array holding the password.
+     *
+     * @return a reference to the password array.
+     */
     public char[] getPassword()
     {
         return password;
     }
 
+    /**
+     * Return the password based key derivation function this key is for,
+     *
+     * @return the string "PKCS12"
+     */
     public String getAlgorithm()
     {
         return "PKCS12";
     }
 
+    /**
+     * Return the format encoding.
+     *
+     * @return the string "PKCS12", representing the char[] to byte[] conversion.
+     */
     public String getFormat()
     {
-        return "RAW";
+        return PasswordConverter.PKCS12.getType();
     }
 
+    /**
+     * Return the password converted to bytes.
+     *
+     * @return the password converted to a byte array.
+     */
     public byte[] getEncoded()
     {
         if (useWrongZeroLengthConversion && password.length == 0)
@@ -57,6 +77,6 @@ public class PKCS12Key
             return new byte[2];
         }
 
-        return PBEParametersGenerator.PKCS12PasswordToBytes(password);
+        return PasswordConverter.PKCS12.convert(password);
     }
 }

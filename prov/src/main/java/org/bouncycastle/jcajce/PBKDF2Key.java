@@ -3,26 +3,23 @@ package org.bouncycastle.jcajce;
 import org.bouncycastle.crypto.CharToByteConverter;
 
 /**
- * A password based key for use with PBKDF1 as defined in PKCS#5.
+ * A password based key for use with PBKDF2 as defined in PKCS#5.
  */
-public class PBKDF1Key
+public class PBKDF2Key
     implements PBKDFKey
 {
     private final char[] password;
     private final CharToByteConverter converter;
 
     /**
-     * Basic constructor for a password based key with generation parameters for PBKDF1.
+     * Basic constructor for a password based key using PBKDF - secret key generation parameters will be passed separately..
      *
      * @param password password to use.
-     * @param converter the converter to use to turn the char array into octets.
      */
-    public PBKDF1Key(char[] password, CharToByteConverter converter)
+    public PBKDF2Key(char[] password, CharToByteConverter converter)
     {
-        this.password = new char[password.length];
+        this.password = password.clone();
         this.converter = converter;
-
-        System.arraycopy(password, 0, this.password, 0, password.length);
     }
 
     /**
@@ -38,11 +35,11 @@ public class PBKDF1Key
     /**
      * Return the password based key derivation function this key is for,
      *
-     * @return the string "PBKDF1"
+     * @return the string "PBKDF2"
      */
     public String getAlgorithm()
     {
-        return "PBKDF1";
+        return "PBKDF2";
     }
 
     /**

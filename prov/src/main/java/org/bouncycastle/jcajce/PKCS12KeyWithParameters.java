@@ -4,8 +4,12 @@ import javax.crypto.interfaces.PBEKey;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A password based key for use with PKCS#12 with full PBE parameters.
+ */
 public class PKCS12KeyWithParameters
-    extends PKCS12Key implements PBEKey
+    extends PKCS12Key
+    implements PBEKey
 {
     private final byte[] salt;
     private final int iterationCount;
@@ -43,11 +47,21 @@ public class PKCS12KeyWithParameters
         this.iterationCount = iterationCount;
     }
 
+    /**
+     * Return the salt to use in the key derivation function.
+     *
+     * @return the salt to use in the KDF.
+     */
     public byte[] getSalt()
     {
         return salt;
     }
 
+    /**
+     * Return the iteration count to use in the key derivation function.
+     *
+     * @return the iteration count to use in the KDF.
+     */
     public int getIterationCount()
     {
         return iterationCount;
