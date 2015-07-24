@@ -1,6 +1,6 @@
 package org.bouncycastle.jcajce;
 
-import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.crypto.PBEParametersGenerator;
 
 /**
  * A password based key for use with PKCS#12.
@@ -62,7 +62,7 @@ public class PKCS12Key
      */
     public String getFormat()
     {
-        return PasswordConverter.PKCS12.getType();
+        return "PKCS12";
     }
 
     /**
@@ -77,6 +77,6 @@ public class PKCS12Key
             return new byte[2];
         }
 
-        return PasswordConverter.PKCS12.convert(password);
+        return PBEParametersGenerator.PKCS12PasswordToBytes(password);
     }
 }
