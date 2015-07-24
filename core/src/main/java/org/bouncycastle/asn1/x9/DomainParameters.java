@@ -45,7 +45,7 @@ public class DomainParameters
     /**
      * Return a DomainParameters object from the passed in object.
      *
-     * @param obj a tagged object.
+     * @param obj an object for conversion or a byte[].
      * @return a DomainParameters
      */
     public static DomainParameters getInstance(Object obj)

@@ -33,7 +33,7 @@ public class DHPublicKey
     /**
      * Return a DHPublicKey from the passed in object.
      *
-     * @param obj a tagged object.
+     * @param obj an object for conversion or a byte[].
      * @return a DHPublicKey
      */
     public static DHPublicKey getInstance(Object obj)
