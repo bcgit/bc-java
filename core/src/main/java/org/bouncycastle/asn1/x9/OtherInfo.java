@@ -80,16 +80,31 @@ public class OtherInfo
         }
     }
 
+    /**
+     * Return the key specific info for the KEK/CEK.
+     *
+     * @return the key specific info.
+     */
     public KeySpecificInfo getKeyInfo()
     {
         return keyInfo;
     }
 
+    /**
+     * PartyA info for key deriviation.
+     *
+     * @return PartyA info.
+     */
     public ASN1OctetString getPartyAInfo()
     {
         return partyAInfo;
     }
 
+    /**
+     * The length of the KEK to be generated as a 4 byte big endian.
+     *
+     * @return KEK length as a 4 byte big endian in an octet string.
+     */
     public ASN1OctetString getSuppPubInfo()
     {
         return suppPubInfo;
