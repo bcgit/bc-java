@@ -22,6 +22,7 @@ import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -235,6 +236,14 @@ public class WriterTest
         if (!akp.equals(privKey))
         {
             fail("Failed to read back test key encoded with: " + algorithm);
+        }
+
+        kp = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(((PEMEncryptedKeyPair)o).decryptKeyPair(new BcPEMDecryptorProvider(testPassword)));
+        privKey = kp.getPrivate();
+
+        if (!akp.equals(privKey))
+        {
+            fail("BC failed to read back test key encoded with: " + algorithm);
         }
     }
 

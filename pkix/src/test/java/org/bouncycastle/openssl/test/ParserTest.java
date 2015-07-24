@@ -39,6 +39,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
+import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
@@ -467,8 +468,13 @@ public class ParserTest
         Class   expectedPrivKeyClass)
         throws IOException
     {
-        JcaPEMKeyConverter   converter = new JcaPEMKeyConverter().setProvider("BC");
-        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().setProvider("BC").build("changeit".toCharArray());
+        keyDecryptTest(fileName, expectedPrivKeyClass, new JcePEMDecryptorProviderBuilder().setProvider("BC").build("changeit".toCharArray()));
+        keyDecryptTest(fileName, expectedPrivKeyClass, new BcPEMDecryptorProvider("changeit".toCharArray()));
+    }
+
+    private void keyDecryptTest(String fileName, Class expectedPrivKeyClass, PEMDecryptorProvider decProv)
+        throws IOException
+    {
         PEMParser pr = openPEMResource("data/" + fileName);
         Object o = pr.readObject();
 
@@ -477,6 +483,7 @@ public class ParserTest
             fail("Didn't find OpenSSL key");
         }
 
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
         KeyPair kp = (o instanceof PEMEncryptedKeyPair) ?
             converter.getKeyPair(((PEMEncryptedKeyPair)o).decryptKeyPair(decProv)) : converter.getKeyPair((PEMKeyPair)o);
 
