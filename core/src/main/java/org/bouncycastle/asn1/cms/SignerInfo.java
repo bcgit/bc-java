@@ -39,7 +39,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *
  * -----------------------------------------
  *
- * RFC 5256:
+ * RFC 5652:
  *
  * SignerInfo ::= SEQUENCE {
  *     version            CMSVersion,
