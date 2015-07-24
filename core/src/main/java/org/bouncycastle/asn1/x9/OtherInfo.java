@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * ANS.1 def for Diffie-Hellman key exchange OtherInfo structure. See
+ * ASN.1 def for Diffie-Hellman key exchange OtherInfo structure. See
  * RFC 2631, or X9.42, for further details.
  * <pre>
  *  OtherInfo ::= SEQUENCE {
