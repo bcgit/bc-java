@@ -94,7 +94,7 @@ public class PublicKeyFactory
         {
             DHPublicKey dhPublicKey = DHPublicKey.getInstance(keyInfo.parsePublicKey());
 
-            BigInteger y = dhPublicKey.getY().getValue();
+            BigInteger y = dhPublicKey.getY();
 
             DomainParameters dhParams = DomainParameters.getInstance(algId.getParameters());
 
