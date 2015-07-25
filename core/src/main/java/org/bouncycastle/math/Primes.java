@@ -96,9 +96,9 @@ public abstract class Primes
 
     /**
      * FIPS 186-4 C.6 Shawe-Taylor Random_Prime Routine
-     * 
+     *
      * Construct a provable prime number using a hash function.
-     * 
+     *
      * @param hash
      *            the {@link Digest} instance to use (as "Hash()"). Cannot be null.
      * @param length
@@ -128,12 +128,12 @@ public abstract class Primes
 
     /**
      * FIPS 186-4 C.3.2 Enhanced Miller-Rabin Probabilistic Primality Test
-     * 
+     *
      * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases. This is an
      * alternative to {@link #isMRProbablePrime(BigInteger, SecureRandom, int)} that provides more
      * information about a composite candidate, which may be useful when generating or validating
      * RSA moduli.
-     * 
+     *
      * @param candidate
      *            the {@link BigInteger} instance to test for primality.
      * @param random
@@ -221,7 +221,7 @@ public abstract class Primes
                         x = z;
                     }
                 }
-                
+
                 g = x.subtract(ONE).gcd(w);
 
                 if (g.compareTo(ONE) > 0)
@@ -238,10 +238,10 @@ public abstract class Primes
 
     /**
      * A fast check for small divisors, up to some implementation-specific limit.
-     * 
+     *
      * @param candidate
      *            the {@link BigInteger} instance to test for division by small factors.
-     * 
+     *
      * @return <code>true</code> if the candidate is found to have any small factors,
      *         <code>false</code> otherwise.
      */
@@ -254,9 +254,9 @@ public abstract class Primes
 
     /**
      * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test
-     * 
+     *
      * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases.
-     * 
+     *
      * @param candidate
      *            the {@link BigInteger} instance to test for primality.
      * @param random
@@ -312,9 +312,9 @@ public abstract class Primes
 
     /**
      * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test (to a fixed base).
-     * 
+     *
      * Run a single iteration of the Miller-Rabin algorithm against the specified base.
-     * 
+     *
      * @param candidate
      *            the {@link BigInteger} instance to test for primality.
      * @param base
@@ -499,7 +499,7 @@ public abstract class Primes
             /*
              * This is an optimization of the original algorithm, using trial division to screen out
              * many non-primes quickly.
-             * 
+             *
              * NOTE: 'primeSeed' is still incremented as if we performed the full check!
              */
             if (!implHasAnySmallFactors(c))
@@ -587,7 +587,7 @@ public abstract class Primes
         /*
          * Use wheel factorization with 2, 3, 5 to select trial divisors.
          */
-        
+
         if (x <= 5L)
         {
             return x == 2L || x == 3L || x == 5L;
