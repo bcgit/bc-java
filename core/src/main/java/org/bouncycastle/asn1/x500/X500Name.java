@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 
 /**
+ * The X.500 Name object.
  * <pre>
  *     Name ::= CHOICE {
  *                       RDNSequence }
@@ -38,6 +39,9 @@ public class X500Name
     private X500NameStyle style;
     private RDN[] rdns;
 
+    /**
+     * @deprecated use the getInstance() method that takes a style.
+     */
     public X500Name(X500NameStyle style, X500Name name)
     {
         this.rdns = name.rdns;
@@ -80,7 +84,7 @@ public class X500Name
     {
         if (obj instanceof X500Name)
         {
-            return getInstance(style, ((X500Name)obj).toASN1Primitive());
+            return new X500Name(style, (X500Name)obj);
         }
         else if (obj != null)
         {

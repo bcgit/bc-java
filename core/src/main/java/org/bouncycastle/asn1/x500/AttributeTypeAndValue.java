@@ -8,6 +8,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Holding class for the AttributeTypeAndValue structures that make up an RDN.
+ */
 public class AttributeTypeAndValue
     extends ASN1Object
 {

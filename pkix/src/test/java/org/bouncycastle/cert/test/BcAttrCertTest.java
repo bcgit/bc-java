@@ -584,7 +584,7 @@ public class BcAttrCertTest
         
         principals = holder.getEntityNames();
 
-        X500Name principal0 = new X500Name(RFC4519Style.INSTANCE, principals[0]);
+        X500Name principal0 = X500Name.getInstance(RFC4519Style.INSTANCE, principals[0]);
         if (!principal0.toString().equals("c=US,o=vt,ou=Class 2,ou=Virginia Tech User,cn=Markus Lorch (mlorch),1.2.840.113549.1.9.1=mlorch@vt.edu"))
         {
             System.err.println(principal0.toString());

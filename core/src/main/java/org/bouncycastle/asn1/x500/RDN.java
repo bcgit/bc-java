@@ -9,6 +9,9 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 
+/**
+ * Holding class for a single Relative Distinguished Name (RDN).
+ */
 public class RDN
     extends ASN1Object
 {
@@ -105,12 +108,12 @@ public class RDN
      * <pre>
      * RelativeDistinguishedName ::=
      *                     SET OF AttributeTypeAndValue
-
+     *
      * AttributeTypeAndValue ::= SEQUENCE {
      *        type     AttributeType,
      *        value    AttributeValue }
      * </pre>
-     * @return this object as an ASN1Primitive type
+     * @return this object as its ASN1Primitive type
      */
     public ASN1Primitive toASN1Primitive()
     {

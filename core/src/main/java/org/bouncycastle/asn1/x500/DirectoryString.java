@@ -12,6 +12,9 @@ import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERUniversalString;
 
+/**
+ * The DirectoryString CHOICE object.
+ */
 public class DirectoryString
     extends ASN1Object
     implements ASN1Choice, ASN1String
