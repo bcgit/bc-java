@@ -125,7 +125,7 @@ public class RFC4519Test
 
         byte[] enc = Hex.decode("305e310b300906035504061302415531283026060355040a0c1f546865204c6567696f6e206f662074686520426f756e637920436173746c653125301006035504070c094d656c626f75726e653011060355040b0c0a4173636f742056616c65");
 
-        X500Name n = new X500Name(style, X500Name.getInstance(enc));
+        X500Name n = X500Name.getInstance(style, X500Name.getInstance(enc));
 
         if (!n.toString().equals("l=Melbourne+ou=Ascot Vale,o=The Legion of the Bouncy Castle,c=AU"))
         {

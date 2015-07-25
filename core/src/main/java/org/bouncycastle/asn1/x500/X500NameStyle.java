@@ -6,9 +6,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 /**
  * It turns out that the number of standard ways the fields in a DN should be 
  * encoded into their ASN.1 counterparts is rapidly approaching the
- * number of machines on the internet. By default the X500Name class
- * will produce UTF8Strings in line with the current recommendations (RFC 3280).
- * <p>
+ * number of machines on the internet. This interface provides a profile to conform to when
+ * DNs are being converted into strings and back.
  */
 public interface X500NameStyle
 {
