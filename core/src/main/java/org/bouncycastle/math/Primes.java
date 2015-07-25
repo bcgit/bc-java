@@ -14,7 +14,56 @@ public abstract class Primes
     private static final BigInteger THREE = BigInteger.valueOf(3);
 
     /**
-     * Used to return the output from the {@linkplain Primes#generateSTRandomPrime(Digest, int, byte[]) Shawe-Taylor Random_Prime Routine} 
+     * Used to return the output from the
+     * {@linkplain Primes#enhancedMRProbablePrimeTest(BigInteger, SecureRandom, int) Enhanced
+     * Miller-Rabin Probabilistic Primality Test}
+     */
+    public static class MROutput
+    {
+        private static MROutput probablyPrime()
+        {
+            return new MROutput(false, null);
+        }
+
+        private static MROutput provablyCompositeWithFactor(BigInteger factor)
+        {
+            return new MROutput(true, factor);
+        }
+
+        private static MROutput provablyCompositeNotPrimePower()
+        {
+            return new MROutput(true, null);
+        }
+
+        private boolean provablyComposite;
+        private BigInteger factor;
+
+        private MROutput(boolean provablyComposite, BigInteger factor)
+        {
+            this.provablyComposite = provablyComposite;
+            this.factor = factor;
+        }
+
+        public BigInteger getFactor()
+        {
+            return factor;
+        }
+
+        public boolean isProvablyComposite()
+        {
+            return provablyComposite;
+        }
+
+        public boolean isNotPrimePower()
+        {
+            return factor == null;
+        }
+    }
+
+    /**
+     * Used to return the output from the
+     * {@linkplain Primes#generateSTRandomPrime(Digest, int, byte[]) Shawe-Taylor Random_Prime
+     * Routine}
      */
     public static class STOutput
     {
@@ -75,6 +124,116 @@ public abstract class Primes
         }
 
         return implSTRandomPrime(hash, length, Arrays.clone(inputSeed));
+    }
+
+    /**
+     * FIPS 186-4 C.3.2 Enhanced Miller-Rabin Probabilistic Primality Test
+     * 
+     * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases. This is an
+     * alternative to {@link #isMRProbablePrime(BigInteger, SecureRandom, int)} that provides more
+     * information about a composite candidate, which may be useful when generating or validating
+     * RSA moduli.
+     * 
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param random
+     *            the source of randomness to use to choose bases.
+     * @param iterations
+     *            the number of randomly-chosen bases to perform the test for.
+     * @return an {@link MROutput} instance that can be further queried for details.
+     */
+    public static MROutput enhancedMRProbablePrimeTest(BigInteger candidate, SecureRandom random, int iterations)
+    {
+        checkMRInput(candidate, "candidate");
+
+        if (random == null)
+        {
+            throw new IllegalArgumentException("'random' cannot be null");
+        }
+        if (iterations < 1)
+        {
+            throw new IllegalArgumentException("'iterations' must be > 0");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return MROutput.probablyPrime();
+        }
+        if (!candidate.testBit(0))
+        {
+            return MROutput.provablyCompositeWithFactor(TWO);
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+        BigInteger wSubTwo = candidate.subtract(TWO);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        for (int i = 0; i < iterations; ++i)
+        {
+            BigInteger b = BigIntegers.createRandomInRange(TWO, wSubTwo, random);
+            BigInteger g = b.gcd(w);
+
+            if (g.compareTo(ONE) > 0)
+            {
+                return MROutput.provablyCompositeWithFactor(g);
+            }
+
+            BigInteger z = b.modPow(m, w);
+
+            if (z.equals(ONE) || z.equals(wSubOne))
+            {
+                continue;
+            }
+
+            boolean primeToBase = false;
+
+            BigInteger x = z;
+            for (int j = 1; j < a; ++j)
+            {
+                z = z.modPow(TWO, w);
+
+                if (z.equals(wSubOne))
+                {
+                    primeToBase = true;
+                    break;
+                }
+
+                if (z.equals(ONE))
+                {
+                    break;
+                }
+
+                x = z;
+            }
+
+            if (!primeToBase)
+            {
+                if (!z.equals(ONE))
+                {
+                    x = z;
+                    z = z.modPow(TWO, w);
+
+                    if (!z.equals(ONE))
+                    {
+                        x = z;
+                    }
+                }
+                
+                g = x.subtract(ONE).gcd(w);
+
+                if (g.compareTo(ONE) > 0)
+                {
+                    return MROutput.provablyCompositeWithFactor(g);
+                }
+
+                return MROutput.provablyCompositeNotPrimePower();
+            }
+        }
+
+        return MROutput.probablyPrime();
     }
 
     /**
