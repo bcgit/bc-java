@@ -1,9 +1,11 @@
 package org.bouncycastle.math;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 public abstract class Primes
 {
@@ -12,7 +14,56 @@ public abstract class Primes
     private static final BigInteger THREE = BigInteger.valueOf(3);
 
     /**
-     * Used to return the output from the {@linkplain #generateSTRandomPrime(Digest) Shawe-Taylor Random_Prime Routine} 
+     * Used to return the output from the
+     * {@linkplain Primes#enhancedMRProbablePrimeTest(BigInteger, SecureRandom, int) Enhanced
+     * Miller-Rabin Probabilistic Primality Test}
+     */
+    public static class MROutput
+    {
+        private static MROutput probablyPrime()
+        {
+            return new MROutput(false, null);
+        }
+
+        private static MROutput provablyCompositeWithFactor(BigInteger factor)
+        {
+            return new MROutput(true, factor);
+        }
+
+        private static MROutput provablyCompositeNotPrimePower()
+        {
+            return new MROutput(true, null);
+        }
+
+        private boolean provablyComposite;
+        private BigInteger factor;
+
+        private MROutput(boolean provablyComposite, BigInteger factor)
+        {
+            this.provablyComposite = provablyComposite;
+            this.factor = factor;
+        }
+
+        public BigInteger getFactor()
+        {
+            return factor;
+        }
+
+        public boolean isProvablyComposite()
+        {
+            return provablyComposite;
+        }
+
+        public boolean isNotPrimePower()
+        {
+            return provablyComposite && factor == null;
+        }
+    }
+
+    /**
+     * Used to return the output from the
+     * {@linkplain Primes#generateSTRandomPrime(Digest, int, byte[]) Shawe-Taylor Random_Prime
+     * Routine}
      */
     public static class STOutput
     {
@@ -45,17 +96,17 @@ public abstract class Primes
 
     /**
      * FIPS 186-4 C.6 Shawe-Taylor Random_Prime Routine
-     * 
+     *
      * Construct a provable prime number using a hash function.
-     * 
+     *
      * @param hash
      *            the {@link Digest} instance to use (as "Hash()"). Cannot be null.
      * @param length
-     *            the length (in bits) of the prime to be generated. Must be >= 2.
+     *            the length (in bits) of the prime to be generated. Must be at least 2.
      * @param inputSeed
      *            the seed to be used for the generation of the requested prime. Cannot be null or
      *            empty.
-     * @returns an {@link STOutput} instance containing the requested prime.
+     * @return an {@link STOutput} instance containing the requested prime.
      */
     public static STOutput generateSTRandomPrime(Digest hash, int length, byte[] inputSeed)
     {
@@ -73,6 +124,304 @@ public abstract class Primes
         }
 
         return implSTRandomPrime(hash, length, Arrays.clone(inputSeed));
+    }
+
+    /**
+     * FIPS 186-4 C.3.2 Enhanced Miller-Rabin Probabilistic Primality Test
+     *
+     * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases. This is an
+     * alternative to {@link #isMRProbablePrime(BigInteger, SecureRandom, int)} that provides more
+     * information about a composite candidate, which may be useful when generating or validating
+     * RSA moduli.
+     *
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param random
+     *            the source of randomness to use to choose bases.
+     * @param iterations
+     *            the number of randomly-chosen bases to perform the test for.
+     * @return an {@link MROutput} instance that can be further queried for details.
+     */
+    public static MROutput enhancedMRProbablePrimeTest(BigInteger candidate, SecureRandom random, int iterations)
+    {
+        checkCandidate(candidate, "candidate");
+
+        if (random == null)
+        {
+            throw new IllegalArgumentException("'random' cannot be null");
+        }
+        if (iterations < 1)
+        {
+            throw new IllegalArgumentException("'iterations' must be > 0");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return MROutput.probablyPrime();
+        }
+        if (!candidate.testBit(0))
+        {
+            return MROutput.provablyCompositeWithFactor(TWO);
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+        BigInteger wSubTwo = candidate.subtract(TWO);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        for (int i = 0; i < iterations; ++i)
+        {
+            BigInteger b = BigIntegers.createRandomInRange(TWO, wSubTwo, random);
+            BigInteger g = b.gcd(w);
+
+            if (g.compareTo(ONE) > 0)
+            {
+                return MROutput.provablyCompositeWithFactor(g);
+            }
+
+            BigInteger z = b.modPow(m, w);
+
+            if (z.equals(ONE) || z.equals(wSubOne))
+            {
+                continue;
+            }
+
+            boolean primeToBase = false;
+
+            BigInteger x = z;
+            for (int j = 1; j < a; ++j)
+            {
+                z = z.modPow(TWO, w);
+
+                if (z.equals(wSubOne))
+                {
+                    primeToBase = true;
+                    break;
+                }
+
+                if (z.equals(ONE))
+                {
+                    break;
+                }
+
+                x = z;
+            }
+
+            if (!primeToBase)
+            {
+                if (!z.equals(ONE))
+                {
+                    x = z;
+                    z = z.modPow(TWO, w);
+
+                    if (!z.equals(ONE))
+                    {
+                        x = z;
+                    }
+                }
+
+                g = x.subtract(ONE).gcd(w);
+
+                if (g.compareTo(ONE) > 0)
+                {
+                    return MROutput.provablyCompositeWithFactor(g);
+                }
+
+                return MROutput.provablyCompositeNotPrimePower();
+            }
+        }
+
+        return MROutput.probablyPrime();
+    }
+
+    /**
+     * A fast check for small divisors, up to some implementation-specific limit.
+     *
+     * @param candidate
+     *            the {@link BigInteger} instance to test for division by small factors.
+     *
+     * @return <code>true</code> if the candidate is found to have any small factors,
+     *         <code>false</code> otherwise.
+     */
+    public static boolean hasAnySmallFactors(BigInteger candidate)
+    {
+        checkCandidate(candidate, "candidate");
+
+        return implHasAnySmallFactors(candidate);
+    }
+
+    /**
+     * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test
+     *
+     * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases.
+     *
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param random
+     *            the source of randomness to use to choose bases.
+     * @param iterations
+     *            the number of randomly-chosen bases to perform the test for.
+     * @return <code>false</code> if any witness to compositeness is found amongst the chosen bases
+     *          (so <code>candidate</code> is definitely NOT prime), or else <code>true</code>
+     *          (indicating primality with some probability dependent on the number of iterations
+     *          that were performed).
+     */
+    public static boolean isMRProbablePrime(BigInteger candidate, SecureRandom random, int iterations)
+    {
+        checkCandidate(candidate, "candidate");
+
+        if (random == null)
+        {
+            throw new IllegalArgumentException("'random' cannot be null");
+        }
+        if (iterations < 1)
+        {
+            throw new IllegalArgumentException("'iterations' must be > 0");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return true;
+        }
+        if (!candidate.testBit(0))
+        {
+            return false;
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+        BigInteger wSubTwo = candidate.subtract(TWO);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        for (int i = 0; i < iterations; ++i)
+        {
+            BigInteger b = BigIntegers.createRandomInRange(TWO, wSubTwo, random);
+
+            if (!implMRProbablePrimeToBase(w, wSubOne, m, a, b))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test (to a fixed base).
+     *
+     * Run a single iteration of the Miller-Rabin algorithm against the specified base.
+     *
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param base
+     *            the source of randomness to use to choose bases.
+     * @return <code>false</code> if the specified base is a witness to compositeness (so
+     *          <code>candidate</code> is definitely NOT prime), or else <code>true</code>.
+     */
+    public static boolean isMRProbablePrimeToBase(BigInteger candidate, BigInteger base)
+    {
+        checkCandidate(candidate, "candidate");
+        checkCandidate(base, "base");
+
+        if (base.compareTo(candidate.subtract(ONE)) >= 0)
+        {
+            throw new IllegalArgumentException("'base' must be < ('candidate' - 1)");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return true;
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        return implMRProbablePrimeToBase(w, wSubOne, m, a, base);
+    }
+
+    private static void checkCandidate(BigInteger n, String name)
+    {
+        if (n == null || n.signum() < 1 || n.bitLength() < 2)
+        {
+            throw new IllegalArgumentException("'" + name + "' must be non-null and >= 2");
+        }
+    }
+
+    private static boolean implHasAnySmallFactors(BigInteger x)
+    {
+        /*
+         * Bundle trial divisors into ~32-bit moduli then use fast tests on the ~32-bit remainders.
+         */
+        int m = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
+        int r = x.mod(BigInteger.valueOf(m)).intValue();
+        if ((r & 1) != 0 && (r % 3) != 0 && (r % 5) != 0 && (r % 7) != 0 && (r % 11) != 0
+            && (r % 13) != 0 && (r % 17) != 0 && (r % 19) != 0 && (r % 23) != 0)
+        {
+            m = 29 * 31 * 37 * 41 * 43;
+            r = x.mod(BigInteger.valueOf(m)).intValue();
+            if ((r % 29) != 0 && (r % 31) != 0 && (r % 37) != 0 && (r % 41) != 0 && (r % 43) != 0)
+            {
+                m = 47 * 53 * 59 * 61 * 67;
+                r = x.mod(BigInteger.valueOf(m)).intValue();
+                if ((r % 47) != 0 && (r % 53) != 0 && (r % 59) != 0 && (r % 61) != 0 && (r % 67) != 0)
+                {
+                    m = 71 * 73 * 79 * 83;
+                    r = x.mod(BigInteger.valueOf(m)).intValue();
+                    if ((r % 71) != 0 && (r % 73) != 0 && (r % 79) != 0 && (r % 83) != 0)
+                    {
+                        m = 89 * 97 * 101 * 103;
+                        r = x.mod(BigInteger.valueOf(m)).intValue();
+                        if ((r % 89) != 0 && (r % 97) != 0 && (r % 101) != 0 && (r % 103) != 0)
+                        {
+                            m = 107 * 109 * 113 * 127;
+                            r = x.mod(BigInteger.valueOf(m)).intValue();
+                            if ((r % 107) != 0 && (r % 109) != 0 && (r % 113) != 0 && (r % 127) != 0)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean implMRProbablePrimeToBase(BigInteger w, BigInteger wSubOne, BigInteger m, int a, BigInteger b)
+    {
+        BigInteger z = b.modPow(m, w);
+
+        if (z.equals(ONE) || z.equals(wSubOne))
+        {
+            return true;
+        }
+
+        boolean result = false;
+
+        for (int j = 1; j < a; ++j)
+        {
+            z = z.modPow(TWO, w);
+
+            if (z.equals(wSubOne))
+            {
+                result = true;
+                break;
+            }
+
+            if (z.equals(ONE))
+            {
+                return false;
+            }
+        }
+
+        return result;
     }
 
     private static STOutput implSTRandomPrime(Digest d, int length, byte[] primeSeed)
@@ -150,10 +499,10 @@ public abstract class Primes
             /*
              * This is an optimization of the original algorithm, using trial division to screen out
              * many non-primes quickly.
-             * 
+             *
              * NOTE: 'primeSeed' is still incremented as if we performed the full check!
              */
-            if (mightBePrime(c))
+            if (!implHasAnySmallFactors(c))
             {
                 BigInteger a = hashGen(d, primeSeed, iterations + 1);
                 a = a.mod(c.subtract(THREE)).add(TWO);
@@ -238,7 +587,7 @@ public abstract class Primes
         /*
          * Use wheel factorization with 2, 3, 5 to select trial divisors.
          */
-        
+
         if (x <= 5L)
         {
             return x == 2L || x == 3L || x == 5L;
@@ -273,45 +622,5 @@ public abstract class Primes
                 return true;
             }
         }
-    }
-
-    private static boolean mightBePrime(BigInteger x)
-    {
-        /*
-         * Bundle trial divisors into ~32-bit moduli then use fast tests on the ~32-bit remainders.
-         */
-        int m = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
-        int r = x.mod(BigInteger.valueOf(m)).intValue();
-        if ((r & 1) != 0 && (r % 3) != 0 && (r % 5) != 0 && (r % 7) != 0 && (r % 11) != 0
-            && (r % 13) != 0 && (r % 17) != 0 && (r % 19) != 0 && (r % 23) != 0)
-        {
-            m = 29 * 31 * 37 * 41 * 43;
-            r = x.mod(BigInteger.valueOf(m)).intValue();
-            if ((r % 29) != 0 && (r % 31) != 0 && (r % 37) != 0 && (r % 41) != 0 && (r % 43) != 0)
-            {
-                m = 47 * 53 * 59 * 61 * 67;
-                r = x.mod(BigInteger.valueOf(m)).intValue();
-                if ((r % 47) != 0 && (r % 53) != 0 && (r % 59) != 0 && (r % 61) != 0 && (r % 67) != 0)
-                {
-                    m = 71 * 73 * 79 * 83;
-                    r = x.mod(BigInteger.valueOf(m)).intValue();
-                    if ((r % 71) != 0 && (r % 73) != 0 && (r % 79) != 0 && (r % 83) != 0)
-                    {
-                        m = 89 * 97 * 101 * 103;
-                        r = x.mod(BigInteger.valueOf(m)).intValue();
-                        if ((r % 89) != 0 && (r % 97) != 0 && (r % 101) != 0 && (r % 103) != 0)
-                        {
-                            m = 107 * 109 * 113 * 127;
-                            r = x.mod(BigInteger.valueOf(m)).intValue();
-                            if ((r % 107) != 0 && (r % 109) != 0 && (r % 113) != 0 && (r % 127) != 0)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
     }
 }

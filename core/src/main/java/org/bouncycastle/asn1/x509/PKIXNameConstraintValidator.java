@@ -49,7 +49,6 @@ public class PKIXNameConstraintValidator
      * @param name The GeneralName
      * @throws NameConstraintValidatorException If the <code>name</code>
      */
-    @Override
     public void checkPermitted(GeneralName name)
         throws NameConstraintValidatorException
     {
@@ -84,7 +83,6 @@ public class PKIXNameConstraintValidator
      * @throws NameConstraintValidatorException If the <code>name</code> is
      * excluded.
      */
-    @Override
     public void checkExcluded(GeneralName name)
         throws NameConstraintValidatorException
     {
@@ -111,7 +109,6 @@ public class PKIXNameConstraintValidator
         }
     }
 
-    @Override
     public void intersectPermittedSubtree(GeneralSubtree permitted)
     {
         intersectPermittedSubtree(new GeneralSubtree[]{permitted});
@@ -123,7 +120,6 @@ public class PKIXNameConstraintValidator
      *
      * @param permitted The permitted subtrees
      */
-    @Override
     public void intersectPermittedSubtree(GeneralSubtree[] permitted)
     {
         Map subtreesMap = new HashMap();
@@ -170,7 +166,6 @@ public class PKIXNameConstraintValidator
         }
     }
 
-    @Override
     public void intersectEmptyPermittedSubtree(int nameType)
     {
         switch (nameType)
@@ -197,7 +192,6 @@ public class PKIXNameConstraintValidator
      *
      * @param subtree A subtree with an excluded GeneralName.
      */
-    @Override
     public void addExcludedSubtree(GeneralSubtree subtree)
     {
         GeneralName base = subtree.getBase();
