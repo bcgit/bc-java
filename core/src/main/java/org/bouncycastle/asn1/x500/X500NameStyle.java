@@ -4,10 +4,11 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
- * It turns out that the number of standard ways the fields in a DN should be 
- * encoded into their ASN.1 counterparts is rapidly approaching the
- * number of machines on the internet. This interface provides a profile to conform to when
- * DNs are being converted into strings and back.
+ * This interface provides a profile to conform to when
+ * DNs are being converted into strings and back. The idea being that we'll be able to deal with
+ * the number of standard ways the fields in a DN should be
+ * encoded into their ASN.1 counterparts - a number that is rapidly approaching the
+ * number of machines on the internet.
  */
 public interface X500NameStyle
 {
