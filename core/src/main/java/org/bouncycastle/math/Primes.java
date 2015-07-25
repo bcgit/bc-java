@@ -102,7 +102,7 @@ public abstract class Primes
      * @param hash
      *            the {@link Digest} instance to use (as "Hash()"). Cannot be null.
      * @param length
-     *            the length (in bits) of the prime to be generated. Must be >= 2.
+     *            the length (in bits) of the prime to be generated. Must be at least 2.
      * @param inputSeed
      *            the seed to be used for the generation of the requested prime. Cannot be null or
      *            empty.
