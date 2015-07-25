@@ -1,9 +1,11 @@
 package org.bouncycastle.math;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 public abstract class Primes
 {
@@ -73,6 +75,138 @@ public abstract class Primes
         }
 
         return implSTRandomPrime(hash, length, Arrays.clone(inputSeed));
+    }
+
+    /**
+     * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test
+     * 
+     * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases.
+     * 
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param random
+     *            the source of randomness to use to choose bases.
+     * @param iterations
+     *            the number of randomly-chosen bases to perform the test for.
+     * @returns <code>false</code> if any witness to compositeness is found amongst the chosen bases
+     *          (so <code>candidate</code> is definitely NOT prime), or else <code>true</code>
+     *          (indicating primality with some probability dependent on the number of iterations
+     *          that were performed).
+     */
+    public static boolean isMRProbablePrime(BigInteger candidate, SecureRandom random, int iterations)
+    {
+        checkMRInput(candidate, "candidate");
+
+        if (random == null)
+        {
+            throw new IllegalArgumentException("'random' cannot be null");
+        }
+        if (iterations < 1)
+        {
+            throw new IllegalArgumentException("'iterations' must be > 0");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return true;
+        }
+        if (!candidate.testBit(0))
+        {
+            return false;
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+        BigInteger wSubTwo = candidate.subtract(TWO);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        for (int i = 0; i < iterations; ++i)
+        {
+            BigInteger b = BigIntegers.createRandomInRange(TWO, wSubTwo, random);
+
+            if (!implMRProbablePrimeToBase(w, wSubOne, m, a, b))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test (to a fixed base).
+     * 
+     * Run a single iteration of the Miller-Rabin algorithm against the specified base.
+     * 
+     * @param candidate
+     *            the {@link BigInteger} instance to test for primality.
+     * @param base
+     *            the source of randomness to use to choose bases.
+     * @returns <code>false</code> if the specified base is a witness to compositeness (so
+     *          <code>candidate</code> is definitely NOT prime), or else <code>true</code>.
+     */
+    public static boolean isMRProbablePrimeToBase(BigInteger candidate, BigInteger base)
+    {
+        checkMRInput(candidate, "candidate");
+        checkMRInput(base, "base");
+
+        if (base.compareTo(candidate.subtract(ONE)) >= 0)
+        {
+            throw new IllegalArgumentException("'base' must be < ('candidate' - 1)");
+        }
+
+        if (candidate.bitLength() == 2)
+        {
+            return true;
+        }
+
+        BigInteger w = candidate;
+        BigInteger wSubOne = candidate.subtract(ONE);
+
+        int a = wSubOne.getLowestSetBit();
+        BigInteger m = wSubOne.shiftRight(a);
+
+        return implMRProbablePrimeToBase(w, wSubOne, m, a, base);
+    }
+
+    private static void checkMRInput(BigInteger n, String name)
+    {
+        if (n == null || n.signum() < 1 || n.bitLength() < 2)
+        {
+            throw new IllegalArgumentException("'" + name + "' must be non-null and >= 2");
+        }
+    }
+
+    private static boolean implMRProbablePrimeToBase(BigInteger w, BigInteger wSubOne, BigInteger m, int a, BigInteger b)
+    {
+        BigInteger z = b.modPow(m, w);
+
+        if (z.equals(ONE) || z.equals(wSubOne))
+        {
+            return true;
+        }
+
+        boolean result = false;
+
+        for (int j = 1; j < a; ++j)
+        {
+            z = z.modPow(TWO, w);
+
+            if (z.equals(wSubOne))
+            {
+                result = true;
+                break;
+            }
+
+            if (z.equals(ONE))
+            {
+                return false;
+            }
+        }
+
+        return result;
     }
 
     private static STOutput implSTRandomPrime(Digest d, int length, byte[] primeSeed)
