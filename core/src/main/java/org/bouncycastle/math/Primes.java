@@ -56,7 +56,7 @@ public abstract class Primes
 
         public boolean isNotPrimePower()
         {
-            return factor == null;
+            return provablyComposite && factor == null;
         }
     }
 
@@ -144,7 +144,7 @@ public abstract class Primes
      */
     public static MROutput enhancedMRProbablePrimeTest(BigInteger candidate, SecureRandom random, int iterations)
     {
-        checkMRInput(candidate, "candidate");
+        checkCandidate(candidate, "candidate");
 
         if (random == null)
         {
@@ -237,6 +237,22 @@ public abstract class Primes
     }
 
     /**
+     * A fast check for small divisors, up to some implementation-specific limit.
+     * 
+     * @param candidate
+     *            the {@link BigInteger} instance to test for division by small factors.
+     * 
+     * @return <code>true</code> if the candidate is found to have any small factors,
+     *         <code>false</code> otherwise.
+     */
+    public static boolean hasAnySmallFactors(BigInteger candidate)
+    {
+        checkCandidate(candidate, "candidate");
+
+        return implHasAnySmallFactors(candidate);
+    }
+
+    /**
      * FIPS 186-4 C.3.1 Miller-Rabin Probabilistic Primality Test
      * 
      * Run several iterations of the Miller-Rabin algorithm with randomly-chosen bases.
@@ -254,7 +270,7 @@ public abstract class Primes
      */
     public static boolean isMRProbablePrime(BigInteger candidate, SecureRandom random, int iterations)
     {
-        checkMRInput(candidate, "candidate");
+        checkCandidate(candidate, "candidate");
 
         if (random == null)
         {
@@ -308,8 +324,8 @@ public abstract class Primes
      */
     public static boolean isMRProbablePrimeToBase(BigInteger candidate, BigInteger base)
     {
-        checkMRInput(candidate, "candidate");
-        checkMRInput(base, "base");
+        checkCandidate(candidate, "candidate");
+        checkCandidate(base, "base");
 
         if (base.compareTo(candidate.subtract(ONE)) >= 0)
         {
@@ -330,12 +346,52 @@ public abstract class Primes
         return implMRProbablePrimeToBase(w, wSubOne, m, a, base);
     }
 
-    private static void checkMRInput(BigInteger n, String name)
+    private static void checkCandidate(BigInteger n, String name)
     {
         if (n == null || n.signum() < 1 || n.bitLength() < 2)
         {
             throw new IllegalArgumentException("'" + name + "' must be non-null and >= 2");
         }
+    }
+
+    private static boolean implHasAnySmallFactors(BigInteger x)
+    {
+        /*
+         * Bundle trial divisors into ~32-bit moduli then use fast tests on the ~32-bit remainders.
+         */
+        int m = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
+        int r = x.mod(BigInteger.valueOf(m)).intValue();
+        if ((r & 1) != 0 && (r % 3) != 0 && (r % 5) != 0 && (r % 7) != 0 && (r % 11) != 0
+            && (r % 13) != 0 && (r % 17) != 0 && (r % 19) != 0 && (r % 23) != 0)
+        {
+            m = 29 * 31 * 37 * 41 * 43;
+            r = x.mod(BigInteger.valueOf(m)).intValue();
+            if ((r % 29) != 0 && (r % 31) != 0 && (r % 37) != 0 && (r % 41) != 0 && (r % 43) != 0)
+            {
+                m = 47 * 53 * 59 * 61 * 67;
+                r = x.mod(BigInteger.valueOf(m)).intValue();
+                if ((r % 47) != 0 && (r % 53) != 0 && (r % 59) != 0 && (r % 61) != 0 && (r % 67) != 0)
+                {
+                    m = 71 * 73 * 79 * 83;
+                    r = x.mod(BigInteger.valueOf(m)).intValue();
+                    if ((r % 71) != 0 && (r % 73) != 0 && (r % 79) != 0 && (r % 83) != 0)
+                    {
+                        m = 89 * 97 * 101 * 103;
+                        r = x.mod(BigInteger.valueOf(m)).intValue();
+                        if ((r % 89) != 0 && (r % 97) != 0 && (r % 101) != 0 && (r % 103) != 0)
+                        {
+                            m = 107 * 109 * 113 * 127;
+                            r = x.mod(BigInteger.valueOf(m)).intValue();
+                            if ((r % 107) != 0 && (r % 109) != 0 && (r % 113) != 0 && (r % 127) != 0)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private static boolean implMRProbablePrimeToBase(BigInteger w, BigInteger wSubOne, BigInteger m, int a, BigInteger b)
@@ -446,7 +502,7 @@ public abstract class Primes
              * 
              * NOTE: 'primeSeed' is still incremented as if we performed the full check!
              */
-            if (mightBePrime(c))
+            if (!implHasAnySmallFactors(c))
             {
                 BigInteger a = hashGen(d, primeSeed, iterations + 1);
                 a = a.mod(c.subtract(THREE)).add(TWO);
@@ -566,45 +622,5 @@ public abstract class Primes
                 return true;
             }
         }
-    }
-
-    private static boolean mightBePrime(BigInteger x)
-    {
-        /*
-         * Bundle trial divisors into ~32-bit moduli then use fast tests on the ~32-bit remainders.
-         */
-        int m = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
-        int r = x.mod(BigInteger.valueOf(m)).intValue();
-        if ((r & 1) != 0 && (r % 3) != 0 && (r % 5) != 0 && (r % 7) != 0 && (r % 11) != 0
-            && (r % 13) != 0 && (r % 17) != 0 && (r % 19) != 0 && (r % 23) != 0)
-        {
-            m = 29 * 31 * 37 * 41 * 43;
-            r = x.mod(BigInteger.valueOf(m)).intValue();
-            if ((r % 29) != 0 && (r % 31) != 0 && (r % 37) != 0 && (r % 41) != 0 && (r % 43) != 0)
-            {
-                m = 47 * 53 * 59 * 61 * 67;
-                r = x.mod(BigInteger.valueOf(m)).intValue();
-                if ((r % 47) != 0 && (r % 53) != 0 && (r % 59) != 0 && (r % 61) != 0 && (r % 67) != 0)
-                {
-                    m = 71 * 73 * 79 * 83;
-                    r = x.mod(BigInteger.valueOf(m)).intValue();
-                    if ((r % 71) != 0 && (r % 73) != 0 && (r % 79) != 0 && (r % 83) != 0)
-                    {
-                        m = 89 * 97 * 101 * 103;
-                        r = x.mod(BigInteger.valueOf(m)).intValue();
-                        if ((r % 89) != 0 && (r % 97) != 0 && (r % 101) != 0 && (r % 103) != 0)
-                        {
-                            m = 107 * 109 * 113 * 127;
-                            r = x.mod(BigInteger.valueOf(m)).intValue();
-                            if ((r % 107) != 0 && (r % 109) != 0 && (r % 113) != 0 && (r % 127) != 0)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
     }
 }
