@@ -57,7 +57,7 @@ public abstract class Primes
      * @param inputSeed
      *            the seed to be used for the generation of the requested prime. Cannot be null or
      *            empty.
-     * @returns an {@link STOutput} instance containing the requested prime.
+     * @return an {@link STOutput} instance containing the requested prime.
      */
     public static STOutput generateSTRandomPrime(Digest hash, int length, byte[] inputSeed)
     {
@@ -88,7 +88,7 @@ public abstract class Primes
      *            the source of randomness to use to choose bases.
      * @param iterations
      *            the number of randomly-chosen bases to perform the test for.
-     * @returns <code>false</code> if any witness to compositeness is found amongst the chosen bases
+     * @return <code>false</code> if any witness to compositeness is found amongst the chosen bases
      *          (so <code>candidate</code> is definitely NOT prime), or else <code>true</code>
      *          (indicating primality with some probability dependent on the number of iterations
      *          that were performed).
@@ -144,7 +144,7 @@ public abstract class Primes
      *            the {@link BigInteger} instance to test for primality.
      * @param base
      *            the source of randomness to use to choose bases.
-     * @returns <code>false</code> if the specified base is a witness to compositeness (so
+     * @return <code>false</code> if the specified base is a witness to compositeness (so
      *          <code>candidate</code> is definitely NOT prime), or else <code>true</code>.
      */
     public static boolean isMRProbablePrimeToBase(BigInteger candidate, BigInteger base)
