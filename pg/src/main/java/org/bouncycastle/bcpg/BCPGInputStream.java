@@ -117,23 +117,21 @@ public class BCPGInputStream
             {
                 nextB = -1;
             }
+
+            next = true;
         }
 
-        next = true;
-
-        if (nextB >= 0)
+        if (nextB < 0)
         {
-            if ((nextB & 0x40) != 0)    // new
-            {
-                return (nextB & 0x3f);
-            }
-            else    // old
-            {
-                return ((nextB & 0x3f) >> 2);
-            }
+            return nextB;
         }
 
-        return nextB;
+        int maskB = nextB & 0x3f;
+        if ((nextB & 0x40) == 0)    // old
+        {
+            maskB >>= 2;
+        }
+        return maskB;
     }
 
     /**
