@@ -14,7 +14,7 @@ public abstract class Primes
     private static final BigInteger THREE = BigInteger.valueOf(3);
 
     /**
-     * Used to return the output from the {@linkplain #generateSTRandomPrime(Digest) Shawe-Taylor Random_Prime Routine} 
+     * Used to return the output from the {@linkplain Primes#generateSTRandomPrime(Digest, int, byte[]) Shawe-Taylor Random_Prime Routine} 
      */
     public static class STOutput
     {
