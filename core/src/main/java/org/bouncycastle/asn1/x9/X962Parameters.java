@@ -9,6 +9,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 
+/**
+ * The Parameters ASN.1 CHOICE from X9.62.
+ */
 public class X962Parameters
     extends ASN1Object
     implements ASN1Choice
@@ -62,6 +65,15 @@ public class X962Parameters
         this.params = namedCurve;
     }
 
+    public X962Parameters(
+        ASN1Null           obj)
+    {
+        this.params = obj;
+    }
+
+    /**
+     * @deprecated use getInstance()
+     */
     public X962Parameters(
         ASN1Primitive           obj)
     {
