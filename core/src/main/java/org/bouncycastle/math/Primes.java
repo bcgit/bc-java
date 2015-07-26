@@ -7,6 +7,9 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * Utility methods for generating primes and testing for primality.
+ */
 public abstract class Primes
 {
     private static final BigInteger ONE = BigInteger.valueOf(1);
