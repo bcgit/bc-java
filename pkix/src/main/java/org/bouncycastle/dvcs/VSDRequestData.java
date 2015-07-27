@@ -48,7 +48,7 @@ public class VSDRequestData
     /**
      * Get contained message (data to be certified).
      *
-     * @return
+     * @return the contained message.
      */
     public byte[] getMessage()
     {
@@ -58,7 +58,7 @@ public class VSDRequestData
     /**
      * Get the CMS SignedData object represented by the encoded message.
      *
-     * @return
+     * @return the parsed contents of the contained message as a CMS SignedData object.
      */
     public CMSSignedData getParsedMessage()
     {

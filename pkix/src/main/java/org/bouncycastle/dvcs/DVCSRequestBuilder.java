@@ -97,7 +97,6 @@ public abstract class DVCSRequestBuilder
      * @param oid the OID defining the extension type.
      * @param isCritical true if the extension is critical, false otherwise.
      * @param value the ASN.1 structure that forms the extension's value.
-     * @return this builder object.
      * @throws DVCSException if there is an issue encoding the extension for adding.
      */
     public void addExtension(

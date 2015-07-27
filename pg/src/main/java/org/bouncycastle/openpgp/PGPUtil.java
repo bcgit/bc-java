@@ -250,7 +250,7 @@ public class PGPUtil
      * @param fileType the {@link PGPLiteralData} type to use for the file data.
      * @param file the file to write the contents of.
      * @param buffer buffer to be used to chunk the file into partial packets.
-     * @see {@link PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[])}.
+     * @see PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[]).
      *
      * @throws IOException if an error occurs reading the file or writing to the output stream.
      */

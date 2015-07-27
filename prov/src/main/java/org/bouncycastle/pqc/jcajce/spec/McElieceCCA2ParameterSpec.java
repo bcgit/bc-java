@@ -5,13 +5,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class provides a specification for the parameters of the CCA2-secure
- * variants of the McEliece PKCS that are used with
- * {@link McElieceFujisakiCipher}, {@link McElieceKobaraImaiCipher}, and
- * {@link McEliecePointchevalCipher}.
- *
- * @see McElieceFujisakiCipher
- * @see McElieceKobaraImaiCipher
- * @see McEliecePointchevalCipher
+ * variants of the McEliece PKCS.
  */
 public class McElieceCCA2ParameterSpec
     implements AlgorithmParameterSpec

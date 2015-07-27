@@ -9,8 +9,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 
 /**
  * This class provides a specification for a McEliece CCA2 private key.
- *
- * @see JDKMcElieceCCA2PrivateKey
  */
 public class McElieceCCA2PrivateKeySpec
     implements KeySpec
@@ -67,7 +65,7 @@ public class McElieceCCA2PrivateKeySpec
     }
 
     /**
-     * Constructor used by the {@link McElieceKeyFactory}.
+     * Constructor.
      *
      * @param n            the length of the code
      * @param k            the dimension of the code

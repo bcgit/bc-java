@@ -12,7 +12,7 @@ public interface AlgorithmNameFinder
      * Return true if the passed in objectIdentifier has a "human friendly" name associated with it.
      *
      * @param objectIdentifier the OID of interest.
-     * @boolean true if a name lookup exists for the OID, false otherwise.
+     * @return true if a name lookup exists for the OID, false otherwise.
      */
     boolean hasAlgorithmName(ASN1ObjectIdentifier objectIdentifier);
 

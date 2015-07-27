@@ -64,7 +64,8 @@ public class VPKCRequestBuilder
     /**
      * Build DVCS request to VPKC service.
      *
-     * @throws DVCSException
+     * @return a new DVCSRequest based on the state of this builder.
+     * @throws DVCSException if an issue occurs during construction.
      */
     public DVCSRequest build()
         throws DVCSException

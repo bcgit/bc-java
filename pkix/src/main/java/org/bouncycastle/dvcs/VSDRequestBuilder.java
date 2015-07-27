@@ -28,9 +28,9 @@ public class VSDRequestBuilder
     /**
      * Build VSD request from CMS SignedData object.
      *
-     * @param document
-     * @return
-     * @throws DVCSException
+     * @param document the CMS SignedData to include in the request.
+     * @return a new DVCSRequest based on the state of this builder.
+     * @throws DVCSException if an issue occurs during construction.
      */
     public DVCSRequest build(CMSSignedData document)
         throws DVCSException
