@@ -32,7 +32,7 @@ public class CPDRequestData
     /**
      * Get contained message (data to be certified).
      *
-     * @return
+     * @return the contained message.
      */
     public byte[] getMessage()
     {

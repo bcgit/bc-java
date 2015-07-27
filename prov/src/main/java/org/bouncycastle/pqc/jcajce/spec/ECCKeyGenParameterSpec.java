@@ -8,10 +8,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2;
 /**
  * This class provides a specification for the parameters that are used by the
  * McEliece, McElieceCCA2, and Niederreiter key pair generators.
- *
- * @see org.bouncycastle.pqc.ecc.mceliece.McElieceKeyPairGenerator
- * @see org.bouncycastle.pqc.ecc.mceliece.McElieceCCA2KeyPairGenerator
- * @see org.bouncycastle.pqc.ecc.niederreiter.NiederreiterKeyPairGenerator
  */
 public class ECCKeyGenParameterSpec
     implements AlgorithmParameterSpec

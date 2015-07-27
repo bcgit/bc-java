@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +56,7 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.cms.test.CMSTestUtil;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMESignedParser;
@@ -105,6 +106,11 @@ public class NewSMIMESignedTest
     {
         try
         {
+            if (Security.getProvider("BC") == null)
+            {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+
             msg      = SMIMETestUtil.makeMimeBodyPart("Hello world!\n");
 
             msgR     = SMIMETestUtil.makeMimeBodyPart("Hello world!\r");
@@ -1234,8 +1240,9 @@ public class NewSMIMESignedTest
         gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).setSignedAttributeGenerator(new AttributeTable(signedAttrs)).build("SHA1withRSA", _signKP.getPrivate(), _signCert));
         gen.addCertificates(certs);
 
+        m.writeTo(System.err);
         MimeMultipart mm = gen.generate(m);
-
+        mm.writeTo(System.err);
         SMIMESigned s = new SMIMESigned(mm);
 
         verifySigners(s.getCertificates(), s.getSignerInfos());

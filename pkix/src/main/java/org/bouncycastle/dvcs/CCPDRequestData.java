@@ -40,7 +40,7 @@ public class CCPDRequestData
     /**
      * Get MessageImprint value
      *
-     * @return
+     * @return the message imprint data as a MessageImprint object.
      */
     public MessageImprint getMessageImprint()
     {

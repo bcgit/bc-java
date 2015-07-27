@@ -107,7 +107,6 @@ public class TimeStampTokenInfo
 
     /**
      * @deprecated use toASN1Structure
-     * @return
      */
     public TSTInfo toTSTInfo()
     {

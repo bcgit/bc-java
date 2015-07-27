@@ -21,7 +21,7 @@ public class DVCSRequestInfo
     /**
      * Constructs DVCRequestInfo from byte array (DER encoded DVCSRequestInformation).
      *
-     * @param in
+     * @param in a byte array holding the encoding of a DVCSRequestInformation structure.
      */
     public DVCSRequestInfo(byte[] in)
     {
@@ -31,7 +31,7 @@ public class DVCSRequestInfo
     /**
      * Constructs DVCRequestInfo from DVCSRequestInformation ASN.1 structure.
      *
-     * @param data
+     * @param data a DVCSRequestInformation to populate this object with.
      */
     public DVCSRequestInfo(DVCSRequestInformation data)
     {
@@ -41,7 +41,7 @@ public class DVCSRequestInfo
     /**
      * Converts to corresponding ASN.1 structure (DVCSRequestInformation).
      *
-     * @return
+     * @return a DVCSRequestInformation object.
      */
     public DVCSRequestInformation toASN1Structure()
     {
@@ -55,7 +55,7 @@ public class DVCSRequestInfo
     /**
      * Get DVCS version of request.
      *
-     * @return
+     * @return the version number of the request.
      */
     public int getVersion()
     {
@@ -121,7 +121,7 @@ public class DVCSRequestInfo
     /**
      * Get names of requesting entity, if set.
      *
-     * @return
+     * @return the requesting entity, or null.
      */
     public GeneralNames getRequester()
     {
@@ -146,7 +146,7 @@ public class DVCSRequestInfo
      * Get names of DVCS servers.
      * Note: this field can be set by DVCS.
      *
-     * @return
+     * @return the DVCS names object, or null if not set.
      */
     public GeneralNames getDVCSNames()
     {
@@ -158,7 +158,7 @@ public class DVCSRequestInfo
      * Note: the exact meaning of field is up to applications.
      * Note: this field can be set by DVCS.
      *
-     * @return
+     * @return the DVCS dataLocations object, or null if not set.
      */
     public GeneralNames getDataLocations()
     {

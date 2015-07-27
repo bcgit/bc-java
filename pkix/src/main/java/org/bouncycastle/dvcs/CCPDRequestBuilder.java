@@ -19,8 +19,8 @@ public class CCPDRequestBuilder
      * Builds CCPD request.
      *
      * @param messageImprint - the message imprint to include.
-     * @return
-     * @throws DVCSException
+     * @return a new DVCSRequest based on the state of this builder.
+     * @throws DVCSException if an issue occurs during construction.
      */
     public DVCSRequest build(MessageImprint messageImprint)
         throws DVCSException
