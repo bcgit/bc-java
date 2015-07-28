@@ -41,7 +41,7 @@ public class McElieceCCA2PublicKeyParameters
     }
 
     /**
-     * Constructor (used by {@link McElieceKeyFactory}).
+     * Constructor.
      *
      * @param n         length of the code
      * @param t         error correction capability of the code

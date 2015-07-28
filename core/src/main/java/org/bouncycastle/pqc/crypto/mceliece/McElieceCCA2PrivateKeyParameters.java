@@ -68,7 +68,7 @@ public class McElieceCCA2PrivateKeyParameters
     }
 
     /**
-     * Constructor used by the {@link McElieceKeyFactory}.
+     * Constructor.
      *
      * @param n            the length of the code
      * @param k            the dimension of the code

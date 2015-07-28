@@ -5,9 +5,8 @@ import java.math.BigInteger;
 
 /**
  * This interface defines a finite field element. It is implemented by the
- * classes {@link GFPElement} and {@link GF2nElement}.
+ * class {@link GF2nElement}.
  *
- * @see GFPElement
  * @see GF2nElement
  */
 public interface GFElement
