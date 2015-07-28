@@ -490,7 +490,6 @@ public class GF2nONBElement
      *
      * @param addend the addend
      * @return <tt>this + other</tt> (newly created)
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public GFElement add(GFElement addend)
         throws RuntimeException
@@ -504,7 +503,6 @@ public class GF2nONBElement
      * Compute <tt>this + addend</tt> (overwrite <tt>this</tt>).
      *
      * @param addend the addend
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public void addToThis(GFElement addend)
         throws RuntimeException
@@ -549,7 +547,6 @@ public class GF2nONBElement
      *
      * @param factor the factor
      * @return <tt>this * factor</tt> (newly created)
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public GFElement multiply(GFElement factor)
         throws RuntimeException
@@ -563,7 +560,6 @@ public class GF2nONBElement
      * Compute <tt>this * factor</tt> (overwrite <tt>this</tt>).
      *
      * @param factor the factor
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public void multiplyThisBy(GFElement factor)
         throws RuntimeException
@@ -972,8 +968,6 @@ public class GF2nONBElement
      * Let z<sup>2</sup> + z = <tt>this</tt>. Then this method returns z.
      *
      * @return z with z<sup>2</sup> + z = <tt>this</tt>
-     * @throws NoSolutionException if z<sup>2</sup> + z = <tt>this</tt> does not have a
-     * solution
      */
     public GF2nElement solveQuadraticEquation()
         throws RuntimeException

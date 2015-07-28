@@ -1,12 +1,5 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
-import java.math.BigInteger;
-
-/**
- *
- *
- *
- */
 public final class IntUtils
 {
 
@@ -157,22 +150,6 @@ public final class IntUtils
     {
         int[] result = new int[end - start];
         System.arraycopy(input, start, result, 0, end - start);
-        return result;
-    }
-
-    /**
-     * Convert an int array to a {@link FlexiBigInt} array.
-     *
-     * @param input the int array
-     * @return the {@link FlexiBigInt} array
-     */
-    public static BigInteger[] toFlexiBigIntArray(int[] input)
-    {
-        BigInteger[] result = new BigInteger[input.length];
-        for (int i = 0; i < input.length; i++)
-        {
-            result[i] = BigInteger.valueOf(input[i]);
-        }
         return result;
     }
 

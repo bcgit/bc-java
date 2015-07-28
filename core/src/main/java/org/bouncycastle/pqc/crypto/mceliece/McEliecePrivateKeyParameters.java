@@ -77,7 +77,7 @@ public class McEliecePrivateKeyParameters
     }
 
     /**
-     * Constructor (used by the {@link McElieceKeyFactory}).
+     * Constructor.
      *
      * @param oid
      * @param n            the length of the code

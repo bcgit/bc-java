@@ -122,7 +122,7 @@ public class Blake2bDigest
 	 * Instance with increased or reduced number of rounds. 
 	 * Default value is 12. 
 	 * 
-	 * @param rounds: the number of rounds
+	 * @param rounds the number of rounds
 	 */
 	public Blake2bDigest(int rounds)
 	{
@@ -140,23 +140,23 @@ public class Blake2bDigest
 	 * this instance. 
 	 * The key can be overwritten using the clearKey() method. 
 	 * 
-	 * @param _key: A key up to 64 bytes or null
+	 * @param key A key up to 64 bytes or null
 	 */
-	public Blake2bDigest(byte[] _key)
+	public Blake2bDigest(byte[] key)
 	{
 		buffer = new byte[BLOCK_LENGTH_BYTES];
-		if (_key != null)
+		if (key != null)
 		{
-			key = new byte[_key.length];
-			System.arraycopy(_key, 0, key, 0, _key.length);
+			this.key = new byte[key.length];
+			System.arraycopy(key, 0, this.key, 0, key.length);
 			
-			if (_key.length > 64)
+			if (key.length > 64)
 			{
 				throw new IllegalArgumentException(
 						"Keys > 64 are not supported");
 			}
-			keyLength = _key.length;
-			System.arraycopy(_key, 0, buffer, 0, _key.length);
+			keyLength = key.length;
+			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
 		}
 		digestLength = 64;
@@ -170,10 +170,10 @@ public class Blake2bDigest
 	 * The key can be overwritten using the clearKey() method, the salt (pepper)
 	 * can be overwritten using the clearSalt() method.
 	 * 
-	 * @param _key: A key up to 64 bytes or null
-	 * @param _digestLength: from 1 up to 64 bytes
-	 * @param _salt: up to 16 bytes or null
-	 * @param _personalization: up to 16 bytes or null
+	 * @param _key A key up to 64 bytes or null
+	 * @param _digestLength from 1 up to 64 bytes
+	 * @param _salt up to 16 bytes or null
+	 * @param _personalization up to 16 bytes or null
 	 */
 	public Blake2bDigest(byte[] _key, int _digestLength, byte[] _salt,
 			byte[] _personalization)

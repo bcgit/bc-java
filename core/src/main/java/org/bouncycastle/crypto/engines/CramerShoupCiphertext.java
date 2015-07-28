@@ -110,7 +110,7 @@ public class CramerShoupCiphertext
      * convert the cipher-text in a byte array,
      * prepending them with 4 Bytes for their length
      *
-     * @return
+     * @return a byte array of the cipher text.
      */
     public byte[] toByteArray()
     {

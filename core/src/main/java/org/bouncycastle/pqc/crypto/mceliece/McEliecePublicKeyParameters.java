@@ -20,9 +20,9 @@ public class McEliecePublicKeyParameters
     private GF2Matrix g;
 
     /**
-     * Constructor (used by {@link McElieceKeyFactory}).
+     * Constructor.
      *
-     * @param oid
+     * @param oid    string representation of the OID for this key.
      * @param n      the length of the code
      * @param t      the error correction capability of the code
      * @param g      the generator matrix
@@ -38,7 +38,7 @@ public class McEliecePublicKeyParameters
     }
 
     /**
-     * Constructor (used by {@link McElieceKeyFactory}).
+     * Constructor.
      *
      * @param oid
      * @param n      the length of the code

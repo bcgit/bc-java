@@ -143,7 +143,7 @@ public final class IntegerFunctions
      * @param p prime modulus that determines the underlying field
      * @return a number <tt>b</tt> such that b<sup>2</sup> = a (mod p) if
      *         <tt>a</tt> is a quadratic residue modulo <tt>p</tt>.
-     * @throws NoQuadraticResidueException if <tt>a</tt> is a quadratic non-residue modulo <tt>p</tt>
+     * @throws IllegalArgumentException if <tt>a</tt> is a quadratic non-residue modulo <tt>p</tt>
      */
     public static BigInteger ressol(BigInteger a, BigInteger p)
         throws IllegalArgumentException
@@ -1152,33 +1152,11 @@ public final class IntegerFunctions
     }
 
     /**
-     * Calculation of a logarithmus of a float param
-     *
-     * @param param
-     * @return
-     */
-    public static float floatLog(float param)
-    {
-        double arg = (param - 1) / (param + 1);
-        double arg2 = arg;
-        int counter = 1;
-        float result = (float)arg;
-
-        while (arg2 > 0.001)
-        {
-            counter += 2;
-            arg2 *= arg * arg;
-            result += (1. / counter) * arg2;
-        }
-        return 2 * result;
-    }
-
-    /**
      * int power of a base float, only use for small ints
      *
-     * @param f
-     * @param i
-     * @return
+     * @param f base float
+     * @param i power to be raised to.
+     * @return int power i of f
      */
     public static float floatPow(float f, int i)
     {
@@ -1410,14 +1388,5 @@ public final class IntegerFunctions
     public static BigInteger octetsToInteger(byte[] data)
     {
         return octetsToInteger(data, 0, data.length);
-    }
-
-    public static void main(String[] args)
-    {
-        System.out.println("test");
-        // System.out.println(intRoot(37, 5));
-        // System.out.println(floatPow((float)2.5, 4));
-        System.out.println(floatLog(10));
-        System.out.println("test2");
     }
 }

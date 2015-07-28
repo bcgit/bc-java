@@ -262,7 +262,6 @@ public class NTRUEngine
      * @param N
      * @param minCallsR
      * @param hashSeed  whether to hash the seed
-     * @return
      */
     private IntegerPolynomial MGF(byte[] seed, int N, int minCallsR, boolean hashSeed)
     {
@@ -451,7 +450,7 @@ public class NTRUEngine
      * @param e
      * @param priv_t  a polynomial such that if <code>fastFp=true</code>, <code>f=1+3*priv_t</code>; otherwise, <code>f=priv_t</code>
      * @param priv_fp
-     * @return
+     * @return an IntegerPolynomial representing the output.
      */
     protected IntegerPolynomial decrypt(IntegerPolynomial e, Polynomial priv_t, IntegerPolynomial priv_fp)
     {
