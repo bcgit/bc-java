@@ -96,7 +96,7 @@ public class JcaX509ExtensionUtils
      */
     public SubjectKeyIdentifier createTruncatedSubjectKeyIdentifier(PublicKey publicKey)
     {
-       return super.createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+       return super.createTruncatedSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
     }
 
     /**
