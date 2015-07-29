@@ -85,6 +85,11 @@ public class SMIMEMiscTest
     {
         try
         {
+            if (Security.getProvider("BC") == null)
+            {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+
             msg      = SMIMETestUtil.makeMimeBodyPart("Hello world!\n");
             
             signDN   = "O=Bouncy Castle, C=AU";
