@@ -1,7 +1,5 @@
 package org.bouncycastle.dvcs;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.dvcs.DVCSRequestInformationBuilder;
 import org.bouncycastle.asn1.dvcs.Data;
 import org.bouncycastle.asn1.dvcs.ServiceType;
@@ -21,11 +19,11 @@ public class CPDRequestBuilder
      * Build CPD request.
      *
      * @param messageBytes  - data to be certified
-     * @return
-     * @throws DVCSException
+     * @return a DVSCRequest based on the builder's current state and messageBytes.
+     * @throws DVCSException on a build issue.
      */
     public DVCSRequest build(byte[] messageBytes)
-        throws DVCSException, IOException
+        throws DVCSException
     {
         Data data = new Data(messageBytes);
 

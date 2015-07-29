@@ -57,7 +57,7 @@ public final class SessionParameters
         }
 
         /**
-         * @deprecated Use {@link #setPSKIdentity(byte[]))
+         * @deprecated Use {@link #setPSKIdentity(byte[])}
          */
         public Builder setPskIdentity(byte[] pskIdentity)
         {
@@ -156,7 +156,7 @@ public final class SessionParameters
     }
 
     /**
-     * @deprecated Use {@link #getPSKIdentity())
+     * @deprecated Use {@link #getPSKIdentity()}
      */
     public byte[] getPskIdentity()
     {

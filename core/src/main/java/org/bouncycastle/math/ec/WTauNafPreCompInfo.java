@@ -8,9 +8,7 @@ public class WTauNafPreCompInfo implements PreCompInfo
 {
     /**
      * Array holding the precomputed <code>ECPoint.AbstractF2m</code>s used for the
-     * WTNAF multiplication in <code>
-     * {@link org.bouncycastle.math.ec.multiplier.WTauNafMultiplier.multiply()
-     * WTauNafMultiplier.multiply()}</code>.
+     * WTNAF multiplication.
      */
     protected ECPoint.AbstractF2m[] preComp = null;
 

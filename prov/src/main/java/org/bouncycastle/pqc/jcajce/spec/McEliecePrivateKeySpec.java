@@ -11,7 +11,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 /**
  * This class provides a specification for a McEliece private key.
  *
- * @see org.bouncycastle.pqc.ecc.JDKMcEliecePrivateKey.McEliecePrivateKey
  * @see KeySpec
  */
 public class McEliecePrivateKeySpec
@@ -51,7 +50,7 @@ public class McEliecePrivateKeySpec
     /**
      * Constructor.
      *
-     * @param oid
+     * @param oid       string representation of the object identifier the algorithm for this key.
      * @param n         the length of the code
      * @param k         the dimension of the code
      * @param field     the field polynomial defining the finite field
@@ -83,9 +82,9 @@ public class McEliecePrivateKeySpec
     }
 
     /**
-     * Constructor (used by the {@link McElieceKeyFactory}).
+     * Constructor.
      *
-     * @param oid
+     * @param oid          string representation of the object identifier the algorithm for this key.
      * @param n            the length of the code
      * @param k            the dimension of the code
      * @param encField     the encoded field polynomial defining the finite field

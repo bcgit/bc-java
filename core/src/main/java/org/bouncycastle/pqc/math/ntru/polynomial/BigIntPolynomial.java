@@ -66,7 +66,7 @@ public class BigIntPolynomial
      * @param N          number of coefficients
      * @param numOnes    number of 1's
      * @param numNegOnes number of -1's
-     * @return
+     * @return a random polynomial.
      */
     static BigIntPolynomial generateRandomSmall(int N, int numOnes, int numNegOnes)
     {

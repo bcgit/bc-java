@@ -91,7 +91,7 @@ public class SMIMEToolkit
      * @param verifier the verifier we want to find a signer for.
      * @return true if cert verifies message, false otherwise.
      * @throws SMIMEException on a SMIME handling issue.
-     * @trhows MessagingException on a basic message processing exception
+     * @throws MessagingException on a basic message processing exception
      */
     public boolean isValidSignature(Part message, SignerInformationVerifier verifier)
         throws SMIMEException, MessagingException
@@ -158,7 +158,7 @@ public class SMIMEToolkit
      * @param verifier the verifier we want to find a signer for.
      * @return true if cert verifies message, false otherwise.
      * @throws SMIMEException on a SMIME handling issue.
-     * @trhows MessagingException on a basic message processing exception
+     * @throws MessagingException on a basic message processing exception
      */
     public boolean isValidSignature(MimeMultipart message, SignerInformationVerifier verifier)
         throws SMIMEException, MessagingException

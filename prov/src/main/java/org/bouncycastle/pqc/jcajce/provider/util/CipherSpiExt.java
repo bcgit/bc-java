@@ -83,7 +83,7 @@ public abstract class CipherSpiExt
      * <p>
      * If this cipher (including its underlying mode or padding scheme) requires
      * any random bytes, it will obtain them from <tt>random</tt>. Note that
-     * when a {@link BlockCipher} object is initialized, it loses all
+     * when a cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
      * </p><p>
@@ -392,7 +392,7 @@ public abstract class CipherSpiExt
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
      * </p><p>
-     * Note that when a {@link BlockCipher} object is initialized, it loses all
+     * Note that when a cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
      *
@@ -424,7 +424,7 @@ public abstract class CipherSpiExt
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from random.
      * </p><p>
-     * Note that when a {@link BlockCipher} object is initialized, it loses all
+     * Note that when a cipher object is initialized, it loses all
      * previously-acquired state. In other words, initializing a Cipher is
      * equivalent to creating a new instance of that Cipher and initializing it.
      *
@@ -507,7 +507,7 @@ public abstract class CipherSpiExt
      * Set the mode of this cipher.
      *
      * @param mode the cipher mode
-     * @throws NoSuchModeException if the requested mode cannot be found.
+     * @throws NoSuchAlgorithmException if the requested mode cannot be found.
      */
     protected abstract void setMode(String mode)
         throws NoSuchAlgorithmException;
