@@ -64,7 +64,7 @@ public class RespID
         }
     }
 
-    public ResponderID toASN1Object()
+    public ResponderID toASN1Primitive()
     {
         return id;
     }

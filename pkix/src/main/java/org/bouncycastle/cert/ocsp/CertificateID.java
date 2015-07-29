@@ -88,7 +88,7 @@ public class CertificateID
         }
     }
 
-    public CertID toASN1Object()
+    public CertID toASN1Primitive()
     {
         return id;
     }

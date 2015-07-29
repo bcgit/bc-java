@@ -29,7 +29,7 @@ public class Iso4217CurrencyCodeUnitTest
         
         checkNumeric(cc, ALPHABETIC_CURRENCY_CODE);
         
-        ASN1Primitive obj = cc.toASN1Object();
+        ASN1Primitive obj = cc.toASN1Primitive();
         
         cc = Iso4217CurrencyCode.getInstance(obj);
         
@@ -46,7 +46,7 @@ public class Iso4217CurrencyCodeUnitTest
         
         checkNumeric(cc, NUMERIC_CURRENCY_CODE);
         
-        obj = cc.toASN1Object();
+        obj = cc.toASN1Primitive();
         
         cc = Iso4217CurrencyCode.getInstance(obj);
         

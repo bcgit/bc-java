@@ -72,7 +72,7 @@ public class RequestedCertificateUnitTest
 
         checkValues(requested, type, certOctets, cert);
 
-        ASN1InputStream aIn = new ASN1InputStream(requested.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(requested.toASN1Primitive().getEncoded());
 
         Object obj = aIn.readObject();
 

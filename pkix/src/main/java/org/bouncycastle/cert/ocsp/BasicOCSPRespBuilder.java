@@ -93,7 +93,7 @@ public class BasicOCSPRespBuilder
         public SingleResponse toResponse()
             throws Exception
         {
-            return new SingleResponse(certId.toASN1Object(), certStatus, thisUpdate, nextUpdate, extensions);
+            return new SingleResponse(certId.toASN1Primitive(), certStatus, thisUpdate, nextUpdate, extensions);
         }
     }
 
@@ -246,7 +246,7 @@ public class BasicOCSPRespBuilder
             }
         }
 
-        ResponseData  tbsResp = new ResponseData(responderID.toASN1Object(), new ASN1GeneralizedTime(producedAt), new DERSequence(responses), responseExtensions);
+        ResponseData  tbsResp = new ResponseData(responderID.toASN1Primitive(), new ASN1GeneralizedTime(producedAt), new DERSequence(responses), responseExtensions);
         DERBitString    bitSig;
 
         try

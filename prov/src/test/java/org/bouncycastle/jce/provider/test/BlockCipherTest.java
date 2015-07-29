@@ -15,6 +15,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -42,6 +44,16 @@ import org.bouncycastle.util.test.TestFailedException;
 public class BlockCipherTest
     extends SimpleTest
 {
+    private static Set<String> shortIvOkay = new HashSet<String>();
+
+    static
+    {
+        shortIvOkay.add("EAX");
+        shortIvOkay.add("OCB");
+        shortIvOkay.add("CCM");
+        shortIvOkay.add("GCM");
+    }
+
     static String[] cipherTests1 =
     {
         "DES",
@@ -336,6 +348,58 @@ public class BlockCipherTest
         "8d5ac312ca0d436a0154d56568d39811ccf6bb970012398014fc8a49ed669b117443c0249b07ead8",
         "Twofish/EAX/NoPadding",
         "9a90dffe1233a04733fc8869e8ec4cba2fa53d9543f0206825293b1ff102e63f81a60b12204e1fd8",
+        "IDEA/OFB/NoPadding",
+        "dd447da3cbdcf81f4053fb446596261cb00a3c49a66085485af5f7c10ba20dad",
+        "RC2/OFB/NoPadding",
+        "0a07cb78537cb04c0c74e28a7b86b80f80acadf87d6ef32792f1a8cf74b39f74",
+        "SEED/OFB/NoPadding",
+        "9fd249435dc66d3d5d41abad270df5e3c6b972692fadfcb6c311b047f96fb114",
+        "SEED/OCB/NoPadding",
+        "eb04b3612769e1ad681f975af1a6f401d94dc88276dd50fc3ebce791c28825c652b7351acbad8c63d4d66191de94c970",
+        "SEED/CCM/NoPadding",
+        "8bb16b37e7f1d4eb97bb1fa3b9bfd411aca64a3581bb3c5b2a91346983aa334984d73ad629a847f7",
+        "SEED/GCM/NoPadding",
+        "ed5f6293c9a4f280af6695750bfb3bb3b60c214565a049494df955152757812ebfb93705895606c4378498a93f2541b5",
+        "DES/ECB/TBCPadding",
+        "466da00648ef0e1f9617b1f002e225251a3248d09172f46b9617b1f002e22525698575eb3998481b",
+        "GOST28147/ECB/TBCPadding",
+        "0a77f4114451b37d44c5192619b723dd49093d1047c2373544c5192619b723dde7b0810d205c07ab",
+        "IDEA/ECB/TBCPadding",
+        "8c9fd56823ffdc523f6ccf7f614aa6173553e594fc7a21b53f6ccf7f614aa61747a7c95a57b9eaf4",
+        "RC2/ECB/TBCPadding",
+        "eb5b889bbcced12eb6b1a3da6a3d965bba66a5edfdd4c8a6b6b1a3da6a3d965b6b5359ba5e69b179",
+        "SEED/ECB/TBCPadding",
+        "d53d4ce1f48b9879420949467bfcbfbe2c6a7d4a8770bee0c71211def898d7c509f6e111845db39b4cce1dd155aa592b",
+        "DES/CBC/TBCPadding",
+        "60fa2f8fae5aa2a38e9ac77d0246726beb7511e4515feb12cf99f75cc6e0122ad3b3f002c927f1fd",
+        "GOST28147/CBC/TBCPadding",
+        "ba87be9c465cbb30e1bf0148daa9639c2e4cbc1b6777cfcda860760686596159aa564fd65e66c125",
+        "IDEA/CBC/TBCPadding",
+        "30cd990ebdae80fe12b6c6e4fcd1c064a27d985c276b3d7097351c8684e4c4d922f14e12faecaa0b",
+        "RC2/CBC/TBCPadding",
+        "a51facdb3933c9676795cd38cc3146fd4694722b468b1a979a399c77606abf9997b47d2f64a37e2f",
+        "SEED/CBC/TBCPadding",
+        "fc34f03ddf4d2a4d9934addc82011af1d5f76ee015b691a6524d7ad5464422d7989825d19e23a60ba759407e13d1ea02",
+        "DES/CFB8/NoPadding",
+        "53cb0cdff712a825eb283b23c31e7323aa12495e7e751428b5c4eb89b28a25d4",
+        "GOST28147/CFB8/NoPadding",
+        "29f6ca1ca7ae9670413183932a28cdd4a09f2ba630c3c3fbf6f071d3774d7577",
+        "IDEA/CFB8/NoPadding",
+        "dd7839d2525420d10f95eec23dbaf3463302c445972a28c563c2635191bc19af",
+        "RC2/CFB8/NoPadding",
+        "0aa227f94be3a32ff927c5d25647ea41d7c2a1e94012fc7f2ad6767b9664bce5",
+        "SEED/CFB8/NoPadding",
+        "9f1622c3785a034ee4c595df05fb11e69e4d52036e238d2d451e190e87ee876e",
+        "DES/CTS/NoPadding",
+        "60fa2f8fae5aa2a38e9ac77d0246726bcf99f75cc6e0122aeb7511e4515feb12",
+        "GOST28147/CTS/NoPadding",
+        "ba87be9c465cbb30e1bf0148daa9639ca8607606865961592e4cbc1b6777cfcd",
+        "IDEA/CTS/NoPadding",
+        "30cd990ebdae80fe12b6c6e4fcd1c06497351c8684e4c4d9a27d985c276b3d70",
+        "RC2/CTS/NoPadding",
+        "a51facdb3933c9676795cd38cc3146fd9a399c77606abf994694722b468b1a97",
+        "SEED/CTS/NoPadding",
+        "d5f76ee015b691a6524d7ad5464422d7fc34f03ddf4d2a4d9934addc82011af1",
         "SHACAL-2/CBC/PKCS7Padding",
         "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669b6a81cdec475ed4d2394d7ad771404a52eb52d245a39f0d7d3e8062d3b0f0e54",
         "SHACAL-2/CBC/TBCPadding",
@@ -358,6 +422,26 @@ public class BlockCipherTest
     {
         "SHACAL-2/CBC/withCTS",
         "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e18fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b456478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276",
+        "SHACAL-2/CBC/PKCS7Padding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e1856478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b4dda7154ca3f53f3c8ff443f31b7821aa05cdcf584add4dbfb436abb2cffec14d",
+        "SHACAL-2/CBC/ISO10126-2Padding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e1856478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b46ba38f310460943eca68cbe924899c32e4436e71c3b7c9714d139ca559a4a63c",
+        "SHACAL-2/CBC/ISO7816-4Padding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e1856478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b499af44e121ef1a08eaaa3b96f2c4fe6248c375435a69f7fc0e1c22eed8aeeac2",
+        "SHACAL-2/CBC/X923Padding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e1856478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b46ba38f310460943eca68cbe924899c32e4436e71c3b7c9714d139ca559a4a63c",
+        "SHACAL-2/CBC/TBCPadding",
+        "3af7c54ea55d2497162ac9c79d9b2f7837898f83aa4b50b7b762979aa8087669c7228283218babbc53af6eb9edefe37ddd827ded8dd6d99557e9f10075b53e1856478bbaaa6c1a4adcda6564906a71fd49669fffec5806dd86c451052d70f276fff454cccdc913a1817dcad39fca72820e014892ff16432233e9a0a19aa499b49607ddd0d5c54de11ed6ae50afa7fe6ed7f298b5963254e60e069f0916b8f0e1",
+        "SHACAL-2/CTR/NoPadding",
+        "e128b4dd0a8a3bf0d4b558ec2a76700a754a1f99cf83a28b3e3a4c2c6b7c6d2cbeb759073b08aa4294730bbed03cfb77a506efb833a4c09a906bbabf25daca6d7ee7df13ef0c462a54dcede0b282914f7914b1cf6f64409c6ce4ea48c7da26ea95fcb7f4b8d169f4bd6b0515f6a37d784b3b9fbb519f931a912391250a78e0c5",
+        "SHACAL-2/CFB8/NoPadding",
+        "e185119f49ecb9370bc6915d9f3748e352a4bbd26a7d4911089762cd2933912e220909b2c4a5c047038a547f89701ab6b0ab7fb6cc3e48c79ab573e218793d01f78c3b590ad9d6ce078d3ccecedd228bb8cce130b94dcfe8d5d0ed6fcbb9d1d06768da1f0a4b979c2cdd590474f05e6c0073c35e5202b3f8f73e5e9028120c2b",
+        "SHACAL-2/CFB256/NoPadding",
+        "e128b4dd0a8a3bf0d4b558ec2a76700a754a1f99cf83a28b3e3a4c2c6b7c6d2ccd3ea6711fea5531f1bb21be35c6cc8b25e86942f397106b65c56b42267f4bf62782bd6011cb320bb073ceb037de8a5bd775f6fb3ee74525ef6286c54bbb1d19f29e2ed08c7519ecd1440a50fc68a254f7f5ac085f9b7d63e4fa651a25ab7a3b",
+        "SHACAL-2/CFB/NoPadding",
+        "e128b4dd0a8a3bf0d4b558ec2a76700a754a1f99cf83a28b3e3a4c2c6b7c6d2ccd3ea6711fea5531f1bb21be35c6cc8b25e86942f397106b65c56b42267f4bf62782bd6011cb320bb073ceb037de8a5bd775f6fb3ee74525ef6286c54bbb1d19f29e2ed08c7519ecd1440a50fc68a254f7f5ac085f9b7d63e4fa651a25ab7a3b",
+        "SHACAL-2/OFB/NoPadding",
+        "e128b4dd0a8a3bf0d4b558ec2a76700a754a1f99cf83a28b3e3a4c2c6b7c6d2cb231d2897aba5cffa1b64a99fb6f9b5c9df8875dcd0d88412dacfaf61c2985ee726c4f534c109b16289811f1fc8e20d73c3a4c07dc30e07e806bc631a7e901e5d77fe48114b52abbed9a0c58bde5622c1a624ad8714e5044081016da78518d58",
         "Threefish-256",
         "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
             "9f82b577cf4cca7a504e9f7a2cd7dbb4ef4ac167c716fca19ab1211f195f610f" +
@@ -534,18 +618,21 @@ public class BlockCipherTest
 
         rand = new FixedSecureRandom();
 
+        String baseAlgorithm, mode;
         try
         {
-            String  baseAlgorithm;
-            int     index = algorithm.indexOf('/');
+
+            int index = algorithm.indexOf('/');
 
             if (index > 0)
             {
                 baseAlgorithm = algorithm.substring(0, index);
+                mode = algorithm.substring(index + 1, algorithm.lastIndexOf('/'));
             }
             else
             {
                 baseAlgorithm = algorithm;
+                mode = null;
             }
 
             if (baseAlgorithm.equals("IDEA") & noIDEA())
@@ -591,8 +678,9 @@ public class BlockCipherTest
             }
         }
         catch (Exception e)
-        {                        e.printStackTrace();
+        {
             fail("" + algorithm + " failed initialisation - " + e.toString(), e);
+            return;
         }
 
         //
@@ -622,7 +710,7 @@ public class BlockCipherTest
                 iv = out.getIV();
                 if (iv != null)
                 {
-                    if (algorithm.indexOf("EAX") < 0)
+                    if (!shortIvOkay.contains(mode))
                     {
                         try
                         {

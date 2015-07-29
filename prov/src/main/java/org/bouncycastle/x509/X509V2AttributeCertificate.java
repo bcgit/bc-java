@@ -103,7 +103,7 @@ public class X509V2AttributeCertificate
     
     public AttributeCertificateHolder getHolder()
     {
-        return new AttributeCertificateHolder((ASN1Sequence)cert.getAcinfo().getHolder().toASN1Object());
+        return new AttributeCertificateHolder((ASN1Sequence)cert.getAcinfo().getHolder().toASN1Primitive());
     }
     
     public AttributeCertificateIssuer getIssuer()

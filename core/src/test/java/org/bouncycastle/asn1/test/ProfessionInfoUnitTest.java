@@ -82,7 +82,7 @@ public class ProfessionInfoUnitTest
 
         checkValues(profInfo, auth, professionItems, professionOids, registrationNumber, addProfInfo);
 
-        ASN1InputStream aIn = new ASN1InputStream(profInfo.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(profInfo.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 

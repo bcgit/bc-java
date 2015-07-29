@@ -7,10 +7,10 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.x509.ProcurationSyntax;
 import org.bouncycastle.asn1.x500.DirectoryString;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
-import org.bouncycastle.asn1.x509.X509Name;
 
 public class ProcurationSyntaxUnitTest
     extends ASN1UnitTest
@@ -25,8 +25,8 @@ public class ProcurationSyntaxUnitTest
     {
         String country = "AU";
         DirectoryString  typeOfSubstitution = new DirectoryString("substitution");
-        GeneralName thirdPerson = new GeneralName(new X509Name("CN=thirdPerson"));
-        IssuerSerial certRef = new IssuerSerial(new GeneralNames(new GeneralName(new X509Name("CN=test"))), new ASN1Integer(1));
+        GeneralName thirdPerson = new GeneralName(new X500Name("CN=thirdPerson"));
+        IssuerSerial certRef = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), new ASN1Integer(1));
 
         ProcurationSyntax procuration = new ProcurationSyntax(country, typeOfSubstitution, thirdPerson);
 
@@ -77,7 +77,7 @@ public class ProcurationSyntaxUnitTest
 
         checkValues(procuration, country, typeOfSubstitution, thirdPerson, certRef);
 
-        ASN1InputStream aIn = new ASN1InputStream(procuration.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(procuration.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 

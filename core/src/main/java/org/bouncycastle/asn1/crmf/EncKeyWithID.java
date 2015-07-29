@@ -99,7 +99,7 @@ public class EncKeyWithID
      *     } OPTIONAL
      * }
      * </pre>
-     * @return
+     * @return a DERSequence representing the value in this object.
      */
     public ASN1Primitive toASN1Primitive()
     {

@@ -93,8 +93,6 @@ public class CertTemplateBuilder
 
     /**
      * @deprecated use method taking Extensions
-     * @param extens
-     * @return
      */
     public CertTemplateBuilder setExtensions(X509Extensions extens)
     {

@@ -5,8 +5,8 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.qualified.SemanticsInformation;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -29,7 +29,7 @@ public class SemanticsInformationUnitTest
         GeneralName[] names = new GeneralName[2];
         
         names[0] = new GeneralName(GeneralName.rfc822Name, "test@test.org");
-        names[1] = new GeneralName(new X509Name("cn=test"));
+        names[1] = new GeneralName(new X500Name("cn=test"));
         
         mv = new SemanticsInformation(statementId, names);
 
@@ -83,7 +83,7 @@ public class SemanticsInformationUnitTest
         
         checkStatement(mv, semanticsIdentifier, names);
         
-        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Primitive().getEncoded());
         
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 

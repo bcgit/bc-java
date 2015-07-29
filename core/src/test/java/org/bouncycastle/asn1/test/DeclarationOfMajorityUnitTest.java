@@ -59,7 +59,7 @@ public class DeclarationOfMajorityUnitTest
 
         checkValues(decl, type, dateOfBirth, notYoungerThan);
 
-        ASN1InputStream aIn = new ASN1InputStream(decl.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(decl.toASN1Primitive().getEncoded());
 
         DERTaggedObject info = (DERTaggedObject)aIn.readObject();
 

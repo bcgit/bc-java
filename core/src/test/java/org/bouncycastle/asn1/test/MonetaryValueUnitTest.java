@@ -30,7 +30,7 @@ public class MonetaryValueUnitTest
         
         checkValues(mv, TEST_AMOUNT, ZERO_EXPONENT);
         
-        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
         

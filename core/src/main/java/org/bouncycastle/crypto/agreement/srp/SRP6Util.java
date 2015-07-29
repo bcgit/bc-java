@@ -96,7 +96,7 @@ public class SRP6Util
 	 * @param digest The Digest used as the hashing function H
 	 * @param N Modulus used to get the pad length
 	 * @param S The secret calculated by both sides
-	 * @return
+	 * @return the final Key value.
 	 */
 	public static BigInteger calculateKey(Digest digest, BigInteger N, BigInteger S) {
 		int padLength = (N.bitLength() + 7) / 8;

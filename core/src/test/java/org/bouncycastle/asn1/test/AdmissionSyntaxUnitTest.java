@@ -11,8 +11,8 @@ import org.bouncycastle.asn1.isismtt.x509.Admissions;
 import org.bouncycastle.asn1.isismtt.x509.NamingAuthority;
 import org.bouncycastle.asn1.isismtt.x509.ProfessionInfo;
 import org.bouncycastle.asn1.x500.DirectoryString;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Name;
 
 public class AdmissionSyntaxUnitTest
     extends ASN1UnitTest
@@ -25,7 +25,7 @@ public class AdmissionSyntaxUnitTest
     public void performTest()
         throws Exception
     {
-        GeneralName     name = new GeneralName(new X509Name("CN=hello world"));
+        GeneralName     name = new GeneralName(new X500Name("CN=hello world"));
         ASN1Sequence    admissions = new DERSequence(
                                         new Admissions(name,
                                           new NamingAuthority(new ASN1ObjectIdentifier("1.2.3"), "url", new DirectoryString("fred")),
@@ -65,7 +65,7 @@ public class AdmissionSyntaxUnitTest
 
         checkValues(syntax, authority, admissions);
 
-        ASN1InputStream aIn = new ASN1InputStream(syntax.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(syntax.toASN1Primitive().getEncoded());
 
         ASN1Sequence info = (ASN1Sequence)aIn.readObject();
 

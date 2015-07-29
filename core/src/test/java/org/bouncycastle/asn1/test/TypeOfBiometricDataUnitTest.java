@@ -97,7 +97,7 @@ public class TypeOfBiometricDataUnitTest
         
         checkPredefined(type, predefinedType);
         
-        ASN1InputStream aIn = new ASN1InputStream(type.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(type.toASN1Primitive().getEncoded());
 
         ASN1Primitive obj = aIn.readObject();
 

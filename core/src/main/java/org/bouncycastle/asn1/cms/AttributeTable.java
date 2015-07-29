@@ -216,9 +216,9 @@ public class AttributeTable
     /**
      * Return a new table with the passed in attribute added.
      *
-     * @param attrType
-     * @param attrValue
-     * @return
+     * @param attrType the type of the attribute to add.
+     * @param attrValue the value corresponding to the attribute (will be wrapped in a SET).
+     * @return a new table with the extra attribute in it.
      */
     public AttributeTable add(ASN1ObjectIdentifier attrType, ASN1Encodable attrValue)
     {

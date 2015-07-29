@@ -49,8 +49,8 @@ public class RC2WrapEngine
    /**
     * Method init
     *
-    * @param forWrapping
-    * @param param
+    * @param forWrapping true if for wrapping, false for unwrap.
+    * @param param parameters for wrap/unwrapping (iv required for unwrap).
     */
    public void init(boolean forWrapping, CipherParameters param)
    {
@@ -119,9 +119,9 @@ public class RC2WrapEngine
    /**
     * Method wrap
     *
-    * @param in
-    * @param inOff
-    * @param inLen
+    * @param in byte array containing the key.
+    * @param inOff offset into in array that the key data starts at.
+    * @param inLen length of key data.
     * @return the wrapped bytes.
     */
    public byte[] wrap(byte[] in, int inOff, int inLen)
@@ -218,9 +218,9 @@ public class RC2WrapEngine
    /**
     * Method unwrap
     *
-    * @param in
-    * @param inOff
-    * @param inLen
+    * @param in byte array containing the wrapped key.
+    * @param inOff offset into in array that the wrapped key starts at.
+    * @param inLen length of wrapped key data.
     * @return the unwrapped bytes.
     * @throws InvalidCipherTextException
     */
@@ -342,7 +342,7 @@ public class RC2WrapEngine
         return CEK;
     }
 
-    /**
+    /*
      * Some key wrap algorithms make use of the Key Checksum defined
      * in CMS [CMS-Algorithms]. This is used to provide an integrity
      * check value for the key being wrapped. The algorithm is
@@ -351,10 +351,6 @@ public class RC2WrapEngine
      * - Use the first 8 octets of this hash as the checksum value.
      *
      * For details see  http://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum
-     * @param key
-     * @return
-     * @throws RuntimeException
-     *
      */
     private byte[] calculateCMSKeyChecksum(
         byte[] key)
@@ -369,12 +365,8 @@ public class RC2WrapEngine
         return result;
     }
 
-    /**
+    /*
      * For details see  http://www.w3.org/TR/xmlenc-core/#sec-CMSKeyChecksum
-     *
-     * @param key
-     * @param checksum
-     * @return
      */
     private boolean checkCMSKeyChecksum(
         byte[] key,

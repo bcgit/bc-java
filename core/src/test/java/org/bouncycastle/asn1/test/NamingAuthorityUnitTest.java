@@ -71,7 +71,7 @@ public class NamingAuthorityUnitTest
 
         checkValues(auth, namingAuthorityID, namingAuthorityURL, namingAuthorityText);
 
-        ASN1InputStream aIn = new ASN1InputStream(auth.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(auth.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 
