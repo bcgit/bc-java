@@ -9,6 +9,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * CRL Bag for PKCS#12
+ */
 public class CRLBag
     extends ASN1Object
 {
@@ -44,12 +47,12 @@ public class CRLBag
         this.crlValue = crlValue;
     }
 
-    public ASN1ObjectIdentifier getcrlId()
+    public ASN1ObjectIdentifier getCrlId()
     {
         return crlId;
     }
 
-    public ASN1Encodable getCRLValue()
+    public ASN1Encodable getCrlValue()
     {
         return crlValue;
     }
