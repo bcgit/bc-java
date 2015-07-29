@@ -20,7 +20,7 @@ public abstract class DVCSRequestData
     /**
      * The constructor is accessible by subclasses.
      *
-     * @param data
+     * @param data the data piece for this request.
      */
     protected DVCSRequestData(Data data)
     {
@@ -30,7 +30,7 @@ public abstract class DVCSRequestData
     /**
      * Convert to ASN.1 structure (Data).
      *
-     * @return
+     * @return a Data object.
      */
     public Data toASN1Structure()
     {

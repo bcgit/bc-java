@@ -89,7 +89,7 @@ public class SecurityParameters
     }
 
     /**
-     * @deprecated Use {@link SecurityParameters#getPSKIdentity()) 
+     * @deprecated Use {@link SecurityParameters#getPSKIdentity()}
      */
     public byte[] getPskIdentity()
     {

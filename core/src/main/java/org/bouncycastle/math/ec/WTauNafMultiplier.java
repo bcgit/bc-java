@@ -15,7 +15,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
      * Multiplies a {@link org.bouncycastle.math.ec.ECPoint.AbstractF2m ECPoint.AbstractF2m}
      * by <code>k</code> using the reduced <code>&tau;</code>-adic NAF (RTNAF)
      * method.
-     * @param p The ECPoint.AbstractF2m to multiply.
+     * @param point The ECPoint.AbstractF2m to multiply.
      * @param k The integer by which to multiply <code>k</code>.
      * @return <code>p</code> multiplied by <code>k</code>.
      */

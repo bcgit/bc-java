@@ -55,7 +55,6 @@ import org.bouncycastle.util.Arrays;
  * Each instance should only be used for ONE complete J-PAKE exchange
  * (i.e. a new {@link JPAKEParticipant} should be constructed for each new J-PAKE exchange).
  * <p>
- * See {@link JPAKEExample} for example usage.
  */
 public class JPAKEParticipant
 {
