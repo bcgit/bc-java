@@ -29,6 +29,8 @@ subprojects {
     test {
         systemProperty 'bc.test.data.home', bcTestDataHome
 
-        exclude '**/*PerformanceTest.class'
+        filter {
+            includeTestsMatching "*AllTests"
+        }
     }
 }

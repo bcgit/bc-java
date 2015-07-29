@@ -3,5 +3,5 @@ dependencies {
     compile project(':pkix')
     compile project(':prov')
 
-    compile group: 'javax.mail', name: 'mail', version: '1.4.+'
+    compile group: 'javax.mail', name: 'mail', version: '1.4'
 }
