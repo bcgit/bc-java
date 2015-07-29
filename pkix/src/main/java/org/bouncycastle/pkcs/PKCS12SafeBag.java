@@ -85,7 +85,7 @@ public class PKCS12SafeBag
         {
             CRLBag crlBag = CRLBag.getInstance(safeBag.getBagValue());
 
-            return new X509CRLHolder(CertificateList.getInstance(ASN1OctetString.getInstance(crlBag.getCRLValue()).getOctets()));
+            return new X509CRLHolder(CertificateList.getInstance(ASN1OctetString.getInstance(crlBag.getCrlValue()).getOctets()));
         }
 
         return safeBag.getBagValue();
