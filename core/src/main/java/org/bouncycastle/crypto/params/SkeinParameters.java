@@ -179,15 +179,15 @@ public class SkeinParameters
         /**
          * Sets a parameters to apply to the Skein hash function.<br>
          * Parameter types must be in the range 0,5..62, and cannot use the value {@value
-         * SkeinParameters#PARAM_TYPE_MESSAGE} (reserved for message body).
+         * #PARAM_TYPE_MESSAGE} (reserved for message body).
          * <p>
-         * Parameters with type &lt; {@value SkeinParameters#PARAM_TYPE_MESSAGE} are processed before
-         * the message content, parameters with type &gt; {@value SkeinParameters#PARAM_TYPE_MESSAGE}
+         * Parameters with type &lt; {@value #PARAM_TYPE_MESSAGE} are processed before
+         * the message content, parameters with type &gt; {@value #PARAM_TYPE_MESSAGE}
          * are processed after the message and prior to output.
          *
          * @param type  the type of the parameter, in the range 5..62.
          * @param value the byte sequence of the parameter.
-         * @return
+         * @return the current builder instance.
          */
         public Builder set(int type, byte[] value)
         {
@@ -210,7 +210,7 @@ public class SkeinParameters
         }
 
         /**
-         * Sets the {@link SkeinParameters#PARAM_TYPE_KEY} parameter.
+         * Sets the {@link #PARAM_TYPE_KEY} parameter.
          */
         public Builder setKey(byte[] key)
         {
@@ -218,7 +218,7 @@ public class SkeinParameters
         }
 
         /**
-         * Sets the {@link SkeinParameters#PARAM_TYPE_PERSONALISATION} parameter.
+         * Sets the {@link #PARAM_TYPE_PERSONALISATION} parameter.
          */
         public Builder setPersonalisation(byte[] personalisation)
         {

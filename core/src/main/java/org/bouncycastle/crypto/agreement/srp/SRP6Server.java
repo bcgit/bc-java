@@ -100,7 +100,7 @@ public class SRP6Server
     /** 
 	 * Authenticates the received client evidence message M1 and saves it only if correct.
 	 * To be called after calculating the secret S.
-	 * @param M1: the client side generated evidence message
+	 * @param clientM1 the client side generated evidence message
 	 * @return A boolean indicating if the client message M1 was the expected one.
 	 * @throws CryptoException 
 	 */

@@ -1,10 +1,10 @@
 package org.bouncycastle.asn1.test;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.x509.MonetaryLimit;
-
-import java.io.IOException;
 
 public class MonetaryLimitUnitTest
     extends ASN1UnitTest
@@ -57,7 +57,7 @@ public class MonetaryLimitUnitTest
 
         checkValues(limit, currency, amount, exponent);
 
-        ASN1InputStream aIn = new ASN1InputStream(limit.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(limit.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 

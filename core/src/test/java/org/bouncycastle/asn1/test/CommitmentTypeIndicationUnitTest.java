@@ -63,7 +63,7 @@ public class CommitmentTypeIndicationUnitTest
         
         checkStatement(mv, commitmenttTypeId, qualifier);
         
-        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(mv.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
         

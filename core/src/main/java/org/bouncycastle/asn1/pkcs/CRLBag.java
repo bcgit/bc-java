@@ -58,7 +58,7 @@ public class CRLBag
      * <pre>
      * CRLBag ::= SEQUENCE {
      * crlId  BAG-TYPE.&amp;id ({CRLTypes}),
-     * crlValue  [0] EXPLICIT BAG-TYPE.&amp;Type ({CRLTypes}{@crlId})
+     * crlValue  [0] EXPLICIT BAG-TYPE.&amp;Type ({CRLTypes}{&#64;crlId})
      * }
      *
      * x509CRL BAG-TYPE ::= {OCTET STRING IDENTIFIED BY {certTypes 1}

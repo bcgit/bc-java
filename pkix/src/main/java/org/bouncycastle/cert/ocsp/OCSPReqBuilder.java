@@ -42,7 +42,7 @@ public class OCSPReqBuilder
         public Request toRequest()
             throws Exception
         {
-            return new Request(certId.toASN1Object(), extensions);
+            return new Request(certId.toASN1Primitive(), extensions);
         }
     }
 

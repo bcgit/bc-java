@@ -46,7 +46,7 @@ public class RestrictionUnitTest
 
         checkValues(restriction, res);
 
-        ASN1InputStream aIn = new ASN1InputStream(restriction.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(restriction.toASN1Primitive().getEncoded());
 
         ASN1String str = (ASN1String)aIn.readObject();
 

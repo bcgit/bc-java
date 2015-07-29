@@ -64,7 +64,7 @@ public class NameOrPseudonymUnitTest
 
         checkValues(id, pseudonym, surname, givenName);
 
-        ASN1InputStream aIn = new ASN1InputStream(id.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(id.toASN1Primitive().getEncoded());
 
         if (surname != null)
         {

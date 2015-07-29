@@ -7,11 +7,11 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ess.OtherCertID;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
-import org.bouncycastle.asn1.x509.X509Name;
 
 public class OtherCertIDUnitTest
     extends ASN1UnitTest
@@ -26,7 +26,7 @@ public class OtherCertIDUnitTest
     {
         AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.2.3"));
         byte[]              digest = new byte[20];
-        IssuerSerial        issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(new X509Name("CN=test"))), new ASN1Integer(1));
+        IssuerSerial        issuerSerial = new IssuerSerial(new GeneralNames(new GeneralName(new X500Name("CN=test"))), new ASN1Integer(1));
 
         OtherCertID certID = new OtherCertID(algId, digest);
 
@@ -68,7 +68,7 @@ public class OtherCertIDUnitTest
 
         checkValues(certID, algId, digest, issuerSerial);
 
-        ASN1InputStream aIn = new ASN1InputStream(certID.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(certID.toASN1Primitive().getEncoded());
 
         ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
 

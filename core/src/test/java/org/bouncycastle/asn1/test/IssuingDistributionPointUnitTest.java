@@ -4,12 +4,12 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.ReasonFlags;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class IssuingDistributionPointUnitTest 
@@ -24,7 +24,7 @@ public class IssuingDistributionPointUnitTest
         throws Exception
     {
         DistributionPointName    name = new DistributionPointName(
-                                              new GeneralNames(new GeneralName(new X509Name("cn=test"))));
+                                              new GeneralNames(new GeneralName(new X500Name("cn=test"))));
         ReasonFlags reasonFlags = new ReasonFlags(ReasonFlags.cACompromise);
 
         checkPoint(6, name, true, true, reasonFlags, true, true);

@@ -71,7 +71,7 @@ public class AuthorityKeyIdentifierStructure
                 SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
                 
                 return (ASN1Sequence)new AuthorityKeyIdentifier(
-                               info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Object();
+                               info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
             }
             else
             {
@@ -84,14 +84,14 @@ public class AuthorityKeyIdentifierStructure
                     ASN1OctetString     str = (ASN1OctetString)X509ExtensionUtil.fromExtensionValue(ext);
                 
                     return (ASN1Sequence)new AuthorityKeyIdentifier(
-                                    str.getOctets(), new GeneralNames(genName), certificate.getSerialNumber()).toASN1Object();
+                                    str.getOctets(), new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
                 }
                 else
                 {
                     SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
                     
                     return (ASN1Sequence)new AuthorityKeyIdentifier(
-                            info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Object();
+                            info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
                 }
             }
         }
@@ -109,7 +109,7 @@ public class AuthorityKeyIdentifierStructure
         {
             SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
         
-            return (ASN1Sequence)new AuthorityKeyIdentifier(info).toASN1Object();
+            return (ASN1Sequence)new AuthorityKeyIdentifier(info).toASN1Primitive();
         }
         catch (Exception e)
         {

@@ -45,7 +45,7 @@ public class AdditionalInformationSyntaxUnitTest
 
         checkValues(syntax, information);
 
-        ASN1InputStream aIn = new ASN1InputStream(syntax.toASN1Object().getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(syntax.toASN1Primitive().getEncoded());
 
         ASN1String info = (ASN1String)aIn.readObject();
 
