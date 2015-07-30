@@ -22,9 +22,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
@@ -124,11 +122,6 @@ public class SMIMEMiscTest
         junit.textui.TestRunner.run(SMIMEMiscTest.class);
     }
 
-    public static Test suite() 
-    {
-        return new SMIMETestSetup(new TestSuite(SMIMEMiscTest.class));
-    }
-    
     public void testSHA256WithRSAParserEncryptedWithAES()
         throws Exception
     {
