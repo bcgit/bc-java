@@ -1,24 +1,31 @@
-package org.bouncycastle.crypto.ec.test;
+package org.bouncycastle.cert.path.test;
+
+import java.security.Security;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
     extends TestCase
 {
-    public void testCrypto()
+    public void testSimpleTests()
     {
-        org.bouncycastle.util.test.Test[] tests = { new ECElGamalTest(), new ECTransformationTest() };
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new CertPathTest(), new CertPathValidationTest() };
 
         for (int i = 0; i != tests.length; i++)
         {
-            SimpleTestResult result = (SimpleTestResult)tests[i].perform();
+            SimpleTestResult  result = (SimpleTestResult)tests[i].perform();
 
             if (!result.isSuccessful())
             {
+                if (result.getException() != null)
+                {
+                    result.getException().printStackTrace();
+                }
                 fail(result.toString());
             }
         }
@@ -31,7 +38,7 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight EC ElGamal Tests");
+        TestSuite suite = new TestSuite("Cert Path Tests");
 
         suite.addTestSuite(AllTests.class);
 
@@ -48,12 +55,12 @@ public class AllTests
 
         protected void setUp()
         {
-
+            Security.addProvider(new BouncyCastleProvider());
         }
 
         protected void tearDown()
         {
-
+            Security.removeProvider("BC");
         }
     }
 

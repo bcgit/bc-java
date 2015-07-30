@@ -2,6 +2,7 @@ package org.bouncycastle.cert.test;
 
 import java.security.Security;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -52,6 +53,26 @@ public class AllTests
         suite.addTestSuite(BcPKCS10Test.class);
         suite.addTest(ConverterTest.suite());
 
-        return suite;
+        return new BCTestSetup(suite);
     }
+
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        protected void tearDown()
+        {
+            Security.removeProvider("BC");
+        }
+    }
+
 }

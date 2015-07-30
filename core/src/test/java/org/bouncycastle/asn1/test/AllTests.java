@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.test;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -38,6 +39,25 @@ public class AllTests
         suite.addTestSuite(OctetStringTest.class);
         suite.addTestSuite(ParseTest.class);
         
-        return suite;
+        return new BCTestSetup(suite);
+    }
+
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+
+        }
+
+        protected void tearDown()
+        {
+
+        }
     }
 }

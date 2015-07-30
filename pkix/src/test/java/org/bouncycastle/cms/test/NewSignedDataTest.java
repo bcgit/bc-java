@@ -24,6 +24,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -1146,6 +1147,99 @@ public class NewSignedDataTest
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
     }
 
+    public void testSignerInformationExtension()
+        throws Exception
+    {
+        List                certList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        JcaSignerInfoGeneratorBuilder builder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(builder.build(sha1Signer, _origCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        //
+        // the signature is detached, so need to add msg before passing on
+        //
+        s = new CMSSignedData(msg, s.getEncoded());
+
+        Store                   certStore = s.getCertificates();
+        SignerInformationStore  signers = s.getSignerInfos();
+
+        Collection              c = signers.getSigners();
+        Iterator                it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation   signer = (SignerInformation)it.next();
+            Collection          certCollection = certStore.getMatches(signer.getSID());
+
+            Iterator        certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert);
+
+            assertEquals(false, new MyWrongSignerInformation(signer).verify(verifier));
+
+            MyRightSignerInformation rSigner = new MyRightSignerInformation(signer);
+
+            assertTrue(rSigner.verify(verifier));
+            assertTrue(rSigner.isUsed());
+        }
+    }
+
+    private class MyWrongSignerInformation
+        extends SignerInformation
+    {
+        protected MyWrongSignerInformation(SignerInformation baseInfo)
+        {
+            super(baseInfo);
+        }
+
+        @Override
+        public byte[] getEncodedSignedAttributes()
+            throws IOException
+        {
+            return new byte[signedAttributeSet.getEncoded(ASN1Encoding.DL).length];
+        }
+    }
+
+    private class MyRightSignerInformation
+        extends SignerInformation
+    {
+        private boolean used;
+
+        protected MyRightSignerInformation(SignerInformation baseInfo)
+        {
+            super(baseInfo);
+        }
+
+        boolean isUsed()
+        {
+            return used;
+        }
+
+        @Override
+        public byte[] getEncodedSignedAttributes()
+            throws IOException
+        {
+            used = true;
+            return signedAttributeSet.getEncoded(ASN1Encoding.DL);
+        }
+    }
+
     public void testLwSHA1WithRSAAndAttributeTable()
         throws Exception
     {
@@ -1648,6 +1742,7 @@ public class NewSignedDataTest
         ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC).build(signaturePair.getPrivate());
 
         gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(contentSigner, signatureCert));
+
 
         gen.addCertificates(certs);
     

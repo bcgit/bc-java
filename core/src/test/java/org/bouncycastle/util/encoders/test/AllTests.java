@@ -1,8 +1,12 @@
 package org.bouncycastle.util.encoders.test;
 
-import junit.framework.*;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class AllTests
+    extends TestCase
 {
     public static void main (String[] args)
     {
@@ -15,6 +19,25 @@ public class AllTests
         suite.addTestSuite(Base64Test.class);
         suite.addTestSuite(UrlBase64Test.class);
         suite.addTestSuite(HexTest.class);
-        return suite;
+        return new BCTestSetup(suite);
+    }
+
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+
+        }
+
+        protected void tearDown()
+        {
+
+        }
     }
 }
