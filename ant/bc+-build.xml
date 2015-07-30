@@ -704,8 +704,6 @@
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
                 <fileset dir="${src.dir}">
                     <include name="**/AllTests.java" />
-                    <include name="**/nist/Nist*Test.java" />
-                    <include name="**/rsa3/RSA3CertTest.java" />
                 </fileset>
             </batchtest>
         </junit>
