@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -23,7 +24,7 @@ public class AllTests
         suite.addTest(ECAlgorithmsTest.suite());
         suite.addTest(ECPointTest.suite());
 
-        return suite;
+        return new BCTestSetup(suite);
     }
 
     static List enumToList(Enumeration en)
@@ -36,5 +37,24 @@ public class AllTests
         }
 
         return rv;
+    }
+
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+
+        }
+
+        protected void tearDown()
+        {
+
+        }
     }
 }

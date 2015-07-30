@@ -1,10 +1,6 @@
 package org.bouncycastle.operator.test;
 
-import java.security.Security;
-
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -22,31 +18,6 @@ public class AllTests
     private static final byte[] TEST_DATA = "Hello world!".getBytes();
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
     private static final String TEST_DATA_HOME = "bc.test.data.home";
-
-    public AllTests(String name)
-    {
-        super(name);
-    }
-
-    public static void main(String args[])
-    {
-        junit.textui.TestRunner.run(AllTests.class);
-    }
-
-    public static Test suite()
-    {
-        return new TestSuite(AllTests.class);
-    }
-
-    public void setUp()
-    {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    public void tearDown()
-    {
-
-    }
 
     public void testAlgorithmNameFinder()
         throws Exception

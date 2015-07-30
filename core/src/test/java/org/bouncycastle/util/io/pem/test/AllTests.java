@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -55,17 +53,5 @@ public class AllTests
         pWrt.close();
 
         assertEquals(bOut.toByteArray().length, pWrt.getOutputSize(pemObj));
-    }
-
-    public static void main (String[] args)
-    {
-        junit.textui.TestRunner.run (suite());
-    }
-
-    public static Test suite()
-    {
-        TestSuite suite = new TestSuite("util tests");
-        suite.addTestSuite(AllTests.class);
-        return suite;
     }
 }

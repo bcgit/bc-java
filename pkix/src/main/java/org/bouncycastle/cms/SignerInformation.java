@@ -39,21 +39,22 @@ import org.bouncycastle.util.io.TeeOutputStream;
  */
 public class SignerInformation
 {
-    private SignerId                sid;
-    private SignerInfo              info;
-    private AlgorithmIdentifier     digestAlgorithm;
-    private AlgorithmIdentifier     encryptionAlgorithm;
-    private final ASN1Set           signedAttributeSet;
-    private final ASN1Set           unsignedAttributeSet;
-    private CMSProcessable          content;
-    private byte[]                  signature;
-    private ASN1ObjectIdentifier    contentType;
-    private byte[]                  resultDigest;
+    private final SignerId                sid;
+    private final CMSProcessable          content;
+    private final byte[]                  signature;
+    private final ASN1ObjectIdentifier    contentType;
+    private final boolean                 isCounterSignature;
 
     // Derived
-    private AttributeTable          signedAttributeValues;
-    private AttributeTable          unsignedAttributeValues;
-    private boolean                 isCounterSignature;
+    private AttributeTable                signedAttributeValues;
+    private AttributeTable                unsignedAttributeValues;
+    private byte[]                        resultDigest;
+
+    protected final SignerInfo            info;
+    protected final AlgorithmIdentifier   digestAlgorithm;
+    protected final AlgorithmIdentifier   encryptionAlgorithm;
+    protected final ASN1Set               signedAttributeSet;
+    protected final ASN1Set               unsignedAttributeSet;
 
     SignerInformation(
         SignerInfo          info,
@@ -88,6 +89,28 @@ public class SignerInformation
 
         this.content = content;
         this.resultDigest = resultDigest;
+    }
+
+    /**
+     * Protected constructor. In some cases clients have their own idea about how to encode
+     * the signed attributes and calculate the signature. This constructor is to allow developers
+     * to deal with that by extending off the class and overridng methods like getSignedAttributes().
+     *
+     * @param baseInfo the SignerInformation to base this one on.
+     */
+    protected SignerInformation(SignerInformation baseInfo)
+    {
+        this.info = baseInfo.info;
+        this.contentType = baseInfo.contentType;
+        this.isCounterSignature = baseInfo.isCounterSignature();
+        this.sid = baseInfo.getSID();
+        this.digestAlgorithm = info.getDigestAlgorithm();
+        this.signedAttributeSet = info.getAuthenticatedAttributes();
+        this.unsignedAttributeSet = info.getUnauthenticatedAttributes();
+        this.encryptionAlgorithm = info.getDigestEncryptionAlgorithm();
+        this.signature = info.getEncryptedDigest().getOctets();
+        this.content = baseInfo.content;
+        this.resultDigest = baseInfo.resultDigest;
     }
 
     public boolean isCounterSignature()

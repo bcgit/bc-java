@@ -1,4 +1,4 @@
-package org.bouncycastle.tsp.test;
+package org.bouncycastle.jce.provider.test.nist;
 
 import java.security.Security;
 
@@ -6,6 +6,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class AllTests
     extends TestCase
@@ -17,14 +18,11 @@ public class AllTests
     
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("TSP Tests");
+        TestSuite suite = new TestSuite("CertPath Tests");
         
-        suite.addTestSuite(ParseTest.class);
-        suite.addTestSuite(NewTSPTest.class);
-        suite.addTestSuite(CMSTimeStampedDataTest.class);
-        suite.addTestSuite(CMSTimeStampedDataParserTest.class);
-        suite.addTestSuite(CMSTimeStampedDataGeneratorTest.class);
-        
+        suite.addTestSuite(NistCertPathTest.class);
+        suite.addTestSuite(NistCertPathReviewerTest.class);
+
         return new BCTestSetup(suite);
     }
 
@@ -38,7 +36,7 @@ public class AllTests
 
         protected void setUp()
         {
-            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            Security.addProvider(new BouncyCastleProvider());
         }
 
         protected void tearDown()

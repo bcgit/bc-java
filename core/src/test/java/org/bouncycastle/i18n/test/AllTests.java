@@ -1,12 +1,12 @@
 
 package org.bouncycastle.i18n.test;
 
-import org.bouncycastle.i18n.filter.test.HTMLFilterTest;
-import org.bouncycastle.i18n.filter.test.SQLFilterTest;
-
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.i18n.filter.test.HTMLFilterTest;
+import org.bouncycastle.i18n.filter.test.SQLFilterTest;
 
 public class AllTests extends TestCase
 {
@@ -22,7 +22,25 @@ public class AllTests extends TestCase
         suite.addTestSuite(LocalizedMessageTest.class);
         suite.addTestSuite(HTMLFilterTest.class);
         suite.addTestSuite(SQLFilterTest.class);
-        return suite;
+        return new BCTestSetup(suite);
     }
 
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+
+        }
+
+        protected void tearDown()
+        {
+
+        }
+    }
 }
