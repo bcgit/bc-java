@@ -642,6 +642,7 @@
              <fileset dir="${src.dir}" includes="**/*AllTests.java" />
              <fileset dir="${src.dir}" includes="**/math/**/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
              <fileset dir="${src.dir}" includes="**/test/*.java" />
