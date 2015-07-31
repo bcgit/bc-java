@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * Builder and holder class for preparing SP 800-56A compliant OtherInfo. The data is ultimately encoded as a DER SEQUENCE.
  * Empty octet strings are used to represent nulls in compulsory fields.
  */
-public class KTSOtherInfo
+public class DEROtherInfo
 {
     /**
      * Builder to create OtherInfo
@@ -72,7 +72,7 @@ public class KTSOtherInfo
          *
          * @return an KTSOtherInfo containing the data.
          */
-        public KTSOtherInfo build()
+        public DEROtherInfo build()
         {
             ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -90,13 +90,13 @@ public class KTSOtherInfo
                 v.add(suppPrivInfo);
             }
 
-            return new KTSOtherInfo(new DERSequence(v));
+            return new DEROtherInfo(new DERSequence(v));
         }
     }
 
     private final DERSequence sequence;
 
-    private KTSOtherInfo(DERSequence sequence)
+    private DEROtherInfo(DERSequence sequence)
     {
         this.sequence = sequence;
     }

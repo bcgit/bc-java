@@ -11,7 +11,7 @@ import javax.crypto.Cipher;
 import org.bouncycastle.asn1.cms.GenericHybridParameters;
 import org.bouncycastle.asn1.cms.RsaKemParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.util.KTSOtherInfo;
+import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -65,7 +65,7 @@ public class JceKTSKeyUnwrapper
 
         try
         {
-            KTSOtherInfo otherInfo = new KTSOtherInfo.Builder(params.getDem(), partyUInfo, partyVInfo).build();
+            DEROtherInfo otherInfo = new DEROtherInfo.Builder(params.getDem(), partyUInfo, partyVInfo).build();
             KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(symmetricWrappingAlg, keySizeInBits, otherInfo.getEncoded()).withKdfAlgorithm(kemParameters.getKeyDerivationFunction()).build();
 
             keyCipher.init(Cipher.UNWRAP_MODE, privKey, ktsSpec);
