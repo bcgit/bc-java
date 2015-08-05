@@ -3,9 +3,7 @@ package org.bouncycastle.asn1.bc;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
- *  iso.org.dod.internet.private.enterprise.legion-of-the-bouncy-castle
- * <p>
- *  1.3.6.1.4.1.22554
+ *  Object Identifiers belonging to iso.org.dod.internet.private.enterprise.legion-of-the-bouncy-castle (1.3.6.1.4.1.22554)
  */
 public interface BCObjectIdentifiers
 {
