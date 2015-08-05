@@ -90,6 +90,15 @@ public class X9ECParameters
 
     public X9ECParameters(
         ECCurve     curve,
+        X9ECPoint     g,
+        BigInteger  n,
+        BigInteger  h)
+    {
+        this(curve, g, n, h, null);
+    }
+
+    public X9ECParameters(
+        ECCurve     curve,
         ECPoint     g,
         BigInteger  n,
         BigInteger  h)
