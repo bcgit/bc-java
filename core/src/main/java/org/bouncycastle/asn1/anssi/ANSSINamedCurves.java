@@ -12,6 +12,9 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * ANSSI Elliptic curve table.
+ */
 public class ANSSINamedCurves
 {
     private static ECCurve configureCurve(ECCurve curve)
