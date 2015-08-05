@@ -1,5 +1,15 @@
 package org.bouncycastle.openpgp.examples.test;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -11,16 +21,6 @@ import org.bouncycastle.openpgp.examples.PBEFileProcessor;
 import org.bouncycastle.openpgp.examples.RSAKeyPairGenerator;
 import org.bouncycastle.openpgp.examples.SignedFileProcessor;
 import org.bouncycastle.util.encoders.Base64;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 
 public class AllTests
     extends TestCase
@@ -211,6 +211,8 @@ public class AllTests
     public void testPBEEncryption() 
         throws Exception
     {
+        createTestData("hello world!", "test.txt");
+
         _currentErr.reset();
         
         PBEFileProcessor.main(new String[] { "-e", "test.txt", "password" });
