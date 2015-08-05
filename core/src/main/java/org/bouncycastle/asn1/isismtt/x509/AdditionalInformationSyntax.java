@@ -40,7 +40,7 @@ public class AdditionalInformationSyntax
     /**
      * Constructor from a given details.
      *
-     * @param information The describtion of the information.
+     * @param information The description of the information.
      */
     public AdditionalInformationSyntax(String information)
     {
