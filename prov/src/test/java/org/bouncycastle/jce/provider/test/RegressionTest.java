@@ -73,7 +73,7 @@ public class RegressionTest
         new CRL5Test(),
         new Poly1305Test(),
         new SipHashTest(),
-        new SHA3Test(),
+        new KeccakTest(),
         new SkeinTest(),
         new Shacal2Test(),
         new DetDSATest(),
