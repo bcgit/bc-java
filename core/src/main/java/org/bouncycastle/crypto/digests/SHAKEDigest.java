@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.Xof;
+
 
 /**
  * implementation of SHA-3 based on following KeccakNISTInterface.c from http://keccak.noekeon.org/
@@ -8,6 +10,7 @@ package org.bouncycastle.crypto.digests;
  */
 public class SHAKEDigest
     extends KeccakDigest
+    implements Xof
 {
     private static int checkBitLength(int bitLength)
     {
@@ -45,9 +48,6 @@ public class SHAKEDigest
         return doFinal(out, outOff, getDigestSize());
     }
 
-    /*
-     * TODO Do we need a new API interface for Extendable-Output Functions? 
-     */
     public int doFinal(byte[] out, int outOff, int outLen)
     {
         absorb(new byte[]{ 0x0F }, 0, 4);
