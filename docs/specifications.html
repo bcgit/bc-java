@@ -287,6 +287,7 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD4Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD5Digest</b></td><td>128</td><td>&nbsp;</td></tr>
@@ -299,7 +300,8 @@ implementations
 <tr><td><b>SHA256Digest</b></td><td>256</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA384Digest</b></td><td>384</td><td>FIPS 180-2</td></tr>
 <tr><td><b>SHA512Digest</b></td><td>512</td><td>FIPS 180-2</td></tr>
-<tr><td><b>SHA3Digest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
+<tr><td><b>SHA3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
+<tr><td><b>SHAKEDigest</b></td><td>128, 256</td><td></td></tr>
 <tr><td><b>SkeinDigest</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state sizes. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SM3Digest</b></td><td>256</td><td>The SM3 Digest.</td></tr>
 <tr><td><b>TigerDigest</b></td><td>192</td><td>The Tiger Digest.</td></tr>
@@ -710,6 +712,11 @@ change as the draft is finalised.
 <tr><td>Any MAC based on a block cipher, CBC (the default) and CFB modes.</td><td>half the cipher's block size (usually 32 bits)</td><td>&nbsp;</td></tr>
 <tr><td>*-GMAC</td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D. e.g. AES-GMAC.</td></tr>
 <tr><td>VMPC-MAC</td><td>128</td><td>&nbsp;</td></tr>
+<tr><td>HMac-KECCAK224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>HMac-KECCAK256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-KECCAK288</td><td>288</td><td>&nbsp;</td></tr>
+<tr><td>HMac-KECCAK384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>HMac-KECCAK512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMac-MD2</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>HMac-MD4</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>HMac-MD5</td><td>128</td><td>&nbsp;</td></tr>
@@ -720,10 +727,6 @@ change as the draft is finalised.
 <tr><td>HMac-SHA256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA384</td><td>384</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA512</td><td>512</td><td>&nbsp;</td></tr>
-<tr><td>HMac-SHA3-224</td><td>224</td><td>&nbsp;</td></tr>
-<tr><td>HMac-SHA3-256</td><td>256</td><td>&nbsp;</td></tr>
-<tr><td>HMac-SHA3-384</td><td>384</td><td>&nbsp;</td></tr>
-<tr><td>HMac-SHA3-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMAC-Skein-256-*</td><td>128, 160, 224, 256</td><td>e.g. HMAC-Skein-256-160</td></tr>
 <tr><td>HMAC-Skein-512-*</td><td>128, 160, 224, 256, 384, 512</td><td>e.g. HMAC-Skein-512-256</td></tr>
 <tr><td>HMAC-Skein-1024-*</td><td>384, 512, 1024</td><td>e.g. HMAC-Skein-1024-1024</td></tr>
