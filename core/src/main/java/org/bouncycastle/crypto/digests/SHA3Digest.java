@@ -138,12 +138,47 @@ public class SHA3Digest
 
     public int doFinal(byte[] out, int outOff)
     {
+        absorb(new byte[]{ 0x02 }, 0, 2);
+
         squeeze(out, outOff, fixedOutputLength);
 
         reset();
 
         return getDigestSize();
     }
+
+    /*
+     * TODO Possible API change to support partial-byte suffixes.
+     */
+//    public int doFinal(byte[] out, int outOff, byte partialByte, int partialBits)
+//    {
+//        if (partialBits < 0 || partialBits > 7)
+//        {
+//            throw new IllegalArgumentException("'partialBits' must be in the range [0,7]");
+//        }
+//
+//        int finalInput = (partialByte & ((1 << partialBits) - 1)) | (0x02 << partialBits);
+//        int finalBits = partialBits + 2;
+//
+//        if (finalBits >= 8)
+//        {
+//            oneByte[0] = (byte)finalInput;
+//            absorb(oneByte, 0, 8);
+//            finalBits -= 8;
+//            finalInput >>>= 8;
+//        }
+//        if (finalBits > 0)
+//        {
+//            oneByte[0] = (byte)finalInput;
+//            absorb(oneByte, 0, finalBits);
+//        }
+//
+//        squeeze(out, outOff, fixedOutputLength);
+//
+//        reset();
+//
+//        return getDigestSize();
+//    }
 
     public void reset()
     {
@@ -197,8 +232,8 @@ public class SHA3Digest
 
             byte[] lastByte = new byte[1];
 
-            lastByte[0] = (byte)(data[off + (int)(databitlen / 8)] >> (8 - (databitlen % 8)));
-            absorb(lastByte, off, databitlen % 8);
+            lastByte[0] = (byte)(data[off + (int)(databitlen / 8)] & ((1 << (databitlen % 8)) - 1));
+            absorb(lastByte, 0, databitlen % 8);
         }
     }
 
