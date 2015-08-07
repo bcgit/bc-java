@@ -6,37 +6,37 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * SHA3 Digest Test
+ * SHAKE Digest Test
  */
-public class SHA3DigestTest
+public class SHAKEDigestTest
     extends SimpleTest
 {
-    static class MySHA3Digest extends SHA3Digest
+    static class MySHAKEDigest extends SHAKEDigest
     {
-        MySHA3Digest(int bitLength)
+        MySHAKEDigest(int bitLength)
         {
             super(bitLength);
         }
 
-        int myDoFinal(byte[] out, int outOff, byte partialByte, int partialBits)
+        int myDoFinal(byte[] out, int outOff, int outLen, byte partialByte, int partialBits)
         {
-            return doFinal(out, outOff, partialByte, partialBits);
+            return doFinal(out, outOff, outLen, partialByte, partialBits);
         }
     }
 
-    SHA3DigestTest()
+    SHAKEDigestTest()
     {
     }
 
     public String getName()
     {
-        return "SHA-3";
+        return "SHAKE";
     }
 
     public void performTest() throws Exception
@@ -47,7 +47,7 @@ public class SHA3DigestTest
     public void testVectors() throws Exception
     {
         BufferedReader r = new BufferedReader(new InputStreamReader(
-            getClass().getResourceAsStream("SHA3TestVectors.txt")));
+            getClass().getResourceAsStream("SHAKETestVectors.txt")));
 
         String line;
         while (null != (line = readLine(r)))
@@ -62,12 +62,12 @@ public class SHA3DigestTest
         r.close();
     }
 
-    private MySHA3Digest createDigest(String algorithm) throws Exception
+    private MySHAKEDigest createDigest(String algorithm) throws Exception
     {
-        if (algorithm.startsWith("SHA3-"))
+        if (algorithm.startsWith("SHAKE-"))
         {
-            int bits = Integer.parseInt(algorithm.substring("SHA3-".length()));
-            return new MySHA3Digest(bits);
+            int bits = Integer.parseInt(algorithm.substring("SHAKE-".length()));
+            return new MySHAKEDigest(bits);
         }
         throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
     }
@@ -130,10 +130,10 @@ public class SHA3DigestTest
         }
         byte[] message = decodeBinary(messageBlock);
 
-        skipUntil(r, TestVector.HASH_HEADER);
-        byte[] hash = Hex.decode(readBlock(r));
+        skipUntil(r, TestVector.OUTPUT_HEADER);
+        byte[] output = Hex.decode(readBlock(r));
 
-        return new TestVector(algorithm, bits, message, hash);
+        return new TestVector(algorithm, bits, message, output);
     }
 
     private String readLine(BufferedReader r) throws IOException
@@ -162,32 +162,30 @@ public class SHA3DigestTest
         int bits = v.getBits();
         int partialBits = bits % 8;
 
-        if (bits == 1605)
-        {
-            // TODO The 1605-bit test vectors appear to be invalid
-            return;
-        }
+        byte[] expected = v.getOutput();
 
 //        System.out.println(v.getAlgorithm() + " " + bits + "-bit");
 //        System.out.println(Hex.toHexString(v.getMessage()).toUpperCase());
-//        System.out.println(Hex.toHexString(v.getHash()).toUpperCase());
+//        System.out.println(Hex.toHexString(expected).toUpperCase());
 
-        MySHA3Digest d = createDigest(v.getAlgorithm());
-        byte[] output = new byte[d.getDigestSize()];
+        int outLen = expected.length;
+
+        MySHAKEDigest d = createDigest(v.getAlgorithm());
+        byte[] output = new byte[outLen];
 
         byte[] m = v.getMessage();
         if (partialBits == 0)
         {
             d.update(m, 0, m.length);
-            d.doFinal(output, 0);
+            d.doFinal(output, 0, outLen);
         }
         else
         {
             d.update(m, 0, m.length - 1);
-            d.myDoFinal(output, 0, m[m.length - 1], partialBits);
+            d.myDoFinal(output, 0, outLen, m[m.length - 1], partialBits);
         }
 
-        if (!Arrays.areEqual(v.getHash(), output))
+        if (!Arrays.areEqual(expected, output))
         {
             fail(v.getAlgorithm() + " " + v.getBits() + "-bit test vector hash mismatch");
 //            System.err.println(v.getAlgorithm() + " " + v.getBits() + "-bit test vector hash mismatch");
@@ -221,32 +219,32 @@ public class SHA3DigestTest
 
     protected Digest cloneDigest(Digest digest)
     {
-        return new SHA3Digest((SHA3Digest)digest);
+        return new SHAKEDigest((SHAKEDigest)digest);
     }
-    
+
     public static void main(
         String[]    args)
     {
-        runTest(new SHA3DigestTest());
+        runTest(new SHAKEDigestTest());
     }
 
     private static class TestVector
     {
         private static String SAMPLE_OF = " sample of ";
         private static String MSG_HEADER = "Msg as bit string";
-        private static String HASH_HEADER = "Hash val is";
+        private static String OUTPUT_HEADER = "Output val is";
 
         private String algorithm;
         private int bits;
         private byte[] message;
-        private byte[] hash;
+        private byte[] output;
 
-        private TestVector(String algorithm, int bits, byte[] message, byte[] hash)
+        private TestVector(String algorithm, int bits, byte[] message, byte[] output)
         {
             this.algorithm = algorithm;
             this.bits = bits;
             this.message = message;
-            this.hash = hash;
+            this.output = output;
         }
 
         public String getAlgorithm()
@@ -264,9 +262,9 @@ public class SHA3DigestTest
             return message;
         }
 
-        public byte[] getHash()
+        public byte[] getOutput()
         {
-            return hash;
+            return output;
         }
     }
 }

@@ -141,7 +141,9 @@ public class RegressionTest
         new BCryptTest(),
         new OpenBSDBCryptTest(),
         new X931SignerTest(),
-        new Blake2bDigestTest()
+        new Blake2bDigestTest(),
+        new KeccakDigestTest(),
+        new SHAKEDigestTest()
     };
 
     public static void main(
