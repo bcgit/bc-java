@@ -1,5 +1,10 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.SHA3Digest;
@@ -336,18 +341,204 @@ public class SHA3DigestTest
         }
     }
 
-    public void performTest()
+    public void performTest() throws Exception
     {
-        testDigest(new SHA3Digest(), digests288);
-        testDigest(new SHA3Digest(224), digests224);
-        testDigest(new SHA3Digest(256), digests256);
-        testDigest(new SHA3Digest(384), digests384);
-        testDigest(new SHA3Digest(512), digests512);
+        /*
+         * TODO Need to move these existing tests to a Keccak-specific test
+         */
+//        testDigest(new SHA3Digest(), digests288);
+//        testDigest(new SHA3Digest(224), digests224);
+//        testDigest(new SHA3Digest(256), digests256);
+//        testDigest(new SHA3Digest(384), digests384);
+//        testDigest(new SHA3Digest(512), digests512);
+//
+//        testMac(new SHA3Digest(224), macKeys, macData, mac224, trunc224);
+//        testMac(new SHA3Digest(256), macKeys, macData, mac256, trunc256);
+//        testMac(new SHA3Digest(384), macKeys, macData, mac384, trunc384);
+//        testMac(new SHA3Digest(512), macKeys, macData, mac512, trunc512);
 
-        testMac(new SHA3Digest(224), macKeys, macData, mac224, trunc224);
-        testMac(new SHA3Digest(256), macKeys, macData, mac256, trunc256);
-        testMac(new SHA3Digest(384), macKeys, macData, mac384, trunc384);
-        testMac(new SHA3Digest(512), macKeys, macData, mac512, trunc512);
+        testVectors();
+    }
+
+    public void testVectors() throws Exception
+    {
+        BufferedReader r = new BufferedReader(new InputStreamReader(
+            getClass().getResourceAsStream("SHA3TestVectors.txt")));
+
+        String line;
+        while (null != (line = readLine(r)))
+        {
+            if (line.length() != 0)
+            {
+                TestVector v = readTestVector(r, line);
+                runTestVector(v);
+            }
+        }
+
+        r.close();
+    }
+
+    private SHA3Digest createDigest(String algorithm) throws Exception
+    {
+        if (algorithm.startsWith("SHA3-"))
+        {
+            int bits = Integer.parseInt(algorithm.substring("SHA3-".length()));
+            return new SHA3Digest(bits);
+        }
+        throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
+    }
+
+    private byte[] decodeBinary(String block)
+    {
+        int bits = block.length();
+        int fullBytes = bits / 8;
+        int totalBytes = (bits + 7) / 8;
+        byte[] result = new byte[totalBytes];
+
+        for (int i = 0; i < fullBytes; ++i)
+        {
+            String byteStr = reverse(block.substring(i * 8, (i + 1) * 8));
+            result[i] = (byte)Integer.parseUnsignedInt(byteStr, 2);
+        }
+
+        if (totalBytes > fullBytes)
+        {
+            String byteStr = reverse(block.substring(fullBytes * 8));
+            result[fullBytes] = (byte)Integer.parseUnsignedInt(byteStr, 2);
+        }
+
+        return result;
+    }
+
+    private String readBlock(BufferedReader r) throws IOException
+    {
+        StringBuffer b = new StringBuffer();
+        String line;
+        while ((line = readBlockLine(r)) != null)
+        {
+            b.append(line);
+        }
+        return b.toString();
+    }
+
+    private String readBlockLine(BufferedReader r) throws IOException
+    {
+        String line = readLine(r);
+        if (line == null || line.length() == 0)
+        {
+            return null;
+        }
+        return line.replaceAll(" ", "");
+    }
+
+    private TestVector readTestVector(BufferedReader r, String header) throws IOException
+    {
+        String[] parts = header.split(TestVector.SAMPLE_OF);
+
+        String algorithm = parts[0];
+        int bits = Integer.parseInt(stripFromChar(parts[1], '-'));
+
+        skipUntil(r, TestVector.MSG_HEADER);
+        String messageBlock = readBlock(r);
+        if (messageBlock.length() != bits)
+        {
+            throw new IllegalStateException("Test vector length mismatch");
+        }
+        byte[] message = decodeBinary(messageBlock);
+
+        skipUntil(r, TestVector.HASH_HEADER);
+        byte[] hash = Hex.decode(readBlock(r));
+
+        return new TestVector(algorithm, bits, message, hash);
+    }
+
+    private String readLine(BufferedReader r) throws IOException
+    {
+        String line = r.readLine();
+        return line == null ? null : stripFromChar(line, '#').trim();
+    }
+
+    private String requireLine(BufferedReader r) throws IOException
+    {
+        String line = readLine(r);
+        if (line == null)
+        {
+            throw new EOFException();
+        }
+        return line;
+    }
+
+    private String reverse(String s)
+    {
+        return new StringBuffer(s).reverse().toString();
+    }
+
+    private void runTestVector(TestVector v) throws Exception
+    {
+        int bits = v.getBits();
+        int partialBits = bits % 8;
+
+        if (partialBits != 0)
+        {
+            // TODO Partial bytes - currently no API exposed
+            return;
+        }
+
+//        System.out.println(v.getAlgorithm() + " " + bits + "-bit");
+//        System.out.println(Hex.toHexString(v.getMessage()).toUpperCase());
+//        System.out.println(Hex.toHexString(v.getHash()).toUpperCase());
+
+        SHA3Digest d = createDigest(v.getAlgorithm());
+        byte[] output = new byte[d.getDigestSize()];
+
+        byte[] m = v.getMessage();
+        if (partialBits == 0)
+        {
+            d.update(m, 0, m.length);
+            d.doFinal(output, 0);
+        }
+        else
+        {
+            d.update(m, 0, m.length - 1);
+
+            /*
+             * TODO Possible API extension to support partial-byte suffixes. An alternative is a
+             * 'delimited suffix' in the way the KeccakCodePackage does it (the final 0-7 bits are
+             * delimited by a high 1-bit).
+             */
+//            d.doFinal(output, 0, m[m.length - 1], partialBits);
+        }
+
+        if (!Arrays.areEqual(v.getHash(), output))
+        {
+            fail(v.getAlgorithm() + " " + v.getBits() + "-bit test vector hash mismatch");
+//            System.err.println(v.getAlgorithm() + " " + v.getBits() + "-bit test vector hash mismatch");
+//            System.err.println(Hex.toHexString(output).toUpperCase());
+        }
+    }
+
+    private void skipUntil(BufferedReader r, String header) throws IOException
+    {
+        String line;
+        do
+        {
+            line = requireLine(r);
+        }
+        while (line.length() == 0);
+        if (!line.equals(header))
+        {
+            throw new IOException("Expected: " + header);
+        }
+    }
+
+    private String stripFromChar(String s, char c)
+    {
+        int i = s.indexOf(c);
+        if (i >= 0)
+        {
+            s = s.substring(0, i);
+        }
+        return s;
     }
 
     protected Digest cloneDigest(Digest digest)
@@ -359,5 +550,45 @@ public class SHA3DigestTest
         String[]    args)
     {
         runTest(new SHA3DigestTest());
+    }
+
+    private static class TestVector
+    {
+        private static String SAMPLE_OF = " sample of ";
+        private static String MSG_HEADER = "Msg as bit string";
+        private static String HASH_HEADER = "Hash val is";
+
+        private String algorithm;
+        private int bits;
+        private byte[] message;
+        private byte[] hash;
+
+        private TestVector(String algorithm, int bits, byte[] message, byte[] hash)
+        {
+            this.algorithm = algorithm;
+            this.bits = bits;
+            this.message = message;
+            this.hash = hash;
+        }
+
+        public String getAlgorithm()
+        {
+            return algorithm;
+        }
+
+        public int getBits()
+        {
+            return bits;
+        }
+        
+        public byte[] getMessage()
+        {
+            return message;
+        }
+
+        public byte[] getHash()
+        {
+            return hash;
+        }
     }
 }
