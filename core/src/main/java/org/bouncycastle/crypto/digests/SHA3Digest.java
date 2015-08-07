@@ -19,7 +19,7 @@ public class SHA3Digest
         case 512:
             return bitLength;
         default:
-            throw new IllegalArgumentException("'bitLength' " + bitLength + " not supported");
+            throw new IllegalArgumentException("'bitLength' " + bitLength + " not supported for SHA-3");
         }
     }
 
