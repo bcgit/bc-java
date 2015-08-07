@@ -10,11 +10,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 
 /**
  * HMAC tester
@@ -39,6 +39,12 @@ public class HMacTest
     static byte[]   outputTiger = Hex.decode("1d7a658c75f8f004916e7b07e2a2e10aec7de2ae124d3647");
     static byte[]   outputOld384 = Hex.decode("0a046aaa0255e432912228f8ccda437c8a8363fb160afb0570ab5b1fd5ddc20eb1888b9ed4e5b6cb5bc034cd9ef70e40");
     static byte[]   outputOld512 = Hex.decode("9656975ee5de55e75f2976ecce9a04501060b9dc22a6eda2eaef638966280182477fe09f080b2bf564649cad42af8607a2bd8d02979df3a980f15e2326a0a22a");
+
+    static byte[]   outputKck224 = Hex.decode("b73d595a2ba9af815e9f2b4e53e78581ebd34a80b3bbaac4e702c4cc");
+    static byte[]   outputKck256 = Hex.decode("9663d10c73ee294054dc9faf95647cb99731d12210ff7075fb3d3395abfb9821");
+    static byte[]   outputKck288 = Hex.decode("36145df8742160a1811139494d708f9a12757c30dedc622a98aa6ecb69da32a34ea55441");
+    static byte[]   outputKck384 = Hex.decode("892dfdf5d51e4679bf320cd16d4c9dc6f749744608e003add7fba894acff87361efa4e5799be06b6461f43b60ae97048");
+    static byte[]   outputKck512 = Hex.decode("8852c63be8cfc21541a4ee5e5a9a852fc2f7a9adec2ff3a13718ab4ed81aaea0b87b7eb397323548e261a64e7fc75198f6663a11b22cd957f7c8ec858a1c7755");
 
     public HMacTest()
     {
@@ -142,6 +148,11 @@ public class HMacTest
         testHMac("HMac-RIPEMD128", outputRipeMD128);
         testHMac("HMac-RIPEMD160", outputRipeMD160);
         testHMac("HMac-TIGER", outputTiger);
+        testHMac("HMac-KECCAK224", outputKck224);
+        testHMac("HMac-KECCAK256", outputKck256);
+        testHMac("HMac-KECCAK288", outputKck288);
+        testHMac("HMac-KECCAK384", outputKck384);
+        testHMac("HMac-KECCAK512", outputKck512);
 
         testHMac("HMac/SHA1", output1);
         testHMac("HMac/MD5", outputMD5);

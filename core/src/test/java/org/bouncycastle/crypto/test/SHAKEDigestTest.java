@@ -82,13 +82,13 @@ public class SHAKEDigestTest
         for (int i = 0; i < fullBytes; ++i)
         {
             String byteStr = reverse(block.substring(i * 8, (i + 1) * 8));
-            result[i] = (byte)Integer.parseUnsignedInt(byteStr, 2);
+            result[i] = (byte)Integer.parseInt(byteStr, 2);
         }
 
         if (totalBytes > fullBytes)
         {
             String byteStr = reverse(block.substring(fullBytes * 8));
-            result[fullBytes] = (byte)Integer.parseUnsignedInt(byteStr, 2);
+            result[fullBytes] = (byte)Integer.parseInt(byteStr, 2);
         }
 
         return result;
