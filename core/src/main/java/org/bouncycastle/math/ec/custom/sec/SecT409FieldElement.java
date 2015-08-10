@@ -2,7 +2,6 @@ package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat448;
@@ -163,8 +162,9 @@ public class SecT409FieldElement extends ECFieldElement
 
     public ECFieldElement invert()
     {
-        return new SecT409FieldElement(
-            ECCurve.AbstractF2m.inverse(409, new int[]{ 87 }, toBigInteger()));
+        long[] z = Nat448.create64();
+        SecT409Field.invert(x, z);
+        return new SecT409FieldElement(z);
     }
 
     public ECFieldElement sqrt()

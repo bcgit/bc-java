@@ -60,6 +60,59 @@ public class SecT571Field
         return z;
     }
 
+    public static void invert(long[] x, long[] z)
+    {
+        if (Nat576.isZero64(x))
+        {
+            throw new IllegalStateException();
+        }
+
+        // Itoh-Tsujii inversion with bases { 2, 3, 5 }
+
+        long[] t0 = Nat576.create64();
+        long[] t1 = Nat576.create64();
+        long[] t2 = Nat576.create64();
+
+        square(x, t2);
+
+        // 5 | 570
+        square(t2, t0);
+        square(t0, t1);
+        multiply(t0, t1, t0);
+        squareN(t0, 2, t1);
+        multiply(t0, t1, t0);
+        multiply(t0, t2, t0);
+
+        // 3 | 114
+        squareN(t0, 5, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 5, t1);
+        multiply(t0, t1, t0);
+        
+        // 2 | 38
+        squareN(t0, 15, t1);
+        multiply(t0, t1, t2);
+
+        // ! {2,3,5} | 19
+        squareN(t2, 30, t0);
+        squareN(t0, 30, t1);
+        multiply(t0, t1, t0);
+
+        // 3 | 9
+        squareN(t0, 60, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 60, t1);
+        multiply(t0, t1, t0);
+
+        // 3 | 3
+        squareN(t0, 180, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 180, t1);
+        multiply(t0, t1, t0);
+
+        multiply(t0, t2, z);
+    }
+
     public static void multiply(long[] x, long[] y, long[] z)
     {
         long[] tt = Nat576.createExt64();

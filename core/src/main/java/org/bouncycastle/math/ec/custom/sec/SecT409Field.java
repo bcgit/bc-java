@@ -48,6 +48,59 @@ public class SecT409Field
         return z;
     }
 
+    public static void invert(long[] x, long[] z)
+    {
+        if (Nat448.isZero64(x))
+        {
+            throw new IllegalStateException();
+        }
+
+        // Itoh-Tsujii inversion with bases { 2, 3 }
+
+        long[] t0 = Nat448.create64();
+        long[] t1 = Nat448.create64();
+        long[] t2 = Nat448.create64();
+
+        square(x, t0);
+
+        // 3 | 408
+        squareN(t0, 1, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 1, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 136
+        squareN(t0, 3, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 68
+        squareN(t0, 6, t1);
+        multiply(t0, t1, t0);
+        
+        // 2 | 34
+        squareN(t0, 12, t1);
+        multiply(t0, t1, t2);
+
+        // ! {2,3} | 17
+        squareN(t2, 24, t0);
+        squareN(t0, 24, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 8
+        squareN(t0, 48, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 4
+        squareN(t0, 96, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 2
+        squareN(t0, 192, t1);
+        multiply(t0, t1, t0);
+
+        multiply(t0, t2, z);
+    }
+
     public static void multiply(long[] x, long[] y, long[] z)
     {
         long[] tt = Nat448.createExt64();
