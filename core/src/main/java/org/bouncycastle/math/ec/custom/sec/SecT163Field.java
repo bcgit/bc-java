@@ -41,6 +41,49 @@ public class SecT163Field
         return z;
     }
 
+    public static void invert(long[] x, long[] z)
+    {
+        if (Nat192.isZero64(x))
+        {
+            throw new IllegalStateException();
+        }
+
+        // Itoh-Tsujii inversion with bases { 2, 3 }
+
+        long[] t0 = Nat192.create64();
+        long[] t1 = Nat192.create64();
+
+        square(x, t0);
+
+        // 3 | 162
+        squareN(t0, 1, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 1, t1);
+        multiply(t0, t1, t0);
+
+        // 3 | 54
+        squareN(t0, 3, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 3, t1);
+        multiply(t0, t1, t0);
+
+        // 3 | 18
+        squareN(t0, 9, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 9, t1);
+        multiply(t0, t1, t0);
+
+        // 3 | 6
+        squareN(t0, 27, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 27, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 2
+        squareN(t0, 81, t1);
+        multiply(t0, t1, z);
+    }
+
     public static void multiply(long[] x, long[] y, long[] z)
     {
         long[] tt = Nat192.createExt64();
