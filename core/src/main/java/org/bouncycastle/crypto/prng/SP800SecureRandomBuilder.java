@@ -165,6 +165,7 @@ public class SP800SecureRandomBuilder
      * @param nonce  nonce value to use in DRBG construction.
      * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return a SecureRandom supported by a Dual EC DRBG.
+     * @deprecated Don't use this for anything other than research purposes. It appears this construct is simply not safe.
      */
     public SP800SecureRandom buildDualEC(DualECPoints[] pointSet, Digest digest, byte[] nonce, boolean predictionResistant)
     {
