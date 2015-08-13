@@ -121,10 +121,20 @@ public class AESLightEngine
     private static final int m1 = 0x80808080;
     private static final int m2 = 0x7f7f7f7f;
     private static final int m3 = 0x0000001b;
+    private static final int m4 = 0xC0C0C0C0;
+    private static final int m5 = 0x3f3f3f3f;
 
     private static int FFmulX(int x)
     {
         return (((x & m2) << 1) ^ (((x & m1) >>> 7) * m3));
+    }
+
+    private static int FFmulX2(int x)
+    {
+        int t0  = (x & m5) << 2;
+        int t1  = (x & m4);
+            t1 ^= (t1 >>> 1);
+        return t0 ^ (t1 >>> 2) ^ (t1 >>> 5);
     }
 
     /* 
@@ -139,18 +149,21 @@ public class AESLightEngine
 
     private static int mcol(int x)
     {
-        int f2 = FFmulX(x);
-        return f2 ^ shift(x ^ f2, 8) ^ shift(x, 16) ^ shift(x, 24);
+        int t0, t1;
+        t0  = shift(x, 8);
+        t1  = x ^ t0;
+        return shift(t1, 16) ^ t0 ^ FFmulX(t1);
     }
 
     private static int inv_mcol(int x)
     {
-        int f2 = FFmulX(x);
-        int f4 = FFmulX(f2);
-        int f8 = FFmulX(f4);
-        int f9 = x ^ f8;
-        
-        return f2 ^ f4 ^ f8 ^ shift(f2 ^ f9, 8) ^ shift(f4 ^ f9, 16) ^ shift(f9, 24);
+        int t0, t1;
+        t0  = x;
+        t1  = t0 ^ shift(t0, 8);
+        t0 ^= FFmulX(t1);
+        t1 ^= FFmulX2(t0);
+        t0 ^= t1 ^ shift(t1, 16);
+        return t0;
     }
 
 

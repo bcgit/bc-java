@@ -44,6 +44,51 @@ public class SecT193Field
         return z;
     }
 
+    public static void invert(long[] x, long[] z)
+    {
+        if (Nat256.isZero64(x))
+        {
+            throw new IllegalStateException();
+        }
+
+        // Itoh-Tsujii inversion with bases { 2, 3 }
+
+        long[] t0 = Nat256.create64();
+        long[] t1 = Nat256.create64();
+
+        square(x, t0);
+
+        // 3 | 192
+        squareN(t0, 1, t1);
+        multiply(t0, t1, t0);
+        squareN(t1, 1, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 64
+        squareN(t0, 3, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 32
+        squareN(t0, 6, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 16
+        squareN(t0, 12, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 8
+        squareN(t0, 24, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 4
+        squareN(t0, 48, t1);
+        multiply(t0, t1, t0);
+
+        // 2 | 2
+        squareN(t0, 96, t1);
+        multiply(t0, t1, z);
+    }
+
     public static void multiply(long[] x, long[] y, long[] z)
     {
         long[] tt = Nat256.createExt64();

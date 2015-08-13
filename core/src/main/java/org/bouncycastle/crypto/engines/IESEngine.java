@@ -444,7 +444,6 @@ public class IESEngine
         {
             Pack.longToBigEndian(p2.length * 8L, L2, 0);
         }
-        System.err.println(Hex.toHexString(L2));
         return L2;
     }
 }
