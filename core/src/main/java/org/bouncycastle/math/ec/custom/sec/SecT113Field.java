@@ -37,6 +37,37 @@ public class SecT113Field
         return z;
     }
 
+    public static void invert(long[] x, long[] z)
+    {
+        if (Nat128.isZero64(x))
+        {
+            throw new IllegalStateException();
+        }
+
+        // Itoh-Tsujii inversion
+
+        long[] t0 = Nat128.create64();
+        long[] t1 = Nat128.create64();
+
+        square(x, t0);
+        multiply(t0, x, t0);
+        square(t0, t0);
+        multiply(t0, x, t0);
+        squareN(t0, 3, t1);
+        multiply(t1, t0, t1);
+        square(t1, t1);
+        multiply(t1, x, t1);
+        squareN(t1, 7, t0);
+        multiply(t0, t1, t0);
+        squareN(t0, 14, t1);
+        multiply(t1, t0, t1);
+        squareN(t1, 28, t0);
+        multiply(t0, t1, t0);
+        squareN(t0, 56, t1);
+        multiply(t1, t0, t1);
+        square(t1, z);
+    }
+
     public static void multiply(long[] x, long[] y, long[] z)
     {
         long[] tt = Nat128.createExt64();

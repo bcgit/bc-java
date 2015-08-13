@@ -42,8 +42,6 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -73,19 +71,19 @@ public class GOST3410Test
 
         ECParameterSpec spec = new ECParameterSpec(
             curve,
-                new ECPoint.Fp(curve,
-                               new ECFieldElement.Fp(mod_p,new BigInteger("2")), // x
-                               new ECFieldElement.Fp(mod_p,new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280"))), // y
-                new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619")); // q
+            curve.createPoint(
+                new BigInteger("2"), // x
+                new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280")), // y
+            new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619")); // q
 
         ECPrivateKeySpec priKey = new ECPrivateKeySpec(
             new BigInteger("55441196065363246126355624130324183196576709222340016572108097750006097525544"), // d
             spec);
 
         ECPublicKeySpec pubKey = new ECPublicKeySpec(
-                new ECPoint.Fp(curve,
-                               new ECFieldElement.Fp(mod_p, new BigInteger("57520216126176808443631405023338071176630104906313632182896741342206604859403")), // x
-                               new ECFieldElement.Fp(mod_p, new BigInteger("17614944419213781543809391949654080031942662045363639260709847859438286763994"))), // y
+            curve.createPoint(
+                new BigInteger("57520216126176808443631405023338071176630104906313632182896741342206604859403"), // x
+                new BigInteger("17614944419213781543809391949654080031942662045363639260709847859438286763994")), // y
             spec);
 
         Signature           sgr = Signature.getInstance("ECGOST3410", "BC");
