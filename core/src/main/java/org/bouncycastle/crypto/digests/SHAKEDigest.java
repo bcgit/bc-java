@@ -52,7 +52,7 @@ public class SHAKEDigest
     {
         absorb(new byte[]{ 0x0F }, 0, 4);
 
-        squeeze(out, outOff, outLen * 8);
+        squeeze(out, outOff, ((long)outLen) * 8);
 
         reset();
 
