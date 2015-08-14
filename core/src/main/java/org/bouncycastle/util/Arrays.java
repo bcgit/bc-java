@@ -1,6 +1,7 @@
 package org.bouncycastle.util;
 
 import java.math.BigInteger;
+import java.util.NoSuchElementException;
 
 /**
  * General array utilities.
@@ -1061,6 +1062,11 @@ public final class Arrays
 
         public T next()
         {
+            if (position == dataArray.length)
+            {
+                throw new NoSuchElementException("Out of elements: " + position);
+            }
+
             return dataArray[position++];
         }
 
