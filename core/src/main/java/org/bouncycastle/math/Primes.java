@@ -321,7 +321,7 @@ public abstract class Primes
      * @param candidate
      *            the {@link BigInteger} instance to test for primality.
      * @param base
-     *            the source of randomness to use to choose bases.
+     *            the base value to use for this iteration.
      * @return <code>false</code> if the specified base is a witness to compositeness (so
      *          <code>candidate</code> is definitely NOT prime), or else <code>true</code>.
      */
