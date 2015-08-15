@@ -30,7 +30,7 @@ public class SecP256R1Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         int c = Nat.add(16, xx, yy, zz);
-        if (c != 0 || ((zz[15] & PExt15) == PExt15 && Nat.gte(16, zz, PExt)))
+        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
         {
             Nat.subFrom(16, PExt, zz);
         }
@@ -78,7 +78,7 @@ public class SecP256R1Field
     public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
     {
         int c = Nat256.mulAddTo(x, y, zz);
-        if (c != 0 || ((zz[15] & PExt15) == PExt15 && Nat.gte(16, zz, PExt)))
+        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
         {
             Nat.subFrom(16, PExt, zz);
         }
