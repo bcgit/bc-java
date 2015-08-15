@@ -26,9 +26,9 @@ public class GLVTypeBEndomorphism implements GLVEndomorphism
         BigInteger b1 = calculateB(k, parameters.getG1(), bits);
         BigInteger b2 = calculateB(k, parameters.getG2(), bits);
 
-        BigInteger[] v1 = parameters.getV1(), v2 = parameters.getV2();
-        BigInteger a = k.subtract((b1.multiply(v1[0])).add(b2.multiply(v2[0])));
-        BigInteger b = (b1.multiply(v1[1])).add(b2.multiply(v2[1])).negate();
+        GLVTypeBParameters p = parameters;
+        BigInteger a = k.subtract((b1.multiply(p.getV1A())).add(b2.multiply(p.getV2A())));
+        BigInteger b = (b1.multiply(p.getV1B())).add(b2.multiply(p.getV2B())).negate();
 
         return new BigInteger[]{ a, b };
     }

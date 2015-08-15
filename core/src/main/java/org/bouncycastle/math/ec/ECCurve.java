@@ -75,9 +75,13 @@ public abstract class ECCurve
                 throw new IllegalStateException("implementation returned current curve");
             }
 
-            c.coord = coord;
-            c.endomorphism = endomorphism;
-            c.multiplier = multiplier;
+            // NOTE: Synchronization added to keep FindBugs™ happy
+            synchronized (c)
+            {
+                c.coord = coord;
+                c.endomorphism = endomorphism;
+                c.multiplier = multiplier;
+            }
 
             return c;
         }
@@ -100,7 +104,7 @@ public abstract class ECCurve
 
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
-    public Config configure()
+    public synchronized Config configure()
     {
         return new Config(this.coord, this.endomorphism, this.multiplier);
     }
@@ -696,7 +700,9 @@ public abstract class ECCurve
         {
             ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
 
-            switch (this.getCoordinateSystem())
+            int coord = this.getCoordinateSystem();
+
+            switch (coord)
             {
             case COORD_LAMBDA_AFFINE:
             case COORD_LAMBDA_PROJECTIVE:
@@ -708,6 +714,17 @@ public abstract class ECCurve
                         throw new IllegalArgumentException();
                     }
                 }
+                /*
+                 * NOTE: A division could be avoided using a projective result, except at present
+                 * callers will expect that the result is already normalized.
+                 */
+//                else if (coord == COORD_LAMBDA_PROJECTIVE)
+//                {
+//                    ECFieldElement Z = X;
+//                    X = X.square();
+//                    Y = Y.add(X);
+//                    return createRawPoint(X, Y, new ECFieldElement[]{ Z }, withCompression);
+//                }
                 else
                 {
                     // Y becomes Lambda (X + Y/X) here

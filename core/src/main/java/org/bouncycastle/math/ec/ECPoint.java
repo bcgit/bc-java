@@ -181,7 +181,7 @@ public abstract class ECPoint
         int zsLen = zs.length;
         if (zsLen == 0)
         {
-            return zs;
+            return EMPTY_ZS;
         }
         ECFieldElement[] copy = new ECFieldElement[zsLen];
         System.arraycopy(zs, 0, copy, 0, zsLen);
@@ -1175,6 +1175,8 @@ public abstract class ECPoint
             {
                 switch (coord)
                 {
+                case ECCurve.COORD_AFFINE:
+                    break;
                 case ECCurve.COORD_HOMOGENEOUS:
                     ECFieldElement Z1Sq = Z1.square();
                     X1 = X1.multiply(Z1);
@@ -1187,6 +1189,8 @@ public abstract class ECPoint
                 case ECCurve.COORD_JACOBIAN_MODIFIED:
                     W1 = getJacobianModifiedW();
                     break;
+                default:
+                    throw new IllegalStateException("unsupported coordinate system");
                 }
             }
 
