@@ -10,7 +10,7 @@ import java.io.OutputStream;
  */
 public final class Streams
 {
-    private static int BUFFER_SIZE = 512;
+    private static int BUFFER_SIZE = 4096;
 
     /**
      * Read stream till EOF is encountered.
