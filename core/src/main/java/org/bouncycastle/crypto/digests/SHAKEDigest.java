@@ -94,7 +94,7 @@ public class SHAKEDigest
             absorb(oneByte, 0, finalBits);
         }
 
-        squeeze(out, outOff, outLen * 8);
+        squeeze(out, outOff, ((long)outLen) * 8);
 
         reset();
 
