@@ -98,7 +98,7 @@ public class DVCSResponse
         }
         else
         {
-            return new DERTaggedObject(0, dvErrorNote);
+            return new DERTaggedObject(false, 0, dvErrorNote);
         }
     }
 
@@ -108,10 +108,9 @@ public class DVCSResponse
         {
             return "DVCSResponse {\ndvCertInfo: " + dvCertInfo.toString() + "}\n";
         }
-        if (dvErrorNote != null)
+        else
         {
             return "DVCSResponse {\ndvErrorNote: " + dvErrorNote.toString() + "}\n";
         }
-        return null;
     }
 }

@@ -23,6 +23,9 @@ public class ResponseBytes
         this.response = response;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public ResponseBytes(
         ASN1Sequence    seq)
     {
@@ -40,16 +43,16 @@ public class ResponseBytes
     public static ResponseBytes getInstance(
         Object  obj)
     {
-        if (obj == null || obj instanceof ResponseBytes)
+        if (obj instanceof ResponseBytes)
         {
             return (ResponseBytes)obj;
         }
-        else if (obj instanceof ASN1Sequence)
+        else if (obj != null)
         {
-            return new ResponseBytes((ASN1Sequence)obj);
+            return new ResponseBytes(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("unknown object in factory: " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1ObjectIdentifier getResponseType()

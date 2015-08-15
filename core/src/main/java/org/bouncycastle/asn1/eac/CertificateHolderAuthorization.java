@@ -59,12 +59,12 @@ public class CertificateHolderAuthorization
           */
     }
 
-    public static String GetRoleDescription(int i)
+    public static String getRoleDescription(int i)
     {
         return (String)AuthorizationRole.get(Integers.valueOf(i));
     }
 
-    public static int GetFlag(String description)
+    public static int getFlag(String description)
     {
         Integer i = (Integer)AuthorizationRole.getReverse(description);
         if (i == null)
