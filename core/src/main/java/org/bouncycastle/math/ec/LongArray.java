@@ -4,7 +4,7 @@ import org.bouncycastle.util.Arrays;
 
 import java.math.BigInteger;
 
-class LongArray
+class LongArray implements Cloneable
 {
 //    private static long DEINTERLEAVE_MASK = 0x5555555555555555L;
 
