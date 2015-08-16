@@ -128,12 +128,12 @@ public class KeccakDigest
     {
         oneByte[0] = in;
 
-        doUpdate(oneByte, 0, 8L);
+        absorb(oneByte, 0, 8L);
     }
 
     public void update(byte[] in, int inOff, int len)
     {
-        doUpdate(in, inOff, len * 8L);
+        absorb(in, inOff, len * 8L);
     }
 
     public int doFinal(byte[] out, int outOff)
@@ -202,23 +202,6 @@ public class KeccakDigest
             break;
         default:
             throw new IllegalArgumentException("bitLength must be one of 128, 224, 256, 288, 384, or 512.");
-        }
-    }
-
-    private void doUpdate(byte[] data, int off, long databitlen)
-    {
-        if ((databitlen % 8) == 0)
-        {
-            absorb(data, off, databitlen);
-        }
-        else
-        {
-            absorb(data, off, databitlen - (databitlen % 8));
-
-            byte[] lastByte = new byte[1];
-
-            lastByte[0] = (byte)(data[off + (int)(databitlen / 8)] & ((1 << (databitlen % 8)) - 1));
-            absorb(lastByte, 0, databitlen % 8);
         }
     }
 
