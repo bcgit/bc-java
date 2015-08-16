@@ -1,4 +1,4 @@
-    package org.bouncycastle.math.ec.custom.sec;
+package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
 

@@ -120,7 +120,7 @@ public class SecP128R1Field
         while (x != 0)
         {
             long c, x4 = x & M;
-    
+
             c = (z[0] & M) + x4;
             z[0] = (int)c; c >>= 32;
             if (c != 0)

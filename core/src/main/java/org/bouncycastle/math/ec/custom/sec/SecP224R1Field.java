@@ -171,7 +171,7 @@ public class SecP224R1Field
         if (x != 0)
         {
             long xx07 = x & M;
-    
+
             cc += (z[0] & M) - xx07;
             z[0] = (int)cc;
             cc >>= 32;

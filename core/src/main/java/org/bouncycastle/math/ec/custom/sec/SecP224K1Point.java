@@ -10,14 +10,14 @@ public class SecP224K1Point extends ECPoint.AbstractFp
 {
     /**
      * Create a point which encodes with point compression.
-     * 
+     *
      * @param curve
      *            the curve to use
      * @param x
      *            affine x co-ordinate
      * @param y
      *            affine y co-ordinate
-     * 
+     *
      * @deprecated Use ECCurve.createPoint to construct points
      */
     public SecP224K1Point(ECCurve curve, ECFieldElement x, ECFieldElement y)
@@ -27,7 +27,7 @@ public class SecP224K1Point extends ECPoint.AbstractFp
 
     /**
      * Create a point that encodes with or without point compresion.
-     * 
+     *
      * @param curve
      *            the curve to use
      * @param x
@@ -36,7 +36,7 @@ public class SecP224K1Point extends ECPoint.AbstractFp
      *            affine y co-ordinate
      * @param withCompression
      *            if true encode with point compression
-     * 
+     *
      * @deprecated per-point compression property will be removed, refer
      *             {@link #getEncoded(boolean)}
      */
@@ -210,7 +210,7 @@ public class SecP224K1Point extends ECPoint.AbstractFp
         SecP224K1FieldElement X1 = (SecP224K1FieldElement)this.x, Z1 = (SecP224K1FieldElement)this.zs[0];
 
         int c;
-        
+
         int[] Y1Squared = Nat224.create();
         SecP224K1Field.square(Y1.x, Y1Squared);
 

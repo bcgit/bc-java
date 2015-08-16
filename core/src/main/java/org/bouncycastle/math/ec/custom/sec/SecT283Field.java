@@ -116,13 +116,13 @@ public class SecT283Field
 
         x0 ^= (x5 <<  37) ^ (x5 <<  42) ^ (x5 <<  44) ^ (x5 <<  49);
         x1 ^= (x5 >>> 27) ^ (x5 >>> 22) ^ (x5 >>> 20) ^ (x5 >>> 15);
-        
+
         long t = x4 >>> 27;
         z[0]   = x0 ^ t ^ (t << 5) ^ (t << 7) ^ (t << 12);
-        z[1]   = x1; 
-        z[2]   = x2; 
-        z[3]   = x3; 
-        z[4]   = x4 & M27; 
+        z[1]   = x1;
+        z[2]   = x2;
+        z[3]   = x3;
+        z[4]   = x4 & M27;
     }
 
     public static void reduce37(long[] z, int zOff)
@@ -205,7 +205,7 @@ public class SecT283Field
         /*
          * Formula (17) from "Some New Results on Binary Polynomial Multiplication",
          * Murat Cenk and M. Anwar Hasan.
-         * 
+         *
          * The formula as given contained an error in the term t25, as noted below
          */
         long[] a = new long[5], b = new long[5];
@@ -260,7 +260,7 @@ public class SecT283Field
         long t1  = p[ 0] ^ p[ 1];
         long t2  = t1    ^ p[ 2];
         long t3  = t2    ^ p[10];
-        
+
         zz[1]    = t3;
 
         long t4  = p[ 3] ^ p[ 4];
@@ -304,7 +304,7 @@ public class SecT283Field
         long t29 = t28   ^ t23;
 
         zz[4]    = t29;
-        
+
         long t30 = t7    ^ t19;
         long t31 = t27   ^ t30;
         long t32 = p[21] ^ p[22];
@@ -318,7 +318,7 @@ public class SecT283Field
         long t37 = t36   ^ p[21];
         long t38 = t37   ^ p[23];
         long t39 = t38   ^ p[25];
-        
+
         zz[6]    = t39;
 
         implCompactExt(zz);
@@ -354,7 +354,7 @@ public class SecT283Field
         while ((k -= 9) > 0);
 
         h ^= ((x & 0x0100804020100800L) & ((y << 7) >> 63)) >>> 8;
-        
+
 //        assert h >>> 49 == 0;
 
         z[zOff    ] = l & M57;

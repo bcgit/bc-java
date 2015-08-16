@@ -137,10 +137,10 @@ public class SecP224K1FieldElement extends ECFieldElement
          * Q == 8m + 5, so we use Pocklington's method for this case.
          *
          * First, raise this element to the exponent 2^221 - 2^29 - 2^9 - 2^8 - 2^6 - 2^4 - 2^1 (i.e. m + 1)
-         * 
+         *
          * Breaking up the exponent's binary representation into "repunits", we get:
          * { 191 1s } { 1 0s } { 19 1s } { 2 0s } { 1 1s } { 1 0s} { 1 1s } { 1 0s} { 3 1s } { 1 0s}
-         * 
+         *
          * Therefore we need an addition chain containing 1, 3, 19, 191 (the lengths of the repunits)
          * We use: [1], 2, [3], 4, 8, 11, [19], 23, 42, 84, 107, [191]
          */

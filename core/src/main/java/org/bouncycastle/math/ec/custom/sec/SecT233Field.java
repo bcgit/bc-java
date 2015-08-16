@@ -171,7 +171,7 @@ public class SecT233Field
         zz[6] = (z6 >>> 30) ^ (z7 << 29);
         zz[7] = (z7 >>> 35);
     }
-    
+
     protected static void implExpand(long[] x, long[] z)
     {
         long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];

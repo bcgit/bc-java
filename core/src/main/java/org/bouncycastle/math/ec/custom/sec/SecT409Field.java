@@ -26,7 +26,7 @@ public class SecT409Field
     {
         for (int i = 0; i < 13; ++i)
         {
-            zz[i] = xx[i] ^ yy[i]; 
+            zz[i] = xx[i] ^ yy[i];
         }
     }
 
@@ -76,7 +76,7 @@ public class SecT409Field
         // 2 | 68
         squareN(t0, 6, t1);
         multiply(t0, t1, t0);
-        
+
         // 2 | 34
         squareN(t0, 12, t1);
         multiply(t0, t1, t2);
@@ -163,7 +163,7 @@ public class SecT409Field
     public static void reduce39(long[] z, int zOff)
     {
         long z6 = z[zOff + 6], t = z6 >>> 25;
-        z[zOff    ] ^= t; 
+        z[zOff    ] ^= t;
         z[zOff + 1] ^= (t << 23);
         z[zOff + 6]  = z6 & M25;
     }

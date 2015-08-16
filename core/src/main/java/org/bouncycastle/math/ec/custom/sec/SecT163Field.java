@@ -189,7 +189,7 @@ public class SecT163Field
         long t1 = g0 ^ g1 ^ g2;
 
         implMulw(t0, t1, H, 4);               // H(1)       55/54 bits
-        
+
         long t2 = (f1 << 1) ^ (f2 << 2);
         long t3 = (g1 << 1) ^ (g2 << 2);
 
@@ -210,7 +210,7 @@ public class SecT163Field
         long u0 = H[0];
         long u1 = H[1] ^ H[0] ^ H[4];
         long u2 =        H[1] ^ H[5];
-        
+
         // Calculate W
         long w0 = u0 ^ v0 ^ (H[2] << 4) ^ (H[2] << 1);
         long w1 = u1 ^ v1 ^ (H[3] << 4) ^ (H[3] << 1);
@@ -257,12 +257,12 @@ public class SecT163Field
 
 //        assert w2 >>> 52 == 0;
 
-        zz[0] = u0; 
-        zz[1] = u1 ^ w0      ^ H[2]; 
-        zz[2] = u2 ^ w1 ^ w0 ^ H[3]; 
-        zz[3] =      w2 ^ w1; 
-        zz[4] =           w2 ^ H[2]; 
-        zz[5] =                H[3]; 
+        zz[0] = u0;
+        zz[1] = u1 ^ w0      ^ H[2];
+        zz[2] = u2 ^ w1 ^ w0 ^ H[3];
+        zz[3] =      w2 ^ w1;
+        zz[4] =           w2 ^ H[2];
+        zz[5] =                H[3];
 
         implCompactExt(zz);
     }

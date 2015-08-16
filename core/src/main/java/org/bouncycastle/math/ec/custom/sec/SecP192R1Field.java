@@ -168,7 +168,7 @@ public class SecP192R1Field
         if (x != 0)
         {
             long xx06 = x & M;
-    
+
             cc += (z[0] & M) + xx06;
             z[0] = (int)cc;
             cc >>= 32;

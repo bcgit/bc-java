@@ -131,12 +131,12 @@ public class SecP128R1FieldElement extends ECFieldElement
     {
         /*
          * Raise this element to the exponent 2^126 - 2^95
-         * 
+         *
          * Breaking up the exponent's binary representation into "repunits", we get:
          *     { 31 1s } { 95 0s }
-         * 
+         *
          * Therefore we need an addition chain containing 31 (the length of the repunit) We use:
-         *     1, 2, 4, 8, 10, 20, 30, [31] 
+         *     1, 2, 4, 8, 10, 20, 30, [31]
          */
 
         int[] x1 = this.x;
@@ -173,7 +173,7 @@ public class SecP128R1FieldElement extends ECFieldElement
         int[] t2 = x30;
         SecP128R1Field.square(t1, t2);
 
-        return Nat128.eq(x1, t2) ? new SecP128R1FieldElement(t1) : null;        
+        return Nat128.eq(x1, t2) ? new SecP128R1FieldElement(t1) : null;
     }
 
     public boolean equals(Object other)

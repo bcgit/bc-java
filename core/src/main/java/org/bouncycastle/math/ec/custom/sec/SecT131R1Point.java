@@ -190,7 +190,7 @@ public class SecT131R1Point extends AbstractF2m
 
     public ECPoint twice()
     {
-        if (this.isInfinity()) 
+        if (this.isInfinity())
         {
             return this;
         }
@@ -198,7 +198,7 @@ public class SecT131R1Point extends AbstractF2m
         ECCurve curve = this.getCurve();
 
         ECFieldElement X1 = this.x;
-        if (X1.isZero()) 
+        if (X1.isZero())
         {
             // A point with X == 0 is it's own additive inverse
             return curve.getInfinity();
@@ -228,7 +228,7 @@ public class SecT131R1Point extends AbstractF2m
 
     public ECPoint twicePlus(ECPoint b)
     {
-        if (this.isInfinity()) 
+        if (this.isInfinity())
         {
             return b;
         }
@@ -240,7 +240,7 @@ public class SecT131R1Point extends AbstractF2m
         ECCurve curve = this.getCurve();
 
         ECFieldElement X1 = this.x;
-        if (X1.isZero()) 
+        if (X1.isZero())
         {
             // A point with X == 0 is it's own additive inverse
             return b;
