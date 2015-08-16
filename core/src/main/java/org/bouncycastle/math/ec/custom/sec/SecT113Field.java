@@ -149,8 +149,8 @@ public class SecT113Field
 
         long[] H = new long[6];
 
-        implMulw(f0, g0, H, 0);               // H(0)       57/56 bits                                
-        implMulw(f1, g1, H, 2);               // H(INF)     57/54 bits                                
+        implMulw(f0, g0, H, 0);               // H(0)       57/56 bits
+        implMulw(f1, g1, H, 2);               // H(INF)     57/54 bits
         implMulw(f0 ^ f1, g0 ^ g1, H, 4);     // H(1)       57/56 bits
 
         long r  = H[1] ^ H[2];

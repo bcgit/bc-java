@@ -78,7 +78,7 @@ public class SecT283R1Curve extends AbstractF2m
 
     /**
      * Decompresses a compressed point P = (xp, yp) (X9.62 s 4.2.2).
-     * 
+     *
      * @param yTilde
      *            ~yp, an indication bit for the decompression of yp.
      * @param X1
@@ -131,7 +131,7 @@ public class SecT283R1Curve extends AbstractF2m
     /**
      * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
      * D.1.6) The other solution is <code>z + 1</code>.
-     * 
+     *
      * @param beta
      *            The value to solve the quadratic equation for.
      * @return the solution for <code>z<sup>2</sup> + z = beta</code> or

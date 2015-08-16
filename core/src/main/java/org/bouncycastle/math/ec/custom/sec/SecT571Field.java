@@ -16,7 +16,7 @@ public class SecT571Field
     {
         for (int i = 0; i < 9; ++i)
         {
-            z[i] = x[i] ^ y[i]; 
+            z[i] = x[i] ^ y[i];
         }
     }
 
@@ -40,7 +40,7 @@ public class SecT571Field
     {
         for (int i = 0; i < 18; ++i)
         {
-            zz[i] = xx[i] ^ yy[i]; 
+            zz[i] = xx[i] ^ yy[i];
         }
     }
 
@@ -88,7 +88,7 @@ public class SecT571Field
         multiply(t0, t1, t0);
         squareN(t1, 5, t1);
         multiply(t0, t1, t0);
-        
+
         // 2 | 38
         squareN(t0, 15, t1);
         multiply(t0, t1, t2);

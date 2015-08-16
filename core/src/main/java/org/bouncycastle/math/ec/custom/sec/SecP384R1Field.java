@@ -155,11 +155,11 @@ public class SecP384R1Field
     public static void reduce32(int x, int[] z)
     {
         long cc = 0;
-        
+
         if (x != 0)
         {
             long xx12 = x & M;
-    
+
             cc += (z[0] & M) + xx12;
             z[0] = (int)cc;
             cc >>= 32;
