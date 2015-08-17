@@ -532,6 +532,19 @@ public final class Arrays
         return copy;
     }
 
+    public static char[] clone(char[] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        char[] copy = new char[data.length];
+
+        System.arraycopy(data, 0, copy, 0, data.length);
+
+        return copy;
+    }
+
     public static byte[] clone(byte[] data, byte[] existing)
     {
         if (data == null)

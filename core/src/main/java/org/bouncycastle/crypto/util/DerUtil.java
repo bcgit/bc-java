@@ -25,9 +25,15 @@ class DerUtil
         {
             return primitive.getEncoded();
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
-            throw new IllegalStateException("Cannot get encoding: " + e.getMessage(), e);
+            throw new IllegalStateException("Cannot get encoding: " + e.getMessage())
+            {
+                public Throwable getCause()
+                {
+                    return e;
+                }
+            };
         }
     }
 }
