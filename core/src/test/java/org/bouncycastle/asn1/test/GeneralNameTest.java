@@ -1,6 +1,8 @@
 package org.bouncycastle.asn1.test;
 
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.GeneralNamesBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -132,6 +134,34 @@ public class GeneralNameTest
         if (!Arrays.areEqual(nm.getEncoded(), ipv6j))
         {
             fail("ipv6j failed");
+        }
+
+        GeneralNamesBuilder genNamesBuilder = new GeneralNamesBuilder();
+
+        GeneralName name1 = new GeneralName(GeneralName.iPAddress, "2001:0db8:85a3::8a2e:0370:7334");
+
+        genNamesBuilder.addName(name1);
+
+        if (!genNamesBuilder.build().equals(new GeneralNames(name1)))
+        {
+            fail("single build failed");
+        }
+
+        GeneralName nm1 = new GeneralName(GeneralName.iPAddress, "2001:0db8:85a3::/48");
+        GeneralName nm2 = new GeneralName(GeneralName.iPAddress, "2001:0db8:85a3::/47");
+        GeneralName nm3 = new GeneralName(GeneralName.iPAddress, "2001:0db8:85a3::/49");
+
+        genNamesBuilder = new GeneralNamesBuilder();
+
+        genNamesBuilder.addName(name1);
+
+        genNamesBuilder.addNames(new GeneralNames(new GeneralName[]{nm1, nm2}));
+
+        genNamesBuilder.addName(nm3);
+
+        if (!genNamesBuilder.build().equals(new GeneralNames(new GeneralName[] { name1, nm1, nm2, nm3 })))
+        {
+            fail("multi build failed");
         }
     }
 
