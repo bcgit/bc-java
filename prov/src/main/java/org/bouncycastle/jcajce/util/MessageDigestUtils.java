@@ -44,7 +44,7 @@ public class MessageDigestUtils
      */
     public static String getDigestName(ASN1ObjectIdentifier digestAlgOID)
     {
-        String name = digestOidMap.get(digestAlgOID);
+        String name = (String)digestOidMap.get(digestAlgOID);  // for pre 1.5 JDK
         if (name != null)
         {
             return name;
