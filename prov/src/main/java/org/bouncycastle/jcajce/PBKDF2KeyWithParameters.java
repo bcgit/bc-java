@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce;
 import javax.crypto.interfaces.PBEKey;
 
 import org.bouncycastle.crypto.CharToByteConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A password based key for use with PBKDF2 as defined in PKCS#5 with full PBE parameters.
@@ -26,7 +27,7 @@ public class PBKDF2KeyWithParameters
     {
         super(password, converter);
 
-        this.salt = salt.clone();
+        this.salt = Arrays.clone(salt);
         this.iterationCount = iterationCount;
     }
 

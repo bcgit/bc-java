@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce;
 
 import org.bouncycastle.crypto.CharToByteConverter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A password based key for use with PBKDF2 as defined in PKCS#5.
@@ -18,7 +19,7 @@ public class PBKDF2Key
      */
     public PBKDF2Key(char[] password, CharToByteConverter converter)
     {
-        this.password = password.clone();
+        this.password = Arrays.clone(password);
         this.converter = converter;
     }
 

@@ -29,9 +29,9 @@ public class AlgorithmParametersSpi
     protected void engineInit(AlgorithmParameterSpec algorithmParameterSpec)
         throws InvalidParameterSpecException
     {
-        if (algorithmParameterSpec instanceof ECGenParameterSpec)
+        if (algorithmParameterSpec instanceof ECNamedCurveGenParameterSpec)
         {
-            ECGenParameterSpec ecGenParameterSpec = (ECGenParameterSpec)algorithmParameterSpec;
+            ECNamedCurveGenParameterSpec ecGenParameterSpec = (ECNamedCurveGenParameterSpec)algorithmParameterSpec;
             X9ECParameters params = ECNamedCurveTable.getByName(ecGenParameterSpec.getName());
 
             curveName = ecGenParameterSpec.getName();
@@ -65,10 +65,14 @@ public class AlgorithmParametersSpi
             if (params.isNamedCurve())
             {
                 curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
-                ecParameterSpec = new ECNamedCurveParameterSpec(curveName, params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+                X9ECParameters curveParams = ECNamedCurveTable.getByName(curveName);
+
+                ecParameterSpec = new ECNamedCurveParameterSpec(curveName, curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
             }
 
-            ecParameterSpec = new ECParameterSpec(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+            X9ECParameters curveParams = X9ECParameters.getInstance(params.getParameters());
+
+            ecParameterSpec = new ECParameterSpec(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
         }
         else
         {
@@ -84,7 +88,7 @@ public class AlgorithmParametersSpi
         {
             return ecParameterSpec;
         }
-        else if (ECGenParameterSpec.class.isAssignableFrom(paramSpec) && curveName != null)
+        else if (ECNamedCurveGenParameterSpec.class.isAssignableFrom(paramSpec) && curveName != null)
         {
             return new ECNamedCurveGenParameterSpec(curveName);
         }
@@ -116,13 +120,12 @@ public class AlgorithmParametersSpi
             }
             else
             {
-                org.bouncycastle.jce.spec.ECParameterSpec ecSpec = EC5Util.convertSpec(ecParameterSpec, false);
                 X9ECParameters ecP = new X9ECParameters(
-                    ecSpec.getCurve(),
-                    ecSpec.getG(),
-                    ecSpec.getN(),
-                    ecSpec.getH(),
-                    ecSpec.getSeed());
+                    ecParameterSpec.getCurve(),
+                    ecParameterSpec.getG(),
+                    ecParameterSpec.getN(),
+                    ecParameterSpec.getH(),
+                    ecParameterSpec.getSeed());
 
                 params = new X962Parameters(ecP);
             }
