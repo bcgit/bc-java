@@ -45,9 +45,15 @@ public class JceKTSKeyTransRecipientInfoGenerator
         {
             return recipientID.getEncoded(ASN1Encoding.DER);
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
-            throw new CertificateEncodingException("Cannot process extracted IssuerAndSerialNumber: " + e.getMessage(), e);
+            throw new CertificateEncodingException("Cannot process extracted IssuerAndSerialNumber: " + e.getMessage())
+            {
+                public Throwable getCause()
+                {
+                    return e;
+                }
+            };
         }
     }
 
@@ -57,9 +63,15 @@ public class JceKTSKeyTransRecipientInfoGenerator
         {
             return new DEROctetString(subjectKeyIdentifier).getEncoded();
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
-            throw new IllegalArgumentException("Cannot process subject key identifier: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Cannot process subject key identifier: " + e.getMessage())
+            {
+                public Throwable getCause()
+                {
+                    return e;
+                }
+            };
         }
     }
 

@@ -90,7 +90,7 @@ public class CertificateTrustBlock
             return oids;
         }
 
-        return Collections.emptySet();
+        return Collections.EMPTY_SET;
     }
 
     private ASN1Sequence toSequence(Set<ASN1ObjectIdentifier> oids)
