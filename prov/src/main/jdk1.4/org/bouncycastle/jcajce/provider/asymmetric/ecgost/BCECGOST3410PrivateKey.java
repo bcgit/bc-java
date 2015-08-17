@@ -38,6 +38,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Strings;
 
 public class BCECGOST3410PrivateKey
     implements ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
