@@ -189,7 +189,7 @@ public class SecT131Field
         long t4 = H[6] ^ H[8];
         long t5 = H[7] ^ H[9];
 
-        assert t5 >>> 44 == 0;
+    //    assert t5 >>> 44 == 0;
 
         // Calculate V
         long v0 =      (t4 << 1) ^ H[6];
@@ -210,7 +210,7 @@ public class SecT131Field
         w1 ^= (w0 >>> 44); w0 &= M44;
         w2 ^= (w1 >>> 44); w1 &= M44;
 
-        assert (w0 & 1L) == 0;
+   //     assert (w0 & 1L) == 0;
 
         // Divide W by t
 
@@ -245,7 +245,7 @@ public class SecT131Field
         w2 ^= (w2 << 16);
         w2 ^= (w2 << 32);
 
-        assert w2 >>> 42 == 0;
+  //      assert w2 >>> 42 == 0;
 
         zz[0] = u0;
         zz[1] = u1 ^ w0      ^ H[2];
