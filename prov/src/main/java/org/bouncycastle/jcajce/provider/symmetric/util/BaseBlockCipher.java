@@ -787,9 +787,15 @@ public class BaseBlockCipher
                 throw new InvalidParameterException("unknown opmode " + opmode + " passed");
             }
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
-            throw new InvalidKeyException(e.getMessage(), e);
+            throw new InvalidKeyException(e.getMessage())
+            {
+                public Throwable getCause()
+                {
+                    return e;
+                }
+            };
         }
     }
 

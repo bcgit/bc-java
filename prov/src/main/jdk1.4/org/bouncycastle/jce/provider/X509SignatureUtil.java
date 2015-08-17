@@ -59,15 +59,15 @@ class X509SignatureUtil
         
         if (params != null && !derNull.equals(params))
         {
-            if (sigAlgId.getObjectId().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+            if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
                 
-                return getDigestAlgName(rsaParams.getHashAlgorithm().getObjectId()) + "withRSAandMGF1";
+                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
             }
         }
 
-        return sigAlgId.getObjectId().getId();
+        return sigAlgId.getAlgorithm().getId();
     }
     
     /**
