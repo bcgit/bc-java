@@ -37,6 +37,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Strings;
 
 public class BCECGOST3410PublicKey
     implements ECPublicKey, ECPointEncoder
@@ -140,7 +141,7 @@ public class BCECGOST3410PublicKey
 
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo info)
     {
-        if (info.getAlgorithmId().getObjectId().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+        if (info.getAlgorithmId().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
         {
             DERBitString bits = info.getPublicKeyData();
             ASN1OctetString key;
