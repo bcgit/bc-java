@@ -101,6 +101,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.util.Strings;
 
 public class CertTest
     extends SimpleTest

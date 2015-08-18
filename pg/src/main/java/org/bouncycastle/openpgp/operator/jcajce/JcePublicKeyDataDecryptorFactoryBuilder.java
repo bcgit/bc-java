@@ -8,7 +8,6 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.interfaces.ECPrivateKey;
 import java.util.Date;
 
 import javax.crypto.Cipher;
@@ -20,7 +19,6 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -160,7 +158,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
 
-            ECPrivateKey privateKey = (ECPrivateKey)converter.getPrivateKey(privKey);
+            PrivateKey privateKey = converter.getPrivateKey(privKey);
 
             agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
 
