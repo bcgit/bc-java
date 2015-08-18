@@ -1208,7 +1208,6 @@ public class NewSignedDataTest
             super(baseInfo);
         }
 
-        @Override
         public byte[] getEncodedSignedAttributes()
             throws IOException
         {
@@ -1231,7 +1230,6 @@ public class NewSignedDataTest
             return used;
         }
 
-        @Override
         public byte[] getEncodedSignedAttributes()
             throws IOException
         {

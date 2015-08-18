@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -9,7 +10,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -17,8 +18,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -91,10 +94,13 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 X9ECParameters x9Params = PGPUtil.getX9Parameters(ecKey.getCurveOID());
+                AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
+
+                ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());
 
                 KeyPairGenerator kpGen = helper.createKeyPairGenerator("EC");
 
-                kpGen.initialize(new ECGenParameterSpec(ECNamedCurveTable.getName(ecKey.getCurveOID())));
+                kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class));
 
                 KeyPair ephKP = kpGen.generateKeyPair();
 
@@ -115,8 +121,11 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
                 byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
 
-                java.security.spec.ECPoint wPoint = ((java.security.interfaces.ECPublicKey)ephKP.getPublic()).getW();
-                ECPoint publicPoint = x9Params.getCurve().createPoint(wPoint.getAffineX(), wPoint.getAffineY());
+                SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
+
+                X9ECPoint derQ = new X9ECPoint(x9Params.getCurve(), epPubKey.getPublicKeyData().getBytes());
+
+                ECPoint publicPoint = derQ.getPoint();
 
                 byte[] VB = new MPInteger(new BigInteger(1, publicPoint.getEncoded(false))).getEncoded();
 
