@@ -162,9 +162,12 @@ public class SHA3DigestTest
         int bits = v.getBits();
         int partialBits = bits % 8;
 
-        if (bits == 1605)
+        if (bits == 1605 && v.getAlgorithm().contains("512"))
         {
-            // TODO The 1605-bit test vectors appear to be invalid
+            /*
+             * TODO The SHA3-512 1605-bit test vector appear to be invalid. The 1605-bit vectors for
+             * the other SHA3 lengths were originally wrong, but fixed 14th Aug, 2015.
+             */
             return;
         }
 
