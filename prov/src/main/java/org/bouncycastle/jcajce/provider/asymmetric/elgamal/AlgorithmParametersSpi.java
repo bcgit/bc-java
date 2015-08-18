@@ -54,7 +54,7 @@ public class AlgorithmParametersSpi
         Class paramSpec)
         throws InvalidParameterSpecException
     {
-        if (paramSpec == ElGamalParameterSpec.class)
+        if (paramSpec == ElGamalParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
         {
             return currentSpec;
         }

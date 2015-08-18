@@ -69,7 +69,7 @@ public class AlgorithmParametersSpi
         Class paramSpec)
         throws InvalidParameterSpecException
     {
-        if (paramSpec == DSAParameterSpec.class)
+        if (paramSpec == DSAParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
         {
             return currentSpec;
         }
