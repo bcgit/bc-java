@@ -73,7 +73,7 @@ public class AlgorithmParametersSpi
         Class paramSpec)
         throws InvalidParameterSpecException
     {
-        if (paramSpec == GOST3410PublicKeyParameterSetSpec.class)
+        if (paramSpec == GOST3410PublicKeyParameterSetSpec.class || paramSpec == AlgorithmParameterSpec.class)
         {
             return currentSpec;
         }

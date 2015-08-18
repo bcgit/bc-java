@@ -90,7 +90,7 @@ public abstract class AlgorithmParametersSpi
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == OAEPParameterSpec.class && currentSpec != null)
+            if (paramSpec == OAEPParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return currentSpec;
             }
