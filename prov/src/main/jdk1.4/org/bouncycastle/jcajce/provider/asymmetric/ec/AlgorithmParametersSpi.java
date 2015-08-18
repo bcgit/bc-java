@@ -68,6 +68,7 @@ public class AlgorithmParametersSpi
                 X9ECParameters curveParams = ECNamedCurveTable.getByName(curveName);
 
                 ecParameterSpec = new ECNamedCurveParameterSpec(curveName, curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH(), curveParams.getSeed());
+                return;
             }
 
             X9ECParameters curveParams = X9ECParameters.getInstance(params.getParameters());
@@ -84,7 +85,7 @@ public class AlgorithmParametersSpi
     protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
         throws InvalidParameterSpecException
     {
-        if (ECParameterSpec.class.isAssignableFrom(paramSpec))
+        if (ECParameterSpec.class.isAssignableFrom(paramSpec) || paramSpec == AlgorithmParameterSpec.class)
         {
             return ecParameterSpec;
         }

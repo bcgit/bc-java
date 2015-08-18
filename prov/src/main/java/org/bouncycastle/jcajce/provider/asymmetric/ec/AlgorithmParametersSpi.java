@@ -83,7 +83,7 @@ public class AlgorithmParametersSpi
     protected <T extends AlgorithmParameterSpec> T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException
     {
-        if (ECParameterSpec.class.isAssignableFrom(paramSpec))
+        if (ECParameterSpec.class.isAssignableFrom(paramSpec) || paramSpec == AlgorithmParameterSpec.class)
         {
             return (T)ecParameterSpec;
         }
