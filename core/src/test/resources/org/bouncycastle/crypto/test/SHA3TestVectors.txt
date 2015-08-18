@@ -143,8 +143,8 @@ Msg as bit string
     1 1 0 0 0
 
 Hash val is
-    80 0E CB CA C8 15 FD 9B 6A 73 98 A7 43 B8 DF 86
-    03 CC 7E 28 52 BF D0 F7 EF 5E 63 84
+    22 D2 F7 BB 0B 17 3F D8 C1 96 86 F9 17 31 66 E3
+    EE 62 73 80 47 D7 EA DD 69 EF B2 28
 
 SHA3-224 sample of 1630-bit message
 
@@ -346,8 +346,8 @@ Msg as bit string
     1 1 0 0 0
 
 Hash val is
-    5C 69 B9 79 2A A6 18 F8 90 76 6E B2 E4 8B 73 FB
-    57 FC B6 60 8E 6A C1 CD 19 F5 7A F1 00 4F F8 F5
+    81 EE 76 9B ED 09 50 86 2B 1D DD ED 2E 84 AA A6
+    AB 7B FD D3 CE AA 47 1B E3 11 63 D4 03 36 36 3C
 
 SHA3-256 sample of 1630-bit message
 
@@ -553,9 +553,9 @@ Msg as bit string
     1 1 0 0 0
 
 Hash val is
-    E0 50 7E C3 0A A2 47 F9 31 6D 6C 84 4E 86 9A 57
-    82 9F 1F C6 F5 1F 0D 23 A6 E5 AB 9D B8 24 FD 6F
-    02 02 99 B5 40 65 9B 00 83 37 4B 76 4D A1 C4 5C
+    A3 1F DB D8 D5 76 55 1C 21 FB 11 91 B5 4B DA 65
+    B6 C5 FE 97 F0 F4 A6 91 03 42 4B 43 F7 FD B8 35
+    97 9F DB EA E8 B3 FE 16 CB 82 E5 87 38 1E B6 24
 
 SHA3-384 sample of 1630-bit message
 
