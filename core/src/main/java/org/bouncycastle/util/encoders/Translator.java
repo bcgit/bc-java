@@ -1,7 +1,7 @@
 package org.bouncycastle.util.encoders;
 
 /**
- * General interface for an translator.
+ * General interface for a translator.
  */
 public interface Translator
 {
