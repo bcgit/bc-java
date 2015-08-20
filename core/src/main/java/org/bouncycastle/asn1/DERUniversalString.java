@@ -73,6 +73,8 @@ public class DERUniversalString
 
     /**
      * basic constructor - byte encoded string.
+     *
+     * @param string the byte encoding of the string to be carried in the UniversalString object,
      */
     public DERUniversalString(
         byte[]   string)
