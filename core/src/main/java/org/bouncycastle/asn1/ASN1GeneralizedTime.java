@@ -162,6 +162,7 @@ public class ASN1GeneralizedTime
      * To read in the time and get a date which is compatible with our local
      * time zone.
      * </p>
+     * @return a String representation of the time.
      */
     public String getTime()
     {
