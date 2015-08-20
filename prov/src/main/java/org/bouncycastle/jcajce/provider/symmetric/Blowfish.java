@@ -3,10 +3,12 @@ package org.bouncycastle.jcajce.provider.symmetric;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
+import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
@@ -31,6 +33,15 @@ public final class Blowfish
         public CBC()
         {
             super(new CBCBlockCipher(new BlowfishEngine()), 64);
+        }
+    }
+
+    public static class CMAC
+        extends BaseMac
+    {
+        public CMAC()
+        {
+            super(new CMac(new BlowfishEngine()));
         }
     }
 
@@ -64,6 +75,7 @@ public final class Blowfish
         public void configure(ConfigurableProvider provider)
         {
 
+            provider.addAlgorithm("Mac.BLOWFISHCMAC", PREFIX + "$CMAC");
             provider.addAlgorithm("Cipher.BLOWFISH", PREFIX + "$ECB");
             provider.addAlgorithm("Cipher", MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, PREFIX + "$CBC");
             provider.addAlgorithm("KeyGenerator.BLOWFISH", PREFIX + "$KeyGen");

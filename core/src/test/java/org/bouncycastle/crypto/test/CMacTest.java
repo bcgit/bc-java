@@ -4,10 +4,16 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.BlowfishEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
+import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.RijndaelEngine;
+import org.bouncycastle.crypto.engines.Shacal2Engine;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.CMacWithIV;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -50,6 +56,10 @@ public class CMacTest
     private static final byte[] output_k256_m16 = Hex.decode("28a7023f452e8f82bd4bf28d8c37c35c");
     private static final byte[] output_k256_m40 = Hex.decode("aaf3d8f1de5640c232f5b169b9c911e6");
     private static final byte[] output_k256_m64 = Hex.decode("e1992190549f6ed5696a2c056c315410");
+
+    private static final byte[] output_des_ede = Hex.decode("1ca670dea381d37c");
+
+    private static final byte[] general_input = Strings.toByteArray("The quick brown fox jumps over the lazy dog.");
 
     public CMacTest()
     {
@@ -293,7 +303,41 @@ public class CMacTest
                 + " got " + new String(Hex.encode(out)));
         }
 
+        testCMac(new DESedeEngine(), keyBytes128, input0, output_des_ede);
+
+        testCMac(new RijndaelEngine(), "2b7e151628aed2a6abf7158809cf4f3c", "682b9b57e769cc63231cf778c5c76646");
+        testCMac(new RijndaelEngine(192), "2b7e151628aed2a6abf7158809cf4f3c", "2a11b6bdd1e4f8b6127c2960859ae73ede59c7200d77ff45");
+        testCMac(new RijndaelEngine(256), "2b7e151628aed2a6abf7158809cf4f3c", "316d1df4084ada3e10b26266ae1fdae170a9d824ab37e981f06227c80c80fddd");
+        testCMac(new BlowfishEngine(), "2b7e151628aed2a6abf7158809cf4f3c", "875d73b9bc3de78a");
+        testCMac(new DESEngine(), "2b7e151628aed2a6", "3cc3a242585e49f9");
+        testCMac(new Shacal2Engine(), "2b7e151628aed2a6abf7158809cf4f3c", "794b2766cd0d550877f1ded48ab74f9ddff20f32e6d69fae8a1ede4205e7d640");
+
         testExceptions();
+    }
+
+    private void testCMac(BlockCipher cipher, String keyBytes, String expected)
+    {
+        testCMac(cipher, Hex.decode(keyBytes), general_input, Hex.decode(expected));
+    }
+
+    private void testCMac(BlockCipher cipher, byte[] keyBytes, byte[] input, byte[] expected)
+    {
+        Mac mac = new CMac(cipher, cipher.getBlockSize() * 8);
+
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        mac.init(key);
+
+        mac.update(input, 0, input.length);
+
+        byte[] out = new byte[mac.getMacSize()];
+
+        mac.doFinal(out, 0);
+
+        if (!areEqual(out, expected))
+        {
+            fail("Failed - expected " + Strings.fromByteArray(Hex.encode(expected)) + " got " + new String(Hex.encode(out)));
+        }
     }
 
     private void testExceptions()

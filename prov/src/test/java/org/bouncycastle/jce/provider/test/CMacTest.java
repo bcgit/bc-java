@@ -1,11 +1,13 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.security.Key;
 import java.security.Security;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -50,6 +52,8 @@ public class CMacTest
     private static final byte[] output_k256_m64 = Hex.decode("e1992190549f6ed5696a2c056c315410");
 
     private final byte[] output_des_ede = Hex.decode("1ca670dea381d37c");
+
+    private static final byte[] general_input = Strings.toByteArray("The quick brown fox jumps over the lazy dog.");
 
     public CMacTest()
     {
@@ -272,6 +276,41 @@ public class CMacTest
             fail("Failed - expected " + new String(Hex.encode(output_des_ede))
                 + " got " + new String(Hex.encode(out)));
         }
+
+        testCMac(Mac.getInstance("DESedeCMAC", "BC"), keyBytes128, "DESede", input0, output_des_ede);
+
+        testCMac(Mac.getInstance("BlowfishCMAC", "BC"), "2b7e151628aed2a6abf7158809cf4f3c", "Blowfish", "875d73b9bc3de78a");
+        testCMac(Mac.getInstance("SHACAL-2CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c", "SHACAL-2", "794b2766cd0d550877f1ded48ab74f9ddff20f32e6d69fae8a1ede4205e7d640");
+        testCMac(Mac.getInstance("Threefish-256CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c", "Threefish-256", "107a7afec4d17ba4a7bf6b80e5f34b39d066abf168d413ddd16d7ad97515bfff");
+        testCMac(Mac.getInstance("Threefish-512CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c", "Threefish-512", "b3499567f5846fa6de3bd3f8d885d726976026cd0b04ec2e95431d9aed7743b7c1629d5759b3bca48aeb0c76a905ddfed5cd45c598dfd41d3a9f5964b3a6c4cf");
+        testCMac(Mac.getInstance("Threefish-1024CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c",
+            "Threefish-1024", "644009204fcf388e692f989c435a41b4218c6cb7ee3589170e3cf791d007f5c9fd0b389be769f144d36ea19b4c7489812a68c81ba7cc756c6d143a4bbe3175a415897b70f736cd4251b98cff3d357d0c2a1036d0df154bf6cf514c04ce01c1059002082c4792dbb4b7638aa04064d8b93c2c8fe5512f2e05d14ac9bf66397dea");
+    }
+
+    private void testCMac(Mac mac, String keyBytes, String algorithm, String expected)
+        throws Exception
+    {
+        testCMac(mac, Hex.decode(keyBytes), algorithm, general_input, Hex.decode(expected));
+    }
+
+    private void testCMac(Mac mac, byte[] keyBytes, String algorithm, byte[] input, byte[] expected)
+        throws Exception
+    {
+         Key key = new SecretKeySpec(keyBytes, algorithm);
+
+         mac.init(key);
+
+         mac.update(input, 0, input.length);
+
+         byte[] out = new byte[mac.getMacLength()];
+
+         mac.doFinal(out, 0);
+
+         if (!areEqual(out, expected))
+         {
+             fail("Failed - expected " + new String(Hex.encode(expected))
+                 + " got " + new String(Hex.encode(out)));
+         }
     }
 
     public String getName()
