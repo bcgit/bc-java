@@ -19,7 +19,8 @@ public class DLSequence
     }
 
     /**
-     * Create a sequence containing one object
+     * create a sequence containing one object
+     * @param obj the object to go in the sequence.
      */
     public DLSequence(
         ASN1Encodable obj)
@@ -28,7 +29,8 @@ public class DLSequence
     }
 
     /**
-     * Create a sequence containing a vector of objects.
+     * create a sequence containing a vector of objects.
+     * @param v the vector of objects to make up the sequence.
      */
     public DLSequence(
         ASN1EncodableVector v)
@@ -37,7 +39,8 @@ public class DLSequence
     }
 
     /**
-     * Create a sequence containing an array of objects.
+     * create a sequence containing an array of objects.
+     * @param array the array of objects to make up the sequence.
      */
     public DLSequence(
         ASN1Encodable[] array)

@@ -17,6 +17,7 @@ public class DERSequence
 
     /**
      * create a sequence containing one object
+     * @param obj the object to go in the sequence.
      */
     public DERSequence(
         ASN1Encodable obj)
@@ -26,6 +27,7 @@ public class DERSequence
 
     /**
      * create a sequence containing a vector of objects.
+     * @param v the vector of objects to make up the sequence.
      */
     public DERSequence(
         ASN1EncodableVector v)
@@ -35,6 +37,7 @@ public class DERSequence
 
     /**
      * create a sequence containing an array of objects.
+     * @param array the array of objects to make up the sequence.
      */
     public DERSequence(
         ASN1Encodable[]   array)

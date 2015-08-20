@@ -19,7 +19,8 @@ public class DERSet
     }
 
     /**
-     * @param obj - a single object that makes up the set.
+     * create a set containing one object
+     * @param obj the object to go in the set
      */
     public DERSet(
         ASN1Encodable obj)
@@ -28,7 +29,8 @@ public class DERSet
     }
 
     /**
-     * @param v - a vector of objects making up the set.
+     * create a set containing a vector of objects.
+     * @param v the vector of objects to make up the set.
      */
     public DERSet(
         ASN1EncodableVector v)
@@ -37,7 +39,8 @@ public class DERSet
     }
     
     /**
-     * create a set from an array of objects.
+     * create a set containing an array of objects.
+     * @param a the array of objects to make up the set.
      */
     public DERSet(
         ASN1Encodable[]   a)

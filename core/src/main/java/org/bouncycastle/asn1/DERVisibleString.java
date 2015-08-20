@@ -73,7 +73,7 @@ public class DERVisibleString
         }
     }
 
-    /**
+    /*
      * Basic constructor - byte encoded string.
      */
     DERVisibleString(
@@ -84,6 +84,8 @@ public class DERVisibleString
 
     /**
      * Basic constructor
+     *
+     * @param string the string to be carried in the VisibleString object,
      */
     public DERVisibleString(
         String   string)
