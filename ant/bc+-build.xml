@@ -759,6 +759,7 @@
                  <include name="org/bouncycastle/x509/**/test/*.java" />
                  <include name="org/bouncycastle/ocsp/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/test/*.java" />
+                 <include name="org/bouncycastle/crypto/**/test/cavp/*.java" />
                  <include name="org/bouncycastle/asn1/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.html" />
                  <include name="org/bouncycastle/math/**/*.html" />
@@ -948,6 +949,7 @@
         <copy todir="${lcrypto.target.src.dir}">
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/crypto/**/test/*.java" />
+                 <include name="org/bouncycastle/crypto/**/test/cavp/*.java" />
                  <include name="org/bouncycastle/asn1/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.html" />
                  <include name="org/bouncycastle/math/**/*.html" />
