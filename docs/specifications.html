@@ -54,12 +54,16 @@ Some of the algorithms in the Bouncy Castle APIs are patented in some
 places. It is upon the user of the library to be aware of what the
 legal situation is in their own situation, however we have been asked
 to specifically mention the patents below, in the following terms, at
-the request of the patent holder. Algorithms that appear here are only
-distributed in the -ext- versions of the provider.
+the request of the patent holder.
 <p>
-The IDEA Encryption algorithm was patented in the USA, Japan and Europe.
-These patents expired in 2011/2012, and IDEA is now provided in the standard
-Bouncy Castle provider.
+The BC distribution contains implementations of EC MQV as described in RFC 5753, "Use of ECC Algorithms in CMS". In line with the conditions in:
+<pre>
+<a href="http://www.ietf.org/ietf-ftp/IPR/certicom-ipr-rfc-5753.pdf">http://www.ietf.org/ietf-ftp/IPR/certicom-ipr-rfc-5753.pdf</a>
+</pre>
+We state, where EC MQV has not otherwise been disabled or removed:</br />
+
+"The use of this product or service is subject to the reasonable, non-discriminatory terms in the Intellectual Property Rights (IPR) Disclosures of Certicom Corp. at the IETF for Use of Elliptic Curve Cryptography (ECC) Algorithms in Cryptographic Message Syntax (CMS) implemented in the product or service."
+</p>
 
 <h2>3.0 Specifications</h2>
 
@@ -319,7 +323,7 @@ implementations
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
 <tr><td><b>CBCBlockCipherMac</b></td><td>blocksize/2 unless specified</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipherMac</b></td><td>blocksize/2, in CFB 8 mode, unless specified</td><td>&nbsp;</td></tr>
-<tr><td><b>CMac</b></td><td>24 to 128 bits</td><td>Usable with block ciphers, NIST SP 800-38B.</td></tr>
+<tr><td><b>CMac</b></td><td>24 to cipher block size bits</td><td>Usable with block ciphers, NIST SP 800-38B.</td></tr>
 <tr><td><b>GMac</b></td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D.</td></tr>
 <tr><td><b>GOST28147Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>ISO9797Alg3Mac</b></td><td>multiple of 8 bits up to underlying cipher size.</td><td>&nbsp;</td></tr>
