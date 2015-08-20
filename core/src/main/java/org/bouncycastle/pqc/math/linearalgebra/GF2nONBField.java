@@ -100,10 +100,7 @@ public class GF2nONBField
      * constructs an instance of the finite field with 2<sup>deg</sup>
      * elements and characteristic 2.
      *
-     * @param deg -
-     *            the extention degree of this field
-     * @throws NoSuchBasisException if an ONB-implementation other than type 1 or type 2 is
-     * requested.
+     * @param deg -the extention degree of this field
      */
     public GF2nONBField(int deg)
         throws RuntimeException

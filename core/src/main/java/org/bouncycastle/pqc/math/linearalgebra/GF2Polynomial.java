@@ -1179,7 +1179,6 @@ public class GF2Polynomial
      *
      * @param g GF2Polynomial != 0
      * @return a new GF2Polynomial (<i>this</i> % <i>g</i>)
-     * @throws PolynomialIsZeroException if <i>g</i> equals zero
      */
     public GF2Polynomial remainder(GF2Polynomial g)
         throws RuntimeException
@@ -1216,7 +1215,6 @@ public class GF2Polynomial
      *
      * @param g GF2Polynomial != 0
      * @return a new GF2Polynomial |_ <i>this</i> / <i>g</i> _|
-     * @throws PolynomialIsZeroException if <i>g</i> equals zero
      */
     public GF2Polynomial quotient(GF2Polynomial g)
         throws RuntimeException
@@ -1258,7 +1256,6 @@ public class GF2Polynomial
      *
      * @param g GF2Polynomial != 0
      * @return a new GF2Polynomial[2] containing quotient and remainder
-     * @throws PolynomialIsZeroException if <i>g</i> equals zero
      */
     public GF2Polynomial[] divide(GF2Polynomial g)
         throws RuntimeException
@@ -1306,7 +1303,6 @@ public class GF2Polynomial
      * @param g GF2Polynomial != 0
      * @return a new GF2Polynomial gcd(<i>this</i>,<i>g</i>)
      * @throws ArithmeticException if <i>this</i> and <i>g</i> both are equal to zero
-     * @throws PolynomialIsZeroException to be API-compliant (should never be thrown).
      */
     public GF2Polynomial gcd(GF2Polynomial g)
         throws RuntimeException
@@ -1636,8 +1632,6 @@ public class GF2Polynomial
      *
      * @param b GF2Polynomial
      * @return this x <i>b</i> as boolean (1-&gt;true, 0-&gt;false)
-     * @throws PolynomialsHaveDifferentLengthException if <i>this</i> and <i>b</i> have a different length and
-     * thus cannot be vector-multiplied
      */
     public boolean vectorMult(GF2Polynomial b)
         throws RuntimeException

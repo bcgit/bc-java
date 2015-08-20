@@ -277,7 +277,6 @@ public class GF2nPolynomialElement
      *
      * @param addend the addend
      * @return <tt>this + other</tt> (newly created)
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public GFElement add(GFElement addend)
         throws RuntimeException
@@ -291,7 +290,6 @@ public class GF2nPolynomialElement
      * Compute <tt>this + addend</tt> (overwrite <tt>this</tt>).
      *
      * @param addend the addend
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public void addToThis(GFElement addend)
         throws RuntimeException
@@ -332,7 +330,6 @@ public class GF2nPolynomialElement
      *
      * @param factor the factor
      * @return <tt>this * factor</tt> (newly created)
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public GFElement multiply(GFElement factor)
         throws RuntimeException
@@ -346,7 +343,6 @@ public class GF2nPolynomialElement
      * Compute <tt>this * factor</tt> (overwrite <tt>this</tt>).
      *
      * @param factor the factor
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public void multiplyThisBy(GFElement factor)
         throws RuntimeException
@@ -748,7 +744,6 @@ public class GF2nPolynomialElement
      *
      * @return a GF2nPolynomialElement representing one z satisfying the
      *         equation <tt>z<sup>2</sup> + z = this</tt>
-     * @throws NoSolutionException if no solution exists
      * @see "IEEE 1363, Annex A.4.7"
      */
     public GF2nElement solveQuadraticEquation()
@@ -824,7 +819,6 @@ public class GF2nPolynomialElement
      *
      * @return a GF2nPolynomialElement representing the half-trace of this
      *         GF2nPolynomialElement.
-     * @throws DegreeIsEvenException if the degree of this GF2nPolynomialElement is even.
      */
     private GF2nPolynomialElement halfTrace()
         throws RuntimeException
