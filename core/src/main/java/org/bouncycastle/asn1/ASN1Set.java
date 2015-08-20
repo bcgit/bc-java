@@ -255,7 +255,7 @@ public abstract class ASN1Set
         }
     }
 
-    /**
+    /*
      * create a sequence containing a vector of objects.
      */
     protected ASN1Set(

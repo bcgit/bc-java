@@ -192,7 +192,7 @@ public abstract class ASN1Sequence
         }
     }
 
-    /**
+    /*
      * Create a sequence containing a vector of objects.
      */
     protected ASN1Sequence(

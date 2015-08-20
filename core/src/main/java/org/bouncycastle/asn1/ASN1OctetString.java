@@ -63,7 +63,7 @@ import org.bouncycastle.util.encoders.Hex;
  * each encoding in the contents octets may itself
  * be primitive or constructed.
  * However, such encodings will usually be primitive.
- * </p><p>
+ * <br />
  * NOTE 2 &mdash; In particular, the tags in the contents octets are always universal class, number 4.
  * </blockquote>
  * </p>
@@ -83,7 +83,7 @@ import org.bouncycastle.util.encoders.Hex;
  * the constructed encoding shall be encoded with a primitive encoding.
  * The encoding of each fragment, except possibly
  * the last, shall have 1000 contents octets. (Contrast with 8.21.6.)
- * </p>
+ * </p><p>
  * <b>10: Distinguished encoding rules</b>
  * </p><p>
  * <b>10.1 Length forms</b>
