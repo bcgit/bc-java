@@ -83,7 +83,8 @@ public class SignedData
      * </ul>
      *
      * @param o the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @return a reference that can be assigned to SignedData (may be null)
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static SignedData getInstance(
         Object  o)

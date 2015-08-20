@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * <a href="http://tools.ietf.org/html/rfc5652#section-9.1">RFC 5652</a> section 9.1:
  * The AuthenticatedData carries AuthAttributes and other data
  * which define what really is being signed.
- * <p>
  * <pre>
  * AuthenticatedData ::= SEQUENCE {
  *       version CMSVersion,
@@ -131,6 +130,7 @@ public class AuthenticatedData
      * @param obj      the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
+     * @return a reference that can be assigned to AuthenticatedData (may be null)
      * @throws IllegalArgumentException if the object held by the
      *                                  tagged object cannot be converted.
      */
@@ -152,6 +152,7 @@ public class AuthenticatedData
      * </ul>
      *
      * @param obj the object we want converted.
+     * @return a reference that can be assigned to AuthenticatedData (may be null)
      * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static AuthenticatedData getInstance(

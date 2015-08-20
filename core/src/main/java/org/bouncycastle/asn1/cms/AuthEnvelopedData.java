@@ -156,6 +156,7 @@ public class AuthEnvelopedData
      * @param obj      the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
+     * @return a reference that can be assigned to AuthEnvelopedData (may be null)
      * @throws IllegalArgumentException if the object held by the
      *                                  tagged object cannot be converted.
      */
@@ -177,6 +178,7 @@ public class AuthEnvelopedData
      * </ul>
      *
      * @param obj The object we want converted.
+     * @return a reference that can be assigned to AuthEnvelopedData (may be null)
      * @throws IllegalArgumentException if the object cannot be converted, or was null.
      */
     public static AuthEnvelopedData getInstance(
