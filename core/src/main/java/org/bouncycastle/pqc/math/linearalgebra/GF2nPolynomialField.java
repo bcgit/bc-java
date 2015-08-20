@@ -90,7 +90,6 @@ public class GF2nPolynomialField
      *
      * @param deg        degree of the GF2nField
      * @param polynomial the field polynomial to use
-     * @throws PolynomialIsNotIrreducibleException if the given polynomial is not irreducible in GF(2^<i>i</i>)
      */
     public GF2nPolynomialField(int deg, GF2Polynomial polynomial)
         throws RuntimeException
@@ -166,7 +165,6 @@ public class GF2nPolynomialField
      * (x^n + x^(getTc()) + 1).
      *
      * @return the middle coefficient of the used field trinomial
-     * @throws GFException if the field polynomial is not a trinomial
      */
     public int getTc()
         throws RuntimeException
@@ -183,7 +181,6 @@ public class GF2nPolynomialField
      * pentanomial (x^n + x^(getPc()[2]) + x^(getPc()[1]) + x^(getPc()[0]) + 1).
      *
      * @return the middle coefficients of the used field pentanomial
-     * @throws GFException if the field polynomial is not a pentanomial
      */
     public int[] getPc()
         throws RuntimeException
