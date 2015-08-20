@@ -1,7 +1,7 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -10,9 +10,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,8 +31,6 @@ import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cms.CMSAlgorithm;
-import org.bouncycastle.cms.CMSEnvelopedGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
@@ -197,18 +193,22 @@ public class JceKeyAgreeRecipientInfoGenerator
             {
                 try
                 {
-                    ECParameterSpec ecParamSpec = ((ECPublicKey)senderPublicKey).getParams();
+                    SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(senderPublicKey.getEncoded());
+
+                    AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters(pubInfo.getAlgorithm().getAlgorithm());
+
+                    ecAlgParams.init(pubInfo.getAlgorithm().getParameters().toASN1Primitive().getEncoded());
 
                     KeyPairGenerator ephemKPG = helper.createKeyPairGenerator(keyAgreementOID);
 
-                    ephemKPG.initialize(ecParamSpec, random);
+                    ephemKPG.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class), random);
 
                     ephemeralKP = ephemKPG.generateKeyPair();
                 }
-                catch (InvalidAlgorithmParameterException e)
+                catch (Exception e)
                 {
                     throw new CMSException(
-                        "cannot determine MQV ephemeral key pair parameters from public key: " + e);
+                        "cannot determine MQV ephemeral key pair parameters from public key: " + e, e);
                 }
             }
         }
