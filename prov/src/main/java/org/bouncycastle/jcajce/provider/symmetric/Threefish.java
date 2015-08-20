@@ -2,9 +2,11 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.ThreefishEngine;
+import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
@@ -95,6 +97,33 @@ public final class Threefish
         }
     }
 
+    public static class CMAC_256
+        extends BaseMac
+    {
+        public CMAC_256()
+        {
+            super(new CMac(new ThreefishEngine(256)));
+        }
+    }
+
+    public static class CMAC_512
+        extends BaseMac
+    {
+        public CMAC_512()
+        {
+            super(new CMac(new ThreefishEngine(512)));
+        }
+    }
+
+    public static class CMAC_1024
+        extends BaseMac
+    {
+        public CMAC_1024()
+        {
+            super(new CMac(new ThreefishEngine(1024)));
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -106,6 +135,10 @@ public final class Threefish
 
         public void configure(ConfigurableProvider provider)
         {
+            provider.addAlgorithm("Mac.Threefish-256CMAC", PREFIX + "$CMAC_256");
+            provider.addAlgorithm("Mac.Threefish-512CMAC", PREFIX + "$CMAC_512");
+            provider.addAlgorithm("Mac.Threefish-1024CMAC", PREFIX + "$CMAC_1024");
+
             provider.addAlgorithm("Cipher.Threefish-256", PREFIX + "$ECB_256");
             provider.addAlgorithm("Cipher.Threefish-512", PREFIX + "$ECB_512");
             provider.addAlgorithm("Cipher.Threefish-1024", PREFIX + "$ECB_1024");
