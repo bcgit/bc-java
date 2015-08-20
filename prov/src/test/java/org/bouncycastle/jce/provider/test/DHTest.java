@@ -570,7 +570,7 @@ public class DHTest
         }
     }
 
-    private void testECDH(String algorithm, String cipher, int keyLen)
+    private void testECDH(String algorithm, String curveName, String cipher, int keyLen)
         throws Exception
     {
         ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec("secp521r1");
@@ -967,11 +967,16 @@ public class DHTest
 
         testECDH("ECDH");
         testECDH("ECDHC");
-        testECDH("ECDH", "AES", 256);
-        testECDH("ECDH", "DESEDE", 192);
-        testECDH("ECDH", "DES", 64);
-        testECDH("ECDHwithSHA1KDF", "AES", 256);
-        testECDH("ECDHwithSHA1KDF", "DESEDE", 192);
+        testECDH("ECDH", "secp521r1", "AES", 256);
+        testECDH("ECDH", "secp521r1", "DESEDE", 192);
+        testECDH("ECDH", "secp521r1", "DES", 64);
+        testECDH("ECDHwithSHA1KDF", "secp521r1", "AES", 256);
+        testECDH("ECDHwithSHA1KDF", "secp521r1", "DESEDE", 192);
+        testECDH("ECDH", "Curve25519", "AES", 256);
+        testECDH("ECDH", "Curve25519", "DESEDE", 192);
+        testECDH("ECDH", "Curve25519", "DES", 64);
+        testECDH("ECDHwithSHA1KDF", "Curve25519", "AES", 256);
+        testECDH("ECDHwithSHA1KDF", "Curve25519", "DESEDE", 192);
 
         testExceptions();
         testDESAndDESede(g768, p768);
