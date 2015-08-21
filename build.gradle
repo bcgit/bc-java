@@ -13,7 +13,6 @@ buildscript {
 allprojects {
    apply plugin: 'java'
    apply plugin: 'idea'
-   apply plugin: 'eclipse'
    apply plugin: 'net.saliman.cobertura'
 
    repositories {
@@ -38,6 +37,7 @@ task printProperties << {
 }
 
 subprojects {
+    apply plugin: 'eclipse'
 
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
