@@ -119,9 +119,10 @@ public class CMac implements Mac
         /*
          * NOTE: This construction is an attempt at a constant-time implementation.
          */
-        ret[in.length - 3] ^= ((poly[1] & 0xff) >>> ((1 - carry) << 3));
-        ret[in.length - 2] ^= ((poly[2] & 0xff) >>> ((1 - carry) << 3));
-        ret[in.length - 1] ^= ((poly[3] & 0xff) >>> ((1 - carry) << 3));
+        int mask = (-carry) & 0xff;
+        ret[in.length - 3] ^= poly[1] & mask;
+        ret[in.length - 2] ^= poly[2] & mask;
+        ret[in.length - 1] ^= poly[3] & mask;
 
         return ret;
     }
