@@ -6,9 +6,11 @@ import java.util.List;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class AllTests 
+public class AllTests
+    extends TestCase
 {
     public static void main (String[] args) 
         throws Exception
@@ -21,8 +23,8 @@ public class AllTests
     {   
         TestSuite suite = new TestSuite("EC Math tests");
 
-        suite.addTest(ECAlgorithmsTest.suite());
-        suite.addTest(ECPointTest.suite());
+        suite.addTestSuite(ECAlgorithmsTest.class);
+        suite.addTestSuite(ECPointTest.class);
 
         return new BCTestSetup(suite);
     }

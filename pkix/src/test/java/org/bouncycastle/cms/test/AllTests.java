@@ -3,9 +3,11 @@ package org.bouncycastle.cms.test;
 import javax.crypto.Cipher;
 
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class AllTests 
+public class AllTests
+    extends TestCase
 {
     public static void main (String[] args) 
         throws Exception
