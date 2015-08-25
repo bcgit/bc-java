@@ -280,6 +280,8 @@ public class CMacTest
         testCMac(Mac.getInstance("DESedeCMAC", "BC"), keyBytes128, "DESede", input0, output_des_ede);
 
         testCMac(Mac.getInstance("BlowfishCMAC", "BC"), "2b7e151628aed2a6abf7158809cf4f3c", "Blowfish", "875d73b9bc3de78a");
+        testCMac(Mac.getInstance("SEED-CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c", "SEED", "73624c03548a1aaeab9104e47fbd14b1");
+        testCMac(Mac.getInstance("SM4-CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c", "SM4", "25b84c0bb3f0cb0c285148a62a09940a");
         testCMac(Mac.getInstance("SHACAL-2CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c", "SHACAL-2", "794b2766cd0d550877f1ded48ab74f9ddff20f32e6d69fae8a1ede4205e7d640");
         testCMac(Mac.getInstance("Threefish-256CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c", "Threefish-256", "107a7afec4d17ba4a7bf6b80e5f34b39d066abf168d413ddd16d7ad97515bfff");
         testCMac(Mac.getInstance("Threefish-512CMAC", "BC"),  "2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c2b7e151628aed2a6abf7158809cf4f3c", "Threefish-512", "b3499567f5846fa6de3bd3f8d885d726976026cd0b04ec2e95431d9aed7743b7c1629d5759b3bca48aeb0c76a905ddfed5cd45c598dfd41d3a9f5964b3a6c4cf");

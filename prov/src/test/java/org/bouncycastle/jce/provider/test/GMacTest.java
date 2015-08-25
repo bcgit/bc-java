@@ -3,7 +3,6 @@ package org.bouncycastle.jce.provider.test;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -38,7 +37,7 @@ public class GMacTest
         List missingMacs = new ArrayList();
         List missingKeyGens = new ArrayList();
 
-        String[] ciphers = new String[] { "AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "RC6", "CAMELLIA" };
+        String[] ciphers = new String[] { "AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "SM4", "RC6", "CAMELLIA" };
         String[] macs = new String[]
             {
                 "a52308801b32d4770c701ace9b826f12",
@@ -47,6 +46,7 @@ public class GMacTest
                 "d13a33e78e48b274bf7d64bf9aecdb82",
                 "d05d550054735c6e7e01b6981fc14b4e",
                 "4a34dfe4f5410afd7c40b1e110377a73",
+                "d394f3d12bec3cf6c5302265ecab9af1",
                 "d9f597c96b41f641da6c83d4760f543b",
                 "371ad8cc920c6bda2a26d8f237bd446b"
             };
@@ -108,7 +108,7 @@ public class GMacTest
 
             if (!Arrays.areEqual(bytes, Hex.decode(macOutput)))
             {
-                fail("wrong mac value computed for " + name);
+                fail("wrong mac value computed for " + name + " " + Hex.toHexString(bytes));
             }
 
             try

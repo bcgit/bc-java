@@ -77,7 +77,8 @@ public class RegressionTest
         new SkeinTest(),
         new Shacal2Test(),
         new DetDSATest(),
-        new ThreefishTest()
+        new ThreefishTest(),
+        new SM4Test()
     };
 
     public static void main(

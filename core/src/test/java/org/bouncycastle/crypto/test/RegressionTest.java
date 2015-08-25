@@ -143,7 +143,8 @@ public class RegressionTest
         new X931SignerTest(),
         new Blake2bDigestTest(),
         new KeccakDigestTest(),
-        new SHAKEDigestTest()
+        new SHAKEDigestTest(),
+        new SM4Test()
     };
 
     public static void main(

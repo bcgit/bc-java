@@ -23,7 +23,7 @@ public class Poly1305Test
     extends SimpleTest
 {
     private static final byte[] MASTER_KEY = Hex
-            .decode("95cc0e44d0b79a8856afcae1bec4fe3c01bcb20bfc8b6e03609ddd09f44b060f");
+        .decode("95cc0e44d0b79a8856afcae1bec4fe3c01bcb20bfc8b6e03609ddd09f44b060f");
 
     public String getName()
     {
@@ -42,16 +42,17 @@ public class Poly1305Test
         List missingMacs = new ArrayList();
         List missingKeyGens = new ArrayList();
 
-        String[] ciphers = new String[]{"AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "RC6", "CAMELLIA"};
+        String[] ciphers = new String[]{"AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "SM4", "RC6", "CAMELLIA"};
         String[] macs = new String[]{
-                "4bb5e21dd13001ed5faccfcfdaf8a854",
-                "6d601be3d5ebbb9972a64ed3223d913d",
-                "211195296d9afc7b35a1223a79487c87",
-                "f328857a1b653684e73760c804c55b1d",
-                "21cd8adb23ca84eb4dbb12780595bf28",
-                "211195296d9afc7b35a1223a79487c87",
-                "db86de7b1fcae429753d68b1263d7ca0",
-                "11918174f33a2f278fb86554da094112"};
+            "4bb5e21dd13001ed5faccfcfdaf8a854",
+            "6d601be3d5ebbb9972a64ed3223d913d",
+            "211195296d9afc7b35a1223a79487c87",
+            "f328857a1b653684e73760c804c55b1d",
+            "21cd8adb23ca84eb4dbb12780595bf28",
+            "211195296d9afc7b35a1223a79487c87",
+            "9bb04be6a1c314a9054ae3c94d3c941b",
+            "db86de7b1fcae429753d68b1263d7ca0",
+            "11918174f33a2f278fb86554da094112"};
 
         for (int i = 0; i < ciphers.length; i++)
         {
@@ -60,7 +61,8 @@ public class Poly1305Test
             try
             {
                 cipher = Cipher.getInstance(cipherName, "BC");
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 System.err.println(cipherName + ": " + e.getMessage());
                 continue;
@@ -69,7 +71,8 @@ public class Poly1305Test
             try
             {
                 blocksize = cipher.getBlockSize();
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 System.err.println(cipherName + ": " + e.getMessage());
                 continue;
@@ -107,7 +110,8 @@ public class Poly1305Test
                 try
                 {
                     Poly1305KeyGenerator.checkKey(key.getEncoded());
-                } catch (IllegalArgumentException e)
+                }
+                catch (IllegalArgumentException e)
                 {
                     fail("Generated key for algo " + name + " does not match required Poly1305 format.");
                 }
@@ -123,19 +127,23 @@ public class Poly1305Test
                     {
                         fail("wrong mac value computed for " + name, macOutput, new String(Hex.encode(bytes)));
                     }
-                } catch (NoSuchAlgorithmException e)
+                }
+                catch (NoSuchAlgorithmException e)
                 {
                     missingMacs.add(name);
                 }
 
-            } catch (NoSuchAlgorithmException e)
+            }
+            catch (NoSuchAlgorithmException e)
             {
                 missingKeyGens.add(name);
             }
-        } catch (TestFailedException e)
+        }
+        catch (TestFailedException e)
         {
             throw e;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             fail("Unexpected error", e);
         }

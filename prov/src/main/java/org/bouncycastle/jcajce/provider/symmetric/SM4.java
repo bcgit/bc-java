@@ -7,28 +7,24 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.engines.SEEDEngine;
-import org.bouncycastle.crypto.engines.SEEDWrapEngine;
+import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
-import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 
-public final class SEED
+public final class SM4
 {
-    private SEED()
+    private SM4()
     {
     }
     
@@ -41,27 +37,9 @@ public final class SEED
             {
                 public BlockCipher get()
                 {
-                    return new SEEDEngine();
+                    return new SM4Engine();
                 }
             });
-        }
-    }
-
-    public static class CBC
-       extends BaseBlockCipher
-    {
-        public CBC()
-        {
-            super(new CBCBlockCipher(new SEEDEngine()), 128);
-        }
-    }
-
-    public static class Wrap
-        extends BaseWrapCipher
-    {
-        public Wrap()
-        {
-            super(new SEEDWrapEngine());
         }
     }
 
@@ -70,7 +48,7 @@ public final class SEED
     {
         public KeyGen()
         {
-            super("SEED", 128, new CipherKeyGenerator());
+            super("SM4", 128, new CipherKeyGenerator());
         }
     }
 
@@ -79,7 +57,7 @@ public final class SEED
     {
         public CMAC()
         {
-            super(new CMac(new SEEDEngine()));
+            super(new CMac(new SM4Engine()));
         }
     }
 
@@ -88,7 +66,7 @@ public final class SEED
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new SEEDEngine())));
+            super(new GMac(new GCMBlockCipher(new SM4Engine())));
         }
     }
 
@@ -97,7 +75,7 @@ public final class SEED
     {
         public Poly1305()
         {
-            super(new org.bouncycastle.crypto.macs.Poly1305(new SEEDEngine()));
+            super(new org.bouncycastle.crypto.macs.Poly1305(new SM4Engine()));
         }
     }
 
@@ -106,7 +84,7 @@ public final class SEED
     {
         public Poly1305KeyGen()
         {
-            super("Poly1305-SEED", 256, new Poly1305KeyGenerator());
+            super("Poly1305-SM4", 256, new Poly1305KeyGenerator());
         }
     }
 
@@ -118,7 +96,7 @@ public final class SEED
             SecureRandom random)
             throws InvalidAlgorithmParameterException
         {
-            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for SEED parameter generation.");
+            throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for SM4 parameter generation.");
         }
 
         protected AlgorithmParameters engineGenerateParameters()
@@ -136,7 +114,7 @@ public final class SEED
 
             try
             {
-                params = createParametersInstance("SEED");
+                params = createParametersInstance("SM4");
                 params.init(new IvParameterSpec(iv));
             }
             catch (Exception e)
@@ -153,14 +131,14 @@ public final class SEED
     {
         protected String engineToString()
         {
-            return "SEED IV";
+            return "SM4 IV";
         }
     }
 
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
-        private static final String PREFIX = SEED.class.getName();
+        private static final String PREFIX = SM4.class.getName();
 
         public Mappings()
         {
@@ -168,27 +146,17 @@ public final class SEED
 
         public void configure(ConfigurableProvider provider)
         {
+            provider.addAlgorithm("AlgorithmParameters.SM4", PREFIX + "$AlgParams");
 
-            provider.addAlgorithm("AlgorithmParameters.SEED", PREFIX + "$AlgParams");
-            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + KISAObjectIdentifiers.id_seedCBC, "SEED");
+            provider.addAlgorithm("AlgorithmParameterGenerator.SM4", PREFIX + "$AlgParamGen");
 
-            provider.addAlgorithm("AlgorithmParameterGenerator.SEED", PREFIX + "$AlgParamGen");
-            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + KISAObjectIdentifiers.id_seedCBC, "SEED");
+            provider.addAlgorithm("Cipher.SM4", PREFIX + "$ECB");
 
-            provider.addAlgorithm("Cipher.SEED", PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher", KISAObjectIdentifiers.id_seedCBC, PREFIX + "$CBC");
+            provider.addAlgorithm("KeyGenerator.SM4", PREFIX + "$KeyGen");
 
-            provider.addAlgorithm("Cipher.SEEDWRAP", PREFIX + "$Wrap");
-            provider.addAlgorithm("Alg.Alias.Cipher", KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, "SEEDWRAP");
-            provider.addAlgorithm("Alg.Alias.Cipher.SEEDKW", "SEEDWRAP");
-
-            provider.addAlgorithm("KeyGenerator.SEED", PREFIX + "$KeyGen");
-            provider.addAlgorithm("KeyGenerator", KISAObjectIdentifiers.id_seedCBC, PREFIX + "$KeyGen");
-            provider.addAlgorithm("KeyGenerator", KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, PREFIX + "$KeyGen");
-
-            addCMacAlgorithm(provider, "SEED", PREFIX + "$CMAC", PREFIX + "$KeyGen");
-            addGMacAlgorithm(provider, "SEED", PREFIX + "$GMAC", PREFIX + "$KeyGen");
-            addPoly1305Algorithm(provider, "SEED", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
+            addCMacAlgorithm(provider, "SM4", PREFIX + "$CMAC", PREFIX + "$KeyGen");
+            addGMacAlgorithm(provider, "SM4", PREFIX + "$GMAC", PREFIX + "$KeyGen");
+            addPoly1305Algorithm(provider, "SM4", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
     }
 }

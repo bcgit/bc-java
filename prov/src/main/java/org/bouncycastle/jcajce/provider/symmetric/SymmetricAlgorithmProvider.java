@@ -6,6 +6,19 @@ import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 abstract class SymmetricAlgorithmProvider
     extends AlgorithmProvider
 {
+    protected void addCMacAlgorithm(
+        ConfigurableProvider provider,
+        String algorithm,
+        String algorithmClassName,
+        String keyGeneratorClassName)
+    {
+        provider.addAlgorithm("Mac." + algorithm + "-CMAC", algorithmClassName);
+        provider.addAlgorithm("Alg.Alias.Mac." + algorithm + "CMAC", algorithm + "-CMAC");
+
+        provider.addAlgorithm("KeyGenerator." + algorithm + "-CMAC", keyGeneratorClassName);
+        provider.addAlgorithm("Alg.Alias.KeyGenerator." + algorithm + "CMAC",  algorithm + "-CMAC");
+    }
+
     protected void addGMacAlgorithm(
         ConfigurableProvider provider,
         String algorithm,
