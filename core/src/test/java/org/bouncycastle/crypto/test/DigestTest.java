@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.EncodableDigest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -38,7 +39,9 @@ public abstract class DigestTest
             
             vectorTest(digest, i, resBuf, m, Hex.decode(results[i]));
         }
-        
+
+        offsetTest(digest, 0, toByteArray(input[0]), Hex.decode(results[0]));
+
         byte[] lastV = toByteArray(input[input.length - 1]);
         byte[] lastDigest = Hex.decode(results[input.length - 1]);
         
@@ -128,7 +131,7 @@ public abstract class DigestTest
 
     private void testClone(byte[] resBuf, byte[] input, byte[] expected)
     {
-        digest.update(input, 0, input.length/2);
+        digest.update(input, 0, input.length / 2);
 
         // clone the Digest
         Digest d = cloneDigest(digest);
@@ -177,7 +180,24 @@ public abstract class DigestTest
             fail("Vector " + count + " failed got " + new String(Hex.encode(resBuf)));
         }
     }
-    
+
+    private void offsetTest(
+        Digest digest,
+        int count,
+        byte[] input,
+        byte[] expected)
+    {
+        byte[] resBuf = new byte[expected.length + 11];
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(resBuf, 11);
+
+        if (!areEqual(Arrays.copyOfRange(resBuf, 11, resBuf.length), expected))
+        {
+            fail("Offset " + count + " failed got " + new String(Hex.encode(resBuf)));
+        }
+    }
+
     protected abstract Digest cloneDigest(Digest digest);
 
     protected Digest cloneDigest(byte[] encodedState)

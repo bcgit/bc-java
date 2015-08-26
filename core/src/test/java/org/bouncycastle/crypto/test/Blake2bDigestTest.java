@@ -2,10 +2,11 @@ package org.bouncycastle.crypto.test;
 
 import java.io.UnsupportedEncodingException;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class Blake2bDigestTest 
 	extends SimpleTest
@@ -70,6 +71,23 @@ public class Blake2bDigestTest
 		return "Blake2b";
 	}
 
+	private void offsetTest(
+		Digest digest,
+		byte[] input,
+		byte[] expected)
+	{
+		byte[] resBuf = new byte[expected.length + 11];
+
+		digest.update(input, 0, input.length);
+
+        digest.doFinal(resBuf, 11);
+
+		if (!areEqual(Arrays.copyOfRange(resBuf, 11, resBuf.length), expected))
+		{
+			fail("Offset failed got " + new String(Hex.encode(resBuf)));
+		}
+	}
+
 	public void performTest() throws Exception
 	{
 		// test keyed test vectors:
@@ -85,13 +103,14 @@ public class Blake2bDigestTest
 			byte[] keyedHash = new byte[64];
 			blake2bkeyed.doFinal(keyedHash, 0);
 
-			if (!Arrays
-					.areEqual(Hex.decode(keyedTestVectors[tv][2]), keyedHash))
+			if (!Arrays.areEqual(Hex.decode(keyedTestVectors[tv][2]), keyedHash))
 			{
 				fail("Blake2b mismatch on test vector ",
 						keyedTestVectors[tv][2],
 						new String(Hex.encode(keyedHash)));
 			}
+
+			offsetTest(blake2bkeyed, input, keyedHash);
 		}
 
 		Blake2bDigest blake2bunkeyed = new Blake2bDigest();
