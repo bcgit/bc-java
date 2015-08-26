@@ -119,21 +119,6 @@ public class Blake2bDigest
 	}
 
 	/**
-	 * Instance with increased or reduced number of rounds. 
-	 * Default value is 12. 
-	 * 
-	 * @param rounds the number of rounds
-	 */
-	public Blake2bDigest(int rounds)
-	{
-		rOUNDS = rounds;
-		buffer = new byte[BLOCK_LENGTH_BYTES];
-		keyLength = 0;
-		digestLength = 64;
-		init();
-	}
-
-	/**
 	 * Blake2b for authentication ("Prefix-MAC mode"). 
 	 * After calling the doFinal() method, the key will
 	 * remain to be used for further computations of
@@ -386,10 +371,11 @@ public class Blake2bDigest
 		Arrays.fill(buffer, (byte) 0);// Holds eventually the key if input is null
 		Arrays.fill(internalState, 0L);
 
-		for (int i = outOffset; i < chainValue.length; i++)
+		for (int i = 0; i < chainValue.length; i++)
 		{
-			System.arraycopy(long2bytes(chainValue[i]), 0, out, i * 8, 8);
+			System.arraycopy(long2bytes(chainValue[i]), 0, out, outOffset + i * 8, 8);
 		}
+
 		Arrays.fill(chainValue, 0L);
 		
 		reset();
