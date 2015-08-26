@@ -195,7 +195,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                 {
                     SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(senderPublicKey.getEncoded());
 
-                    AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters(pubInfo.getAlgorithm().getAlgorithm());
+                    AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters(keyAgreementOID);
 
                     ecAlgParams.init(pubInfo.getAlgorithm().getParameters().toASN1Primitive().getEncoded());
 
