@@ -143,6 +143,16 @@ public class ClearSignedFileProcessor
                 out.write(lineSep);
             }
         }
+        else
+        {
+            // a single line file
+            if (lookAhead != -1)
+            {
+                byte[] line = lineOut.toByteArray();
+                out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+                out.write(lineSep);
+            }
+        }
 
         out.close();
 

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,7 +21,10 @@ import org.bouncycastle.openpgp.examples.KeyBasedLargeFileProcessor;
 import org.bouncycastle.openpgp.examples.PBEFileProcessor;
 import org.bouncycastle.openpgp.examples.RSAKeyPairGenerator;
 import org.bouncycastle.openpgp.examples.SignedFileProcessor;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
+import org.junit.Assert;
 
 public class AllTests
     extends TestCase
@@ -215,21 +219,21 @@ public class AllTests
 
         _currentErr.reset();
         
-        PBEFileProcessor.main(new String[] { "-e", "test.txt", "password" });
+        PBEFileProcessor.main(new String[]{"-e", "test.txt", "password"});
         
-        PBEFileProcessor.main(new String[] { "-d", "test.txt.bpg", "password" });
+        PBEFileProcessor.main(new String[]{"-d", "test.txt.bpg", "password"});
         
         assertEquals("no message integrity check", getLine(_currentErr));
         
-        PBEFileProcessor.main(new String[] { "-e", "-i", "test.txt", "password" });
+        PBEFileProcessor.main(new String[]{"-e", "-i", "test.txt", "password"});
         
-        PBEFileProcessor.main(new String[] { "-d", "test.txt.bpg", "password" });
+        PBEFileProcessor.main(new String[]{"-d", "test.txt.bpg", "password"});
         
         assertEquals("message integrity check passed", getLine(_currentErr));
         
-        PBEFileProcessor.main(new String[] { "-e", "-ai", "test.txt", "password" });
+        PBEFileProcessor.main(new String[]{"-e", "-ai", "test.txt", "password"});
         
-        PBEFileProcessor.main(new String[] { "-d", "test.txt.asc", "password" });
+        PBEFileProcessor.main(new String[]{"-d", "test.txt.asc", "password"});
         
         assertEquals("message integrity check passed", getLine(_currentErr));
     }
@@ -259,7 +263,19 @@ public class AllTests
     {
         createTestFile(clearSignedPublicKey, "test.txt");
 
-        ClearSignedFileProcessor.main(new String[] { "-s", "test.txt", "secret.bpg", "password" });
+        ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
+    }
+
+    public void testClearSignedSingleLine()
+        throws Exception
+    {
+        createTestData("This is a test payload!" + Strings.lineSeparator(), "test.txt");
+        createTestData("This is a test payload!" + Strings.lineSeparator(), "test.bak");
+
+        ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
+        ClearSignedFileProcessor.main(new String[]{"-v", "test.txt.asc", "pub.bpg"});
+
+        compareFile("test.bak", "test.txt");
     }
 
     private void checkClearSignedVerify(String message)
@@ -267,7 +283,16 @@ public class AllTests
     {
         createTestData(message, "test.txt.asc");
 
-        ClearSignedFileProcessor.main(new String[] { "-v", "test.txt.asc", "pub.bpg" });
+        ClearSignedFileProcessor.main(new String[]{"-v", "test.txt.asc", "pub.bpg"});
+    }
+
+    private void compareFile(String file1, String file2)
+        throws Exception
+    {
+        byte[] data1 = Streams.readAll(new FileInputStream(file1));
+        byte[] data2 = Streams.readAll(new FileInputStream(file2));
+
+        Assert.assertArrayEquals(data1, data2);
     }
 
     private void checkClearSigned(String message)
