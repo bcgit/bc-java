@@ -21,10 +21,10 @@ import org.bouncycastle.openpgp.examples.KeyBasedLargeFileProcessor;
 import org.bouncycastle.openpgp.examples.PBEFileProcessor;
 import org.bouncycastle.openpgp.examples.RSAKeyPairGenerator;
 import org.bouncycastle.openpgp.examples.SignedFileProcessor;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
-import org.junit.Assert;
 
 public class AllTests
     extends TestCase
@@ -292,7 +292,7 @@ public class AllTests
         byte[] data1 = Streams.readAll(new FileInputStream(file1));
         byte[] data2 = Streams.readAll(new FileInputStream(file2));
 
-        Assert.assertArrayEquals(data1, data2);
+        assertTrue(Arrays.areEqual(data1, data2));
     }
 
     private void checkClearSigned(String message)
