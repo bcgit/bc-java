@@ -17,12 +17,16 @@ import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
 
 public class JceCRMFEncryptorBuilder
 {
+    private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
+
     private final ASN1ObjectIdentifier encryptionOID;
     private final int                  keySize;
 
@@ -82,6 +86,11 @@ public class JceCRMFEncryptorBuilder
             if (random == null)
             {
                 random = new SecureRandom();
+            }
+
+            if (keySize < 0)
+            {
+                keySize = KEY_SIZE_PROVIDER.getKeySize(encryptionOID);
             }
 
             if (keySize < 0)
