@@ -34,6 +34,8 @@ Release 1.53
 <li>TRUSTED CERTIFICATE parsing in PEM files was ignoring the attribute block. A new class X509TrustedCertificateBlock is now returned containing both the certificate and the trust information.</li>
 <li>Adding a password to a PGP key which did not previously have one would result in an improperly formatted key. This has been fixed.</li>
 <li>ECIES/IES was only using a 4 byte label length for the MAC tag when it should have been an 8 byte one. This has now been fixed and OldECIES/OldIES has been added for backwards compatibility.</li>
+<li>The JceCRMFEncryptorBuilder was not recognising key size specific object identifiers properly. This has been fixed.</li>
+<li>The OpenPGP ClearSignedFileProcessor would not handle verification of single line files properly. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
