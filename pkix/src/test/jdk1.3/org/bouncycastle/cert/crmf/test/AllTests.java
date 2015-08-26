@@ -94,6 +94,30 @@ public class AllTests
 
     }
 
+    public void testKeySizes()
+        throws Exception
+    {
+        verifyKeySize(NISTObjectIdentifiers.id_aes128_CBC, 128);
+        verifyKeySize(NISTObjectIdentifiers.id_aes192_CBC, 192);
+        verifyKeySize(NISTObjectIdentifiers.id_aes256_CBC, 256);
+
+        verifyKeySize(NTTObjectIdentifiers.id_camellia128_cbc, 128);
+        verifyKeySize(NTTObjectIdentifiers.id_camellia192_cbc, 192);
+        verifyKeySize(NTTObjectIdentifiers.id_camellia256_cbc, 256);
+
+        verifyKeySize(PKCSObjectIdentifiers.des_EDE3_CBC, 192);
+    }
+
+    private void verifyKeySize(ASN1ObjectIdentifier oid, int keySize)
+        throws Exception
+    {
+        JceCRMFEncryptorBuilder encryptorBuilder = new JceCRMFEncryptorBuilder(oid);
+
+        OutputEncryptor outputEncryptor = encryptorBuilder.build();
+
+        Assert.assertEquals(keySize / 8, ((byte[])(outputEncryptor.getKey().getRepresentation())).length);
+    }
+
     public void testBasicMessageWithArchiveControl()
         throws Exception
     {
