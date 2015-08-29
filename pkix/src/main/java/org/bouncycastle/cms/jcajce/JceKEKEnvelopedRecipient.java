@@ -4,12 +4,12 @@ import java.io.InputStream;
 import java.security.Key;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.RecipientOperator;
+import org.bouncycastle.jcajce.io.CipherInputStream;
 import org.bouncycastle.operator.InputDecryptor;
 
 public class JceKEKEnvelopedRecipient
