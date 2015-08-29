@@ -297,7 +297,7 @@ public class AllTests
     private void verifyKeySize(ASN1ObjectIdentifier oid, int keySize)
         throws Exception
     {
-        JceCRMFEncryptorBuilder encryptorBuilder = new JceCRMFEncryptorBuilder(oid);
+        JceCRMFEncryptorBuilder encryptorBuilder = new JceCRMFEncryptorBuilder(oid).setProvider(BC);
 
         OutputEncryptor outputEncryptor = encryptorBuilder.build();
 
