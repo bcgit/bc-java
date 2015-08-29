@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.io.MacOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -87,7 +86,7 @@ public class JcePKCS12MacCalculatorBuilderProvider
 
                         public GenericKey getKey()
                         {
-                            return new GenericKey(getAlgorithmIdentifier(), PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
+                            return new GenericKey(getAlgorithmIdentifier(), key.getEncoded());
                         }
                     };
                 }
