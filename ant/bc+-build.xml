@@ -700,7 +700,6 @@
             <sysproperty key="bc.test.data.home" value="../../core/src/test/data" />
 
             <formatter type="xml" />
-            <test name="${testcase}" todir="${artifacts.reports.xml.dir}" if="testcase" />
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
                 <fileset dir="${src.dir}">
                     <include name="**/AllTests.java" />
