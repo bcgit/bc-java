@@ -250,7 +250,7 @@ public class BaseBlockCipher
                     engineParams.init(ivParam.getIV());
                 }
                 catch (Exception e)
-                {                         e.printStackTrace();
+                {
                     throw new RuntimeException(e.toString());
                 }
             }
@@ -609,7 +609,7 @@ public class BaseBlockCipher
             {
                 IvParameterSpec p = (IvParameterSpec)params;
 
-                if (p.getIV().length != ivLength && !isAEADModeName(modeName) && fixedIv)
+                if (p.getIV().length != ivLength && !(cipher instanceof AEADGenericBlockCipher) && fixedIv)
                 {
                     throw new InvalidAlgorithmParameterException("IV must be " + ivLength + " bytes long.");
                 }
