@@ -80,10 +80,10 @@ public class BaseBlockCipher
                                     {
                                         RC2ParameterSpec.class,
                                         RC5ParameterSpec.class,
+                                        gcmSpecClass,
                                         IvParameterSpec.class,
                                         PBEParameterSpec.class,
-                                        GOST28147ParameterSpec.class,
-                                        gcmSpecClass
+                                        GOST28147ParameterSpec.class
                                     };
 
     private BlockCipher             baseEngine;
