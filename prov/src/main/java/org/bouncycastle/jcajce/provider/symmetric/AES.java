@@ -1,8 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.SecureRandom;
@@ -40,7 +38,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
-import org.bouncycastle.util.Integers;
 
 public final class AES
 {
@@ -525,19 +522,13 @@ public final class AES
         protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-            if (gcmSpecClass != null)
+            if (GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                try
-                {
-                    Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
-                    Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-                    gcmParams = new GCMParameters((byte[])iv.invoke(paramSpec, new Object[0]), ((Integer)tLen.invoke(paramSpec, new Object[0])).intValue() / 8);
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidParameterSpecException("Cannot process GCMParameterSpec.");
-                }
+                gcmParams = GcmSpecUtil.extractGcmParameters(paramSpec);
+            }
+            else
+            {
+                throw new InvalidParameterSpecException("AlgorithmParameterSpec class not recognized: " + paramSpec.getClass().getName());
             }
         }
 
@@ -583,25 +574,20 @@ public final class AES
         protected AlgorithmParameterSpec localEngineGetParameterSpec(Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (gcmSpecClass != null)
+            if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                try
+                if (GcmSpecUtil.gcmSpecExists())
                 {
-                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
-
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(gcmParams.getIcvLen() * 8), gcmParams.getNonce() });
+                    return GcmSpecUtil.extractGcmSpec(gcmParams.toASN1Primitive());
                 }
-                catch (NoSuchMethodException e)
-                {
-                    throw new InvalidParameterSpecException("no constructor found!");   // should never happen
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidParameterSpecException("construction failed: " + e.getMessage());   // should never happen
-                }
+                return new IvParameterSpec(gcmParams.getNonce());
+            }
+            if (paramSpec == IvParameterSpec.class)
+            {
+                return new IvParameterSpec(gcmParams.getNonce());
             }
 
-            throw new InvalidParameterSpecException("unknown parameter spec: " + paramSpec.getName());
+            throw new InvalidParameterSpecException("AlgorithmParameterSpec not recognized: " + paramSpec.getName());
         }
     }
 
@@ -613,7 +599,14 @@ public final class AES
         protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-            throw new InvalidParameterSpecException("No supported AlgorithmParameterSpec for AES parameter generation.");
+            if (GcmSpecUtil.isGcmSpec(paramSpec))
+            {
+                ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractGcmParameters(paramSpec));
+            }
+            else
+            {
+                throw new InvalidParameterSpecException("AlgorithmParameterSpec class not recognized: " + paramSpec.getClass().getName());
+            }
         }
 
         protected void engineInit(byte[] params)
@@ -658,25 +651,20 @@ public final class AES
         protected AlgorithmParameterSpec localEngineGetParameterSpec(Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (gcmSpecClass != null)
+            if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                try
+                if (GcmSpecUtil.gcmSpecExists())
                 {
-                    Constructor constructor = gcmSpecClass.getConstructor(new Class[] { Integer.TYPE, byte[].class });
-
-                    return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(ccmParams.getIcvLen() * 8), ccmParams.getNonce() });
+                    return GcmSpecUtil.extractGcmSpec(ccmParams.toASN1Primitive());
                 }
-                catch (NoSuchMethodException e)
-                {
-                    throw new InvalidParameterSpecException("no constructor found!");   // should never happen
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidParameterSpecException("construction failed: " + e.getMessage());   // should never happen
-                }
+                return new IvParameterSpec(ccmParams.getNonce());
+            }
+            if (paramSpec == IvParameterSpec.class)
+            {
+                return new IvParameterSpec(ccmParams.getNonce());
             }
 
-            throw new InvalidParameterSpecException("unknown parameter spec: " + paramSpec.getName());
+            throw new InvalidParameterSpecException("AlgorithmParameterSpec not recognized: " + paramSpec.getName());
         }
     }
 
