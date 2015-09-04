@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.signers;
 
-import java.util.Hashtable;
-
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
@@ -10,7 +8,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SignerWithRecovery;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 
 /**
  * ISO9796-2 - mechanism using a hash function with recovery (scheme 1)
@@ -26,21 +23,6 @@ public class ISO9796d2Signer
     static final public int   TRAILER_SHA512      = 0x35CC;
     static final public int   TRAILER_SHA384      = 0x36CC;
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
-
-    private static Hashtable  trailerMap          = new Hashtable();
-
-    static
-    {
-        trailerMap.put("RIPEMD128", Integers.valueOf(TRAILER_RIPEMD128));
-        trailerMap.put("RIPEMD160", Integers.valueOf(TRAILER_RIPEMD160));
-
-        trailerMap.put("SHA-1", Integers.valueOf(TRAILER_SHA1));
-        trailerMap.put("SHA-256", Integers.valueOf(TRAILER_SHA256));
-        trailerMap.put("SHA-384", Integers.valueOf(TRAILER_SHA384));
-        trailerMap.put("SHA-512", Integers.valueOf(TRAILER_SHA512));
-
-        trailerMap.put("Whirlpool", Integers.valueOf(TRAILER_WHIRLPOOL));
-    }
 
     private Digest                      digest;
     private AsymmetricBlockCipher       cipher;
@@ -78,7 +60,7 @@ public class ISO9796d2Signer
         }
         else
         {
-            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+            Integer trailerObj = ISOTrailers.getTrailer(digest);
 
             if (trailerObj != null)
             {
@@ -86,7 +68,7 @@ public class ISO9796d2Signer
             }
             else
             {
-                throw new IllegalArgumentException("no valid trailer for digest");
+                throw new IllegalArgumentException("no valid trailer for digest: " + digest.getAlgorithmName());
             }
         }
     }
@@ -207,7 +189,7 @@ public class ISO9796d2Signer
         else
         {
             int sigTrail = ((block[block.length - 2] & 0xFF) << 8) | (block[block.length - 1] & 0xFF);
-            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+            Integer trailerObj = ISOTrailers.getTrailer(digest);
 
             if (trailerObj != null)
             {
@@ -466,7 +448,7 @@ public class ISO9796d2Signer
         else
         {
             int sigTrail = ((block[block.length - 2] & 0xFF) << 8) | (block[block.length - 1] & 0xFF);
-            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+            Integer trailerObj = ISOTrailers.getTrailer(digest);
 
             if (trailerObj != null)
             {

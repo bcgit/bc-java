@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.signers;
 
 import java.math.BigInteger;
-import java.util.Hashtable;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -11,7 +10,6 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.Integers;
 
 /**
  * X9.31-1998 - signing using a hash.
@@ -34,26 +32,6 @@ public class X931Signer
     static final public int   TRAILER_SHA384      = 0x36CC;
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
     static final public int   TRAILER_SHA224      = 0x38CC;
-    static final public int   TRAILER_SHA512_224  = 0x39CC;
-    static final public int   TRAILER_SHA512_256  = 0x40CC;
-
-    private static Hashtable  trailerMap          = new Hashtable();
-
-    static
-    {
-        trailerMap.put("RIPEMD128", Integers.valueOf(TRAILER_RIPEMD128));
-        trailerMap.put("RIPEMD160", Integers.valueOf(TRAILER_RIPEMD160));
-
-        trailerMap.put("SHA-1", Integers.valueOf(TRAILER_SHA1));
-        trailerMap.put("SHA-224", Integers.valueOf(TRAILER_SHA224));
-        trailerMap.put("SHA-256", Integers.valueOf(TRAILER_SHA256));
-        trailerMap.put("SHA-384", Integers.valueOf(TRAILER_SHA384));
-        trailerMap.put("SHA-512", Integers.valueOf(TRAILER_SHA512));
-        trailerMap.put("SHA-512/224", Integers.valueOf(TRAILER_SHA512_224));
-        trailerMap.put("SHA-512/256", Integers.valueOf(TRAILER_SHA512_256));
-
-        trailerMap.put("Whirlpool", Integers.valueOf(TRAILER_WHIRLPOOL));
-    }
 
     private Digest                      digest;
     private AsymmetricBlockCipher       cipher;
@@ -85,7 +63,7 @@ public class X931Signer
         }
         else
         {
-            Integer trailerObj = (Integer)trailerMap.get(digest.getAlgorithmName());
+            Integer trailerObj = ISOTrailers.getTrailer(digest);
 
             if (trailerObj != null)
             {
@@ -93,7 +71,7 @@ public class X931Signer
             }
             else
             {
-                throw new IllegalArgumentException("no valid trailer for digest");
+                throw new IllegalArgumentException("no valid trailer for digest: " + digest.getAlgorithmName());
             }
         }
     }
