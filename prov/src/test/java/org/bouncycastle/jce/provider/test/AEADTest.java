@@ -180,7 +180,7 @@ public class AEADTest extends SimpleTest
 
         GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
 
-        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen() * 8)
         {
             fail("parameters mismatch");
         }
@@ -280,7 +280,7 @@ public class AEADTest extends SimpleTest
 
         GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
 
-        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen() * 8)
         {
             fail("parameters mismatch");
         }
@@ -328,7 +328,7 @@ public class AEADTest extends SimpleTest
 
         GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
 
-        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen())
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getTLen() != gcmParameters.getIcvLen() * 8)
         {
             fail("parameters mismatch");
         }
