@@ -11,6 +11,8 @@ public class ISOTrailers
 {
     private static final Map<String, Integer> trailerMap;
 
+    static final public int   TRAILER_IMPLICIT    = 0xBC;
+
     static final public int   TRAILER_RIPEMD160   = 0x31CC;
     static final public int   TRAILER_RIPEMD128   = 0x32CC;
     static final public int   TRAILER_SHA1        = 0x33CC;
