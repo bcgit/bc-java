@@ -23,14 +23,23 @@ import org.bouncycastle.util.BigIntegers;
 public class X931Signer
     implements Signer
 {
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_IMPLICIT    = 0xBC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD160   = 0x31CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD128   = 0x32CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA1        = 0x33CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA256      = 0x34CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA512      = 0x35CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA384      = 0x36CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA224      = 0x38CC;
 
     private Digest                      digest;
@@ -59,7 +68,7 @@ public class X931Signer
 
         if (implicit)
         {
-            trailer = TRAILER_IMPLICIT;
+            trailer = ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {
@@ -167,11 +176,11 @@ public class X931Signer
 
         int delta;
 
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
             delta = block.length - digSize - 1;
             digest.doFinal(block, delta);
-            block[block.length - 1] = (byte)TRAILER_IMPLICIT;
+            block[block.length - 1] = (byte)ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {

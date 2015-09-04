@@ -15,13 +15,21 @@ import org.bouncycastle.util.Arrays;
 public class ISO9796d2Signer
     implements SignerWithRecovery
 {
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_IMPLICIT    = 0xBC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD160   = 0x31CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD128   = 0x32CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA1        = 0x33CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA256      = 0x34CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA512      = 0x35CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA384      = 0x36CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
 
     private Digest                      digest;
@@ -56,7 +64,7 @@ public class ISO9796d2Signer
 
         if (implicit)
         {
-            trailer = TRAILER_IMPLICIT;
+            trailer = ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {
@@ -98,7 +106,7 @@ public class ISO9796d2Signer
 
         block = new byte[(keyBits + 7) / 8];
         
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
             mBuf = new byte[block.length - digest.getDigestSize() - 2];
         }
@@ -329,12 +337,12 @@ public class ISO9796d2Signer
         int t = 0;
         int delta = 0;
 
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
             t = 8;
             delta = block.length - digSize - 1;
             digest.doFinal(block, delta);
-            block[block.length - 1] = (byte)TRAILER_IMPLICIT;
+            block[block.length - 1] = (byte)ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {

@@ -22,13 +22,21 @@ import org.bouncycastle.util.Arrays;
 public class ISO9796d2PSSSigner
     implements SignerWithRecovery
 {
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_IMPLICIT    = 0xBC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD160   = 0x31CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_RIPEMD128   = 0x32CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA1        = 0x33CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA256      = 0x34CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA512      = 0x35CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_SHA384      = 0x36CC;
+    /** @deprecated use ISOTrailers */
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
 
     private Digest digest;
@@ -74,7 +82,7 @@ public class ISO9796d2PSSSigner
 
         if (implicit)
         {
-            trailer = TRAILER_IMPLICIT;
+            trailer = ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {
@@ -161,7 +169,7 @@ public class ISO9796d2PSSSigner
 
         block = new byte[(keyBits + 7) / 8];
 
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
             mBuf = new byte[block.length - digest.getDigestSize() - lengthOfSalt - 1 - 1];
         }
@@ -409,7 +417,7 @@ public class ISO9796d2PSSSigner
         digest.doFinal(hash, 0);
 
         int tLength = 2;
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
             tLength = 1;
         }
@@ -429,9 +437,9 @@ public class ISO9796d2PSSSigner
 
         System.arraycopy(hash, 0, block, block.length - hLen - tLength, hLen);
 
-        if (trailer == TRAILER_IMPLICIT)
+        if (trailer == ISOTrailers.TRAILER_IMPLICIT)
         {
-            block[block.length - 1] = (byte)TRAILER_IMPLICIT;
+            block[block.length - 1] = (byte)ISOTrailers.TRAILER_IMPLICIT;
         }
         else
         {
