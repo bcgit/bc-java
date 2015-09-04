@@ -259,7 +259,7 @@ public class BaseBlockCipher
                 try
                 {
                     engineParams = createParametersInstance("GCM");
-                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize()).getEncoded());
+                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
                 }
                 catch (Exception e)
                 {
