@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.signers.X931Signer;
@@ -178,6 +179,24 @@ public class X931SignatureSpi
         public SHA512WithRSAEncryption()
         {
             super(new SHA512Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA512_224WithRSAEncryption
+        extends X931SignatureSpi
+    {
+        public SHA512_224WithRSAEncryption()
+        {
+            super(new SHA512tDigest(224), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA512_256WithRSAEncryption
+        extends X931SignatureSpi
+    {
+        public SHA512_256WithRSAEncryption()
+        {
+            super(new SHA512tDigest(256), new RSABlindedEngine());
         }
     }
 

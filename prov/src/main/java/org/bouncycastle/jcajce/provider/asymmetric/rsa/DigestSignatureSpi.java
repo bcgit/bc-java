@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.util.Arrays;
@@ -291,6 +292,24 @@ public class DigestSignatureSpi
         public SHA512()
         {
             super(NISTObjectIdentifiers.id_sha512, new SHA512Digest(), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA512_224
+        extends DigestSignatureSpi
+    {
+        public SHA512_224()
+        {
+            super(NISTObjectIdentifiers.id_sha512_224, new SHA512tDigest(224), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA512_256
+        extends DigestSignatureSpi
+    {
+        public SHA512_256()
+        {
+            super(NISTObjectIdentifiers.id_sha512_256, new SHA512tDigest(256), new PKCS1Encoding(new RSABlindedEngine()));
         }
     }
 

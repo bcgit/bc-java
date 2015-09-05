@@ -329,6 +329,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA512_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(224)", "MGF1", new MGF1ParameterSpec("SHA-512(224)"), 28, 1));
+        }
+    }
+
+    static public class SHA512_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA-512(256)", "MGF1", new MGF1ParameterSpec("SHA-512(256)"), 32, 1));
+        }
+    }
+
     private class NullPssDigest
         implements Digest
     {

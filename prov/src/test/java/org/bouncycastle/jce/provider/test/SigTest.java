@@ -309,6 +309,25 @@ public class SigTest
             fail("SHA1/ISO verification failed");
         }
 
+        trySig("SHA512(224)WithRSA", data, signingKey, verifyKey);
+        trySig("SHA512(256)WithRSA", data, signingKey, verifyKey);
+
+        trySig("SHA1WithRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA224WithRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA256withRSAAndMGF1", data, signingKey, verifyKey);
+        //trySig("SHA384WithRSAAndMGF1", data, signingKey, verifyKey);
+       //trySig("SHA512WithRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA512(224)WithRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA512(256)WithRSAAndMGF1", data, signingKey, verifyKey);
+
+        trySig("SHA1WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA224WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA256withRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA384WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA512WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA512(224)WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("SHA512(256)WithRSA/ISO9796-2", data, signingKey, verifyKey);
+        trySig("WhirlpoolWithRSA/ISO9796-2", data, signingKey, verifyKey);
         trySig("RIPEMD160WithRSA/ISO9796-2", data, signingKey, verifyKey);
 
         trySig("RIPEMD128WithRSA/X9.31", data, signingKey, verifyKey);
@@ -318,6 +337,8 @@ public class SigTest
         trySig("SHA256withRSA/X9.31", data, signingKey, verifyKey);
         trySig("SHA384WithRSA/X9.31", data, signingKey, verifyKey);
         trySig("SHA512WithRSA/X9.31", data, signingKey, verifyKey);
+        trySig("SHA512(224)WithRSA/X9.31", data, signingKey, verifyKey);
+        trySig("SHA512(256)WithRSA/X9.31", data, signingKey, verifyKey);
         trySig("WhirlpoolWithRSA/X9.31", data, signingKey, verifyKey);
 
         KeyFactory keyFact = KeyFactory.getInstance("RSA", "BC");
