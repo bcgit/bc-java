@@ -15,6 +15,12 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.signers.ISO9796d2Signer;
 
@@ -137,6 +143,69 @@ public class ISOSignatureSpi
         public RIPEMD160WithRSAEncryption()
         {
             super(new RIPEMD160Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA224WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA224WithRSAEncryption()
+        {
+            super(new SHA224Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA256WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA256WithRSAEncryption()
+        {
+            super(new SHA256Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA384WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA384WithRSAEncryption()
+        {
+            super(new SHA384Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA512WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA512WithRSAEncryption()
+        {
+            super(new SHA512Digest(), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA512_224WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA512_224WithRSAEncryption()
+        {
+            super(new SHA512tDigest(224), new RSABlindedEngine());
+        }
+    }
+
+    static public class SHA512_256WithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public SHA512_256WithRSAEncryption()
+        {
+            super(new SHA512tDigest(256), new RSABlindedEngine());
+        }
+    }
+
+    static public class WhirlpoolWithRSAEncryption
+        extends ISOSignatureSpi
+    {
+        public WhirlpoolWithRSAEncryption()
+        {
+            super(new WhirlpoolDigest(), new RSABlindedEngine());
         }
     }
 }
