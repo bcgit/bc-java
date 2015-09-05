@@ -36,6 +36,7 @@ Release 1.53
 <li>ECIES/IES was only using a 4 byte label length for the MAC tag when it should have been an 8 byte one. This has now been fixed and OldECIES/OldIES has been added for backwards compatibility.</li>
 <li>The JceCRMFEncryptorBuilder was not recognising key size specific object identifiers properly. This has been fixed.</li>
 <li>The OpenPGP ClearSignedFileProcessor would not handle verification of single line files properly. This has been fixed.</li>
+<li>The BC X509Certificate class was no longer in agreement with the standard class for hashCode(). The BC X509Certificate class will now track the changes made in the standard Java distribution.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -46,6 +47,7 @@ Release 1.53
 <li>The ASN.1 parser for ECGOST private keys will now parse keys encoded with a private value represented as an ASN.1 INTEGER.</li>
 <li>EAX mode and CMAC is now supported for ciphers such as SHACAL-2 and Threefish.</li>
 <li>The SM4 block cipher has been added to the provider and the lightweight API.</li>
+<li>X9.31, ISO9796/2, and PSS signature support has been added for SHA512/224, SHA512/256.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
