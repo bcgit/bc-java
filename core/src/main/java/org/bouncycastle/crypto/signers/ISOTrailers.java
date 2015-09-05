@@ -39,7 +39,7 @@ public class ISOTrailers
         trailers.put("SHA-512/224", Integers.valueOf(TRAILER_SHA512_224));
         trailers.put("SHA-512/256", Integers.valueOf(TRAILER_SHA512_256));
 
-        trailers.put("WHIRLPOOL", Integers.valueOf(TRAILER_WHIRLPOOL));
+        trailers.put("Whirlpool", Integers.valueOf(TRAILER_WHIRLPOOL));
 
         trailerMap = Collections.unmodifiableMap(trailers);
     }
