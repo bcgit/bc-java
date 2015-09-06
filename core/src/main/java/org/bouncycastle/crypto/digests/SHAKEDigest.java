@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.Xof;
 
 
 /**
- * implementation of SHA-3 based on following KeccakNISTInterface.c from http://keccak.noekeon.org/
+ * implementation of SHAKE based on following KeccakNISTInterface.c from http://keccak.noekeon.org/
  * <p>
  * Following the naming conventions used in the C source code to enable easy review of the implementation.
  */

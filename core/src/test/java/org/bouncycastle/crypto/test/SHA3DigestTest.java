@@ -5,7 +5,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -66,7 +65,7 @@ public class SHA3DigestTest
     {
         if (algorithm.startsWith("SHA3-"))
         {
-            int bits = Integer.parseInt(algorithm.substring("SHA3-".length()));
+            int bits = parseDecimal(algorithm.substring("SHA3-".length()));
             return new MySHA3Digest(bits);
         }
         throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
@@ -82,16 +81,26 @@ public class SHA3DigestTest
         for (int i = 0; i < fullBytes; ++i)
         {
             String byteStr = reverse(block.substring(i * 8, (i + 1) * 8));
-            result[i] = (byte)Integer.parseInt(byteStr, 2);
+            result[i] = (byte)parseBinary(byteStr);
         }
 
         if (totalBytes > fullBytes)
         {
             String byteStr = reverse(block.substring(fullBytes * 8));
-            result[fullBytes] = (byte)Integer.parseInt(byteStr, 2);
+            result[fullBytes] = (byte)parseBinary(byteStr);
         }
 
         return result;
+    }
+
+    private int parseBinary(String s)
+    {
+        return Integer.parseInt(s, 2);
+    }
+
+    private int parseDecimal(String s)
+    {
+        return Integer.parseInt(s);
     }
 
     private String readBlock(BufferedReader r) throws IOException
@@ -117,10 +126,10 @@ public class SHA3DigestTest
 
     private TestVector readTestVector(BufferedReader r, String header) throws IOException
     {
-        String[] parts = header.split(TestVector.SAMPLE_OF);
+        String[] parts = splitAround(header, TestVector.SAMPLE_OF);
 
         String algorithm = parts[0];
-        int bits = Integer.parseInt(stripFromChar(parts[1], '-'));
+        int bits = parseDecimal(stripFromChar(parts[1], '-'));
 
         skipUntil(r, TestVector.MSG_HEADER);
         String messageBlock = readBlock(r);
@@ -212,6 +221,11 @@ public class SHA3DigestTest
         }
     }
 
+    private String[] splitAround(String s, String separator)
+    {
+        return s.split(separator);
+    }
+
     private String stripFromChar(String s, char c)
     {
         int i = s.indexOf(c);
@@ -222,11 +236,6 @@ public class SHA3DigestTest
         return s;
     }
 
-    protected Digest cloneDigest(Digest digest)
-    {
-        return new SHA3Digest((SHA3Digest)digest);
-    }
-    
     public static void main(
         String[]    args)
     {

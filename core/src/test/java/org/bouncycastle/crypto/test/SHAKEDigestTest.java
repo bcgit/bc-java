@@ -5,7 +5,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -66,7 +65,7 @@ public class SHAKEDigestTest
     {
         if (algorithm.startsWith("SHAKE-"))
         {
-            int bits = Integer.parseInt(algorithm.substring("SHAKE-".length()));
+            int bits = parseDecimal(algorithm.substring("SHAKE-".length()));
             return new MySHAKEDigest(bits);
         }
         throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
@@ -82,16 +81,26 @@ public class SHAKEDigestTest
         for (int i = 0; i < fullBytes; ++i)
         {
             String byteStr = reverse(block.substring(i * 8, (i + 1) * 8));
-            result[i] = (byte)Integer.parseInt(byteStr, 2);
+            result[i] = (byte)parseBinary(byteStr);
         }
 
         if (totalBytes > fullBytes)
         {
             String byteStr = reverse(block.substring(fullBytes * 8));
-            result[fullBytes] = (byte)Integer.parseInt(byteStr, 2);
+            result[fullBytes] = (byte)parseBinary(byteStr);
         }
 
         return result;
+    }
+
+    private int parseBinary(String s)
+    {
+        return Integer.parseInt(s, 2);
+    }
+
+    private int parseDecimal(String s)
+    {
+        return Integer.parseInt(s);
     }
 
     private String readBlock(BufferedReader r) throws IOException
@@ -117,10 +126,10 @@ public class SHAKEDigestTest
 
     private TestVector readTestVector(BufferedReader r, String header) throws IOException
     {
-        String[] parts = header.split(TestVector.SAMPLE_OF);
+        String[] parts = splitAround(header, TestVector.SAMPLE_OF);
 
         String algorithm = parts[0];
-        int bits = Integer.parseInt(stripFromChar(parts[1], '-'));
+        int bits = parseDecimal(stripFromChar(parts[1], '-'));
 
         skipUntil(r, TestVector.MSG_HEADER);
         String messageBlock = readBlock(r);
@@ -207,6 +216,11 @@ public class SHAKEDigestTest
         }
     }
 
+    private String[] splitAround(String s, String separator)
+    {
+        return s.split(separator);
+    }
+
     private String stripFromChar(String s, char c)
     {
         int i = s.indexOf(c);
@@ -215,11 +229,6 @@ public class SHAKEDigestTest
             s = s.substring(0, i);
         }
         return s;
-    }
-
-    protected Digest cloneDigest(Digest digest)
-    {
-        return new SHAKEDigest((SHAKEDigest)digest);
     }
 
     public static void main(
