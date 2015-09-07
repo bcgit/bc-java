@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -20,25 +21,36 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientIdentifier;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
+import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
+import org.bouncycastle.jcajce.provider.asymmetric.util.DESUtil;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.SecretKeySizeProvider;
+import org.bouncycastle.util.Pack;
 
 public class JceKeyAgreeRecipientInfoGenerator
     extends KeyAgreeRecipientInfoGenerator
 {
+    private SecretKeySizeProvider keySizeProvider = new DefaultSecretKeySizeProvider();
+
     private List recipientIDs = new ArrayList();
     private List recipientKeys = new ArrayList();
     private PublicKey senderPublicKey;
@@ -135,7 +147,9 @@ public class JceKeyAgreeRecipientInfoGenerator
                 }
                 else
                 {
-                    agreementParamSpec = null; // TODO
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm.getAlgorithm(), keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), null);
+
+                    agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
 
                 // Use key agreement to choose a wrap key for this recipient
@@ -213,4 +227,35 @@ public class JceKeyAgreeRecipientInfoGenerator
             }
         }
     }
+
+    private static interface KeyMaterialGenerator
+    {
+        byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters);
+    }
+
+    private static KeyMaterialGenerator ecc_cms_Generator = new KeyMaterialGenerator()
+    {
+        public byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
+        {
+            ECCCMSSharedInfo eccInfo;
+
+            if (DESUtil.isDES(keyAlgorithm.getId()) || keyAlgorithm.equals(PKCSObjectIdentifiers.id_alg_CMSRC2wrap))
+            {
+                eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm, DERNull.INSTANCE), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
+            }
+            else
+            {
+                eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
+            }
+
+            try
+            {
+                return eccInfo.getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("Unable to create KDF material: " + e);
+            }
+        }
+    };
 }
