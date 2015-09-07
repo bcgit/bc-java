@@ -1,6 +1,9 @@
 # Test vectors for FIPS 202 - SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions
 #
 # Downloaded 6th August, 2015 from http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
+#
+# NOTE: The 1605-bit test vectors were initially wrong. Corrections were published on 14th August, 2015
+#       (SHA3-512 corrected on 3rd September, 2015).
 
 SHA3-224 sample of 0-bit message
 
@@ -766,10 +769,10 @@ Msg as bit string
     1 1 0 0 0
 
 Hash val is
-    01 54 15 42 D1 B0 6E BF 5A 01 BF A3 59 55 C5 FF
-    B8 7E C8 1E 64 BF 1B B8 BF EB DF 84 A6 40 6C FD
-    F9 30 33 19 D6 4A 23 08 B6 AF F6 17 02 E5 39 31
-    0F 98 BF 77 24 6E 7F 7D 51 CF 0D 0C 01 F4 60 23
+    FC 4A 16 7C CB 31 A9 37 D6 98 FD E8 2B 04 34 8C
+    95 39 B2 8F 0C 9D 3B 45 05 70 9C 03 81 23 50 E4
+    99 0E 96 22 97 4F 6E 57 5C 47 86 1C 0D 2E 63 8C
+    CF C2 02 3C 36 5B B6 0A 93 F5 28 55 06 98 78 6B
 
 SHA3-512 sample of 1630-bit message
 
