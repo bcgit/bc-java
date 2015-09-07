@@ -228,6 +228,12 @@ public class NewEnvelopedDataTest
     {
     }
 
+    public void setUp()
+        throws Exception
+    {
+        init();
+    }
+
     private static void init()
         throws Exception
     {

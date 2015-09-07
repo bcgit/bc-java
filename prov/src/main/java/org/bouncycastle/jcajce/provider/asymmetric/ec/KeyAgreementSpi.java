@@ -27,8 +27,6 @@ import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
-import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
-import org.bouncycastle.crypto.agreement.kdf.ECDHKEKGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -243,27 +241,12 @@ public class KeyAgreementSpi
             
             int    keySize = ((Integer)algorithms.get(oidAlgorithm)).intValue();
 
-            if (ukmParameters != null)
-            {
-                KDFParameters params = new KDFParameters(secret, ukmParameters);
+            KDFParameters params = new KDFParameters(secret, ukmParameters);
 
-                byte[] keyBytes = new byte[keySize / 8];
-                kdf.init(params);
-                kdf.generateBytes(keyBytes, 0, keyBytes.length);
-                secret = keyBytes;
-            }
-            else
-            {
-                DHKDFParameters params = new DHKDFParameters(new ASN1ObjectIdentifier(oidAlgorithm), keySize, secret);
-
-                byte[] keyBytes = new byte[keySize / 8];
-
-                ECDHKEKGenerator kekGen = new ECDHKEKGenerator(new SHA1Digest());
-
-                kekGen.init(params);
-                kekGen.generateBytes(keyBytes, 0, keyBytes.length);
-                secret = keyBytes;
-            }
+            byte[] keyBytes = new byte[keySize / 8];
+            kdf.init(params);
+            kdf.generateBytes(keyBytes, 0, keyBytes.length);
+            secret = keyBytes;
         }
         else
         {
