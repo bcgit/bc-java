@@ -25,14 +25,12 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipient;
-import org.bouncycastle.jcajce.provider.asymmetric.util.DESUtil;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
@@ -47,6 +45,7 @@ public abstract class JceKeyAgreeRecipient
     static
     {
         possibleOldMessages.add(X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme);
+        possibleOldMessages.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
     }
 
     private PrivateKey recipientKey;
@@ -135,6 +134,10 @@ public abstract class JceKeyAgreeRecipient
             KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
 
             byte[] ukmKeyingMaterial = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
+            if (kmGen == old_ecc_cms_Generator)
+            {
+                ukmKeyingMaterial = old_ecc_cms_Generator.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), ukmKeyingMaterial);
+            }
 
             agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial));
             agreement.doPhase(senderPublicKey, true);
@@ -204,7 +207,7 @@ public abstract class JceKeyAgreeRecipient
                         senderPublicKey, userKeyingMaterial, recipientKey, old_ecc_cms_Generator);
 
                     return unwrapSessionKey(wrapAlg, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
-                }               System.err.println(keyEncryptionAlgorithm.getAlgorithm());
+                }
                 throw e;
             }
         }
@@ -235,11 +238,6 @@ public abstract class JceKeyAgreeRecipient
         return PrivateKeyInfo.getInstance(recipientKey.getEncoded()).getPrivateKeyAlgorithm();
     }
 
-    private static interface KeyMaterialGenerator
-    {
-        byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters);
-    }
-
     private static KeyMaterialGenerator old_ecc_cms_Generator = new KeyMaterialGenerator()
     {
         public byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
@@ -260,29 +258,5 @@ public abstract class JceKeyAgreeRecipient
         }
     };
 
-    private static KeyMaterialGenerator ecc_cms_Generator = new KeyMaterialGenerator()
-    {
-        public byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
-        {
-            ECCCMSSharedInfo eccInfo;
-
-            if (DESUtil.isDES(keyAlgorithm.getId()) || keyAlgorithm.equals(PKCSObjectIdentifiers.id_alg_CMSRC2wrap))
-            {
-                eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm, DERNull.INSTANCE), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
-            }
-            else
-            {
-                eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
-            }
-
-            try
-            {
-                return eccInfo.getEncoded(ASN1Encoding.DER);
-            }
-            catch (IOException e)
-            {
-                throw new IllegalStateException("Unable to create KDF material: " + e);
-            }
-        }
-    };
+    private static KeyMaterialGenerator ecc_cms_Generator = new RFC5753KeyMaterialGenerator();
 }
