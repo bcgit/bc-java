@@ -118,6 +118,11 @@ public class JceKeyAgreeRecipientInfoGenerator
     public ASN1Sequence generateRecipientEncryptedKeys(AlgorithmIdentifier keyAgreeAlgorithm, AlgorithmIdentifier keyEncryptionAlgorithm, GenericKey contentEncryptionKey)
         throws CMSException
     {
+        if (recipientIDs.isEmpty())
+        {
+            throw new CMSException("No recipients associated with this generator - use addRecipient()");
+        }
+
         init(keyAgreeAlgorithm.getAlgorithm());
 
         PrivateKey senderPrivateKey = this.senderPrivateKey;
