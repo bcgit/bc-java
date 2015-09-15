@@ -1301,6 +1301,30 @@ public class NewEnvelopedDataTest
         confirmNumberRecipients(recipients, 1);
     }
 
+    public void testFaultyAgreementRecipient()
+        throws Exception
+    {
+        ASN1ObjectIdentifier algorithm = CMSAlgorithm.ECDH_SHA1KDF;
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(algorithm,
+            _origEcKP.getPrivate(), _origEcKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).setProvider(BC));
+
+        try
+        {
+            edGen.generate(
+                new CMSProcessableByteArray(data),
+                new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+        }
+        catch (CMSException e)
+        {
+            assertEquals(e.getMessage(), "No recipients associated with generator - use addRecipient()");
+        }
+    }
+
     public void testKDFAgreements()
         throws Exception
     {

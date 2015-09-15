@@ -120,7 +120,7 @@ public class JceKeyAgreeRecipientInfoGenerator
     {
         if (recipientIDs.isEmpty())
         {
-            throw new CMSException("No recipients associated with this generator - use addRecipient()");
+            throw new CMSException("No recipients associated with generator - use addRecipient()");
         }
 
         init(keyAgreeAlgorithm.getAlgorithm());
