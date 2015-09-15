@@ -1,5 +1,6 @@
 package org.bouncycastle.mail.smime.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,6 +12,7 @@ import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.mail.MessagingException;
@@ -24,11 +26,15 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.KeyTransRecipientId;
 import org.bouncycastle.cms.RecipientId;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientId;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
@@ -58,6 +64,12 @@ public class NewSMIMEEnvelopedTest
     private static String          _reciDN2;
     private static KeyPair         _reciKP2;
     private static X509Certificate _reciCert2;
+
+    private static KeyPair         _origEcKP;
+    private static KeyPair         _reciEcKP;
+    private static X509Certificate _reciEcCert;
+    private static KeyPair         _reciEcKP2;
+    private static X509Certificate _reciEcCert2;
 
     private static boolean         _initialised = false;
 
@@ -93,6 +105,12 @@ public class NewSMIMEEnvelopedTest
             _reciDN2   = "CN=Fred, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP2   = CMSTestUtil.makeKeyPair();
             _reciCert2 = CMSTestUtil.makeCertificate(_reciKP2, _reciDN2, _signKP, _signDN);
+
+            _origEcKP = CMSTestUtil.makeEcDsaKeyPair();
+            _reciEcKP = CMSTestUtil.makeEcDsaKeyPair();
+            _reciEcCert = CMSTestUtil.makeCertificate(_reciEcKP, _reciDN, _signKP, _signDN);
+            _reciEcKP2 = CMSTestUtil.makeEcDsaKeyPair();
+            _reciEcCert2 = CMSTestUtil.makeCertificate(_reciEcKP2, _reciDN2, _signKP, _signDN);
         }
     }
 
@@ -494,5 +512,74 @@ public class NewSMIMEEnvelopedTest
         RecipientId          recId = new JceKeyTransRecipientId(cert);
 
         return recId;
+    }
+
+    public void testKDFAgreements()
+            throws Exception
+    {
+        MimeBodyPart    msg      = SMIMETestUtil.makeMimeBodyPart("WallaWallaWashington");
+
+        doTryAgreement(msg, CMSAlgorithm.ECDH_SHA1KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECDH_SHA224KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECDH_SHA256KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECDH_SHA384KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECDH_SHA512KDF);
+
+        doTryAgreement(msg, CMSAlgorithm.ECCDH_SHA1KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECCDH_SHA224KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECCDH_SHA256KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECCDH_SHA384KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECCDH_SHA512KDF);
+
+        doTryAgreement(msg, CMSAlgorithm.ECMQV_SHA1KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECMQV_SHA224KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECMQV_SHA256KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECMQV_SHA384KDF);
+        doTryAgreement(msg, CMSAlgorithm.ECMQV_SHA512KDF);
+    }
+
+    private void doTryAgreement(MimeBodyPart data, ASN1ObjectIdentifier algorithm)
+        throws Exception
+    {
+        SMIMEEnvelopedGenerator edGen = new SMIMEEnvelopedGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(algorithm,
+            _origEcKP.getPrivate(), _origEcKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).addRecipient(_reciEcCert).setProvider(BC));
+
+        MimeBodyPart res = edGen.generate(
+            data,
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        SMIMEEnveloped ed = new SMIMEEnveloped(res);
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
+        confirmNumberRecipients(recipients, 1);
+    }
+
+    private static void confirmDataReceived(RecipientInformationStore recipients,
+       MimeBodyPart  expectedData, X509Certificate reciCert, PrivateKey reciPrivKey, String provider)
+        throws Exception
+    {
+        RecipientId rid = new JceKeyAgreeRecipientId(reciCert);
+          System.err.println(recipients.size());
+        RecipientInformation recipient = recipients.get(rid);
+        assertNotNull(recipient);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        expectedData.writeTo(bOut);
+
+        byte[] actualData = recipient.getContent(new JceKeyAgreeEnvelopedRecipient(reciPrivKey).setProvider(provider));
+        assertEquals(true, Arrays.equals(bOut.toByteArray(), actualData));
+    }
+
+    private static void confirmNumberRecipients(RecipientInformationStore recipients, int count)
+    {
+        assertEquals(count, recipients.getRecipients().size());
     }
 }
