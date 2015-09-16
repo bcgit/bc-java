@@ -390,6 +390,8 @@ public class SMIMEUtil
                 outCRLF.write(buf, 0, len);
             }
 
+            inRaw.close();
+
             outCRLF.flush();
         }
         else
