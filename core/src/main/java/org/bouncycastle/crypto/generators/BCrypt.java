@@ -27,8 +27,6 @@ import org.bouncycastle.util.Arrays;
  */
 public final class BCrypt
 {
-    private static final BCrypt INSTANCE = new BCrypt();
-
     // magic String "OrpheanBeholderScryDoubt" is used as clear text for encryption
     private static final int[] MAGIC_STRING =
         {
@@ -329,7 +327,7 @@ public final class BCrypt
     private final int[] S;    // the s-boxes
     private final int[] P;    // the p-array
 
-    public BCrypt()
+    private BCrypt()
     {
         S = new int[SBOX_SK * 4];
         P = new int[P_SZ];
@@ -655,6 +653,6 @@ public final class BCrypt
             throw new IllegalArgumentException("BCrypt cost must be from 4..31");
         }
 
-        return INSTANCE.deriveRawKey(cost, salt, password);
+        return new BCrypt().deriveRawKey(cost, salt, password);
     }
 }
