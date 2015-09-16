@@ -90,6 +90,8 @@ public class PKCS7ContentHandler
             {
                 os.write(b);
             }
+
+            in.close();
         }
         else if (obj instanceof SMIMEStreamingProcessor)
         {
