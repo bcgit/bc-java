@@ -12,6 +12,7 @@ import java.util.Enumeration;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
+import javax.mail.Part;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
@@ -21,11 +22,21 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.mail.smime.util.CRLFOutputStream;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
+import org.bouncycastle.util.Strings;
 
 public class SMIMEUtil
 {
+    private static final String MULTIPART = "multipart";
     private static final int BUF_SIZE = 32760;
-    
+
+    public static boolean isMultipartContent(Part part)
+        throws MessagingException
+    {
+        String          partType = Strings.toLowerCase(part.getContentType());
+
+        return partType.startsWith(MULTIPART);
+    }
+
     static boolean isCanonicalisationRequired(
         MimeBodyPart   bodyPart,
         String defaultContentTransferEncoding) 
@@ -269,7 +280,7 @@ public class SMIMEUtil
             String[]        cte = mimePart.getHeader("Content-Transfer-Encoding");
             String          contentTransferEncoding;
 
-            if (mimePart.getContent() instanceof MimeMultipart)
+            if (isMultipartContent(mimePart))
             {
                 MimeMultipart mp = (MimeMultipart)bodyPart.getContent();
                 ContentType contentType = new ContentType(mp.getContentType());
@@ -293,7 +304,7 @@ public class SMIMEUtil
                     lOut.writeln(boundary);
                     BodyPart part = mp.getBodyPart(i);
                     outputBodyPart(out, false, part, defaultContentTransferEncoding);
-                    if (!(part.getContent() instanceof MimeMultipart))
+                    if (!isMultipartContent(part))
                     {
                         lOut.writeln();       // CRLF terminator needed
                     }
