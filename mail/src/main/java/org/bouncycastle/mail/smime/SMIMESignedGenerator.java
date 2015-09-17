@@ -541,7 +541,7 @@ public class SMIMESignedGenerator
             MimeBodyPart bodyPart)
             throws IOException, MessagingException
         {
-            if (bodyPart.getContent() instanceof Multipart)
+            if (SMIMEUtil.isMultipartContent(bodyPart))
             {
                 Multipart mp = (Multipart)bodyPart.getContent();
                 ContentType contentType = new ContentType(mp.getContentType());

@@ -18,6 +18,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.mail.smime.SMIMEStreamingProcessor;
+import org.bouncycastle.mail.smime.SMIMEUtil;
 
 public class multipart_signed 
     implements DataContentHandler 
@@ -133,7 +134,7 @@ public class multipart_signed
 
         MimeBodyPart    mimePart = (MimeBodyPart)bodyPart;
 
-        if (mimePart.getContent() instanceof Multipart)
+        if (SMIMEUtil.isMultipartContent(mimePart))
         {
             Multipart mp = (Multipart)mimePart.getContent();
             ContentType contentType = new ContentType(mp.getContentType());
