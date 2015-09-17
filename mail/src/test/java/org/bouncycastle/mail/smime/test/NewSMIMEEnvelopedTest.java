@@ -566,7 +566,7 @@ public class NewSMIMEEnvelopedTest
         throws Exception
     {
         RecipientId rid = new JceKeyAgreeRecipientId(reciCert);
-          System.err.println(recipients.size());
+
         RecipientInformation recipient = recipients.get(rid);
         assertNotNull(recipient);
 
