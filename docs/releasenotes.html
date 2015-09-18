@@ -23,7 +23,7 @@ to conform the algorithms to the JCE framework.
 <h2>2.0 Release History</h2>
 
 <h3>2.1.1 Version</h3>
-Release 1.53
+Release: 1.53
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>The BC JCE cipher implementations could sometimes fail when used in conjunction with the JSSE and NIO. This has been fixed.</li>
@@ -51,7 +51,8 @@ Release 1.53
 </ul>
 
 <h3>2.2.1 Version</h3>
-Release 1.52
+Release: 1.52<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, March 2
 <h3>2.2.2 Defects Fixed</h3>
 <ul>
 <li>GenericSigner in the lightweight API would fail if the digest started with a zero byte, occassionally causing a TLS negotiation to fail. This has been fixed.</li>
@@ -102,7 +103,8 @@ Release 1.52
 </ul>
 
 <h3>2.3.1 Version</h3>
-Release 1.51
+Release: 1.51<br />
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2014, July 28
 <h3>2.3.2 Defects Fixed</h3>
 <ul>
 <li>The AEAD GCM AlgorithmParameters object was unable to return a GCMParameterSpec object. This has been fixed.</li>
@@ -152,7 +154,8 @@ Release 1.51
 <li>There has been further clean out of deprecated methods in this release. If your code has previously been flagged as using a deprecated method you may need to change it. The OpenPGP API is the most heavily affected.</li>
 </ul>
 <h3>2.4.1 Version</h3>
-Release 1.50
+Release: 1.50<br />
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, December 3
 <h3>2.4.2 Defects Fixed</h3>
 <ul>
 <li>The DualECSP800DRBG sometimes truncated the last block in the generated stream incorrectly. This has been fixed.</li>
@@ -198,7 +201,8 @@ Release 1.50
 </ul>
 
 <h3>2.5.1 Version</h3>
-Release 1.49
+Release: 1.49<br />
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, May 31
 <h3>2.5.2 Defects Fixed</h3>
 <ul>
 <li>Occasional ArrayOutOfBounds exception in DSTU-4145 signature generation has been fixed.</li>
@@ -246,7 +250,8 @@ class NonMemoableDigest has been added which hides the Memoable interface where 
 </ul>
 
 <h3>2.6.1 Version</h3>
-Release 1.48
+Release: 1.48<br />
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, February 10
 <h3>2.6.2 Defects Fixed</h3>
 <ul>
 <li>Occasional key compatibility issues in IES due to variable length keys have been fixed.</li>
@@ -275,7 +280,8 @@ Release 1.48
 </ul>
 
 <h3>2.7.1 Version</h3>
-Release 1.47
+Release: 1.47<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2012, March 30
 <h3>2.7.2 Defects Fixed</h3>
 <ul>
 <li>OpenPGP ID based certifications now support UTF-8. Note: this may mean that some old certifications no longer validate - if this happens a retry can be added using by converting the ID using Strings.fromByteArray(Strings.toByteArray(id)) - this will strip out the top byte in each character.</li>
@@ -319,7 +325,8 @@ Okay, so we have had to do another release. The issue we have run into is that w
 </p>
 
 <h3>2.8.1 Version</h3>
-Release 1.46
+Release: 1.46</br>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2011, February 23
 <h3>2.8.2 Defects Fixed</h3>
 <ul>
 <li>An edge condition in ECDSA which could result in an invalid signature has been fixed.</li>
@@ -365,7 +372,8 @@ So there are four things useful to know about this release:
 </ul>
 </p>
 <h3>2.9.1 Version</h3>
-Release 1.45
+Release: 1.45<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2010, January 12
 <h3>2.9.2 Defects Fixed</h3>
 <ul>
 <li>OpenPGP now supports UTF-8 in file names for literal data.</li>
@@ -383,7 +391,8 @@ Release 1.45
 </ul>
 
 <h3>2.10.1 Version</h3>
-Release 1.44
+Release: 1.44<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, October 9
 <h3>2.10.2 Defects Fixed</h3>
 <ul>
 <li>The reset() method in BufferedAsymmetricBlockCipher is now fully clearing the buffer.</li>
@@ -417,7 +426,8 @@ Release 1.44
 </ul>
 
 <h3>2.11.1 Version</h3>
-Release 1.43
+Release: 1.43<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, April 13
 <h3>2.11.2 Defects Fixed</h3>
 <ul>
 <li>Multiple countersignature attributes are now correctly collected.</li>
@@ -430,7 +440,8 @@ Release 1.43
 </ul>
 
 <h3>2.12.1 Version</h3>
-Release 1.42
+Release: 1.42<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, March 16
 <h3>2.12.2 Defects Fixed</h3>
 <ul>
 <li>A NullPointer exception which could be result from generating a diffie-hellman key has been fixed.</li>
@@ -456,7 +467,8 @@ Release 1.42
 </ul>
 
 <h3>2.13.1 Version</h3>
-Release 1.41
+Release: 1.41<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, October 1
 <h3>2.13.2 Defects Fixed</h3>
 <ul>
 <li>The GeneralName String constructor now supports IPv4 and IPv6 address parsing.</li>
@@ -480,7 +492,8 @@ Release 1.41
 </ul>
 
 <h3>2.14.1 Version</h3>
-Release 1.40
+Release: 1.40<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, July 12
 <h3>2.14.2 Defects Fixed</h3>
 <ul>
 <li>EAX mode ciphers were not resetting correctly after a doFinal/reset. This has been fixed.</li>
@@ -511,7 +524,8 @@ Release 1.40
 </ul>
 
 <h3>2.15.1 Version</h3>
-Release 1.39
+Release: 1.39<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, March 29
 <h3>2.15.2 Defects Fixed</h3>
 <ul>
 <li>A bug causing the odd NullPointerException has been removed from the LocalizedMessage class.</li>
@@ -541,7 +555,8 @@ Release 1.39
 <li>Support has been added to the provider for the VMPC MAC.</li>
 </ul>
 <h3>2.16.1 Version</h3>
-Release 1.38
+Release: 1.38<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, November 7
 <h3>2.16.2 Defects Fixed</h3>
 <ul>
 <li>SMIME signatures containing non-standard quote-printable data could be altered by SMIME encryption. This has been fixed.</li>
@@ -568,7 +583,8 @@ Release 1.38
 <li>Base64 encoder now does initial size calculations to try to improve resource usage.</li>
 </ul>
 <h3>2.17.1 Version</h3>
-Release 1.37
+Release: 1.37<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, June 15
 <h3>2.17.2 Defects Fixed</h3>
 <ul>
 <li>The ClearSignedFileProcessor example for OpenPGP did not take into account trailing white space in
@@ -603,7 +619,8 @@ the file to be signed. This has been fixed.</li>
 </ul>
 
 <h3>2.18.1 Version</h3>
-Release 1.36
+Release: 1.36<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, March 16
 <h3>2.18.2 Defects Fixed</h3>
 <ul>
 <li>DSA key generator now checks range and keysize.</li>
@@ -635,7 +652,8 @@ regression for processing some messages with embedded multiparts that contained 
 </ul>
 
 <h3>2.19.1 Version</h3>
-Release 1.35
+Release: 1.35<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, December 16
 <h3>2.19.2 Defects Fixed</h3>
 <ul>
 <li>Test data files are no longer in the provider jars.</li>
@@ -673,7 +691,8 @@ Release 1.35
 <li>PGP packet streams can now be closed off using close() on the returned stream as well as closing the generator.</li>
 </ul>
 <h3>2.20.1 Version</h3>
-Release 1.34
+Release: 1.34<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, October 2
 <h3>2.20.2 Defects Fixed</h3>
 <ul>
 <li>Endianess of integer conversion in KDF2BytesGenerator was incorrect. This has been fixed.
@@ -712,7 +731,8 @@ The build scripts now run this target by default.
 will be possible for attackers to exploit some of Bleichenbacher's RSA signature forgery attacks on your applications.</li>
 </ul>
 <h3>2.21.1 Version</h3>
-Release 1.33
+Release: 1.33<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, May 3
 <h3>2.21.2 Defects Fixed</h3>
 <ul>
 <li>OCSPResponseData was including the default version in its encoding. This has been fixed.
@@ -731,7 +751,8 @@ Release 1.33
 </ul>
 
 <h3>2.22.1 Version</h3>
-Release 1.32
+Release: 1.32<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, March 27
 <h3>2.22.2 Defects Fixed</h3>
 <ul>
 <li>Further work has been done on RFC 3280 compliance.
@@ -765,7 +786,8 @@ Owing to patent issues in some jurisdictions, they are now generated with point 
 </ul>
 
 <h3>2.23.1 Version</h3>
-Release 1.31
+Release: 1.31<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, December 29
 <h3>2.23.2 Defects Fixed</h3>
 <ul>
 <li>getCriticalExtensionOIDs on an X.509 attribute certificate was returning the non-critical set. This has been fixed.
@@ -789,7 +811,8 @@ This has been fixed.
 </ul>
 
 <h3>2.24.1 Version</h3>
-Release 1.30
+Release: 1.30<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, September 18
 <h3>2.24.2 Defects Fixed</h3>
 <ul>
 <li>Whirlpool was calculating the wrong digest for 31 byte data and could throw an exception for some other data lengths. This has been fixed.
@@ -814,7 +837,8 @@ ASN.1 encoding. This has been fixed.
 </ul>
 
 <h3>2.25.1 Version</h3>
-Release 1.29
+Release: 1.29<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, June 27
 <h3>2.25.2 Defects Fixed</h3>
 <ul>
 <li>HMac-SHA384 and HMac-SHA512 were not IETF compliant. This has been fixed.
@@ -840,7 +864,8 @@ HMac-SHA512.
 lightweight API.
 </ul> 
 <h3>2.26.1 Version</h3>
-Release 1.28
+Release: 1.28<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, April 20
 <h3>2.26.2 Defects Fixed</h3>
 <ul>
 <li>Signatures on binary encoded S/MIME messages could fail to validate when correct. This has been fixed.
@@ -874,7 +899,8 @@ as some S/MIME 3.1 recommendations have also been introduced for header creation
 <li>GOST private keys are probably not encoding correctly and can be expected to change.
 </ul>
 <h3>2.27.1 Version</h3>
-Release 1.27
+Release: 1.27<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, February 20
 <h3>2.27.2 Defects Fixed</h3>
 <ul>
 <li>Typos in the provider which pointed Signature algorithms SHA256WithRSA, SHA256WithRSAEncryption, SHA384WithRSA, SHA384WithRSAEncryption, SHA512WithRSA, and SHA512WithRSAEncryption at the PSS versions of the algorithms have been fixed. The correct names for the PSS algorithms are SHA256withRSAandMGF1, SHA384withRSAandMGF1, and SHA512withRSAandMGF1.
@@ -910,7 +936,8 @@ with a JCE interface with the same method signature. The getParams() method in p
 were using these previously you should use SHA256WithRSAAndMGF1, SHA384WithRSAAndMGF1, or SHA512WithRSAAndMGF1.
 </ul>
 <h3>2.28.1 Version</h3>
-Release 1.26
+Release: 1.26<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, January 15
 <h3>2.28.2 Defects Fixed</h3>
 <ul>
 <li>The X.509 class UserNotice assumed some of the optional fields were not optional. This has been fixed.
@@ -936,7 +963,8 @@ Release 1.26
 </ul>
 
 <h3>2.29.1 Version</h3>
-Release 1.25
+Release: 1.25<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, October 1
 <h3>2.29.2 Defects Fixed</h3>
 <ul>
 <li>In some situations OpenPGP would overread when a stream had been
@@ -979,7 +1007,8 @@ having to convert the original object down to its base ASN.1 equivalents.
 <li>OID components of up to 2^63 bits are now supported.
 </ul>
 <h3>2.30.1 Version</h3>
-Release 1.24
+Release: 1.24<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, June 12
 <h3>2.30.2 Defects Fixed</h3>
 <ul>
 <li>OpenPGP Secret key rings now parse key rings with user attribute packets in them correctly.
@@ -1004,7 +1033,8 @@ KeyUsage extension has been fixed.
 <li>ZeroPadding for encrypting ASCII data has been added.
 </ul>
 <h3>2.31.1 Version</h3>
-Release 1.23
+Release: 1.23<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, April 10
 <h3>2.31.2 Defects Fixed</h3>
 <ul>
 <li>Reading a PGP Secret key file would sometimes cause a class cast exception. This has been fixed.
@@ -1040,7 +1070,8 @@ certifications has been added.
 </ul>
 
 <h3>2.32.1 Version</h3>
-Release 1.22
+Release: 1.22<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, February 7
 <h3>2.32.2 Defects Fixed</h3>
 <ul>
 <li>Generating DSA signatures with PGP would cause a class cast exception, this has been fixed.
@@ -1060,7 +1091,8 @@ a non-null reason, rather than a null one. This has been fixed.
 </ul>
 
 <h3>2.33.1 Version</h3>
-Release 1.21
+Release: 1.21<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, December 6
 <h3>2.33.2 Defects Fixed</h3>
 <ul>
 <li>The CertPath validator would fail for some valid CRLs. This has been  fixed.
@@ -1077,7 +1109,8 @@ Release 1.21
 </ul>
 
 <h3>2.34.1 Version</h3>
-Release 1.20
+Release: 1.20<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, October 8
 <h3>2.34.2 Defects Fixed</h3>
 <ul>
 <li>BigInteger toString() in J2ME/JDK1.0 now produces same output as the Sun one.
@@ -1097,7 +1130,8 @@ Release 1.20
 </ul>
 
 <h3>2.35.1 Version</h3>
-Release 1.19
+Release: 1.19<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, June 7
 <h3>2.35.2 Defects Fixed</h3>
 <ul>
 <li>The PKCS12 store would throw an exception reading PFX files that had attributes with no values. This has been fixed.
@@ -1119,7 +1153,8 @@ in order to find algorithms.
 </ul>
 
 <h3>2.36.1 Version</h3>
-Release 1.18
+Release: 1.18<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, February 8
 <h3>2.36.2 Defects Fixed</h3>
 <ul>
 <li>DESKeySpec.isParityAdjusted in the clean room JCE could go into an
@@ -1143,7 +1178,8 @@ of "application/pkcs7-mime; smime-type=signed-data;" signatures.
 Sun BigInteger library.
 </ul>
 <h3>2.37.1 Version</h3>
-Release 1.17
+Release: 1.17<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, January 8
 <h3>2.37.2 Defects Fixed</h3>
 <ul>
 <li>Reuse of an CMSSignedObject could occasionally result in a class
@@ -1176,7 +1212,8 @@ string to OID conversion.
 </ul>
 
 <h3>2.38.1 Version</h3>
-Release 1.16
+Release: 1.16<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, November 30
 <h3>2.38.2 Defects Fixed</h3>
 <ul>
 <li>CRLS were only working for UTC time constructed Time objects, this has
@@ -1209,7 +1246,8 @@ of the Cert Path API, remove code suited to inclusion in the provider,
 and to support multiple recipients/signers.
 </ul>
 <h3>2.39.1 Version</h3>
-Release 1.15
+Release: 1.15<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, September 6
 <h3>2.39.2 Defects Fixed</h3>
 <ul>
 <li>The base string for the oids in asn1.x509.KeyPurposeId was incorrect. This
@@ -1242,7 +1280,8 @@ The local name now takes precedence.
 <li>Both the provider and the lightweight library now support a basic SIC mode for block ciphers.
 </ul>
 <h3>2.40.1 Version</h3>
-Release 1.14
+Release: 1.14<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, June 17
 <h3>2.40.2 Defects Fixed</h3>
 <ul>
 <li>there was a bug in the BigInteger right shifting for > 31 bit shifts.
@@ -1278,7 +1317,8 @@ These deal with implicit/explicit tagging ambiguities with constructed types.
 object identifiers.
 </ul>
 <h3>2.41.1 Version</h3>
-Release 1.13
+Release: 1.13<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, April 19
 <h3>2.41.2 Defects Fixed</h3>
 <ul>
     <li>The TBSCertificate object in the ASN.1 library now properly implements
@@ -1305,7 +1345,8 @@ Release 1.13
 </ul>
 
 <h3>2.42.1 Version</h3>
-Release 1.12
+Release: 1.12<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, February 8
 <h3>2.42.2 Defects Fixed</h3>
 <ul>
     <li>The ASN.1 library was unable to read an empty set object. This has been fixed.
@@ -1339,7 +1380,8 @@ Release 1.12
     for details).
 </ul>
 <h3>2.43.1 Version</h3>
-Release 1.11
+Release: 1.11<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, December 10
 <h3>2.43.2 Defects Fixed</h3>
 <ul>
 <li>X9.23 padding of MACs now works correctly with block size aligned data.
@@ -1388,7 +1430,8 @@ more generic method getPublicKeyData has been added and getPublicKey now
 throws an IOException if there is a problem.
 </ul>
 <h3>2.44.1 Version</h3>
-Release 1.10
+Release: 1.10<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, October 20
 <h3>2.44.2 Defects Fixed</h3>
 <ul>
 <li>The PKCS12 Key Store now interoperates with the JDK key tool. <b>Note:</b> this does mean the the key name passed to the setKeyEntry calls has become
@@ -1407,7 +1450,8 @@ be kept long term as it may be adjusted.
 <li>Support for the generation of PKCS10 certification requests has been added.
 </ul>
 <h3>2.45.1 Version</h3>
-Release 1.09
+Release: 1.09<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, October 6
 <h3>2.45.2 Defects Fixed</h3>
 <ul>
 <li>failure to pass in an RC5 parameters object now results in an exception
@@ -1446,8 +1490,8 @@ resource hungry and faster - whether it's fast enough remains to be seen!
 </ul>
 
 <h3>2.46.1 Version</h3>
-Release 1.08
-
+Release: 1.08<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, September 9
 <h3>2.46.2 Defects Fixed</h3>
 <ul>
 <li>It wasn't possible to specify an ordering for distinguished names in
@@ -1473,8 +1517,8 @@ the collections class was not present. Thanks to a donated collections API
 this is fixed.
 </ul>
 <h3>2.47.1 Version</h3>
-Release 1.07
-
+Release: 1.07<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, July 9
 <h3>2.47.2 Defects Fixed</h3>
 <ul>
 <li>It turned out that the setOddParity method in the DESParameter class
@@ -1486,8 +1530,8 @@ call. If you want an example of how to deal with this as a migration issue
 have a look in org.bouncycastle.jce.provider.JDKKeyStore lines 201-291.
 </ul>
 <h3>2.48.1 Version</h3>
-Release 1.06
-
+Release: 1.06<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, July 2
 <h3>2.48.2 Defects Fixed</h3>
 <ul>
 <li>Diffie-Hellman keys are now properly serialisable as well as
@@ -1519,8 +1563,8 @@ as well.
 </ul>
 
 <h3>2.49.1 Version</h3>
-Release 1.05
-
+Release: 1.05<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, April 17
 <h3>2.49.2 Defects Fixed</h3>
 <ul>
 <li>The DESEDE key generator can now be used to generate 2-Key-DESEDE
@@ -1545,8 +1589,8 @@ compatibility issues - if this happens to you, drop us a line at
 and we will help you get it sorted out.
 
 <h3>2.50.1 Version</h3>
-Release 1.04
-
+Release: 1.04<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, March 11
 <h3>2.50.2 Defects Fixed</h3>
 <ul>
 <li>Signatures generated by other providers that include optional null
@@ -1589,8 +1633,8 @@ to lightweight library.
 </ul>
 
 <h3>2.51.1 Version</h3>
-Release 1.03
-
+Release: 1.03<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, January 7
 <h3>2.51.2 Defects Fixed</h3>
 <ul>
 <li>CFB and OFB modes when specified without padding would insist on input
@@ -1602,8 +1646,8 @@ length as the plain text.
 </ul>
 
 <h3>2.52.1 Version</h3>
-Release 1.02
-
+Release: 1.02<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, November 7
 <h3>2.52.2 Defects Fixed</h3>
 <ul>
 <li>The RSA key pair generator occasionally produced keys 1 bit under the
@@ -1611,8 +1655,8 @@ requested size. This is now fixed.
 </ul>
 
 <h3>2.53.1 Version</h3>
-Release 1.01
-
+Release: 1.01<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, October 15
 <h3>2.53.2 Defects Fixed</h3>
 
 <ul>
@@ -1621,8 +1665,8 @@ on a doFinal. This has been fixed.
 </ul>
 
 <h3>2.54.1 Version</h3>
-Release 1.0 
-
+Release: 1.00<br/>
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, October 13
 <h3>2.54.2 Defects Fixed</h3>
 <p>
 <ul>
