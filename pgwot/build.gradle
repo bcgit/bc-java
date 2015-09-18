@@ -1,0 +1,18 @@
+dependencies {
+    compile project(':pg')
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+cobertura {
+   coverageDirs = [
+       "${rootProject.projectDir}/pgwot/build/classes/main"
+  ] 
+}
+
+project.ext.logbackVersion = '1.0.13'
+
+dependencies {
+	testCompile 'org.assertj:assertj-core:1.5.0'
+}
