@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp.wot;
+package org.bouncycastle.openpgp.wot.internal;
 
 public class Util {
 

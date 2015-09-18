@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.wot.key;
 
 import static java.util.Arrays.*;
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -13,6 +13,13 @@ import org.bouncycastle.bcpg.UserAttributeSubpacketTags;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 
+/**
+ * Hash used as identifier of a user-identity or user-attribute.
+ * <p>
+ * Use {@link #createFromUserId(String)} or {@link #createFromUserAttribute(PGPUserAttributeSubpacketVector)}
+ * to create an instance.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpUserIdNameHash implements Comparable<PgpUserIdNameHash>, Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -111,6 +118,11 @@ public class PgpUserIdNameHash implements Comparable<PgpUserIdNameHash>, Seriali
 		return sb.toString();
 	}
 
+	/**
+	 * Creates an instance of {@code PgpUserIdNameHash} for the given user-identity.
+	 * @param userId the user-identity for which to create a name-hash instance. Must not be <code>null</code>.
+	 * @return the name-hash. Never <code>null</code>.
+	 */
 	public static PgpUserIdNameHash createFromUserId(final String userId) {
 		assertNotNull("userId", userId);
 
@@ -123,12 +135,18 @@ public class PgpUserIdNameHash implements Comparable<PgpUserIdNameHash>, Seriali
 		return new PgpUserIdNameHash(out);
 	}
 
+	/**
+	 * Creates an instance of {@code PgpUserIdNameHash} for the given user-attribute. A user-attribute usually
+	 * is an image.
+	 * @param userAttribute the user-attribute for which to create a name-hash instance. Must not be <code>null</code>.
+	 * @return the name-hash. Never <code>null</code>.
+	 */
 	public static PgpUserIdNameHash createFromUserAttribute(final PGPUserAttributeSubpacketVector userAttribute) {
 		assertNotNull("userAttribute", userAttribute);
 
 		final RIPEMD160Digest digest = new RIPEMD160Digest();
 
-		// TODO this needs to be extended, if there is ever any other attribute possible, too!
+		// TODO this needs to be extended, if there is ever any other attribute type (other than image) possible, too!
 		// Currently, image seems to be the only supported attribute. Alternatively, we could get the data via reflection...
 		final UserAttributeSubpacket subpacket = userAttribute.getSubpacket(UserAttributeSubpacketTags.IMAGE_ATTRIBUTE);
 		assertNotNull("subpacket", subpacket);

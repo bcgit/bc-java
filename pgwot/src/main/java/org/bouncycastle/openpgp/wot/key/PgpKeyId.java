@@ -1,10 +1,14 @@
 package org.bouncycastle.openpgp.wot.key;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 
+/**
+ * An OpenPGP key's (unique) identifier.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpKeyId implements Comparable<PgpKeyId>, Serializable {
 	private static final long serialVersionUID = 1L;
 

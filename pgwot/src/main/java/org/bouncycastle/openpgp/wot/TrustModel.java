@@ -1,7 +1,14 @@
 package org.bouncycastle.openpgp.wot;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
+/**
+ * Trust-model specifying the policy and algorithm of trust/validity calculations.
+ * <p>
+ * OpenPGP/GnuPG supports multiple trust models. This implementation, however, currently supports
+ * {@link #PGP} only.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public enum TrustModel {
 
 	CLASSIC(0, "classic"),

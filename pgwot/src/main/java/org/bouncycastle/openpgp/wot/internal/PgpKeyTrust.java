@@ -1,6 +1,6 @@
-package org.bouncycastle.openpgp.wot;
+package org.bouncycastle.openpgp.wot.internal;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.util.Collection;
 import java.util.Collections;

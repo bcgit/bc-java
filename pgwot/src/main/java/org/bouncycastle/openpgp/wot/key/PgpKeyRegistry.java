@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.wot.key;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -32,14 +32,30 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Registry providing fast access to the keys of a public and a secret key ring collection.
+ * <p>
+ * An {@code PgpKeyRegistry} reads the {@code pubring.gpg} and {@code secring.gpg}
+ * (normally located in {@code ~/.gnupg/}) and organizes them in {@link PgpKey} instances.
+ * It then provides fast lookup by key-id or fingerprint via {@link #getPgpKey(PgpKeyId)}
+ * or {@link #getPgpKey(PgpKeyFingerprint)}.
+ * <p>
+ * The {@code PgpKeyRegistry} tracks the timestamps of the key ring collection files. If
+ * one of the files changes, i.e. the timestamp changes, the files are re-loaded.
+ * But beware: The file system's timestamps usually have a pretty bad resolution (of
+ * 1 or even 2 seconds). Therefore, it may happen that a modification goes undetected,
+ * if multiple changes occur within the resolution.
+ *
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpKeyRegistry {
 	private static final Logger logger = LoggerFactory.getLogger(PgpKeyRegistry.class);
 
 	private final File pubringFile;
 	private final File secringFile;
 
-	private long pubringFileLastModified;
-	private long secringFileLastModified;
+	private long pubringFileLastModified = Long.MIN_VALUE;
+	private long secringFileLastModified = Long.MIN_VALUE;
 
 	private Map<PgpKeyFingerprint, PgpKey> pgpKeyFingerprint2pgpKey; // all keys
 	private Map<PgpKeyId, PgpKey> pgpKeyId2pgpKey; // all keys
@@ -47,20 +63,47 @@ public class PgpKeyRegistry {
 
 	private Map<PgpKeyId, Set<PgpKeyId>> signingKeyId2signedKeyIds;
 
+	/**
+	 * Creates an instance of {@code PgpKeyRegistry} with the given public and secret key ring
+	 * collection files.
+	 * @param pubringFile the file containing the public keys - usually named {@code pubring.gpg}
+	 * (located in {@code ~/.gnupg/}). Must not be <code>null</code>. The file does not need to exist, though.
+	 * @param secringFile the file containing the secret keys - usually named {@code secring.gpg}
+	 * (located in {@code ~/.gnupg/}). Must not be <code>null</code>. The file does not need to exist, though.
+	 */
 	public PgpKeyRegistry(File pubringFile, File secringFile) {
 		this.pubringFile = assertNotNull("pubringFile", pubringFile);
 		this.secringFile = assertNotNull("secringFile", secringFile);
 	}
 
+	/**
+	 * Gets the file containing the public keys - usually named {@code pubring.gpg}
+	 * (located in {@code ~/.gnupg/}).
+	 * @return the file containing the public keys. Never <code>null</code>.
+	 */
 	public File getPubringFile() {
 		return pubringFile;
 	}
 
+	/**
+	 * Gets the file containing the secret keys - usually named {@code secring.gpg}
+	 * (located in {@code ~/.gnupg/}).
+	 * @return the file containing the secret keys. Never <code>null</code>.
+	 */
 	public File getSecringFile() {
 		return secringFile;
 	}
 
-	public PgpKey getPgpKeyOrFail(final PgpKeyId pgpKeyId) {
+	/**
+	 * Gets the key with the given ID. If no such key exists, an {@link IllegalArgumentException} is thrown.
+	 * <p>
+	 * It makes no difference to this method whether the key is a master-key or a sub-key.
+	 * @param pgpKeyId the key's ID. Must not be <code>null</code>.
+	 * @return the key identified by the given {@code pgpKeyId}. Never <code>null</code>.
+	 * @throws IllegalArgumentException if the given {@code pgpKeyId} is <code>null</code> or
+	 * there is no key known with this ID.
+	 */
+	public PgpKey getPgpKeyOrFail(final PgpKeyId pgpKeyId) throws IllegalArgumentException {
 		final PgpKey pgpKey = getPgpKey(pgpKeyId);
 		if (pgpKey == null)
 			throw new IllegalArgumentException("No PGP key found for this keyId: " + pgpKeyId);
@@ -68,14 +111,31 @@ public class PgpKeyRegistry {
 		return pgpKey;
 	}
 
-	public synchronized PgpKey getPgpKey(final PgpKeyId pgpKeyId) {
+	/**
+	 * Gets the key with the given ID. If no such key exists, <code>null</code> is returned.
+	 * <p>
+	 * It makes no difference to this method whether the key is a master-key or a sub-key.
+	 * @param pgpKeyId the key's ID. Must not be <code>null</code>.
+	 * @return the key identified by the given {@code pgpKeyId}. May be <code>null</code>.
+	 * @throws IllegalArgumentException if the given {@code pgpKeyId} is <code>null</code>.
+	 */
+	public synchronized PgpKey getPgpKey(final PgpKeyId pgpKeyId) throws IllegalArgumentException {
 		assertNotNull("pgpKeyId", pgpKeyId);
 		loadIfNeeded();
 		final PgpKey pgpKey = pgpKeyId2pgpKey.get(pgpKeyId);
 		return pgpKey;
 	}
 
-	public PgpKey getPgpKeyOrFail(final PgpKeyFingerprint pgpKeyFingerprint) {
+	/**
+	 * Gets the key with the given fingerprint. If no such key exists, an {@link IllegalArgumentException} is thrown.
+	 * <p>
+	 * It makes no difference to this method whether the key is a master-key or a sub-key.
+	 * @param pgpKeyFingerprint the key's fingerprint. Must not be <code>null</code>.
+	 * @return the key identified by the given {@code pgpKeyFingerprint}. Never <code>null</code>.
+	 * @throws IllegalArgumentException if the given {@code pgpKeyFingerprint} is <code>null</code> or
+	 * there is no key known with this fingerprint.
+	 */
+	public PgpKey getPgpKeyOrFail(final PgpKeyFingerprint pgpKeyFingerprint) throws IllegalArgumentException {
 		final PgpKey pgpKey = getPgpKey(pgpKeyFingerprint);
 		if (pgpKey == null)
 			throw new IllegalArgumentException("No PGP key found for this fingerprint: " + pgpKeyFingerprint);
@@ -83,23 +143,47 @@ public class PgpKeyRegistry {
 		return pgpKey;
 	}
 
-	public void markStale() {
-		pubringFileLastModified = 0;
-		secringFileLastModified = 0;
-	}
-
-	public synchronized PgpKey getPgpKey(final PgpKeyFingerprint pgpKeyFingerprint) {
+	/**
+	 * Gets the key with the given fingerprint. If no such key exists, <code>null</code> is returned.
+	 * <p>
+	 * It makes no difference to this method whether the key is a master-key or a sub-key.
+	 * @param pgpKeyFingerprint the key's fingerprint. Must not be <code>null</code>.
+	 * @return the key identified by the given {@code pgpKeyFingerprint}. May be <code>null</code>.
+	 * @throws IllegalArgumentException if the given {@code pgpKeyFingerprint} is <code>null</code>.
+	 */
+	public synchronized PgpKey getPgpKey(final PgpKeyFingerprint pgpKeyFingerprint) throws IllegalArgumentException {
 		assertNotNull("pgpKeyFingerprint", pgpKeyFingerprint);
 		loadIfNeeded();
 		final PgpKey pgpKey = pgpKeyFingerprint2pgpKey.get(pgpKeyFingerprint);
 		return pgpKey;
 	}
 
+	/**
+	 * Gets all master-keys. Their sub-keys are accessible via {@link PgpKey#getSubKeys()}.
+	 * @return all master-keys. Never <code>null</code>.
+	 */
 	public synchronized Collection<PgpKey> getMasterKeys() {
 		loadIfNeeded();
 		return Collections.unmodifiableCollection(pgpKeyId2masterKey.values());
 	}
 
+	/**
+	 * Marks this registry stale - causing it to reload at the next read access.
+	 * <p>
+	 * If a modification of a key ring file happens, this modification is usually detected automatically,
+	 * rendering this registry stale implicitly. However, a change is not reliably detected, because
+	 * the file system's timestamp resolution is usually 1 second or even worse. Multiple changes within
+	 * this resolution might thus go undetected. In order to make sure that a key ring file modification
+	 * reliably causes this registry to reload, this method can be invoked.
+	 */
+	public void markStale() {
+		pubringFileLastModified = Long.MIN_VALUE;
+		secringFileLastModified = Long.MIN_VALUE;
+	}
+
+	/**
+	 * Loads the key ring files, if they were not yet read or if this registry is stale.
+	 */
 	protected synchronized void loadIfNeeded() {
 		if (pgpKeyId2pgpKey == null
 				|| getPubringFile().lastModified() != pubringFileLastModified
@@ -111,6 +195,9 @@ public class PgpKeyRegistry {
 			logger.trace("loadIfNeeded: *not* invoking load().");
 	}
 
+	/**
+	 * Loads the key ring files.
+	 */
 	protected synchronized void load() {
 		pgpKeyFingerprint2pgpKey = null;
 		final Map<PgpKeyFingerprint, PgpKey> pgpKeyFingerprint2pgpKey = new HashMap<>();
@@ -244,7 +331,18 @@ public class PgpKeyRegistry {
 		return masterKey;
 	}
 
+	/**
+	 * Gets all those keys' fingerprints whose keys were signed (certified) by the key identified by the given fingerprint.
+	 * <p>
+	 * Usually, the fingerprint specified should identify a master-key and usually only master-key-fingerprints are
+	 * returned by this method.
+	 * @param signingPgpKeyFingerprint the fingerprint of the key having signed all those keys that we're interested in.
+	 * Must not be <code>null</code>.
+	 * @return the fingerprints of all those keys which have been signed (certified) by the key identified by
+	 * {@code signingPgpKeyFingerprint}. Never <code>null</code>, but maybe empty.
+	 */
 	public synchronized Set<PgpKeyFingerprint> getPgpKeyFingerprintsSignedBy(final PgpKeyFingerprint signingPgpKeyFingerprint) {
+		assertNotNull("signingPgpKeyFingerprint", signingPgpKeyFingerprint);
 		final PgpKey signingPgpKey = getPgpKey(signingPgpKeyFingerprint);
 		if (signingPgpKey == null)
 			return Collections.emptySet();
@@ -261,6 +359,16 @@ public class PgpKeyRegistry {
 		return Collections.unmodifiableSet(result);
 	}
 
+	/**
+	 * Gets all those keys' IDs whose keys were signed (certified) by the key identified by the given ID.
+	 * <p>
+	 * Usually, the ID specified should identify a master-key and usually only master-key-IDs are
+	 * returned by this method.
+	 * @param signingPgpKeyId the ID of the key having signed all those keys that we're interested in.
+	 * Must not be <code>null</code>.
+	 * @return the IDs of all those keys which have been signed (certified) by the key identified by
+	 * {@code signingPgpKeyId}. Never <code>null</code>, but maybe empty.
+	 */
 	public Set<PgpKeyId> getPgpKeyIdsSignedBy(final PgpKeyId signingPgpKeyId) {
 		final Set<PgpKeyId> pgpKeyIds = getSigningKeyId2signedKeyIds().get(signingPgpKeyId);
 		if (pgpKeyIds == null)
@@ -309,6 +417,12 @@ public class PgpKeyRegistry {
 		return signingKeyId2signedKeyIds;
 	}
 
+	/**
+	 * Gets the signatures certifying the authenticity of the given user-ID.
+	 * @param pgpUserId the user-ID whose certifications should be returned. Must not be <code>null</code>.
+	 * @return the certifications authenticating the given {@code pgpUserId}. Never <code>null</code>.
+	 * Because every user-ID is normally at least signed by the owning key, it is normally never empty, too.
+	 */
 	@SuppressWarnings("unchecked")
 	public synchronized List<PGPSignature> getSignatures(final PgpUserId pgpUserId) {
 		assertNotNull("pgpUserId", pgpUserId);
@@ -338,17 +452,6 @@ public class PgpKeyRegistry {
 		else
 			throw new IllegalStateException("WTF?!");
 
-//		// It seems, there are both: certifications for individual user-ids and certifications for the
-//		// entire key. I therefore first take the individual ones (above) into account then and then
-//		// the ones for the entire key (below).
-//		for (Iterator<?> it = nullToEmpty(publicKey.getSignatures()); it.hasNext(); ) {
-//			final PGPSignature pgpSignature = (PGPSignature) it.next();
-//			if (!pgpSignatures.containsKey(pgpSignature) && isCertification(pgpSignature)) {
-//				pgpSignatures.put(pgpSignature, pgpSignature);
-//				result.add(pgpSignature);
-//			}
-//		}
-
 		return result;
 	}
 
@@ -370,11 +473,29 @@ public class PgpKeyRegistry {
 		signedKeyIds.add(pgpKey.getPgpKeyId());
 	}
 
-	public boolean isCertification(PGPSignature pgpSignature) {
+	/**
+	 * Determines whether the given signature is a certification.
+	 * <p>
+	 * A certification is a signature indicating that a certain key or user-identity is authentic.
+	 * @param pgpSignature the signature to be checked. Must not be <code>null</code>.
+	 * @return <code>true</code>, if the signature is a certification; <code>false</code>, if it is
+	 * of a different type.
+	 * @see #isCertification(int)
+	 */
+	public boolean isCertification(final PGPSignature pgpSignature) {
 		assertNotNull("pgpSignature", pgpSignature);
 		return isCertification(pgpSignature.getSignatureType());
 	}
 
+	/**
+	 * Determines whether the given signature-type indicates a certification.
+	 * <p>
+	 * A certification is a signature indicating that a certain key or user-identity is authentic.
+	 * @param pgpSignatureType the type of the signature - like {@link PGPSignature#DEFAULT_CERTIFICATION}
+	 * or other constants (used by the property {@link PGPSignature#getSignatureType()}, for example).
+	 * @return <code>true</code>, if the given signature-type means certification; <code>false</code> otherwise.
+	 * @see #isCertification(PGPSignature)
+	 */
 	public boolean isCertification(int pgpSignatureType) {
 		return PGPSignature.DEFAULT_CERTIFICATION == pgpSignatureType
 				|| PGPSignature.NO_CERTIFICATION == pgpSignatureType

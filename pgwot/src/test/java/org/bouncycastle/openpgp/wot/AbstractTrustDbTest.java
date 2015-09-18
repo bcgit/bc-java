@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.wot;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

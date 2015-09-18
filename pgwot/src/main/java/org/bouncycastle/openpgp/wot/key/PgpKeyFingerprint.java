@@ -1,12 +1,16 @@
 package org.bouncycastle.openpgp.wot.key;
 
 import static java.util.Arrays.*;
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
+/**
+ * An OpenPGP key's fingerprint.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpKeyFingerprint implements Comparable<PgpKeyFingerprint>, Serializable {
 	private static final long serialVersionUID = 1L;
 

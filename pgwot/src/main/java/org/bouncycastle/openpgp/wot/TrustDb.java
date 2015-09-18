@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.wot;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -16,6 +16,11 @@ import java.util.Set;
 
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.wot.internal.PgpKeyTrust;
+import org.bouncycastle.openpgp.wot.internal.PgpUserIdTrust;
+import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
+import org.bouncycastle.openpgp.wot.internal.TrustRecord;
+import org.bouncycastle.openpgp.wot.internal.TrustRecordType;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
 import org.bouncycastle.openpgp.wot.key.PgpKeyFingerprint;
 import org.bouncycastle.openpgp.wot.key.PgpKeyId;
@@ -30,8 +35,8 @@ import org.slf4j.LoggerFactory;
  * <p>
  * An instance of this class is used for the following purposes:
  * <ul>
- * <li>Read the validity of a {@linkplain #getValidity(PGPPublicKey) certain key},
- * {@linkplain #getValidity(PGPPublicKey, PgpUserIdNameHash) user-identity or user-attribute}.
+ * <li>Read the validity of a {@linkplain #getValidityRaw(PGPPublicKey) certain key},
+ * {@linkplain #getValidityRaw(PGPPublicKey, PgpUserIdNameHash) user-identity or user-attribute}.
  * <li>Find out whether a key is {@linkplain #isDisabled(PGPPublicKey) disabled}.
  * <li>Mark a key {@linkplain #setDisabled(PGPPublicKey, boolean) disabled} or enabled.
  * <li>Set a key's {@linkplain #setOwnerTrust(PGPPublicKey, int) owner-trust} attribute.
@@ -54,6 +59,13 @@ public class TrustDb implements AutoCloseable, TrustConst {
 	private Set<PgpKeyFingerprint> fullTrust;
 	private DateFormat dateFormatIso8601WithTime;
 
+	/**
+	 * Create a {@code TrustDb} instance with the given {@code trustdb.gpg} file and the given key-registry.
+	 * <p>
+	 * <b>Important:</b> You must {@linkplain #close() close} this instance!
+	 * @param file the trust-database-file ({@code trustdb.gpg}). Must not be <code>null</code>.
+	 * @param pgpKeyRegistry the key-registry. Must not be <code>null</code>.
+	 */
 	public TrustDb(final File file, final PgpKeyRegistry pgpKeyRegistry) {
 		assertNotNull("file", file);
 		this.pgpKeyRegistry = assertNotNull("pgpKeyRegistry", pgpKeyRegistry);
@@ -115,53 +127,87 @@ public class TrustDb implements AutoCloseable, TrustConst {
 	}
 
 	/**
-	 * Gets the assigned ownertrust value for the given public key.
-	 * The key should be the master key.
+	 * Gets the assigned owner-trust value for the given public key.
+	 * <p>
+	 * This value specifies how much the user trusts the owner of the given key in his function as notary
+	 * certifying other keys.
+	 * @param pgpKey the key whose owner-trust should be looked up. Must not be <code>null</code>.
+	 * @return the owner-trust. Never <code>null</code>. If none has been assigned, before, this
+	 * method returns {@link OwnerTrust#UNKNOWN UNKNOWN}.
+	 * @see #setOwnerTrust(PgpKey, OwnerTrust)
+	 * @see #getOwnerTrust(PGPPublicKey)
 	 */
-	public int getOwnerTrust(final PGPPublicKey publicKey) {
-		assertNotNull("publicKey", publicKey);
-//		if (trustdb_args.no_trustdb && opt.trust_model == TM_ALWAYS)
-//			return TRUST_UNKNOWN; // TODO maybe we should support other trust models...
+	public OwnerTrust getOwnerTrust(PgpKey pgpKey) {
+		assertNotNull("pgpKey", pgpKey);
+		if (pgpKey.getMasterKey() != null)
+			pgpKey = pgpKey.getMasterKey();
 
-		TrustRecord.Trust trust = getTrustByPublicKey(publicKey);
-		if (trust == null)
-			return TRUST_UNKNOWN;
-
-		return trust.getOwnerTrust() & TRUST_MASK;
+		return getOwnerTrust(pgpKey.getPublicKey());
 	}
 
 	/**
 	 * Sets the given key's owner-trust.
 	 * <p>
 	 * This value specifies how much the user trusts the owner of the given key in his function as notary
-	 * certifying other keys. One of the following constants can be passed:
-	 * <ul>
-	 * <li>{@link TrustConst#TRUST_UNKNOWN TRUST_UNKNOWN}
-	 * <li>{@link TrustConst#TRUST_NEVER TRUST_NEVER}
-	 * <li>{@link TrustConst#TRUST_MARGINAL TRUST_MARGINAL}
-	 * <li>{@link TrustConst#TRUST_FULLY TRUST_FULLY}
-	 * <li>{@link TrustConst#TRUST_ULTIMATE TRUST_ULTIMATE}
-	 * </ul>
+	 * certifying other keys.
 	 * <p>
 	 * The user should mark all own keys with {@link TrustConst#TRUST_ULTIMATE TRUST_ULTIMATE}.
-	 * @param publicKey the key whose owner-trust is to be set. Must not be <code>null</code>.
-	 * @param ownerTrust the owner-trust to be assigned.
+	 * @param pgpKey the key whose owner-trust is to be set. Must not be <code>null</code>.
+	 * @param ownerTrust the owner-trust to be assigned. Must not be <code>null</code>.
+	 * @see #getOwnerTrust(PgpKey)
+	 * @see #setOwnerTrust(PGPPublicKey, OwnerTrust)
 	 */
-	public void setOwnerTrust(final PGPPublicKey publicKey, final int ownerTrust) {
+	public void setOwnerTrust(PgpKey pgpKey, final OwnerTrust ownerTrust) {
+		assertNotNull("pgpKey", pgpKey);
+		assertNotNull("ownerTrust", ownerTrust);
+		if (pgpKey.getMasterKey() != null)
+			pgpKey = pgpKey.getMasterKey();
+
+		setOwnerTrust(pgpKey.getPublicKey(), ownerTrust);
+	}
+
+	/**
+	 * Gets the assigned owner-trust value for the given public key.
+	 * <p>
+	 * This value specifies how much the user trusts the owner of the given key in his function as notary
+	 * certifying other keys.
+	 * <p>
+	 * The given key should be a master key.
+	 * @param publicKey the key whose owner-trust should be looked up. Must not be <code>null</code>.
+	 * @return the owner-trust. Never <code>null</code>. If none has been assigned, before, this
+	 * method returns {@link OwnerTrust#UNKNOWN UNKNOWN}.
+	 * @see #setOwnerTrust(PGPPublicKey, OwnerTrust)
+	 * @see #getOwnerTrust(PgpKey)
+	 */
+	public OwnerTrust getOwnerTrust(final PGPPublicKey publicKey) {
 		assertNotNull("publicKey", publicKey);
-		assertNonNegativeShort("ownerTrust", ownerTrust);
-		switch (ownerTrust) {
-			case TRUST_UNKNOWN: // 0
-			case TRUST_NEVER: // 3
-			case TRUST_MARGINAL: // 4
-			case TRUST_FULLY: // 5
-			case TRUST_ULTIMATE: // 6
-				break;
-			default:
-				throw new IllegalArgumentException(String.format(
-						"ownerTrust=%d invalid! Must be one of: TRUST_UNKNOWN, TRUST_NEVER, TRUST_MARGINAL, TRUST_FULLY, TRUST_ULTIMATE",
-						ownerTrust));
-		}
+//		if (trustdb_args.no_trustdb && opt.trust_model == TM_ALWAYS)
+//			return TRUST_UNKNOWN; // TODO maybe we should support other trust models...
+
+		TrustRecord.Trust trust = getTrustByPublicKey(publicKey);
+		if (trust == null)
+			return OwnerTrust.UNKNOWN;
+
+		return OwnerTrust.fromNumericValue(trust.getOwnerTrust() & TRUST_MASK);
+	}
+
+	/**
+	 * Sets the given key's owner-trust.
+	 * <p>
+	 * This value specifies how much the user trusts the owner of the given key in his function as notary
+	 * certifying other keys.
+	 * <p>
+	 * The user should mark all own keys with {@link TrustConst#TRUST_ULTIMATE TRUST_ULTIMATE}.
+	 * <p>
+	 * The given key should be a master key.
+	 * @param publicKey the key whose owner-trust is to be set. Must not be <code>null</code>.
+	 * @param ownerTrust the owner-trust to be assigned. Must not be <code>null</code>.
+	 * @see #getOwnerTrust(PGPPublicKey)
+	 * @see #setOwnerTrust(PgpKey, OwnerTrust)
+	 */
+	public void setOwnerTrust(final PGPPublicKey publicKey, final OwnerTrust ownerTrust) {
+		assertNotNull("publicKey", publicKey);
+		assertNotNull("ownerTrust", ownerTrust);
 
 		TrustRecord.Trust trust = getTrustByPublicKey(publicKey);
 		if (trust == null) {
@@ -172,7 +218,7 @@ public class TrustDb implements AutoCloseable, TrustConst {
 
 		int ownerTrustAdditionalFlags = trust.getOwnerTrust() & ~TRUST_MASK;
 
-		trust.setOwnerTrust((short) (ownerTrust | ownerTrustAdditionalFlags));
+		trust.setOwnerTrust((short) (ownerTrust.getNumericValue() | ownerTrustAdditionalFlags));
 		trustDbIo.putTrustRecord(trust);
 
 		markTrustDbStale();
@@ -185,13 +231,131 @@ public class TrustDb implements AutoCloseable, TrustConst {
 		return trust;
 	}
 
-	public synchronized int getValidity(final PGPPublicKey publicKey) {
-		return getValidity(publicKey, (PgpUserIdNameHash) null);
+	/**
+	 * Gets the validity of the given key.
+	 * <p>
+	 * The validity of a key is the highest validity of all its user-identities (and -attributes). It can be one of
+	 * {@link Validity}'s numeric values (see also the {@link TrustConst} constants) and
+	 * it additionally contains the following bit flags:
+	 * <ul>
+	 * <li>{@link TrustConst#TRUST_FLAG_DISABLED} - corresponds to {@link #isDisabled(PGPPublicKey)}.
+	 * <li>{@link TrustConst#TRUST_FLAG_REVOKED} - corresponds to {@link PGPPublicKey#hasRevocation()}.
+	 * <li>{@link TrustConst#TRUST_FLAG_PENDING_CHECK} - corresponds to {@link #isTrustDbStale()}.
+	 * </ul>
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param publicKey the key whose validity is to be returned. Must not be <code>null</code>.
+	 * @return the validity with bit flags.
+	 * @see #getValidityRaw(PGPPublicKey, PgpUserIdNameHash)
+	 * @deprecated This method exists for compatibility with GnuPG and for easier comparisons between
+	 * GnuPG's calculations and the calculations of this code. Do not use it in your code!
+	 * Use {@link #getValidity(PGPPublicKey)} instead.
+	 */
+	@Deprecated
+	public synchronized int getValidityRaw(final PGPPublicKey publicKey) {
+		assertNotNull("publicKey", publicKey);
+		return _getValidity(publicKey, (PgpUserIdNameHash) null, true);
 	}
 
-	public synchronized int getValidity(final PGPPublicKey publicKey, final PgpUserIdNameHash pgpUserIdNameHash) {
+	/**
+	 * Gets the validity of the given user-identity.
+	 * <ul>
+	 * <li>{@link TrustConst#TRUST_FLAG_DISABLED} - corresponds to {@link #isDisabled(PGPPublicKey)}.
+	 * <li>{@link TrustConst#TRUST_FLAG_REVOKED} - corresponds to {@link PGPPublicKey#hasRevocation()}.
+	 * <li>{@link TrustConst#TRUST_FLAG_PENDING_CHECK} - corresponds to {@link #isTrustDbStale()}.
+	 * </ul>
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param publicKey the key whose validity is to be returned. Must not be <code>null</code>.
+	 * @param pgpUserIdNameHash user-id's (or user-attribute's) name-hash. Must not be <code>null</code>.
+	 * @return the validity with bit flags.
+	 * @see #getValidityRaw(PGPPublicKey)
+	 * @deprecated This method exists for compatibility with GnuPG and for easier comparisons between
+	 * GnuPG's calculations and the calculations of this code. Do not use it in your code!
+	 * Use {@link #getValidity(PGPPublicKey, PgpUserIdNameHash)} instead.
+	 */
+	@Deprecated
+	public synchronized int getValidityRaw(final PGPPublicKey publicKey, final PgpUserIdNameHash pgpUserIdNameHash) {
 		assertNotNull("publicKey", publicKey);
+		assertNotNull("pgpUserIdNameHash", pgpUserIdNameHash);
+		return _getValidity(publicKey, pgpUserIdNameHash, true);
+	}
 
+	/**
+	 * Gets the validity of the given key.
+	 * <p>
+	 * The validity of a key is the highest validity of all its user-identities (and -attributes).
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param pgpKey the key whose validity to look up. Must not be <code>null</code>.
+	 * @return the validity of the given {@code publicKey}. Never <code>null</code>.
+	 * @see #getValidity(PgpKey, PgpUserIdNameHash)
+	 * @see #getValidity(PGPPublicKey)
+	 */
+	public Validity getValidity(final PgpKey pgpKey) {
+		assertNotNull("pgpKey", pgpKey);
+		return getValidity(pgpKey.getPublicKey());
+	}
+
+	/**
+	 * Gets the validity of the given user-identity (or -attribute).
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param pgpUserId the user-identity (or -attribute) whose validity to
+	 * look up. Must not be <code>null</code>.
+	 * @return the validity of the given user-identity. Never <code>null</code>.
+	 * @see #getValidity(PgpKey)
+	 * @see #getValidity(PGPPublicKey, PgpUserIdNameHash)
+	 */
+	public Validity getValidity(final PgpUserId pgpUserId) {
+		assertNotNull("pgpUserId", pgpUserId);
+		return getValidity(pgpUserId.getPgpKey().getPublicKey(), pgpUserId.getNameHash());
+	}
+
+	/**
+	 * Gets the validity of the given key.
+	 * <p>
+	 * The validity of a key is the highest validity of all its user-identities (and -attributes).
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param publicKey the key whose validity to look up. Must not be <code>null</code>.
+	 * @return the validity of the given {@code publicKey}. Never <code>null</code>.
+	 * @see #getValidity(PGPPublicKey, PgpUserIdNameHash)
+	 */
+	public Validity getValidity(final PGPPublicKey publicKey) {
+		assertNotNull("publicKey", publicKey);
+		final int numericValue = _getValidity(publicKey, (PgpUserIdNameHash) null, false);
+		return Validity.fromNumericValue(numericValue);
+	}
+
+	/**
+	 * Gets the validity of the given user-identity (or -attribute).
+	 * <p>
+	 * This method does not calculate the validity! It does solely look it up in the trust-database.
+	 * The validity is (re)calculated by {@link #updateTrustDb()}.
+	 * @param publicKey the key whose validity to look up. Must not be <code>null</code>.
+	 * @param pgpUserIdNameHash the name-hash of the user-identity (or -attribute) whose validity to
+	 * look up. Must not be <code>null</code>.
+	 * @return the validity of the given user-identity. Never <code>null</code>.
+	 * @see #getValidity(PGPPublicKey)
+	 */
+	public Validity getValidity(final PGPPublicKey publicKey, final PgpUserIdNameHash pgpUserIdNameHash) {
+		assertNotNull("publicKey", publicKey);
+		assertNotNull("pgpUserIdNameHash", pgpUserIdNameHash);
+		final int numericValue = _getValidity(publicKey, pgpUserIdNameHash, false);
+		return Validity.fromNumericValue(numericValue);
+	}
+
+	/**
+	 * Ported from {@code unsigned int tdb_get_validity_core (PKT_public_key *pk, PKT_user_id *uid, PKT_public_key *main_pk)}
+	 */
+	protected synchronized int _getValidity(final PGPPublicKey publicKey, final PgpUserIdNameHash pgpUserIdNameHash, final boolean withFlags) {
+		assertNotNull("publicKey", publicKey);
 		TrustRecord.Trust trust = getTrustByPublicKey(publicKey);
 		if (trust == null)
 			return TRUST_UNKNOWN;
@@ -199,6 +363,10 @@ public class TrustDb implements AutoCloseable, TrustConst {
 		// Loop over all user IDs
 		long recordNum = trust.getValidList();
 		int validity = 0;
+		int flags = 0;
+		// Currently, neither this class nor GnuPG stores any flags in the valid-records, but we're robust
+		// and thus expect validateKey(...) to maybe put flags into the validity DB, later. Therefore,
+		// we track them here separately (additive for all sub-keys if no user-id-name-hash is given).
 		while (recordNum != 0) {
 			TrustRecord.Valid valid = trustDbIo.getTrustRecord(recordNum, TrustRecord.Valid.class);
 			assertNotNull("valid", valid);
@@ -208,26 +376,31 @@ public class TrustDb implements AutoCloseable, TrustConst {
 				// user ID ONLY.  If the namehash is not found, then there
 				// is no validity at all (i.e. the user ID wasn't signed).
 				if (pgpUserIdNameHash.equals(valid.getNameHash())) {
-					validity = valid.getValidity();
+					validity = valid.getValidity() & TRUST_MASK;
+					flags = valid.getValidity() & ~TRUST_MASK;
 					break;
 				}
 			}
 			else {
 				// If no user ID is given, we take the maximum validity over all user IDs
 				validity = Math.max(validity, valid.getValidity() & TRUST_MASK);
+				flags |= valid.getValidity() & ~TRUST_MASK;
 			}
 			recordNum = valid.getNext();
 		}
 
-		if ( (trust.getOwnerTrust() & TRUST_FLAG_DISABLED) != 0 )
-			validity |= TRUST_FLAG_DISABLED;
+		if (withFlags) {
+			validity |= flags;
 
-		if (publicKey.hasRevocation())
-			validity |= TRUST_FLAG_REVOKED;
+			if ( (trust.getOwnerTrust() & TRUST_FLAG_DISABLED) != 0 )
+				validity |= TRUST_FLAG_DISABLED;
 
-		if (isTrustDbStale())
-			validity |= TRUST_FLAG_PENDING_CHECK;
+			if (publicKey.hasRevocation())
+				validity |= TRUST_FLAG_REVOKED;
 
+			if (isTrustDbStale())
+				validity |= TRUST_FLAG_PENDING_CHECK;
+		}
 		return validity;
 	}
 
@@ -289,6 +462,8 @@ public class TrustDb implements AutoCloseable, TrustConst {
 	/**
 	 * Marks all those keys that we have a secret key for as ultimately trusted. If we have a secret/private key,
 	 * we assume it to be *our* key and we always trust ourselves.
+	 * @param onlyIfMissing whether only those keys' owner-trust should be set which do not yet have
+	 * an owner-trust assigned.
 	 */
 	public void updateUltimatelyTrustedKeysFromAvailableSecretKeys(boolean onlyIfMissing) {
 		for (final PgpKey masterKey : pgpKeyRegistry.getMasterKeys()) {
@@ -343,7 +518,41 @@ public class TrustDb implements AutoCloseable, TrustConst {
 		// It's a very small number of keys only, hence I ignore it for now ;-)
 	}
 
-	public boolean isDisabled(PGPPublicKey publicKey) {
+	/**
+	 * Determines whether the specified key is marked as disabled.
+	 * @param pgpKey the key whose status to query. Must not be <code>null</code>.
+	 * @return <code>true</code>, if the key is marked as disabled; <code>false</code>, if the key is enabled.
+	 */
+	public boolean isDisabled(PgpKey pgpKey) {
+		assertNotNull("pgpKey", pgpKey);
+		if (pgpKey.getMasterKey() != null)
+			pgpKey = pgpKey.getMasterKey();
+
+		return isDisabled(pgpKey.getPublicKey());
+	}
+
+	/**
+	 * Enables or disabled the specified key.
+	 * @param pgpKey the key whose status to query. Must not be <code>null</code>.
+	 * @param disabled <code>true</code> to disable the key; <code>false</code> to enable it.
+	 */
+	public void setDisabled(PgpKey pgpKey, final boolean disabled) {
+		assertNotNull("pgpKey", pgpKey);
+		if (pgpKey.getMasterKey() != null)
+			pgpKey = pgpKey.getMasterKey();
+
+		setDisabled(pgpKey.getPublicKey(), disabled);
+	}
+
+	/**
+	 * Determines whether the specified key is marked as disabled.
+	 * <p>
+	 * The key should be a master-key.
+	 * @param publicKey the key whose status to query. Must not be <code>null</code>.
+	 * This should be a master-key.
+	 * @return <code>true</code>, if the key is marked as disabled; <code>false</code>, if the key is enabled.
+	 */
+	public boolean isDisabled(final PGPPublicKey publicKey) {
 		assertNotNull("publicKey", publicKey);
 		TrustRecord.Trust trust = trustDbIo.getTrustByFingerprint(publicKey.getFingerprint());
 		if (trust == null)
@@ -352,7 +561,15 @@ public class TrustDb implements AutoCloseable, TrustConst {
 		return (trust.getOwnerTrust() & TRUST_FLAG_DISABLED) != 0;
 	}
 
-	public void setDisabled(PGPPublicKey publicKey, boolean disabled) {
+	/**
+	 * Enables or disabled the specified key.
+	 * <p>
+	 * The key should be a master-key.
+	 * @param publicKey the key whose status to query. Must not be <code>null</code>.
+	 * This should be a master-key.
+	 * @param disabled <code>true</code> to disable the key; <code>false</code> to enable it.
+	 */
+	public void setDisabled(final PGPPublicKey publicKey, final boolean disabled) {
 		assertNotNull("publicKey", publicKey);
 		TrustRecord.Trust trust = trustDbIo.getTrustByFingerprint(publicKey.getFingerprint());
 		if (trust == null) {
@@ -372,6 +589,17 @@ public class TrustDb implements AutoCloseable, TrustConst {
 		trustDbIo.flush();
 	}
 
+	/**
+	 * Determines if the trust-database is stale. It becomes stale, if it is either
+	 * explicitly {@linkplain #markTrustDbStale() marked stale} or if a key expires.
+	 * <p>
+	 * <b>Important:</b> It does not become stale when a key ring file is modified! Thus, when adding new
+	 * keys, {@link #markTrustDbStale()} or {@link #updateTrustDb()} must be invoked.
+	 * @return <code>true</code>, if the trust-database is stale; <code>false</code>, if it is up-to-date.
+	 * @see #markTrustDbStale()
+	 * @see #updateTrustDb()
+	 * @see #updateTrustDbIfNeeded()
+	 */
 	public synchronized boolean isTrustDbStale() {
 		final Config config = Config.getInstance();
 		final TrustRecord.Version version = trustDbIo.getTrustRecord(0, TrustRecord.Version.class);
@@ -629,14 +857,14 @@ public class TrustDb implements AutoCloseable, TrustConst {
 				if (signingKey == null)
 					continue;
 
-				final int signingOwnerTrust = getOwnerTrust(signingKey.getPublicKey());
+				final OwnerTrust signingOwnerTrust = getOwnerTrust(signingKey.getPublicKey());
 				if (signingKey.getPgpKeyId().equals(pgpKey.getPgpKeyId())
-						&& signingOwnerTrust != TRUST_ULTIMATE) {
-					// It's *not* our own key [*not* TRUST_ULTIMATE] - hence we ignore the self-signature.
+						&& signingOwnerTrust != OwnerTrust.ULTIMATE) {
+					// It's *not* our own key [*not* ULTIMATE] - hence we ignore the self-signature.
 					continue;
 				}
 
-				int signingValidity = getValidity(signingKey.getPublicKey()) & TRUST_MASK;
+				int signingValidity = getValidityRaw(signingKey.getPublicKey()) & TRUST_MASK;
 				if (signingValidity <= TRUST_MARGINAL) {
 					// If the signingKey is trusted only marginally or less, we ignore the certification completely.
 					// Only fully trusted keys are taken into account for transitive trust.
@@ -645,13 +873,13 @@ public class TrustDb implements AutoCloseable, TrustConst {
 
 				// The owner-trust of the signing key is relevant.
 				switch (signingOwnerTrust) {
-					case TRUST_ULTIMATE:
+					case ULTIMATE:
 						pgpUserIdTrust.incUltimateCount();
 						break;
-					case TRUST_FULLY:
+					case FULLY:
 						pgpUserIdTrust.incFullCount();
 						break;
-					case TRUST_MARGINAL:
+					case MARGINAL:
 						pgpUserIdTrust.incMarginalCount();
 						break;
 					default: // ignoring!

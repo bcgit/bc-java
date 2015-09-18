@@ -1,6 +1,6 @@
-package org.bouncycastle.openpgp.wot;
+package org.bouncycastle.openpgp.wot.internal;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.io.EOFException;
 import java.io.File;
@@ -16,7 +16,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.wot.TrustRecord.HashLst;
+import org.bouncycastle.openpgp.wot.Config;
+import org.bouncycastle.openpgp.wot.TrustConst;
+import org.bouncycastle.openpgp.wot.TrustDb;
+import org.bouncycastle.openpgp.wot.TrustDbIoException;
+import org.bouncycastle.openpgp.wot.internal.TrustRecord.HashLst;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +51,8 @@ public class TrustDbIo implements AutoCloseable, TrustConst {
 
 	/**
 	 * Create an instance of {@code TrustDbIo} with the given file (usually named {@code trustdb.gpg}).
+	 * <p>
+	 * <b>Important:</b> You must {@linkplain #close() close} this instance!
 	 * @param file the file to read from and write to. Must not be <code>null</code>. Is created, if
 	 * not yet existing.
 	 * @throws TrustDbIoException if reading from/writing to the {@code trustdb.gpg} failed.

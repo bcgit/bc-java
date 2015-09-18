@@ -10,12 +10,11 @@ public interface TrustConst {
 	int MAX_CACHE_SIZE = 1024 * 1024;
 
 
-
 	int TRUST_MASK = 15;
 	/** o: not yet calculated/assigned */
 	int TRUST_UNKNOWN = 0;
-	/** e: calculation may be invalid */
-	int TRUST_EXPIRED = 1;
+//	/** e: calculation may be invalid */
+//	int TRUST_EXPIRED = 1; // unused?! gnupg seems to never assign this value...
 	/** q: not enough information for calculation */
 	int TRUST_UNDEFINED = 2;
 	/** n: never trust this pubkey */

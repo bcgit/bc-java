@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.wot.key;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +15,10 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 
+/**
+ * OpenPGP key or key pair (if both public and secret key are present).
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpKey {
 
 	private final PgpKeyId pgpKeyId;
@@ -100,8 +104,8 @@ public class PgpKey {
 
 	/**
 	 * Gets the master-key for this key.
-	 * @return the master-key for this key. Always <code>null</code>, if this is a master-key. Never <code>null</code>, if
-	 * this is a sub-key.
+	 * @return the master-key for this key. Always <code>null</code>, if this is a master-key.
+	 * Never <code>null</code>, if this is a sub-key.
 	 * @see #getSubKeyIds()
 	 * @see #getSubKeys()
 	 */

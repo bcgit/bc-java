@@ -1,5 +1,11 @@
 package org.bouncycastle.openpgp.wot;
 
+import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
+
+/**
+ * Exception thrown by {@link TrustDbIo} when reading from or writing to the trust database failed.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class TrustDbIoException extends TrustDbException {
 	private static final long serialVersionUID = 1L;
 

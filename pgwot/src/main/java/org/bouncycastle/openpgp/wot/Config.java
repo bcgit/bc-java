@@ -1,5 +1,10 @@
 package org.bouncycastle.openpgp.wot;
 
+/**
+ * Configuration settings for the trust calculation.
+ *
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class Config implements TrustConst {
 
 	public static final int TM_CLASSIC = 0;

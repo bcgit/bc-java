@@ -1,7 +1,9 @@
-package org.bouncycastle.openpgp.wot;
+package org.bouncycastle.openpgp.wot.internal;
 
 import java.util.Arrays;
 import java.util.Date;
+
+import org.bouncycastle.openpgp.wot.TrustConst;
 
 public abstract class TrustRecord implements TrustConst {
 

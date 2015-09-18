@@ -10,7 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bouncycastle.openpgp.wot.TrustRecord.Trust;
+import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
+import org.bouncycastle.openpgp.wot.internal.TrustRecord;
+import org.bouncycastle.openpgp.wot.internal.TrustRecord.Trust;
+import org.bouncycastle.openpgp.wot.internal.TrustRecordType;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
 import org.bouncycastle.openpgp.wot.key.PgpKeyId;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
@@ -170,7 +173,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 			for (PgpKey pgpKey : pgpKeyRegistry.getMasterKeys()) {
 				for (PgpUserId pgpUserId : pgpKey.getPgpUserIds()) {
 //					if (pgpUserId.getUserId() != null) {
-						int validity = trustDb.getValidity(pgpKey.getPublicKey(), pgpUserId.getNameHash());
+						int validity = trustDb.getValidityRaw(pgpKey.getPublicKey(), pgpUserId.getNameHash());
 						pgpUserId2Validity.put(pgpUserId, validity);
 //					}
 				}

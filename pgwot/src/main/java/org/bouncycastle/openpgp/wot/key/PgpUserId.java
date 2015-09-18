@@ -1,9 +1,13 @@
 package org.bouncycastle.openpgp.wot.key;
 
-import static org.bouncycastle.openpgp.wot.Util.*;
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 
+/**
+ * User-identity or user-attribute of an OpenPGP key.
+ * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+ */
 public class PgpUserId {
 	private final PgpKey pgpKey;
 	private final String userId;
