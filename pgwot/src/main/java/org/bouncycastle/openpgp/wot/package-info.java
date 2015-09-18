@@ -4,3 +4,4 @@
  * The most important class and entry point is {@link org.bouncycastle.openpgp.wot.TrustDb TrustDb}.
  */
 package org.bouncycastle.openpgp.wot;
+

@@ -12,34 +12,40 @@ import org.bouncycastle.openpgp.wot.key.PgpKeyFingerprint;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
 import org.bouncycastle.openpgp.wot.key.PgpUserIdNameHash;
 
-public class PgpKeyTrust {
+public class PgpKeyTrust
+{
+    private final PgpKey pgpKey;
+    private final Map<PgpUserIdNameHash, PgpUserIdTrust> nameHash2UserIdTrust = new HashMap<>();
 
-	private final PgpKey pgpKey;
-	private final Map<PgpUserIdNameHash, PgpUserIdTrust> nameHash2UserIdTrust = new HashMap<>();
+    public PgpKeyTrust(final PgpKey pgpKey)
+    {
+        this.pgpKey = assertNotNull("pgpKey", pgpKey);
+    }
 
-	public PgpKeyTrust(final PgpKey pgpKey) {
-		this.pgpKey = assertNotNull("pgpKey", pgpKey);
-	}
+    public PgpKey getPgpKey()
+    {
+        return pgpKey;
+    }
 
-	public PgpKey getPgpKey() {
-		return pgpKey;
-	}
+    public PgpKeyFingerprint getPgpKeyFingerprint()
+    {
+        return pgpKey.getPgpKeyFingerprint();
+    }
 
-	public PgpKeyFingerprint getPgpKeyFingerprint() {
-		return pgpKey.getPgpKeyFingerprint();
-	}
+    public PgpUserIdTrust getPgpUserIdTrust(final PgpUserId pgpUserId)
+    {
+        assertNotNull("pgpUserId", pgpUserId);
+        PgpUserIdTrust pgpUserIdTrust = nameHash2UserIdTrust.get(pgpUserId.getNameHash());
+        if (pgpUserIdTrust == null)
+        {
+            pgpUserIdTrust = new PgpUserIdTrust(this, pgpUserId);
+            nameHash2UserIdTrust.put(pgpUserId.getNameHash(), pgpUserIdTrust);
+        }
+        return pgpUserIdTrust;
+    }
 
-	public PgpUserIdTrust getPgpUserIdTrust(final PgpUserId pgpUserId) {
-		assertNotNull("pgpUserId", pgpUserId);
-		PgpUserIdTrust pgpUserIdTrust = nameHash2UserIdTrust.get(pgpUserId.getNameHash());
-		if (pgpUserIdTrust == null) {
-			pgpUserIdTrust = new PgpUserIdTrust(this, pgpUserId);
-			nameHash2UserIdTrust.put(pgpUserId.getNameHash(), pgpUserIdTrust);
-		}
-		return pgpUserIdTrust;
-	}
-
-	public Collection<PgpUserIdTrust> getPgpUserIdTrusts() {
-		return Collections.unmodifiableCollection(nameHash2UserIdTrust.values());
-	}
+    public Collection<PgpUserIdTrust> getPgpUserIdTrusts()
+    {
+        return Collections.unmodifiableCollection(nameHash2UserIdTrust.values());
+    }
 }
