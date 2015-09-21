@@ -46,7 +46,7 @@ public enum Validity
      * A user should see some positive confirmation (e.g. a green indication colour) when using or encountering such a
      * key.
      */
-    FULLY(TrustConst.TRUST_FULLY), // 5
+    FULLY(TrustConst.TRUST_FULL), // 5
 
     /**
      * The key/user-identity/user-attribute is definitely valid - probably it's belonging to the user himself. There is

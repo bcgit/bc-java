@@ -22,7 +22,7 @@ public interface TrustConst
     /** m: marginally trusted */
     int TRUST_MARGINAL = 4;
     /** f: fully trusted */
-    int TRUST_FULLY = 5;
+    int TRUST_FULL = 5;
     /** u: ultimately trusted */
     int TRUST_ULTIMATE = 6;
 

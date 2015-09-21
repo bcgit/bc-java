@@ -642,7 +642,7 @@ public class TrustDbImpl implements AutoCloseable, TrustConst, TrustDb
                         updateValidity(pgpUserId, depth, validity,
                                 pgpUserIdTrust.getFullCount(), pgpUserIdTrust.getMarginalCount());
 
-                        if (validity >= TRUST_FULLY)
+                        if (validity >= TRUST_FULL)
                             fullTrust.add(pgpUserIdTrust.getPgpUserId().getPgpKey().getPgpKeyFingerprint());
                     }
 
@@ -783,7 +783,7 @@ public class TrustDbImpl implements AutoCloseable, TrustConst, TrustDb
                     case ULTIMATE:
                         pgpUserIdTrust.incUltimateCount();
                         break;
-                    case FULLY:
+                    case FULL:
                         pgpUserIdTrust.incFullCount();
                         break;
                     case MARGINAL:
@@ -795,11 +795,11 @@ public class TrustDbImpl implements AutoCloseable, TrustConst, TrustDb
             }
 
             if (pgpUserIdTrust.getUltimateCount() >= 1)
-                pgpUserIdTrust.setValidity(TRUST_FULLY);
+                pgpUserIdTrust.setValidity(TRUST_FULL);
             else if (pgpUserIdTrust.getFullCount() >= config.getCompletesNeeded())
-                pgpUserIdTrust.setValidity(TRUST_FULLY);
+                pgpUserIdTrust.setValidity(TRUST_FULL);
             else if (pgpUserIdTrust.getFullCount() + pgpUserIdTrust.getMarginalCount() >= config.getMarginalsNeeded())
-                pgpUserIdTrust.setValidity(TRUST_FULLY);
+                pgpUserIdTrust.setValidity(TRUST_FULL);
             else if (pgpUserIdTrust.getFullCount() >= 1 || pgpUserIdTrust.getMarginalCount() >= 1)
                 pgpUserIdTrust.setValidity(TRUST_MARGINAL);
         }
