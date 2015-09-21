@@ -436,7 +436,6 @@ public class PgpKeyRegistry
         return Collections.unmodifiableSet(pgpKeyIds);
     }
 
-    @SuppressWarnings("unchecked")
     protected synchronized Map<PgpKeyId, Set<PgpKeyId>> getSigningKeyId2signedKeyIds()
     {
         loadIfNeeded();
@@ -450,34 +449,34 @@ public class PgpKeyRegistry
                 {
                     if (pgpUserId.getUserId() != null)
                     {
-                        for (final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForID(pgpUserId.getUserId())); it
-                                .hasNext();)
+                        for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForID(pgpUserId.getUserId())); it.hasNext();)
                         {
                             final PGPSignature pgpSignature = (PGPSignature) it.next();
                             if (isCertification(pgpSignature))
                                 enlistInSigningKey2signedKeyIds(m, pgpKey, pgpSignature);
                         }
-                    }
-                    else if (pgpUserId.getUserAttribute() != null)
+                    } else if (pgpUserId.getUserAttribute() != null)
                     {
-                        for (final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForUserAttribute(pgpUserId
-                                .getUserAttribute())); it.hasNext();)
+                        for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForUserAttribute(pgpUserId.getUserAttribute())); it.hasNext();)
                         {
                             final PGPSignature pgpSignature = (PGPSignature) it.next();
                             if (isCertification(pgpSignature))
                                 enlistInSigningKey2signedKeyIds(m, pgpKey, pgpSignature);
                         }
-                    }
-                    else
+                    } else
                         throw new IllegalStateException("WTF?!");
                 }
 
-                // It seems, there are both: certifications for individual user-ids and certifications for the
-                // entire key. I therefore first take the individual ones (above) into account then and then
+                // It seems, there are both: certifications for individual
+                // user-ids and certifications for the
+                // entire key. I therefore first take the individual ones
+                // (above) into account then and then
                 // the ones for the entire key (below).
-                // Normally, the signatures bound to the key are never 'certifications', but it rarely happens.
-                // Don't know, if these are malformed or deprecated (very old) keys, but I should take them into account.
-                for (Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
+                // Normally, the signatures bound to the key are never
+                // 'certifications', but it rarely happens.
+                // Don't know, if these are malformed or deprecated (very old)
+                // keys, but I should take them into account.
+                for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
                 {
                     final PGPSignature pgpSignature = (PGPSignature) it.next();
                     if (isCertification(pgpSignature))
