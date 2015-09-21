@@ -496,7 +496,6 @@ public class PgpKeyRegistry
      * @return the certifications authenticating the given {@code pgpUserId}. Never <code>null</code>. Because every
      *         user-ID is normally at least signed by the owning key, it is normally never empty, too.
      */
-    @SuppressWarnings("unchecked")
     public synchronized List<PGPSignature> getSignatures(final PgpUserId pgpUserId)
     {
         assertNotNull("pgpUserId", pgpUserId);
@@ -507,7 +506,7 @@ public class PgpKeyRegistry
         final List<PGPSignature> result = new ArrayList<>();
         if (pgpUserId.getUserId() != null)
         {
-            for (final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForID(pgpUserId.getUserId())); it.hasNext();)
+            for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForID(pgpUserId.getUserId())); it.hasNext();)
             {
                 final PGPSignature pgpSignature = (PGPSignature) it.next();
                 if (!pgpSignatures.containsKey(pgpSignature) && isCertification(pgpSignature))
@@ -519,8 +518,7 @@ public class PgpKeyRegistry
         }
         else if (pgpUserId.getUserAttribute() != null)
         {
-            for (final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForUserAttribute(pgpUserId
-                    .getUserAttribute())); it.hasNext();)
+            for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getSignaturesForUserAttribute(pgpUserId.getUserAttribute())); it.hasNext();)
             {
                 final PGPSignature pgpSignature = (PGPSignature) it.next();
                 if (!pgpSignatures.containsKey(pgpSignature) && isCertification(pgpSignature))
@@ -535,7 +533,7 @@ public class PgpKeyRegistry
 
         // There are also key-signatures which are not for a certain indivdual user-id/-attribute, but for the entire key.
         // See the comment in getSigningKeyId2signedKeyIds() above for more details.
-        for (final Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
+        for (@SuppressWarnings("unchecked") final Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
         {
             final PGPSignature pgpSignature = (PGPSignature) it.next();
             if (!pgpSignatures.containsKey(pgpSignature) && isCertification(pgpSignature))
