@@ -17,12 +17,11 @@ import org.bouncycastle.openpgp.wot.internal.TrustRecordType;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
 import org.bouncycastle.openpgp.wot.key.PgpKeyId;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore("This test is for playing around while developing - it's not a regular test!")
+//@Ignore("This test is for playing around while developing - it's not a regular test!")
 public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 	private static final Logger logger = LoggerFactory.getLogger(TrustDbProductiveFileTest.class);
 

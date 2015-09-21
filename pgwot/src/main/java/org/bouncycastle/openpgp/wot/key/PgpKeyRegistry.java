@@ -475,7 +475,9 @@ public class PgpKeyRegistry
                 // It seems, there are both: certifications for individual user-ids and certifications for the
                 // entire key. I therefore first take the individual ones (above) into account then and then
                 // the ones for the entire key (below).
-                for (Iterator<?> it = nullToEmpty(publicKey.getSignatures()); it.hasNext();)
+                // Normally, the signatures bound to the key are never 'certifications', but it rarely happens.
+                // Don't know, if these are malformed or deprecated (very old) keys, but I should take them into account.
+                for (Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
                 {
                     final PGPSignature pgpSignature = (PGPSignature) it.next();
                     if (isCertification(pgpSignature))
@@ -531,6 +533,18 @@ public class PgpKeyRegistry
         }
         else
             throw new IllegalStateException("WTF?!");
+
+        // There are also key-signatures which are not for a certain indivdual user-id/-attribute, but for the entire key.
+        // See the comment in getSigningKeyId2signedKeyIds() above for more details.
+        for (final Iterator<?> it = nullToEmpty(publicKey.getKeySignatures()); it.hasNext();)
+        {
+            final PGPSignature pgpSignature = (PGPSignature) it.next();
+            if (!pgpSignatures.containsKey(pgpSignature) && isCertification(pgpSignature))
+            {
+                pgpSignatures.put(pgpSignature, pgpSignature);
+                result.add(pgpSignature);
+            }
+        }
 
         return result;
     }
