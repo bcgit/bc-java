@@ -99,7 +99,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 	@Test
 	public void isExpired() throws Exception {
 		PgpKey pgpKey = pgpKeyRegistry.getPgpKey(new PgpKeyId("56422A5E710E3371"));
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.isExpired(pgpKey.getPublicKey());
 		}
 	}
@@ -110,7 +110,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 
 		Map<PgpUserId, Integer> pgpUserId2ValidityOriginal = getPgpUserId2Validity();
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 		}
 
@@ -169,7 +169,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 
 	private Map<PgpUserId, Integer> getPgpUserId2Validity() throws Exception {
 		Map<PgpUserId, Integer> pgpUserId2Validity = new HashMap<>();
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			for (PgpKey pgpKey : pgpKeyRegistry.getMasterKeys()) {
 				for (PgpUserId pgpUserId : pgpKey.getPgpUserIds()) {
 //					if (pgpUserId.getUserId() != null) {

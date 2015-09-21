@@ -19,7 +19,7 @@ import java.util.Map;
  * to her key.
  *
  * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
- * @see TrustDb#getOwnerTrust(org.bouncycastle.openpgp.wot.key.PgpKey)
+ * @see TrustDbImpl#getOwnerTrust(org.bouncycastle.openpgp.wot.key.PgpKey)
  */
 public enum OwnerTrust
 {

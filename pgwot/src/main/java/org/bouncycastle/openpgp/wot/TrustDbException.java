@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.wot;
 
 /**
- * Exception thrown by {@link TrustDb} and related classes.
+ * Exception thrown by {@link TrustDbImpl} and related classes.
  *
  * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */

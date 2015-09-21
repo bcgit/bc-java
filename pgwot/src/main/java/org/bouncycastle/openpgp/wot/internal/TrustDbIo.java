@@ -18,7 +18,7 @@ import java.util.TreeMap;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.wot.Config;
 import org.bouncycastle.openpgp.wot.TrustConst;
-import org.bouncycastle.openpgp.wot.TrustDb;
+import org.bouncycastle.openpgp.wot.TrustDbImpl;
 import org.bouncycastle.openpgp.wot.TrustDbIoException;
 import org.bouncycastle.openpgp.wot.internal.TrustRecord.HashLst;
 import org.slf4j.Logger;
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * created implicitly!
  * <p>
  * <b>Important:</b> Do <b>not</b> use this class directly, if you don't have good reasons to! Instead, you should use
- * the {@link TrustDb}.
+ * the {@link TrustDbImpl}.
  * <p>
  * This class was mostly ported from the GnuPG's {@code tdbio.h} and {@code tdbio.c} files.
  *

@@ -17,21 +17,21 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 
 		bobKey = signPublicKey(aliceKey, POSITIVE_CERTIFICATION, bobKey);
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.setOwnerTrust(aliceKey.getPublicKey(), OwnerTrust.ULTIMATE);
 		}
 
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 				assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(cathrinKey.getPublicKey())).isEqualTo(TRUST_UNKNOWN);
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 			assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 			assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -58,7 +58,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		georgKey = signPublicKey(frankKey, POSITIVE_CERTIFICATION, georgKey); // georg <= frank <= alice
 		hansKey = signPublicKey(bobKey, CASUAL_CERTIFICATION, hansKey); // hans <= bob <= alice
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.setOwnerTrust(aliceKey.getPublicKey(), OwnerTrust.ULTIMATE);
 
 			trustDb.setOwnerTrust(bobKey.getPublicKey(), OwnerTrust.FULLY);
@@ -69,7 +69,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 				assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(cathrinKey.getPublicKey())).isEqualTo(TRUST_UNKNOWN);
@@ -80,7 +80,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 			assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 			assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -120,7 +120,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 
 		johnKey = signPublicKey(frankKey, POSITIVE_CERTIFICATION, johnKey); // john <= frank <= bob <= alice
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.setOwnerTrust(aliceKey.getPublicKey(), OwnerTrust.ULTIMATE);
 
 			trustDb.setOwnerTrust(bobKey.getPublicKey(), OwnerTrust.MARGINAL);
@@ -137,7 +137,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(cathrinKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(danielKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -152,7 +152,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -179,7 +179,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_MARGINAL);
 				assertThat(trustDb.getValidityRaw(georgKey.getPublicKey())).isEqualTo(TRUST_MARGINAL);
 				assertThat(trustDb.getValidityRaw(hansKey.getPublicKey())).isEqualTo(TRUST_MARGINAL);
@@ -189,7 +189,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_MARGINAL);
@@ -209,7 +209,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(georgKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(hansKey.getPublicKey())).isEqualTo(TRUST_MARGINAL);
@@ -219,7 +219,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -239,7 +239,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(georgKey.getPublicKey())).isEqualTo(TRUST_FULLY);
 				assertThat(trustDb.getValidityRaw(hansKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -249,7 +249,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(frankKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -305,7 +305,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		for (PgpKey signingKey : level3Keys)
 			signPublicKey(signingKey, POSITIVE_CERTIFICATION, karlKey);
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.setOwnerTrust(aliceKey.getPublicKey(), OwnerTrust.ULTIMATE);
 
 			for (PgpKey key : level1Keys)
@@ -322,7 +322,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 
 				assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -341,7 +341,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
@@ -368,7 +368,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 		if (! SKIP_GPG_CHECK_TRUST_DB) {
 			runGpgCheckTrustDb();
 
-			try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+			try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 				assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);
 
 				assertThat(trustDb.getValidityRaw(bobKey.getPublicKey())).isEqualTo(TRUST_FULLY);
@@ -387,7 +387,7 @@ public class UpdateTrustDbTest extends AbstractTrustDbTest {
 			}
 		}
 
-		try (TrustDb trustDb = new TrustDb(trustdbFile, pgpKeyRegistry);) {
+		try (TrustDb trustDb = new TrustDbImpl(trustdbFile, pgpKeyRegistry);) {
 			trustDb.updateTrustDb();
 
 			assertThat(trustDb.getValidityRaw(aliceKey.getPublicKey())).isEqualTo(TRUST_ULTIMATE);

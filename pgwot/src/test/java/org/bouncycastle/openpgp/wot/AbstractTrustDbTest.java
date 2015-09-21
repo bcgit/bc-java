@@ -49,6 +49,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
 import org.bouncycastle.openpgp.wot.key.PgpKeyId;
 import org.bouncycastle.openpgp.wot.key.PgpKeyRegistry;
+import org.bouncycastle.openpgp.wot.key.PgpKeyRegistryImpl;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
 import org.junit.After;
 import org.junit.Before;
@@ -93,7 +94,7 @@ public abstract class AbstractTrustDbTest {
 		secringFile = new File(gnupgHomeDir, "secring.gpg");
 		trustdbFile = new File(gnupgHomeDir, "trustdb.gpg");
 
-		pgpKeyRegistry = new PgpKeyRegistry(pubringFile, secringFile);
+		pgpKeyRegistry = new PgpKeyRegistryImpl(pubringFile, secringFile);
 	}
 
 	@After
