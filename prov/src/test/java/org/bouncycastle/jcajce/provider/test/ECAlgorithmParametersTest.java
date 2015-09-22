@@ -145,7 +145,14 @@ public class ECAlgorithmParametersTest
 
              algParams.init(new ECGenParameterSpec(entries[i]));
 
-             algParams.getParameterSpec(ECParameterSpec.class);
+             try
+             {
+                 algParams.getParameterSpec(ECParameterSpec.class);
+             }
+             catch (IllegalArgumentException e)
+             {
+                 // ignore - this is due to a JDK 1.5 bug
+             }
 
              ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
 
