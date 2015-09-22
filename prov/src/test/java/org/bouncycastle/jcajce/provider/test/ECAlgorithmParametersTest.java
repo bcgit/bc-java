@@ -5,7 +5,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 
 public class ECAlgorithmParametersTest
     extends TestCase
@@ -150,7 +149,7 @@ public class ECAlgorithmParametersTest
 
              ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
 
-             Assert.assertEquals(nextOid(i), spec.getName());
+             TestCase.assertEquals(nextOid(i), spec.getName());
          }
     }
 
