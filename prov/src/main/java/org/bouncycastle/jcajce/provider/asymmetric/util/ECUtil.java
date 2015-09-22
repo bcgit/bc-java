@@ -284,6 +284,31 @@ public class ECUtil
         return params;
     }
 
+    public static X9ECParameters getNamedCurveByName(
+        String curveName)
+    {
+        X9ECParameters params = CustomNamedCurves.getByName(curveName);
+
+        if (params == null)
+        {
+            params = X962NamedCurves.getByName(curveName);
+            if (params == null)
+            {
+                params = SECNamedCurves.getByName(curveName);
+            }
+            if (params == null)
+            {
+                params = NISTNamedCurves.getByName(curveName);
+            }
+            if (params == null)
+            {
+                params = TeleTrusTNamedCurves.getByName(curveName);
+            }
+        }
+
+        return params;
+    }
+
     public static String getCurveName(
         ASN1ObjectIdentifier oid)
     {
