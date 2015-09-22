@@ -199,7 +199,7 @@ public abstract class KeyPairGeneratorSpi
         {
             // NOTE: Don't bother with custom curves here as the curve will be converted to JCE type shortly
 
-            X9ECParameters p = ECNamedCurveTable.getByName(curveName);
+            X9ECParameters p = ECUtils.getDomainParametersFromName(curveName);
             if (p == null)
             {
                 try
