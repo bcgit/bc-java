@@ -740,7 +740,7 @@ public class ECDSA5Test
 
         ECGenParameterSpec genSpec = algParam.getParameterSpec(ECGenParameterSpec.class);
 
-        if (!genSpec.getName().equals("P-256"))
+        if (!genSpec.getName().equals(X9ObjectIdentifiers.prime256v1.getId()))
         {
             fail("curve name not recovered");
         }
