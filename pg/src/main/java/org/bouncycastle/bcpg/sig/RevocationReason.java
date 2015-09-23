@@ -9,14 +9,14 @@ import org.bouncycastle.util.Strings;
  */
 public class RevocationReason extends SignatureSubpacket
 {
-    public RevocationReason(boolean isCritical, byte[] data)
+    public RevocationReason(boolean isCritical, boolean isLongLength, byte[] data)
     {
-        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, data);
+        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, isLongLength, data);
     }
 
     public RevocationReason(boolean isCritical, byte reason, String description)
     {
-        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, createData(reason, description));
+        super(SignatureSubpacketTags.REVOCATION_REASON, isCritical, false, createData(reason, description));
     }
 
     private static byte[] createData(byte reason, String description)

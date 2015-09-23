@@ -857,7 +857,7 @@ public class PGPSignatureTest
 
     private void checkValue(byte[] flag, int value)
     {
-        KeyFlags f = new KeyFlags(true, flag);
+        KeyFlags f = new KeyFlags(true, false, flag);
 
         if (f.getFlags() != value)
         {

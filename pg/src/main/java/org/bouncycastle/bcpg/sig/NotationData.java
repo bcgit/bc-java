@@ -17,9 +17,12 @@ public class NotationData
     public static final int HEADER_NAME_LENGTH = 2;
     public static final int HEADER_VALUE_LENGTH = 2;
 
-    public NotationData(boolean critical, byte[] data)
+    public NotationData(
+        boolean critical,
+        boolean isLongLength,
+        byte[] data)
     {
-        super(SignatureSubpacketTags.NOTATION_DATA, critical, data);
+        super(SignatureSubpacketTags.NOTATION_DATA, critical, isLongLength, data);
     }
 
     public NotationData(
@@ -28,7 +31,7 @@ public class NotationData
         String notationName,
         String notationValue)
     {
-        super(SignatureSubpacketTags.NOTATION_DATA, critical, createData(humanReadable, notationName, notationValue));
+        super(SignatureSubpacketTags.NOTATION_DATA, critical, false, createData(humanReadable, notationName, notationValue));
     }
 
     private static byte[] createData(boolean humanReadable, String notationName, String notationValue)

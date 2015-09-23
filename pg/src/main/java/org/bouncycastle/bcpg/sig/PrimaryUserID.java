@@ -27,16 +27,17 @@ public class PrimaryUserID
     
     public PrimaryUserID(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, data);
+        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, isLongLength, data);
     }
     
     public PrimaryUserID(
         boolean    critical,
         boolean    isPrimaryUserID)
     {
-        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, booleanToByteArray(isPrimaryUserID));
+        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, false, booleanToByteArray(isPrimaryUserID));
     }
     
     public boolean isPrimaryUserID()

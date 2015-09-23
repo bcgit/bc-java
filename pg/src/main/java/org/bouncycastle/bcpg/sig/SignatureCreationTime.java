@@ -27,16 +27,17 @@ public class SignatureCreationTime
     
     public SignatureCreationTime(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.CREATION_TIME, critical, data);
+        super(SignatureSubpacketTags.CREATION_TIME, critical, isLongLength, data);
     }
     
     public SignatureCreationTime(
         boolean    critical,
         Date       date)
     {
-        super(SignatureSubpacketTags.CREATION_TIME, critical, timeToBytes(date));
+        super(SignatureSubpacketTags.CREATION_TIME, critical, false, timeToBytes(date));
     }
     
     public Date getTime()

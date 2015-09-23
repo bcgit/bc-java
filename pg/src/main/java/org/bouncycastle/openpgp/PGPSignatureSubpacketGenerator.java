@@ -140,7 +140,7 @@ public class PGPSignatureSubpacketGenerator
             throw new IllegalArgumentException("attempt to set null SignerUserID");
         }
 
-        list.add(new SignerUserID(isCritical, rawUserID));
+        list.add(new SignerUserID(isCritical, false, rawUserID));
     }
 
     public void setEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
@@ -160,7 +160,7 @@ public class PGPSignatureSubpacketGenerator
 
         System.arraycopy(sig, sig.length - data.length, data, 0, data.length);
 
-        list.add(new EmbeddedSignature(isCritical, data));
+        list.add(new EmbeddedSignature(isCritical, false, data));
     }
 
     public void setPrimaryUserID(boolean isCritical, boolean isPrimaryUserID)

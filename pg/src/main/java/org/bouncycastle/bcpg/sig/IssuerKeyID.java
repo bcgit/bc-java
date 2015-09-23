@@ -28,16 +28,17 @@ public class IssuerKeyID
     
     public IssuerKeyID(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.ISSUER_KEY_ID, critical, data);
+        super(SignatureSubpacketTags.ISSUER_KEY_ID, critical, isLongLength, data);
     }
     
     public IssuerKeyID(
         boolean    critical,
         long       keyID)
     {
-        super(SignatureSubpacketTags.ISSUER_KEY_ID, critical, keyIDToBytes(keyID));
+        super(SignatureSubpacketTags.ISSUER_KEY_ID, critical, false, keyIDToBytes(keyID));
     }
     
     public long getKeyID()
