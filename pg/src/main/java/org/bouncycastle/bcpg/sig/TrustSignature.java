@@ -23,9 +23,10 @@ public class TrustSignature
     
     public TrustSignature(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.TRUST_SIG, critical, data);
+        super(SignatureSubpacketTags.TRUST_SIG, critical, isLongLength, data);
     }
     
     public TrustSignature(
@@ -33,7 +34,7 @@ public class TrustSignature
         int        depth,
         int        trustAmount)
     {
-        super(SignatureSubpacketTags.TRUST_SIG, critical, intToByteArray(depth, trustAmount));
+        super(SignatureSubpacketTags.TRUST_SIG, critical, false, intToByteArray(depth, trustAmount));
     }
     
     public int getDepth()

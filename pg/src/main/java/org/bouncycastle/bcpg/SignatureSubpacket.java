@@ -10,16 +10,18 @@ public class SignatureSubpacket
 {
     int               type;
     boolean           critical;
-    
+    boolean           isLongLength;
     protected byte[]  data;
-    
+
     protected SignatureSubpacket(
         int           type,
         boolean       critical,
+        boolean       isLongLength,
         byte[]        data)
     {    
         this.type = type;
         this.critical = critical;
+        this.isLongLength = isLongLength;
         this.data = data;
     }
     
@@ -32,7 +34,12 @@ public class SignatureSubpacket
     {
         return critical;
     }
-    
+
+    public boolean isLongLength()
+    {
+        return isLongLength;
+    }
+
     /**
      * return the generic data making up the packet.
      */
@@ -46,25 +53,36 @@ public class SignatureSubpacket
         throws IOException
     {
         int    bodyLen = data.length + 1;
-        
-        if (bodyLen < 192)
-        {
-            out.write((byte)bodyLen);
-        }
-        else if (bodyLen <= 8383)
-        {
-            bodyLen -= 192;
-            
-            out.write((byte)(((bodyLen >> 8) & 0xff) + 192));
-            out.write((byte)bodyLen);
-        }
-        else
+
+        if (isLongLength)
         {
             out.write(0xff);
             out.write((byte)(bodyLen >> 24));
             out.write((byte)(bodyLen >> 16));
             out.write((byte)(bodyLen >> 8));
             out.write((byte)bodyLen);
+        }
+        else
+        {
+            if (bodyLen < 192)
+            {
+                out.write((byte)bodyLen);
+            }
+            else if (bodyLen <= 8383)
+            {
+                bodyLen -= 192;
+
+                out.write((byte)(((bodyLen >> 8) & 0xff) + 192));
+                out.write((byte)bodyLen);
+            }
+            else
+            {
+                out.write(0xff);
+                out.write((byte)(bodyLen >> 24));
+                out.write((byte)(bodyLen >> 16));
+                out.write((byte)(bodyLen >> 8));
+                out.write((byte)bodyLen);
+            }
         }
         
         if (critical)

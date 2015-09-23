@@ -27,16 +27,17 @@ public class Revocable
     
     public Revocable(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.REVOCABLE, critical, data);
+        super(SignatureSubpacketTags.REVOCABLE, critical, isLongLength, data);
     }
     
     public Revocable(
         boolean    critical,
         boolean    isRevocable)
     {
-        super(SignatureSubpacketTags.REVOCABLE, critical, booleanToByteArray(isRevocable));
+        super(SignatureSubpacketTags.REVOCABLE, critical, false, booleanToByteArray(isRevocable));
     }
     
     public boolean isRevocable()

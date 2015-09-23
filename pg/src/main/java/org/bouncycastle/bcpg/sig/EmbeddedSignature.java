@@ -11,8 +11,9 @@ public class EmbeddedSignature
 {
     public EmbeddedSignature(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.EMBEDDED_SIGNATURE, critical, data);
+        super(SignatureSubpacketTags.EMBEDDED_SIGNATURE, critical, isLongLength, data);
     }
 }

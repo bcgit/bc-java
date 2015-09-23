@@ -27,16 +27,17 @@ public class Exportable
     
     public Exportable(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.EXPORTABLE, critical, data);
+        super(SignatureSubpacketTags.EXPORTABLE, critical, isLongLength, data);
     }
     
     public Exportable(
         boolean    critical,
         boolean    isExportable)
     {
-        super(SignatureSubpacketTags.EXPORTABLE, critical, booleanToByteArray(isExportable));
+        super(SignatureSubpacketTags.EXPORTABLE, critical, false,  booleanToByteArray(isExportable));
     }
     
     public boolean isExportable()

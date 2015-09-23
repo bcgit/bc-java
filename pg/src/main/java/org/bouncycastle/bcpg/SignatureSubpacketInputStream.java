@@ -23,22 +23,23 @@ import org.bouncycastle.util.io.Streams;
  * reader for signature sub-packets
  */
 public class SignatureSubpacketInputStream
-    extends InputStream implements SignatureSubpacketTags
+    extends InputStream
+    implements SignatureSubpacketTags
 {
-    InputStream    in;
-    
+    InputStream in;
+
     public SignatureSubpacketInputStream(
-        InputStream    in)
+        InputStream in)
     {
         this.in = in;
     }
-    
+
     public int available()
         throws IOException
     {
         return in.available();
     }
-    
+
     public int read()
         throws IOException
     {
@@ -48,13 +49,15 @@ public class SignatureSubpacketInputStream
     public SignatureSubpacket readPacket()
         throws IOException
     {
-        int            l = this.read();
-        int            bodyLen = 0;
-        
+        int l = this.read();
+        int bodyLen = 0;
+
         if (l < 0)
         {
             return null;
         }
+
+        boolean isLongLength = false;
 
         if (l < 192)
         {
@@ -66,21 +69,22 @@ public class SignatureSubpacketInputStream
         }
         else if (l == 255)
         {
-            bodyLen = (in.read() << 24) | (in.read() << 16) |  (in.read() << 8)  | in.read();
+            isLongLength = true;
+            bodyLen = (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
         }
         else
         {
-            // TODO Error?
+            throw new IOException("unexpected length header");
         }
 
-        int        tag = in.read();
+        int tag = in.read();
 
         if (tag < 0)
         {
-               throw new EOFException("unexpected EOF reading signature sub packet");
+            throw new EOFException("unexpected EOF reading signature sub packet");
         }
 
-        byte[]    data = new byte[bodyLen - 1];
+        byte[] data = new byte[bodyLen - 1];
 
         //
         // this may seem a bit strange but it turns out some applications miscode the length
@@ -89,8 +93,8 @@ public class SignatureSubpacketInputStream
         //
         int bytesRead = Streams.readFully(in, data);
 
-        boolean   isCritical = ((tag & 0x80) != 0);
-        int       type = tag & 0x7f;
+        boolean isCritical = ((tag & 0x80) != 0);
+        int type = tag & 0x7f;
 
         if (bytesRead != data.length)
         {
@@ -116,34 +120,34 @@ public class SignatureSubpacketInputStream
         switch (type)
         {
         case CREATION_TIME:
-            return new SignatureCreationTime(isCritical, data);
+            return new SignatureCreationTime(isCritical, isLongLength, data);
         case KEY_EXPIRE_TIME:
-            return new KeyExpirationTime(isCritical, data);
+            return new KeyExpirationTime(isCritical, isLongLength, data);
         case EXPIRE_TIME:
-            return new SignatureExpirationTime(isCritical, data);
+            return new SignatureExpirationTime(isCritical, isLongLength, data);
         case REVOCABLE:
-            return new Revocable(isCritical, data);
+            return new Revocable(isCritical, isLongLength, data);
         case EXPORTABLE:
-            return new Exportable(isCritical, data);
+            return new Exportable(isCritical, isLongLength, data);
         case ISSUER_KEY_ID:
-            return new IssuerKeyID(isCritical, data);
+            return new IssuerKeyID(isCritical, isLongLength, data);
         case TRUST_SIG:
-            return new TrustSignature(isCritical, data);
+            return new TrustSignature(isCritical, isLongLength, data);
         case PREFERRED_COMP_ALGS:
         case PREFERRED_HASH_ALGS:
         case PREFERRED_SYM_ALGS:
-            return new PreferredAlgorithms(type, isCritical, data);
+            return new PreferredAlgorithms(type, isCritical, isLongLength, data);
         case KEY_FLAGS:
-            return new KeyFlags(isCritical, data);
+            return new KeyFlags(isCritical, isLongLength, data);
         case PRIMARY_USER_ID:
-            return new PrimaryUserID(isCritical, data);
+            return new PrimaryUserID(isCritical, isLongLength, data);
         case SIGNER_USER_ID:
-            return new SignerUserID(isCritical, data);
+            return new SignerUserID(isCritical, isLongLength, data);
         case NOTATION_DATA:
-            return new NotationData(isCritical, data);
+            return new NotationData(isCritical, isLongLength, data);
         }
 
-        return new SignatureSubpacket(type, isCritical, data);
+        return new SignatureSubpacket(type, isCritical, isLongLength, data);
     }
 
     private byte[] checkData(byte[] data, int expected, int bytesRead, String name)

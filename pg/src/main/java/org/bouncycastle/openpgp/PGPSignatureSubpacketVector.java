@@ -288,7 +288,7 @@ public class PGPSignatureSubpacketVector
             return null;
         }
 
-        return new Features(p.isCritical(), p.getData());
+        return new Features(p.isCritical(), p.isLongLength(), p.getData());
     }
 
     /**

@@ -24,9 +24,10 @@ public class PreferredAlgorithms
     public PreferredAlgorithms(
         int        type,
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(type, critical, data);
+        super(type, critical, isLongLength, data);
     }
     
     public PreferredAlgorithms(
@@ -34,7 +35,7 @@ public class PreferredAlgorithms
         boolean    critical,
         int[]      preferrences)
     {
-        super(type, critical, intToByteArray(preferrences));
+        super(type, critical, false, intToByteArray(preferrences));
     }
     
     /**
