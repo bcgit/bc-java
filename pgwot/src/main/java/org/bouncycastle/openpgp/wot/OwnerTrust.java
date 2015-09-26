@@ -12,6 +12,7 @@ import java.util.Map;
  * <li>How well does this person understand OpenPGP?
  * <li>How well does this person protect his computer's integrity and most importantly his private key?
  * <li>How well does this person check the authenticity of another key before signing (= certifying) it?
+ * <li>Would this person certify a key in bad faith?
  * </ul>
  * <p>
  * Whether you trust this person on a personal level, should have only a minor influence on the owner-trust. For
