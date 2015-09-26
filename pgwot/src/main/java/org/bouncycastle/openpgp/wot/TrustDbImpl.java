@@ -162,7 +162,7 @@ public class TrustDbImpl implements AutoCloseable, TrustConst, TrustDb
 
         TrustRecord.Trust trust = getTrustByPublicKey(publicKey);
         if (trust == null)
-            return OwnerTrust.UNKNOWN;
+            return null;
 
         return OwnerTrust.fromNumericValue(trust.getOwnerTrust() & TRUST_MASK);
     }

@@ -33,8 +33,7 @@ public interface TrustDb extends AutoCloseable
      *
      * @param pgpKey
      *            the key whose owner-trust should be looked up. Must not be <code>null</code>.
-     * @return the owner-trust. Never <code>null</code>. If none has been assigned, before, this method returns
-     *         {@link OwnerTrust#UNKNOWN UNKNOWN}.
+     * @return the owner-trust. May be <code>null</code>, if none has been assigned, before.
      * @see #setOwnerTrust(PgpKey, OwnerTrust)
      * @see #getOwnerTrust(PGPPublicKey)
      */
@@ -67,8 +66,7 @@ public interface TrustDb extends AutoCloseable
      *
      * @param publicKey
      *            the key whose owner-trust should be looked up. Must not be <code>null</code>.
-     * @return the owner-trust. Never <code>null</code>. If none has been assigned, before, this method returns
-     *         {@link OwnerTrust#UNKNOWN UNKNOWN}.
+     * @return the owner-trust. May be <code>null</code>, if none has been assigned, before.
      * @see #setOwnerTrust(PGPPublicKey, OwnerTrust)
      * @see #getOwnerTrust(PgpKey)
      */
