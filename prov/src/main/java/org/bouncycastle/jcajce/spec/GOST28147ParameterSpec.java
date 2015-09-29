@@ -62,7 +62,7 @@ public class GOST28147ParameterSpec
 
     public byte[] getSbox()
     {
-        return sBox;
+        return Arrays.clone(sBox);
     }
 
     /**
@@ -72,16 +72,7 @@ public class GOST28147ParameterSpec
      */
     public byte[] getIV()
     {
-        if (iv == null)
-        {
-            return null;
-        }
-
-        byte[]  tmp = new byte[iv.length];
-
-        System.arraycopy(iv, 0, tmp, 0, tmp.length);
-
-        return tmp;
+        return Arrays.clone(iv);
     }
 
     private static Map oidMappings = new HashMap();
