@@ -837,7 +837,7 @@ public class BcCertTest
          X500Name p = builder.build();
          String s = p.toString();
 
-         if (!s.equals("C=AU,O=The Legion of the Bouncy Castle,L=Melbourne,ST=Victoria,E=feedback-crypto@bouncycastle.org"))
+         if (!s.equals("1.2.840.113549.1.9.1=feedback-crypto@bouncycastle.org,st=Victoria,l=Melbourne,o=The Legion of the Bouncy Castle,c=AU"))
          {
              fail("ordered X509Principal test failed - s = " + s + ".");
          }
@@ -854,12 +854,12 @@ public class BcCertTest
 
              X509CertificateHolder cert = certGen.build(sigGen);
 
-             if (cert.isValidOn(new Date()))
+             if (!cert.isValidOn(new Date()))
              {
                  fail("not valid on date");
              }
 
-             if (cert.isSignatureValid(new BcECContentVerifierProviderBuilder(new DefaultDigestAlgorithmIdentifierFinder()).build(pubKey)))
+             if (!cert.isSignatureValid(new BcECContentVerifierProviderBuilder(new DefaultDigestAlgorithmIdentifierFinder()).build(pubKey)))
              {
                  fail("signature invalid");
              }
