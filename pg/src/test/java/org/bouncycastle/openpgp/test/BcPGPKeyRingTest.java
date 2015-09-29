@@ -2359,7 +2359,7 @@ public class BcPGPKeyRingTest
         Iterator<String> uidit = masterpk.getUserIDs();
         while (uidit.hasNext())
         {
-            checkUidSig(masterpk, uidit.next());
+            checkUidSig(masterpk, (String)uidit.next());    // 1.4 compatibility
         }
     }
 
@@ -2370,7 +2370,7 @@ public class BcPGPKeyRingTest
 
         while (sigit.hasNext())
         {
-            PGPSignature sig = sigit.next();
+            PGPSignature sig = (PGPSignature)sigit.next();    // 1.4 compatibility
             if (!isGoodUIDSignature(sig, pk, uid))
             {
                 fail("Bad self-signature found for '" + uid + "'");
