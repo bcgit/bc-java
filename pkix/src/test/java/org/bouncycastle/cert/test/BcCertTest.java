@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -39,6 +40,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CRLEntryHolder;
 import org.bouncycastle.cert.X509CRLHolder;
@@ -58,11 +60,15 @@ import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
@@ -70,10 +76,13 @@ import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcDSAContentVerifierProviderBuilder;
+import org.bouncycastle.operator.bc.BcECContentSignerBuilder;
+import org.bouncycastle.operator.bc.BcECContentVerifierProviderBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BcCertTest
     extends TestCase
@@ -793,6 +802,74 @@ public class BcCertTest
             //System.out.println(cert);
     }
 
+    /**
+      * we generate a self signed certificate for the sake of testing - ECDSA
+      */
+     public void checkCreation3()
+     {
+         ECCurve curve = new ECCurve.Fp(
+             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
+             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
+             new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+
+         ECDomainParameters params = new ECDomainParameters(
+             curve,
+             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
+             new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+
+
+         ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(
+             new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
+             params);
+
+         ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
+             curve.decodePoint(Hex.decode("025b6dc53bc61a2548ffb0f671472de6c9521a9d2d2534e65abfcbd5fe0c70")), // Q
+             params);
+
+         //
+         // distinguished name table.
+         //
+         X500NameBuilder builder = createStdBuilder();
+
+         //
+         // toString test
+         //
+         X500Name p = builder.build();
+         String s = p.toString();
+
+         if (!s.equals("C=AU,O=The Legion of the Bouncy Castle,L=Melbourne,ST=Victoria,E=feedback-crypto@bouncycastle.org"))
+         {
+             fail("ordered X509Principal test failed - s = " + s + ".");
+         }
+
+         //
+         // create the certificate - version 3
+         //
+         try
+         {
+             ContentSigner sigGen = new BcECContentSignerBuilder(
+                 new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1),
+                 new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)).build(privKey);
+             BcX509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+             X509CertificateHolder cert = certGen.build(sigGen);
+
+             if (cert.isValidOn(new Date()))
+             {
+                 fail("not valid on date");
+             }
+
+             if (cert.isSignatureValid(new BcECContentVerifierProviderBuilder(new DefaultDigestAlgorithmIdentifierFinder()).build(pubKey)))
+             {
+                 fail("signature invalid");
+             }
+         }
+         catch (Exception e)
+         {
+             fail("error setting generating cert - " + e.toString());
+         }
+     }
+
     private X500NameBuilder createStdBuilder()
     {
         X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
@@ -1422,6 +1499,7 @@ public class BcCertTest
 
         checkCreation1();
         checkCreation2();
+        checkCreation3();
         checkCreation5();
 
         createPSSCert("SHA1withRSAandMGF1");
