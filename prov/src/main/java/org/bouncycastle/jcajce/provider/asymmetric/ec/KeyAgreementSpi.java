@@ -40,6 +40,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -47,7 +48,6 @@ import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.MQVPrivateKey;
 import org.bouncycastle.jce.interfaces.MQVPublicKey;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -57,46 +57,14 @@ import org.bouncycastle.util.Strings;
  * Also, MQV key agreement per SEC-1
  */
 public class KeyAgreementSpi
-    extends javax.crypto.KeyAgreementSpi
+    extends BaseAgreementSpi
 {
     private static final X9IntegerConverter converter = new X9IntegerConverter();
-    private static final Hashtable algorithms = new Hashtable();
-    private static final Hashtable algorithmNames = new Hashtable();
     private static final Hashtable oids = new Hashtable();
     private static final Hashtable des = new Hashtable();
 
     static
     {
-        Integer i64 = Integers.valueOf(64);
-        Integer i128 = Integers.valueOf(128);
-        Integer i192 = Integers.valueOf(192);
-        Integer i256 = Integers.valueOf(256);
-
-        algorithms.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), i128);
-        algorithms.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), i192);
-        algorithms.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), i256);
-        algorithms.put(NISTObjectIdentifiers.id_aes128_wrap.getId(), i128);
-        algorithms.put(NISTObjectIdentifiers.id_aes192_wrap.getId(), i192);
-        algorithms.put(NISTObjectIdentifiers.id_aes256_wrap.getId(), i256);
-        algorithms.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), i192);
-        algorithms.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), i192);
-        algorithms.put(OIWObjectIdentifiers.desCBC.getId(), i64);
-
-        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA1.getId(), Integers.valueOf(160));
-        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA256.getId(), i256);
-        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA384.getId(), Integers.valueOf(384));
-        algorithms.put(PKCSObjectIdentifiers.id_hmacWithSHA512.getId(), Integers.valueOf(512));
-
-        algorithmNames.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), "AES");
-        algorithmNames.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), "AES");
-        algorithmNames.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), "AES");
-        algorithmNames.put(NISTObjectIdentifiers.id_aes128_wrap.getId(), "AES");
-        algorithmNames.put(NISTObjectIdentifiers.id_aes192_wrap.getId(), "AES");
-        algorithmNames.put(NISTObjectIdentifiers.id_aes256_wrap.getId(), "AES");
-        algorithmNames.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), "DESEDE");
-        algorithmNames.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DESEDE");
-        algorithmNames.put(OIWObjectIdentifiers.desCBC.getId(), "DES");
-
         oids.put("DESEDE", PKCSObjectIdentifiers.des_EDE3_CBC);
         oids.put("AES", NISTObjectIdentifiers.id_aes256_CBC);
         oids.put("DES", OIWObjectIdentifiers.desCBC);
@@ -232,33 +200,32 @@ public class KeyAgreementSpi
             oidAlgorithm = ((ASN1ObjectIdentifier)oids.get(algKey)).getId();
         }
 
+        int    keySize = getKeySize(oidAlgorithm);
+
         if (kdf != null)
         {
-            if (!algorithms.containsKey(oidAlgorithm))
+            if (keySize < 0)
             {
-                throw new NoSuchAlgorithmException("unknown algorithm encountered: " + algorithm);
+                throw new NoSuchAlgorithmException("unknown algorithm encountered: " + oidAlgorithm);
             }
-            
-            int    keySize = ((Integer)algorithms.get(oidAlgorithm)).intValue();
+            byte[] keyBytes = new byte[keySize / 8];
 
             KDFParameters params = new KDFParameters(secret, ukmParameters);
 
-            byte[] keyBytes = new byte[keySize / 8];
             kdf.init(params);
             kdf.generateBytes(keyBytes, 0, keyBytes.length);
+
             secret = keyBytes;
         }
         else
         {
-            if (algorithms.containsKey(oidAlgorithm))
+            if (keySize > 0)
             {
-                Integer length = (Integer)algorithms.get(oidAlgorithm);
+                byte[] keyBytes = new byte[keySize / 8];
 
-                byte[] key = new byte[length.intValue() / 8];
+                System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
 
-                System.arraycopy(secret, 0, key, 0, key.length);
-
-                secret = key;
+                secret = keyBytes;
             }
         }
 
@@ -267,17 +234,7 @@ public class KeyAgreementSpi
             DESParameters.setOddParity(secret);
         }
 
-        return new SecretKeySpec(secret, getAlgorithmName(algorithm));
-    }
-
-    private String getAlgorithmName(String algorithm)
-    {
-        if (algorithmNames.containsKey(algorithm))
-        {
-            return (String)algorithmNames.get(algorithm);
-        }
-
-        return algorithm;
+        return new SecretKeySpec(secret, getAlgorithm(algorithm));
     }
 
     protected void engineInit(
