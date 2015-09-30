@@ -37,6 +37,9 @@ Release: 1.53
 <li>The JceCRMFEncryptorBuilder was not recognising key size specific object identifiers properly. This has been fixed.</li>
 <li>The OpenPGP ClearSignedFileProcessor would not handle verification of single line files properly. This has been fixed.</li>
 <li>The BC X509Certificate class was no longer in agreement with the standard class for hashCode(). The BC X509Certificate class will now track the changes made in the standard Java distribution.</li>
+<li>PGP signature hashed sub-packets with long length encodings would fail to validate on signature checking. This has been fixed.</li>
+<li>The S/MIME API would occasionally leak InputStreams which could cause issues with custom DataSource implementations. This has been fixed.</li>
+<li>The PKCS#12 KeyStore implementation would sometimes leave orphaned chain certificates in the key store after private key deletion. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -48,6 +51,7 @@ Release: 1.53
 <li>EAX mode and CMAC is now supported for ciphers such as SHACAL-2 and Threefish.</li>
 <li>The SM4 block cipher has been added to the provider and the lightweight API.</li>
 <li>X9.31, ISO9796/2, and PSS signature support has been added for SHA512/224, SHA512/256.</li>
+<li>SubjectPublicKeyInfoFactory now supports DSA parameters.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
