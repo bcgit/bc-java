@@ -17,10 +17,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.Date;
 import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -35,9 +32,11 @@ import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.SafeBag;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.PKCS12Util;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
@@ -45,7 +44,6 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 /**
  * Exercise the various key stores, making sure we at least get back what we put in!
@@ -563,47 +561,23 @@ public class PKCS12StoreTest
         //
         // distinguished name table.
         //
-        Hashtable                   issuerAttrs = new Hashtable();
+        X500NameBuilder issuerBldr = new X500NameBuilder();
 
-        issuerAttrs.put(X509Principal.C, "AU");
-        issuerAttrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        issuerAttrs.put(X509Principal.L, "Melbourne");
-        issuerAttrs.put(X509Principal.ST, "Victoria");
-        issuerAttrs.put(X509Principal.EmailAddress, issuerEmail);
+        issuerBldr.addRDN(BCStyle.C, "AU");
+        issuerBldr.addRDN(BCStyle.O, "The Legion of the Bouncy Castle");
+        issuerBldr.addRDN(BCStyle.L, "Melbourne");
+        issuerBldr.addRDN(BCStyle.ST, "Victoria");
+        issuerBldr.addRDN(BCStyle.EmailAddress, issuerEmail);
 
-        Hashtable                   subjectAttrs = new Hashtable();
+        X500NameBuilder subjectBldr = new X500NameBuilder();
 
-        subjectAttrs.put(X509Principal.C, "AU");
-        subjectAttrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        subjectAttrs.put(X509Principal.L, "Melbourne");
-        subjectAttrs.put(X509Principal.ST, "Victoria");
-        subjectAttrs.put(X509Principal.EmailAddress, subjectEmail);
+        subjectBldr.addRDN(BCStyle.C, "AU");
+        subjectBldr.addRDN(BCStyle.O, "The Legion of the Bouncy Castle");
+        subjectBldr.addRDN(BCStyle.L, "Melbourne");
+        subjectBldr.addRDN(BCStyle.ST, "Victoria");
+        subjectBldr.addRDN(BCStyle.EmailAddress, subjectEmail);
 
-        Vector order = new Vector();
-        order.add(X509Principal.C);
-        order.add(X509Principal.O);
-        order.add(X509Principal.L);
-        order.add(X509Principal.ST);
-        order.add(X509Principal.EmailAddress);
-
-        //
-        // extensions
-        //
-
-        //
-        // create the certificate - version 3
-        //
-        X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
-
-        certGen.setSerialNumber(BigInteger.valueOf(1));
-        certGen.setIssuerDN(new X509Principal(order, issuerAttrs));
-        certGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        certGen.setSubjectDN(new X509Principal(order, subjectAttrs));
-        certGen.setPublicKey(pubKey);
-        certGen.setSignatureAlgorithm("MD5WithRSAEncryption");
-
-        return certGen.generate(privKey);
+        return TestUtils.createCert(issuerBldr.build(), privKey, subjectBldr.build(), "SHA1withRSA", null, pubKey);
     }
 
     private void testGOSTStore()
@@ -1289,6 +1263,113 @@ public class PKCS12StoreTest
         keyStore.getEntry("cycle", new KeyStore.PasswordProtection("test".toCharArray()));
     }
 
+    private void testOrphanedCertCleanup()
+        throws Exception
+    {
+        KeyPair kp1 = TestUtils.generateRSAKeyPair();
+        KeyPair kp1ca = TestUtils.generateRSAKeyPair();
+        KeyPair kp1ee = TestUtils.generateRSAKeyPair();
+
+        X509Certificate kp1Root = TestUtils.generateRootCert(kp1, new X500Name("CN=KP1 ROOT"));
+        X509Certificate kp1CA = TestUtils.generateIntermediateCert(kp1ca.getPublic(), new X500Name("CN=KP1 CA"), kp1.getPrivate(), kp1Root);
+        X509Certificate kp1EE = TestUtils.generateEndEntityCert(kp1ee.getPublic(), new X500Name("CN=KP1 EE"), kp1ca.getPrivate(), kp1CA);
+
+        Certificate[] kp1Chain = new Certificate[] { kp1EE, kp1CA, kp1Root };
+
+        KeyPair kp2 = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ca = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ee = TestUtils.generateRSAKeyPair();
+
+        X509Certificate kp2Root = TestUtils.generateRootCert(kp2, new X500Name("CN=KP2 ROOT"));
+        X509Certificate kp2CA = TestUtils.generateIntermediateCert(kp2ca.getPublic(), new X500Name("CN=KP2 CA"), kp2.getPrivate(), kp1Root);
+        X509Certificate kp2EE = TestUtils.generateEndEntityCert(kp2ee.getPublic(), new X500Name("CN=KP2 EE"), kp2ca.getPrivate(), kp1CA);
+
+        Certificate[] kp2Chain = new Certificate[] { kp2EE, kp2CA, kp2Root };
+
+        KeyPair kp3 = TestUtils.generateRSAKeyPair();
+        X509Certificate kp3Root = TestUtils.generateRootCert(kp3, new X500Name("CN=KP3 ROOT"));
+
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+
+        keyStore.load(null, null);
+
+        keyStore.setKeyEntry("kp1", kp1.getPrivate(), null, kp1Chain);
+        keyStore.setCertificateEntry("kp1root", kp1Root);
+        keyStore.setKeyEntry("kp2", kp1.getPrivate(), null, kp2Chain);
+
+        keyStore.setCertificateEntry("kp3root", kp3Root);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        keyStore.store(bOut, "fred".toCharArray());
+
+        byte[] baseData = bOut.toByteArray();
+
+        KeyStore ks1 = KeyStore.getInstance("PKCS12", "BC");
+
+        ks1.load(new ByteArrayInputStream(baseData), "fred".toCharArray());
+
+        if (!ks1.containsAlias("kp1") || !ks1.isKeyEntry("kp1") || ks1.getCertificateChain("kp1").length != 3)
+        {
+            fail("kp1 missing in ks1");
+        }
+
+        ks1.deleteEntry("kp1");
+
+        ByteArrayOutputStream bOut1 = new ByteArrayOutputStream();
+
+        ks1.store(bOut1, "fred".toCharArray());
+
+        KeyStore ks2 = KeyStore.getInstance("PKCS12", "BC");
+
+        ks2.load(new ByteArrayInputStream(bOut1.toByteArray()), "fred".toCharArray());
+
+        if (!ks2.containsAlias("kp2") || !ks2.isKeyEntry("kp2") || ks2.getCertificateChain("kp2").length != 3)
+        {
+            fail("kp2 missing in ks2");
+        }
+
+        if (!ks2.containsAlias("kp1root") || !ks2.isCertificateEntry("kp1root"))
+        {
+            fail("kp1root missing in ks2");
+        }
+
+        if (!ks2.containsAlias("kp3root") || !ks2.isCertificateEntry("kp3root"))
+        {
+            fail("kp3root missing in ks2");
+        }
+
+        if (ks2.size() != 3)
+        {
+            fail("ks2 wrong size");
+        }
+
+        ks2.deleteEntry("kp2");
+
+        ByteArrayOutputStream bOut2 = new ByteArrayOutputStream();
+
+        ks2.store(bOut2, "fred".toCharArray());
+
+        KeyStore ks3 = KeyStore.getInstance("PKCS12", "BC");
+
+        ks3.load(new ByteArrayInputStream(bOut2.toByteArray()), "fred".toCharArray());
+
+        if (!ks3.containsAlias("kp1root") || !ks3.isCertificateEntry("kp1root"))
+        {
+            fail("kp1root missing in ks3");
+        }
+
+        if (!ks3.containsAlias("kp3root") || !ks3.isCertificateEntry("kp3root"))
+        {
+            fail("kp3root missing in ks3");
+        }
+
+        if (ks3.size() != 2)
+        {
+            fail("ks3 wrong size");
+        }
+    }
+
     public String getName()
     {
         return "PKCS12Store";
@@ -1330,6 +1411,8 @@ public class PKCS12StoreTest
         {
             fail("Failed deep DER conversion test - inner.");
         }
+
+        testOrphanedCertCleanup();
     }
 
     public static void main(
