@@ -1293,9 +1293,9 @@ public class PKCS12StoreTest
 
         keyStore.load(null, null);
 
-        keyStore.setKeyEntry("kp1", kp1.getPrivate(), null, kp1Chain);
+        keyStore.setKeyEntry("kp1", kp1ee.getPrivate(), null, kp1Chain);
         keyStore.setCertificateEntry("kp1root", kp1Root);
-        keyStore.setKeyEntry("kp2", kp1.getPrivate(), null, kp2Chain);
+        keyStore.setKeyEntry("kp2", kp1ee.getPrivate(), null, kp2Chain);
 
         keyStore.setCertificateEntry("kp3root", kp3Root);
 
