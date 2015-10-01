@@ -1,5 +1,8 @@
 package org.bouncycastle.openpgp.wot.internal;
 
+import java.util.Collections;
+import java.util.Iterator;
+
 public class Util
 {
     private Util()
@@ -148,5 +151,17 @@ public class Util
             throw new IllegalArgumentException(String.format("%s == null", name));
 
         return object;
+    }
+
+    public static <E> Iterator<E> nullToEmpty(final Iterator<E> iterator)
+    {
+        if (iterator == null)
+            return Collections.<E> emptyList().iterator();
+        else
+            return iterator;
+    }
+
+    public static final void doNothing()
+    {
     }
 }

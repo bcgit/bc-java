@@ -1,9 +1,9 @@
 package org.bouncycastle.openpgp.wot;
 
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
+
 /**
  * Exception thrown by {@link TrustDbImpl} and related classes.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class TrustDbException extends RuntimeException
 {

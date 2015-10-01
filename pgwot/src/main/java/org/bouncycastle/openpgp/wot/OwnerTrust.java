@@ -3,6 +3,8 @@ package org.bouncycastle.openpgp.wot;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
+
 /**
  * The owner-trust is assigned to a key, but does <i>not</i> describe the key itself. It specifies how reliable the
  * <i>owner</i> of this key is in his function as notary certifying other keys.
@@ -18,8 +20,7 @@ import java.util.Map;
  * Whether you trust this person on a personal level, should have only a minor influence on the owner-trust. For
  * example, you certainly trust your mother, but unless she's really computer-savvy, you likely assign a low owner-trust
  * to her key.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
+
  * @see TrustDbImpl#getOwnerTrust(org.bouncycastle.openpgp.wot.key.PgpKey)
  */
 public enum OwnerTrust
@@ -67,7 +68,7 @@ public enum OwnerTrust
 
     private final int numericValue;
 
-    private static Map<Integer, OwnerTrust> numericValue2OwnerTrust;
+    private static volatile Map<Integer, OwnerTrust> numericValue2OwnerTrust;
 
     private OwnerTrust(final int numericValue)
     {

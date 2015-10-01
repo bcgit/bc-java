@@ -18,11 +18,32 @@ import org.bouncycastle.openpgp.PGPSignature;
  * the timestamp changes, the files are re-loaded. But beware: The file system's timestamps usually have a pretty bad
  * resolution (of 1 or even 2 seconds). Therefore, it may happen that a modification goes undetected, if multiple
  * changes occur within the resolution.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public interface PgpKeyRegistry
 {
+    /**
+     * Utility class for creating an instance of a {@code PgpKeyRegistry} implementation.
+     */
+    public static class Helper {
+        /**
+         * Creates a new instance of a {@code PgpKeyRegistry} implementation.
+         * <p>
+         * There is currently only one single implementation available ({@code PgpKeyRegistryImpl}),
+         * but this might change in the future. Hence, this method should be used instead of
+         * directly invoking a constructor!
+         * @param pubringFile
+         *            the file containing the public keys - usually named {@code pubring.gpg} (located in {@code ~/.gnupg/}
+         *            ). Must not be <code>null</code>. The file does not need to exist, though.
+         * @param secringFile
+         *            the file containing the secret keys - usually named {@code secring.gpg} (located in {@code ~/.gnupg/}
+         *            ). Must not be <code>null</code>. The file does not need to exist, though.
+         * @return a new instance of a {@code PgpKeyRegistry}. Never <code>null</code>.
+         */
+        public static PgpKeyRegistry createInstance(final File pubringFile, final File secringFile) {
+            return new PgpKeyRegistryImpl(pubringFile, secringFile);
+        }
+    }
+
     /**
      * Gets the file containing the public keys - usually named {@code pubring.gpg} (located in {@code ~/.gnupg/}).
      *

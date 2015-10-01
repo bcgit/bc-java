@@ -17,8 +17,6 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 
 /**
  * OpenPGP key or key pair (if both public and secret key are present).
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class PgpKey
 {
@@ -42,7 +40,7 @@ public class PgpKey
 
     private List<PgpKey> subKeys;
 
-    private List<PgpUserId> pgpUserIds;
+    private volatile List<PgpUserId> pgpUserIds;
 
     public PgpKey(final PgpKeyId pgpKeyId, final PgpKeyFingerprint pgpKeyFingerprint)
     {
@@ -142,8 +140,10 @@ public class PgpKey
 
     public Set<PgpKeyId> getSubKeyIds()
     {
-        if (subKeyIds == null && masterKey == null) // only a master-key can have sub-keys! hence we keep it null, if
-                                                    // this is not a master-key!
+        if (masterKey != null) // only a master-key can have sub-keys! hence we keep it null, if this is not a master-key!
+            return null;
+
+        if (subKeyIds == null)
             subKeyIds = new LinkedHashSet<>();
 
         return subKeyIds;
@@ -151,6 +151,9 @@ public class PgpKey
 
     protected void setSubKeyIds(Set<PgpKeyId> subKeyIds)
     {
+        if (masterKey != null)
+            throw new IllegalStateException("This is not a master-key! Cannot assign sub-keys!");
+
         this.subKeyIds = subKeyIds;
     }
 
@@ -184,5 +187,27 @@ public class PgpKey
 
         return String.format("%s[pgpKeyId=%s masterKey=%s primaryUserId=%s]", this.getClass().getSimpleName(),
                 pgpKeyId, masterKey, primaryUserId);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((pgpKeyId == null) ? 0 : pgpKeyId.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        PgpKey other = (PgpKey) obj;
+        return this.pgpKeyId.equals(other.pgpKeyId);
     }
 }

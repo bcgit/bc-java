@@ -12,7 +12,7 @@ import org.bouncycastle.openpgp.wot.key.PgpKeyFingerprint;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
 import org.bouncycastle.openpgp.wot.key.PgpUserIdNameHash;
 
-public class PgpKeyTrust
+class PgpKeyTrust
 {
     private final PgpKey pgpKey;
     private final Map<PgpUserIdNameHash, PgpUserIdTrust> nameHash2UserIdTrust = new HashMap<>();

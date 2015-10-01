@@ -9,17 +9,15 @@ import java.util.Arrays;
 
 /**
  * An OpenPGP key's fingerprint.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class PgpKeyFingerprint implements Comparable<PgpKeyFingerprint>, Serializable
 {
     private static final long serialVersionUID = 1L;
 
     private final byte[] fingerprint;
-    private transient int hashCode;
-    private transient WeakReference<String> toString;
-    private transient WeakReference<String> toHumanString;
+    private transient volatile int hashCode;
+    private transient volatile WeakReference<String> toString;
+    private transient volatile WeakReference<String> toHumanString;
 
     public PgpKeyFingerprint(final byte[] fingerprint)
     {

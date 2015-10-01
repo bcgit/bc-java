@@ -1,13 +1,27 @@
 package org.bouncycastle.openpgp.wot.internal;
 
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
+
 import java.util.Arrays;
 import java.util.Date;
 
 import org.bouncycastle.openpgp.wot.TrustConst;
 
+/**
+ * A {@code TrustRecord} represents a row in the trust database - which is actually one big table.
+ * <p>
+ * Each row in the trust database can have a different purpose, thus there are different types -
+ * modeled both via {@link TrustRecordType} and via sub-classes of {@code TrustRecord}.
+ * <p>
+ * <b>Important:</b> Reading or modifying a TrustRecord must always be done in a synchronized block
+ * (using {@link Mutex}) guaranteeing the consistency of the entire trust database. There are
+ * inter-dependencies between different records inside the trust database and failing to synchronize
+ * might corrupt the entire database!
+ * <p>
+ * Ported from tdbio.c: struct trust_record
+ */
 public abstract class TrustRecord implements TrustConst
 {
-
     protected long recordNum = -1;
 
     public static class Unused extends TrustRecord
@@ -281,10 +295,6 @@ public abstract class TrustRecord implements TrustConst
         protected long validList;
         protected short minOwnerTrust;
 
-        public Trust()
-        {
-        }
-
         @Override
         public TrustRecordType getType()
         {
@@ -444,87 +454,4 @@ public abstract class TrustRecord implements TrustConst
     }
 
     public abstract TrustRecordType getType();
-
-    // Copied from tdbio.c:
-    // struct trust_record {
-    // int rectype;
-    // int mark;
-    // int dirty; /* for now only used internal by functions */
-    // struct trust_record *next; /* help pointer to build lists in memory */
-    // ulong recnum;
-    // union {
-    // struct { /* version record: */
-    // byte version; /* should be 3 */
-    // byte marginalsNeeded;
-    // byte completesNeeded;
-    // byte cert_depth;
-    // byte trust_model;
-    // byte min_cert_level;
-    // ulong created; /* timestamp of trustdb creation */
-    // ulong nextcheck; /* timestamp of next scheduled check */
-    // ulong reserved;
-    // ulong reserved2;
-    // ulong firstfree;
-    // ulong reserved3;
-    // ulong trusthashtbl;
-    // } ver;
-    // struct { /* free record */
-    // ulong next;
-    // } free;
-    // struct {
-    // ulong item[ITEMS_PER_HTBL_RECORD];
-    // } htbl;
-    // struct {
-    // ulong next;
-    // ulong rnum[ITEMS_PER_HLST_RECORD]; /* of another record */
-    // } hlst;
-    // struct {
-    // byte fingerprint[20];
-    // byte ownertrust;
-    // byte depth;
-    // ulong validlist;
-    // byte min_ownertrust;
-    // } trust;
-    // struct {
-    // byte namehash[20];
-    // ulong next;
-    // byte validity;
-    // byte full_count;
-    // byte marginal_count;
-    // } valid;
-    // } r;
-    // };
-
-    public static String encodeHexStr(final byte[] buf)
-    {
-        return encodeHexStr(buf, 0, buf.length);
-    }
-
-    /**
-     * Encode a byte array into a human readable hex string. For each byte, two hex digits are produced. They are
-     * concatenated without any separators.
-     *
-     * @param buf
-     *            The byte array to translate into human readable text.
-     * @param pos
-     *            The start position (0-based).
-     * @param len
-     *            The number of bytes that shall be processed beginning at the position specified by <code>pos</code>.
-     * @return a human readable string like "fa3d70" for a byte array with 3 bytes and these values.
-     * @see #encodeHexStr(byte[])
-     * @see #decodeHexStr(String)
-     */
-    public static String encodeHexStr(final byte[] buf, int pos, int len)
-    {
-        final StringBuilder hex = new StringBuilder();
-        while (len-- > 0)
-        {
-            final byte ch = buf[pos++];
-            int d = (ch >> 4) & 0xf;
-            hex.append((char) (d >= 10 ? 'a' - 10 + d : '0' + d));
-            d = ch & 0xf;
-            hex.append((char) (d >= 10 ? 'a' - 10 + d : '0' + d));
-        }
-        return hex.toString();
-    }
 }

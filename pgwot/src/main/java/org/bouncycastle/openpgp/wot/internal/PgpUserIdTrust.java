@@ -4,7 +4,7 @@ import static org.bouncycastle.openpgp.wot.internal.Util.*;
 
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
 
-public class PgpUserIdTrust
+class PgpUserIdTrust
 {
     private final PgpKeyTrust pgpKeyTrust;
     private final PgpUserId pgpUserId;

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.bouncycastle.openpgp.PGPSignature.*;
 import static org.bouncycastle.openpgp.wot.TrustConst.*;
 
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
 import org.junit.Test;
 

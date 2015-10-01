@@ -16,8 +16,8 @@ public enum TrustRecordType
     VALID((short) 13, TrustRecord.Valid.class),
     FREE((short) 254, TrustRecord.Free.class);
 
-    private static Map<Short, TrustRecordType> id2Type;
-    private static Map<Class<? extends TrustRecord>, TrustRecordType> class2Type;
+    private static volatile Map<Short, TrustRecordType> id2Type;
+    private static volatile Map<Class<? extends TrustRecord>, TrustRecordType> class2Type;
 
     private final short id;
     private Class<? extends TrustRecord> trustRecordClass;

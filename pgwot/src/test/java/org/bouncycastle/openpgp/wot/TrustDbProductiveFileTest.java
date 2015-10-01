@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.openpgp.wot.internal.Mutex;
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
 import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
 import org.bouncycastle.openpgp.wot.internal.TrustRecord;
 import org.bouncycastle.openpgp.wot.internal.TrustRecord.Trust;
@@ -26,10 +28,13 @@ import org.slf4j.LoggerFactory;
 public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 	private static final Logger logger = LoggerFactory.getLogger(TrustDbProductiveFileTest.class);
 
+	private Mutex mutex;
+
 	@Override
 	protected void initGnupgHomeDir() {
 		String userHome = System.getProperty("user.home");
 		gnupgHomeDir = new File(userHome, ".gnupg");
+		mutex = Mutex.forPgpDir(gnupgHomeDir);
 	}
 
 	@Override
@@ -39,7 +44,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 
 	@Test
 	public void readMyProductiveTrustDb() throws Exception {
-		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile);) {
+		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile, mutex);) {
 			long recordNum = -1;
 			TrustRecord trustRecord;
 			List<byte[]> trustFingerprints = new ArrayList<>();
@@ -58,7 +63,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 
 	@Test
 	public void updateMyProductiveDbHashTable() throws Exception {
-		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile);) {
+		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile, mutex);) {
 			long recordNum = -1;
 			TrustRecord trustRecord;
 			List<TrustRecord.Trust> trusts = new ArrayList<>();
@@ -78,7 +83,7 @@ public class TrustDbProductiveFileTest extends AbstractTrustDbTest {
 		byte[] fingerprint = new byte[]
 				{ -5, 17, -44, -69, 123, 36, 70, 120, 51, 122, -83, -117, -57, -65, 38, -48, -69, 97, 120, 102 };
 
-		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile);) {
+		try (TrustDbIo trustDbIo = new TrustDbIo(trustdbFile, mutex);) {
 			TrustRecord.Trust trust = trustDbIo.getTrustByFingerprint(fingerprint);
 			if (trust == null) {
 				long recordNum = -1;

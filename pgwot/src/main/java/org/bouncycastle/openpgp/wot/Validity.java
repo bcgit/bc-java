@@ -3,14 +3,14 @@ package org.bouncycastle.openpgp.wot;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
+
 /**
  * Validity of a key or user-identity/-attribute.
  * <p>
  * The validity is calculated by {@link TrustDbImpl#updateTrustDb()} and can be queried by its
  * {@link TrustDbImpl#getValidity(org.bouncycastle.openpgp.wot.key.PgpKey) getValidity(PgpKey)} or another overloaded
  * {@code getValidity(...)} method.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public enum Validity
 {
@@ -60,7 +60,7 @@ public enum Validity
 
     private final int numericValue;
 
-    private static Map<Integer, Validity> numericValue2Validity;
+    private static volatile Map<Integer, Validity> numericValue2Validity;
 
     private Validity(final int numericValue)
     {

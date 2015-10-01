@@ -1,7 +1,13 @@
 package org.bouncycastle.openpgp.wot;
 
+import static org.bouncycastle.openpgp.wot.internal.Util.*;
+
+import java.io.File;
+
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
 import org.bouncycastle.openpgp.wot.key.PgpKey;
+import org.bouncycastle.openpgp.wot.key.PgpKeyRegistry;
 import org.bouncycastle.openpgp.wot.key.PgpUserId;
 import org.bouncycastle.openpgp.wot.key.PgpUserIdNameHash;
 
@@ -17,11 +23,34 @@ import org.bouncycastle.openpgp.wot.key.PgpUserIdNameHash;
  * <li>Set a key's {@linkplain #setOwnerTrust(PGPPublicKey, int) owner-trust} attribute.
  * <li>{@linkplain #updateTrustDb() Recalculate the web-of-trust}.
  * </ul>
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public interface TrustDb extends AutoCloseable
 {
+    /**
+     * Utility class for creating an instance of a {@code TrustDb} implementation.
+     */
+    public static class Helper {
+        /**
+         * Creates a new instance of a {@code TrustDb} implementation.
+         * <p>
+         * <b>Important:</b> You must {@linkplain TrustDb#close() close} this instance!
+         * <p>
+         * There is currently only one single implementation available ({@code TrustDbImpl}),
+         * but this might change in the future. Hence, this method should be used instead of
+         * directly invoking a constructor!
+         * @param file
+         *            the trust-database-file ({@code trustdb.gpg}). Must not be <code>null</code>.
+         * @param pgpKeyRegistry
+         *            the key-registry. Must not be <code>null</code>.
+         * @return a new instance of a {@code TrustDb}. Never <code>null</code>.
+         */
+        public static TrustDb createInstance(final File file, final PgpKeyRegistry pgpKeyRegistry) {
+            assertNotNull("file", file);
+            assertNotNull("pgpKeyRegistry", pgpKeyRegistry);
+            return new TrustDbImpl(file, pgpKeyRegistry);
+        }
+    }
+
     @Override
     void close();
 

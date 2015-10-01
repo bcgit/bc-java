@@ -6,15 +6,13 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 
 /**
  * User-identity or user-attribute of an OpenPGP key.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class PgpUserId
 {
     private final PgpKey pgpKey;
     private final String userId;
     private final PGPUserAttributeSubpacketVector userAttribute;
-    private PgpUserIdNameHash nameHash;
+    private volatile PgpUserIdNameHash nameHash;
 
     public PgpUserId(final PgpKey pgpKey, final String userId)
     {

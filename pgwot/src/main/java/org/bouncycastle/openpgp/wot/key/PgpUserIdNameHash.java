@@ -18,17 +18,15 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
  * <p>
  * Use {@link #createFromUserId(String)} or {@link #createFromUserAttribute(PGPUserAttributeSubpacketVector)} to create
  * an instance.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class PgpUserIdNameHash implements Comparable<PgpUserIdNameHash>, Serializable
 {
     private static final long serialVersionUID = 1L;
 
     private final byte[] namehash;
-    private transient int hashCode;
-    private transient WeakReference<String> toString;
-    private transient WeakReference<String> toHumanString;
+    private transient volatile int hashCode;
+    private transient volatile WeakReference<String> toString;
+    private transient volatile WeakReference<String> toHumanString;
 
     protected PgpUserIdNameHash(final byte[] namehash)
     {

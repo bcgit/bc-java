@@ -6,8 +6,6 @@ import static org.bouncycastle.openpgp.wot.internal.Util.*;
  * Trust-model specifying the policy and algorithm of trust/validity calculations.
  * <p>
  * OpenPGP/GnuPG supports multiple trust models. This implementation, however, currently supports {@link #PGP} only.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public enum TrustModel
 {
@@ -20,7 +18,7 @@ public enum TrustModel
     private final int numericId;
     private final String stringId;
 
-    private static TrustModel[] numericId2TrustModel;
+    private static volatile TrustModel[] numericId2TrustModel;
 
     private TrustModel(int numericId, String stringId)
     {

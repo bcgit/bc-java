@@ -7,16 +7,14 @@ import java.lang.ref.WeakReference;
 
 /**
  * An OpenPGP key's (unique) identifier.
- *
- * @author Marco หงุ่ยตระกูล-Schulze - marco at codewizards dot co
  */
 public class PgpKeyId implements Comparable<PgpKeyId>, Serializable
 {
     private static final long serialVersionUID = 1L;
 
     private final long pgpKeyId;
-    private transient WeakReference<String> toString;
-    private transient WeakReference<String> toHumanString;
+    private transient volatile WeakReference<String> toString;
+    private transient volatile WeakReference<String> toHumanString;
 
     public PgpKeyId(final long pgpKeyId)
     {
