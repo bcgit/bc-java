@@ -20,11 +20,11 @@ import org.bouncycastle.openpgp.wot.TrustConst;
  * <p>
  * Ported from tdbio.c: struct trust_record
  */
-public abstract class TrustRecord implements TrustConst
+abstract class TrustRecord implements TrustConst
 {
     protected long recordNum = -1;
 
-    public static class Unused extends TrustRecord
+    static class Unused extends TrustRecord
     {
         @Override
         public TrustRecordType getType()
@@ -33,7 +33,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class Version extends TrustRecord
+    static class Version extends TrustRecord
     {
         protected short version; // should be 3
         protected short marginalsNeeded;
@@ -180,7 +180,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class Free extends TrustRecord
+    static class Free extends TrustRecord
     {
         protected long next;
 
@@ -211,7 +211,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class HashTbl extends TrustRecord
+    static class HashTbl extends TrustRecord
     {
         protected long[] item = new long[ITEMS_PER_HTBL_RECORD];
 
@@ -242,7 +242,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class HashLst extends TrustRecord
+    static class HashLst extends TrustRecord
     {
         protected long next;
         protected long[] rnum = new long[ITEMS_PER_HLST_RECORD]; // of another record
@@ -287,7 +287,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class Trust extends TrustRecord
+    static class Trust extends TrustRecord
     {
         protected byte[] fingerprint = new byte[20];
         protected short ownerTrust;
@@ -367,7 +367,7 @@ public abstract class TrustRecord implements TrustConst
         }
     }
 
-    public static class Valid extends TrustRecord
+    static class Valid extends TrustRecord
     {
         protected byte[] nameHash = new byte[20];
         protected long next;

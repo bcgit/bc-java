@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp.wot;
+package org.bouncycastle.openpgp.wot.internal;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.bouncycastle.openpgp.wot.TrustConst.*;
@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.openpgp.wot.AbstractTrustDbTest;
+import org.bouncycastle.openpgp.wot.TrustDb;
 import org.bouncycastle.openpgp.wot.internal.Mutex;
 import org.bouncycastle.openpgp.wot.internal.TrustDbImpl;
 import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
