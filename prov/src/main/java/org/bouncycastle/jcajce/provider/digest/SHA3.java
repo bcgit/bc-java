@@ -81,10 +81,10 @@ public class SHA3
             provider.addAlgorithm("MessageDigest.SHA3-256", PREFIX + "$Digest256");
             provider.addAlgorithm("MessageDigest.SHA3-384", PREFIX + "$Digest384");
             provider.addAlgorithm("MessageDigest.SHA3-512", PREFIX + "$Digest512");
-            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_sha224, PREFIX + "$Digest224");
-            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_sha256, PREFIX + "$Digest256");
-            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_sha384, PREFIX + "$Digest384");
-            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_sha512, PREFIX + "$Digest512");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_224, PREFIX + "$Digest224");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_256, PREFIX + "$Digest256");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_384, PREFIX + "$Digest384");
+            provider.addAlgorithm("MessageDigest", NISTObjectIdentifiers.id_sha3_512, PREFIX + "$Digest512");
         }
     }
 }

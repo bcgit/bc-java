@@ -32,13 +32,13 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_sha512_256           = hashAlgs.branch("6");
 
     /** 2.16.840.1.101.3.4.2.7 */
-    static final ASN1ObjectIdentifier    id_sha3_sha224          = hashAlgs.branch("7");
+    static final ASN1ObjectIdentifier    id_sha3_224 = hashAlgs.branch("7");
     /** 2.16.840.1.101.3.4.2.8 */
-    static final ASN1ObjectIdentifier    id_sha3_sha256          = hashAlgs.branch("8");
+    static final ASN1ObjectIdentifier    id_sha3_256 = hashAlgs.branch("8");
     /** 2.16.840.1.101.3.4.2.9 */
-    static final ASN1ObjectIdentifier    id_sha3_sha384          = hashAlgs.branch("9");
+    static final ASN1ObjectIdentifier    id_sha3_384 = hashAlgs.branch("9");
     /** 2.16.840.1.101.3.4.2.10 */
-    static final ASN1ObjectIdentifier    id_sha3_sha512          = hashAlgs.branch("10");
+    static final ASN1ObjectIdentifier    id_sha3_512 = hashAlgs.branch("10");
     /** 2.16.840.1.101.3.4.2.11 */
     static final ASN1ObjectIdentifier    id_shake128             = hashAlgs.branch("11");
     /** 2.16.840.1.101.3.4.2.12 */
