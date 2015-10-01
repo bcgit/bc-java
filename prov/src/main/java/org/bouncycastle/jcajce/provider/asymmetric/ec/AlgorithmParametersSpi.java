@@ -92,26 +92,38 @@ public class AlgorithmParametersSpi
         {
             return (T)ecParameterSpec;
         }
-        else if (ECGenParameterSpec.class.isAssignableFrom(paramSpec) && curveName != null)
+        else if (ECGenParameterSpec.class.isAssignableFrom(paramSpec))
         {
-            String name;
-
-            if (curveName.indexOf(' ') > 0)
+            if (curveName != null)
             {
-                name = curveName.substring(curveName.indexOf(' ') + 1);
+                String name;
+
+                if (curveName.indexOf(' ') > 0)
+                {
+                    name = curveName.substring(curveName.indexOf(' ') + 1);
+                }
+                else
+                {
+                    name = curveName;
+                }
+
+                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(name);
+
+                if (namedCurveOid != null)
+                {
+                    return (T)new ECGenParameterSpec(namedCurveOid.getId());
+                }
+                return (T)new ECGenParameterSpec(curveName);
             }
             else
             {
-                name = curveName;
-            }
+                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(EC5Util.convertSpec(ecParameterSpec, false));
 
-            ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(name);
-
-            if (namedCurveOid != null)
-            {
-                return (T)new ECGenParameterSpec(namedCurveOid.getId());
+                if (namedCurveOid != null)
+                {
+                    return (T)new ECGenParameterSpec(namedCurveOid.getId());
+                }
             }
-            return (T)new ECGenParameterSpec(curveName);
         }
         throw new InvalidParameterSpecException("EC AlgorithmParameters cannot convert to " + paramSpec.getName());
     }

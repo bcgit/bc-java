@@ -1,10 +1,12 @@
 package org.bouncycastle.jcajce.provider.test;
 
 import java.security.AlgorithmParameters;
+import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class ECAlgorithmParametersTest
     extends TestCase
@@ -139,15 +141,19 @@ public class ECAlgorithmParametersTest
     public void testRecogniseStandardCurveNames()
         throws Exception
     {
+        Security.addProvider(new BouncyCastleProvider());
+
          for (int i = 0; i != entries.length; i++)
          {
              AlgorithmParameters algParams = AlgorithmParameters.getInstance("EC", "BC");
 
              algParams.init(new ECGenParameterSpec(entries[i]));
 
+             ECParameterSpec ecSpec = null;
+
              try
              {
-                 algParams.getParameterSpec(ECParameterSpec.class);
+                 ecSpec = algParams.getParameterSpec(ECParameterSpec.class);
              }
              catch (IllegalArgumentException e)
              {
@@ -157,6 +163,17 @@ public class ECAlgorithmParametersTest
              ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
 
              TestCase.assertEquals(nextOid(i), spec.getName());
+
+             if (ecSpec != null)
+             {
+                 AlgorithmParameters algParams2 = AlgorithmParameters.getInstance("EC", "BC");
+
+                 algParams2.init(new ECParameterSpec(ecSpec.getCurve(), ecSpec.getGenerator(), ecSpec.getOrder(), ecSpec.getCofactor()));
+
+                 spec = algParams2.getParameterSpec(ECGenParameterSpec.class);
+
+                 TestCase.assertEquals(nextOid(i), spec.getName());
+             }
          }
     }
 

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -12,6 +13,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -258,7 +260,28 @@ public class ECUtil
 
         return oid;
     }
-    
+
+    public static ASN1ObjectIdentifier getNamedCurveOid(
+        ECParameterSpec ecParameterSpec)
+    {
+        for (Enumeration names = ECNamedCurveTable.getNames(); names.hasMoreElements();)
+        {
+            String name = (String)names.nextElement();
+
+            X9ECParameters params = ECNamedCurveTable.getByName(name);
+
+            if (params.getN().equals(ecParameterSpec.getN())
+                && params.getH().equals(ecParameterSpec.getH())
+                && params.getCurve().equals(ecParameterSpec.getCurve())
+                && params.getG().equals(ecParameterSpec.getG()))
+            {
+                return org.bouncycastle.asn1.x9.ECNamedCurveTable.getOID(name);
+            }
+        }
+
+        return null;
+    }
+
     public static X9ECParameters getNamedCurveByOid(
         ASN1ObjectIdentifier oid)
     {
