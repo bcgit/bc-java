@@ -1,9 +1,8 @@
 package org.bouncycastle.openpgp.wot;
 
-import org.bouncycastle.openpgp.wot.internal.TrustDbIo;
-
 /**
- * Exception thrown by {@link TrustDbIo} when reading from or writing to the trust database failed.
+ * Exception thrown by {@link org.bouncycastle.openpgp.wot.internal.TrustDbIo TrustDbIo}
+ * when reading from or writing to the trust database file failed.
  */
 public class TrustDbIoException extends TrustDbException
 {

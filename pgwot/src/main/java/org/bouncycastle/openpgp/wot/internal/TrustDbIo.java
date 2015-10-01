@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * This class was mostly ported from the GnuPG's {@code tdbio.h} and {@code tdbio.c} files.
  */
-public class TrustDbIo implements AutoCloseable, TrustConst
+class TrustDbIo implements AutoCloseable, TrustConst
 {
     private static final Logger logger = LoggerFactory.getLogger(TrustDbIo.class);
 

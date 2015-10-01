@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum TrustRecordType
+enum TrustRecordType
 {
     UNUSED((short) 0, TrustRecord.Unused.class),
     VERSION((short) 1, TrustRecord.Version.class),
