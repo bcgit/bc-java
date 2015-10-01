@@ -194,7 +194,7 @@ public class PgpKey
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((pgpKeyId == null) ? 0 : pgpKeyId.hashCode());
+        result = prime * result + pgpKeyId.hashCode();
         return result;
     }
 
