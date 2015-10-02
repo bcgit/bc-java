@@ -351,7 +351,8 @@ public class BaseStreamCipher
         }
         catch (DataLengthException e)
         {
-            throw new ShortBufferException(e.getMessage());
+            // should never happen
+            throw new IllegalStateException(e.getMessage());
         }
     }
 

@@ -973,7 +973,8 @@ public class BaseBlockCipher
         }
         catch (DataLengthException e)
         {
-            throw new ShortBufferException(e.getMessage());
+            // should never occur
+            throw new IllegalStateException(e.toString());
         }
     }
 
@@ -1038,7 +1039,7 @@ public class BaseBlockCipher
         }
         catch (OutputLengthException e)
         {
-            throw new ShortBufferException(e.getMessage());
+            throw new IllegalBlockSizeException(e.getMessage());
         }
         catch (DataLengthException e)
         {
