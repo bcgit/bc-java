@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -856,6 +857,54 @@ public class BlockCipherTest
                 if (!areEqual(out2, count, input))
                 {
                     fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
+                }
+            }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            fail("" + algorithm + " failed short buffer decryption - " + e.toString());
+        }
+
+        try
+        {
+            if (algorithm.indexOf("CCM") < 0 && algorithm.indexOf("Threefish") < 0 && algorithm.indexOf("PGPCFB") < 0)
+            {
+                //
+                // short buffer on update test
+                //
+                byte[] input2 = new byte[input.length * 8];
+
+                System.arraycopy(input, 0, input2, 0, input.length);
+                System.arraycopy(input, 0, input2, input.length, input.length);
+                System.arraycopy(input, 0, input2, input.length * 2, input.length);
+                System.arraycopy(input, 0, input2, input.length * 3, input.length);
+
+                byte[] output2 = out.doFinal(input2);
+
+                byte[] out1 = new byte[input2.length / 2 - out.getBlockSize() * 2 - 1];
+
+                try
+                {
+                    out.update(input2, 0, input2.length / 2, out1, 0);
+
+                    fail("ShortBufferException not triggered: " + algorithm + " " + input2.length);
+                }
+                catch (ShortBufferException e)
+                {
+                    byte[] out2 = new byte[out.getOutputSize(input2.length / 2)];
+
+                    System.arraycopy(input2, 0, out2, 0, out2.length);
+
+                    int count = out.update(out2, 0, out2.length, out2, 0);
+
+                    if (!areEqual(out2, count, Arrays.copyOfRange(output2, 0, count)))
+                    {
+                        fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(output2)) + " got " + new String(Hex.encode(out2)));
+                    }
                 }
             }
         }
