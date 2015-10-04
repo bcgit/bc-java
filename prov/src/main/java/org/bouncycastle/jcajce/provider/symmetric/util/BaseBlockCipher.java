@@ -962,7 +962,7 @@ public class BaseBlockCipher
         int     outputOffset)
         throws ShortBufferException
     {
-        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
+        if (outputOffset + cipher.getUpdateOutputSize(inputLen) > output.length)
         {
             throw new ShortBufferException("output buffer too short for input.");
         }
