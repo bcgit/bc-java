@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -66,7 +65,7 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 class TestUtils
 {
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
-    private static Map<String, AlgorithmIdentifier> algIds = new HashMap<String, AlgorithmIdentifier>();
+    private static Map algIds = new HashMap();
 
     static
     {
@@ -93,7 +92,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(algIds.get(sigName));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         Signature sig = Signature.getInstance(sigName, "BC");
@@ -107,7 +106,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(algIds.get(sigName));
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -131,7 +130,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(algIds.get(sigName));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
@@ -146,7 +145,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(algIds.get(sigName));
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -424,5 +423,20 @@ class TestUtils
         digest.update(bytes, 0, bytes.length);
         digest.doFinal(resBuf, 0);
         return resBuf;
+    }
+
+    private static class AtomicLong
+    {
+        private long value;
+
+        public AtomicLong(long value)
+        {
+            this.value = value;
+        }
+
+        public synchronized long getAndIncrement()
+        {
+            return value++;
+        }
     }
 }
