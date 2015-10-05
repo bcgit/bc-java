@@ -329,6 +329,18 @@ public class CipherInputStream
     public void close()
     throws IOException
     {
+        if (!finalized)
+        {
+            finalized = true;
+            try
+            {
+                c.doFinal();
+            }
+            catch (Exception e)
+            {
+                throw new IOException("error processing stream: " + e.toString());
+            }
+        }
         super.close();
     }
 
