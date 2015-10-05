@@ -151,7 +151,7 @@ public class CertPathTest
             // ignore okay
         }
 
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
         List certCol = new ArrayList();
 
         certCol.add(cf.generateCertificate(new ByteArrayInputStream(certA)));
@@ -239,7 +239,7 @@ public class CertPathTest
         //
         list = new ArrayList();
 
-        CertPath certPath = CertificateFactory.getInstance("X.509","BC").generateCertPath(list);
+        CertPath certPath = CertificateFactory.getInstance("X.509", "BC").generateCertPath(list);
         if (certPath.getCertificates().size() != 0)
         {
             fail("list wrong size.");
