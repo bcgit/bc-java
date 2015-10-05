@@ -856,7 +856,7 @@ public class BlockCipherTest
 
                 if (!areEqual(out2, count, input))
                 {
-                    fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
+                    fail("doFinal " + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
                 }
             }
         }
@@ -903,7 +903,7 @@ public class BlockCipherTest
 
                     if (!areEqual(out2, count, Arrays.copyOfRange(output2, 0, count)))
                     {
-                        fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(output2)) + " got " + new String(Hex.encode(out2)));
+                        fail("update " + algorithm + " failed decryption - expected " + new String(Hex.encode(output2)) + " got " + new String(Hex.encode(out2)));
                     }
                 }
             }
