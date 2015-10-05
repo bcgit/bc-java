@@ -22,7 +22,7 @@ public class ASN1Boolean
     private static final byte[] TRUE_VALUE = new byte[] { (byte)0xff };
     private static final byte[] FALSE_VALUE = new byte[] { 0 };
 
-    private byte[]         value;
+    private final byte[]         value;
 
     public static final ASN1Boolean FALSE = new ASN1Boolean(false);
     public static final ASN1Boolean TRUE  = new ASN1Boolean(true);

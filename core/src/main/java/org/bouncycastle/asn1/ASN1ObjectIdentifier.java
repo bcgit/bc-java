@@ -12,7 +12,7 @@ import org.bouncycastle.util.Arrays;
 public class ASN1ObjectIdentifier
     extends ASN1Primitive
 {
-    String identifier;
+    private final String identifier;
 
     private byte[] body;
 
