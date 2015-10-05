@@ -698,7 +698,7 @@ public abstract class ECCurve
 
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
         {
-            ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
+            ECFieldElement X = this.fromBigInteger(x), Y = this.fromBigInteger(y);
 
             int coord = this.getCoordinateSystem();
 
@@ -738,7 +738,7 @@ public abstract class ECCurve
             }
             }
 
-            return createRawPoint(X, Y, withCompression);
+            return this.createRawPoint(X, Y, withCompression);
         }
 
         /**
