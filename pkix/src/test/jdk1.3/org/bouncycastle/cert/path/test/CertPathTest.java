@@ -152,7 +152,7 @@ public class CertPathTest
             // ignore okay
         }
 
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
         List certCol = new ArrayList();
 
         certCol.add(cf.generateCertificate(new ByteArrayInputStream(certA)));
