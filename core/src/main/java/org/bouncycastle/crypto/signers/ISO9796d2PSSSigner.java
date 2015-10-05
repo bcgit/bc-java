@@ -61,8 +61,7 @@ public class ISO9796d2PSSSigner
     private int preTLength;
 
     /**
-     * Generate a signer for the with either implicit or explicit trailers
-     * for ISO9796-2, scheme 2 or 3.
+     * Generate a signer with either implicit or explicit trailers for ISO9796-2, scheme 2 or 3.
      *
      * @param cipher     base cipher to use for signature creation/verification
      * @param digest     digest to use.
