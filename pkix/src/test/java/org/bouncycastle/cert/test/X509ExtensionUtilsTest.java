@@ -63,14 +63,14 @@ public class X509ExtensionUtilsTest
 
         if (!Arrays.areEqual(shaID, ski.getKeyIdentifier()))
         {
-            fail("SHA-1 ID does not match");
+            fail("basic SHA-1 ID does not match");
         }
 
         ski = x509ExtensionUtils.createTruncatedSubjectKeyIdentifier(pubInfo);
 
         if (!Arrays.areEqual(shaTruncID, ski.getKeyIdentifier()))
         {
-            fail("truncated SHA-1 ID does not match");
+            fail("basic truncated SHA-1 ID does not match");
         }
 
         AuthorityKeyIdentifier authKeyId = x509ExtensionUtils.createAuthorityKeyIdentifier(new X509CertificateHolder(v0Cert));
@@ -113,14 +113,14 @@ public class X509ExtensionUtilsTest
 
         if (!Arrays.areEqual(shaID, ski.getKeyIdentifier()))
         {
-            fail("SHA-1 ID does not match");
+            fail("jca SHA-1 ID does not match");
         }
 
         ski = x509ExtensionUtils.createTruncatedSubjectKeyIdentifier(key);
 
         if (!Arrays.areEqual(shaTruncID, ski.getKeyIdentifier()))
         {
-            fail("truncated SHA-1 ID does not match");
+            fail("jca truncated SHA-1 ID does not match");
         }
 
         CertificateFactory cFact = CertificateFactory.getInstance("X.509", "BC");
