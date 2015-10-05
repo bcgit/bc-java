@@ -369,9 +369,9 @@ public class PKCS10CertificationRequest
                 //
                 // try an alternate
                 //
-                if (keyAlgorithms.get(keyAlg.getObjectId()) != null)
+                if (keyAlgorithms.get(keyAlg.getAlgorithm()) != null)
                 {
-                    String  keyAlgorithm = (String)keyAlgorithms.get(keyAlg.getObjectId());
+                    String  keyAlgorithm = (String)keyAlgorithms.get(keyAlg.getAlgorithm());
                     
                     if (provider == null)
                     {
@@ -444,9 +444,9 @@ public class PKCS10CertificationRequest
             //
             // try an alternate
             //
-            if (oids.get(sigAlgId.getObjectId()) != null)
+            if (oids.get(sigAlgId.getAlgorithm()) != null)
             {
-                String  signatureAlgorithm = (String)oids.get(sigAlgId.getObjectId());
+                String  signatureAlgorithm = (String)oids.get(sigAlgId.getAlgorithm());
 
                 if (provider == null)
                 {
@@ -522,14 +522,14 @@ public class PKCS10CertificationRequest
 
         if (params != null && !DERNull.INSTANCE.equals(params))
         {
-            if (sigAlgId.getObjectId().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+            if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                return getDigestAlgName(rsaParams.getHashAlgorithm().getObjectId()) + "withRSAandMGF1";
+                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
             }
         }
 
-        return sigAlgId.getObjectId().getId();
+        return sigAlgId.getAlgorithm().getId();
     }
 
     private static String getDigestAlgName(

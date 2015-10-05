@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
@@ -357,6 +358,24 @@ public class PSSSignatureSpi
         public SHA512withRSA()
         {
             super("SHA512withRSAandMGF1", new RSABlindedEngine(), new SHA512Digest());
+        }
+    }
+
+    static public class SHA512_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSA()
+        {
+            super("SHA512(224)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(224));
+        }
+    }
+
+    static public class SHA512_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSA()
+        {
+            super("SHA512(256)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(256));
         }
     }
 

@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
@@ -121,7 +123,19 @@ public class SHAKEDigestTest
         {
             return null;
         }
-        return line.replaceAll(" ", "");
+
+        char[] chars = line.toCharArray();
+
+        int pos = 0;
+        for (int i = 0; i != chars.length; i++)
+        {
+            if (chars[i] != ' ')
+            {
+                chars[pos++] = chars[i];
+            }
+        }
+
+        return new String(chars, 0, pos);
     }
 
     private TestVector readTestVector(BufferedReader r, String header) throws IOException
@@ -218,7 +232,19 @@ public class SHAKEDigestTest
 
     private String[] splitAround(String s, String separator)
     {
-        return s.split(separator);
+        List strings = new ArrayList();
+
+        String remaining = s;
+        int index;
+
+        while ((index = remaining.indexOf(separator)) > 0)
+        {
+            strings.add(remaining.substring(0, index));
+            remaining = remaining.substring(index + separator.length());
+        }
+        strings.add(remaining);
+
+        return (String[])strings.toArray(new String[strings.size()]);
     }
 
     private String stripFromChar(String s, char c)
