@@ -8,7 +8,7 @@ import java.util.Vector;
  */
 public class ASN1EncodableVector
 {
-    Vector v = new Vector();
+    private final Vector v = new Vector();
 
     /**
      * Base constructor.

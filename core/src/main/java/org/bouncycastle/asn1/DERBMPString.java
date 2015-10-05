@@ -11,7 +11,7 @@ public class DERBMPString
     extends ASN1Primitive
     implements ASN1String
 {
-    private char[]  string;
+    private final char[]  string;
 
     /**
      * return a BMP String from the given object.

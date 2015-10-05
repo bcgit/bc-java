@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 public class ASN1Enumerated
     extends ASN1Primitive
 {
-    byte[]      bytes;
+    private final byte[] bytes;
 
     /**
      * return an enumerated from the passed in object

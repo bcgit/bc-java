@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 public class ASN1Integer
     extends ASN1Primitive
 {
-    byte[] bytes;
+    private final byte[] bytes;
 
     /**
      * return an integer from the passed in object
