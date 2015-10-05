@@ -35,6 +35,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.DERNull;
@@ -71,6 +72,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jce.PrincipalUtil;
@@ -91,6 +93,7 @@ import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1898,12 +1901,13 @@ public class CertTest
         Date                 now = new Date();
         KeyPair              pair = kpGen.generateKeyPair();
         X509v2CRLBuilder     crlGen = new X509v2CRLBuilder(new X500Name("CN=Test CA"), now);
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         crlGen.setNextUpdate(new Date(now.getTime() + 100000));
 
         crlGen.addCRLEntry(BigInteger.valueOf(1), now, CRLReason.privilegeWithdrawn);
 
-        crlGen.addExtension(Extensions.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
         X509CRLHolder crl = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
 
@@ -1918,8 +1922,6 @@ public class CertTest
         {
             fail("failed to find CRL extension");
         }
-
-        AuthorityKeyIdentifier authId = new AuthorityKeyIdentifierStructure(authExt);
 
         X509CRLEntryHolder entry = crl.getRevokedCertificate(BigInteger.valueOf(1));
 
@@ -1963,6 +1965,7 @@ public class CertTest
         Date                 now = new Date();
         KeyPair              pair = kpGen.generateKeyPair();
         X509v2CRLBuilder     crlGen = new X509v2CRLBuilder(new X500Name("CN=Test CA"), now);
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         crlGen.setNextUpdate(new Date(now.getTime() + 100000));
         
@@ -1985,7 +1988,7 @@ public class CertTest
 
         crlGen.addCRLEntry(BigInteger.valueOf(1), now, entryExtensions);
 
-        crlGen.addExtension(Extensions.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
         X509CRLHolder crlHolder = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
 
@@ -1996,14 +1999,12 @@ public class CertTest
             fail("failed CRL issuer test");
         }
 
-        byte[] authExt = crl.getExtensionValue(Extensions.authorityKeyIdentifier.getId());
+        byte[] authExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
 
         if (authExt == null)
         {
             fail("failed to find CRL extension");
         }
-
-        AuthorityKeyIdentifier authId = new AuthorityKeyIdentifierStructure(authExt);
 
         X509CRLEntry entry = crl.getRevokedCertificate(BigInteger.valueOf(1));
 
@@ -2026,7 +2027,7 @@ public class CertTest
 
         if (ext != null)
         {
-            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = ASN1Enumerated.getInstance(ASN1OctetString.getInstance(ext).getOctets());
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -2046,6 +2047,7 @@ public class CertTest
         Date                 now = new Date();
         KeyPair              pair = kpGen.generateKeyPair();
         X509v2CRLBuilder     crlGen = new JcaX509v2CRLBuilder(new X500Name("CN=Test CA"), now);
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         crlGen.setNextUpdate(new Date(now.getTime() + 100000));
 
@@ -2068,7 +2070,7 @@ public class CertTest
 
         crlGen.addCRLEntry(BigInteger.valueOf(1), now, entryExtensions);
 
-        crlGen.addExtension(Extensions.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
         X509CRLHolder crlHolder = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
 
@@ -2079,14 +2081,12 @@ public class CertTest
             fail("failed CRL issuer test");
         }
 
-        byte[] authExt = crl.getExtensionValue(Extensions.authorityKeyIdentifier.getId());
+        byte[] authExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
 
         if (authExt == null)
         {
             fail("failed to find CRL extension");
         }
-
-        AuthorityKeyIdentifier authId = new AuthorityKeyIdentifierStructure(authExt);
 
         X509CRLEntry entry = crl.getRevokedCertificate(BigInteger.valueOf(1));
 
@@ -2109,7 +2109,7 @@ public class CertTest
 
         if (ext != null)
         {
-            ASN1Enumerated   reasonCode = (ASN1Enumerated)X509ExtensionUtil.fromExtensionValue(ext);
+            ASN1Enumerated   reasonCode = ASN1Enumerated.getInstance(ASN1OctetString.getInstance(ext).getOctets());
 
             if (reasonCode.getValue().intValue() != CRLReason.privilegeWithdrawn)
             {
@@ -2133,7 +2133,7 @@ public class CertTest
 
         crlGen.addCRLEntry(BigInteger.valueOf(2), now, entryExtensions);
 
-        crlGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(pair.getPublic()));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(pair.getPublic()));
 
         crlHolder = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
 
@@ -2613,7 +2613,7 @@ public class CertTest
         JcaX509v3CertificateBuilder  certGen = new JcaX509v3CertificateBuilder(new X500Name("CN=Test"),BigInteger.valueOf(1),new Date(System.currentTimeMillis() - 50000),new Date(System.currentTimeMillis() + 50000),new X500Name("CN=Test"),pubKey);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
-        X509CertificateStructure struct = X509CertificateStructure.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
+        org.bouncycastle.asn1.x509.Certificate struct = org.bouncycastle.asn1.x509.Certificate.getInstance(ASN1Primitive.fromByteArray(cert.getEncoded()));
 
         ASN1Encodable tbsCertificate = struct.getTBSCertificate();
         AlgorithmIdentifier sig = struct.getSignatureAlgorithm();

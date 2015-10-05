@@ -2183,7 +2183,7 @@ public class X509CertSelector implements CertSelector
             {
                 SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(certX509.getPublicKey().getEncoded());
                 AlgorithmIdentifier algInfo = publicKeyInfo.getAlgorithmId();
-                if (!algInfo.getObjectId().equals(subjectKeyAlgID))
+                if (!algInfo.getAlgorithm().equals(subjectKeyAlgID))
                 {
                     return false;
                 }
