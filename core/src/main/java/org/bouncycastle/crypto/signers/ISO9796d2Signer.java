@@ -47,8 +47,7 @@ public class ISO9796d2Signer
     private byte[]      preBlock;
 
     /**
-     * Generate a signer for the with either implicit or explicit trailers
-     * for ISO9796-2.
+     * Generate a signer with either implicit or explicit trailers for ISO9796-2.
      * 
      * @param cipher base cipher to use for signature creation/verification
      * @param digest digest to use.
