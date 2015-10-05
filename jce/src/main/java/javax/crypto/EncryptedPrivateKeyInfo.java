@@ -146,7 +146,7 @@ public class EncryptedPrivateKeyInfo
      */
     public String getAlgName()
     {
-        return infoObj.getEncryptionAlgorithm().getObjectId().getId();
+        return infoObj.getEncryptionAlgorithm().getAlgorithm().getId();
     }
 
     private AlgorithmParameters getParameters()
