@@ -23,9 +23,8 @@ package org.bouncycastle.crypto.digests;
         ---------------+--------+-----------+------+------------+
  */
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -277,7 +276,7 @@ public class Blake2bDigest
 				t1++;
 			}
 			compress(buffer, 0);
-			Arrays.fill(buffer, (byte) 0);// clear buffer
+			Arrays.fill(buffer, (byte)0);// clear buffer
 			buffer[0] = b;
 			bufferPos = 1;
 		} else
