@@ -19,37 +19,37 @@ public class BCStyle
     /**
      * country code - StringType(SIZE(2))
      */
-    public static final ASN1ObjectIdentifier C = new ASN1ObjectIdentifier("2.5.4.6");
+    public static final ASN1ObjectIdentifier C = new ASN1ObjectIdentifier("2.5.4.6").intern();
 
     /**
      * organization - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier O = new ASN1ObjectIdentifier("2.5.4.10");
+    public static final ASN1ObjectIdentifier O = new ASN1ObjectIdentifier("2.5.4.10").intern();
 
     /**
      * organizational unit name - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier OU = new ASN1ObjectIdentifier("2.5.4.11");
+    public static final ASN1ObjectIdentifier OU = new ASN1ObjectIdentifier("2.5.4.11").intern();
 
     /**
      * Title
      */
-    public static final ASN1ObjectIdentifier T = new ASN1ObjectIdentifier("2.5.4.12");
+    public static final ASN1ObjectIdentifier T = new ASN1ObjectIdentifier("2.5.4.12").intern();
 
     /**
      * common name - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier CN = new ASN1ObjectIdentifier("2.5.4.3");
+    public static final ASN1ObjectIdentifier CN = new ASN1ObjectIdentifier("2.5.4.3").intern();
 
     /**
      * device serial number name - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier SN = new ASN1ObjectIdentifier("2.5.4.5");
+    public static final ASN1ObjectIdentifier SN = new ASN1ObjectIdentifier("2.5.4.5").intern();
 
     /**
      * street - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier STREET = new ASN1ObjectIdentifier("2.5.4.9");
+    public static final ASN1ObjectIdentifier STREET = new ASN1ObjectIdentifier("2.5.4.9").intern();
 
     /**
      * device serial number name - StringType(SIZE(1..64))
@@ -59,95 +59,95 @@ public class BCStyle
     /**
      * locality name - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier L = new ASN1ObjectIdentifier("2.5.4.7");
+    public static final ASN1ObjectIdentifier L = new ASN1ObjectIdentifier("2.5.4.7").intern();
 
     /**
      * state, or province name - StringType(SIZE(1..64))
      */
-    public static final ASN1ObjectIdentifier ST = new ASN1ObjectIdentifier("2.5.4.8");
+    public static final ASN1ObjectIdentifier ST = new ASN1ObjectIdentifier("2.5.4.8").intern();
 
     /**
      * Naming attributes of type X520name
      */
-    public static final ASN1ObjectIdentifier SURNAME = new ASN1ObjectIdentifier("2.5.4.4");
-    public static final ASN1ObjectIdentifier GIVENNAME = new ASN1ObjectIdentifier("2.5.4.42");
-    public static final ASN1ObjectIdentifier INITIALS = new ASN1ObjectIdentifier("2.5.4.43");
-    public static final ASN1ObjectIdentifier GENERATION = new ASN1ObjectIdentifier("2.5.4.44");
-    public static final ASN1ObjectIdentifier UNIQUE_IDENTIFIER = new ASN1ObjectIdentifier("2.5.4.45");
+    public static final ASN1ObjectIdentifier SURNAME = new ASN1ObjectIdentifier("2.5.4.4").intern();
+    public static final ASN1ObjectIdentifier GIVENNAME = new ASN1ObjectIdentifier("2.5.4.42").intern();
+    public static final ASN1ObjectIdentifier INITIALS = new ASN1ObjectIdentifier("2.5.4.43").intern();
+    public static final ASN1ObjectIdentifier GENERATION = new ASN1ObjectIdentifier("2.5.4.44").intern();
+    public static final ASN1ObjectIdentifier UNIQUE_IDENTIFIER = new ASN1ObjectIdentifier("2.5.4.45").intern();
 
     /**
      * businessCategory - DirectoryString(SIZE(1..128)
      */
     public static final ASN1ObjectIdentifier BUSINESS_CATEGORY = new ASN1ObjectIdentifier(
-        "2.5.4.15");
+        "2.5.4.15").intern();
 
     /**
      * postalCode - DirectoryString(SIZE(1..40)
      */
     public static final ASN1ObjectIdentifier POSTAL_CODE = new ASN1ObjectIdentifier(
-        "2.5.4.17");
+        "2.5.4.17").intern();
 
     /**
      * dnQualifier - DirectoryString(SIZE(1..64)
      */
     public static final ASN1ObjectIdentifier DN_QUALIFIER = new ASN1ObjectIdentifier(
-        "2.5.4.46");
+        "2.5.4.46").intern();
 
     /**
      * RFC 3039 Pseudonym - DirectoryString(SIZE(1..64)
      */
     public static final ASN1ObjectIdentifier PSEUDONYM = new ASN1ObjectIdentifier(
-        "2.5.4.65");
+        "2.5.4.65").intern();
 
 
     /**
      * RFC 3039 DateOfBirth - GeneralizedTime - YYYYMMDD000000Z
      */
     public static final ASN1ObjectIdentifier DATE_OF_BIRTH = new ASN1ObjectIdentifier(
-        "1.3.6.1.5.5.7.9.1");
+        "1.3.6.1.5.5.7.9.1").intern();
 
     /**
      * RFC 3039 PlaceOfBirth - DirectoryString(SIZE(1..128)
      */
     public static final ASN1ObjectIdentifier PLACE_OF_BIRTH = new ASN1ObjectIdentifier(
-        "1.3.6.1.5.5.7.9.2");
+        "1.3.6.1.5.5.7.9.2").intern();
 
     /**
      * RFC 3039 Gender - PrintableString (SIZE(1)) -- "M", "F", "m" or "f"
      */
     public static final ASN1ObjectIdentifier GENDER = new ASN1ObjectIdentifier(
-        "1.3.6.1.5.5.7.9.3");
+        "1.3.6.1.5.5.7.9.3").intern();
 
     /**
      * RFC 3039 CountryOfCitizenship - PrintableString (SIZE (2)) -- ISO 3166
      * codes only
      */
     public static final ASN1ObjectIdentifier COUNTRY_OF_CITIZENSHIP = new ASN1ObjectIdentifier(
-        "1.3.6.1.5.5.7.9.4");
+        "1.3.6.1.5.5.7.9.4").intern();
 
     /**
      * RFC 3039 CountryOfResidence - PrintableString (SIZE (2)) -- ISO 3166
      * codes only
      */
     public static final ASN1ObjectIdentifier COUNTRY_OF_RESIDENCE = new ASN1ObjectIdentifier(
-        "1.3.6.1.5.5.7.9.5");
+        "1.3.6.1.5.5.7.9.5").intern();
 
 
     /**
      * ISIS-MTT NameAtBirth - DirectoryString(SIZE(1..64)
      */
-    public static final ASN1ObjectIdentifier NAME_AT_BIRTH = new ASN1ObjectIdentifier("1.3.36.8.3.14");
+    public static final ASN1ObjectIdentifier NAME_AT_BIRTH = new ASN1ObjectIdentifier("1.3.36.8.3.14").intern();
 
     /**
      * RFC 3039 PostalAddress - SEQUENCE SIZE (1..6) OF
      * DirectoryString(SIZE(1..30))
      */
-    public static final ASN1ObjectIdentifier POSTAL_ADDRESS = new ASN1ObjectIdentifier("2.5.4.16");
+    public static final ASN1ObjectIdentifier POSTAL_ADDRESS = new ASN1ObjectIdentifier("2.5.4.16").intern();
 
     /**
      * RFC 2256 dmdName
      */
-    public static final ASN1ObjectIdentifier DMD_NAME = new ASN1ObjectIdentifier("2.5.4.54");
+    public static final ASN1ObjectIdentifier DMD_NAME = new ASN1ObjectIdentifier("2.5.4.54").intern();
 
     /**
      * id-at-telephoneNumber
