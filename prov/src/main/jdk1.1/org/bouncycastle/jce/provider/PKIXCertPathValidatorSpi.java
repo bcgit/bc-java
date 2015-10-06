@@ -800,7 +800,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
         }
 
         AlgorithmIdentifier workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+        ASN1ObjectIdentifier workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
         ASN1Encodable        workingPublicKeyParameters = workingAlgId.getParameters();
     
         //
@@ -1557,7 +1557,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                     throw new CertPathValidatorException(sign.getSubjectDN().getName() + " :" + ex.toString());
                 }
                 workingAlgId = getAlgorithmIdentifier(workingPublicKey);
-                workingPublicKeyAlgorithm = workingAlgId.getObjectId();
+                workingPublicKeyAlgorithm = workingAlgId.getAlgorithm();
                 workingPublicKeyParameters = workingAlgId.getParameters();
             }
             catch (AnnotatedException e)

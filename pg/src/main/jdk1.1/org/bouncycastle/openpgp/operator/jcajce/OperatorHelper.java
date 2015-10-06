@@ -1,15 +1,19 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.InputStream;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
 import java.security.Signature;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
+import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -42,7 +46,7 @@ class OperatorHelper
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new PGPException("cannot find provider: " + e.getMessage(), e);
+            throw new PGPException("cannot find algorithm: " + e.getMessage(), e);
         }
         catch (NoSuchProviderException e)
         {
@@ -61,11 +65,45 @@ class OperatorHelper
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new PGPException("cannot find provider: " + e.getMessage(), e);
+            throw new PGPException("cannot find algorithm: " + e.getMessage(), e);
         }
         catch (NoSuchProviderException e)
         {
             throw new PGPException("cannot find provider: " + e.getMessage(), e);
+        }
+    }
+
+    public KeyAgreement createKeyAgreement(String algorithm)
+        throws GeneralSecurityException
+    {
+        try
+        {
+            return helper.createKeyAgreement(algorithm);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new GeneralSecurityException("cannot find algorithm: " + e.getMessage());
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new GeneralSecurityException("cannot find provider: " + e.getMessage());
+        }
+    }
+
+    public KeyPairGenerator createKeyPairGenerator(String algorithm)
+        throws GeneralSecurityException
+    {
+        try
+        {
+            return helper.createKeyPairGenerator(algorithm);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new GeneralSecurityException("cannot find algorithm: " + e.getMessage());
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new GeneralSecurityException("cannot find provider: " + e.getMessage());
         }
     }
 
@@ -78,9 +116,16 @@ class OperatorHelper
 
             final Cipher c = createStreamCipher(encAlgorithm, withIntegrityPacket);
 
-            byte[] iv = new byte[c.getBlockSize()];
+            if (withIntegrityPacket)
+            {
+                byte[] iv = new byte[c.getBlockSize()];
 
-            c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            }
+            else
+            {
+                c.init(Cipher.DECRYPT_MODE, secretKey);
+            }
 
             return new PGPDataDecryptor()
             {
@@ -130,7 +175,15 @@ class OperatorHelper
         {
             return helper.createCipher(cipherName);
         }
-        catch (Exception e)
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+        }
+        catch (NoSuchPaddingException e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
         {
             throw new PGPException("cannot create cipher: " + e.getMessage(), e);
         }
@@ -167,11 +220,23 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.AES_192:
             case SymmetricKeyAlgorithmTags.AES_256:
                 return helper.createCipher("AESWrap");
+            case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+                return helper.createCipher("CamelliaWrap");
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }
         }
-        catch (Exception e)
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+        }
+        catch (NoSuchPaddingException e)
+        {
+            throw new PGPException("cannot create cipher: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
         {
             throw new PGPException("cannot create cipher: " + e.getMessage(), e);
         }
@@ -184,7 +249,11 @@ class OperatorHelper
         {
             return helper.createSignature(cipherName);
         }
-        catch (Exception e)
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new PGPException("cannot create signature: " + e.getMessage(), e);
+        }
+        catch (NoSuchProviderException e)
         {
             throw new PGPException("cannot create signature: " + e.getMessage(), e);
         }
@@ -216,5 +285,11 @@ class OperatorHelper
         }
 
         return createSignature(PGPUtil.getDigestName(hashAlgorithm) + "with" + encAlg);
+    }
+
+    public AlgorithmParameters createAlgorithmParameters(String algorithm)
+        throws NoSuchProviderException, NoSuchAlgorithmException
+    {
+        return helper.createAlgorithmParameters(algorithm);
     }
 }
