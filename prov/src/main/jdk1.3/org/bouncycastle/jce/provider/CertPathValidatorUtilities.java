@@ -4,6 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchProviderException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
@@ -12,6 +16,7 @@ import org.bouncycastle.jce.cert.CertPathValidatorException;
 import org.bouncycastle.jce.cert.CertStore;
 import org.bouncycastle.jce.cert.CertStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import org.bouncycastle.jce.cert.PKIXParameters;
 import org.bouncycastle.jce.cert.PolicyQualifierInfo;
@@ -1326,7 +1331,7 @@ class CertPathValidatorUtilities
 
     protected static void verifyX509Certificate(X509Certificate cert, PublicKey publicKey,
                                                 String sigProvider)
-        throws GeneralSecurityException
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException, CertificateException
     {
         if (sigProvider == null)
         {

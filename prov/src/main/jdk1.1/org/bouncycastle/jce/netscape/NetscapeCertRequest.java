@@ -86,7 +86,7 @@ public class NetscapeCertRequest
                         + spkac.size());
             }
 
-            sigAlg = new AlgorithmIdentifier.getInstance(spkac.getObjectAt(1));
+            sigAlg = AlgorithmIdentifier.getInstance(spkac.getObjectAt(1));
             sigBits = ((DERBitString)spkac.getObjectAt(2)).getBytes();
 
             //

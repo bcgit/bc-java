@@ -314,7 +314,7 @@ public class SigTest
 
         trySig("SHA1WithRSAAndMGF1", data, signingKey, verifyKey);
         trySig("SHA224WithRSAAndMGF1", data, signingKey, verifyKey);
-        trySig("SHA256withRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA256WithRSAAndMGF1", data, signingKey, verifyKey);
         //trySig("SHA384WithRSAAndMGF1", data, signingKey, verifyKey);
        //trySig("SHA512WithRSAAndMGF1", data, signingKey, verifyKey);
         trySig("SHA512(224)WithRSAAndMGF1", data, signingKey, verifyKey);
