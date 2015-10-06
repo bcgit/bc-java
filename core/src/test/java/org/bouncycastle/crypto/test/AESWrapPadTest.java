@@ -130,7 +130,7 @@ public class AESWrapPadTest
             }
             kek = new byte[kekLength / 8];
             rnd.nextBytes(kek);
-            int keyToWrapSize = rnd.nextInt(256 / 8 - 8) + 8;
+            int keyToWrapSize = RNGUtils.nextInt(rnd, 256 / 8 - 8) + 8;
             byte[] keyToWrap = new byte[keyToWrapSize];
             rnd.nextBytes(keyToWrap);
             wrapAndUnwrap(kek, keyToWrap);

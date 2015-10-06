@@ -79,7 +79,7 @@ public class SipHashTest
         byte[] key = new byte[16];
         random.nextBytes(key);
 
-        int length = 1 + random.nextInt(1024);
+        int length = 1 + RNGUtils.nextInt(random, 1024);
         byte[] input = new byte[length];
         random.nextBytes(input);
 
