@@ -17,7 +17,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTest;
@@ -178,7 +177,7 @@ public class EncryptedPrivateKeyInfoTest
 
         if (!MessageDigest.isEqual(priKey.getEncoded(), keySpec.getEncoded()))
         {
-            TestCase.fail("Private key does not match");
+            fail("Private key does not match");
         }
     }
 
