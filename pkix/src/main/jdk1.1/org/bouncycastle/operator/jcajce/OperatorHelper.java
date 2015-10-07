@@ -14,7 +14,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-//import java.security.spec.PSSParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +23,9 @@ import javax.crypto.Cipher;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -36,8 +37,11 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Integers;
 
 class OperatorHelper
 {
@@ -45,6 +49,7 @@ class OperatorHelper
     private static final Map asymmetricWrapperAlgNames = new HashMap();
     private static final Map symmetricWrapperAlgNames = new HashMap();
     private static final Map symmetricKeyAlgNames = new HashMap();
+    private static final Map symmetricWrapperKeySizes = new HashMap();
 
     static
     {
@@ -58,6 +63,17 @@ class OperatorHelper
         oids.put(PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512WITHRSA");
         oids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94, "GOST3411WITHGOST3410");
         oids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001, "GOST3411WITHECGOST3410");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA1, "SHA1WITHPLAIN-ECDSA");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA224, "SHA224WITHPLAIN-ECDSA");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA256, "SHA256WITHPLAIN-ECDSA");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA384, "SHA384WITHPLAIN-ECDSA");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA512, "SHA512WITHPLAIN-ECDSA");
+        oids.put(BSIObjectIdentifiers.ecdsa_plain_RIPEMD160, "RIPEMD160WITHPLAIN-ECDSA");
+        oids.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_1, "SHA1WITHCVC-ECDSA");
+        oids.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_224, "SHA224WITHCVC-ECDSA");
+        oids.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_256, "SHA256WITHCVC-ECDSA");
+        oids.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_384, "SHA384WITHCVC-ECDSA");
+        oids.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
 
         oids.put(new ASN1ObjectIdentifier("1.2.840.113549.1.1.4"), "MD5WITHRSA");
         oids.put(new ASN1ObjectIdentifier("1.2.840.113549.1.1.2"), "MD2WITHRSA");
@@ -77,9 +93,9 @@ class OperatorHelper
         oids.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
         oids.put(NISTObjectIdentifiers.id_sha384, "SHA-384");
         oids.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD-128");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD-160");
-        oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD-256");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
+        oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
 
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
 
@@ -94,6 +110,16 @@ class OperatorHelper
         symmetricWrapperAlgNames.put(KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, "SEEDWrap");
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESede");
 
+        symmetricWrapperKeySizes.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes128_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes192_wrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NISTObjectIdentifiers.id_aes256_wrap, Integers.valueOf(256));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia128_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia192_wrap, Integers.valueOf(192));
+        symmetricWrapperKeySizes.put(NTTObjectIdentifiers.id_camellia256_wrap, Integers.valueOf(256));
+        symmetricWrapperKeySizes.put(KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, Integers.valueOf(128));
+        symmetricWrapperKeySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
+
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.aes, "AES");
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes128_CBC, "AES");
         symmetricKeyAlgNames.put(NISTObjectIdentifiers.id_aes192_CBC, "AES");
@@ -107,6 +133,16 @@ class OperatorHelper
     OperatorHelper(JcaJceHelper helper)
     {
         this.helper = helper;
+    }
+
+    String getWrappingAlgorithmName(ASN1ObjectIdentifier algOid)
+    {
+        return (String)symmetricWrapperAlgNames.get(algOid);
+    }
+
+    int getKeySizeInBits(ASN1ObjectIdentifier algOid)
+    {
+        return ((Integer)symmetricWrapperKeySizes.get(algOid)).intValue();
     }
 
     Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
@@ -228,40 +264,42 @@ class OperatorHelper
 
         try
         {
-		try
-		{
-		    dig = helper.createDigest(getDigestAlgName(digAlgId.getAlgorithm()));
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-		    //
-		    // try an alternate
-		    //
-		    if (oids.get(digAlgId.getAlgorithm()) != null)
-		    {
-			String  digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
-
-			dig = helper.createDigest(digestAlgorithm);
-		    }
-		    else
-		    {
-			throw e;
-		    }
-		}
-        }
-        catch (Exception ex)
+        try
         {
-            throw new GeneralSecurityException(ex.toString());
+            dig = helper.createDigest(MessageDigestUtils.getDigestName(digAlgId.getAlgorithm()));
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            //
+            // try an alternate
+            //
+            if (oids.get(digAlgId.getAlgorithm()) != null)
+            {
+                String  digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
+
+                dig = helper.createDigest(digestAlgorithm);
+            }
+            else
+            {
+                throw e;
+            }
+        }
+        }
+        catch (Exception e)
+        {
+            throw new GeneralSecurityException(e.toString());
         }
 
         return dig;
     }
 
     Signature createSignature(AlgorithmIdentifier sigAlgId)
-        throws Exception
+        throws GeneralSecurityException
     {
         Signature   sig;
 
+        try
+        {
         try
         {
             sig = helper.createSignature(getSignatureName(sigAlgId));
@@ -281,6 +319,11 @@ class OperatorHelper
             {
                 throw e;
             }
+        }
+        }
+        catch (Exception e)
+        {
+            throw new GeneralSecurityException(e.toString());
         }
 
         return sig;
@@ -306,7 +349,7 @@ class OperatorHelper
             {
                 AlgorithmParameters params = helper.createAlgorithmParameters(algName);
 
-                JcaJceUtils.loadParameters(params, algorithm.getParameters());
+                AlgorithmParametersUtils.loadParameters(params, algorithm.getParameters());
 
                 PSSParameterSpec spec = (PSSParameterSpec)params.getParameterSpec(PSSParameterSpec.class);
                 sig.setParameter(spec);
@@ -331,7 +374,7 @@ class OperatorHelper
             if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
+                return getDigestName(rsaParams.getHashAlgorithm().getAlgorithm()) + "WITHRSAANDMGF1";
             }
         }
 
@@ -343,53 +386,18 @@ class OperatorHelper
         return sigAlgId.getAlgorithm().getId();
     }
 
-    private static String getDigestAlgName(
-        ASN1ObjectIdentifier digestAlgOID)
+    // we need to remove the - to create a correct signature name
+    private static String getDigestName(ASN1ObjectIdentifier oid)
     {
-        if (PKCSObjectIdentifiers.md5.equals(digestAlgOID))
+        String name = MessageDigestUtils.getDigestName(oid);
+
+        int dIndex = name.indexOf('-');
+        if (dIndex > 0)
         {
-            return "MD5";
+            return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
-        else if (OIWObjectIdentifiers.idSHA1.equals(digestAlgOID))
-        {
-            return "SHA1";
-        }
-        else if (NISTObjectIdentifiers.id_sha224.equals(digestAlgOID))
-        {
-            return "SHA224";
-        }
-        else if (NISTObjectIdentifiers.id_sha256.equals(digestAlgOID))
-        {
-            return "SHA256";
-        }
-        else if (NISTObjectIdentifiers.id_sha384.equals(digestAlgOID))
-        {
-            return "SHA384";
-        }
-        else if (NISTObjectIdentifiers.id_sha512.equals(digestAlgOID))
-        {
-            return "SHA512";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd128.equals(digestAlgOID))
-        {
-            return "RIPEMD128";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd160.equals(digestAlgOID))
-        {
-            return "RIPEMD160";
-        }
-        else if (TeleTrusTObjectIdentifiers.ripemd256.equals(digestAlgOID))
-        {
-            return "RIPEMD256";
-        }
-        else if (CryptoProObjectIdentifiers.gostR3411.equals(digestAlgOID))
-        {
-            return "GOST3411";
-        }
-        else
-        {
-            return digestAlgOID.getId();
-        }
+
+        return MessageDigestUtils.getDigestName(oid);
     }
 
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
