@@ -15,7 +15,163 @@ WINDOWTITLE="Bouncy Castle Cryptography $version API Specification"
 HEADER="<b>Bouncy Castle Cryptography $version</b>"
 DOCTITLE="Bouncy Castle $version API Specification"
 
+jdk11src=build/jdk1.1
 artifacts=build/artifacts/jdk1.1
+
+mkdir -p $jdk11src
+
+((cd jce/src/main/java && tar cf - *) | (cd $jdk11src && tar xf -))
+((cd core/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/main/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/main/jdk1.2 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/main/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/test/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/test/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/test/jdk1.2 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd core/src/main/javadoc && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/javadoc && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/test/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/test/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/jdk1.2 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/main/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd prov/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/javadoc && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/test/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/test/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/jdk1.2 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/main/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pkix/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
+
+find $jdk11src -name "*.java" -exec scripts/trim.sh \{\} \;
+find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
+
+(
+    cd $jdk11src
+
+    rm -rf org/bouncycastle/crypto/test/ntru
+    rm -rf org/bouncycastle/pqc/math/ntru
+    rm -rf org/bouncycastle/pqc/crypto/ntru
+    rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
+    rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
+    rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
+    rm -rf org/bouncycastle/crypto/*/test
+    rm -rf org/bouncycastle/crypto/*/IndexGenerator*
+    rm -rf org/bouncycastle/util/utiltest
+    rm -rf org/bouncycastle/i18n/test
+    rm -rf org/bouncycastle/i18n/filter/test
+    rm -rf org/bouncycastle/math/ec/test
+    rm -rf org/bouncycastle/crypto/tls/test
+    rm -rf org/bouncycastle/crypto/test/GCMReorderTest.java
+    rm -rf org/bouncycastle/jce/cert
+    rm -rf org/bouncycastle/jce/ECPointUtil.java
+    rm -rf org/bouncycastle/jce/X509LDAP*.java
+    rm -rf org/bouncycastle/jce/provider/X509LDAP*.java
+    rm -rf org/bouncycastle/jce/provider/JCEEC5*.java
+    rm -rf org/bouncycastle/jce/provider/EC5*.java
+    rm -rf org/bouncycastle/jce/provider/JCEEC*.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/ec/EC5Util.java
+    rm -rf org/bouncycastle/jce/provider/asymmetric/ec/EC5*.java
+    rm -rf org/bouncycastle/jcajce/provider/config/ProviderConfigurationPermission.java
+    rm -rf org/bouncycastle/jce/provider/test/ECDSA5Test.java
+    rm -rf org/bouncycastle/jce/provider/test/CRL5Test.java
+    rm -rf org/bouncycastle/jce/provider/test/X509LDAP*.java
+    rm -rf org/bouncycastle/jce/provider/test/MQVTest*.java
+    rm -rf org/bouncycastle/jce/spec/ECNamedCurveSpec.java
+    rm -rf org/bouncycastle/util/encoders/test/*.java
+    rm -rf org/bouncycastle/x509/PKIXCertPathReviewer.java
+    rm -rf org/bouncycastle/x509/CertPathReviewerException.java
+    rm -rf org/bouncycastle/x509/util/LDAPStoreHelper.java
+    rm -rf org/bouncycastle/jce/provider/X509StoreLDAPAttrCerts.java
+    rm -rf org/bouncycastle/jce/provider/X509StoreLDAPCertPairs.java
+    rm -rf org/bouncycastle/jce/provider/X509StoreLDAPCerts.java
+    rm -rf org/bouncycastle/jce/provider/X509StoreLDAPCRLs.java
+    rm -rf org/bouncycastle/jce/provider/PKIXAttrCert*.java
+    rm -rf org/bouncycastle/jce/provider/PKIXNameConstraints*.java
+    rm -rf org/bouncycastle/jce/provider/test/PKIXNameConstraintsTest.java
+    rm -rf org/bouncycastle/jce/provider/test/nist
+    rm -rf org/bouncycastle/jce/provider/test/rsa3
+    rm -rf org/bouncycastle/jce/provider/test/DSTU4145Test.java
+    rm -rf org/bouncycastle/jce/provider/test/JceTestUtil.java
+    rm -rf org/bouncycastle/x509/PKIXAttrCert*.java
+    rm -rf org/bouncycastle/jce/provider/RFC3281*.java
+    rm -rf org/bouncycastle/jcajce/PKCS12StoreParameter.java
+    rm org/bouncycastle/jce/provider/test/DetDSATest.java
+    rm org/bouncycastle/jce/provider/test/AEADTest.java
+    rm -rf org/bouncycastle/jce/provider/JDKPKCS12StoreParameter.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/ec/ECUtils.java
+    rm -rf org/bouncycastle/jcajce/provider/config/PKCS12StoreParameter.java
+    rm -rf org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
+    rm -rf org/bouncycastle/jcajce/provider/test/ECAlgorithmParametersTest.java
+    rm org/bouncycastle/asn1/test/GetInstanceTest.java
+    rm org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
+    rm org/bouncycastle/asn1/test/OctetStringTest.java
+    rm org/bouncycastle/asn1/test/ParseTest.java
+    rm -r org/bouncycastle/crypto/test/BigSkippingCipherTest.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/dstu
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/DSTU*.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/util/EC5*.java
+    rm org/bouncycastle/asn1/test/EnumeratedTest.java
+    rm -rf org/bouncycastle/pqc/jcajce
+    rm -r org/bouncycastle/crypto/test/speedy
+    rm -r org/bouncycastle/crypto/test/cavp
+    rm -r org/bouncycastle/crypto/test/KDFFeedbackGeneratorTest.java
+    rm -r org/bouncycastle/crypto/test/KDFDoublePipelineIteratorGeneratorTest.java
+    rm -r org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
+    rm -r org/bouncycastle/math/test/PrimesTest.java
+    rm -r org/bouncycastle/math/raw/test/InterleaveTest.java
+    rm -rf org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
+    rm -rf org/bouncycastle/cert/test/ConverterTest*
+    rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
+    rm -rf org/bouncycastle/cert/test/Bc*
+    rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
+    rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm -rf org/bouncycastle/jce/provider/test/DHTest.java
+    rm -rf org/bouncycastle/jce/provider/test/DSATest.java
+    rm -rf org/bouncycastle/jce/provider/test/ECEncodingTest.java
+    rm -rf org/bouncycastle/jce/provider/test/IESTest.java
+    rm -rf org/bouncycastle/jce/provider/test/ECIESTest.java
+    rm -rf org/bouncycastle/jce/provider/test/DHIESTest.java
+    rm -rf org/bouncycastle/jce/provider/test/ElGamalTest.java
+    rm -rf org/bouncycastle/jce/provider/test/NamedCurveTest.java
+    rm -rf org/bouncycastle/jce/provider/test/PSSTest.java
+    rm -rf org/bouncycastle/jce/provider/test/NIST*.java
+    rm -rf org/bouncycastle/jce/provider/test/GOST3410Test.java
+    rm -rf org/bouncycastle/jce/provider/test/JceTestUtil.java
+    rm -rf org/bouncycastle/jce/provider/test/DetDSATest.java
+    rm -rf org/bouncycastle/jce/provider/test/ImplicitlyCaTest.java
+    rm -rf org/bouncycastle/jce/provider/test/ECNRTest.java
+    rm -rf org/bouncycastle/x509/ExtendedPKIX*.java
+    rm -rf org/bouncycastle/x509/CertPath*.java
+    rm -rf org/bouncycastle/x509/PrincipalUtils.java
+    rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
+    rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
+    rm org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactory.java
+    rm -rf org/bouncycastle/pkcs/test
+    rm -rf org/bouncycastle/eac/test
+    rm -rf org/bouncycastle/cms/test
+    rm -rf org/bouncycastle/tsp/test
+    rm -rf org/bouncycastle/dvcs/test
+    rm -rf org/bouncycastle/openssl/test/WriterTest.java
+
+    sh ../../scripts/jdk1.2ed.sh > /dev/null 2>&1
+    sh ../../scripts/jdk1.1ed.sh > /dev/null 2>&1
+
+
+    find . -name AllTests.java -exec rm {} \;
+    ( find . -name CVS -exec rm -r {} \; ) > /dev/null 2>&1 
+)
+
 mkdir -p $artifacts
 
 if test "$base" != ""  -a ! -d $artifacts/lcrypto-jdk11-$base
@@ -25,57 +181,13 @@ then
     mkdir $artifacts/lcrypto-jdk11-$base
     mkdir $artifacts/lcrypto-jdk11-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/lcrypto-jdk11-$base && tar xf -)
-    (cd core/src/main/java && tar cf - org/bouncycastle/LICENSE.java \
+    (cd $jdk11src && tar cf - java org/bouncycastle/LICENSE.java \
     org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1 ) \
      | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/main/javadoc && tar cf -  \
-    org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 ) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/main/jdk1.4 && tar cf - org/bouncycastle/util) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/main/jdk1.3 && tar cf - org/bouncycastle/asn1) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/main/jdk1.1 && tar cf - *) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/test/java && tar cf - org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/test/jdk1.3 && tar cf - org) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/test/jdk1.2 && tar cf - org) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    (cd core/src/test/jdk1.1 && tar cf - org) \
-     | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
-    find $artifacts/lcrypto-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
     (
         cd $artifacts/lcrypto-jdk11-$base;
 
         mkdir classes; mkdir javadoc;
-
-        rm -rf src/org/bouncycastle/jce
-        rm -rf src/org/bouncycastle/ocsp
-        rm -rf src/org/bouncycastle/openpgp
-        rm -rf src/org/bouncycastle/i18n
-        rm -rf src/org/bouncycastle/math/ntru
-        rm -rf src/org/bouncycastle/crypto/test/ntru
-        rm -rf src/org/bouncycastle/crypto/*/NTRU*
-        rm -rf src/org/bouncycastle/crypto/*/test
-        rm -rf src/org/bouncycastle/crypto/*/IndexGenerator*
-        rm -rf src/org/bouncycastle/util/utiltest
-        find src -name AllTests.java -exec rm {} \;
-        rm src/org/bouncycastle/asn1/test/GetInstanceTest.java
-        rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
-        rm src/org/bouncycastle/asn1/test/OctetStringTest.java
-        rm src/org/bouncycastle/asn1/test/ParseTest.java
-        rm src/org/bouncycastle/asn1/test/EnumeratedTest.java
-        rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
-        rm -r src/org/bouncycastle/crypto/test/speedy
-        rm -r src/org/bouncycastle/crypto/test/cavp
-        rm -r src/org/bouncycastle/crypto/test/KDFFeedbackGeneratorTest.java
-        rm -r src/org/bouncycastle/crypto/test/KDFDoublePipelineIteratorGeneratorTest.java
-        rm -r src/org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
-        rm -r src/org/bouncycastle/crypto/test/AESWrapPadTest.java
-        rm -r src/org/bouncycastle/crypto/test/SipHashTest.java
-        rm src/org/bouncycastle/crypto/test/BigSkippingCipherTest.java
 
         (2>&1 javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
             -header "$HEADER" \
@@ -171,143 +283,12 @@ then
     mkdir $artifacts/jce-jdk11-$base
     mkdir $artifacts/jce-jdk11-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/jce-jdk11-$base; tar xf -)
-    ((cd jce/src/main/java && tar cf - *) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd core/src/main/javadoc && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/javadoc && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/java && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.4 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.3 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.2 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/test/jdk1.1 && tar cf - * ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-    ((cd prov/src/main/java && tar cf - org/bouncycastle/jce/exception ) | (cd $artifacts/jce-jdk11-$base/src && tar xf -))
-
-    find $artifacts/jce-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
-    find $artifacts/jce-jdk11-$base -name "*.java" -exec scripts/useseccert.sh \{\} \;
+    (cd $jdk11src && tar cf - java javax org/bouncycastle/LICENSE.java \
+    org/bouncycastle/math org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc org/bouncycastle/jce org/bouncycastle/jcajce org/bouncycastle/x509 ) \
+    | (cd $artifacts/jce-jdk11-$base/src && tar xf -)
 
     (
     cd $artifacts/jce-jdk11-$base; mkdir classes; mkdir javadoc;
-
-    rm -rf src/org/bouncycastle/crypto/test/ntru
-    rm -rf src/org/bouncycastle/pqc/math/ntru
-    rm -rf src/org/bouncycastle/pqc/crypto/ntru
-    rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
-    rm -rf src/org/bouncycastle/pqc/crypto/*/EncryptionKey*
-    rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringT*
-    rm -rf src/org/bouncycastle/jce/cert
-    rm -rf src/org/bouncycastle/math/ntru
-    rm -rf src/org/bouncycastle/crypto/test/ntru
-    rm -rf src/org/bouncycastle/crypto/*/NTRU*
-    rm -rf src/org/bouncycastle/crypto/*/test
-    rm -rf src/org/bouncycastle/crypto/*/IndexGenerator*
-    rm src/org/bouncycastle/jcajce/provider/config/*Permission.java
-    rm -rf src/org/bouncycastle/jcajce/provider/asymmetric/dstu
-    rm src/org/bouncycastle/jcajce/provider/asymmetric/DSTU*
-    rm -rf src/org/bouncycastle/jcajce/PKCS12StoreParameter.java
-    rm src/org/bouncycastle/jce/provider/test/DHTest.java
-    rm src/org/bouncycastle/jce/provider/test/DSATest.java
-    rm src/org/bouncycastle/jce/provider/test/ECIESTest.java
-    rm src/org/bouncycastle/jce/provider/test/ElGamalTest.java
-    rm src/org/bouncycastle/jce/provider/test/NamedCurveTest.java
-    rm src/org/bouncycastle/jce/provider/test/PSSTest.java
-    rm src/org/bouncycastle/jce/provider/test/NIST*.java
-    rm src/org/bouncycastle/jce/provider/test/GOST3410Test.java
-    rm src/org/bouncycastle/jce/provider/test/JceTestUtil.java
-    rm src/org/bouncycastle/jce/provider/test/DetDSATest.java
-    rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
-    rm -rf src/org/bouncycastle/asn1/test/GetInstanceTest.java
-    rm -rf src/org/bouncycastle/i18n/test
-    rm -rf src/org/bouncycastle/i18n/filter/test
-    rm -rf src/org/bouncycastle/voms
-    rm -rf src/org/bouncycastle/jce/ECPointUtil.java
-    rm -rf src/org/bouncycastle/jce/X509LDAP*.java
-    rm -rf src/org/bouncycastle/jce/provider/JCEEC5*.java
-    rm -rf src/org/bouncycastle/jce/provider/JCEEC*.java
-    rm -rf src/org/bouncycastle/jce/provider/CertPathValidatorUtilities.java
-    rm -rf src/org/bouncycastle/jce/provider/test/CRL5Test.java
-    rm -rf src/org/bouncycastle/jcajce/provider/asymmetric/ec/EC5*.java
-    rm -rf src/org/bouncycastle/jce/provider/asymmetric/ec/EC5*.java
-    rm -rf src/org/bouncycastle/jce/provider/EC5*.java
-    rm -rf src/org/bouncycastle/jce/provider/X509LDAP*.java
-    rm -rf src/org/bouncycastle/jce/provider/test/X509LDAP*.java
-    rm -rf src/org/bouncycastle/jce/provider/test/ECDSA5Test.java
-    rm -rf src/org/bouncycastle/jce/provider/test/ECEncodingTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/ECNRTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/IESTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/AttrCertTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/PKIXPolicyMappingTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/nist
-    rm -rf src/org/bouncycastle/jce/provider/test/rsa3
-    rm -rf src/org/bouncycastle/jce/provider/test/DSTU*
-    rm -rf src/org/bouncycastle/jce/provider/test/AEADT*
-    rm -rf src/org/bouncycastle/jce/spec/ECNamedCurveSpec.java
-    rm -rf src/org/bouncycastle/jce/cert
-    rm -rf src/org/bouncycastle/mail
-    rm -rf src/org/bouncycastle/math/ec/test
-    rm -rf src/org/bouncycastle/cms
-    rm -rf src/org/bouncycastle/ocsp
-    rm -rf src/org/bouncycastle/eac
-    rm -rf src/org/bouncycastle/cert
-    rm -rf src/org/bouncycastle/bcpg
-    rm -rf src/org/bouncycastle/pkcs
-    rm -rf src/org/bouncycastle/operator
-    rm -rf src/org/bouncycastle/openpgp
-    rm -rf src/org/bouncycastle/openssl
-    rm -rf src/org/bouncycastle/mozilla
-    rm -rf src/org/bouncycastle/voms
-    rm -rf src/org/bouncycastle/sasn1
-    rm -rf src/org/bouncycastle/tsp
-    rm -rf src/org/bouncycastle/util/encoders/test
-    rm -rf src/org/bouncycastle/util/utiltest
-    rm -rf src/org/bouncycastle/x509/PKIXCertPathReviewer.java
-    rm -rf src/org/bouncycastle/x509/CertPathValidatorUtilities.java
-    rm -rf src/org/bouncycastle/x509/PrincipalUtils.java
-    rm -rf src/org/bouncycastle/x509/CertPathReviewerException.java
-    rm -rf src/org/bouncycastle/x509/ExtendedPKIX*.java
-    rm -rf src/org/bouncycastle/x509/util/LDAPStoreHelper.java
-    rm -rf src/org/bouncycastle/jce/provider/PKIXAttrCert*.java
-    rm -rf src/org/bouncycastle/jce/provider/PKIXNameConstraints*.java
-    rm -rf src/org/bouncycastle/jce/provider/test/PKIXNameConstraintsTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/AttrCertSelectorTest.java
-    rm -rf src/org/bouncycastle/jce/provider/test/MQVTest.java
-    rm -rf src/org/bouncycastle/x509/ExtendedPKIX*.java
-    rm -rf src/org/bouncycastle/jce/provider/PKIXCRL*.java
-    rm -rf src/org/bouncycastle/jce/provider/RFC3281*.java
-    rm -rf src/org/bouncycastle/jce/provider/JDKPKCS12StoreParameter.java
-    rm -rf src/org/bouncycastle/jce/provider/CertPathValidatorUtilities.java
-    rm -rf src/org/bouncycastle/jce/ProviderConfigurationPermission.java
-    rm -rf src/org/bouncycastle/jce/provider/X509StoreLDAPAttrCerts.java
-    rm -rf src/org/bouncycastle/jce/provider/X509StoreLDAPCertPairs.java
-    rm -rf src/org/bouncycastle/jce/provider/X509StoreLDAPCerts.java
-    rm -rf src/org/bouncycastle/jce/provider/X509StoreLDAPCRLs.java
-    rm -rf src/org/bouncycastle/jce/provider/PKIXNameConstraint*.java
-    rm -rf src/org/bouncycastle/openssl/test/WriterTest.java
-    rm -rf src/org/bouncycastle/jcajce/provider/config/PKCS12StoreParameter.java
-    rm -rf src/org/bouncycastle/jcajce/provider/asymmetric/util/EC5Util.java
-    rm -rf src/org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
-    find src -name AllTests.java -exec rm {} \;
-    rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
-    rm src/org/bouncycastle/asn1/test/OctetStringTest.java
-    rm src/org/bouncycastle/asn1/test/ParseTest.java
-    rm src/org/bouncycastle/jce/provider/test/ImplicitlyCaTest.java
-    rm src/org/bouncycastle/jce/provider/test/DHIESTest.java
-    rm -rf src/org/bouncycastle/pqc/jcajce
-    rm -rf src/org/bouncycastle/crypto/tls/test
-    rm -rf src/org/bouncycastle/crypto/test
-    rm -rf src/org/bouncycastle/asn1/test
 
     (2>&1 javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
         -header "$HEADER" \
@@ -395,19 +376,24 @@ then
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java pqc/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java [opqrstuv]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java [ijklmn]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [jk]*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [lmn]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/x*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/c*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[abdefghijklmnopqrstuvwyz]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[ade]*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[gimpsu]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[ABCD]*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[EFHKMNOP]*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[RSTU]*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/digest/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/symmetric/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/*/*.java)
@@ -433,49 +419,13 @@ then
     mkdir $artifacts/bcpkix-jdk11-$base
     mkdir $artifacts/bcpkix-jdk11-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpkix-jdk11-$base; tar xf -)
-    ((cd pkix/src/main/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.4 && tar cf - org/bouncycastle/cms org/bouncycastle/eac ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.3 && tar cf - org/bouncycastle/cert org/bouncycastle/pkcs org/bouncycastle/cms org/bouncycastle/eac org/bouncycastle/tsp org/bouncycastle/operator ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.2 && tar cf - org/bouncycastle/cert org/bouncycastle/cms ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/java && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.3 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/test/jdk1.1 && tar cf - org/bouncycastle/cert ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    ((cd pkix/src/main/javadoc && tar cf - * ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
-    find $artifacts/bcpkix-jdk11-$base -name "*.java" -exec scripts/trim.sh \{\} \;
-    find $artifacts/bcpkix-jdk11-$base -name "*.java" -exec scripts/useseccert.sh \{\} \;
+    ((cd $jdk11src && tar cf - org/bouncycastle/cert org/bouncycastle/dvcs org/bouncycastle/pkcs org/bouncycastle/pkix org/bouncycastle/cms org/bouncycastle/eac org/bouncycastle/openssl org/bouncycastle/tsp org/bouncycastle/operator ) | (cd $artifacts/bcpkix-jdk11-$base/src && tar xf -))
+
     (
     cd $artifacts/bcpkix-jdk11-$base; mkdir classes; mkdir javadoc;
 
     PATH=$JDK11PATH/bin:$PATH
     export PATH
-
-    rm -rf src/java
-    rm -rf src/org/bouncycastle/jce
-    rm -rf src/org/bouncycastle/ocsp
-    rm -rf src/org/bouncycastle/bcpg
-    rm -rf src/org/bouncycastle/x509
-    rm -rf src/org/bouncycastle/mail
-    rm -rf src/org/bouncycastle/openpgp
-    rm -rf src/org/bouncycastle/asn1
-    rm -rf src/org/bouncycastle/i18n
-    rm -rf src/org/bouncycastle/jcajce
-    rm -rf src/org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
-    rm -rf src/org/bouncycastle/cert/test/ConverterTest*
-    rm -rf src/org/bouncycastle/cert/test/Bc*
-    rm -rf src/org/bouncycastle/cms/test
-    rm -rf src/org/bouncycastle/dvcs/test
-    rm -rf src/org/bouncycastle/eac/test
-    rm -rf src/org/bouncycastle/pkcs/test
-    rm -rf src/org/bouncycastle/tsp/test
-    rm -rf src/org/bouncycastle/openssl/test
-    rm -rf src/org/bouncycastle/tsp/GenTimeAccuracyUnit*
-    rm -rf src/org/bouncycastle/tsp/TimeStampTokenInfoUnit*
-    rm src/org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactory.java
-    rm src/org/bouncycastle/cert/test/CertPathLoopTest.java
-
-
-    find src -name AllTests.java -exec rm {} \;
 
     javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
         -header "$HEADER" \
@@ -588,6 +538,7 @@ q
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/test/RegressionTest.java )
 
     cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/bigpub.asc classes/org/bouncycastle/openpgp/test/bigpub.asc
+    cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/longSigSubPack.asc classes/org/bouncycastle/openpgp/test/longSigSubPack.asc
 
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.openpgp.test.RegressionTest
 
