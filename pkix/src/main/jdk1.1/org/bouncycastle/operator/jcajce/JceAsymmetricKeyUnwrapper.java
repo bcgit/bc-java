@@ -1,7 +1,8 @@
 package org.bouncycastle.operator.jcajce;
 
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -29,6 +30,7 @@ public class JceAsymmetricKeyUnwrapper
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private Map extraMappings = new HashMap();
     private PrivateKey privKey;
+    private boolean unwrappedKeyMustBeEncodable;
 
     public JceAsymmetricKeyUnwrapper(AlgorithmIdentifier algorithmIdentifier, PrivateKey privKey)
     {
@@ -47,6 +49,21 @@ public class JceAsymmetricKeyUnwrapper
     public JceAsymmetricKeyUnwrapper setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+
+        return this;
+    }
+
+    /**
+     * Flag that unwrapping must produce a key that will return a meaningful value from a call to Key.getEncoded().
+     * This is important if you are using a HSM for unwrapping and using a software based provider for
+     * with the unwrapped key. Default value: false.
+     *
+     * @param unwrappedKeyMustBeEncodable true if getEncoded() should return key bytes, false if not necessary.
+     * @return this recipient.
+     */
+    public JceAsymmetricKeyUnwrapper setMustProduceEncodableUnwrappedKey(boolean unwrappedKeyMustBeEncodable)
+    {
+        this.unwrappedKeyMustBeEncodable = unwrappedKeyMustBeEncodable;
 
         return this;
     }
@@ -80,26 +97,41 @@ public class JceAsymmetricKeyUnwrapper
             Key sKey = null;
 
             Cipher keyCipher = helper.createAsymmetricWrapper(this.getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+            AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
             try
             {
-                keyCipher.init(Cipher.UNWRAP_MODE, privKey);
+                if (algParams != null)
+                {
+                    keyCipher.init(Cipher.UNWRAP_MODE, privKey, algParams);
+                }
+                else
+                {
+                    keyCipher.init(Cipher.UNWRAP_MODE, privKey);
+                }
+
                 sKey = keyCipher.unwrap(encryptedKey, helper.getKeyAlgorithmName(encryptedKeyAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
+
+                // check key will work with a software provider.
+                if (unwrappedKeyMustBeEncodable)
+                {
+                    try
+                    {
+                        byte[] keyBytes = sKey.getEncoded();
+
+                        if (keyBytes == null || keyBytes.length == 0)
+                        {
+                            sKey = null;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        sKey = null; // try doing a decrypt
+                    }
+                }
             }
-            catch (NoSuchAlgorithmException e)
-            {
-            }
-            catch (InvalidKeyException e)
-            {
-            }
-            catch (IllegalStateException e)
-            {
-            }
-            catch (UnsupportedOperationException e)
-            {
-            }
-            catch (ProviderException e)
-            {
+            catch (Exception e)
+            {   // try decrypt
             }
 
             // some providers do not support UNWRAP (this appears to be only for asymmetric algorithms)
@@ -109,7 +141,7 @@ public class JceAsymmetricKeyUnwrapper
                 sKey = new SecretKeySpec(keyCipher.doFinal(encryptedKey), encryptedKeyAlgorithm.getAlgorithm().getId());
             }
 
-            return new GenericKey(sKey);
+            return new JceGenericKey(encryptedKeyAlgorithm, sKey);
         }
         catch (InvalidKeyException e)
         {

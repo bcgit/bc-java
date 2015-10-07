@@ -1,8 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
-import java.security.InvalidKeyException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.Provider;
 
@@ -11,12 +9,9 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * the RecipientInfo class for a recipient who has been sent a message
@@ -69,30 +64,16 @@ public abstract class JcePasswordRecipient
 
             return keyEncryptionCipher.unwrap(encryptedContentEncryptionKey, contentEncryptionAlgorithm.getAlgorithm().getId(), Cipher.SECRET_KEY);
         }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new CMSException("cannot process content encryption key: " + e.getMessage(), e);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new CMSException("cannot process content encryption key: " + e.getMessage(), e);
-        }
-        catch (InvalidAlgorithmParameterException e)
+        catch (Exception e)
         {
             throw new CMSException("cannot process content encryption key: " + e.getMessage(), e);
         }
     }
 
-    public byte[] calculateDerivedKey(byte[] encodedPassword, AlgorithmIdentifier derivationAlgorithm, int keySize)
+    public byte[] calculateDerivedKey(int schemeID, AlgorithmIdentifier derivationAlgorithm, int keySize)
         throws CMSException
     {
-        PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
-
-        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator();
-
-        gen.init(encodedPassword, params.getSalt(), params.getIterationCount().intValue());
-
-        return ((KeyParameter)gen.generateDerivedParameters(keySize)).getKey();
+        return helper.calculateDerivedKey(schemeID, password, derivationAlgorithm, keySize);
     }
 
     public int getPasswordConversionScheme()
