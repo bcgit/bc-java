@@ -211,9 +211,13 @@ public class JcaPGPKeyConverter
                 }
                 bcpgKey = new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
             }
-            else
+            else if (algorithm == PGPPublicKey.ECDSA)
             {
                 bcpgKey = new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
+            }
+            else
+            {
+                throw new PGPException("unknown key class");
             }
         }
         else
