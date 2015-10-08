@@ -35,8 +35,8 @@ public class PubringDump
             return "ELGAMAL_ENCRYPT";
         case PublicKeyAlgorithmTags.DSA:
             return "DSA";
-        case PublicKeyAlgorithmTags.EC:
-            return "EC";
+        case PublicKeyAlgorithmTags.ECDH:
+            return "ECDH";
         case PublicKeyAlgorithmTags.ECDSA:
             return "ECDSA";
         case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:

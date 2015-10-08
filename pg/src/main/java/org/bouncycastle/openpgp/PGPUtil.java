@@ -6,9 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.security.Signature;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -17,7 +15,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -38,7 +35,7 @@ public class PGPUtil
      */
     public static String getDefaultProvider()
     {
-        // TODO: This is unused?
+        // TODO: no longer used.
         return defProvider;
     }
 
@@ -81,77 +78,6 @@ public class PGPUtil
         values[1] = new MPInteger(i2.getValue());
 
         return values;
-    }
-
-    /**
-     * Translates a PGP {@link HashAlgorithmTags hash algorithm tag} to a JCA {@link MessageDigest}
-     * algorithm name
-     *
-     * @param hashAlgorithm the hash algorithm identifier.
-     * @return the corresponding JCA algorithm name.
-     * @throws PGPException if the hash algorithm is unknown.
-     */
-    static String getDigestName(
-        int        hashAlgorithm)
-        throws PGPException
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithmTags.SHA1:
-            return "SHA1";
-        case HashAlgorithmTags.MD2:
-            return "MD2";
-        case HashAlgorithmTags.MD5:
-            return "MD5";
-        case HashAlgorithmTags.RIPEMD160:
-            return "RIPEMD160";
-        case HashAlgorithmTags.SHA256:
-            return "SHA256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA224";
-        default:
-            throw new PGPException("unknown hash algorithm tag in getDigestName: " + hashAlgorithm);
-        }
-    }
-
-    /**
-     * Translates a PGP {@link PublicKeyAlgorithmTags public key algorithm tag} and a
-     * {@link HashAlgorithmTags hash algorithm tag} to a JCA {@link Signature} algorithm name.
-     *
-     * @param keyAlgorithm they public key algorithm identifier.
-     * @param hashAlgorithm the hash algorithm identifier.
-     * @return the corresponding JCA algorithm name.
-     * @throws PGPException if the public key or hash algorithm is unknown.
-     */
-    static String getSignatureName(
-        int        keyAlgorithm,
-        int        hashAlgorithm)
-        throws PGPException
-    {
-        String     encAlg;
-
-        switch (keyAlgorithm)
-        {
-        case PublicKeyAlgorithmTags.RSA_GENERAL:
-        case PublicKeyAlgorithmTags.RSA_SIGN:
-            encAlg = "RSA";
-            break;
-        case PublicKeyAlgorithmTags.DSA:
-            encAlg = "DSA";
-            break;
-        case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT: // in some malformed cases.
-        case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
-            encAlg = "ElGamal";
-            break;
-        default:
-            throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
-        }
-
-        return getDigestName(hashAlgorithm) + "with" + encAlg;
     }
 
     /**
