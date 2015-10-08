@@ -416,7 +416,7 @@ public class ASN1ObjectIdentifier
      * The pool is also used by the ASN.1 parsers to limit the number of duplicated OID
      * objects in circulation.
      * </p>
-     * @return
+     * @return a reference to the identifier in the pool.
      */
     public ASN1ObjectIdentifier intern()
     {
