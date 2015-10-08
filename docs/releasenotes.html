@@ -29,6 +29,7 @@ Release: 1.53
 <li>The BC JCE cipher implementations could sometimes fail when used in conjunction with the JSSE and NIO. This has been fixed.</li>
 <li>PGPPublicKey.getBitStrength() always returned 0 for EC keys. This has been fixed.</li>
 <li>A PKCS12 key store containing a looping certificate chain could cause an OutOfMemoryException. This has been fixed.</li>
+<li>A change in JDK 1.8 meant that X509Certificate.verify(PublicKey, Provider) would cause a stack overflow. This has been fixed.</li>
 <li>Nested multiparts with irregular post-amble could cause verification issues for the SMIMESigned classes. This has been fixed.</li>
 <li>CMSSignedData now supports verification of signed attributes where the calculated digest uses a different algorithm from the digest used in the signature.</li>
 <li>TRUSTED CERTIFICATE parsing in PEM files was ignoring the attribute block. A new class X509TrustedCertificateBlock is now returned containing both the certificate and the trust information.</li>
@@ -40,18 +41,28 @@ Release: 1.53
 <li>PGP signature hashed sub-packets with long length encodings would fail to validate on signature checking. This has been fixed.</li>
 <li>The S/MIME API would occasionally leak InputStreams which could cause issues with custom DataSource implementations. This has been fixed.</li>
 <li>The PKCS#12 KeyStore implementation would sometimes leave orphaned chain certificates in the key store after private key deletion. This has been fixed.</li>
+<li>A bug in the DirectKeySignature OpenPGP example which could lead to extra data appearing in the signature has been fixed.</li>
+<li>Explicit configuration of a BcAsymmetricKeyWrapper with a SecureRandom was not properly propagated internally. This has been fixed.</li>
+<li>A CRL with a null certificate issuer would sometimes result in a NullPointerException during CertPathProcessing. This has been fixed.<li>
+<li>The CertPath processor would occassionally fail to match a DistributionPoint name correctly. This has been fixed.</li>
+<li>In order to avoid confusion about thread safety, BCrypt now uses a new instance for hash calculation every time it is invoked.</li>
+<li>Some decidedly odd argument casting in the PKIXCertPathValidator has been fixed to throw an InvalidAlgorithmParameterException.</li>
+<li>Presenting an empty array of certificates to the PKIXCertPathValidator would cause an IndexOutOfRangeException instead of a CertPathValidatorException. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
-<li>It is now possible to specify that an unwrapped key must be usable by a software provider in the assymettric unwrappers for CMS.</li>
-<li>A Blake2b implmenentation has been added to the provider and lightweight API.</li>
-<li>SHA3 has now been added to the provider and the lightweight API. SHAKe128 and SHAKE256 have also been added to the lightweight API. The original implmementation of the draft standard has been renamed to Keccak.</li>
+<li>It is now possible to specify that an unwrapped key must be usable by a software provider in the asymmetric unwrappers for CMS.</li>
+<li>A Blake2b implementation has been added to the provider and lightweight API.</li>
+<li>SHA3 has now been added to the provider and the lightweight API. SHAKe128 and SHAKE256 have also been added to the lightweight API. The original implementation of the draft standard has been renamed to Keccak.</li>
 <li>The CMS API now supports RFC 6211 for both SignedData and AuthenticatedData.</li>
 <li>The ASN.1 parser for ECGOST private keys will now parse keys encoded with a private value represented as an ASN.1 INTEGER.</li>
 <li>EAX mode and CMAC is now supported for ciphers such as SHACAL-2 and Threefish.</li>
 <li>The SM4 block cipher has been added to the provider and the lightweight API.</li>
 <li>X9.31, ISO9796/2, and PSS signature support has been added for SHA512/224, SHA512/256.</li>
 <li>SubjectPublicKeyInfoFactory now supports DSA parameters.</li>
+<li>A range of new algorithms are now support for EC key agreement.</li>
+<li>EC ContentSigners and EC ContentVerifiers have been added to the lightweight operator package in the PKIX APIs.</li>
+<li>The PKCS#12 key store will now garbage collect orphaned certificates on saving.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
