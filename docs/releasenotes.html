@@ -49,7 +49,7 @@ Release: 1.53
 <li>Some decidedly odd argument casting in the PKIXCertPathValidator has been fixed to throw an InvalidAlgorithmParameterException.</li>
 <li>Presenting an empty array of certificates to the PKIXCertPathValidator would cause an IndexOutOfRangeException instead of a CertPathValidatorException. This has been fixed.</li>
 </ul>
-<h3>2.2.3 Additional Features and Functionality</h3>
+<h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>It is now possible to specify that an unwrapped key must be usable by a software provider in the asymmetric unwrappers for CMS.</li>
 <li>A Blake2b implementation has been added to the provider and lightweight API.</li>
@@ -64,6 +64,10 @@ Release: 1.53
 <li>EC ContentSigners and EC ContentVerifiers have been added to the lightweight operator package in the PKIX APIs.</li>
 <li>The PKCS#12 key store will now garbage collect orphaned certificates on saving.</li>
 </ul>
+<h3>2.1.4 Notes</h3>
+<p>
+It turns out there was a similar, but different, issue in Crypto++ to the BC issue with ECIES. Crypto++ 6.0 now offers a corrected version of ECIES which is compatible with that which is now in BC.
+</p>
 
 <h3>2.2.1 Version</h3>
 Release: 1.52<br/>
