@@ -672,21 +672,25 @@ as;
 <h4>Key Agreement</h4>
 
 <p>
-Diffie-Hellman key agreement is supported using the "DH", "ECDH", and
-"ECDHC" (ECDH with cofactors) key agreement instances.
+Diffie-Hellman key agreement is supported using the "DH", "ECDH",
+"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations.
+</p>
 <p>
+Support is provided for the standard SEC algorithm set for EC. Names appear
+in the form of [Agreement]with[KDF PRF Digest][KDF type]. For example:
+<ul>
+<li>"ECCDHwithSHA256KDF" which represents EC cofactor DH using the X9.63 KDF with SHA256 as the PRF</li>
+<li>"ECMQVwithSHA1CKDF" which represents EC MQV using the concetantion KDF with SHA1 as the PRF</li>
+</ul>
+</p><p>
 Note: with basic "DH" only the basic algorithm fits in with the JCE API, if
 you're using long-term public keys you may want to look at the light-weight
-API.
-<p>
+API, there are also additional JCE support classes for UserKeyingMaterial and MQVParameters in the <b>org.bouncycastle.jcajce.spec</b> package.
+</p>
 <h4>ECIES</h4>
 <p>
-An implementation of ECIES (stream mode) as described in IEEE P 1363a.
-<p>
-<b>Note:</b> At the moment this is still a draft, don't use it for anything
-that may be subject to long term storage, the key values produced may well
-change as the draft is finalised.
-<p>
+An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now based more formally on Victor Shoup's paper and should be compatible with the implementation in Crypto++ (version 6 onwards).
+</p>
 <h4>Digest</h4>
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
@@ -714,6 +718,7 @@ change as the draft is finalised.
 <tr><td>Tiger</td><td>192</td><td>&nbsp;</td></tr>
 <tr><td>Whirlpool</td><td>512</td><td>&nbsp;</td></tr>
 </table>
+</p>
 
 <h4>MAC</h4>
 
@@ -787,17 +792,17 @@ change as the draft is finalised.
 <li>SHA256withDSA</li>
 <li>SHA384withDSA</li>
 <li>SHA512withDSA</li>
-<li>SHA1withDetDSA</li>
-<li>SHA224withDetDSA</li>
-<li>SHA256withDetDSA</li>
-<li>SHA384withDetDSA</li>
-<li>SHA512withDetDSA</li>
+<li>SHA1withDDSA</li>
+<li>SHA224withDDSA</li>
+<li>SHA256withDDSA</li>
+<li>SHA384withDDSA</li>
+<li>SHA512withDDSA</li>
 <li>NONEwithDSA</li>
 <li>SHA1withDetECDSA</li>
-<li>SHA224withDetECDSA</li>
-<li>SHA256withDetECDSA</li>
-<li>SHA384withDetECDSA</li>
-<li>SHA512withDetECDSA</li>
+<li>SHA224withECDDSA</li>
+<li>SHA256withECDDSA</li>
+<li>SHA384withECDDSA</li>
+<li>SHA512withECDDSA</li>
 <li>SHA1withECDSA</li>
 <li>NONEwithECDSA</li>
 <li>SHA224withECDSA</li>
