@@ -64,6 +64,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 <li>A range of new algorithms are now support for EC key agreement.</li>
 <li>EC ContentSigners and EC ContentVerifiers have been added to the lightweight operator package in the PKIX APIs.</li>
 <li>The PKCS#12 key store will now garbage collect orphaned certificates on saving.</li>
+<li>Caching for ASN.1 ObjectIdentifiers has been rewritten to make use of an intern method. The "usual suspects" are now interned automatically, and the cache is used by the parser. Other OIDs can be added to the cache by calling ASN1ObjectIdentifier.intern().</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <p>
