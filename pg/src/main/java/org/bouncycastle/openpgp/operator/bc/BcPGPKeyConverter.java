@@ -118,7 +118,7 @@ public class BcPGPKeyConverter
             }
             else
             {
-                throw new PGPException("unknown key class");
+                throw new PGPException("unknown EC algorithm");
             }
         }
         else
