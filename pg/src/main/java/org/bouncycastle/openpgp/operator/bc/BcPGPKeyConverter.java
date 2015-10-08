@@ -1,8 +1,15 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.IOException;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
@@ -30,7 +37,10 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
@@ -47,7 +57,7 @@ public class BcPGPKeyConverter
      * @param time      date of creation.
      * @throws PGPException on key creation problem.
      */
-    public PGPPublicKey getPGPPublicKey(int algorithm, AsymmetricKeyParameter pubKey, Date time)
+    public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, AsymmetricKeyParameter pubKey, Date time)
         throws PGPException
     {
         BCPGKey bcpgKey;
@@ -74,15 +84,41 @@ public class BcPGPKeyConverter
         }
         else if (pubKey instanceof ECPublicKeyParameters)
         {
-            ECPublicKeyParameters eK = (ECPublicKeyParameters)pubKey;
+            SubjectPublicKeyInfo keyInfo;
+            try
+            {
+                keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubKey);
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Unable to encode key: " + e.getMessage(), e);
+            }
+
+            // TODO: should probably match curve by comparison as well
+            ASN1ObjectIdentifier curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
+
+            X9ECParameters params = NISTNamedCurves.getByOID(curveOid);
+
+            ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
+            X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
 
             if (algorithm == PGPPublicKey.ECDH)
-            {                                                   // TODO: KDF parameters setting
-                bcpgKey = new ECDHPublicBCPGKey(((ECNamedDomainParameters)eK.getParameters()).getName(), eK.getQ(), HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+            {
+                PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
+                if (kdfParams == null)
+                {
+                    // We default to these as they are specified as mandatory in RFC 6631.
+                    kdfParams = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+                }
+                bcpgKey = new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+            }
+            else if (algorithm == PGPPublicKey.ECDSA)
+            {
+                bcpgKey = new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
             }
             else
             {
-                bcpgKey = new ECDSAPublicBCPGKey(((ECNamedDomainParameters)eK.getParameters()).getName(), eK.getQ());
+                throw new PGPException("unknown key class");
             }
         }
         else
