@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
@@ -13,7 +12,6 @@ import org.bouncycastle.crypto.EphemeralKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -28,7 +26,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
+import org.bouncycastle.openpgp.operator.RFC6637Utils;
 
 /**
  * A method generator for supporting public key based encryption operations.
@@ -108,7 +106,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                 RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
 
-                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(ecKey.getCurveOID(), S, pubKey.getFingerprint()));
+                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
 
                 Wrapper c = BcImplProvider.createWrapper(ecKey.getSymmetricKeyAlgorithm());
 

@@ -1,5 +1,7 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
@@ -19,7 +21,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.RFC6637KDFCalculator;
+import org.bouncycastle.openpgp.operator.RFC6637Utils;
 
 /**
  * A decryptor factory for handling public key decryption operations.
@@ -115,12 +117,16 @@ public class BcPublicKeyDataDecryptorFactory
                 ECPoint S = x9Params.getCurve().decodePoint(pEnc).multiply(((ECSecretBCPGKey)privKey.getPrivateKeyDataPacket()).getX()).normalize();
 
                 RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(ecKey.getHashAlgorithm()), ecKey.getSymmetricKeyAlgorithm());
-                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(ecKey.getCurveOID(), S, new BcKeyFingerprintCalculator().calculateFingerprint(privKey.getPublicKeyPacket())));
+                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(S, RFC6637Utils.createUserKeyingMaterial(privKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator())));
 
                 c.init(false, key);
 
                 return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
             }
+        }
+        catch (IOException e)
+        {
+            throw new PGPException("exception creating user keying material: " + e.getMessage(), e);
         }
         catch (InvalidCipherTextException e)
         {
