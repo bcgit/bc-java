@@ -92,6 +92,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         {
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
+                // Generate the ephemeral key pair
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 X9ECParameters x9Params = PGPUtil.getX9Parameters(ecKey.getCurveOID());
                 AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
@@ -104,7 +105,6 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
                 KeyPair ephKP = kpGen.generateKeyPair();
 
-                // Generate the ephemeral key pair
                 KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKey.getPublicKeyPacket()));
 
                 agreement.init(ephKP.getPrivate(), new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKey.getPublicKeyPacket(), new JcaKeyFingerprintCalculator())));
