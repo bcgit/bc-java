@@ -65,7 +65,13 @@ We state, where EC MQV has not otherwise been disabled or removed:</br />
 "The use of this product or service is subject to the reasonable, non-discriminatory terms in the Intellectual Property Rights (IPR) Disclosures of Certicom Corp. at the IETF for Use of Elliptic Curve Cryptography (ECC) Algorithms in Cryptographic Message Syntax (CMS) implemented in the product or service."
 </p>
 
-<h2>3.0 Specifications</h2>
+<h2>3.0 System Properties</h2>
+The Bouncy Castle provider can make use of the following two system properties:
+<ul>
+<li><b>org.bouncycastle.ec.disable_mqv</b> - setting this property to true will disable support for EC MQV in the provider.</li>
+<li><b>org.bouncycastle.pkcs1.not_strict</b> - some other providers of cryptography services fail to produce PKCS1 encoded block that are the correct length. Setting this property to true will relax the conformance check on the block length.</li>
+</ul>
+<h2>4.0 Specifications</h2>
 
 <ul>
 <li> clean room implementation of the JCE API 
@@ -87,7 +93,7 @@ We state, where EC MQV has not otherwise been disabled or removed:</br />
 <li> JCE compatible framework for a Bouncy Castle provider
 </ul>
 
-<h2>4.0 Light-weight API</h2>
+<h2>5.0 Light-weight API</h2>
 
 <p>
 This API has been specifically developed for those circumstances
@@ -98,7 +104,7 @@ However as a result, the light-weight API requires more effort
 and understanding on the part of a developer to initialise and 
 utilise the algorithms.
 
-<h3>4.1 Example</h3>
+<h3>5.1 Example</h3>
 
 <p>To utilise the light-weight API in a program, the fundamentals
 are as follows;
@@ -132,7 +138,7 @@ are as follows;
 </code>
 </pre>
 
-<h3>4.2 Algorithms</h3>
+<h3>5.2 Algorithms</h3>
 
 <p>The light-weight API has built in support for the following:
 
@@ -412,31 +418,31 @@ Classes for generating DSA and ECDSA parameters can be found in the
 <b>org.bouncycastle.crypto.params</b> and <b>org.bouncycastle.crypto.generators</b> packages.
 <p>
 
-<h3>4.4 Elliptic Curve Transforms.</h3>
+<h3>5.4 Elliptic Curve Transforms.</h3>
 
 <p>
 The org.bouncycastle.crypto.ec package contains implementations for a variety of EC cryptographic transforms such as EC ElGamal.
 </p>
 
-<h3>4.4 TLS/DTLS</h3>
+<h3>5.5 TLS/DTLS</h3>
 
 <p>
 The org.bouncycastle.crypto.tls package contains implementations for TLS 1.1, 1.2 and DTLS 1.0, 1.2.
 </p>
 
-<h3>4.5 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers</h3>
+<h3>5.6 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers</h3>
 
 <p>
 The org.bouncycastle.crypto.prng package contains implementations for a variety of bit generators including those from SP 800-90A and X9.31, as well as builders for SecureRandom objects based around them.
 </p>
-<h3>4.6 ASN.1 package</h3>
+<h3>5.7 ASN.1 package</h3>
 
 <p>The light-weight API has direct interfaces into a package capable of
 reading and writing DER-encoded ASN.1 objects and for the generation
 of X.509 V3 certificate objects and PKCS12 files. BER InputStream and
 OutputStream classes are provided as well.
 
-<h2>5.0 Bouncy Castle Provider</h2>
+<h2>6.0 Bouncy Castle Provider</h2>
 
 <p>The Bouncy Castle provider is a JCE compliant provider that
 is a wrapper built on top of the light-weight API.</p>
@@ -452,7 +458,7 @@ been developed in an environment with cryptographic export
 controls.
 </p>
 
-<h3>5.1 Example</h3>
+<h3>6.1 Example</h3>
 
 <p>To utilise the JCE provider in a program, the fundamentals
 are as follows;
@@ -519,7 +525,7 @@ to get something like the following:
 </b>
 The policy files can be found at the same place you downloaded the JDK.
 <p>
-<h3>5.2 Algorithms</h3>
+<h3>6.2 Algorithms</h3>
 
 <h4>Symmetric (Block)</h4>
 
@@ -864,7 +870,7 @@ Defined in Bouncy Castle JCE Provider
 <tr><td>PBEWithSHAAndIDEA-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
 </table>
 
-<h3>5.3 Certificates</h3>
+<h3>6.3 Certificates</h3>
 <p>
 The Bouncy Castle provider will read X.509 certficates (v2 or v3) as per the examples in
 the java.security.cert.CertificateFactory class. They can be provided either
@@ -876,7 +882,7 @@ In addition to the classes in the org.bouncycastle.asn1.x509 package for certifi
 generation a more JCE "friendly" class is provided in the package org.bouncycastle.cert. The JCE "friendly" classes found in the jcajce
  subpackages support RSA, DSA, GOST, DTSU, and EC-DSA.
 <p>
-<h3>5.4 Keystore</h3>
+<h3>6.4 Keystore</h3>
 <p>
 The Bouncy Castle package has three implementation of a keystore.
 <p>
@@ -911,7 +917,7 @@ loading into browsers. It is in the package
 org.bouncycastle.jce.examples.
 <p>
 <p>
-<h3>5.5 Additional support classes for Elliptic Curve.</h3>
+<h3>6.5 Additional support classes for Elliptic Curve.</h3>
 <p>
 There are no classes for supporting EC in the JDK prior to JDK 1.5. If you are using
 an earlier JDK you can find classes for using EC in the following
@@ -922,7 +928,7 @@ packages:
 <li>org.bouncycastle.jce</li>
 </ul>
 
-<h3>6.0 BouncyCastle S/MIME</h3>
+<h3>7.0 BouncyCastle S/MIME</h3>
 
 To be able to fully compile and utilise the BouncyCastle S/MIME
 package (including the test classes) you need the jar files for
@@ -933,7 +939,7 @@ the following APIs.
 <li>The Java Activation Framework - <a href="http://java.sun.com/products/javabeans/glasgow/jaf.html">http://java.sun.com/products/javabeans/glasgow/jaf.html</a></li>
 </ul>
 
-<h3>6.1 Setting up BouncyCastle S/MIME in JavaMail</h3>
+<h3>7.1 Setting up BouncyCastle S/MIME in JavaMail</h3>
 
 The BouncyCastle S/MIME handlers may be set in JavaMail two ways.
 
