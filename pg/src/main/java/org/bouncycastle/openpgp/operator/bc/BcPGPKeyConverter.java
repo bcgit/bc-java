@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.util.Date;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
@@ -19,7 +18,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -78,7 +76,7 @@ public class BcPGPKeyConverter
         {
             ECPublicKeyParameters eK = (ECPublicKeyParameters)pubKey;
 
-            if (algorithm == PGPPublicKey.EC)
+            if (algorithm == PGPPublicKey.ECDH)
             {                                                   // TODO: KDF parameters setting
                 bcpgKey = new ECDHPublicBCPGKey(((ECNamedDomainParameters)eK.getParameters()).getName(), eK.getQ(), HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
             }

@@ -10,6 +10,9 @@ public interface PublicKeyAlgorithmTags
     public static final int RSA_SIGN = 3;          // RSA Sign-Only
     public static final int ELGAMAL_ENCRYPT = 16;  // Elgamal (Encrypt-Only), see [ELGAMAL]
     public static final int DSA = 17;              // DSA (Digital Signature Standard)
+    /**
+     * @deprecated use ECDH
+     */
     public static final int EC = 18;               // Reserved for Elliptic Curve
     public static final int ECDH = 18;             // Reserved for Elliptic Curve (actual algorithm name)
     public static final int ECDSA = 19;            // Reserved for ECDSA

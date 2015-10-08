@@ -44,7 +44,7 @@ public class PublicKeyPacket
         case ELGAMAL_GENERAL:
             key = new ElGamalPublicBCPGKey(in);
             break;
-        case EC:
+        case ECDH:
             key = new ECDHPublicBCPGKey(in);
             break;
         case ECDSA:
