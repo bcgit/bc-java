@@ -75,6 +75,7 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -906,11 +907,16 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Name certIssuer = X500Name.getInstance(((X509CRLEntryObject)crl_entry).getCertificateIssuer().getEncoded());
+            X509Principal cIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
 
-            if (certIssuer == null)
+            X500Name certIssuer;
+            if (cIssuer == null)
             {
                 certIssuer = PrincipalUtils.getIssuerPrincipal(crl);
+            }
+            else
+            {
+                certIssuer = X500Name.getInstance(cIssuer.getEncoded());
             }
 
             if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
