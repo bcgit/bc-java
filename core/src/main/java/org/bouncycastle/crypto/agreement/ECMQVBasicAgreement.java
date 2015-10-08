@@ -13,6 +13,7 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Properties;
 
 public class ECMQVBasicAgreement
     implements BasicAgreement
@@ -32,6 +33,11 @@ public class ECMQVBasicAgreement
 
     public BigInteger calculateAgreement(CipherParameters pubKey)
     {
+        if (Properties.isOverrideSet("org.bouncycastle.ec.disable_mqv"))
+        {
+            throw new IllegalStateException("ECMQV explicitly disabled");
+        }
+
         MQVPublicParameters pubParams = (MQVPublicParameters)pubKey;
 
         ECPrivateKeyParameters staticPrivateKey = privParams.getStaticPrivateKey();

@@ -2,7 +2,9 @@ package java.util;
 
 public class Collections
 {
-    public static List EMPTY_LIST = new ArrayList();
+    public static List EMPTY_LIST = new UnmodifiableList(new ArrayList());
+
+    public static Set EMPTY_SET = new UnmodifiableSet(new HashSet());
 
     private Collections()
     {
@@ -115,6 +117,15 @@ public class Collections
     public static Set unmodifiableSet(Set s)
     {
         return new UnmodifiableSet(s);
+    }
+
+    public static Set singleton(Object o)
+    {
+        Set rv = new HashSet();
+
+        rv.add(o);
+
+        return rv;
     }
 
     static class UnmodifiableSet

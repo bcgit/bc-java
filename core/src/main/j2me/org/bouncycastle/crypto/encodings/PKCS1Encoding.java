@@ -16,15 +16,20 @@ public class PKCS1Encoding
     implements AsymmetricBlockCipher
 {
     /**
-     * some providers fail to include the leading zero in PKCS1 encoded blocks. If you need to
-     * work with one of these set the system property org.bouncycastle.pkcs1.strict to false.
-     * <p>
-     * The system property is checked during construction of the encoding object, it is set to 
-     * true by default.
-     * </p>
+     * @deprecated use NOT_STRICT_LENGTH_ENABLED_PROPERTY
      */
     public static final String STRICT_LENGTH_ENABLED_PROPERTY = "org.bouncycastle.pkcs1.strict";
-    
+
+    /**
+     * some providers fail to include the leading zero in PKCS1 encoded blocks. If you need to
+     * work with one of these set the system property org.bouncycastle.pkcs1.not_strict to true.
+     * <p>
+     * The system property is checked during construction of the encoding object, it is set to
+     * false by default.
+     * </p>
+     */
+    public static final String NOT_STRICT_LENGTH_ENABLED_PROPERTY = "org.bouncycastle.pkcs1.not_strict";
+
     private static final int HEADER_LENGTH = 10;
 
     private SecureRandom            random;
@@ -89,6 +94,12 @@ public class PKCS1Encoding
     {
         // required if security manager has been installed.
         String strict = System.getProperty(STRICT_LENGTH_ENABLED_PROPERTY);
+        String notStrict = System.getProperty(NOT_STRICT_LENGTH_ENABLED_PROPERTY);
+
+        if (notStrict != null)
+        {
+            return !notStrict.equals("true");
+        }
 
         return strict == null || strict.equals("true");
     }
