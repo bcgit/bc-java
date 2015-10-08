@@ -217,7 +217,7 @@ public class JcaPGPKeyConverter
             }
             else
             {
-                throw new PGPException("unknown key class");
+                throw new PGPException("unknown EC algorithm");
             }
         }
         else
