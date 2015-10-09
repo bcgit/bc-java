@@ -155,7 +155,7 @@ public class TimeStampTokenInfoUnitTest
         }
         catch (InvocationTargetException e)
         {
-            throw (Exception)e.getCause();
+            throw (Exception)e.getTargetException();
         }
     }
 }
