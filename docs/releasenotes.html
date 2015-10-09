@@ -45,7 +45,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 <li>A bug in the DirectKeySignature OpenPGP example which could lead to extra data appearing in the signature has been fixed.</li>
 <li>Explicit configuration of a BcAsymmetricKeyWrapper with a SecureRandom was not properly propagated internally. This has been fixed.</li>
 <li>A CRL with a null certificate issuer would sometimes result in a NullPointerException during CertPathProcessing. This has been fixed.</li>
-<li>The CertPath processor would occassionally fail to match a DistributionPoint name correctly. This has been fixed.</li>
+<li>The CertPath processor would occasionally fail to match a DistributionPoint name correctly. This has been fixed.</li>
 <li>In order to avoid confusion about thread safety, BCrypt now uses a new instance for hash calculation every time it is invoked.</li>
 <li>Some decidedly odd argument casting in the PKIXCertPathValidator has been fixed to throw an InvalidAlgorithmParameterException.</li>
 <li>Presenting an empty array of certificates to the PKIXCertPathValidator would cause an IndexOutOfRangeException instead of a CertPathValidatorException. This has been fixed.</li>
@@ -76,7 +76,7 @@ Release: 1.52<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, March 2
 <h3>2.2.2 Defects Fixed</h3>
 <ul>
-<li>GenericSigner in the lightweight API would fail if the digest started with a zero byte, occassionally causing a TLS negotiation to fail. This has been fixed.</li>
+<li>GenericSigner in the lightweight API would fail if the digest started with a zero byte, occasionally causing a TLS negotiation to fail. This has been fixed.</li>
 <li>Some BC internal classes expected the BC provider to be accessible within the provider. This has been fixed.</li>
 <li>Email based policy constraints in CertPath validation did not include '@'domain.name as a possible match. This has been fixed.</li>
 <li>The Shacal2Engine would throw an ArrayIndexOutOfBoundsException if presented with input longer than a block size. This has been fixed.</li>
