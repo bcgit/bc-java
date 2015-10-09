@@ -295,7 +295,6 @@
         <copy todir="${provider.target.src.dir}">
              <fileset dir="${src.dir}">
                  <exclude name="build/**" />
-                 <exclude name="resources/**" />
                  <exclude name="PKITS/**" />
                  <exclude name="cmp/**" />
                  <exclude name="rfc4134/**" />
@@ -321,7 +320,7 @@
                  <exclude name="org/bouncycastle/voms/**" />
                  <exclude name="org/bouncycastle/apache/**" />
              </fileset>
-             <fileset dir="${src.dir}/resources">
+             <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
