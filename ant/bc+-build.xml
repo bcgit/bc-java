@@ -668,6 +668,9 @@
              <fileset dir="${src.dir}" includes="**/*.message" />
         </copy>
 
+        <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
+
         <compile-test target="${test.target}">
             <manifestElements>
                 <attribute name="Manifest-Version" value="1.0" />
