@@ -62,7 +62,9 @@
                 <exclude name="**/GetInstanceTest.java" />
             </fileset>
             <fileset dir="pg/src/test/java" />
-            <fileset dir="pkix/src/test/java" />
+            <fileset dir="pkix/src/test/java" >
+                <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
+            </fileset>
             <fileset dir="mail/src/test/java" />
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java" />
