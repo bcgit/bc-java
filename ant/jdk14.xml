@@ -88,7 +88,7 @@
 		<exclude name="**/jce/provider/test/JceTestUtil.java" />
             </fileset>
             <fileset dir="core/src/test/" includes="**/*.properties" />
-            <fileset dir="prov/src/main/" includes="**/*.properties" />
+            <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />
