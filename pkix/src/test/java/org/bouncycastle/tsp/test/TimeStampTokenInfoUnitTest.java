@@ -1,11 +1,17 @@
-package org.bouncycastle.tsp;
+package org.bouncycastle.tsp.test;
 
-import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.tsp.TSTInfo;
+import org.bouncycastle.tsp.GenTimeAccuracy;
+import org.bouncycastle.tsp.TSPAlgorithms;
+import org.bouncycastle.tsp.TSPException;
+import org.bouncycastle.tsp.TimeStampTokenInfo;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -50,7 +56,7 @@ public class TimeStampTokenInfoUnitTest
         
         assertNull(tstInfo.getNonce());
         
-        assertEquals(TSPAlgorithms.SHA1, tstInfo.getMessageImprintAlgOID());
+        Assert.assertEquals(TSPAlgorithms.SHA1, tstInfo.getMessageImprintAlgOID());
         
         assertTrue(Arrays.areEqual(new byte[20], tstInfo.getMessageImprintDigest()));
         
@@ -134,11 +140,23 @@ public class TimeStampTokenInfoUnitTest
     
     private TimeStampTokenInfo getTimeStampTokenInfo(
         byte[] tstInfo) 
-        throws IOException, TSPException
+        throws Exception
     {
         ASN1InputStream    aIn = new ASN1InputStream(tstInfo);
         TSTInfo            info = TSTInfo.getInstance(aIn.readObject());
-        
-        return new TimeStampTokenInfo(info);
+
+        final Constructor<?> constructor = TimeStampTokenInfo.class.getDeclaredConstructor(TSTInfo.class);
+
+        constructor.setAccessible(true);
+
+        try
+        {
+        return (TimeStampTokenInfo)constructor.newInstance(new Object[] { info });
+
+            }
+        catch (InvocationTargetException e)
+        {
+            throw (Exception)e.getCause();
+        }
     }
 }
