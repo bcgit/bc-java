@@ -164,6 +164,7 @@
                 <exclude name="**/SunProviderTest.java" />
                 <exclude name="**/NullProviderTest.java" />
                 <exclude name="**/CertPathLoopTest.java" />
+                <exclude name="**/TimeStampTokenInfoUnitTest.java" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />
