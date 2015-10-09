@@ -23,7 +23,7 @@ to conform the algorithms to the JCE framework.
 <h2>2.0 Release History</h2>
 
 <h3>2.1.1 Version</h3>
-Release: 1.53
+Release: 1.53 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
@@ -44,7 +44,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 <li>The PKCS#12 KeyStore implementation would sometimes leave orphaned chain certificates in the key store after private key deletion. This has been fixed.</li>
 <li>A bug in the DirectKeySignature OpenPGP example which could lead to extra data appearing in the signature has been fixed.</li>
 <li>Explicit configuration of a BcAsymmetricKeyWrapper with a SecureRandom was not properly propagated internally. This has been fixed.</li>
-<li>A CRL with a null certificate issuer would sometimes result in a NullPointerException during CertPathProcessing. This has been fixed.<li>
+<li>A CRL with a null certificate issuer would sometimes result in a NullPointerException during CertPathProcessing. This has been fixed.</li>
 <li>The CertPath processor would occassionally fail to match a DistributionPoint name correctly. This has been fixed.</li>
 <li>In order to avoid confusion about thread safety, BCrypt now uses a new instance for hash calculation every time it is invoked.</li>
 <li>Some decidedly odd argument casting in the PKIXCertPathValidator has been fixed to throw an InvalidAlgorithmParameterException.</li>
