@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(CMSTimeStampedDataParserTest.class);
         suite.addTestSuite(CMSTimeStampedDataGeneratorTest.class);
         suite.addTestSuite(GenTimeAccuracyUnitTest.class);
+        suite.addTestSuite(TimeStampTokenInfoUnitTest.class);
 
         return new BCTestSetup(suite);
     }
