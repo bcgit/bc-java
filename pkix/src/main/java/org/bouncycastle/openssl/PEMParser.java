@@ -67,6 +67,7 @@ public class PEMParser
         parsers.put("X509 CERTIFICATE", new X509CertificateParser());
         parsers.put("X509 CRL", new X509CRLParser());
         parsers.put("PKCS7", new PKCS7Parser());
+        parsers.put("CMS", new PKCS7Parser());
         parsers.put("ATTRIBUTE CERTIFICATE", new X509AttributeCertificateParser());
         parsers.put("EC PARAMETERS", new ECCurveParamsParser());
         parsers.put("PUBLIC KEY", new PublicKeyParser());
