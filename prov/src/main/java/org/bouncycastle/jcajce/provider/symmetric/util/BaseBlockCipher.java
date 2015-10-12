@@ -518,7 +518,21 @@ public class BaseBlockCipher
             {
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
-            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+            if (key instanceof BCPBEKey)
+            {
+                if (((BCPBEKey)key).getParam() != null)
+                {
+                    param = ((BCPBEKey)key).getParam();
+                }
+                else
+                {
+                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+                }
+            }
+            else
+            {
+                param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+            }
             if (param instanceof ParametersWithIV)
             {
                 ivParam = (ParametersWithIV)param;

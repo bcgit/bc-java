@@ -25,6 +25,8 @@ import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -600,6 +602,8 @@ public class PBETest
             openSSLTests[i].perform();
         }
 
+        testPKCS12Interop();
+
         testPBEHMac("PBEWithHMacSHA1", hMac1);
         testPBEHMac("PBEWithHMacRIPEMD160", hMac2);
 
@@ -610,6 +614,37 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+    }
+
+    private void testPKCS12Interop()
+        throws Exception
+    {
+        final String algorithm = "PBEWithSHA256And192BitAES-CBC-BC";
+
+        final PBEKeySpec keySpec = new PBEKeySpec("foo123".toCharArray(), Hex.decode("01020304050607080910"), 1024);
+        final SecretKeyFactory fact = SecretKeyFactory.getInstance(algorithm, "BC");
+
+        BCPBEKey bcpbeKey = (BCPBEKey)fact.generateSecret(keySpec);
+
+        Cipher c1 = Cipher.getInstance(algorithm, "BC");
+
+        c1.init(Cipher.ENCRYPT_MODE, new PKCS12KeyWithParameters("foo123".toCharArray(), Hex.decode("01020304050607080910"), 1024));
+
+        Cipher c2 = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+
+        c2.init(Cipher.DECRYPT_MODE, new SecretKeySpec(bcpbeKey.getEncoded(), "AES"), new IvParameterSpec(((ParametersWithIV)bcpbeKey.getParam()).getIV()));
+
+        if (!Arrays.areEqual(Hex.decode("deadbeef"), c2.doFinal(c1.doFinal(Hex.decode("deadbeef")))))
+        {
+            fail("new key failed");
+        }
+
+        c1.init(Cipher.ENCRYPT_MODE, bcpbeKey);
+
+        if (!Arrays.areEqual(Hex.decode("deadbeef"), c2.doFinal(c1.doFinal(Hex.decode("deadbeef")))))
+        {
+            fail("old key failed");
+        }
     }
 
     private void checkPBE(String baseAlg, boolean defIsUTF8, String utf8, String eightBit)

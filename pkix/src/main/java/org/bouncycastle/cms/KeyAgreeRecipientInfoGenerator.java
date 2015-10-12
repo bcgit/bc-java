@@ -3,7 +3,6 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
@@ -12,6 +11,7 @@ import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.OriginatorIdentifierOrKey;
 import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.RecipientInfo;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.GenericKey;
@@ -36,10 +36,16 @@ public abstract class KeyAgreeRecipientInfoGenerator
         OriginatorIdentifierOrKey originator = new OriginatorIdentifierOrKey(
                 createOriginatorPublicKey(originatorKeyInfo));
 
-        ASN1EncodableVector params = new ASN1EncodableVector();
-        params.add(keyEncryptionOID);
-        params.add(DERNull.INSTANCE);
-        AlgorithmIdentifier keyEncAlg = new AlgorithmIdentifier(keyEncryptionOID, DERNull.INSTANCE);
+        AlgorithmIdentifier keyEncAlg;
+        if (CMSUtils.isDES(keyEncryptionOID.getId()) || keyEncryptionOID.equals(PKCSObjectIdentifiers.id_alg_CMSRC2wrap))
+        {
+            keyEncAlg = new AlgorithmIdentifier(keyEncryptionOID, DERNull.INSTANCE);
+        }
+        else
+        {
+            keyEncAlg = new AlgorithmIdentifier(keyEncryptionOID);
+        }
+
         AlgorithmIdentifier keyAgreeAlg = new AlgorithmIdentifier(keyAgreementOID, keyEncAlg);
 
         ASN1Sequence recipients = generateRecipientEncryptedKeys(keyAgreeAlg, keyEncAlg, contentEncryptionKey);

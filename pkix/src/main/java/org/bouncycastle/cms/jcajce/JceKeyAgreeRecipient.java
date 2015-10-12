@@ -115,7 +115,7 @@ public abstract class JceKeyAgreeRecipient
         return this;
     }
 
-    private SecretKey calculateAgreedWrapKey(AlgorithmIdentifier keyEncAlg, ASN1ObjectIdentifier wrapAlg,
+    private SecretKey calculateAgreedWrapKey(AlgorithmIdentifier keyEncAlg, AlgorithmIdentifier wrapAlg,
         PublicKey senderPublicKey, ASN1OctetString userKeyingMaterial, PrivateKey receiverPrivateKey, KeyMaterialGenerator kmGen)
         throws CMSException, GeneralSecurityException, IOException
     {
@@ -142,7 +142,7 @@ public abstract class JceKeyAgreeRecipient
             agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial));
             agreement.doPhase(senderPublicKey, true);
 
-            return agreement.generateSecret(wrapAlg.getId());
+            return agreement.generateSecret(wrapAlg.getAlgorithm().getId());
         }
         else
         {
@@ -167,7 +167,7 @@ public abstract class JceKeyAgreeRecipient
 
             agreement.doPhase(senderPublicKey, true);
 
-            return agreement.generateSecret(wrapAlg.getId());
+            return agreement.generateSecret(wrapAlg.getAlgorithm().getId());
         }
     }
 
@@ -184,8 +184,8 @@ public abstract class JceKeyAgreeRecipient
     {
         try
         {
-            ASN1ObjectIdentifier wrapAlg =
-                AlgorithmIdentifier.getInstance(keyEncryptionAlgorithm.getParameters()).getAlgorithm();
+            AlgorithmIdentifier wrapAlg =
+                AlgorithmIdentifier.getInstance(keyEncryptionAlgorithm.getParameters());
 
             X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(senderKey.getEncoded());
             KeyFactory fact = helper.createKeyFactory(keyEncryptionAlgorithm.getAlgorithm());
@@ -196,7 +196,7 @@ public abstract class JceKeyAgreeRecipient
                 SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
                     senderPublicKey, userKeyingMaterial, recipientKey, ecc_cms_Generator);
 
-                return unwrapSessionKey(wrapAlg, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
             }
             catch (InvalidKeyException e)
             {
@@ -206,7 +206,7 @@ public abstract class JceKeyAgreeRecipient
                     SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
                         senderPublicKey, userKeyingMaterial, recipientKey, old_ecc_cms_Generator);
 
-                    return unwrapSessionKey(wrapAlg, agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                    return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
                 }
                 throw e;
             }
@@ -240,12 +240,12 @@ public abstract class JceKeyAgreeRecipient
 
     private static KeyMaterialGenerator old_ecc_cms_Generator = new KeyMaterialGenerator()
     {
-        public byte[] generateKDFMaterial(ASN1ObjectIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
+        public byte[] generateKDFMaterial(AlgorithmIdentifier keyAlgorithm, int keySize, byte[] userKeyMaterialParameters)
         {
             ECCCMSSharedInfo eccInfo;
 
             // this isn't correct with AES and RFC 5753, but we have messages predating it...
-            eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm, DERNull.INSTANCE), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
+            eccInfo = new ECCCMSSharedInfo(new AlgorithmIdentifier(keyAlgorithm.getAlgorithm(), DERNull.INSTANCE), userKeyMaterialParameters, Pack.intToBigEndian(keySize));
 
             try
             {

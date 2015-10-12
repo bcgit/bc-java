@@ -12,30 +12,19 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
-import org.bouncycastle.util.Strings;
 
 class CMSUtils
 {
     private static final Set mqvAlgs = new HashSet();
-    private static final Set<String> des = new HashSet<String>();
 
     static
     {
-        des.add("DES");
-        des.add("DESEDE");
-        des.add(OIWObjectIdentifiers.desCBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
-
         mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme);
@@ -48,13 +37,6 @@ class CMSUtils
         return mqvAlgs.contains(algorithm);
     }
 
-    static boolean isDES(String algorithmID)
-    {
-        String name = Strings.toUpperCase(algorithmID);
-
-        return des.contains(name);
-    }
-
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)
         throws CertificateEncodingException
     {
@@ -62,7 +44,6 @@ class CMSUtils
 
         return new IssuerAndSerialNumber(certStruct.getIssuer(), cert.getSerialNumber());
     }
-
 
     static byte[] getSubjectKeyId(X509Certificate cert)
     {
