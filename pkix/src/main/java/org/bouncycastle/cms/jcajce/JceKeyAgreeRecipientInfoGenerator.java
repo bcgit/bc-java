@@ -145,7 +145,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                 }
                 else
                 {
-                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm.getAlgorithm(), keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), null);
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), null);
 
                     agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
