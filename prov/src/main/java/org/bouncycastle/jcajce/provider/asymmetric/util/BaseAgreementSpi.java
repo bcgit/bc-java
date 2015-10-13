@@ -57,6 +57,10 @@ public abstract class BaseAgreementSpi
         keySizes.put(NISTObjectIdentifiers.id_aes128_GCM.getId(), i128);
         keySizes.put(NISTObjectIdentifiers.id_aes192_GCM.getId(), i192);
         keySizes.put(NISTObjectIdentifiers.id_aes256_GCM.getId(), i256);
+        keySizes.put(NTTObjectIdentifiers.id_camellia128_wrap.getId(), i128);
+        keySizes.put(NTTObjectIdentifiers.id_camellia192_wrap.getId(), i192);
+        keySizes.put(NTTObjectIdentifiers.id_camellia256_wrap.getId(), i256);
+        keySizes.put(KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap.getId(), i128);
 
         keySizes.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), i192);
         keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), i192);

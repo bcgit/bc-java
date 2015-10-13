@@ -82,4 +82,14 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier cryptlib_algorithm_blowfish_CBC = cryptlib_algorithm.branch("1.2");
     ASN1ObjectIdentifier cryptlib_algorithm_blowfish_CFB = cryptlib_algorithm.branch("1.3");
     ASN1ObjectIdentifier cryptlib_algorithm_blowfish_OFB = cryptlib_algorithm.branch("1.4");
+
+    //
+    // Blake2b
+    //
+    ASN1ObjectIdentifier blake2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.1722.12.2");
+
+    ASN1ObjectIdentifier id_blake2b160 = blake2.branch("1.5");
+    ASN1ObjectIdentifier id_blake2b256 = blake2.branch("1.8");
+    ASN1ObjectIdentifier id_blake2b384 = blake2.branch("1.12");
+    ASN1ObjectIdentifier id_blake2b512 = blake2.branch("1.16");
 }
