@@ -111,9 +111,30 @@ public class Blake2bDigest
 
 	public Blake2bDigest()
 	{
+		this(512);
+	}
+
+	public Blake2bDigest(Blake2bDigest digest)
+	{
+		this.bufferPos = digest.bufferPos;
+		this.buffer = Arrays.clone(digest.buffer);
+		this.keyLength = digest.keyLength;
+		this.key = Arrays.clone(key);
+		this.digestLength = digest.digestLength;
+		this.chainValue = Arrays.clone(digest.chainValue);
+		this.personalization = Arrays.clone(personalization);
+	}
+
+	public Blake2bDigest(int digestLength)
+	{
+		if (digestLength != 160 && digestLength != 256 && digestLength != 384 && digestLength != 512)
+		{
+			throw new IllegalArgumentException("Blake2b digest restricted to one of [160, 256, 384, 512]");
+		}
+
 		buffer = new byte[BLOCK_LENGTH_BYTES];
 		keyLength = 0;
-		digestLength = 64;
+		this.digestLength = digestLength / 8;
 		init();
 	}
 
@@ -370,9 +391,18 @@ public class Blake2bDigest
 		Arrays.fill(buffer, (byte) 0);// Holds eventually the key if input is null
 		Arrays.fill(internalState, 0L);
 
-		for (int i = 0; i < chainValue.length; i++)
+		for (int i = 0; i < chainValue.length && (i * 8 < digestLength); i++)
 		{
-			System.arraycopy(long2bytes(chainValue[i]), 0, out, outOffset + i * 8, 8);
+            byte[] bytes = long2bytes(chainValue[i]);
+
+            if (i * 8 < digestLength - 8)
+            {
+                System.arraycopy(bytes, 0, out, outOffset + i * 8, 8);
+            }
+            else
+            {
+                System.arraycopy(bytes, 0, out, outOffset + i * 8, digestLength - (i * 8));
+            }
 		}
 
 		Arrays.fill(chainValue, 0L);

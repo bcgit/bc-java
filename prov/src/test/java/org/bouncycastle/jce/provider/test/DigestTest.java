@@ -3,6 +3,7 @@ package org.bouncycastle.jce.provider.test;
 import java.security.MessageDigest;
 import java.security.Security;
 
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -41,6 +42,14 @@ public class DigestTest
         { "KECCAK-288", "20ff13d217d5789fa7fc9e0e9a2ee627363ec28171d0b6c52bbd2f240554dbc94289f4d6" },
         { "KECCAK-384", "f7df1165f033337be098e7d288ad6a2f74409d7a60b49c36642218de161b1f99f8c681e4afaf31a34db29fb763e3c28e" },
         { "KECCAK-512", "18587dc2ea106b9a1563e32b3312421ca164c7f1f07bc922a9c83d77cea3a1e5d0c69910739025372dc14ac9642629379540c17e2a65b19d77aa511a9d00bb96" },
+        { "BLAKE2B-160", "384264f676f39536840523f284921cdc68b6846b" },
+        { "BLAKE2B-256", "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319" },
+        { "BLAKE2B-384", "6f56a82c8e7ef526dfe182eb5212f7db9df1317e57815dbda46083fc30f54ee6c66ba83be64b302d7cba6ce15bb556f4" },
+        { "BLAKE2B-512", "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923" },
+        { MiscObjectIdentifiers.id_blake2b160.getId(), "384264f676f39536840523f284921cdc68b6846b" },
+        { MiscObjectIdentifiers.id_blake2b256.getId(), "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319" },
+        { MiscObjectIdentifiers.id_blake2b384.getId(), "6f56a82c8e7ef526dfe182eb5212f7db9df1317e57815dbda46083fc30f54ee6c66ba83be64b302d7cba6ce15bb556f4" },
+        { MiscObjectIdentifiers.id_blake2b512.getId(), "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923" },
     };
     
     public String getName()
@@ -101,7 +110,7 @@ public class DigestTest
         result2 = d.digest();
 
         if (!MessageDigest.isEqual(result, result2))
-        {
+        {                         System.err.println(Hex.toHexString(result2));  System.err.println(Hex.toHexString(result));
             fail("Result object 4(b) not equal");
         }
 
@@ -137,11 +146,11 @@ public class DigestTest
         byte[] result = digest.digest(abc);
         
         if (!MessageDigest.isEqual(result, Hex.decode(hash)))
-        {
+        {                  System.err.println(Hex.toHexString(result));
             fail("abc result not equal for " + algorithm);
         }
     }
-    
+
     public void performTest()
         throws Exception
     {

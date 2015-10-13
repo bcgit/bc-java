@@ -44,7 +44,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.53";
+    private static String info = "BouncyCastle Security Provider v1.54b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -98,7 +98,8 @@ public final class BouncyCastleProvider extends Provider
     private static final String DIGEST_PACKAGE = "org.bouncycastle.jcajce.provider.digest.";
     private static final String[] DIGESTS =
     {
-        "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224", "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool"
+        "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224",
+        "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b"
     };
 
     /*
@@ -117,7 +118,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.53, info);
+        super(PROVIDER_NAME, 1.535, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
