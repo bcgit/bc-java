@@ -289,10 +289,19 @@ public class AllTests
     private void compareFile(String file1, String file2)
         throws Exception
     {
-        byte[] data1 = Streams.readAll(new FileInputStream(file1));
-        byte[] data2 = Streams.readAll(new FileInputStream(file2));
+        byte[] data1 = getFileContents(file1);
+        byte[] data2 = getFileContents(file2);
 
         assertTrue(Arrays.areEqual(data1, data2));
+    }
+
+    private byte[] getFileContents(String name)
+        throws IOException
+    {
+        FileInputStream fs = new FileInputStream(name);
+        byte[] contents = Streams.readAll(fs);
+        fs.close();
+        return contents;
     }
 
     private void checkClearSigned(String message)
