@@ -25,16 +25,46 @@ public class TlsClientProtocol
     protected CertificateStatus certificateStatus = null;
     protected CertificateRequest certificateRequest = null;
 
+    /**
+     * Constructor for blocking mode.
+     * @param input The stream of data from the client
+     * @param output The stream of data to the client
+     * @param secureRandom Random number generator for various cryptographic functions
+     */
     public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
         super(input, output, secureRandom);
     }
 
     /**
-     * Initiates a TLS handshake in the role of client
+     * Constructor for non-blocking mode.<br>
+     * <br>
+     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
+     * provide the received ciphertext, then use
+     * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
+     * <br>
+     * Similarly, when data needs to be sent, use
+     * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
+     * {@link #readOutput(byte[], int, int)} to get the corresponding
+     * ciphertext.
+     * 
+     * @param secureRandom
+     *            Random number generator for various cryptographic functions
+     */
+    public TlsClientProtocol(SecureRandom secureRandom)
+    {
+        super(secureRandom);
+    }
+
+    /**
+     * Initiates a TLS handshake in the role of client.<br>
+     * <br>
+     * In blocking mode, this will not return until the handshake is complete.
+     * In non-blocking mode, use {@link TlsPeer#notifyHandshakeComplete()} to
+     * receive a callback when the handshake is complete.
      *
      * @param tlsClient The {@link TlsClient} to use for the handshake.
-     * @throws IOException If handshake was not successful.
+     * @throws IOException If in blocking mode and handshake was not successful.
      */
     public void connect(TlsClient tlsClient) throws IOException
     {
@@ -74,7 +104,7 @@ public class TlsClientProtocol
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
-        completeHandshake();
+        blockForHandshake();
     }
 
     protected void cleanupHandshake()
@@ -527,6 +557,11 @@ public class TlsClientProtocol
         case HandshakeType.hello_verify_request:
         default:
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+        
+        if (connection_state == CS_END)
+        {
+            completeHandshake();
         }
     }
 

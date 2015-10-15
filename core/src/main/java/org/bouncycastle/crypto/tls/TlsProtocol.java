@@ -84,9 +84,23 @@ public abstract class TlsProtocol
     protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
 
+    protected boolean blocking;
+    protected ByteQueueInputStream inputBuffers;
+    protected ByteQueueOutputStream outputBuffer;
+    
     public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
+        this.blocking = true;
         this.recordStream = new RecordStream(this, input, output);
+        this.secureRandom = secureRandom;
+    }
+    
+    public TlsProtocol(SecureRandom secureRandom)
+    {
+        this.blocking = false;
+        this.inputBuffers = new ByteQueueInputStream();
+        this.outputBuffer = new ByteQueueOutputStream();
+        this.recordStream = new RecordStream(this, inputBuffers, outputBuffer);
         this.secureRandom = secureRandom;
     }
 
@@ -154,15 +168,11 @@ public abstract class TlsProtocol
         this.allowCertificateStatus = false;
         this.expectSessionTicket = false;
     }
-
-    protected void completeHandshake()
-        throws IOException
+    
+    protected void blockForHandshake() throws IOException
     {
-        try
+        if (blocking)
         {
-            /*
-             * We will now read data, until we have completed the handshake.
-             */
             while (this.connection_state != CS_END)
             {
                 if (this.closed)
@@ -172,7 +182,14 @@ public abstract class TlsProtocol
 
                 safeReadRecord();
             }
+        }
+    }
 
+    protected void completeHandshake()
+        throws IOException
+    {
+        try
+        {
             this.recordStream.finaliseHandshake();
 
             this.splitApplicationDataRecords = !TlsUtils.isTLSv11(getContext());
@@ -184,8 +201,11 @@ public abstract class TlsProtocol
             {
                 this.appDataReady = true;
 
-                this.tlsInputStream = new TlsInputStream(this);
-                this.tlsOutputStream = new TlsOutputStream(this);
+                if (blocking)
+                {
+                    this.tlsInputStream = new TlsInputStream(this);
+                    this.tlsOutputStream = new TlsOutputStream(this);
+                }
             }
 
             if (this.tlsSession != null)
@@ -432,7 +452,6 @@ public abstract class TlsProtocol
     }
 
     protected int applicationDataAvailable()
-        throws IOException
     {
         return applicationDataQueue.available();
     }
@@ -623,19 +642,196 @@ public abstract class TlsProtocol
     }
 
     /**
-     * @return An OutputStream which can be used to send data.
+     * @return An OutputStream which can be used to send data. Only allowed in blocking mode.
      */
     public OutputStream getOutputStream()
     {
+        if (!blocking)
+        {
+            throw new IllegalStateException("Cannot use OutputStream in non-blocking mode! Use offerOutput() instead.");
+        }
         return this.tlsOutputStream;
     }
 
     /**
-     * @return An InputStream which can be used to read data.
+     * @return An InputStream which can be used to read data. Only allowed in blocking mode.
      */
     public InputStream getInputStream()
     {
+        if (!blocking)
+        {
+            throw new IllegalStateException("Cannot use InputStream in non-blocking mode! Use offerInput() instead.");
+        }
         return this.tlsInputStream;
+    }
+
+    /**
+     * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
+     * <br>
+     * After this method returns, the input buffer is "owned" by this object. Other code
+     * must not attempt to do anything with it.<br>
+     * <br>
+     * This method will decrypt and process all records that are fully available.
+     * If only part of a record is available, the buffer will be retained until the
+     * remainder of the record is offered.<br>
+     * <br>
+     * If any records containing application data were processed, the decrypted data
+     * can be obtained using {@link #readInput(byte[], int, int)}. If any records
+     * containing protocol data were processed, a response may have been generated.
+     * You should always check to see if there is any available output after calling
+     * this method by calling {@link #getAvailableOutputBytes()}.
+     * @param input The input buffer to offer
+     * @throws IOException If an error occurs while decrypting or processing a record
+     */
+    public void offerInput(byte[] input) throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use offerInput() in blocking mode! Use getInputStream() instead.");
+        }
+        
+        if (closed)
+        {
+            throw new IOException("Connection is closed, cannot accept any more input");
+        }
+        
+        inputBuffers.addBytes(input);
+
+        // loop while there are enough bytes to read the length of the next record
+        while (inputBuffers.available() >= RecordStream.TLS_HEADER_SIZE)
+        {
+            byte[] header = new byte[RecordStream.TLS_HEADER_SIZE];
+            inputBuffers.peek(header);
+
+            int totalLength = TlsUtils.readUint16(header, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
+            if (inputBuffers.available() < totalLength)
+            {
+                // not enough bytes to read a whole record
+                break;
+            }
+
+            safeReadRecord();
+        }
+    }
+
+    /**
+     * Gets the amount of received application data. A call to {@link #readInput(byte[], int, int)}
+     * is guaranteed to be able to return at least this much data.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * @return The number of bytes of available application data
+     */
+    public int getAvailableInputBytes()
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use getAvailableInputBytes() in blocking mode! Use getInputStream().available() instead.");
+        }
+        return applicationDataAvailable();
+    }
+
+    /**
+     * Retrieves received application data. Use {@link #getAvailableInputBytes()} to check
+     * how much application data is currently available. This method functions similarly to
+     * {@link InputStream#read(byte[], int, int)}, except that it never blocks. If no data
+     * is available, nothing will be copied and zero will be returned.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * @param buffer The buffer to hold the application data
+     * @param offset The start offset in the buffer at which the data is written
+     * @param length The maximum number of bytes to read
+     * @return The total number of bytes copied to the buffer. May be less than the
+     *          length specified if the length was greater than the amount of available data.
+     */
+    public int readInput(byte[] buffer, int offset, int length)
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use readInput() in blocking mode! Use getInputStream() instead.");
+        }
+        
+        try
+        {
+            return readApplicationData(buffer, offset, Math.min(length, applicationDataAvailable()));
+        }
+        catch (IOException e)
+        {
+            // readApplicationData() only throws if there is no data available, so this should never happen
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Offer output from an arbitrary source. Only allowed in non-blocking mode.<br>
+     * <br>
+     * After this method returns, the specified section of the buffer will have been
+     * processed. Use {@link #readOutput(byte[], int, int)} to get the bytes to
+     * transmit to the other peer.<br>
+     * <br>
+     * This method must not be called until after the handshake is complete! Attempting
+     * to call it before the handshake is complete will result in an exception.
+     * @param buffer The buffer containing application data to encrypt
+     * @param offset The offset at which to begin reading data
+     * @param length The number of bytes of data to read
+     * @throws IOException If an error occurs encrypting the data, or the handshake is not complete
+     */
+    public void offerOutput(byte[] buffer, int offset, int length)
+            throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use offerOutput() in blocking mode! Use getOutputStream() instead.");
+        }
+        
+        if (!appDataReady)
+        {
+            throw new IOException("Application data cannot be sent until the handshake is complete!");
+        }
+        
+        writeData(buffer, offset, length);
+    }
+
+    /**
+     * Gets the amount of encrypted data available to be sent. A call to
+     * {@link #readOutput(byte[], int, int)} is guaranteed to be able to return at
+     * least this much data.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * @return The number of bytes of available encrypted data
+     */
+    public int getAvailableOutputBytes()
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use getAvailableOutputBytes() in blocking mode! Use getOutputStream() instead.");
+        }
+        
+        return outputBuffer.getBuffer().available();
+    }
+
+    /**
+     * Retrieves encrypted data to be sent. Use {@link #getAvailableOutputBytes()} to check
+     * how much encrypted data is currently available. This method functions similarly to
+     * {@link InputStream#read(byte[], int, int)}, except that it never blocks. If no data
+     * is available, nothing will be copied and zero will be returned.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * @param buffer The buffer to hold the encrypted data
+     * @param offset The start offset in the buffer at which the data is written
+     * @param length The maximum number of bytes to read
+     * @return The total number of bytes copied to the buffer. May be less than the
+     *          length specified if the length was greater than the amount of available data.
+     */
+    public int readOutput(byte[] buffer, int offset, int length)
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use readOutput() in blocking mode! Use getOutputStream() instead.");
+        }
+        
+        int bytesToRead = Math.min(getAvailableOutputBytes(), length);
+        outputBuffer.getBuffer().removeData(buffer, offset, bytesToRead, 0);
+        return bytesToRead;
     }
 
     /**
@@ -839,7 +1035,7 @@ public abstract class TlsProtocol
         recordStream.flush();
     }
 
-    protected boolean isClosed()
+    public boolean isClosed()
     {
         return closed;
     }
