@@ -159,6 +159,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.csr" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
@@ -191,6 +192,7 @@
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
                             <include name="**/*.rsp" />
+                            <include name="**/*.key" />
                             <include name="**/*.gpg" />
                             <include name="**/*.pub" />
                             <include name="**/*.sec" />
@@ -403,7 +405,8 @@
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="**/*.crl" />
-                 <exclude name="org/bouncycastle/**/test/*.crt" />
+                 <exclude name="**/*.key" />
+                 <exclude name="org/bouncycastle/**.crt" />
                  <exclude name="org/bouncycastle/**/test/*.cer" />
                  <exclude name="org/bouncycastle/**/test/*.csr" />
                  <exclude name="org/bouncycastle/**/test/*.cvcert" />
@@ -658,6 +661,7 @@
              <fileset dir="${src.dir}" includes="**/*.data" />
              <fileset dir="${src.dir}" includes="**/*.der" />
              <fileset dir="${src.dir}" includes="**/*.crt" />
+             <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
