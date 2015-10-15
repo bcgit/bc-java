@@ -3,7 +3,6 @@
 <project name="crypto.bcbuild" default="build" basedir=".">
 
     <property file="bc-build.properties" />
-
     <property environment="env" />
 
     <property name="target.name" value="${target.prefix}-${release.suffix}" />
