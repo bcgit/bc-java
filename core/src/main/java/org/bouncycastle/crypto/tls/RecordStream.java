@@ -11,6 +11,10 @@ import java.io.OutputStream;
 class RecordStream
 {
     private static int DEFAULT_PLAINTEXT_LIMIT = (1 << 14);
+    static final int TLS_HEADER_SIZE = 5;
+    static final int TLS_HEADER_TYPE_OFFSET = 0;
+    static final int TLS_HEADER_VERSION_OFFSET = 1;
+    static final int TLS_HEADER_LENGTH_OFFSET = 3;
 
     private TlsProtocol handler;
     private InputStream input;
@@ -130,13 +134,13 @@ class RecordStream
     boolean readRecord()
         throws IOException
     {
-        byte[] recordHeader = TlsUtils.readAllOrNothing(5, input);
+        byte[] recordHeader = TlsUtils.readAllOrNothing(TLS_HEADER_SIZE, input);
         if (recordHeader == null)
         {
             return false;
         }
 
-        short type = TlsUtils.readUint8(recordHeader, 0);
+        short type = TlsUtils.readUint8(recordHeader, TLS_HEADER_TYPE_OFFSET);
 
         /*
          * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
@@ -146,7 +150,7 @@ class RecordStream
 
         if (!restrictReadVersion)
         {
-            int version = TlsUtils.readVersionRaw(recordHeader, 1);
+            int version = TlsUtils.readVersionRaw(recordHeader, TLS_HEADER_VERSION_OFFSET);
             if ((version & 0xffffff00) != 0x0300)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -154,7 +158,7 @@ class RecordStream
         }
         else
         {
-            ProtocolVersion version = TlsUtils.readVersion(recordHeader, 1);
+            ProtocolVersion version = TlsUtils.readVersion(recordHeader, TLS_HEADER_VERSION_OFFSET);
             if (readVersion == null)
             {
                 readVersion = version;
@@ -165,7 +169,7 @@ class RecordStream
             }
         }
 
-        int length = TlsUtils.readUint16(recordHeader, 3);
+        int length = TlsUtils.readUint16(recordHeader, TLS_HEADER_LENGTH_OFFSET);
         byte[] plaintext = decodeAndVerify(type, input, length);
         handler.processRecord(type, plaintext, 0, plaintext.length);
         return true;
@@ -273,11 +277,11 @@ class RecordStream
          */
         checkLength(ciphertext.length, ciphertextLimit, AlertDescription.internal_error);
 
-        byte[] record = new byte[ciphertext.length + 5];
-        TlsUtils.writeUint8(type, record, 0);
-        TlsUtils.writeVersion(writeVersion, record, 1);
-        TlsUtils.writeUint16(ciphertext.length, record, 3);
-        System.arraycopy(ciphertext, 0, record, 5, ciphertext.length);
+        byte[] record = new byte[ciphertext.length + TLS_HEADER_SIZE];
+        TlsUtils.writeUint8(type, record, TLS_HEADER_TYPE_OFFSET);
+        TlsUtils.writeVersion(writeVersion, record, TLS_HEADER_VERSION_OFFSET);
+        TlsUtils.writeUint16(ciphertext.length, record, TLS_HEADER_LENGTH_OFFSET);
+        System.arraycopy(ciphertext, 0, record, TLS_HEADER_SIZE, ciphertext.length);
         output.write(record);
         output.flush();
     }
