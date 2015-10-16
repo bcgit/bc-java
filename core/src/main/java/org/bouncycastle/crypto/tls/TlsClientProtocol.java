@@ -27,8 +27,8 @@ public class TlsClientProtocol
 
     /**
      * Constructor for blocking mode.
-     * @param input The stream of data from the client
-     * @param output The stream of data to the client
+     * @param input The stream of data from the server
+     * @param output The stream of data to the server
      * @param secureRandom Random number generator for various cryptographic functions
      */
     public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
@@ -152,6 +152,7 @@ public class TlsClientProtocol
             this.connection_state = CS_CLIENT_FINISHED;
             this.connection_state = CS_END;
 
+            completeHandshake();
             return;
         }
 
@@ -246,6 +247,8 @@ public class TlsClientProtocol
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
+
+                completeHandshake();
                 break;
             }
             default:
@@ -557,11 +560,6 @@ public class TlsClientProtocol
         case HandshakeType.hello_verify_request:
         default:
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-        
-        if (connection_state == CS_END)
-        {
-            completeHandshake();
         }
     }
 

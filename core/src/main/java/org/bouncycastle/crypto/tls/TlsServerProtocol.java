@@ -369,6 +369,8 @@ public class TlsServerProtocol
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
+
+                completeHandshake();
                 break;
             }
             default:
@@ -385,11 +387,6 @@ public class TlsServerProtocol
         case HandshakeType.session_ticket:
         default:
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-        
-        if (connection_state == CS_END)
-        {
-            completeHandshake();
         }
     }
 
