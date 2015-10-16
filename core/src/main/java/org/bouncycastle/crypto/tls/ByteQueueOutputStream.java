@@ -5,26 +5,28 @@ import java.io.OutputStream;
 
 import org.bouncycastle.crypto.tls.ByteQueue;
 
-public class ByteQueueOutputStream extends OutputStream {
+public class ByteQueueOutputStream
+    extends OutputStream
+{
+    private ByteQueue buffer;
 
-	private ByteQueue buffer;
-	
-	public ByteQueueOutputStream() {
-		buffer = new ByteQueue();
-	}
-	
-	public ByteQueue getBuffer() {
-		return buffer;
-	}
+    public ByteQueueOutputStream()
+    {
+        buffer = new ByteQueue();
+    }
 
-	@Override
-	public void write(int b) throws IOException {
-		buffer.addData(new byte[] {(byte) b}, 0, 1);
-	}
+    public ByteQueue getBuffer()
+    {
+        return buffer;
+    }
 
-	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
-		buffer.addData(b, off, len);
-	}
+    public void write(int b) throws IOException
+    {
+        buffer.addData(new byte[]{ (byte)b }, 0, 1);
+    }
 
+    public void write(byte[] b, int off, int len) throws IOException
+    {
+        buffer.addData(b, off, len);
+    }
 }
