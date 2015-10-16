@@ -263,6 +263,8 @@ public class AllTests
     {
         createTestFile(clearSignedPublicKey, "test.txt");
 
+        RSAKeyPairGenerator.main(new String[] { "test", "password" });
+
         ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
     }
 
@@ -271,6 +273,8 @@ public class AllTests
     {
         createTestData("This is a test payload!" + Strings.lineSeparator(), "test.txt");
         createTestData("This is a test payload!" + Strings.lineSeparator(), "test.bak");
+
+        RSAKeyPairGenerator.main(new String[] { "test", "password" });
 
         ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
         ClearSignedFileProcessor.main(new String[]{"-v", "test.txt.asc", "pub.bpg"});
