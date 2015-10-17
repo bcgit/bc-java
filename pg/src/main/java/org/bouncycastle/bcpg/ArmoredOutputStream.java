@@ -367,7 +367,7 @@ public class ArmoredOutputStream
     }
 
     /**
-     * <b>Note</b>: close does nor close the underlying stream. So it is possible to write
+     * <b>Note</b>: close() does not close the underlying stream. So it is possible to write
      * multiple objects using armoring to a single stream.
      */
     public void close()
