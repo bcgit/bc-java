@@ -15,7 +15,7 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("JPKAE Engine Tests");
+        TestSuite suite = new TestSuite("JPAKE Engine Tests");
 
         suite.addTestSuite(JPAKEParticipantTest.class);
         suite.addTestSuite(JPAKEPrimeOrderGroupTest.class);
