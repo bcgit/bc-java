@@ -118,7 +118,7 @@ public class SICBlockCipher
 
     private void checkCounter()
     {
-        // if the IV is the same as the blocksize we assume the user know's what they are doing
+        // if the IV is the same as the blocksize we assume the user knows what they are doing
         if (IV.length != blockSize)
         {
             for (int i = 0; i != IV.length; i++)
