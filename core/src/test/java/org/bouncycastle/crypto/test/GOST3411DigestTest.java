@@ -5,6 +5,8 @@ import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.generators.PKCS5S1ParametersGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class GOST3411DigestTest
     extends DigestTest
@@ -46,7 +48,7 @@ public class GOST3411DigestTest
     public void performTest()
     {
         super.performTest();
-        
+
         millionATest(million_a_digest);
 
         HMac gMac = new HMac(new GOST3411Digest());
@@ -59,6 +61,11 @@ public class GOST3411DigestTest
         byte[] mac = new byte[gMac.getMacSize()];
 
         gMac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(Hex.decode("e9f98610cfc80084462b175a15d2b4ec10b2ab892eae5a6179d572d9b1db6b72"), mac))
+        {
+            fail("mac calculation failed.");
+        }
     }
 
     protected Digest cloneDigest(Digest digest)

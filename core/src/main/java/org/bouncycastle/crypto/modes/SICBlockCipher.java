@@ -55,6 +55,11 @@ public class SICBlockCipher
             ParametersWithIV ivParam = (ParametersWithIV)params;
             this.IV = Arrays.clone(ivParam.getIV());
 
+            if (blockSize < IV.length)
+            {
+                throw new IllegalArgumentException("CTR/SIC mode requires IV no greater than: " + blockSize + " bytes.");
+            }
+
             if (blockSize - IV.length > 8)
             {
                 throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - 8) + " bytes.");
@@ -119,11 +124,11 @@ public class SICBlockCipher
     private void checkCounter()
     {
         // if the IV is the same as the blocksize we assume the user knows what they are doing
-        if (IV.length != blockSize)
+        if (IV.length < blockSize)
         {
             for (int i = 0; i != IV.length; i++)
             {
-                if ((counter[i] ^ IV[i]) != 0)
+                if (counter[i] != IV[i])
                 {
                     throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
                 }
