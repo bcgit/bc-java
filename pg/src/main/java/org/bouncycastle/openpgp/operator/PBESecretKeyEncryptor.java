@@ -65,7 +65,7 @@ public abstract class PBESecretKeyEncryptor
      * Key encryption method invoked for V4 keys and greater.
      *
      * @param keyData raw key data
-     * @param keyOff offset into rawe key data
+     * @param keyOff offset into raw key data
      * @param keyLen length of key data to use.
      * @return an encryption of the passed in keyData.
      * @throws PGPException on error in the underlying encryption process.
@@ -75,7 +75,7 @@ public abstract class PBESecretKeyEncryptor
     {
         if (s2k == null)
         {
-            byte[]        iv = new byte[8];
+            byte[] iv = new byte[8];
 
             random.nextBytes(iv);
 
