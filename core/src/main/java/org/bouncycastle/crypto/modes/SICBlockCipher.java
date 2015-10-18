@@ -1,3 +1,6 @@
+/***************************************************************/
+/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
+/***************************************************************/
 package org.bouncycastle.crypto.modes;
 
 import org.bouncycastle.crypto.BlockCipher;
@@ -6,6 +9,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -18,7 +22,7 @@ public class SICBlockCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
-    
+
     private byte[]          IV;
     private byte[]          counter;
     private byte[]          counterOut;
@@ -49,8 +53,12 @@ public class SICBlockCipher
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
-            byte[] iv = ivParam.getIV();
-            System.arraycopy(iv, 0, IV, 0, IV.length);
+            this.IV = Arrays.clone(ivParam.getIV());
+
+            if (blockSize - IV.length > 8)
+            {
+                throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - 8) + " bytes.");
+            }
 
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
@@ -62,7 +70,7 @@ public class SICBlockCipher
         }
         else
         {
-            throw new IllegalArgumentException("SIC mode requires ParametersWithIV");
+            throw new IllegalArgumentException("CTR/SIC mode requires ParametersWithIV");
         }
     }
 
@@ -101,9 +109,26 @@ public class SICBlockCipher
             byteCount = 0;
 
             incrementCounter();
+
+            checkCounter();
         }
 
         return rv;
+    }
+
+    private void checkCounter()
+    {
+        // if the IV is the same as the blocksize we assume the user know's what they are doing
+        if (IV.length != blockSize)
+        {
+            for (int i = 0; i != IV.length; i++)
+            {
+                if ((counter[i] ^ IV[i]) != 0)
+                {
+                    throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
+                }
+            }
+        }
     }
 
     private void incrementCounterPow2(int pow2Div8)
@@ -270,7 +295,8 @@ public class SICBlockCipher
 
     public void reset()
     {
-        System.arraycopy(IV, 0, counter, 0, counter.length);
+        Arrays.fill(counter, (byte)0);
+        System.arraycopy(IV, 0, counter, 0, IV.length);
         cipher.reset();
         this.byteCount = 0;
     }
@@ -278,6 +304,8 @@ public class SICBlockCipher
     public long skip(long numberOfBytes)
     {
         adjustCounter(numberOfBytes);
+
+        checkCounter();
 
         cipher.processBlock(counter, 0, counterOut, 0);
 
@@ -293,13 +321,21 @@ public class SICBlockCipher
 
     public long getPosition()
     {
-        byte[] res = new byte[IV.length];
+        byte[] res = new byte[counter.length];
 
         System.arraycopy(counter, 0, res, 0, res.length);
 
         for (int i = res.length - 1; i >= 1; i--)
         {
-            int v = (res[i] & 0xff) - (IV[i] & 0xff);
+            int v;
+            if (i < IV.length)
+            {
+                v = (res[i] & 0xff) - (IV[i] & 0xff);
+            }
+            else
+            {
+                v = (res[i] & 0xff);
+            }
 
             if (v < 0)
             {
