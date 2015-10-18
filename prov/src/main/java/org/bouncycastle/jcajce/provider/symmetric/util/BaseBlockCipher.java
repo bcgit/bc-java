@@ -341,12 +341,14 @@ public class BaseBlockCipher
             {
                 throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
             }
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
         else if (modeName.startsWith("CTR"))
         {
             ivLength = baseEngine.getBlockSize();
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }

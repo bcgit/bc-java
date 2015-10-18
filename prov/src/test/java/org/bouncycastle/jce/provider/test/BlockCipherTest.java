@@ -53,6 +53,8 @@ public class BlockCipherTest
         shortIvOkay.add("OCB");
         shortIvOkay.add("CCM");
         shortIvOkay.add("GCM");
+        shortIvOkay.add("SIC");
+        shortIvOkay.add("CTR");
     }
 
     static String[] cipherTests1 =
@@ -211,6 +213,12 @@ public class BlockCipherTest
         "d4a96bf4e44f89fd91b46830bc95b130c44695633c07010f3a0d8f7ea046a642",
         "IDEA/CBC/WithCTS",
         "30cd990ebdae80fe12b6c6e4fcd1c06497351c8684e4c4d9a27d985c276b3d70",
+        "Blowfish/CTR/NoPadding",
+        "6cd6f7c5d2c65555d2b31f8614f54ec654f5e7888d515008d59302c3edfcc6cb",
+        "CAST5/CTR/NoPadding",
+        "9ef6c08987f02d3dc218513450cf0f8d6aa9eb15d0ad92dde14863731a7e39c2",
+        "Camellia/CTR/NoPadding",
+        "9132cee4b4f13574ed61c00997f8049e8b45f941f6394e333926a3245f11d759",
         "DES/OFB/NoPadding",
         "537572e480c1714f5c9a4f3b874df824dc6681b1fd6c11982debcad91e3f78b7",
         "DESede/OFB/NoPadding",
