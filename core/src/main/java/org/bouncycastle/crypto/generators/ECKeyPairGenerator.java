@@ -56,12 +56,6 @@ public class ECKeyPairGenerator
                 continue;
             }
 
-            /*
-             * Require a minimum weight of the NAF representation, since low-weight primes may be
-             * weak against a version of the number-field-sieve for the discrete-logarithm-problem.
-             * 
-             * See "The number field sieve for integers of low weight", Oliver Schirokauer.
-             */
             if (WNafUtil.getNafWeight(d) < minWeight)
             {
                 continue;
