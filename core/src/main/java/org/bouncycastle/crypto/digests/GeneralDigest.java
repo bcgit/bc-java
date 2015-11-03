@@ -70,39 +70,44 @@ public abstract class GeneralDigest
         int     inOff,
         int     len)
     {
+        len = Math.max(0,  len);
+
         //
         // fill the current word
         //
-        while ((xBufOff != 0) && (len > 0))
+        int i = 0;
+        if (xBufOff != 0)
         {
-            update(in[inOff]);
-
-            inOff++;
-            len--;
+            while (i < len)
+            {
+                xBuf[xBufOff++] = in[inOff + i++];
+                if (xBufOff == 4)
+                {
+                    processWord(xBuf, 0);
+                    xBufOff = 0;
+                    break;
+                }
+            }
         }
 
         //
         // process whole words.
         //
-        while (len > xBuf.length)
+        int limit = ((len - i) & ~3) + i;
+        for (; i < limit; i += 4)
         {
-            processWord(in, inOff);
-
-            inOff += xBuf.length;
-            len -= xBuf.length;
-            byteCount += xBuf.length;
+            processWord(in, inOff + i);
         }
 
         //
         // load in the remainder.
         //
-        while (len > 0)
+        while (i < len)
         {
-            update(in[inOff]);
-
-            inOff++;
-            len--;
+            xBuf[xBufOff++] = in[inOff + i++];
         }
+
+        byteCount += len;
     }
 
     public void finish()
