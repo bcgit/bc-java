@@ -227,14 +227,6 @@ public class KeyAgreementSpi
 
                 secret = keyBytes;
             }
-            else
-            {
-                // for JSSE compatibility
-                if (algorithm.equals("TlsPremasterSecret"))
-                {
-                    return new SecretKeySpec(trimZeroes(secret), algorithm);
-                }
-            }
         }
 
         if (des.containsKey(oidAlgorithm))
