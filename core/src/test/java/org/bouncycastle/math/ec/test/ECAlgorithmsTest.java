@@ -24,67 +24,91 @@ public class ECAlgorithmsTest extends TestCase
 
     public void testSumOfMultiplies()
     {
-        ArrayList x9s = getTestCurves();
-        Iterator it = x9s.iterator();
-        while (it.hasNext())
-        {
-            X9ECParameters x9 = (X9ECParameters)it.next();
-
-            ECPoint[] points = new ECPoint[SCALE];
-            BigInteger[] scalars = new BigInteger[SCALE];
-            for (int i = 0; i < SCALE; ++i)
-            {
-                points[i] = getRandomPoint(x9);
-                scalars[i] = getRandomScalar(x9);
-            }
-
-            ECPoint u = x9.getCurve().getInfinity();
-            for (int i = 0; i < SCALE; ++i)
-            {
-                u = u.add(points[i].multiply(scalars[i]));
-
-                ECPoint v = ECAlgorithms.sumOfMultiplies(copyPoints(points, i + 1), copyScalars(scalars, i + 1));
-
-                ECPoint[] results = new ECPoint[]{ u, v };
-                x9.getCurve().normalizeAll(results);
-
-                assertPointsEqual("ECAlgorithms.sumOfMultiplies is incorrect", results[0], results[1]);
-            }
-        }
+        X9ECParameters x9 = CustomNamedCurves.getByName("secp256r1");
+        assertNotNull(x9);
+        doTestSumOfMultiplies(x9);
     }
 
-    public void testSumOfTwoMultiplies()
+    // TODO Ideally, mark this test not to run by default
+    public void testSumOfMultipliesComplete()
     {
         ArrayList x9s = getTestCurves();
         Iterator it = x9s.iterator();
         while (it.hasNext())
         {
             X9ECParameters x9 = (X9ECParameters)it.next();
-
-            ECPoint p = getRandomPoint(x9);
-            BigInteger a = getRandomScalar(x9);
-
-            for (int i = 0; i < SCALE; ++i)
-            {
-                ECPoint q = getRandomPoint(x9);
-                BigInteger b = getRandomScalar(x9);
-                
-                ECPoint u = p.multiply(a).add(q.multiply(b));
-                ECPoint v = ECAlgorithms.shamirsTrick(p, a, q, b);
-                ECPoint w = ECAlgorithms.sumOfTwoMultiplies(p, a, q, b);
-
-                ECPoint[] results = new ECPoint[]{ u, v, w };
-                x9.getCurve().normalizeAll(results);
-
-                assertPointsEqual("ECAlgorithms.shamirsTrick is incorrect", results[0], results[1]);
-                assertPointsEqual("ECAlgorithms.sumOfTwoMultiplies is incorrect", results[0], results[2]);
-
-                p = q;
-                a = b;
-            }
+            doTestSumOfMultiplies(x9);
         }
     }
-    
+
+    public void testSumOfTwoMultiplies()
+    {
+        X9ECParameters x9 = CustomNamedCurves.getByName("secp256r1");
+        assertNotNull(x9);
+        doTestSumOfMultiplies(x9);
+    }
+
+    // TODO Ideally, mark this test not to run by default
+    public void testSumOfTwoMultipliesComplete()
+    {
+        ArrayList x9s = getTestCurves();
+        Iterator it = x9s.iterator();
+        while (it.hasNext())
+        {
+            X9ECParameters x9 = (X9ECParameters)it.next();
+            doTestSumOfTwoMultiplies(x9);
+        }
+    }
+
+    private void doTestSumOfMultiplies(X9ECParameters x9)
+    {
+        ECPoint[] points = new ECPoint[SCALE];
+        BigInteger[] scalars = new BigInteger[SCALE];
+        for (int i = 0; i < SCALE; ++i)
+        {
+            points[i] = getRandomPoint(x9);
+            scalars[i] = getRandomScalar(x9);
+        }
+
+        ECPoint u = x9.getCurve().getInfinity();
+        for (int i = 0; i < SCALE; ++i)
+        {
+            u = u.add(points[i].multiply(scalars[i]));
+
+            ECPoint v = ECAlgorithms.sumOfMultiplies(copyPoints(points, i + 1), copyScalars(scalars, i + 1));
+
+            ECPoint[] results = new ECPoint[]{ u, v };
+            x9.getCurve().normalizeAll(results);
+
+            assertPointsEqual("ECAlgorithms.sumOfMultiplies is incorrect", results[0], results[1]);
+        }
+    }
+
+    private void doTestSumOfTwoMultiplies(X9ECParameters x9)
+    {
+        ECPoint p = getRandomPoint(x9);
+        BigInteger a = getRandomScalar(x9);
+
+        for (int i = 0; i < SCALE; ++i)
+        {
+            ECPoint q = getRandomPoint(x9);
+            BigInteger b = getRandomScalar(x9);
+            
+            ECPoint u = p.multiply(a).add(q.multiply(b));
+            ECPoint v = ECAlgorithms.shamirsTrick(p, a, q, b);
+            ECPoint w = ECAlgorithms.sumOfTwoMultiplies(p, a, q, b);
+
+            ECPoint[] results = new ECPoint[]{ u, v, w };
+            x9.getCurve().normalizeAll(results);
+
+            assertPointsEqual("ECAlgorithms.shamirsTrick is incorrect", results[0], results[1]);
+            assertPointsEqual("ECAlgorithms.sumOfTwoMultiplies is incorrect", results[0], results[2]);
+
+            p = q;
+            a = b;
+        }
+    }
+
     private void assertPointsEqual(String message, ECPoint a, ECPoint b)
     {
         assertEquals(message, a, b);
