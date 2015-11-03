@@ -153,4 +153,26 @@ public abstract class BaseAgreementSpi
 
         return ((Integer)keySizes.get(algKey)).intValue();
     }
+
+    protected static byte[] trimZeroes(byte[] secret)
+    {
+        if (secret[0] != 0)
+        {
+            return secret;
+        }
+        else
+        {
+            int ind = 0;
+            while (ind < secret.length && secret[ind] == 0)
+            {
+                ind++;
+            }
+
+            byte[] rv = new byte[secret.length - ind];
+
+            System.arraycopy(secret, ind, rv, 0, rv.length);
+
+            return rv;
+        }
+    }
 }
