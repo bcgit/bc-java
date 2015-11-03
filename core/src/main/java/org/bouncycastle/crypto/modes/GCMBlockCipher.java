@@ -522,16 +522,11 @@ public class GCMBlockCipher
 
     private byte[] getNextCounterBlock()
     {
-        for (int i = 15; i >= 12; --i)
-        {
-            byte b = (byte)((counter[i] + 1) & 0xff);
-            counter[i] = b;
-
-            if (b != 0)
-            {
-                break;
-            }
-        }
+        int c = 1;
+        c += counter[15] & 0xFF; counter[15] = (byte)c; c >>>= 8;
+        c += counter[14] & 0xFF; counter[14] = (byte)c; c >>>= 8;
+        c += counter[13] & 0xFF; counter[13] = (byte)c; c >>>= 8;
+        c += counter[12] & 0xFF; counter[12] = (byte)c;
 
         byte[] tmp = new byte[BLOCK_SIZE];
         // TODO Sure would be nice if ciphers could operate on int[]
