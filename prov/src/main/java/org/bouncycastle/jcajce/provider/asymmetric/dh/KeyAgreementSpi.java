@@ -154,6 +154,14 @@ public class KeyAgreementSpi
             
             return new SecretKeySpec(key, algName);
         }
+        else
+        {
+            // for JSSE compatibility
+            if (algorithm.equals("TlsPremasterSecret"))
+            {
+                return new SecretKeySpec(trimZeroes(res), algorithm);
+            }
+        }
 
         return new SecretKeySpec(res, algName);
     }
