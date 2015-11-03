@@ -1,6 +1,3 @@
-/***************************************************************/
-/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
-/***************************************************************/
 package org.bouncycastle.asn1.x9;
 
 import java.math.BigInteger;

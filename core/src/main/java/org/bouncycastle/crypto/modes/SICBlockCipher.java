@@ -1,6 +1,3 @@
-/***************************************************************/
-/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
-/***************************************************************/
 package org.bouncycastle.crypto.modes;
 
 import org.bouncycastle.crypto.BlockCipher;
