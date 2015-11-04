@@ -57,9 +57,11 @@ public class SICBlockCipher
                 throw new IllegalArgumentException("CTR/SIC mode requires IV no greater than: " + blockSize + " bytes.");
             }
 
-            if (blockSize - IV.length > 8)
+            int maxCounterSize = (8 > blockSize / 2) ? blockSize / 2 : 8;
+
+            if (blockSize - IV.length > maxCounterSize)
             {
-                throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - 8) + " bytes.");
+                throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - maxCounterSize) + " bytes.");
             }
 
             // if null it's an IV changed only.
@@ -167,9 +169,6 @@ public class SICBlockCipher
                 return;
             }
         }
-        // if it underflowed, reset counter and throw
-        incrementCounterAt(pos);
-        throw new IllegalStateException("attempt to reduce counter past zero.");
     }
 
     private void adjustCounter(long n)
