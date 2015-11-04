@@ -197,7 +197,6 @@ public class PGPCompressedDataGenerator
             if (dOut != pkOut)
             {
                 dOut.close();
-                dOut.flush();
             }
 
             dOut = null;
