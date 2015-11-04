@@ -110,7 +110,7 @@ public class SICBlockCipher
         {
             byteCount = 0;
 
-            incrementCounter();
+            incrementCounterAt(0);
 
             checkCounter();
         }
@@ -133,12 +133,15 @@ public class SICBlockCipher
         }
     }
 
-    private void incrementCounterPow2(int pow2Div8)
+    private void incrementCounterAt(int pos)
     {
-        // increment counter by 1 << 8 * pow2Div8
-        for (int i = counter.length - (1 + pow2Div8); i >= 0 && ++counter[i] == 0; i--)
+        int i = counter.length - pos;
+        while (--i >= 0)
         {
-            ; // do nothing - pre-increment and test for 0 in counter does the job.
+            if (++counter[i] != 0)
+            {
+                break;
+            }
         }
     }
 
@@ -150,71 +153,23 @@ public class SICBlockCipher
 
         if (old != 0 && counter[counter.length - 1] < old)
         {
-            incrementCounterPow2(1);
+            incrementCounterAt(1);
         }
     }
 
-    private void incrementCounter()
+    private void decrementCounterAt(int pos)
     {
-        // increment counter by 1.
-        for (int i = counter.length - 1; i >= 0 && ++counter[i] == 0; i--)
+        int i = counter.length - pos;
+        while (--i >= 0)
         {
-            ; // do nothing - pre-increment and test for 0 in counter does the job.
-        }
-    }
-
-    private void decrementCounterPow2(int pow2Div8)
-    {
-        if (counter[pow2Div8] == 0)
-        {
-            boolean nonZero = false;
-
-            for (int i = counter.length - (1 + pow2Div8); i > 0; i--)
+            if (--counter[i] != -1)
             {
-                if (counter[i] != 0)
-                {
-                    nonZero = true;
-                }
-            }
-
-            if (!nonZero)
-            {
-                throw new IllegalStateException("attempt to reduce counter past zero.");
+                return;
             }
         }
-
-        // decrement counter by 1.
-        for (int i = counter.length - (1 + pow2Div8); i >= 0 && --counter[i] == -1; i--)
-        {
-            ;
-        }
-    }
-
-    private void decrementCounter()
-    {
-        if (counter[0] == 0)
-        {
-            boolean nonZero = false;
-
-            for (int i = counter.length - 1; i > 0; i--)
-            {
-                if (counter[i] != 0)
-                {
-                    nonZero = true;
-                }
-            }
-
-            if (!nonZero)
-            {
-                throw new IllegalStateException("attempt to reduce counter past zero.");
-            }
-        }
-
-        // decrement counter by 1.
-        for (int i = counter.length - 1; i >= 0 && --counter[i] == -1; i--)
-        {
-            ;
-        }
+        // if it underflowed, reset counter and throw
+        incrementCounterAt(pos);
+        throw new IllegalStateException("attempt to reduce counter past zero.");
     }
 
     private void adjustCounter(long n)
@@ -223,28 +178,21 @@ public class SICBlockCipher
         {
             long numBlocks = (n + byteCount) / blockSize;
 
-            if (numBlocks > 255)
+            long rem = numBlocks;
+            if (rem > 255)
             {
-                long gap = numBlocks;
-
                 for (int i = 5; i >= 1; i--)
                 {
                     long diff = 1L << (8 * i);
-
-                    while (gap >= diff)
+                    while (rem >= diff)
                     {
-                        incrementCounterPow2(i);
-
-                        gap -= diff;
+                        incrementCounterAt(i);
+                        rem -= diff;
                     }
                 }
+            }
 
-                incrementCounter((int)gap);
-            }
-            else
-            {
-                incrementCounter((int)numBlocks);
-            }
+            incrementCounter((int)rem);
 
             byteCount = (int)((n + byteCount) - (blockSize * numBlocks));
         }
@@ -252,33 +200,23 @@ public class SICBlockCipher
         {
             long numBlocks = (-n - byteCount) / blockSize;
 
-            if (numBlocks > 255)
+            long rem = numBlocks;
+            if (rem > 255)
             {
-                long gap = numBlocks;
-
                 for (int i = 5; i >= 1; i--)
                 {
                     long diff = 1L << (8 * i);
-
-                    while (gap > diff)
+                    while (rem > diff)
                     {
-                        decrementCounterPow2(i);
-
-                        gap -= diff;
+                        decrementCounterAt(i);
+                        rem -= diff;
                     }
                 }
-
-                for (long i = 0; i != gap; i++)
-                {
-                    decrementCounter();
-                }
             }
-            else
+
+            for (long i = 0; i != rem; i++)
             {
-                for (long i = 0; i != numBlocks; i++)
-                {
-                    decrementCounter();
-                }
+                decrementCounterAt(0);
             }
 
             int gap = (int)(byteCount + n + (blockSize * numBlocks));
@@ -289,7 +227,7 @@ public class SICBlockCipher
             }
             else
             {
-                decrementCounter();
+                decrementCounterAt(0);
                 byteCount =  blockSize + gap;
             }
         }
