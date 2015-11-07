@@ -175,55 +175,55 @@ public class Blake2bDigest
 	 * The key can be overwritten using the clearKey() method, the salt (pepper)
 	 * can be overwritten using the clearSalt() method.
 	 * 
-	 * @param _key A key up to 64 bytes or null
-	 * @param _digestLength from 1 up to 64 bytes
-	 * @param _salt up to 16 bytes or null
-	 * @param _personalization up to 16 bytes or null
+	 * @param key A key up to 64 bytes or null
+	 * @param digestLength from 1 up to 64 bytes
+	 * @param salt up to 16 bytes or null
+	 * @param personalization up to 16 bytes or null
 	 */
-	public Blake2bDigest(byte[] _key, int _digestLength, byte[] _salt,
-			byte[] _personalization)
+	public Blake2bDigest(byte[] key, int digestLength, byte[] salt,
+			byte[] personalization)
 	{
 
 		buffer = new byte[BLOCK_LENGTH_BYTES];
-		if (_digestLength < 1 || digestLength > 64)
+		if (digestLength < 1 || digestLength > 64)
 		{
 			throw new IllegalArgumentException(
 					"Invalid digest length (required: 1 - 64)");
 		}
-		digestLength = _digestLength;
-		if (_salt != null)
+		this.digestLength = digestLength;
+		if (salt != null)
 		{
-			if (_salt.length != 16)
+			if (salt.length != 16)
 			{
 				throw new IllegalArgumentException(
 						"salt length must be exactly 16 bytes");
 			}
-			salt = new byte[16];
-			System.arraycopy(_salt, 0, salt, 0, _salt.length);
+			this.salt = new byte[16];
+			System.arraycopy(salt, 0, this.salt, 0, salt.length);
 		}
-		if (_personalization != null)
+		if (personalization != null)
 		{
-			if (_personalization.length != 16)
+			if (personalization.length != 16)
 			{
 				throw new IllegalArgumentException(
 						"personalization length must be exactly 16 bytes");
 			}
-			personalization = new byte[16];
-			System.arraycopy(_personalization, 0, personalization, 0,
-					_personalization.length);
+			this.personalization = new byte[16];
+			System.arraycopy(personalization, 0, this.personalization, 0,
+					personalization.length);
 		}
-		if (_key != null)
+		if (key != null)
 		{
-			key = new byte[_key.length];
-			System.arraycopy(_key, 0, key, 0, _key.length);
+			this.key = new byte[key.length];
+			System.arraycopy(key, 0, this.key, 0, key.length);
 			
-			if (_key.length > 64)
+			if (key.length > 64)
 			{
 				throw new IllegalArgumentException(
 						"Keys > 64 are not supported");
 			}
-			keyLength = _key.length;
-			System.arraycopy(_key, 0, buffer, 0, _key.length);
+			keyLength = key.length;
+			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
 		}
 		init();
