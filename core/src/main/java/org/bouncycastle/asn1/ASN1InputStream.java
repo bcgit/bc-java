@@ -430,7 +430,7 @@ public class ASN1InputStream
         switch (tagNo)
         {
             case BIT_STRING:
-                return DERBitString.fromInputStream(defIn.getRemaining(), defIn);
+                return ASN1BitString.fromInputStream(defIn.getRemaining(), defIn);
             case BMP_STRING:
                 return new DERBMPString(getBMPCharBuffer(defIn));
             case BOOLEAN:

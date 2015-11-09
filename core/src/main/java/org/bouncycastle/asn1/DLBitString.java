@@ -2,7 +2,7 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
-public class DERBitString
+public class DLBitString
     extends ASN1BitString
 {
     /**
@@ -12,16 +12,12 @@ public class DERBitString
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return a DERBitString instance, or null.
      */
-    public static DERBitString getInstance(
+    public static DLBitString getInstance(
         Object  obj)
     {
-        if (obj == null || obj instanceof DERBitString)
+        if (obj == null || obj instanceof DLBitString)
         {
-            return (DERBitString)obj;
-        }
-        if (obj instanceof DLBitString)
-        {
-            return new DERBitString(((DLBitString)obj).data, ((DLBitString)obj).padBits);
+            return (DLBitString)obj;
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
@@ -37,13 +33,13 @@ public class DERBitString
      *               be converted.
      * @return a DERBitString instance, or null.
      */
-    public static DERBitString getInstance(
+    public static DLBitString getInstance(
         ASN1TaggedObject obj,
         boolean          explicit)
     {
         ASN1Primitive o = obj.getObject();
 
-        if (explicit || o instanceof DERBitString)
+        if (explicit || o instanceof DLBitString)
         {
             return getInstance(o);
         }
@@ -52,8 +48,8 @@ public class DERBitString
             return fromOctetString(((ASN1OctetString)o).getOctets());
         }
     }
-    
-    protected DERBitString(
+
+    protected DLBitString(
         byte    data,
         int     padBits)
     {
@@ -73,26 +69,26 @@ public class DERBitString
      * @param data the octets making up the bit string.
      * @param padBits the number of extra bits at the end of the string.
      */
-    public DERBitString(
+    public DLBitString(
         byte[]  data,
         int     padBits)
     {
         super(data, padBits);
     }
 
-    public DERBitString(
+    public DLBitString(
         byte[]  data)
     {
         this(data, 0);
     }
 
-    public DERBitString(
+    public DLBitString(
         int value)
     {
         super(getBytes(value), getPadBits(value));
     }
 
-    public DERBitString(
+    public DLBitString(
         ASN1Encodable obj)
         throws IOException
     {
@@ -118,7 +114,7 @@ public class DERBitString
         ASN1OutputStream  out)
         throws IOException
     {
-        byte[] string = derForm(data, padBits);
+        byte[] string = data;
         byte[] bytes = new byte[string.length + 1];
 
         bytes[0] = (byte)getPadBits();
@@ -127,7 +123,7 @@ public class DERBitString
         out.writeEncoded(BERTags.BIT_STRING, bytes);
     }
 
-    static DERBitString fromOctetString(byte[] bytes)
+    static DLBitString fromOctetString(byte[] bytes)
     {
         if (bytes.length < 1)
         {
@@ -142,6 +138,6 @@ public class DERBitString
             System.arraycopy(bytes, 1, data, 0, bytes.length - 1);
         }
 
-        return new DERBitString(data, padBits);
+        return new DLBitString(data, padBits);
     }
 }
