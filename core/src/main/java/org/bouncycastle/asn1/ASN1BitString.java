@@ -8,6 +8,9 @@ import java.io.InputStream;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * Base class for BIT STRING objects
+ */
 public abstract class ASN1BitString
     extends ASN1Primitive
     implements ASN1String
@@ -93,6 +96,8 @@ public abstract class ASN1BitString
     }
 
     /**
+     * Base constructor.
+     *
      * @param data the octets making up the bit string.
      * @param padBits the number of extra bits at the end of the string.
      */
@@ -104,6 +109,11 @@ public abstract class ASN1BitString
         this.padBits = padBits;
     }
 
+    /**
+     * Return a String representation of this BIT STRING
+     *
+     * @return a String representation.
+     */
     public String getString()
     {
         StringBuffer          buf = new StringBuffer("#");
@@ -153,7 +163,7 @@ public abstract class ASN1BitString
 
     public byte[] getBytes()
     {
-        return Arrays.clone(data);
+        return derForm(data, padBits);
     }
 
     public int getPadBits()

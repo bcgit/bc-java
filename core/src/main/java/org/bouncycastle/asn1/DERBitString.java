@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * A BIT STRING with DER encoding.
+ */
 public class DERBitString
     extends ASN1BitString
 {
@@ -97,11 +100,6 @@ public class DERBitString
         throws IOException
     {
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
-    }
-
-    public byte[] getBytes()
-    {
-        return derForm(data, padBits);
     }
 
     boolean isConstructed()
