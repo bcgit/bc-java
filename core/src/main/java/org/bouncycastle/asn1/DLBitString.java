@@ -2,22 +2,29 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * A Definite length BIT STRING
+ */
 public class DLBitString
     extends ASN1BitString
 {
     /**
-     * return a Bit String from the passed in object
+     * return a Bit String that can be definite-length encoded from the passed in object.
      *
-     * @param obj a DERBitString or an object that can be converted into one.
+     * @param obj a DL or DER BitString or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
-     * @return a DERBitString instance, or null.
+     * @return an ASN1BitString instance, or null.
      */
-    public static DLBitString getInstance(
+    public static ASN1BitString getInstance(
         Object  obj)
     {
         if (obj == null || obj instanceof DLBitString)
         {
             return (DLBitString)obj;
+        }
+        if (obj instanceof DERBitString)
+        {
+            return (DERBitString)obj;
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
@@ -31,9 +38,9 @@ public class DLBitString
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot
      *               be converted.
-     * @return a DERBitString instance, or null.
+     * @return an ASN1BitString instance, or null.
      */
-    public static DLBitString getInstance(
+    public static ASN1BitString getInstance(
         ASN1TaggedObject obj,
         boolean          explicit)
     {
@@ -93,11 +100,6 @@ public class DLBitString
         throws IOException
     {
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
-    }
-
-    public byte[] getBytes()
-    {
-        return derForm(data, padBits);
     }
 
     boolean isConstructed()
