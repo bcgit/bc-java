@@ -1798,7 +1798,7 @@ public class PKCS12KeyStoreSpi
 
             keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
 
-            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
+            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
 
             keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
             keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
