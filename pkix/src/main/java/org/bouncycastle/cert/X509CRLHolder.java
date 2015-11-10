@@ -291,7 +291,7 @@ public class X509CRLHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(x509CRL.getSignature().getBytes());
+        return verifier.verify(x509CRL.getSignature().getOctets());
     }
 
     public boolean equals(
