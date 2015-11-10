@@ -174,7 +174,7 @@ public class OCSPReq
             return null;
         }
 
-        return req.getOptionalSignature().getSignature().getBytes();
+        return req.getOptionalSignature().getSignature().getOctets();
     }
 
     public X509CertificateHolder[] getCerts()

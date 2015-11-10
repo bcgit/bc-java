@@ -137,7 +137,7 @@ public class BasicOCSPResp
 
     public byte[] getSignature()
     {
-        return resp.getSignature().getBytes();
+        return resp.getSignature().getOctets();
     }
 
     public X509CertificateHolder[] getCerts()
