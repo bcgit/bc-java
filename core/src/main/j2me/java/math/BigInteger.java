@@ -619,6 +619,7 @@ public class BigInteger
         int nBytes = (bitLength + 7) / BITS_PER_BYTE;
         int xBits = BITS_PER_BYTE * nBytes - bitLength;
         byte mask = (byte)(255 >>> xBits);
+        byte lead = (byte)(1 << (7 - xBits));
 
         byte[] b = new byte[nBytes];
 
@@ -630,7 +631,7 @@ public class BigInteger
             b[0] &= mask;
 
             // ensure the leading bit is 1 (to meet the strength requirement)
-            b[0] |= (byte)(1 << (7 - xBits));
+            b[0] |= lead;
 
             // ensure the trailing bit is 1 (i.e. must be odd)
             b[nBytes - 1] |= (byte)1;
@@ -645,18 +646,12 @@ public class BigInteger
             if (this.isProbablePrime(certainty))
                 break;
 
-            if (bitLength > 32)
+            for (int j = 1; j < (magnitude.length - 1); ++j)
             {
-                for (int rep = 0; rep < 10000; ++rep)
-                {
-                    int n = 33 + (rnd.nextInt() >>> 1) % (bitLength - 2);
-                    this.magnitude[this.magnitude.length - (n >>> 5)] ^= (1 << (n & 31));
-                    this.magnitude[this.magnitude.length - 1] ^= (rnd.nextInt() << 1);
-                    this.mQuote = 0;
+                this.magnitude[j] = rnd.nextInt();
 
-                    if (this.isProbablePrime(certainty))
-                        return;
-                }
+                if (this.isProbablePrime(certainty))
+                    return;
             }
         }
     }
