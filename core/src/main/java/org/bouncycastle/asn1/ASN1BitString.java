@@ -55,9 +55,8 @@ public abstract class ASN1BitString
 
         if (val == 0)
         {
-            return 7;
+            return 0;
         }
-
 
         int bits = 1;
 
@@ -76,6 +75,11 @@ public abstract class ASN1BitString
      */
     static protected byte[] getBytes(int bitString)
     {
+        if (bitString == 0)
+        {
+            return new byte[0];
+        }
+
         int bytes = 4;
         for (int i = 3; i >= 1; i--)
         {
@@ -105,6 +109,15 @@ public abstract class ASN1BitString
         byte[]  data,
         int     padBits)
     {
+        if (data.length == 0 && padBits != 0)
+        {
+            throw new IllegalArgumentException("zero length data with non-zero pad bits");
+        }
+        if (padBits > 7)
+        {
+            throw new IllegalArgumentException("pad bits cannot be greater than 7");
+        }
+
         this.data = Arrays.clone(data);
         this.padBits = padBits;
     }
