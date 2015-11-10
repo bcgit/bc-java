@@ -14,6 +14,50 @@ import org.bouncycastle.util.test.TestResult;
 public class BitStringTest
     extends SimpleTest
 {
+    private void testZeroLengthStrings()
+        throws Exception
+    {
+        // basic construction
+        DERBitString s1 = new DERBitString(new byte[0], 0);
+
+        if (!Arrays.areEqual(s1.getEncoded(), Hex.decode("030100")))
+        {
+            fail("zero encoding wrong");
+        }
+
+        try
+        {
+            new DERBitString(new byte[0], 1);
+            fail("exception not thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!"zero length data with non-zero pad bits".equals(e.getMessage()))
+            {
+                fail("Unexpected exception");
+            }
+        }
+
+        try
+        {
+            new DERBitString(new byte[1], 8);
+            fail("exception not thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            if (!"pad bits cannot be greater than 7".equals(e.getMessage()))
+            {
+                fail("Unexpected exception");
+            }
+        }
+
+        DERBitString s2 = new DERBitString(0);
+        if (!Arrays.areEqual(s1.getEncoded(), s2.getEncoded()))
+        {
+            fail("zero encoding wrong");
+        }
+    }
+
     private void testRandomPadBits()
         throws Exception
     {
@@ -87,6 +131,7 @@ public class BitStringTest
         }
 
         testRandomPadBits();
+        testZeroLengthStrings();
     }
 
     public String getName()
