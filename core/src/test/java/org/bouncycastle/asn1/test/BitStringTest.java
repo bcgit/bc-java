@@ -20,9 +20,24 @@ public class BitStringTest
         // basic construction
         DERBitString s1 = new DERBitString(new byte[0], 0);
 
+        s1.getBytes();
+
         if (!Arrays.areEqual(s1.getEncoded(), Hex.decode("030100")))
         {
             fail("zero encoding wrong");
+        }
+
+        try
+        {
+            new DERBitString(null, 1);
+            fail("exception not thrown");
+        }
+        catch (NullPointerException e)
+        {
+            if (!"data cannot be null".equals(e.getMessage()))
+            {
+                fail("Unexpected exception");
+            }
         }
 
         try
@@ -45,7 +60,7 @@ public class BitStringTest
         }
         catch (IllegalArgumentException e)
         {
-            if (!"pad bits cannot be greater than 7".equals(e.getMessage()))
+            if (!"pad bits cannot be greater than 7 or less than 0".equals(e.getMessage()))
             {
                 fail("Unexpected exception");
             }
@@ -95,27 +110,27 @@ public class BitStringTest
         {
             fail("failed digitalSignature");
         }
-        
+
         k = new KeyUsage(KeyUsage.nonRepudiation);
         if ((k.getBytes()[0] != (byte)KeyUsage.nonRepudiation) || (k.getPadBits() != 6))
         {
             fail("failed nonRepudiation");
         }
-        
+
         k = new KeyUsage(KeyUsage.keyEncipherment);
         if ((k.getBytes()[0] != (byte)KeyUsage.keyEncipherment) || (k.getPadBits() != 5))
         {
             fail("failed keyEncipherment");
         }
-        
+
         k = new KeyUsage(KeyUsage.cRLSign);
-        if ((k.getBytes()[0] != (byte)KeyUsage.cRLSign)  || (k.getPadBits() != 1))
+        if ((k.getBytes()[0] != (byte)KeyUsage.cRLSign) || (k.getPadBits() != 1))
         {
             fail("failed cRLSign");
         }
-        
+
         k = new KeyUsage(KeyUsage.decipherOnly);
-        if ((k.getBytes()[1] != (byte)(KeyUsage.decipherOnly >> 8))  || (k.getPadBits() != 7))
+        if ((k.getBytes()[1] != (byte)(KeyUsage.decipherOnly >> 8)) || (k.getPadBits() != 7))
         {
             fail("failed decipherOnly");
         }
@@ -142,8 +157,8 @@ public class BitStringTest
     public static void main(
         String[] args)
     {
-        BitStringTest    test = new BitStringTest();
-        TestResult      result = test.perform();
+        BitStringTest test = new BitStringTest();
+        TestResult result = test.perform();
 
         System.out.println(result);
     }

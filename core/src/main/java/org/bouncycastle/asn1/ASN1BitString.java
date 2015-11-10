@@ -109,13 +109,17 @@ public abstract class ASN1BitString
         byte[]  data,
         int     padBits)
     {
+        if (data == null)
+        {
+            throw new NullPointerException("data cannot be null");
+        }
         if (data.length == 0 && padBits != 0)
         {
             throw new IllegalArgumentException("zero length data with non-zero pad bits");
         }
-        if (padBits > 7)
+        if (padBits > 7 || padBits < 0)
         {
-            throw new IllegalArgumentException("pad bits cannot be greater than 7");
+            throw new IllegalArgumentException("pad bits cannot be greater than 7 or less than 0");
         }
 
         this.data = Arrays.clone(data);
