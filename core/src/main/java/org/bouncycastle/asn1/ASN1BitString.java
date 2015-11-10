@@ -258,13 +258,13 @@ public abstract class ASN1BitString
             {
                 throw new EOFException("EOF encountered in middle of BIT STRING");
             }
-        }
 
-        if (padBits > 0)
-        {
-            if (data[data.length - 1] != (byte)(data[data.length - 1] & (0xff << padBits)))
+            if (padBits > 0 && padBits < 8)
             {
-                return new DLBitString(data, padBits);
+                if (data[data.length - 1] != (byte)(data[data.length - 1] & (0xff << padBits)))
+                {
+                    return new DLBitString(data, padBits);
+                }
             }
         }
 
