@@ -340,7 +340,7 @@ public class X509AttributeCertificateHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(attrCert.getSignatureValue().getBytes());
+        return verifier.verify(attrCert.getSignatureValue().getOctets());
     }
 
     public boolean equals(
