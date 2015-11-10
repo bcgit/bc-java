@@ -174,6 +174,23 @@ public abstract class ASN1BitString
         return value;
     }
 
+    /**
+     * Return the octets contained in this BIT STRING, checking that this BIT STRING really
+     * does represent an octet aligned string. Only use this method when the standard you are
+     * following dictates that the BIT STRING will be octet aligned.
+     *
+     * @return a copy of the octet aligned data.
+     */
+    public byte[] getOctets()
+    {
+        if (padBits != 0)
+        {
+            throw new IllegalStateException("attempt to get non-octet aligned data from BIT STRING");
+        }
+
+        return Arrays.clone(data);
+    }
+
     public byte[] getBytes()
     {
         return derForm(data, padBits);
