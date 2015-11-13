@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.util.Strings;
-
 public class ServerName
 {
     protected short nameType;
@@ -55,12 +53,12 @@ public class ServerName
         switch (nameType)
         {
         case NameType.host_name:
-            byte[] utf8Encoding = Strings.toUTF8ByteArray((String)name);
-            if (utf8Encoding.length < 1)
+            byte[] asciiEncoding = ((String)name).getBytes("ASCII");
+            if (asciiEncoding.length < 1)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-            TlsUtils.writeOpaque16(utf8Encoding, output);
+            TlsUtils.writeOpaque16(asciiEncoding, output);
             break;
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -84,12 +82,12 @@ public class ServerName
         {
         case NameType.host_name:
         {
-            byte[] utf8Encoding = TlsUtils.readOpaque16(input);
-            if (utf8Encoding.length < 1)
+            byte[] asciiEncoding = TlsUtils.readOpaque16(input);
+            if (asciiEncoding.length < 1)
             {
                 throw new TlsFatalAlert(AlertDescription.decode_error);
             }
-            name = Strings.fromUTF8ByteArray(utf8Encoding);
+            name = new String(asciiEncoding, "ASCII");
             break;
         }
         default:
