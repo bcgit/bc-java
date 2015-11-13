@@ -164,7 +164,7 @@ public class X509V2AttributeCertificate
     
     public byte[] getSignature()
     {
-        return cert.getSignatureValue().getBytes();
+        return cert.getSignatureValue().getOctets();
     }
     
     public final void verify(
