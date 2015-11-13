@@ -117,7 +117,8 @@ public class X9Test
         //
         X962Parameters          params = new X962Parameters(X9ObjectIdentifiers.prime192v1);
 
-        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(ecP.getCurve().getOrder().bitLength(), BigInteger.valueOf(10)));
+        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+            new ECPrivateKey(ecP.getN().bitLength(), BigInteger.valueOf(10)));
 
         if (!areEqual(info.getEncoded(), namedPriv))
         {
@@ -138,7 +139,8 @@ public class X9Test
 
         params = new X962Parameters(ecP);
         
-        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(ecP.getCurve().getOrder().bitLength(), BigInteger.valueOf(20)));
+        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+            new ECPrivateKey(ecP.getN().bitLength(), BigInteger.valueOf(20)));
 
         if (!areEqual(info.getEncoded(), expPriv))
         {
