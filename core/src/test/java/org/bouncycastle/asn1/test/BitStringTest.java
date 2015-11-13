@@ -20,7 +20,11 @@ public class BitStringTest
         // basic construction
         DERBitString s1 = new DERBitString(new byte[0], 0);
 
+        // check getBytes()
         s1.getBytes();
+
+        // check encoding/decoding
+        DERBitString derBit = (DERBitString)ASN1Primitive.fromByteArray(s1.getEncoded());
 
         if (!Arrays.areEqual(s1.getEncoded(), Hex.decode("030100")))
         {
