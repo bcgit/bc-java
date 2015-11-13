@@ -27,6 +27,8 @@ Release: 1.54 <br/>
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Blake2b-160, Blake2b-256, Blake2b-384, and Blake2b-512 are now actually in the provider.</li>
+<li>PKCS#5 Scheme 2 using DESede CBC is now supported by the PKCS#12 implementation.</li>
+<li>The IES engine would sometimes throw a "too short" exception on small messages which were the right length. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
