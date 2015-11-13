@@ -22,7 +22,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Support class for constructing integrated encryption ciphers
@@ -274,9 +273,9 @@ public class IESEngine
         int len;
 
         // Ensure that the length of the input is greater than the MAC in bytes
-        if (inLen <= (param.getMacKeySize() / 8))
+        if (inLen < V.length + mac.getMacSize())
         {
-            throw new InvalidCipherTextException("Length of input must be greater than the MAC");
+            throw new InvalidCipherTextException("Length of input must be greater than the MAC and V combined");
         }
 
         if (cipher == null)
