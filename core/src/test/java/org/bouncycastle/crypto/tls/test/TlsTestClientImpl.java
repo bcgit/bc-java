@@ -227,14 +227,14 @@ class TlsTestClientImpl
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(cert.getTBSCertificate());
         v.add(cert.getSignatureAlgorithm());
-        v.add(corruptBitString(cert.getSignature()));
+        v.add(corruptSignature(cert.getSignature()));
 
         return Certificate.getInstance(new DERSequence(v));
     }
 
-    protected DERBitString corruptBitString(DERBitString bs)
+    protected DERBitString corruptSignature(DERBitString bs)
     {
-        return new DERBitString(corruptBit(bs.getBytes()));
+        return new DERBitString(corruptBit(bs.getOctets()));
     }
 
     protected byte[] corruptBit(byte[] bs)
