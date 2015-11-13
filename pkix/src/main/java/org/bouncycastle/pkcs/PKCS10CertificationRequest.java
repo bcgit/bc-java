@@ -103,7 +103,7 @@ public class PKCS10CertificationRequest
      */
     public byte[] getSignature()
     {
-        return certificationRequest.getSignature().getBytes();
+        return certificationRequest.getSignature().getOctets();
     }
 
     /**
@@ -209,7 +209,7 @@ public class PKCS10CertificationRequest
             throw new PKCSException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(certificationRequest.getSignature().getBytes());
+        return verifier.verify(this.getSignature());
     }
 
     public boolean equals(Object o)

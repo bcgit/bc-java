@@ -87,7 +87,7 @@ public class NetscapeCertRequest
             }
 
             sigAlg = AlgorithmIdentifier.getInstance(spkac.getObjectAt(1));
-            sigBits = ((DERBitString)spkac.getObjectAt(2)).getBytes();
+            sigBits = ((DERBitString)spkac.getObjectAt(2)).getOctets();
 
             //
             // PublicKeyAndChallenge ::= SEQUENCE {
@@ -114,7 +114,7 @@ public class NetscapeCertRequest
             X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(
                     pubkeyinfo).getBytes());
 
-            keyAlg = pubkeyinfo.getAlgorithmId();
+            keyAlg = pubkeyinfo.getAlgorithm();
             pubkey = KeyFactory.getInstance(keyAlg.getAlgorithm().getId(), "BC")
                     .generatePublic(xspec);
 

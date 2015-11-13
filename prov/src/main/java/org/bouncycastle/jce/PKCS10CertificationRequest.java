@@ -397,7 +397,7 @@ public class PKCS10CertificationRequest
         
         try
         {
-            X509EncodedKeySpec      xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
+            X509EncodedKeySpec      xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getOctets());
             AlgorithmIdentifier     keyAlg = subjectPKInfo.getAlgorithm();
             try
             {
@@ -522,7 +522,7 @@ public class PKCS10CertificationRequest
             throw new SignatureException("exception encoding TBS cert request - " + e);
         }
 
-        return sig.verify(sigBits.getBytes());
+        return sig.verify(sigBits.getOctets());
     }
 
     /**
