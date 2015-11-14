@@ -65,7 +65,7 @@ public class PrivateKeyInfoFactory
             else if (domainParams instanceof ECNamedDomainParameters)
             {
                 params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
-                orderBitLength = domainParams.getCurve().getOrder().bitLength();
+                orderBitLength = domainParams.getN().bitLength();
             }
             else
             {
@@ -77,7 +77,7 @@ public class PrivateKeyInfoFactory
                     domainParams.getSeed());
 
                 params = new X962Parameters(ecP);
-                orderBitLength = domainParams.getCurve().getOrder().bitLength();
+                orderBitLength = domainParams.getN().bitLength();
             }
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(orderBitLength, priv.getD(), params));
