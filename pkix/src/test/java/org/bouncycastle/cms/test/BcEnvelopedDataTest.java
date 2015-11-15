@@ -23,11 +23,13 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -484,6 +486,18 @@ public class BcEnvelopedDataTest
         {
             fail("no recipient found");
         }
+    }
+
+    public void testKeyTransCAST5()
+        throws Exception
+    {
+        tryKeyTrans(CMSAlgorithm.CAST5_CBC, MiscObjectIdentifiers.cast5CBC, 16, ASN1Sequence.class);
+    }
+
+    public void testKeyTransRC2()
+        throws Exception
+    {
+        tryKeyTrans(CMSAlgorithm.RC2_CBC, PKCSObjectIdentifiers.RC2_CBC, 16, ASN1Sequence.class);
     }
 
     public void testKeyTransAES128()
