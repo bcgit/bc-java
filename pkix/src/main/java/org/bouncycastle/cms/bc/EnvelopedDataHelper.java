@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.CAST5CBCParameters;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -28,6 +29,7 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC2Engine;
@@ -45,7 +47,6 @@ import org.bouncycastle.crypto.params.RC2Parameters;
 class EnvelopedDataHelper
 {
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
-    protected static final Map CIPHER_ALG_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
 
     static
@@ -54,17 +55,6 @@ class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES128_CBC, "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES192_CBC, "AES");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.AES256_CBC, "AES");
-
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_EDE3_CBC, "DESEDE/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.AES128_CBC, "AES/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.AES192_CBC, "AES/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.AES256_CBC, "AES/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(new ASN1ObjectIdentifier(PKCSObjectIdentifiers.rsaEncryption.getId()), "RSA/ECB/PKCS1Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.CAST5_CBC, "CAST5/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.CAMELLIA128_CBC, "Camellia/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.CAMELLIA192_CBC, "Camellia/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.CAMELLIA256_CBC, "Camellia/CBC/PKCS5Padding");
-        CIPHER_ALG_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED/CBC/PKCS5Padding");
 
         MAC_ALG_NAMES.put(CMSAlgorithm.DES_EDE3_CBC, "DESEDEMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.AES128_CBC, "AESMac");
@@ -149,6 +139,10 @@ class EnvelopedDataHelper
         else if (PKCSObjectIdentifiers.RC2_CBC.equals(algorithm))
         {
             cipher = new CBCBlockCipher(new RC2Engine());
+        }
+        else if (MiscObjectIdentifiers.cast5CBC.equals(algorithm))
+        {
+            cipher = new CBCBlockCipher(new CAST5Engine());
         }
         else
         {
@@ -295,6 +289,16 @@ class EnvelopedDataHelper
         {
             return new AlgorithmIdentifier(encryptionOID, DERNull.INSTANCE);
         }
+        else if (encryptionOID.equals(PKCSObjectIdentifiers.RC2_CBC))
+        {
+            byte[] iv = new byte[8];
+
+            random.nextBytes(iv);
+
+            RC2CBCParameter cbcParams = new RC2CBCParameter(rc2Table[128], iv);
+
+            return new AlgorithmIdentifier(encryptionOID, cbcParams);
+        }
         else
         {
             throw new CMSException("unable to match algorithm");
@@ -356,10 +360,10 @@ class EnvelopedDataHelper
         {
             return createCipherKeyGenerator(random, 128);
         }
-//        else if (PKCSObjectIdentifiers.RC2_CBC.equals(algorithm))
-//        {
-//            cipher = new CBCBlockCipher(new RC2Engine());
-//        }
+        else if (PKCSObjectIdentifiers.RC2_CBC.equals(algorithm))
+        {
+            return createCipherKeyGenerator(random, 128);
+        }
         else
         {
             throw new CMSException("cannot recognise cipher: " + algorithm);
