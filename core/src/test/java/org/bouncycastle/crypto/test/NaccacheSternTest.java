@@ -36,12 +36,6 @@ public class NaccacheSternTest
 
     static final NaccacheSternEngine decryptEng = new NaccacheSternEngine();
 
-    static
-    {
-        cryptEng.setDebug(debug);
-        decryptEng.setDebug(debug);
-    }
-
     // Values from NaccacheStern paper
     static final BigInteger a = BigInteger.valueOf(101);
 
@@ -91,14 +85,10 @@ public class NaccacheSternTest
     //
     static final String edgeInput = "ff6f77206973207468652074696d6520666f7220616c6c20676f6f64206d656e";
 
-    public String getName()
+    static
     {
-        return "NaccacheStern";
-    }
-
-    public void performTest()
-    {
-        // Test with given key from NaccacheSternPaper (totally insecure)
+        cryptEng.setDebug(debug);
+        decryptEng.setDebug(debug);
 
         // First the Parameters from the NaccacheStern Paper
         // (see http://www.gemplus.com/smart/rd/publications/pdf/NS98pkcs.pdf )
@@ -109,6 +99,16 @@ public class NaccacheSternTest
         smallPrimes.addElement(v1);
         smallPrimes.addElement(v2);
         smallPrimes.addElement(v3);
+    }
+
+    public String getName()
+    {
+        return "NaccacheStern";
+    }
+
+    public void performTest()
+    {
+        // Test with given key from NaccacheSternPaper (totally insecure)
 
         NaccacheSternKeyParameters pubParameters = new NaccacheSternKeyParameters(false, g, n, sigma.bitLength());
 
