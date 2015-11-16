@@ -909,6 +909,10 @@ public final class Arrays
 
             return rv;
         }
+        else if (a == null)
+        {
+            return concatenate(b, c);
+        }
         else if (b == null)
         {
             return concatenate(a, c);
