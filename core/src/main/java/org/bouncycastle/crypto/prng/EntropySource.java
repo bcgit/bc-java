@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.prng;
 
+/**
+ * Base interface describing an entropy source for a DRBG.
+ */
 public interface EntropySource
 {
     /**
