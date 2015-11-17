@@ -126,6 +126,11 @@ public class X931RNG
         reseedCounter = 1;
     }
 
+    EntropySource getEntropySource()
+    {
+        return entropySource;
+    }
+
     private void process(byte[] res, byte[] a, byte[] b)
     {
         for (int i = 0; i != res.length; i++)
