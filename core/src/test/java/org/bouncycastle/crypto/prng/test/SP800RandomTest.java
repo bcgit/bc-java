@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.prng.BasicEntropySourceProvider;
 import org.bouncycastle.crypto.prng.SP800SecureRandomBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -264,6 +265,34 @@ public class SP800RandomTest
         }
     }
 
+    private void testGenerateSeed()
+    {
+        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new Bit232EntropyProvider());
+
+        rBuild.setPersonalizationString(Hex.decode("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C"));
+        rBuild.setSecurityStrength(112);
+        rBuild.setEntropyBitsRequired(232);
+
+        SecureRandom random = rBuild.buildCTR(new DESedeEngine(), 168, Hex.decode("20212223242526"), false);
+
+        rBuild = new SP800SecureRandomBuilder(new BasicEntropySourceProvider(random, false));
+
+        rBuild.setPersonalizationString(Hex.decode("404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C"));
+        rBuild.setSecurityStrength(112);
+        rBuild.setEntropyBitsRequired(232);
+
+        random = rBuild.buildCTR(new DESedeEngine(), 168, Hex.decode("20212223242526"), false);
+
+        byte[] expected = Hex.decode("760bed7d92b083b10af31cf0656081eb51d241f0");
+
+        byte[] produced = random.generateSeed(20);
+
+        if (!Arrays.areEqual(expected, produced))
+        {
+            fail("SP800 CTR SecureRandom.generateSeed() produced incorrect result (1)");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -271,6 +300,7 @@ public class SP800RandomTest
         testHMACRandom();
         testCTRRandom();
         testDualECRandom();
+        testGenerateSeed();
     }
 
     public static void main(String[] args)

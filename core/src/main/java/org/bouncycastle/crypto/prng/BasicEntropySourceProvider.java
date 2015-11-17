@@ -41,6 +41,15 @@ public class BasicEntropySourceProvider
 
             public byte[] getEntropy()
             {
+                // is the RNG regarded as useful for seeding?
+                if (_sr instanceof SP800SecureRandom || _sr instanceof X931SecureRandom)
+                {
+                    byte[] rv = new byte[(bitsRequired + 7) / 8];
+
+                    _sr.nextBytes(rv);
+
+                    return rv;
+                }
                 return _sr.generateSeed((bitsRequired + 7) / 8);
             }
 
