@@ -94,16 +94,13 @@ public class DESedeParameters
      */
     public static boolean isReal3Key(byte[] key, int offset)
     {
-        boolean isValid = false;
+        boolean diff12 = false, diff13 = false, diff23 = false;
         for (int i = offset; i != offset + 8; i++)
         {
-            if (key[i] != key[i + 8] && key[i] != key[i + 16] && key[i + 8] != key[i + 16])
-            {
-                isValid = true;
-            }
+            diff12 |= (key[i] != key[i + 8]);
+            diff13 |= (key[i] != key[i + 16]);
+            diff23 |= (key[i + 8] != key[i + 16]);
         }
-
-        return isValid;
+        return diff12 && diff13 && diff23;
     }
-
 }
