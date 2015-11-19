@@ -104,6 +104,8 @@ public abstract class ECCurve
 
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
+    public abstract boolean isValidFieldElement(BigInteger x);
+
     public synchronized Config configure()
     {
         return new Config(this.coord, this.endomorphism, this.multiplier);
@@ -501,6 +503,11 @@ public abstract class ECCurve
             super(FiniteFields.getPrimeField(q));
         }
 
+        public boolean isValidFieldElement(BigInteger x)
+        {
+            return x != null && x.signum() >= 0 && x.compareTo(getField().getCharacteristic()) < 0;
+        }
+
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement x = this.fromBigInteger(X1);
@@ -694,6 +701,11 @@ public abstract class ECCurve
         protected AbstractF2m(int m, int k1, int k2, int k3)
         {
             super(buildField(m, k1, k2, k3));
+        }
+
+        public boolean isValidFieldElement(BigInteger x)
+        {
+            return x != null && x.signum() >= 0 && x.bitLength() <= getFieldSize();
         }
 
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
