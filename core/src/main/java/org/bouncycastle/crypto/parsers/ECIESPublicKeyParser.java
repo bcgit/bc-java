@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.KeyParser;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.util.io.Streams;
 
 public class ECIESPublicKeyParser
     implements KeyParser
@@ -46,7 +47,7 @@ public class ECIESPublicKeyParser
         }
 
         V[0] = (byte)first;
-        stream.read(V, 1, V.length - 1);
+        Streams.readFully(stream, V, 1, V.length - 1);
 
         return new ECPublicKeyParameters(ecParams.getCurve().decodePoint(V), ecParams);
     }
