@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -88,6 +90,44 @@ public class SerpentTest
     SerpentTest()
     {
         super(tests, new SerpentEngine(), new KeyParameter(new byte[32]));
+    }
+
+    public void performTest()
+        throws Exception
+    {
+        super.performTest();
+
+        doCbcMonte(new byte[16], new byte[16], new byte[16], Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"));
+        doCbcMonte(Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"), Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"), Hex.decode("b4813d8a66244188b9e92c75913fa2f4"), Hex.decode("f86b2c265b9c75869f31e2c684c13e9f"));
+    }
+
+    private void doCbcMonte(byte[] key, byte[] iv, byte[] pt, byte[] expected)
+    {
+        BlockCipher c = new SerpentEngine();
+
+        byte[] out = new byte[16];
+
+        System.arraycopy(iv, 0, out, 0, 16);
+
+        for (int i = 0; i < 10000; i++)
+        {
+            for (int k = 0; k != iv.length; k++)
+            {
+                iv[k] ^= pt[k];
+            }
+            System.arraycopy(out, 0, pt, 0, 16);
+
+            c.init(true, new KeyParameter(key));
+
+            c.processBlock(iv, 0, out, 0);
+
+            System.arraycopy(out, 0, iv, 0, 16);
+        }
+
+        if (!Arrays.areEqual(expected, out))
+        {
+            fail("CBC monte test failed");
+        }
     }
 
     public String getName()
