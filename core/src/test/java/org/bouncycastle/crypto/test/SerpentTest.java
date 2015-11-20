@@ -105,9 +105,9 @@ public class SerpentTest
     {
         BlockCipher c = new SerpentEngine();
 
-        byte[] out = new byte[16];
+        byte[] ct = new byte[16];
 
-        System.arraycopy(iv, 0, out, 0, 16);
+        System.arraycopy(iv, 0, ct, 0, 16);
 
         for (int i = 0; i < 10000; i++)
         {
@@ -115,16 +115,16 @@ public class SerpentTest
             {
                 iv[k] ^= pt[k];
             }
-            System.arraycopy(out, 0, pt, 0, 16);
+            System.arraycopy(ct, 0, pt, 0, 16);
 
             c.init(true, new KeyParameter(key));
 
-            c.processBlock(iv, 0, out, 0);
+            c.processBlock(iv, 0, ct, 0);
 
-            System.arraycopy(out, 0, iv, 0, 16);
+            System.arraycopy(ct, 0, iv, 0, 16);
         }
 
-        if (!Arrays.areEqual(expected, out))
+        if (!Arrays.areEqual(expected, ct))
         {
             fail("CBC monte test failed");
         }
