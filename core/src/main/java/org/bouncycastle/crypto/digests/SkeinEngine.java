@@ -756,7 +756,7 @@ public class SkeinEngine
         checkInitialised();
         if (out.length < (outOff + outputSizeBytes))
         {
-            throw new DataLengthException("Output buffer is too short to hold output of " + outputSizeBytes + " bytes");
+            throw new DataLengthException("Output buffer is too short to hold output");
         }
 
         // Finalise message block
