@@ -29,6 +29,7 @@ Release: 1.54 <br/>
 <li>Blake2b-160, Blake2b-256, Blake2b-384, and Blake2b-512 are now actually in the provider.</li>
 <li>PKCS#5 Scheme 2 using DESede CBC is now supported by the PKCS#12 implementation.</li>
 <li>The IES engine would sometimes throw a "too short" exception on small messages which were the right length. This has been fixed.</li>
+<li>It turns out, after advice one way and another that the NESSIE test vectors for Serpent are now what should be followed and that the vectors in the AES submission are regarded as an algorithm called Tnepres. The Serpent version now follows the NESSIE vectors, and the Tnepres cipher has been added to the provider and the lightweight API for compatibility.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -37,6 +38,10 @@ Release: 1.54 <br/>
 <li>CTR/SIC mode now support an internal counter. The internal counter can be turned on by passing an IV smaller than the block size of the cipher's algorithm.</li>
 <li>The lightweight CMS API operators now support CAST5 and RC2 CBC encryption.<li>
 </ul>
+<h3>2.2.4 Notes</h3>
+<p>
+If you have been using Serpent, you will need to either change to Tnepres, or take into account the fact that Serpent is now byte-swapped compared to what it was before.
+</p>
 
 <h3>2.2.1 Version</h3>
 Release: 1.53 <br/>
