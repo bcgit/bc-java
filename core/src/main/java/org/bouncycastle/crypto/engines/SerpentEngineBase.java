@@ -106,14 +106,14 @@ public abstract class SerpentEngineBase
     {
     }
 
-    protected int rotateLeft(
+    protected static int rotateLeft(
         int     x,
         int     bits)
     {
         return (x << bits) | (x >>> -bits);
     }
 
-    protected int rotateRight(
+    protected static int rotateRight(
         int     x,
         int     bits)
     {

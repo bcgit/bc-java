@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -85,12 +84,8 @@ public class SerpentTest
         throws Exception
     {
         super.performTest();
-//
-//        doCbcMonte(new byte[16], new byte[16], new byte[16], Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"));
-//        doCbcMonte(Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"), Hex.decode("9ea101ecebaa41c712bcb0d9bab3e2e4"), Hex.decode("b4813d8a66244188b9e92c75913fa2f4"), Hex.decode("f86b2c265b9c75869f31e2c684c13e9f"));
 
         doCbc(Hex.decode("BE4295539F6BD1752FD0A80229EF8847"), Hex.decode("00963F59224794D5AD4252094358FBC3"), Strings.toByteArray("CBC Mode Test"), Hex.decode("CF2CF2547E02F6D34D97246E8042ED89"));
-
         doEax(Hex.decode("7494A57648FB420043BFBFC5639EB82D"), Hex.decode("6DF94638B83E01458F3E30C9A1D6AF1C"), Strings.toByteArray("EAX Mode Test"), new byte[0], 128, Hex.decode("96C521F32DC5E9BBC369DDE4914CB13B710EEBBAB7D706D3ABE06A99DC"));
     }
 
@@ -109,9 +104,7 @@ public class SerpentTest
 
         if (!Arrays.areEqual(expected, out))
         {
-            System.err.println(Hex.toHexString(expected));
-            System.err.println(Hex.toHexString(out));
-            //fail("EAX test failed");
+            fail("EAX test failed");
         }
     }
 
@@ -131,35 +124,6 @@ public class SerpentTest
         if (!Arrays.areEqual(expected, ct))
         {
             fail("CBC test failed");
-        }
-    }
-
-    private void doCbcMonte(byte[] key, byte[] iv, byte[] pt, byte[] expected)
-    {
-        BlockCipher c = new SerpentEngine();
-
-        byte[] ct = new byte[16];
-
-        System.arraycopy(iv, 0, ct, 0, 16);
-
-        for (int i = 0; i < 10000; i++)
-        {
-            for (int k = 0; k != iv.length; k++)
-            {
-                iv[k] ^= pt[k];
-            }
-            System.arraycopy(ct, 0, pt, 0, 16);
-
-            c.init(true, new KeyParameter(key));
-
-            c.processBlock(iv, 0, ct, 0);
-
-            System.arraycopy(ct, 0, iv, 0, 16);
-        }
-
-        if (!Arrays.areEqual(expected, ct))
-        {
-            fail("CBC monte test failed");
         }
     }
 
