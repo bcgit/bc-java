@@ -15,6 +15,11 @@ package org.bouncycastle.crypto.engines;
 public final class TnepresEngine
     extends SerpentEngineBase
 {
+    public String getAlgorithmName()
+    {
+        return "Tnepres";
+    }
+
     /**
      * Expand a user-supplied key material into a session key.
      *
