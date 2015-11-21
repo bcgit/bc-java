@@ -34,6 +34,7 @@ public class RegressionTest
         new RC6Test(),
         new RijndaelTest(),
         new SerpentTest(),
+        new TnepresTest(),
         new CamelliaTest(),
         new CamelliaLightTest(),
         new DigestRandomNumberTest(),
