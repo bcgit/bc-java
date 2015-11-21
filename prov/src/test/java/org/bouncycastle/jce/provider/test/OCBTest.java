@@ -29,7 +29,7 @@ public class OCBTest
     private void checkRegistrations()
         throws Exception
     {
-        String[] ciphers = new String[] { "AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Serpent", "RC6", "CAMELLIA" };
+        String[] ciphers = new String[] { "AES", "NOEKEON", "Twofish", "CAST6", "SEED", "Tnepres", "Serpent", "RC6", "CAMELLIA" };
         String[] cipherText = new String[]
             {
                 "BEA5E8798DBE7110031C144DA0B2612213CC8B747807121A4CBB3E4BD6B456AF",
@@ -38,6 +38,7 @@ public class OCBTest
                 "5b9b738b2ac7000b33b89dd4eec18dd853f4f7c1d9e17b565405f17a0a8c8b63",
                 "fcdbcee69d02c69858ed4569f78b81920b3027cdb7f1f154634aa5ace9e6ba29",
                 "4f7154cb34558940e85db7d3e96ac6c9cb0d9c1b00b18e82e15d1be83deef9df",
+                "3dd3477801e71807ea1f1f690d8428ed6b1002831428a64f88c36b6d5610022f",
                 "23f3e450c4c7199563a0ed601a5c60d75eb88db2a0d090ae5e84d98438a146aa",
                 "ac13ce9db4af148e910a813fc728e5785e23b1bf1d04a961a3f95f356b9417ab"
             };

@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.GMac;
@@ -35,6 +36,21 @@ public final class Serpent
                 public BlockCipher get()
                 {
                     return new SerpentEngine();
+                }
+            });
+        }
+    }
+
+    public static class TECB
+        extends BaseBlockCipher
+    {
+        public TECB()
+        {
+            super(new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return new TnepresEngine();
                 }
             });
         }
@@ -76,12 +92,30 @@ public final class Serpent
         }
     }
 
+    public static class TKeyGen
+        extends BaseKeyGenerator
+    {
+        public TKeyGen()
+        {
+            super("Tnepres", 192, new CipherKeyGenerator());
+        }
+    }
+
     public static class SerpentGMAC
         extends BaseMac
     {
         public SerpentGMAC()
         {
             super(new GMac(new GCMBlockCipher(new SerpentEngine())));
+        }
+    }
+
+    public static class TSerpentGMAC
+        extends BaseMac
+    {
+        public TSerpentGMAC()
+        {
+            super(new GMac(new GCMBlockCipher(new TnepresEngine())));
         }
     }
 
@@ -112,6 +146,15 @@ public final class Serpent
         }
     }
 
+    public static class TAlgParams
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "Tnepres IV";
+        }
+    }
+
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
@@ -127,6 +170,10 @@ public final class Serpent
             provider.addAlgorithm("Cipher.Serpent", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.Serpent", PREFIX + "$KeyGen");
             provider.addAlgorithm("AlgorithmParameters.Serpent", PREFIX + "$AlgParams");
+
+            provider.addAlgorithm("Cipher.Tnepres", PREFIX + "$TECB");
+            provider.addAlgorithm("KeyGenerator.Tnepres", PREFIX + "$TKeyGen");
+            provider.addAlgorithm("AlgorithmParameters.Tnepres", PREFIX + "$TAlgParams");
 
             provider.addAlgorithm("Cipher", GNUObjectIdentifiers.Serpent_128_ECB, PREFIX + "$ECB");
             provider.addAlgorithm("Cipher", GNUObjectIdentifiers.Serpent_192_ECB, PREFIX + "$ECB");
@@ -145,6 +192,7 @@ public final class Serpent
             provider.addAlgorithm("Cipher", GNUObjectIdentifiers.Serpent_256_OFB, PREFIX + "$OFB");
 
             addGMacAlgorithm(provider, "SERPENT", PREFIX + "$SerpentGMAC", PREFIX + "$KeyGen");
+            addGMacAlgorithm(provider, "TNEPRES", PREFIX + "$TSerpentGMAC", PREFIX + "$TKeyGen");
             addPoly1305Algorithm(provider, "SERPENT", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
     }
