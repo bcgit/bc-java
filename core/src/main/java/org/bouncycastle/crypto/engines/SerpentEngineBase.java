@@ -43,7 +43,7 @@ public abstract class SerpentEngineBase
             return;
         }
 
-        throw new IllegalArgumentException("invalid parameter passed to Serpent init - " + params.getClass().getName());
+        throw new IllegalArgumentException("invalid parameter passed to " + getAlgorithmName() + " init - " + params.getClass().getName());
     }
 
     public String getAlgorithmName()
@@ -77,7 +77,7 @@ public abstract class SerpentEngineBase
     {
         if (wKey == null)
         {
-            throw new IllegalStateException("Serpent not initialised");
+            throw new IllegalStateException(getAlgorithmName() + " not initialised");
         }
 
         if ((inOff + BLOCK_SIZE) > in.length)
