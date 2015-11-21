@@ -1,16 +1,18 @@
 package org.bouncycastle.crypto.engines;
 
 /**
- * Serpent is a 128-bit 32-round block cipher with variable key lengths,
+ * Thepres is a 128-bit 32-round block cipher with variable key lengths,
  * including 128, 192 and 256 bit keys conjectured to be at least as
  * secure as three-key triple-DES.
  * <p>
- * Serpent was designed by Ross Anderson, Eli Biham and Lars Knudsen as a
- * candidate algorithm for the NIST AES Quest.
+ * Tnepres is based on Serpent which was designed by Ross Anderson, Eli Biham and Lars Knudsen as a
+ * candidate algorithm for the NIST AES Quest. Unfortunately there was an endianness issue
+ * with test vectors in the AES submission and the resulting confusion lead to the Tnepres cipher
+ * as well, which is a byte swapped version of Serpent.
  * <p>
  * For full details see the <a href="http://www.cl.cam.ac.uk/~rja14/serpent.html">The Serpent home page</a>
  */
-public final class SerpentEngine
+public final class TnepresEngine
     extends SerpentEngineBase
 {
     /**
@@ -30,14 +32,14 @@ public final class SerpentEngine
         int     off = 0;
         int     length = 0;
 
-        for (off = 0; (off + 4) < key.length; off += 4)
+        for (off = key.length - 4; off > 0; off -= 4)
         {
             kPad[length++] = bytesToWord(key, off);
         }
 
-        if (off % 4 == 0)
+        if (off == 0)
         {
-            kPad[length++] = bytesToWord(key, off);
+            kPad[length++] = bytesToWord(key, 0);
             if (length < 8)
             {
                 kPad[length] = 1;
@@ -149,8 +151,8 @@ public final class SerpentEngine
         byte[]  src,
         int     srcOff)
     {
-        return (((src[srcOff + 3] & 0xff) << 24) | ((src[srcOff + 2] & 0xff) <<  16) |
-          ((src[srcOff + 1] & 0xff) << 8) | ((src[srcOff] & 0xff)));
+        return (((src[srcOff] & 0xff) << 24) | ((src[srcOff + 1] & 0xff) <<  16) |
+          ((src[srcOff + 2] & 0xff) << 8) | ((src[srcOff + 3] & 0xff)));
     }
 
     private void wordToBytes(
@@ -158,10 +160,10 @@ public final class SerpentEngine
         byte[]  dst,
         int     dstOff)
     {
-        dst[dstOff] = (byte)(word);
-        dst[dstOff + 1] = (byte)(word >>> 8);
-        dst[dstOff + 2] = (byte)(word >>> 16);
-        dst[dstOff + 3] = (byte)(word >>> 24);
+        dst[dstOff + 3] = (byte)(word);
+        dst[dstOff + 2] = (byte)(word >>> 8);
+        dst[dstOff + 1] = (byte)(word >>> 16);
+        dst[dstOff]     = (byte)(word >>> 24);
     }
 
     /**
@@ -178,10 +180,10 @@ public final class SerpentEngine
         byte[]  output,
         int     outOff)
     {
-        X0 = bytesToWord(input, inOff);
-        X1 = bytesToWord(input, inOff + 4);
-        X2 = bytesToWord(input, inOff + 8);
-        X3 = bytesToWord(input, inOff + 12);
+        X3 = bytesToWord(input, inOff);
+        X2 = bytesToWord(input, inOff + 4);
+        X1 = bytesToWord(input, inOff + 8);
+        X0 = bytesToWord(input, inOff + 12);
 
         sb0(wKey[0] ^ X0, wKey[1] ^ X1, wKey[2] ^ X2, wKey[3] ^ X3); LT();
         sb1(wKey[4] ^ X0, wKey[5] ^ X1, wKey[6] ^ X2, wKey[7] ^ X3); LT();
@@ -216,10 +218,10 @@ public final class SerpentEngine
         sb6(wKey[120] ^ X0, wKey[121] ^ X1, wKey[122] ^ X2, wKey[123] ^ X3); LT();
         sb7(wKey[124] ^ X0, wKey[125] ^ X1, wKey[126] ^ X2, wKey[127] ^ X3);
 
-        wordToBytes(wKey[128] ^ X0, output, outOff);
-        wordToBytes(wKey[129] ^ X1, output, outOff + 4);
-        wordToBytes(wKey[130] ^ X2, output, outOff + 8);
-        wordToBytes(wKey[131] ^ X3, output, outOff + 12);
+        wordToBytes(wKey[131] ^ X3, output, outOff);
+        wordToBytes(wKey[130] ^ X2, output, outOff + 4);
+        wordToBytes(wKey[129] ^ X1, output, outOff + 8);
+        wordToBytes(wKey[128] ^ X0, output, outOff + 12);
     }
 
     /**
@@ -236,10 +238,10 @@ public final class SerpentEngine
         byte[]  output,
         int     outOff)
     {
-        X0 = wKey[128] ^ bytesToWord(input, inOff);
-        X1 = wKey[129] ^ bytesToWord(input, inOff + 4);
-        X2 = wKey[130] ^ bytesToWord(input, inOff + 8);
-        X3 = wKey[131] ^ bytesToWord(input, inOff + 12);
+        X3 = wKey[131] ^ bytesToWord(input, inOff);
+        X2 = wKey[130] ^ bytesToWord(input, inOff + 4);
+        X1 = wKey[129] ^ bytesToWord(input, inOff + 8);
+        X0 = wKey[128] ^ bytesToWord(input, inOff + 12);
 
         ib7(X0, X1, X2, X3);
         X0 ^= wKey[124]; X1 ^= wKey[125]; X2 ^= wKey[126]; X3 ^= wKey[127];
@@ -305,9 +307,9 @@ public final class SerpentEngine
         X0 ^= wKey[4]; X1 ^= wKey[5]; X2 ^= wKey[6]; X3 ^= wKey[7];
         inverseLT(); ib0(X0, X1, X2, X3);
 
-        wordToBytes(X0 ^ wKey[0], output, outOff);
-        wordToBytes(X1 ^ wKey[1], output, outOff + 4);
-        wordToBytes(X2 ^ wKey[2], output, outOff + 8);
-        wordToBytes(X3 ^ wKey[3], output, outOff + 12);
+        wordToBytes(X3 ^ wKey[3], output, outOff);
+        wordToBytes(X2 ^ wKey[2], output, outOff + 4);
+        wordToBytes(X1 ^ wKey[1], output, outOff + 8);
+        wordToBytes(X0 ^ wKey[0], output, outOff + 12);
     }
 }
