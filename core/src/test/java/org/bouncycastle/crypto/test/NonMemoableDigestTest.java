@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -61,7 +62,7 @@ public class NonMemoableDigestTest
 
         for (int i = 0; i < messages.length; i++)
         {
-            byte[] m = messages[i].getBytes();
+            byte[] m = Strings.toByteArray(messages[i]);
             if (messages[i].startsWith("0x"))
             {
                 m = Hex.decode(messages[i].substring(2));
@@ -80,7 +81,7 @@ public class NonMemoableDigestTest
         // test reset
         //
         int vector = 0; // vector used for test
-        byte[] m = messages[vector].getBytes();
+        byte[] m = Strings.toByteArray(messages[vector]);
         if (messages[vector].startsWith("0x"))
         {
             m = Hex.decode(messages[vector].substring(2));
@@ -95,7 +96,7 @@ public class NonMemoableDigestTest
         if (!Arrays.areEqual(resBuf, Hex.decode(digests[vector])))
         {
             return new SimpleTestResult(false, getName() +
-                    "Reset with vector " + vector + " failed");
+                    ": Reset with vector " + vector + " failed");
         }
 
         return new SimpleTestResult(true, getName() + ": Okay");
