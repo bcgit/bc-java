@@ -104,6 +104,16 @@ public class SecT113Field
         z[zOff + 1]  = z1 & M49;
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long u0 = Interleave.unshuffle(x[0]), u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c0  = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        z[0] = e0 ^ (c0 << 57) ^ (c0 << 5);
+        z[1] =      (c0 >>> 7) ^ (c0 >>> 59); 
+    }
+
     public static void square(long[] x, long[] z)
     {
         long[] tt = Nat128.createExt64();
