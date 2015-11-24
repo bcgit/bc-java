@@ -45,7 +45,7 @@ public class ECAlgorithmsTest extends TestCase
     {
         X9ECParameters x9 = CustomNamedCurves.getByName("secp256r1");
         assertNotNull(x9);
-        doTestSumOfMultiplies(x9);
+        doTestSumOfTwoMultiplies(x9);
     }
 
     // TODO Ideally, mark this test not to run by default
