@@ -141,6 +141,12 @@ public class SecT131Field
         }
     }
 
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0, 123, 129
+        return (int)(x[0] ^ (x[1] >>> 59) ^ (x[2] >>> 1)) & 1;
+    }
+
     protected static void implCompactExt(long[] zz)
     {
         long z0 = zz[0], z1 = zz[1], z2 = zz[2], z3 = zz[3], z4 = zz[4], z5 = zz[5];
