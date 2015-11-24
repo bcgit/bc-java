@@ -159,6 +159,41 @@ public class SecT233Field
         }
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long u0, u1;
+        u0 = Interleave.unshuffle(x[0]); u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c0 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[2]); u1 = Interleave.unshuffle(x[3]);
+        long e1 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c1 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        long c2;
+        c2  =              (c1 >>> 27);
+        c1 ^= (c1 << 37) | (c0 >>> 27);
+        c0 ^= (c0 << 37);
+
+        long[] tt = Nat256.createExt64();
+
+        int[] shifts = { 32, 117, 191 };
+        for (int i = 0; i < shifts.length; ++i)
+        {
+            int w = shifts[i] >>> 6, s = shifts[i] & 63;
+//            assert s != 0;
+            tt[w    ] ^= (c0 << s);
+            tt[w + 1] ^= (c1 << s) | (c0 >>> -s);
+            tt[w + 2] ^= (c2 << s) | (c1 >>> -s);
+            tt[w + 3] ^=             (c2 >>> -s);
+        }
+
+        reduce(tt, z);
+
+        z[0] ^= e0;
+        z[1] ^= e1;
+    }
+
     public static int trace(long[] x)
     {
         // Non-zero-trace bits: 0, 159
