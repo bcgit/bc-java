@@ -188,6 +188,12 @@ public class SecT571Field
         }
     }
 
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0, 561, 569
+        return (int)(x[0] ^ (x[8] >>> 49) ^ (x[8] >>> 57)) & 1;
+    }
+
     protected static void implMultiply(long[] x, long[] y, long[] zz)
     {
 //        for (int i = 0; i < 9; ++i)
