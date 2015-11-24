@@ -197,6 +197,12 @@ public class SecT409Field
         }
     }
 
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0
+        return (int)(x[0]) & 1;
+    }
+
     protected static void implCompactExt(long[] zz)
     {
         long z00 = zz[ 0], z01 = zz[ 1], z02 = zz[ 2], z03 = zz[ 3], z04 = zz[ 4], z05 = zz[ 5], z06 = zz[ 6];
