@@ -133,6 +133,12 @@ public class SecT113Field
         }
     }
 
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0
+        return (int)(x[0]) & 1;
+    }
+
     protected static void implMultiply(long[] x, long[] y, long[] zz)
     {
         /*
