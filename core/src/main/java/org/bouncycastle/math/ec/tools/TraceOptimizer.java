@@ -47,7 +47,7 @@ public class TraceOptimizer
     {
         if (!ECAlgorithms.isF2mCurve(x9.getCurve()))
         {
-            throw new IllegalArgumentException("Trace only define over characteristic-2 fields");
+            throw new IllegalArgumentException("Trace only defined over characteristic-2 fields");
         }
 
         implPrintNonZeroTraceBits(x9);
