@@ -11,6 +11,8 @@ public class SecT131Field
     private static final long M03 = -1L >>> 61;
     private static final long M44 = -1L >>> 20;
 
+    private static final long[] ROOT_Z = new long[]{ 0x26BC4D789AF13523L, 0x26BC4D789AF135E2L, 0x6L };
+
     public static void add(long[] x, long[] y, long[] z)
     {
         z[0] = x[0] ^ y[0];
@@ -110,6 +112,25 @@ public class SecT131Field
         z[zOff    ] ^= t ^ (t << 2) ^ (t << 3) ^ (t <<   8);
         z[zOff + 1] ^=                           (t >>> 56);
         z[zOff + 2]  = z2 & M03;
+    }
+
+    public static void sqrt(long[] x, long[] z)
+    {
+        long[] odd = Nat192.create64();
+
+        long u0, u1;
+        u0 = Interleave.unshuffle(x[0]); u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        odd[0]  = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[2]);
+        long e1 = (u0 & 0x00000000FFFFFFFFL);
+        odd[1]  = (u0 >>> 32);
+
+        multiply(odd, ROOT_Z, z);
+
+        z[0] ^= e0;
+        z[1] ^= e1;
     }
 
     public static void square(long[] x, long[] z)
