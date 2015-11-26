@@ -439,12 +439,14 @@ public class ECPointTest extends TestCase
         else if (ECAlgorithms.isF2mCurve(c))
         {
             int m = c.getFieldSize();
-            for (int i = 0; i < 10; ++i)
+            BigInteger x = new BigInteger(m, secRand);
+            ECFieldElement fe = c.fromBigInteger(x);
+            for (int i = 0; i < 100; ++i)
             {
-                BigInteger x = new BigInteger(m, secRand);
-                ECFieldElement fe = c.fromBigInteger(x);
-                ECFieldElement check = fe.square().sqrt();
+                ECFieldElement sq = fe.square();
+                ECFieldElement check = sq.sqrt();
                 assertEquals(fe, check);
+                fe = sq;
             }
         }
     }

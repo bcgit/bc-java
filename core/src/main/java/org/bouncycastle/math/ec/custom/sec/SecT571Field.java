@@ -12,6 +12,9 @@ public class SecT571Field
 
     private static final long RM = 0xEF7BDEF7BDEF7BDEL;
 
+    private static final long[] ROOT_Z = new long[]{ 0x2BE1195F08CAFB99L, 0x95F08CAF84657C23L, 0xCAF84657C232BE11L, 0x657C232BE1195F08L,
+        0xF84657C2308CAF84L, 0x7C232BE1195F08CAL, 0xBE1195F08CAF8465L, 0x5F08CAF84657C232L, 0x784657C232BE119L };
+
     public static void add(long[] x, long[] y, long[] z)
     {
         for (int i = 0; i < 9; ++i)
@@ -157,6 +160,28 @@ public class SecT571Field
         long z8      = z[zOff + 8], t = z8 >>> 59;
         z[zOff    ] ^= t ^ (t << 2) ^ (t << 5) ^ (t << 10);
         z[zOff + 8]  = z8 & M59;
+    }
+
+    public static void sqrt(long[] x, long[] z)
+    {
+        long[] evn = Nat576.create64(), odd = Nat576.create64();
+
+        int pos = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            long u0 = Interleave.unshuffle(x[pos++]);
+            long u1 = Interleave.unshuffle(x[pos++]);
+            evn[i] = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+            odd[i] = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+        }
+        {
+            long u0 = Interleave.unshuffle(x[pos]);
+            evn[4] = (u0 & 0x00000000FFFFFFFFL);
+            odd[4] = (u0 >>> 32);
+        }
+
+        multiply(odd, ROOT_Z, z);
+        add(z, evn, z);
     }
 
     public static void square(long[] x, long[] z)
