@@ -304,7 +304,12 @@ public class PKIXCRLStoreSelector<T extends CRL>
 
     public X509Certificate getCertificateChecking()
     {
-        return ((X509CRLSelector)baseSelector).getCertificateChecking();
+        if (baseSelector instanceof X509CRLSelector)
+        {
+            return ((X509CRLSelector)baseSelector).getCertificateChecking();
+        }
+
+        return null;
     }
 
     public static Collection<? extends CRL> getCRLs(final PKIXCRLStoreSelector selector, CertStore certStore)
