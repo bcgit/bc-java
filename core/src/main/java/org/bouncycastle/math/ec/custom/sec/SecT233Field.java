@@ -171,9 +171,9 @@ public class SecT233Field
         long c1 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
 
         long c2;
-        c2  =              (c1 >>> 27);
-        c1 ^= (c1 << 37) | (c0 >>> 27);
-        c0 ^= (c0 << 37);
+        c2  = (c1 >>> 27);
+        c1 ^= (c0 >>> 27) | (c1 << 37);
+        c0 ^=               (c0 << 37);
 
         long[] tt = Nat256.createExt64();
 
