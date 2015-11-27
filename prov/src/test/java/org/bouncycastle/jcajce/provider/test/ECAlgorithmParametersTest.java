@@ -173,6 +173,8 @@ public class ECAlgorithmParametersTest
                  spec = algParams2.getParameterSpec(ECGenParameterSpec.class);
 
                  TestCase.assertEquals(nextOid(i), spec.getName());
+
+                 algParams.getEncoded();        // check that we can get an encoded spec.
              }
          }
     }
