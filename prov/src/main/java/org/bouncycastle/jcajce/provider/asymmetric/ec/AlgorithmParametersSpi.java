@@ -149,7 +149,7 @@ public class AlgorithmParametersSpi
             }
             else if (curveName != null)
             {
-                params = new X962Parameters(ECNamedCurveTable.getOID(curveName));
+                params = new X962Parameters(ECUtil.getNamedCurveOid(curveName));
             }
             else
             {
