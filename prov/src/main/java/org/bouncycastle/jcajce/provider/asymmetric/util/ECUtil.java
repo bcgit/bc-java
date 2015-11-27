@@ -7,6 +7,7 @@ import java.security.PublicKey;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -239,8 +240,27 @@ public class ECUtil
     public static ASN1ObjectIdentifier getNamedCurveOid(
         String name)
     {
+        try
+        {
+            if (name.charAt(0) >= '0' && name.charAt(0) <= '2')
+            {
+                return new ASN1ObjectIdentifier(name);
+            }
+            else
+            {
+                return lookupOidByName(name);
+            }
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return lookupOidByName(name);
+        }
+    }
+
+    private static ASN1ObjectIdentifier lookupOidByName(String name)
+    {
         ASN1ObjectIdentifier oid = X962NamedCurves.getOID(name);
-        
+
         if (oid == null)
         {
             oid = SECNamedCurves.getOID(name);
@@ -255,6 +275,10 @@ public class ECUtil
             if (oid == null)
             {
                 oid = ECGOST3410NamedCurves.getOID(name);
+            }
+            if (oid == null)
+            {
+                oid = ANSSINamedCurves.getOID(name);
             }
         }
 
