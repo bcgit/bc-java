@@ -96,18 +96,7 @@ public class AlgorithmParametersSpi
         {
             if (curveName != null)
             {
-                String name;
-
-                if (curveName.indexOf(' ') > 0)
-                {
-                    name = curveName.substring(curveName.indexOf(' ') + 1);
-                }
-                else
-                {
-                    name = curveName;
-                }
-
-                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(name);
+                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(curveName);
 
                 if (namedCurveOid != null)
                 {

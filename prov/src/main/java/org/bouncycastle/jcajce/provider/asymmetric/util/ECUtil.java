@@ -238,8 +238,19 @@ public class ECUtil
     }
 
     public static ASN1ObjectIdentifier getNamedCurveOid(
-        String name)
+        String curveName)
     {
+        String name;
+
+        if (curveName.indexOf(' ') > 0)
+        {
+            name = curveName.substring(curveName.indexOf(' ') + 1);
+        }
+        else
+        {
+            name = curveName;
+        }
+
         try
         {
             if (name.charAt(0) >= '0' && name.charAt(0) <= '2')
