@@ -1,9 +1,15 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 import javax.crypto.KeyAgreementSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -14,6 +20,9 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.params.DESParameters;
+import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 
@@ -23,6 +32,9 @@ public abstract class BaseAgreementSpi
     private static final Map<String, ASN1ObjectIdentifier> defaultOids = new HashMap<String, ASN1ObjectIdentifier>();
     private static final Map<String, Integer> keySizes = new HashMap<String, Integer>();
     private static final Map<String, String> nameTable = new HashMap<String, String>();
+
+    private static final Hashtable oids = new Hashtable();
+    private static final Hashtable des = new Hashtable();
 
     static
     {
@@ -110,6 +122,28 @@ public abstract class BaseAgreementSpi
         nameTable.put(NISTObjectIdentifiers.id_aes128_wrap.getId(), "AES");
         nameTable.put(NISTObjectIdentifiers.id_aes128_CCM.getId(), "AES");
         nameTable.put(NISTObjectIdentifiers.id_aes128_CCM.getId(), "AES");
+
+        oids.put("DESEDE", PKCSObjectIdentifiers.des_EDE3_CBC);
+        oids.put("AES", NISTObjectIdentifiers.id_aes256_CBC);
+        oids.put("DES", OIWObjectIdentifiers.desCBC);
+
+        des.put("DES", "DES");
+        des.put("DESEDE", "DES");
+        des.put(OIWObjectIdentifiers.desCBC.getId(), "DES");
+        des.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DES");
+        des.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), "DES");
+    }
+
+    private final String kaAlgorithm;
+    private final DerivationFunction kdf;
+
+    protected BigInteger result;
+    protected byte[]     ukmParameters;
+
+    public BaseAgreementSpi(String kaAlgorithm, DerivationFunction kdf)
+    {
+        this.kaAlgorithm = kaAlgorithm;
+        this.kdf = kdf;
     }
 
     protected static String getAlgorithm(String algDetails)
@@ -175,4 +209,85 @@ public abstract class BaseAgreementSpi
             return rv;
         }
     }
+
+    protected byte[] engineGenerateSecret()
+        throws IllegalStateException
+    {
+        if (kdf != null)
+        {
+            throw new UnsupportedOperationException(
+                "KDF can only be used when algorithm is known");
+        }
+
+        return bigIntToBytes(result);
+    }
+
+    protected int engineGenerateSecret(
+        byte[]  sharedSecret,
+        int     offset)
+        throws IllegalStateException, ShortBufferException
+    {
+        byte[] secret = engineGenerateSecret();
+
+        if (sharedSecret.length - offset < secret.length)
+        {
+            throw new ShortBufferException(kaAlgorithm + " key agreement: need " + secret.length + " bytes");
+        }
+
+        System.arraycopy(secret, 0, sharedSecret, offset, secret.length);
+
+        return secret.length;
+    }
+
+    protected SecretKey engineGenerateSecret(
+        String algorithm)
+        throws NoSuchAlgorithmException
+    {
+        byte[] secret = bigIntToBytes(result);
+        String algKey = Strings.toUpperCase(algorithm);
+        String oidAlgorithm = algorithm;
+
+        if (oids.containsKey(algKey))
+        {
+            oidAlgorithm = ((ASN1ObjectIdentifier)oids.get(algKey)).getId();
+        }
+
+        int    keySize = getKeySize(oidAlgorithm);
+
+        if (kdf != null)
+        {
+            if (keySize < 0)
+            {
+                throw new NoSuchAlgorithmException("unknown algorithm encountered: " + oidAlgorithm);
+            }
+            byte[] keyBytes = new byte[keySize / 8];
+
+            KDFParameters params = new KDFParameters(secret, ukmParameters);
+
+            kdf.init(params);
+            kdf.generateBytes(keyBytes, 0, keyBytes.length);
+
+            secret = keyBytes;
+        }
+        else
+        {
+            if (keySize > 0)
+            {
+                byte[] keyBytes = new byte[keySize / 8];
+
+                System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
+
+                secret = keyBytes;
+            }
+        }
+
+        if (des.containsKey(oidAlgorithm))
+        {
+            DESParameters.setOddParity(secret);
+        }
+
+        return new SecretKeySpec(secret, getAlgorithm(algorithm));
+    }
+
+    protected abstract byte[] bigIntToBytes(BigInteger result);
 }

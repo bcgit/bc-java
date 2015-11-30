@@ -4,21 +4,11 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Hashtable;
 
-import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
@@ -33,11 +23,9 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
-import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
@@ -48,7 +36,6 @@ import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.interfaces.MQVPrivateKey;
 import org.bouncycastle.jce.interfaces.MQVPublicKey;
-import org.bouncycastle.util.Strings;
 
 /**
  * Diffie-Hellman key agreement using elliptic curve keys, ala IEEE P1363
@@ -60,44 +47,29 @@ public class KeyAgreementSpi
     extends BaseAgreementSpi
 {
     private static final X9IntegerConverter converter = new X9IntegerConverter();
-    private static final Hashtable oids = new Hashtable();
-    private static final Hashtable des = new Hashtable();
-
-    static
-    {
-        oids.put("DESEDE", PKCSObjectIdentifiers.des_EDE3_CBC);
-        oids.put("AES", NISTObjectIdentifiers.id_aes256_CBC);
-        oids.put("DES", OIWObjectIdentifiers.desCBC);
-
-        des.put("DES", "DES");
-        des.put("DESEDE", "DES");
-        des.put(OIWObjectIdentifiers.desCBC.getId(), "DES");
-        des.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DES");
-        des.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId(), "DES");
-    }
 
     private String                 kaAlgorithm;
-    private BigInteger             result;
+
     private ECDomainParameters     parameters;
     private BasicAgreement         agreement;
-    private DerivationFunction     kdf;
-    private MQVParameterSpec       mqvParameters;
-    private byte[]                 ukmParameters;
 
-    private byte[] bigIntToBytes(
-        BigInteger    r)
-    {
-        return converter.integerToBytes(r, converter.getByteLength(parameters.getCurve()));
-    }
+    private MQVParameterSpec       mqvParameters;
 
     protected KeyAgreementSpi(
         String kaAlgorithm,
         BasicAgreement agreement,
         DerivationFunction kdf)
     {
+        super(kaAlgorithm, kdf);
+
         this.kaAlgorithm = kaAlgorithm;
         this.agreement = agreement;
-        this.kdf = kdf;
+    }
+
+    protected byte[] bigIntToBytes(
+        BigInteger    r)
+    {
+        return converter.integerToBytes(r, converter.getByteLength(parameters.getCurve()));
     }
 
     protected Key engineDoPhase(
@@ -156,85 +128,6 @@ public class KeyAgreementSpi
         result = agreement.calculateAgreement(pubKey);
 
         return null;
-    }
-
-    protected byte[] engineGenerateSecret()
-        throws IllegalStateException
-    {
-        if (kdf != null)
-        {
-            throw new UnsupportedOperationException(
-                "KDF can only be used when algorithm is known");
-        }
-
-        return bigIntToBytes(result);
-    }
-
-    protected int engineGenerateSecret(
-        byte[]  sharedSecret,
-        int     offset) 
-        throws IllegalStateException, ShortBufferException
-    {
-        byte[] secret = engineGenerateSecret();
-
-        if (sharedSecret.length - offset < secret.length)
-        {
-            throw new ShortBufferException(kaAlgorithm + " key agreement: need " + secret.length + " bytes");
-        }
-
-        System.arraycopy(secret, 0, sharedSecret, offset, secret.length);
-        
-        return secret.length;
-    }
-
-    protected SecretKey engineGenerateSecret(
-        String algorithm)
-        throws NoSuchAlgorithmException
-    {
-        byte[] secret = bigIntToBytes(result);
-        String algKey = Strings.toUpperCase(algorithm);
-        String oidAlgorithm = algorithm;
-
-        if (oids.containsKey(algKey))
-        {
-            oidAlgorithm = ((ASN1ObjectIdentifier)oids.get(algKey)).getId();
-        }
-
-        int    keySize = getKeySize(oidAlgorithm);
-
-        if (kdf != null)
-        {
-            if (keySize < 0)
-            {
-                throw new NoSuchAlgorithmException("unknown algorithm encountered: " + oidAlgorithm);
-            }
-            byte[] keyBytes = new byte[keySize / 8];
-
-            KDFParameters params = new KDFParameters(secret, ukmParameters);
-
-            kdf.init(params);
-            kdf.generateBytes(keyBytes, 0, keyBytes.length);
-
-            secret = keyBytes;
-        }
-        else
-        {
-            if (keySize > 0)
-            {
-                byte[] keyBytes = new byte[keySize / 8];
-
-                System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
-
-                secret = keyBytes;
-            }
-        }
-
-        if (des.containsKey(oidAlgorithm))
-        {
-            DESParameters.setOddParity(secret);
-        }
-
-        return new SecretKeySpec(secret, getAlgorithm(algorithm));
     }
 
     protected void engineInit(

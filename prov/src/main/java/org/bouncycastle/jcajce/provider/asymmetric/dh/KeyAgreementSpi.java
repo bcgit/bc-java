@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -14,7 +15,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.params.DESParameters;
+import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 
 /**
@@ -28,9 +29,20 @@ public class KeyAgreementSpi
     private BigInteger      x;
     private BigInteger      p;
     private BigInteger      g;
-    private BigInteger      result;
 
-    private byte[] bigIntToBytes(
+    public KeyAgreementSpi()
+    {
+        super("Diffie-Hellman", null);
+    }
+
+    public KeyAgreementSpi(
+        String kaAlgorithm,
+        DerivationFunction kdf)
+    {
+        super(kaAlgorithm, kdf);
+    }
+
+    protected byte[] bigIntToBytes(
         BigInteger    r)
     {
         //
@@ -105,7 +117,7 @@ public class KeyAgreementSpi
             throw new IllegalStateException("Diffie-Hellman not initialised.");
         }
 
-        return bigIntToBytes(result);
+        return super.engineGenerateSecret();
     }
 
     protected int engineGenerateSecret(
@@ -118,52 +130,27 @@ public class KeyAgreementSpi
             throw new IllegalStateException("Diffie-Hellman not initialised.");
         }
 
-        byte[]  secret = bigIntToBytes(result);
-
-        if (sharedSecret.length - offset < secret.length)
-        {
-            throw new ShortBufferException("DHKeyAgreement - buffer too short");
-        }
-
-        System.arraycopy(secret, 0, sharedSecret, offset, secret.length);
-
-        return secret.length;
+        return super.engineGenerateSecret(sharedSecret, offset);
     }
 
     protected SecretKey engineGenerateSecret(
-        String algorithm) 
+        String algorithm)
+        throws NoSuchAlgorithmException
     {
         if (x == null)
         {
             throw new IllegalStateException("Diffie-Hellman not initialised.");
         }
 
-        String algName = getAlgorithm(algorithm);
         byte[] res = bigIntToBytes(result);
-        int length = getKeySize(algorithm);
 
-        if (length > 0)
+        // for JSSE compatibility
+        if (algorithm.equals("TlsPremasterSecret"))
         {
-            byte[] key = new byte[length / 8];
-            System.arraycopy(res, 0, key, 0, key.length);
-
-            if (algName.startsWith("DES"))
-            {
-                DESParameters.setOddParity(key);
-            }
-            
-            return new SecretKeySpec(key, algName);
-        }
-        else
-        {
-            // for JSSE compatibility
-            if (algorithm.equals("TlsPremasterSecret"))
-            {
-                return new SecretKeySpec(trimZeroes(res), algorithm);
-            }
+            return new SecretKeySpec(trimZeroes(res), algorithm);
         }
 
-        return new SecretKeySpec(res, algName);
+        return super.engineGenerateSecret(algorithm);
     }
 
     protected void engineInit(
