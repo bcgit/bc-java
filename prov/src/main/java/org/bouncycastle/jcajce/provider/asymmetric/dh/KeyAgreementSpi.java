@@ -16,7 +16,10 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 
 /**
  * Diffie-Hellman key agreement. There's actually a better way of doing this
@@ -167,14 +170,23 @@ public class KeyAgreementSpi
 
         if (params != null)
         {
-            if (!(params instanceof DHParameterSpec))
+            if (params instanceof DHParameterSpec)    // p, g override.
+            {
+                DHParameterSpec p = (DHParameterSpec)params;
+
+                this.p = p.getP();
+                this.g = p.getG();
+            }
+            else if (params instanceof UserKeyingMaterialSpec)
+            {
+                this.p = privKey.getParams().getP();
+                this.g = privKey.getParams().getG();
+                this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
+            }
+            else
             {
                 throw new InvalidAlgorithmParameterException("DHKeyAgreement only accepts DHParameterSpec");
             }
-            DHParameterSpec p = (DHParameterSpec)params;
-
-            this.p = p.getP();
-            this.g = p.getG();
         }
         else
         {
@@ -200,5 +212,14 @@ public class KeyAgreementSpi
         this.p = privKey.getParams().getP();
         this.g = privKey.getParams().getG();
         this.x = this.result = privKey.getX();
+    }
+
+    public static class DHwithRFC2631KDF
+        extends KeyAgreementSpi
+    {
+        public DHwithRFC2631KDF()
+        {
+            super("DHwithRFC2631KDF", new DHKEKGenerator(new SHA1Digest()));
+        }
     }
 }

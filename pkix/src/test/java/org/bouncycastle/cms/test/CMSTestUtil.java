@@ -18,6 +18,7 @@ import java.util.Date;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -54,6 +55,7 @@ public class CMSTestUtil
 
     public static KeyPairGenerator gostKpg;
     public static KeyPairGenerator dsaKpg;
+    public static KeyPairGenerator dhKpg;
     public static KeyPairGenerator ecGostKpg;
     public static KeyPairGenerator ecDsaKpg;
     public static KeyGenerator     aes192kg;
@@ -136,6 +138,9 @@ public class CMSTestUtil
                         new BigInteger("4182906737723181805517018315469082619513954319976782448649747742951189003482834321192692620856488639629011570381138542789803819092529658402611668375788410"));
 
             dsaKpg.initialize(dsaSpec, new SecureRandom());
+
+            dhKpg = KeyPairGenerator.getInstance("DH", "BC");
+            dhKpg.initialize(new DHParameterSpec(dsaSpec.getP(), dsaSpec.getG()), new SecureRandom());
 
             ecGostKpg = KeyPairGenerator.getInstance("ECGOST3410", "BC");
             ecGostKpg.initialize(ECGOST3410NamedCurveTable.getParameterSpec("GostR3410-2001-CryptoPro-A"), new SecureRandom());
@@ -222,6 +227,11 @@ public class CMSTestUtil
     public static KeyPair makeEcDsaKeyPair()
     {
         return ecDsaKpg.generateKeyPair();
+    }
+
+    public static KeyPair makeDhKeyPair()
+    {
+        return dhKpg.generateKeyPair();
     }
 
     public static KeyPair makeEcGostKeyPair()

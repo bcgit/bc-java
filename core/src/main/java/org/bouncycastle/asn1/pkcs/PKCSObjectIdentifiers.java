@@ -402,5 +402,9 @@ public interface PKCSObjectIdentifiers
     static final ASN1ObjectIdentifier    id_alg_CMS3DESwrap = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.7 */
     static final ASN1ObjectIdentifier    id_alg_CMSRC2wrap  = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.7");
+    /** PKCS#9: 1.2.840.113549.1.9.16.3.5 */
+    static final ASN1ObjectIdentifier    id_alg_ESDH  = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.5");
+    /** PKCS#9: 1.2.840.113549.1.9.16.3.10 */
+    static final ASN1ObjectIdentifier    id_alg_SSDH  = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.10");
 }
 

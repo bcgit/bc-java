@@ -1,8 +1,5 @@
 package org.bouncycastle.cms;
 
-import java.io.IOException;
-
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
@@ -49,24 +46,17 @@ public abstract class KeyAgreeRecipientInfoGenerator
         AlgorithmIdentifier keyAgreeAlg = new AlgorithmIdentifier(keyAgreementOID, keyEncAlg);
 
         ASN1Sequence recipients = generateRecipientEncryptedKeys(keyAgreeAlg, keyEncAlg, contentEncryptionKey);
-        ASN1Encodable userKeyingMaterial = getUserKeyingMaterial(keyAgreeAlg);
+        byte[] userKeyingMaterial = getUserKeyingMaterial(keyAgreeAlg);
 
         if (userKeyingMaterial != null)
         {
-            try
-            {
-                return new RecipientInfo(new KeyAgreeRecipientInfo(originator, new DEROctetString(userKeyingMaterial),
+            return new RecipientInfo(new KeyAgreeRecipientInfo(originator, new DEROctetString(userKeyingMaterial),
                     keyAgreeAlg, recipients));
-            }
-            catch (IOException e)
-            {
-                throw new CMSException("unable to encode userKeyingMaterial: " + e.getMessage(), e);
-            }
+
         }
         else
         {
-            return new RecipientInfo(new KeyAgreeRecipientInfo(originator, null,
-                keyAgreeAlg, recipients));
+            return new RecipientInfo(new KeyAgreeRecipientInfo(originator, null, keyAgreeAlg, recipients));
         }
     }
 
@@ -80,7 +70,7 @@ public abstract class KeyAgreeRecipientInfoGenerator
     protected abstract ASN1Sequence generateRecipientEncryptedKeys(AlgorithmIdentifier keyAgreeAlgorithm, AlgorithmIdentifier keyEncAlgorithm, GenericKey contentEncryptionKey)
         throws CMSException;
 
-    protected abstract ASN1Encodable getUserKeyingMaterial(AlgorithmIdentifier keyAgreeAlgorithm)
+    protected abstract byte[] getUserKeyingMaterial(AlgorithmIdentifier keyAgreeAlgorithm)
         throws CMSException;
 
 }
