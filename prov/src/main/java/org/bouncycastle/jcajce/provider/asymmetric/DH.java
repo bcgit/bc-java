@@ -24,6 +24,8 @@ public class DH
 
             provider.addAlgorithm("KeyAgreement.DH", PREFIX + "KeyAgreementSpi");
             provider.addAlgorithm("Alg.Alias.KeyAgreement.DIFFIEHELLMAN", "DH");
+            provider.addAlgorithm("KeyAgreement", PKCSObjectIdentifiers.id_alg_ESDH, PREFIX + "KeyAgreementSpi$DHwithRFC2631KDF");
+            provider.addAlgorithm("KeyAgreement", PKCSObjectIdentifiers.id_alg_SSDH, PREFIX + "KeyAgreementSpi$DHwithRFC2631KDF");
 
             provider.addAlgorithm("KeyFactory.DH", PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory.DIFFIEHELLMAN", "DH");

@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
@@ -22,6 +23,7 @@ import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 class CMSUtils
 {
     private static final Set mqvAlgs = new HashSet();
+    private static final Set ecAlgs = new HashSet();
 
     static
     {
@@ -30,11 +32,32 @@ class CMSUtils
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme);
+
+        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme);
+        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha224kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha224kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha256kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha256kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha384kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha384kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme);
     }
 
     static boolean isMQV(ASN1ObjectIdentifier algorithm)
     {
         return mqvAlgs.contains(algorithm);
+    }
+
+    static boolean isEC(ASN1ObjectIdentifier algorithm)
+    {
+        return ecAlgs.contains(algorithm);
+    }
+
+    static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
+    {
+        return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
     }
 
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)

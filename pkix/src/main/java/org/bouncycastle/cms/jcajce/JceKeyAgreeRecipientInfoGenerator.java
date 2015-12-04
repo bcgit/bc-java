@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -18,7 +19,6 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -26,9 +26,11 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientIdentifier;
+import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSException;
@@ -38,6 +40,7 @@ import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.SecretKeySizeProvider;
+import org.bouncycastle.util.Arrays;
 
 public class JceKeyAgreeRecipientInfoGenerator
     extends KeyAgreeRecipientInfoGenerator
@@ -52,6 +55,7 @@ public class JceKeyAgreeRecipientInfoGenerator
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     private SecureRandom random;
     private KeyPair ephemeralKP;
+    private byte[] userKeyingMaterial;
 
     public JceKeyAgreeRecipientInfoGenerator(ASN1ObjectIdentifier keyAgreementOID, PrivateKey senderPrivateKey, PublicKey senderPublicKey, ASN1ObjectIdentifier keyEncryptionOID)
     {
@@ -59,6 +63,13 @@ public class JceKeyAgreeRecipientInfoGenerator
 
         this.senderPublicKey = senderPublicKey;
         this.senderPrivateKey = senderPrivateKey;
+    }
+
+    public JceKeyAgreeRecipientInfoGenerator setUserKeyingMaterial(byte[] userKeyingMaterial)
+    {
+        this.userKeyingMaterial = Arrays.clone(userKeyingMaterial);
+
+        return this;
     }
 
     public JceKeyAgreeRecipientInfoGenerator setProvider(Provider provider)
@@ -141,13 +152,32 @@ public class JceKeyAgreeRecipientInfoGenerator
 
                 if (CMSUtils.isMQV(keyAgreementOID))
                 {
-                    agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, null);
+                    agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, userKeyingMaterial);
+                }
+                else if (CMSUtils.isEC(keyAgreementOID))
+                {
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), userKeyingMaterial);
+
+                    agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                }
+                else if (CMSUtils.isRFC2631(keyAgreementOID))
+                {
+                    if (userKeyingMaterial != null)
+                    {
+                        agreementParamSpec = new UserKeyingMaterialSpec(userKeyingMaterial);
+                    }
+                    else
+                    {
+                        if (keyAgreementOID.equals(PKCSObjectIdentifiers.id_alg_SSDH))
+                        {
+                            throw new CMSException("User keying material must be set for static keys.");
+                        }
+                        agreementParamSpec = null;
+                    }
                 }
                 else
                 {
-                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), null);
-
-                    agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    throw new CMSException("Unknown key agreement algorithm: " + keyAgreementOID);
                 }
 
                 // Use key agreement to choose a wrap key for this recipient
@@ -177,18 +207,33 @@ public class JceKeyAgreeRecipientInfoGenerator
         return new DERSequence(recipientEncryptedKeys);
     }
 
-    protected ASN1Encodable getUserKeyingMaterial(AlgorithmIdentifier keyAgreeAlg)
+    protected byte[] getUserKeyingMaterial(AlgorithmIdentifier keyAgreeAlg)
         throws CMSException
     {
         init(keyAgreeAlg.getAlgorithm());
 
         if (ephemeralKP != null)
         {
-            return new MQVuserKeyingMaterial(
-                        createOriginatorPublicKey(SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded())), null);
+            OriginatorPublicKey originatorPublicKey = createOriginatorPublicKey(SubjectPublicKeyInfo.getInstance(ephemeralKP.getPublic().getEncoded()));
+
+            try
+            {
+                if (userKeyingMaterial != null)
+                {
+                    return new MQVuserKeyingMaterial(originatorPublicKey, new DEROctetString(userKeyingMaterial)).getEncoded();
+                }
+                else
+                {
+                    return new MQVuserKeyingMaterial(originatorPublicKey, null).getEncoded();
+                }
+            }
+            catch (IOException e)
+            {
+                throw new CMSException("unable to encode user keying material: " + e.getMessage(), e);
+            }
         }
 
-        return null;
+        return userKeyingMaterial;
     }
 
     private void init(ASN1ObjectIdentifier keyAgreementOID)

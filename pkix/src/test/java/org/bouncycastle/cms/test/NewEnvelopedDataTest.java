@@ -25,6 +25,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -116,6 +117,10 @@ public class NewEnvelopedDataTest
     private static X509Certificate _reciEcCert2;
     private static KeyPair         _reciKemsKP;
     private static X509Certificate _reciKemsCert;
+
+    private static KeyPair         _origDhKP;
+    private static KeyPair         _reciDhKP;
+    private static X509Certificate _reciDhCert;
 
     private static boolean         _initialised = false;
 
@@ -269,6 +274,10 @@ public class NewEnvelopedDataTest
             _reciEcCert = CMSTestUtil.makeCertificate(_reciEcKP, _reciDN, _signKP, _signDN);
             _reciEcKP2 = CMSTestUtil.makeEcDsaKeyPair();
             _reciEcCert2 = CMSTestUtil.makeCertificate(_reciEcKP2, _reciDN2, _signKP, _signDN);
+
+            _origDhKP = CMSTestUtil.makeDhKeyPair();
+            _reciDhKP = CMSTestUtil.makeDhKeyPair();
+            _reciDhCert = CMSTestUtil.makeCertificate(_reciDhKP, _reciDN, _signKP, _signDN);
 
             _reciKemsKP = CMSTestUtil.makeKeyPair();
             _reciKemsCert = CMSTestUtil.makeCertificate(_reciKemsKP, _reciDN, _signKP, _signDN, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_rsa_KEM));
@@ -1382,6 +1391,73 @@ public class NewEnvelopedDataTest
 
         confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
         confirmNumberRecipients(recipients, 1);
+    }
+
+    public void testEphemeralStaticDHAgreement()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(PKCSObjectIdentifiers.id_alg_ESDH,
+            _origDhKP.getPrivate(), _origDhKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).addRecipient(_reciDhCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        confirmDataReceived(recipients, data, _reciDhCert, _reciDhKP.getPrivate(), BC);
+        confirmNumberRecipients(recipients, 1);
+    }
+
+    public void testStaticStaticDHAgreement()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(PKCSObjectIdentifiers.id_alg_SSDH,
+            _origDhKP.getPrivate(), _origDhKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP)
+            .setUserKeyingMaterial(data)
+            .addRecipient(_reciDhCert)
+            .setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        confirmDataReceived(recipients, data, _reciDhCert, _reciDhKP.getPrivate(), BC);
+        confirmNumberRecipients(recipients, 1);
+
+        try
+        {
+            edGen = new CMSEnvelopedDataGenerator();
+
+            edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(PKCSObjectIdentifiers.id_alg_SSDH,
+                        _origDhKP.getPrivate(), _origDhKP.getPublic(),
+                        CMSAlgorithm.AES128_WRAP).addRecipient(_reciDhCert).setProvider(BC));
+
+            edGen.generate(
+                 new CMSProcessableByteArray(data),
+                 new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+            fail("no UKM uncaught");
+        }
+        catch (CMSException e)
+        {
+            Assert.assertEquals("User keying material must be set for static keys.", e.getMessage());
+        }
     }
 
     public void testKDFAgreements()

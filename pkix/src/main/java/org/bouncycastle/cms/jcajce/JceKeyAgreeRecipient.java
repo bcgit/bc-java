@@ -150,17 +150,31 @@ public abstract class JceKeyAgreeRecipient
 
             UserKeyingMaterialSpec userKeyingMaterialSpec = null;
 
-            if (userKeyingMaterial != null)
+            if (CMSUtils.isEC(keyEncAlg.getAlgorithm()))
             {
-                byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
+                if (userKeyingMaterial != null)
+                {
+                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
 
-                userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                }
+                else
+                {
+                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
+
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                }
+            }
+            else if (CMSUtils.isRFC2631(keyEncAlg.getAlgorithm()))
+            {
+                if (userKeyingMaterial != null)
+                {
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
+                }
             }
             else
             {
-                byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
-
-                userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                throw new CMSException("Unknown key agreement algorithm: " + keyEncAlg.getAlgorithm());
             }
 
             agreement.init(receiverPrivateKey, userKeyingMaterialSpec);
@@ -188,7 +202,7 @@ public abstract class JceKeyAgreeRecipient
                 AlgorithmIdentifier.getInstance(keyEncryptionAlgorithm.getParameters());
 
             X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(senderKey.getEncoded());
-            KeyFactory fact = helper.createKeyFactory(keyEncryptionAlgorithm.getAlgorithm());
+            KeyFactory fact = helper.createKeyFactory(senderKey.getAlgorithm().getAlgorithm());
             PublicKey senderPublicKey = fact.generatePublic(pubSpec);
 
             try

@@ -21,6 +21,8 @@ import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
+import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.util.Integers;
@@ -262,9 +264,28 @@ public abstract class BaseAgreementSpi
             }
             byte[] keyBytes = new byte[keySize / 8];
 
-            KDFParameters params = new KDFParameters(secret, ukmParameters);
+            if (kdf instanceof DHKEKGenerator)
+            {
+                ASN1ObjectIdentifier oid;
+                try
+                {
+                    oid = new ASN1ObjectIdentifier(oidAlgorithm);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new NoSuchAlgorithmException("no OID for algorithm: " + oidAlgorithm);
+                }
+                DHKDFParameters params = new DHKDFParameters(oid, keySize, secret, ukmParameters);
 
-            kdf.init(params);
+                kdf.init(params);
+            }
+            else
+            {
+                KDFParameters params = new KDFParameters(secret, ukmParameters);
+
+                kdf.init(params);
+            }
+
             kdf.generateBytes(keyBytes, 0, keyBytes.length);
 
             secret = keyBytes;
