@@ -154,15 +154,20 @@ public class IESCipher
     {
         int len1, len2, len3;
 
+        if (key == null)
+        {
+            throw new IllegalStateException("cipher not initialised");
+        }
+
         len1 = engine.getMac().getMacSize();
 
-        if (key != null)
+        if (otherKeyParameter == null)
         {
-            len2 = 1 + 2 * (((ECKey)key).getParameters().getCurve().getFieldSize() + 7) / 8;
+            len2 = 1 + 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
         }
         else
         {
-            throw new IllegalStateException("cipher not initialised");
+            len2 = 0;
         }
 
         if (engine.getCipher() == null)
