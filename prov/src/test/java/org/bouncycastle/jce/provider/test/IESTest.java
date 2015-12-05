@@ -132,9 +132,23 @@ public class IESTest
 
         byte[] message = Hex.decode("1234567890abcdef");
 
+        int estLen1 =  c1.getOutputSize(message.length);
+
         byte[]   out1 = c1.doFinal(message, 0, message.length);
 
+        if (estLen1 < out1.length)
+        {
+            fail("output size incorrect");
+        }
+
+        int estLen2 =  c2.getOutputSize(out1.length);
+
         byte[]   out2 = c2.doFinal(out1, 0, out1.length);
+
+        if (estLen2 < out2.length)
+        {
+            fail("output size incorrect");
+        }
 
         if (!areEqual(out2, message))
         {
@@ -176,9 +190,22 @@ public class IESTest
 
         byte[] message = Hex.decode("1234567890abcdef");
 
+        int estLen1 = c1.getOutputSize(message.length);
+
         byte[] out1 = c1.doFinal(message, 0, message.length);
 
+        if (estLen1 < out1.length)
+        {
+            fail("output size incorrect");
+        }
+
+        int estLen2 =  c2.getOutputSize(out1.length);
         byte[] out2 = c2.doFinal(out1, 0, out1.length);
+
+        if (estLen2 < out2.length)
+        {
+            fail("output size incorrect");
+        }
 
         if (!areEqual(out2, message))
         {
