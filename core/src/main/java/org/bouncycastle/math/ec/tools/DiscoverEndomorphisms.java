@@ -26,11 +26,31 @@ public class DiscoverEndomorphisms
 
         for (int i = 0; i < args.length; ++i)
         {
-            discoverEndomorphism(args[i]);
+            discoverEndomorphisms(args[i]);
         }
     }
 
-    private static void discoverEndomorphism(String curveName)
+    public static void discoverEndomorphisms(X9ECParameters x9)
+    {
+        if (x9 == null)
+        {
+            throw new NullPointerException("x9");
+        }
+
+        ECCurve c = x9.getCurve();
+        if (ECAlgorithms.isFpCurve(c))
+        {
+            BigInteger characteristic = c.getField().getCharacteristic();
+
+            if (c.getA().isZero() && characteristic.mod(ECConstants.THREE).equals(ECConstants.ONE))
+            {
+                System.out.println("Curve has a 'GLV Type B' endomorphism with these parameters:");
+                printGLVTypeBParameters(x9);
+            }
+        }
+    }
+
+    private static void discoverEndomorphisms(String curveName)
     {
         X9ECParameters x9 = ECNamedCurveTable.getByName(curveName);
         if (x9 == null)
@@ -46,7 +66,7 @@ public class DiscoverEndomorphisms
 
             if (c.getA().isZero() && characteristic.mod(ECConstants.THREE).equals(ECConstants.ONE))
             {
-                System.out.println("Curve '" + curveName + "' has a 'GLV Type B' endomorphism with these parameters: ");
+                System.out.println("Curve '" + curveName + "' has a 'GLV Type B' endomorphism with these parameters:");
                 printGLVTypeBParameters(x9);
             }
         }
@@ -54,12 +74,52 @@ public class DiscoverEndomorphisms
 
     private static void printGLVTypeBParameters(X9ECParameters x9)
     {
+        // x^2 + x + 1 = 0 mod n
+        BigInteger[] lambdas = solveQuadraticEquation(x9.getN(), ECConstants.ONE, ECConstants.ONE);
+
+        /*
+         * The 'Beta' values are field elements of order 3. There are only two such values besides 1, each corresponding
+         * to one choice for 'Lambda'.
+         */
+        ECFieldElement[] betas = findBetaValues(x9.getCurve());
+
+        printGLVTypeBParameters(x9, lambdas[0], betas);
+        System.out.println("OR");
+        printGLVTypeBParameters(x9, lambdas[1], betas);
+    }
+
+    private static void printGLVTypeBParameters(X9ECParameters x9, BigInteger lambda, ECFieldElement[] betas)
+    {
+        /*
+         * Check the basic premise of the endomorphism: that multiplying a point by lambda preserves the y-coordinate
+         */
+        ECPoint G = x9.getG().normalize();
+        ECPoint mapG = G.multiply(lambda).normalize();
+        if (!G.getYCoord().equals(mapG.getYCoord()))
+        {
+            throw new IllegalStateException("Derivation of GLV Type B parameters failed unexpectedly");
+        }
+
+        /*
+         * Determine which of the beta values corresponds with this choice of lambda, by checking that it scales
+         * the x-coordinate the same way a point-multiplication by lambda does.
+         */
+        ECFieldElement beta = betas[0];
+        if (!G.getXCoord().multiply(beta).equals(mapG.getXCoord()))
+        {
+            beta = betas[1];
+            if (!G.getXCoord().multiply(beta).equals(mapG.getXCoord()))
+            {
+                throw new IllegalStateException("Derivation of GLV Type B parameters failed unexpectedly");
+            }
+        }
+
+        /*
+         * Now search for parameters to allow efficient decomposition of full-length scalars
+         */
         BigInteger n = x9.getN();
         BigInteger[] v1 = null;
         BigInteger[] v2 = null;
-
-        // x^2 + x + 1 = 0 mod n
-        BigInteger lambda = solveQuadraticEquation(n, ECConstants.ONE, ECConstants.ONE);
 
         BigInteger[] rt = extEuclidGLV(n, lambda);
         v1 = new BigInteger[]{ rt[2], rt[3].negate() };
@@ -76,94 +136,62 @@ public class DiscoverEndomorphisms
             BigInteger r = v1[0], t = v1[1], s = r.add(t.multiply(lambda)).divide(n);
 
             BigInteger[] vw = extEuclidBezout(new BigInteger[]{ s.abs(), t.abs() });
-            BigInteger v = vw[0], w = vw[1];
-
-            if (s.signum() < 0)
+            if (vw != null)
             {
-                v = v.negate();
-            }
-            if (t.signum() > 0)
-            {
-                w = w.negate();
-            }
-
-            BigInteger check = s.multiply(v).subtract(t.multiply(w));
-            if (!check.equals(ECConstants.ONE))
-            {
-                throw new IllegalStateException();
-            }
-
-            BigInteger x = w.multiply(n).subtract(v.multiply(lambda));
-
-            BigInteger base1 = v.negate();
-            BigInteger base2 = x.negate();
-
-            /*
-             * We calculate the range(s) conservatively large to avoid messy rounding issues, so
-             * there may be spurious candidate generators, but we won't miss any.
-             */
-            BigInteger sqrtN = isqrt(n.subtract(ECConstants.ONE)).add(ECConstants.ONE);
-
-            BigInteger[] I1 = calculateRange(base1, sqrtN, t);
-            BigInteger[] I2 = calculateRange(base2, sqrtN, r);
-
-            BigInteger[] range = intersect(I1, I2);
-            if (range != null)
-            {
-                for (BigInteger alpha = range[0]; alpha.compareTo(range[1]) <= 0; alpha = alpha.add(ECConstants.ONE))
+                BigInteger v = vw[0], w = vw[1];
+    
+                if (s.signum() < 0)
                 {
-                    BigInteger[] candidate = new BigInteger[]{ x.add(alpha.multiply(r)), v.add(alpha.multiply(t)) };
-                    if (isShorter(candidate, v2))
+                    v = v.negate();
+                }
+                if (t.signum() > 0)
+                {
+                    w = w.negate();
+                }
+    
+                BigInteger check = s.multiply(v).subtract(t.multiply(w));
+                if (!check.equals(ECConstants.ONE))
+                {
+                    throw new IllegalStateException();
+                }
+    
+                BigInteger x = w.multiply(n).subtract(v.multiply(lambda));
+    
+                BigInteger base1 = v.negate();
+                BigInteger base2 = x.negate();
+    
+                /*
+                 * We calculate the range(s) conservatively large to avoid messy rounding issues, so
+                 * there may be spurious candidate generators, but we won't miss any.
+                 */
+                BigInteger sqrtN = isqrt(n.subtract(ECConstants.ONE)).add(ECConstants.ONE);
+    
+                BigInteger[] I1 = calculateRange(base1, sqrtN, t);
+                BigInteger[] I2 = calculateRange(base2, sqrtN, r);
+    
+                BigInteger[] range = intersect(I1, I2);
+                if (range != null)
+                {
+                    for (BigInteger alpha = range[0]; alpha.compareTo(range[1]) <= 0; alpha = alpha.add(ECConstants.ONE))
                     {
-                        v2 = candidate;
+                        BigInteger[] candidate = new BigInteger[]{ x.add(alpha.multiply(r)), v.add(alpha.multiply(t)) };
+                        if (isShorter(candidate, v2))
+                        {
+                            v2 = candidate;
+                        }
                     }
                 }
             }
         }
 
-        /*
-         * 'Beta' is a field element of order 3. There are only two such values besides 1; determine which of them
-         * corresponds to our choice for 'Lambda'.
-         */
-        ECFieldElement beta;
-        {
-            ECPoint G = x9.getG().normalize();
-            ECPoint mapG = G.multiply(lambda).normalize();
-            if (!G.getYCoord().equals(mapG.getYCoord()))
-            {
-                throw new IllegalStateException("Derivation of GLV Type B parameters failed unexpectedly");
-            }
-    
-            BigInteger q = x9.getCurve().getField().getCharacteristic();
-            BigInteger e = q.divide(ECConstants.THREE);
-
-            SecureRandom random = new SecureRandom();
-            BigInteger b;
-            do
-            {
-                BigInteger r = BigIntegers.createRandomInRange(ECConstants.TWO, q.subtract(ECConstants.TWO), random);
-                b = r.modPow(e, q);
-            }
-            while (b.equals(ECConstants.ONE));
-
-            beta = x9.getCurve().fromBigInteger(ECConstants.TWO.modPow(e, q));
-
-            if (!G.getXCoord().multiply(beta).equals(mapG.getXCoord()))
-            {
-                beta = beta.square();
-                if (!G.getXCoord().multiply(beta).equals(mapG.getXCoord()))
-                {
-                    throw new IllegalStateException("Derivation of GLV Type B parameters failed unexpectedly");
-                }
-            }
-        }
-
-        /*
-         * These parameters are used to avoid division when decomposing the scalar in a GLV point multiplication
-         */
         BigInteger d = (v1[0].multiply(v2[1])).subtract(v1[1].multiply(v2[0]));
 
-        int bits = n.bitLength() + 16 - (n.bitLength() & 7);
+        /*
+         * These parameters are used to avoid division when decomposing the scalar in a GLV point multiplication.
+         * The precision is determined by 'bits', even 2 bits is enough, but we try to get more whilst keeping it
+         * 8-bit aligned and limiting the possible growth of product sizes on a 32-bit machine.
+         */
+        int bits = n.bitLength() + 16 - (n.bitLength() & 7); 
         BigInteger g1 = roundQuotient(v2[1].shiftLeft(bits), d);
         BigInteger g2 = roundQuotient(v1[1].shiftLeft(bits), d).negate();
 
@@ -171,6 +199,7 @@ public class DiscoverEndomorphisms
         printProperty("Lambda", lambda.toString(radix));
         printProperty("v1", "{ " + v1[0].toString(radix) + ", " + v1[1].toString(radix) + " }");
         printProperty("v2", "{ " + v2[0].toString(radix) + ", " + v2[1].toString(radix) + " }");
+        printProperty("d", d.toString(radix));
         printProperty("(OPT) g1", g1.toString(radix));
         printProperty("(OPT) g2", g2.toString(radix));
         printProperty("(OPT) bits", Integer.toString(bits));
@@ -231,7 +260,10 @@ public class DiscoverEndomorphisms
 
         if (r1.signum() <= 0)
         {
-            throw new IllegalStateException();
+            /*
+             * NOTE: This case occurred while testing on curves over tiny fields; probably due to a 0 input.
+             */
+            return null;
         }
 
         BigInteger[] st = new BigInteger[]{ s1, t1 };
@@ -337,17 +369,45 @@ public class DiscoverEndomorphisms
         return negative ? result.negate() : result;
     }
 
-    private static BigInteger solveQuadraticEquation(BigInteger n, BigInteger r, BigInteger s)
+    private static BigInteger[] solveQuadraticEquation(BigInteger n, BigInteger r, BigInteger s)
     {
         BigInteger det = r.multiply(r).subtract(s.shiftLeft(2)).mod(n);
 
-        BigInteger root = new ECFieldElement.Fp(n, det).sqrt().toBigInteger();
-        if (!root.testBit(0))
+        BigInteger root1 = new ECFieldElement.Fp(n, det).sqrt().toBigInteger(), root2 = n.subtract(root1);
+        if (root1.testBit(0))
         {
-            root = n.subtract(root);
+            root2 = root2.add(n);
+        }
+        else
+        {
+            root1 = root1.add(n);
         }
 
-        return root.shiftRight(1); // NOTE: implicit -1 of the low-bit
+//        assert root1.testBit(0);
+//        assert root2.testBit(0);
+
+        // NOTE: implicit -1 of the low-bits
+        return new BigInteger[]{ root1.shiftRight(1), root2.shiftRight(1) };
+    }
+
+    private static ECFieldElement[] findBetaValues(ECCurve c)
+    {
+        BigInteger q = c.getField().getCharacteristic();
+        BigInteger e = q.divide(ECConstants.THREE);
+
+        // Search for a random value that generates a non-trival cube root of 1
+        SecureRandom random = new SecureRandom();
+        BigInteger b;
+        do
+        {
+            BigInteger r = BigIntegers.createRandomInRange(ECConstants.TWO, q.subtract(ECConstants.TWO), random);
+            b = r.modPow(e, q);
+        }
+        while (b.equals(ECConstants.ONE));
+
+        ECFieldElement beta = c.fromBigInteger(b);
+
+        return new ECFieldElement[]{ beta, beta.square() }; 
     }
 
     private static BigInteger isqrt(BigInteger x)
