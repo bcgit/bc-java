@@ -32,7 +32,7 @@ public class DERExternal
             offset++;
             enc = getObjFromVector(vector, offset);
         }
-        if (!(enc instanceof DERTaggedObject))
+        if (!(enc instanceof ASN1TaggedObject))
         {
             dataValueDescriptor = (ASN1Primitive) enc;
             offset++;
@@ -44,11 +44,11 @@ public class DERExternal
             throw new IllegalArgumentException("input vector too large");
         }
 
-        if (!(enc instanceof DERTaggedObject))
+        if (!(enc instanceof ASN1TaggedObject))
         {
             throw new IllegalArgumentException("No tagged object found in vector. Structure doesn't seem to be of type External");
         }
-        DERTaggedObject obj = (DERTaggedObject)enc;
+        ASN1TaggedObject obj = (ASN1TaggedObject)enc;
         setEncoding(obj.getTagNo());
         externalContent = obj.getObject();
     }
