@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 public class DERApplicationSpecificTest
     extends SimpleTest
@@ -95,7 +94,10 @@ public class DERApplicationSpecificTest
 
         DERApplicationSpecific appSpec = (DERApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
 
-        Assert.assertEquals(1, appSpec.getApplicationTag());
+        if (1 != appSpec.getApplicationTag())
+        {
+            fail("wrong tag detected");
+        }
 
         ASN1Integer value = new ASN1Integer(9);
 
