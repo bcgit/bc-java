@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assert;
 
 public class DERApplicationSpecificTest
     extends SimpleTest
@@ -30,6 +31,9 @@ public class DERApplicationSpecificTest
       + "C15F25060007000400015F24060009000400015F37384CCF25C59F3612EEE188"
       + "75F6C5F2E2D21F0395683B532A26E4C189B71EFE659C3F26E0EB9AEAE9986310"
       + "7F9B0DADA16414FFA204516AEE2B");
+
+    private final static byte[] sampleData = Hex.decode(
+        "613280020780a106060456000104a203020101a305a103020101be80288006025101020109a080b2800a01000000000000000000");
 
     public String getName()
     {
@@ -88,6 +92,10 @@ public class DERApplicationSpecificTest
         throws Exception
     {
         testTaggedObject();
+
+        DERApplicationSpecific appSpec = (DERApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
+
+        Assert.assertEquals(1, appSpec.getApplicationTag());
 
         ASN1Integer value = new ASN1Integer(9);
 
