@@ -159,4 +159,9 @@ public class KeyPurposeId
     {
         return id.getId();
     }
+
+    public String toString()
+    {
+        return id.toString();
+    }
 }
