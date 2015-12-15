@@ -3,6 +3,7 @@ package org.bouncycastle.cms.test;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -60,6 +61,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
 public class NewSignedDataStreamTest
     extends TestCase
@@ -126,7 +128,13 @@ public class NewSignedDataStreamTest
     {
         super(name);
     }
-    
+
+    public void setUp()
+        throws Exception
+    {
+        init();
+    }
+
     private static void init()
         throws Exception
     {
@@ -1274,6 +1282,39 @@ public class NewSignedDataStreamTest
         gen.open(bOut).close();
 
         checkSigParseable(bOut.toByteArray());
+    }
+
+    public void testMSPKCS7()
+        throws Exception
+    {
+        byte[] data = getInput("SignedMSPkcs7.bin");
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), data);
+
+        sp.getSignedContent().drain();
+
+        Store certStore = sp.getCertificates();
+        SignerInformationStore signers = sp.getSignerInfos();
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certStore.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
+        }
+    }
+
+    private byte[] getInput(String name)
+        throws IOException
+    {
+        return Streams.readAll(getClass().getResourceAsStream(name));
     }
 
     public static Test suite()
