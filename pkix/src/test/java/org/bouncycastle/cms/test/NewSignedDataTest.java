@@ -589,6 +589,12 @@ public class NewSignedDataTest
         return new CMSTestSetup(new TestSuite(NewSignedDataTest.class));
     }
 
+    public void setUp()
+        throws Exception
+    {
+        init();
+    }
+
     private static void init()
         throws Exception
     {
@@ -2288,6 +2294,67 @@ public class NewSignedDataTest
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+        }
+    }
+
+    public void testMSPKCS7()
+        throws Exception
+    {
+        byte[] data = getInput("SignedMSPkcs7.bin");
+
+        CMSSignedData sData = new CMSSignedData(data);
+
+        Store                   certStore = sData.getCertificates();
+        SignerInformationStore  signers = sData.getSignerInfos();
+
+        Collection              c = signers.getSigners();
+        Iterator                it = c.iterator();
+
+        while (it.hasNext())
+        {
+          SignerInformation   signer = (SignerInformation)it.next();
+          Collection          certCollection = certStore.getMatches(signer.getSID());
+
+          Iterator        certIt = certCollection.iterator();
+          X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
+        }
+
+        // try generation from it.
+        List                  certList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha1Signer, _origCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData local = gen.generate(sData.getSignedContent(), true);
+
+        certStore = local.getCertificates();
+        signers = local.getSignerInfos();
+
+        c = signers.getSigners();
+        it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certStore.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
         }
     }
 

@@ -14,7 +14,8 @@ public class CMSTypedStream
     private static final int BUF_SIZ = 32 * 1024;
     
     private final ASN1ObjectIdentifier      _oid;
-    private final InputStream _in;
+
+    protected InputStream _in;
 
     public CMSTypedStream(
         InputStream in)
@@ -51,6 +52,12 @@ public class CMSTypedStream
     {
         _oid = oid;
         _in = new FullReaderStream(new BufferedInputStream(in, bufSize));
+    }
+
+    protected CMSTypedStream(
+         ASN1ObjectIdentifier oid)
+    {
+        _oid = oid;
     }
 
     public ASN1ObjectIdentifier getContentType()

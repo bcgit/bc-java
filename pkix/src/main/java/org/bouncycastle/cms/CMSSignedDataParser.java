@@ -179,24 +179,44 @@ public class CMSSignedDataParser
             // If the message is simply a certificate chain message getContent() may return null.
             //
             ContentInfoParser     cont = _signedData.getEncapContentInfo();
-            ASN1OctetStringParser octs = (ASN1OctetStringParser)
-                cont.getContent(BERTags.OCTET_STRING);
+            ASN1Encodable contentParser = cont.getContent(BERTags.OCTET_STRING);
 
-            if (octs != null)
+            if (contentParser instanceof ASN1OctetStringParser)
             {
-                CMSTypedStream ctStr = new CMSTypedStream(
-                    cont.getContentType().getId(), octs.getOctetStream());
+                ASN1OctetStringParser octs = (ASN1OctetStringParser)contentParser;
+
+                if (octs != null)
+                {
+                    CMSTypedStream ctStr = new CMSTypedStream(
+                        cont.getContentType(), octs.getOctetStream());
+
+                    if (_signedContent == null)
+                    {
+                        _signedContent = ctStr;
+                    }
+                    else
+                    {
+                        //
+                        // content passed in, need to read past empty encapsulated content info object if present
+                        //
+                        ctStr.drain();
+                    }
+                }
+            }
+            else
+            {
+                PKCS7TypedStream pkcs7Stream = new PKCS7TypedStream(cont.getContentType(), contentParser);
 
                 if (_signedContent == null)
                 {
-                    _signedContent = ctStr; 
+                    _signedContent = pkcs7Stream;
                 }
                 else
                 {
                     //
                     // content passed in, need to read past empty encapsulated content info object if present
                     //
-                    ctStr.drain();
+                    pkcs7Stream.drain();
                 }
             }
 

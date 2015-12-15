@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -187,11 +188,18 @@ public class CMSSignedData
         // this can happen if the signed message is sent simply to send a
         // certificate chain.
         //
-        if (signedData.getEncapContentInfo().getContent() != null)
+        ASN1Encodable content = signedData.getEncapContentInfo().getContent();
+        if (content != null)
         {
-            this.signedContent = new CMSProcessableByteArray(signedData.getEncapContentInfo().getContentType(),
-                    ((ASN1OctetString)(signedData.getEncapContentInfo()
-                                                .getContent())).getOctets());
+            if (content instanceof ASN1OctetString)
+            {
+                this.signedContent = new CMSProcessableByteArray(signedData.getEncapContentInfo().getContentType(),
+                    ((ASN1OctetString)content).getOctets());
+            }
+            else
+            {
+                this.signedContent = new PKCS7ProcessableObject(signedData.getEncapContentInfo().getContentType(), content);
+            }
         }
         else
         {
