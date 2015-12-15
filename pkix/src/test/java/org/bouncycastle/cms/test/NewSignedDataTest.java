@@ -2300,7 +2300,7 @@ public class NewSignedDataTest
     public void testMSPKCS7()
         throws Exception
     {
-        byte[] data = getInput("SignedMSPkcs7.bin");
+        byte[] data = getInput("SignedMSPkcs7.sig");
 
         CMSSignedData sData = new CMSSignedData(data);
 

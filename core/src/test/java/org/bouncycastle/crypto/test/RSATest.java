@@ -456,7 +456,7 @@ public class RSATest
         }
 
         genParam = new RSAKeyGenerationParameters(
-            BigInteger.valueOf(0x11), new SecureRandom(), 16, 25);
+            BigInteger.valueOf(0x11), new SecureRandom(), 128, 25);
         pGen.init(genParam);
 
         for (int i = 0; i < 100; ++i)
@@ -465,7 +465,7 @@ public class RSATest
             RSAPrivateCrtKeyParameters privKey = (RSAPrivateCrtKeyParameters) pair.getPrivate();
             BigInteger pqDiff = privKey.getP().subtract(privKey.getQ()).abs();
 
-            if (pqDiff.bitLength() < 5)
+            if (pqDiff.bitLength() < 42)
             {
                 fail("P and Q too close in RSA key pair");
             }

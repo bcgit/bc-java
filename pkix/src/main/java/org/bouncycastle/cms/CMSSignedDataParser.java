@@ -203,7 +203,7 @@ public class CMSSignedDataParser
                     }
                 }
             }
-            else
+            else if (contentParser != null)
             {
                 PKCS7TypedStream pkcs7Stream = new PKCS7TypedStream(cont.getContentType(), contentParser);
 

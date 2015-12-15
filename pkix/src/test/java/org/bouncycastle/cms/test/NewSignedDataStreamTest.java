@@ -1287,7 +1287,7 @@ public class NewSignedDataStreamTest
     public void testMSPKCS7()
         throws Exception
     {
-        byte[] data = getInput("SignedMSPkcs7.bin");
+        byte[] data = getInput("SignedMSPkcs7.sig");
 
         CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), data);
 
