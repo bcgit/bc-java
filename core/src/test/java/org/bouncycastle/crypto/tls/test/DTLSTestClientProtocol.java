@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.tls.DTLSClientProtocol;
 import org.bouncycastle.crypto.tls.DigitallySigned;
 
-public class DTLSTestClientProtocol extends DTLSClientProtocol
+class DTLSTestClientProtocol extends DTLSClientProtocol
 {
     protected final TlsTestConfig config;
 

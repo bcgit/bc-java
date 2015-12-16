@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.tls.DigitallySigned;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 
-public class TlsTestClientProtocol extends TlsClientProtocol
+class TlsTestClientProtocol extends TlsClientProtocol
 {
     protected final TlsTestConfig config;
 
