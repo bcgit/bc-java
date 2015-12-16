@@ -1,7 +1,11 @@
 package org.bouncycastle.crypto.tls.test;
 
 import org.bouncycastle.crypto.tls.AlertDescription;
+import org.bouncycastle.crypto.tls.HashAlgorithm;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.crypto.tls.SignatureAlgorithm;
+import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.crypto.tls.TlsUtils;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -34,7 +38,7 @@ public class TlsTestSuite extends TestSuite
             TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12);
             c.clientFallback = true;
 
-            testSuite.addTest(new TlsTestCase(c, "FallbackGood"));
+            addTestCase(testSuite, c, "FallbackGood");
         }
 
         {
@@ -43,14 +47,14 @@ public class TlsTestSuite extends TestSuite
             c.clientFallback = true;
             c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
 
-            testSuite.addTest(new TlsTestCase(c, "FallbackBad"));
+            addTestCase(testSuite, c, "FallbackBad");
         }
 
         {
             TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12);
             c.clientOfferVersion = ProtocolVersion.TLSv11;
 
-            testSuite.addTest(new TlsTestCase(c, "FallbackNone"));
+            addTestCase(testSuite, c, "FallbackNone");
         }
     }
 
@@ -61,7 +65,58 @@ public class TlsTestSuite extends TestSuite
         {
             TlsTestConfig c = createTlsTestConfig(version);
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "GoodDefault"));
+            addTestCase(testSuite, c, prefix + "GoodDefault");
+        }
+
+        /*
+         * Server only declares support for SHA1/RSA, client selects MD5/RSA. Since the client is
+         * NOT actually tracking MD5 over the handshake, we expect fatal alert from the client.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_VALID;
+            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
+            c.serverCertReqSigAlgs = TlsUtils.getDefaultRSASignatureAlgorithms();
+            c.expectClientFatalAlert(AlertDescription.internal_error);
+
+            addTestCase(testSuite, c, prefix + "BadCertificateVerifyHashAlg");
+        }
+
+        /*
+         * Server only declares support for SHA1/ECDSA, client selects SHA1/RSA. Since the client is
+         * actually tracking SHA1 over the handshake, we expect fatal alert to come from the server
+         * when it verifies the selected algorithm against the CertificateRequest supported
+         * algorithms.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_VALID;
+            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa);
+            c.serverCertReqSigAlgs = TlsUtils.getDefaultECDSASignatureAlgorithms();
+            c.expectServerFatalAlert(AlertDescription.illegal_parameter);
+
+            addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlg");
+        }
+
+        /*
+         * Server only declares support for SHA1/ECDSA, client signs with SHA1/RSA, but sends
+         * SHA1/ECDSA in the CertificateVerify. Since the client is actually tracking SHA1 over the
+         * handshake, and the claimed algorithm is in the CertificateRequest supported algorithms,
+         * we expect fatal alert to come from the server when it finds the claimed algorithm
+         * doesn't match the client certificate.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientAuth = C.CLIENT_AUTH_VALID;
+            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa);
+            c.clientAuthSigAlgClaimed = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
+            c.serverCertReqSigAlgs = TlsUtils.getDefaultECDSASignatureAlgorithms();
+            c.expectServerFatalAlert(AlertDescription.decrypt_error);
+
+            addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlgMismatch");
         }
 
         {
@@ -69,7 +124,7 @@ public class TlsTestSuite extends TestSuite
             c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
             c.expectServerFatalAlert(AlertDescription.decrypt_error);
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "BadCertificateVerify"));
+            addTestCase(testSuite, c, prefix + "BadCertificateVerifySignature");
         }
 
         {
@@ -77,7 +132,7 @@ public class TlsTestSuite extends TestSuite
             c.clientAuth = C.CLIENT_AUTH_INVALID_CERT;
             c.expectServerFatalAlert(AlertDescription.bad_certificate);
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "BadClientCertificate"));
+            addTestCase(testSuite, c, prefix + "BadClientCertificate");
         }
 
         {
@@ -86,22 +141,27 @@ public class TlsTestSuite extends TestSuite
             c.serverCertReq = C.SERVER_CERT_REQ_MANDATORY;
             c.expectServerFatalAlert(AlertDescription.handshake_failure);
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "BadMandatoryCertReqDeclined"));
+            addTestCase(testSuite, c, prefix + "BadMandatoryCertReqDeclined");
         }
 
         {
             TlsTestConfig c = createTlsTestConfig(version);
             c.serverCertReq = C.SERVER_CERT_REQ_NONE;
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "GoodNoCertReq"));
+            addTestCase(testSuite, c, prefix + "GoodNoCertReq");
         }
 
         {
             TlsTestConfig c = createTlsTestConfig(version);
             c.clientAuth = C.CLIENT_AUTH_NONE;
 
-            testSuite.addTest(new TlsTestCase(c, prefix + "GoodOptionalCertReqDeclined"));
+            addTestCase(testSuite, c, prefix + "GoodOptionalCertReqDeclined");
         }
+    }
+
+    private static void addTestCase(TestSuite testSuite, TlsTestConfig config, String name)
+    {
+        testSuite.addTest(new TlsTestCase(config, name));
     }
 
     private static TlsTestConfig createTlsTestConfig(ProtocolVersion version)

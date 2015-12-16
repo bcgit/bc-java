@@ -5,13 +5,11 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
-
 import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.TlsClientProtocol;
-import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
+
+import junit.framework.TestCase;
 
 public class TlsTestCase extends TestCase
 {
@@ -69,8 +67,8 @@ public class TlsTestCase extends TestCase
         NetworkOutputStream clientNetOut = new NetworkOutputStream(clientWrite);
         NetworkOutputStream serverNetOut = new NetworkOutputStream(serverWrite);
 
-        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientNetIn, clientNetOut, secureRandom);
-        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverNetIn, serverNetOut, secureRandom);
+        TlsTestClientProtocol clientProtocol = new TlsTestClientProtocol(clientNetIn, clientNetOut, secureRandom, config);
+        TlsTestServerProtocol serverProtocol = new TlsTestServerProtocol(serverNetIn, serverNetOut, secureRandom, config);
 
         TlsTestClientImpl clientImpl = new TlsTestClientImpl(config);
         TlsTestServerImpl serverImpl = new TlsTestServerImpl(config);
@@ -137,13 +135,13 @@ public class TlsTestCase extends TestCase
 
     class ServerThread extends Thread
     {
-        protected final TlsServerProtocol serverProtocol;
+        protected final TlsTestServerProtocol serverProtocol;
         protected final TlsTestServerImpl serverImpl;
 
         boolean canExit = false;
         Exception caught = null;
 
-        ServerThread(TlsServerProtocol serverProtocol, TlsTestServerImpl serverImpl)
+        ServerThread(TlsTestServerProtocol serverProtocol, TlsTestServerImpl serverImpl)
         {
             this.serverProtocol = serverProtocol;
             this.serverImpl = serverImpl;

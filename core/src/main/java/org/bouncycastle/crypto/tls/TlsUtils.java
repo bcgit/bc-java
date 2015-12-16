@@ -185,14 +185,24 @@ public class TlsUtils
         return context.getServerVersion().isSSL();
     }
 
+    public static boolean isTLSv11(ProtocolVersion version)
+    {
+        return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
     public static boolean isTLSv11(TlsContext context)
     {
-        return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+        return isTLSv11(context.getServerVersion());
+    }
+
+    public static boolean isTLSv12(ProtocolVersion version)
+    {
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
     public static boolean isTLSv12(TlsContext context)
     {
-        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(context.getServerVersion().getEquivalentTLSVersion());
+        return isTLSv12(context.getServerVersion());
     }
 
     public static void writeUint8(short i, OutputStream output)
@@ -900,6 +910,35 @@ public class TlsUtils
             supportedSignatureAlgorithms.addElement(entry);
         }
         return supportedSignatureAlgorithms;
+    }
+
+    public static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms, SignatureAndHashAlgorithm signatureAlgorithm)
+        throws IOException
+    {
+        if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1
+            || supportedSignatureAlgorithms.size() >= (1 << 15))
+        {
+            throw new IllegalArgumentException(
+                "'supportedSignatureAlgorithms' must have length from 1 to (2^15 - 1)");
+        }
+        if (signatureAlgorithm == null)
+        {
+            throw new IllegalArgumentException("'signatureAlgorithm' cannot be null");
+        }
+
+        if (signatureAlgorithm.getSignature() != SignatureAlgorithm.anonymous)
+        {
+            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            {
+                SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+                if (entry.getHash() == signatureAlgorithm.getHash() && entry.getSignature() == signatureAlgorithm.getSignature())
+                {
+                    return;
+                }
+            }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
     public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)

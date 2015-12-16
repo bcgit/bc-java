@@ -126,7 +126,11 @@ class TlsTestServerImpl
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
         {
-            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+            serverSigAlgs = config.serverCertReqSigAlgs;
+            if (serverSigAlgs == null)
+            {
+                serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+            }
         }
 
         Vector certificateAuthorities = new Vector();
