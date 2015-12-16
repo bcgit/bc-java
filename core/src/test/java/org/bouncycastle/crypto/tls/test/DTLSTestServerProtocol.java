@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.tls.DTLSServerProtocol;
 
-public class DTLSTestServerProtocol extends DTLSServerProtocol
+class DTLSTestServerProtocol extends DTLSServerProtocol
 {
     protected final TlsTestConfig config;
 
