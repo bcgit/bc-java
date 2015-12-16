@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.util;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -287,7 +288,7 @@ public class ASN1Dump
     
     private static String outputApplicationSpecific(String type, String indent, boolean verbose, ASN1Primitive obj, String nl)
     {
-        DERApplicationSpecific app = (DERApplicationSpecific)obj;
+        ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
         StringBuffer buf = new StringBuffer();
 
         if (app.isConstructed())
