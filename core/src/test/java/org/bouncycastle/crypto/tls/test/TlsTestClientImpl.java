@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;
@@ -171,9 +172,15 @@ class TlsTestClientImpl
                     return null;
                 }
 
+                Vector supportedSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+                if (supportedSigAlgs != null && config.clientAuthSigAlg != null)
+                {
+                    supportedSigAlgs = new Vector(1);
+                    supportedSigAlgs.add(config.clientAuthSigAlg);
+                }
+
                 final TlsSignerCredentials signerCredentials = TlsTestUtils.loadSignerCredentials(context,
-                    certificateRequest.getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
-                    "x509-client.pem", "x509-client-key.pem");
+                    supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client.pem", "x509-client-key.pem");
 
                 if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_VALID)
                 {

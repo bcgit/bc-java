@@ -487,6 +487,11 @@ public class DTLSServerProtocol
     protected void processCertificateVerify(ServerHandshakeState state, byte[] body, TlsHandshakeHash prepareFinishHash)
         throws IOException
     {
+        if (state.certificateRequest == null)
+        {
+            throw new IllegalStateException();
+        }
+
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         TlsServerContextImpl context = state.serverContext;
@@ -495,13 +500,15 @@ public class DTLSServerProtocol
         TlsProtocol.assertEmpty(buf);
 
         // Verify the CertificateVerify message contains a correct signature.
-        boolean verified = false;
         try
         {
+            SignatureAndHashAlgorithm signatureAlgorithm = clientCertificateVerify.getAlgorithm();
+
             byte[] hash;
             if (TlsUtils.isTLSv12(context))
             {
-                hash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
+                TlsUtils.verifySupportedSignatureAlgorithm(state.certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
+                hash = prepareFinishHash.getFinalHash(signatureAlgorithm.getHash());
             }
             else
             {
@@ -514,16 +521,18 @@ public class DTLSServerProtocol
 
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(state.clientCertificateType);
             tlsSigner.init(context);
-            verified = tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, hash);
+            if (!tlsSigner.verifyRawSignature(signatureAlgorithm, clientCertificateVerify.getSignature(), publicKey, hash))
+            {
+                throw new TlsFatalAlert(AlertDescription.decrypt_error);
+            }
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
-        }
-
-        if (!verified)
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
         }
     }
 
