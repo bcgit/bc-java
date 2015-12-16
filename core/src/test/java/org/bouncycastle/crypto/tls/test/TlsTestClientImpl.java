@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -21,6 +22,7 @@ import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
+import org.bouncycastle.crypto.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
 class TlsTestClientImpl
@@ -64,6 +66,17 @@ class TlsTestClientImpl
         }
 
         return super.getMinimumVersion();
+    }
+
+    public Hashtable getClientExtensions() throws IOException
+    {
+        Hashtable clientExtensions = super.getClientExtensions();
+        if (clientExtensions != null && !config.clientSendSignatureAlgorithms)
+        {
+            clientExtensions.remove(TlsUtils.EXT_signature_algorithms);
+            this.supportedSignatureAlgorithms = null;
+        }
+        return clientExtensions;
     }
 
     public boolean isFallback()
@@ -176,7 +189,7 @@ class TlsTestClientImpl
                 if (supportedSigAlgs != null && config.clientAuthSigAlg != null)
                 {
                     supportedSigAlgs = new Vector(1);
-                    supportedSigAlgs.add(config.clientAuthSigAlg);
+                    supportedSigAlgs.addElement(config.clientAuthSigAlg);
                 }
 
                 final TlsSignerCredentials signerCredentials = TlsTestUtils.loadSignerCredentials(context,

@@ -80,7 +80,7 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
-        DigitallySigned signed_params = DigitallySigned.parse(context, input);
+        DigitallySigned signed_params = parseSignature(input);
 
         Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
         buf.updateSigner(signer);

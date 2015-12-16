@@ -18,6 +18,17 @@ public abstract class AbstractTlsKeyExchange
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
     }
 
+    protected DigitallySigned parseSignature(InputStream input) throws IOException
+    {
+        DigitallySigned signature = DigitallySigned.parse(context, input);
+        SignatureAndHashAlgorithm signatureAlgorithm = signature.getAlgorithm();
+        if (signatureAlgorithm != null)
+        {
+            TlsUtils.verifySupportedSignatureAlgorithm(supportedSignatureAlgorithms, signatureAlgorithm);
+        }
+        return signature;
+    }
+
     public void init(TlsContext context)
     {
         this.context = context;
@@ -80,7 +91,6 @@ public abstract class AbstractTlsKeyExchange
                     throw new IllegalStateException("unsupported key exchange algorithm");
                 }
             }
-
         }
         else if (this.supportedSignatureAlgorithms != null)
         {

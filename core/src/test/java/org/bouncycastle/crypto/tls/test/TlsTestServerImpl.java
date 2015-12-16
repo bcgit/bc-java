@@ -134,7 +134,7 @@ class TlsTestServerImpl
         }
 
         Vector certificateAuthorities = new Vector();
-        certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
+        certificateAuthorities.addElement(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
@@ -176,15 +176,27 @@ class TlsTestServerImpl
         }
     }
 
+    protected Vector getSupportedSignatureAlgorithms()
+    {
+        if (TlsUtils.isTLSv12(context) && config.serverAuthSigAlg != null)
+        {
+            Vector signatureAlgorithms = new Vector(1);
+            signatureAlgorithms.addElement(config.serverAuthSigAlg);
+            return signatureAlgorithms;
+        }
+
+        return supportedSignatureAlgorithms;
+    }
+
     protected TlsSignerCredentials getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.dsa,
+        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.dsa,
             "x509-server-dsa.pem", "x509-server-key-dsa.pem");
     }
 
     protected TlsSignerCredentials getECDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa,
+        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ecdsa,
             "x509-server-ecdsa.pem", "x509-server-key-ecdsa.pem");
     }
 
@@ -196,7 +208,7 @@ class TlsTestServerImpl
 
     protected TlsSignerCredentials getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
+        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
             "x509-server.pem", "x509-server-key.pem");
     }
 }
