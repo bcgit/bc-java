@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 
-public class TlsTestServerProtocol extends TlsServerProtocol
+class TlsTestServerProtocol extends TlsServerProtocol
 {
     protected final TlsTestConfig config;
 
