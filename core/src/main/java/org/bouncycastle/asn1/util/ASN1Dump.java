@@ -26,12 +26,14 @@ import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERExternal;
+import org.bouncycastle.asn1.DERGraphicString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.DERVideotexString;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -238,6 +240,14 @@ public class ASN1Dump
         else if (obj instanceof DERT61String)
         {
             buf.append(indent + "T61String(" + ((DERT61String)obj).getString() + ") " + nl);
+        }
+        else if (obj instanceof DERGraphicString)
+        {
+            buf.append(indent + "GraphicString(" + ((DERGraphicString)obj).getString() + ") " + nl);
+        }
+        else if (obj instanceof DERVideotexString)
+        {
+            buf.append(indent + "VideotexString(" + ((DERVideotexString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1UTCTime)
         {

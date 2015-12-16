@@ -3,9 +3,11 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class DERGraphicString
     extends ASN1Primitive
+    implements ASN1String
 {
     private final byte[] string;
     
@@ -113,5 +115,10 @@ public class DERGraphicString
         DERGraphicString  s = (DERGraphicString)o;
 
         return Arrays.areEqual(string, s.string);
+    }
+
+    public String getString()
+    {
+        return Strings.fromByteArray(string);
     }
 }
