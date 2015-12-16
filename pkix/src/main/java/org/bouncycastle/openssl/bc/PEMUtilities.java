@@ -191,14 +191,14 @@ class PEMUtilities
             }
             else
             {
-                throw new EncryptionException("unknown AES encryption with private key");
+                throw new EncryptionException("unknown AES encryption with private key: " + dekAlgName);
             }
             sKey = getKey(password, keyBits / 8, salt);
             engine = new AESFastEngine();
         }
         else
         {
-            throw new EncryptionException("unknown encryption with private key");
+            throw new EncryptionException("unknown encryption with private key: " + dekAlgName);
         }
 
         if (blockMode.equals("CBC"))
