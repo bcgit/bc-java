@@ -82,7 +82,7 @@ class MockTlsServer
         }
 
         Vector certificateAuthorities = new Vector();
-        certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
+        certificateAuthorities.addElement(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }

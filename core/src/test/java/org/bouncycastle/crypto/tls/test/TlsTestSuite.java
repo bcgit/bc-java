@@ -144,6 +144,35 @@ public class TlsTestSuite extends TestSuite
             addTestCase(testSuite, c, prefix + "BadMandatoryCertReqDeclined");
         }
 
+        /*
+         * Server selects MD5/RSA for ServerKeyExchange signature, which is not in the default
+         * supported signature algorithms that the client sent. We expect fatal alert from the
+         * client when it verifies the selected algorithm against the supported algorithms.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
+            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
+
+            addTestCase(testSuite, c, prefix + "BadServerKeyExchangeSigAlg");
+        }
+
+        /*
+         * Server selects MD5/RSA for ServerKeyExchange signature, which is not the default {sha1,rsa}
+         * implied by the absent signature_algorithms extension. We expect fatal alert from the
+         * client when it verifies the selected algorithm against the implicit default.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version);
+            c.clientSendSignatureAlgorithms = false;
+            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
+            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
+
+            addTestCase(testSuite, c, prefix + "BadServerKeyExchangeSigAlg2");
+        }
+
         {
             TlsTestConfig c = createTlsTestConfig(version);
             c.serverCertReq = C.SERVER_CERT_REQ_NONE;
