@@ -169,6 +169,11 @@ public class DTLSServerProtocol
             state.certificateRequest = state.server.getCertificateRequest();
             if (state.certificateRequest != null)
             {
+                if (TlsUtils.isTLSv12(state.serverContext) != (state.certificateRequest.getSupportedSignatureAlgorithms() != null))
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
                 state.keyExchange.validateCertificateRequest(state.certificateRequest);
 
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
