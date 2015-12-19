@@ -30,6 +30,7 @@ public class PSSSigner
 
     private int                         hLen;
     private int                         mgfhLen;
+    private boolean                     sSet;
     private int                         sLen;
     private int                         emBits;
     private byte[]                      salt;
@@ -82,8 +83,45 @@ public class PSSSigner
         this.mgfDigest = mgfDigest;
         this.hLen = contentDigest.getDigestSize();
         this.mgfhLen = mgfDigest.getDigestSize();
+        this.sSet = false;
         this.sLen = sLen;
         this.salt = new byte[sLen];
+        this.mDash = new byte[8 + sLen + hLen];
+        this.trailer = trailer;
+    }
+
+    public PSSSigner(
+        AsymmetricBlockCipher   cipher,
+        Digest                  digest,
+        byte[]                  salt)
+    {
+        this(cipher, digest, digest, salt, TRAILER_IMPLICIT);
+    }
+
+    public PSSSigner(
+        AsymmetricBlockCipher   cipher,
+        Digest                  contentDigest,
+        Digest                  mgfDigest,
+        byte[]                  salt)
+    {
+        this(cipher, contentDigest, mgfDigest, salt, TRAILER_IMPLICIT);
+    }
+
+    public PSSSigner(
+        AsymmetricBlockCipher   cipher,
+        Digest                  contentDigest,
+        Digest                  mgfDigest,
+        byte[]                  salt,
+        byte                    trailer)
+    {
+        this.cipher = cipher;
+        this.contentDigest = contentDigest;
+        this.mgfDigest = mgfDigest;
+        this.hLen = contentDigest.getDigestSize();
+        this.mgfhLen = mgfDigest.getDigestSize();
+        this.sSet = true;
+        this.sLen = salt.length;
+        this.salt = salt;
         this.mDash = new byte[8 + sLen + hLen];
         this.trailer = trailer;
     }
@@ -188,7 +226,10 @@ public class PSSSigner
 
         if (sLen != 0)
         {
-            random.nextBytes(salt);
+            if (!sSet)
+            {
+                random.nextBytes(salt);
+            }
 
             System.arraycopy(salt, 0, mDash, mDash.length - sLen, sLen);
         }
@@ -270,7 +311,14 @@ public class PSSSigner
             return false;
         }
 
-        System.arraycopy(block, block.length - sLen - hLen - 1, mDash, mDash.length - sLen, sLen);
+        if (sSet)
+        {
+            System.arraycopy(salt, 0, mDash, mDash.length - sLen, sLen);
+        }
+        else
+        {
+            System.arraycopy(block, block.length - sLen - hLen - 1, mDash, mDash.length - sLen, sLen);
+        }
 
         contentDigest.update(mDash, 0, mDash.length);
         contentDigest.doFinal(mDash, mDash.length - hLen);
