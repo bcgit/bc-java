@@ -198,6 +198,11 @@ public class TlsServerProtocol
                     this.certificateRequest = tlsServer.getCertificateRequest();
                     if (this.certificateRequest != null)
                     {
+                        if (TlsUtils.isTLSv12(getContext()) != (certificateRequest.getSupportedSignatureAlgorithms() != null))
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+
                         this.keyExchange.validateCertificateRequest(certificateRequest);
 
                         sendCertificateRequestMessage(certificateRequest);
