@@ -521,7 +521,14 @@ public class ISO9796d2PSSSigner
         digest.update(m2Hash, 0, m2Hash.length);
 
         // Update for the salt
-        digest.update(block, mStart + recoveredMessage.length, saltLength);
+        if (standardSalt != null)
+        {
+            digest.update(standardSalt, 0, standardSalt.length);
+        }
+        else
+        {
+            digest.update(block, mStart + recoveredMessage.length, saltLength);
+        }
 
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
