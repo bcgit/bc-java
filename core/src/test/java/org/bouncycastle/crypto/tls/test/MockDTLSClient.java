@@ -85,8 +85,13 @@ public class MockDTLSClient
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
-        TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
-        TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+        {
+            /*
+             * NOTE: If you are copying test code, do not blindly set these extensions in your own client.
+             */
+            TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+            TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+        }
         return clientExtensions;
     }
 

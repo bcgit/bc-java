@@ -89,12 +89,8 @@ public class DTLSServerProtocol
 
         DTLSReliableHandshake.Message clientMessage = handshake.receiveMessage();
 
-        {
-            // NOTE: After receiving a record from the client, we discover the record layer version
-            ProtocolVersion client_version = recordLayer.getDiscoveredPeerVersion();
-            // TODO Read RFCs for guidance on the expected record layer version number
-            state.serverContext.setClientVersion(client_version);
-        }
+        // NOTE: DTLSRecordLayer requires any DTLS version, we don't otherwise constrain this
+//        ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
 
         if (clientMessage.getType() == HandshakeType.client_hello)
         {
@@ -109,7 +105,11 @@ public class DTLSServerProtocol
             byte[] serverHelloBody = generateServerHello(state);
 
             applyMaxFragmentLengthExtension(recordLayer, securityParameters.maxFragmentLength);
-    
+
+            ProtocolVersion recordLayerVersion = state.serverContext.getServerVersion();
+            recordLayer.setReadVersion(recordLayerVersion);
+            recordLayer.setWriteVersion(recordLayerVersion);
+
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
 

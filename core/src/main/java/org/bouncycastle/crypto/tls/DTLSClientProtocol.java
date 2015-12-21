@@ -83,13 +83,16 @@ public class DTLSClientProtocol
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
 
         byte[] clientHelloBody = generateClientHello(state, state.client);
+
+        recordLayer.setWriteVersion(ProtocolVersion.DTLSv10);
+
         handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
         while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
-            ProtocolVersion recordLayerVersion = recordLayer.resetDiscoveredPeerVersion();
+            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
             ProtocolVersion client_version = state.clientContext.getClientVersion();
 
             /*
@@ -103,6 +106,8 @@ public class DTLSClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
+            recordLayer.setReadVersion(null);
+
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
@@ -114,7 +119,9 @@ public class DTLSClientProtocol
 
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
-            reportServerVersion(state, recordLayer.getDiscoveredPeerVersion());
+            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
+            reportServerVersion(state, recordLayerVersion);
+            recordLayer.setWriteVersion(recordLayerVersion);
 
             processServerHello(state, serverMessage.getBody());
         }
