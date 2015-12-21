@@ -203,11 +203,7 @@ public class DTLSTestSuite extends TestSuite
     {
         TlsTestConfig c = new TlsTestConfig();
         c.clientMinimumVersion = ProtocolVersion.DTLSv10;
-        /*
-         * TODO We'd like to just set the offer version to DTLSv12, but there is a known issue with
-         * overly-restrictive version checks b/w BC DTLS 1.2 client, BC DTLS 1.0 server
-         */
-        c.clientOfferVersion = version;
+        c.clientOfferVersion = ProtocolVersion.DTLSv12;
         c.serverMaximumVersion = version;
         c.serverMinimumVersion = ProtocolVersion.DTLSv10;
         return c;

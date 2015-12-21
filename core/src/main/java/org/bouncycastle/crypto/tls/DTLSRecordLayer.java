@@ -18,7 +18,7 @@ class DTLSRecordLayer
 
     private volatile boolean closed = false;
     private volatile boolean failed = false;
-    private volatile ProtocolVersion discoveredPeerVersion = null;
+    private volatile ProtocolVersion readVersion = null, writeVersion = null;
     private volatile boolean inHandshake;
     private volatile int plaintextLimit;
     private DTLSEpoch currentEpoch, pendingEpoch;
@@ -49,16 +49,19 @@ class DTLSRecordLayer
         this.plaintextLimit = plaintextLimit;
     }
 
-    ProtocolVersion getDiscoveredPeerVersion()
+    ProtocolVersion getReadVersion()
     {
-        return discoveredPeerVersion;
+        return readVersion;
     }
 
-    ProtocolVersion resetDiscoveredPeerVersion()
+    void setReadVersion(ProtocolVersion readVersion)
     {
-        ProtocolVersion result = discoveredPeerVersion; 
-        discoveredPeerVersion = null;
-        return result;
+        this.readVersion = readVersion;
+    }
+
+    void setWriteVersion(ProtocolVersion writeVersion)
+    {
+        this.writeVersion = writeVersion;
     }
 
     void initPendingEpoch(TlsCipher pendingCipher)
@@ -201,7 +204,12 @@ class DTLSRecordLayer
                 }
 
                 ProtocolVersion version = TlsUtils.readVersion(record, 1);
-                if (discoveredPeerVersion != null && !discoveredPeerVersion.equals(version))
+                if (!version.isDTLS())
+                {
+                    continue;
+                }
+
+                if (readVersion != null && !readVersion.equals(version))
                 {
                     continue;
                 }
@@ -217,9 +225,9 @@ class DTLSRecordLayer
                     continue;
                 }
 
-                if (discoveredPeerVersion == null)
+                if (readVersion == null)
                 {
-                    discoveredPeerVersion = version;
+                    readVersion = version;
                 }
 
                 switch (type)
@@ -475,6 +483,12 @@ class DTLSRecordLayer
     private void sendRecord(short contentType, byte[] buf, int off, int len)
         throws IOException
     {
+        // Never send anything until a valid ClientHello has been received
+        if (writeVersion == null)
+        {
+            return;
+        }
+
         if (len > this.plaintextLimit)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -499,8 +513,7 @@ class DTLSRecordLayer
 
         byte[] record = new byte[ciphertext.length + RECORD_HEADER_LENGTH];
         TlsUtils.writeUint8(contentType, record, 0);
-        ProtocolVersion version = discoveredPeerVersion != null ? discoveredPeerVersion : context.getClientVersion();
-        TlsUtils.writeVersion(version, record, 1);
+        TlsUtils.writeVersion(writeVersion, record, 1);
         TlsUtils.writeUint16(recordEpoch, record, 3);
         TlsUtils.writeUint48(recordSequenceNumber, record, 5);
         TlsUtils.writeUint16(ciphertext.length, record, 11);
