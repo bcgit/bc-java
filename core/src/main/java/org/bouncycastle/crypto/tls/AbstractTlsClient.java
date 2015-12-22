@@ -211,11 +211,11 @@ public abstract class AbstractTlsClient extends AbstractTlsPeer implements TlsCl
 	public void notifyNewSessionTicket(NewSessionTicket newSessionTicket, SecurityParameters securityParameters) throws IOException {
 	}
 
-	public NewSessionTicket getNewSessionTicket() throws IOException {
+	public NewSessionTicket getNewSessionTicket() {
 		return null;
 	}
 
-	public SecurityParameters getSecurityParameters() throws IOException {
+	public SecurityParameters getSecurityParameters() {
 		return null;
 	}
 }

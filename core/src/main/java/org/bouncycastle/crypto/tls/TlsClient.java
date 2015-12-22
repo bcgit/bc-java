@@ -76,9 +76,8 @@ public interface TlsClient extends TlsPeer {
 	/**
 	 * 
 	 * @return a {@link NewSessionTicket}
-	 * @throws IOException
 	 */
-	NewSessionTicket getNewSessionTicket() throws IOException;
+	NewSessionTicket getNewSessionTicket();
 
 	/**
 	 * In the case of TLS resumption using session tickets,
@@ -89,5 +88,5 @@ public interface TlsClient extends TlsPeer {
 	 * @return A {@link SecurityParameters} object
 	 * @throws IOException
 	 */
-	SecurityParameters getSecurityParameters() throws IOException;
+	SecurityParameters getSecurityParameters();
 }
