@@ -37,6 +37,7 @@ public class TlsClientTest
         long time2 = System.currentTimeMillis();
         System.out.println("Elapsed 1: " + (time2 - time1) + "ms");
 
+        // session resumption using session id
         client = new MockTlsClient(client.getSessionToResume());
         protocol = openTlsConnection(address, port, client);
 
@@ -57,6 +58,12 @@ public class TlsClientTest
         }
 
         protocol.close();
+        
+        // session resumption using session tickets
+        client = new MockTlsClient(client.getSessionTicket(), client.getSecurityParameters());
+        protocol = openTlsConnection(address, port, client);
+        protocol.close();
+        
     }
 
     static TlsClientProtocol openTlsConnection(InetAddress address, int port, TlsClient client) throws IOException
