@@ -577,7 +577,13 @@ public class TlsClientProtocol
 
         assertEmpty(buf);
 
-        tlsClient.notifyNewSessionTicket(newSessionTicket);
+        /*
+         * RFC 5077 - notify client so it can save the ticket and security
+         * parameters for session resumption.
+         */
+        SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.copySecurityParametersFrom(this.securityParameters);
+        tlsClient.notifyNewSessionTicket(newSessionTicket, securityParameters);
     }
 
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)

@@ -602,8 +602,15 @@ public class DTLSClientProtocol
         NewSessionTicket newSessionTicket = NewSessionTicket.parse(buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        state.client.notifyNewSessionTicket(newSessionTicket);
+        
+        /*
+         * RFC 5077 - notify client so it can save the ticket and security
+         * parameters for session resumption.
+         */
+        SecurityParameters securityParameters = new SecurityParameters();
+        securityParameters.copySecurityParametersFrom(state.clientContext.getSecurityParameters());
+        
+        state.client.notifyNewSessionTicket(newSessionTicket, securityParameters);
     }
 
     protected Certificate processServerCertificate(ClientHandshakeState state, byte[] body)

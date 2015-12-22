@@ -19,6 +19,24 @@ public class SecurityParameters
     boolean truncatedHMac = false;
     boolean encryptThenMAC = false;
     boolean extendedMasterSecret = false;
+    
+	/**
+	 * Copies the security parameters from another instance if it is not null,
+	 * otherwise this is a no-op.
+	 * 
+	 * @param other
+	 */
+    void copySecurityParametersFrom(SecurityParameters other)
+    {
+    	if (other != null) {
+	        this.entity = other.entity;
+	        this.cipherSuite = other.cipherSuite;
+	        this.compressionAlgorithm = other.compressionAlgorithm;
+	        this.prfAlgorithm = other.prfAlgorithm;
+	        this.verifyDataLength = other.verifyDataLength;
+	        this.masterSecret = Arrays.clone(other.masterSecret);
+    	}
+    }
 
     void clear()
     {

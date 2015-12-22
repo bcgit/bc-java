@@ -12,7 +12,9 @@ import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.MaxFragmentLength;
+import org.bouncycastle.crypto.tls.NewSessionTicket;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.crypto.tls.SecurityParameters;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
 import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
@@ -26,6 +28,8 @@ class MockTlsClient
     extends DefaultTlsClient
 {
     TlsSession session;
+    NewSessionTicket sessionTicket;
+    SecurityParameters securityParameters;
 
     MockTlsClient(TlsSession session)
     {
@@ -166,5 +170,23 @@ class MockTlsClient
 
             this.session = newSession;
         }
+    }
+
+    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket, SecurityParameters securityParameters)
+            throws IOException
+    {
+        super.notifyNewSessionTicket(newSessionTicket, securityParameters);
+        this.sessionTicket = newSessionTicket;
+        this.securityParameters = securityParameters;
+    }
+
+    public NewSessionTicket getSessionTicket()
+    {
+        return sessionTicket;
+    }
+
+    public SecurityParameters getSecurityParameters()
+    {
+        return this.securityParameters;
     }
 }
