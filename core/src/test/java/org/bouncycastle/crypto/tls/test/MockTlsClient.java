@@ -35,6 +35,12 @@ class MockTlsClient
     {
         this.session = session;
     }
+    
+    MockTlsClient(NewSessionTicket sessionTicket, SecurityParameters securityParameters)
+    {
+        this.sessionTicket = sessionTicket;
+        this.securityParameters = securityParameters;
+    }
 
     public TlsSession getSessionToResume()
     {
