@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -252,7 +253,31 @@ public class TlsClientProtocol
 
                 if (this.resumedSession)
                 {
-                    this.securityParameters.masterSecret = Arrays.clone(this.sessionParameters.getMasterSecret());
+                    /*
+                     * RFC 5077 - The master secret to use depends on whether
+                     * resumed session using session id or ticket.
+                     * 
+                     * If this is resumed session, we expect either session
+                     * parameters to be available or the client to provide us
+                     * with security parameters. If neither gives us master
+                     * secret, we raise an alert.
+                     */
+
+                    if (this.sessionParameters != null)
+                    {
+                        this.securityParameters.masterSecret = Arrays.clone(this.sessionParameters.getMasterSecret());
+                    }
+                    else if (this.tlsClient.getNewSessionTicket() != null
+                            && this.tlsClient.getSecurityParameters() != null)
+                    {
+                        this.securityParameters.masterSecret = Arrays.clone(this.tlsClient.getSecurityParameters()
+                                .getMasterSecret());
+                    }
+                    else
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                    }
+
                     this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                     sendChangeCipherSpecMessage();
@@ -623,10 +648,12 @@ public class TlsClientProtocol
         }
 
         this.tlsClient.notifySessionID(this.selectedSessionID);
-
-        this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
-            && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
-
+        
+        /*
+         * RFC 5077 - can resume either using session id or using
+         * NewSessionTicket
+         */
+        this.resumedSession = canResumeUsingSessionId() || canResumeUsingNewSessionTicket();
         /*
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones, and is a valid selection for the negotiated version.
@@ -771,14 +798,49 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (this.resumedSession)
         {
-            if (selectedCipherSuite != this.sessionParameters.getCipherSuite()
-                || selectedCompressionMethod != this.sessionParameters.getCompressionAlgorithm())
+        	/*
+             * RFC 5077 - We will have session parameters only if there is a TLS
+             * session (with id). In the case of session tickets, there is no
+             * TLS session. So the check to ensure whether the selected cipher
+             * suite and compression algorithm match with expected ones depends
+             * on whether session resumption using session id or ticket is being
+             * done. In the case of session id, expected cipher suite and
+             * compression algorithm are from the session parameters. In the
+             * case of session ticket, they are from the security parameters
+             * (expected to be stored in the client).
+             */
+
+            int expectedCipherSuite = -1;
+            short expectedCompressionAlgorithm = -1;
+
+            if (this.selectedSessionID != null && this.selectedSessionID.length > 0)
+            {
+                expectedCipherSuite = this.sessionParameters.getCipherSuite();
+                expectedCompressionAlgorithm = this.sessionParameters.getCompressionAlgorithm();
+            }
+            else if (this.tlsClient.getNewSessionTicket() != null && this.tlsClient.getSecurityParameters() != null)
+            {
+                expectedCipherSuite = this.tlsClient.getSecurityParameters().getCipherSuite();
+                expectedCompressionAlgorithm = this.tlsClient.getSecurityParameters().getCompressionAlgorithm();
+            }
+            else
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            if (selectedCipherSuite != expectedCipherSuite || selectedCompressionMethod != expectedCompressionAlgorithm)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
             sessionClientExtensions = null;
-            sessionServerExtensions = this.sessionParameters.readServerExtensions();
+
+            // RFC 5077 - this.sessionParameters can be null if resuming using
+            // session tickets
+            if (this.sessionParameters != null)
+            {
+                sessionServerExtensions = this.sessionParameters.readServerExtensions();
+            }
 
             this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
         }
@@ -925,6 +987,23 @@ public class TlsClientProtocol
         }
 
         TlsUtils.writeUint8ArrayWithUint8Length(offeredCompressionMethods, message);
+        
+        /*
+         * RFC 5077 - If the client supports session ticket extension and it has
+         * a ticket, then put the ticket in the client hello.
+         */
+        byte[] sessionTicketExtData = TlsUtils.getExtensionData(clientExtensions, EXT_SessionTicket);
+        NewSessionTicket sessionTicket = tlsClient.getNewSessionTicket();
+
+        boolean sessionTicketExtSupported = sessionTicketExtData != null;
+        boolean sessionTicketPresent = sessionTicket != null;
+
+        if (sessionTicketExtSupported && sessionTicketPresent)
+        {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            sessionTicket.encode(output);
+            clientExtensions.put(EXT_SessionTicket, output.toByteArray());
+        }
 
         if (clientExtensions != null)
         {
@@ -942,5 +1021,16 @@ public class TlsClientProtocol
         this.keyExchange.generateClientKeyExchange(message);
 
         message.writeToRecordStream();
+    }
+    
+    private boolean canResumeUsingSessionId()
+    {
+        return this.selectedSessionID.length > 0 && this.tlsSession != null
+                && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
+    }
+
+    private boolean canResumeUsingNewSessionTicket()
+    {
+        return this.tlsClient.getNewSessionTicket() != null;
     }
 }
