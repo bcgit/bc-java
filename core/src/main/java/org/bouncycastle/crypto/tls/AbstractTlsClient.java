@@ -90,8 +90,8 @@ public abstract class AbstractTlsClient
             // TODO Provide a way for the user to specify the acceptable
             // hash/signature algorithms.
 
-            short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                    HashAlgorithm.sha224, HashAlgorithm.sha1 };
+            short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224,
+                    HashAlgorithm.sha1 };
 
             // TODO Sort out ECDSA signatures and add them as the preferred
             // option here
@@ -102,16 +102,14 @@ public abstract class AbstractTlsClient
             {
                 for (int j = 0; j < signatureAlgorithms.length; ++j)
                 {
-                    this.supportedSignatureAlgorithms
-                            .addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
+                    this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
                 }
             }
 
             /*
              * RFC 5264 7.4.3. Currently, DSA [DSS] may only be used with SHA-1.
              */
-            this.supportedSignatureAlgorithms
-                    .addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+            this.supportedSignatureAlgorithms.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
@@ -133,8 +131,8 @@ public abstract class AbstractTlsClient
              * configuration options.
              */
             this.namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.secp384r1 };
-            this.clientECPointFormats = new short[] { ECPointFormat.uncompressed,
-                    ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
+            this.clientECPointFormats = new short[] { ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
+                    ECPointFormat.ansiX962_compressed_char2, };
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
@@ -240,8 +238,7 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket, SecurityParameters securityParameters)
-        throws IOException
+    public void notifyNewSessionTicket(NewSessionTicket newSessionTicket, SecurityParameters securityParameters) throws IOException
     {
     }
 
