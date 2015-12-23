@@ -5,8 +5,8 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 public abstract class AbstractTlsClient
-        extends AbstractTlsPeer
-        implements TlsClient
+    extends AbstractTlsPeer
+    implements TlsClient
 {
     protected TlsCipherFactory cipherFactory;
 
@@ -88,12 +88,12 @@ public abstract class AbstractTlsClient
             // TODO Provide a way for the user to specify the acceptable
             // hash/signature algorithms.
 
-            short[] hashAlgorithms = new short[]{HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
-                    HashAlgorithm.sha224, HashAlgorithm.sha1};
+            short[] hashAlgorithms = new short[]{ HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256,
+                    HashAlgorithm.sha224, HashAlgorithm.sha1 };
 
             // TODO Sort out ECDSA signatures and add them as the preferred
             // option here
-            short[] signatureAlgorithms = new short[]{SignatureAlgorithm.rsa};
+            short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa };
 
             this.supportedSignatureAlgorithms = new Vector();
             for (int i = 0; i < hashAlgorithms.length; ++i)
@@ -128,9 +128,9 @@ public abstract class AbstractTlsClient
              * TODO Could just add all the curves since we support them all, but users may not want
              * to use unnecessarily large fields. Need configuration options.
              */
-            this.namedCurves = new int[]{NamedCurve.secp256r1, NamedCurve.secp384r1};
-            this.clientECPointFormats = new short[]{ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
-                    ECPointFormat.ansiX962_compressed_char2,};
+            this.namedCurves = new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1 };
+            this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
+                    ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
@@ -156,7 +156,7 @@ public abstract class AbstractTlsClient
 
     public short[] getCompressionMethods()
     {
-        return new short[]{CompressionMethod._null};
+        return new short[]{ CompressionMethod._null };
     }
 
     public void notifySessionID(byte[] sessionID)
