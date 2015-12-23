@@ -241,7 +241,7 @@ public abstract class AbstractTlsClient
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket, SecurityParameters securityParameters)
-            throws IOException
+        throws IOException
     {
     }
 
