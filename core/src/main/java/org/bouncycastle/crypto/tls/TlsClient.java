@@ -30,9 +30,11 @@ public interface TlsClient
     short[] getCompressionMethods();
 
     // Hashtable is (Integer -> byte[])
-    Hashtable getClientExtensions() throws IOException;
+    Hashtable getClientExtensions()
+        throws IOException;
 
-    void notifyServerVersion(ProtocolVersion selectedVersion) throws IOException;
+    void notifyServerVersion(ProtocolVersion selectedVersion)
+        throws IOException;
 
     /**
      * Notifies the client of the session_id sent in the ServerHello.
@@ -47,17 +49,22 @@ public interface TlsClient
     void notifySelectedCompressionMethod(short selectedCompressionMethod);
 
     // Hashtable is (Integer -> byte[])
-    void processServerExtensions(Hashtable serverExtensions) throws IOException;
+    void processServerExtensions(Hashtable serverExtensions)
+        throws IOException;
 
     // Vector is (SupplementalDataEntry)
-    void processServerSupplementalData(Vector serverSupplementalData) throws IOException;
+    void processServerSupplementalData(Vector serverSupplementalData)
+        throws IOException;
 
-    TlsKeyExchange getKeyExchange() throws IOException;
+    TlsKeyExchange getKeyExchange()
+        throws IOException;
 
-    TlsAuthentication getAuthentication() throws IOException;
+    TlsAuthentication getAuthentication()
+        throws IOException;
 
     // Vector is (SupplementalDataEntry)
-    Vector getClientSupplementalData() throws IOException;
+    Vector getClientSupplementalData()
+        throws IOException;
 
     /**
      * RFC 5077 3.3. NewSessionTicket Handshake Message

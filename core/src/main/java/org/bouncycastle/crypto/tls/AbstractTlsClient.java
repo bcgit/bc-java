@@ -73,7 +73,8 @@ public abstract class AbstractTlsClient
         return false;
     }
 
-    public Hashtable getClientExtensions() throws IOException
+    public Hashtable getClientExtensions()
+        throws IOException
     {
         Hashtable clientExtensions = null;
 
@@ -146,7 +147,8 @@ public abstract class AbstractTlsClient
         return ProtocolVersion.TLSv10;
     }
 
-    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
+    public void notifyServerVersion(ProtocolVersion serverVersion)
+        throws IOException
     {
         if (!getMinimumVersion().isEqualOrEarlierVersionOf(serverVersion))
         {
@@ -174,7 +176,8 @@ public abstract class AbstractTlsClient
         this.selectedCompressionMethod = selectedCompressionMethod;
     }
 
-    public void processServerExtensions(Hashtable serverExtensions) throws IOException
+    public void processServerExtensions(Hashtable serverExtensions)
+        throws IOException
     {
         /*
          * TlsProtocol implementation validates that any server extensions received correspond to
@@ -204,7 +207,8 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public void processServerSupplementalData(Vector serverSupplementalData) throws IOException
+    public void processServerSupplementalData(Vector serverSupplementalData)
+        throws IOException
     {
         if (serverSupplementalData != null)
         {
@@ -212,12 +216,14 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public Vector getClientSupplementalData() throws IOException
+    public Vector getClientSupplementalData()
+        throws IOException
     {
         return null;
     }
 
-    public TlsCompression getCompression() throws IOException
+    public TlsCompression getCompression()
+        throws IOException
     {
         switch (selectedCompressionMethod)
         {
