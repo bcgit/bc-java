@@ -40,10 +40,11 @@ public abstract class AbstractTlsClient
     }
 
     /**
-     * RFC 5246 E.1. "TLS clients that wish to negotiate with older servers MAY send any value {03,XX} as the record
-     * layer version number. Typical values would be {03,00}, the lowest version number supported by the client, and the
-     * value of ClientHello.client_version. No single value will guarantee interoperability with all old servers, but
-     * this is a complex topic beyond the scope of this document."
+     * RFC 5246 E.1. "TLS clients that wish to negotiate with older servers MAY send any value
+     * {03,XX} as the record layer version number. Typical values would be {03,00}, the lowest
+     * version number supported by the client, and the value of ClientHello.client_version. No
+     * single value will guarantee interoperability with all old servers, but this is a complex
+     * topic beyond the scope of this document."
      */
     public ProtocolVersion getClientHelloRecordLayerVersion()
     {
@@ -65,8 +66,9 @@ public abstract class AbstractTlsClient
     public boolean isFallback()
     {
         /*
-         * draft-ietf-tls-downgrade-scsv-00 4. [..] is meant for use by clients that repeat a connection attempt with a
-         * downgraded protocol in order to avoid interoperability problems with legacy servers.
+         * draft-ietf-tls-downgrade-scsv-00 4. [..] is meant for use by clients that repeat a
+         * connection attempt with a downgraded protocol in order to avoid interoperability problems
+         * with legacy servers.
          */
         return false;
     }
@@ -78,8 +80,8 @@ public abstract class AbstractTlsClient
         ProtocolVersion clientVersion = context.getClientVersion();
 
         /*
-         * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2. Clients MUST NOT
-         * offer it if they are offering prior versions.
+         * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior to 1.2.
+         * Clients MUST NOT offer it if they are offering prior versions.
          */
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
@@ -117,14 +119,14 @@ public abstract class AbstractTlsClient
         if (TlsECCUtils.containsECCCipherSuites(getCipherSuites()))
         {
             /*
-             * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message appends these
-             * extensions (along with any others), enumerating the curves it supports and the point formats it can
-             * parse. Clients SHOULD send both the Supported Elliptic Curves Extension and the Supported Point Formats
-             * Extension.
+             * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
+             * appends these extensions (along with any others), enumerating the curves it supports
+             * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
+             * Curves Extension and the Supported Point Formats Extension.
              */
             /*
-             * TODO Could just add all the curves since we support them all, but users may not want to use unnecessarily
-             * large fields. Need configuration options.
+             * TODO Could just add all the curves since we support them all, but users may not want
+             * to use unnecessarily large fields. Need configuration options.
              */
             this.namedCurves = new int[]{NamedCurve.secp256r1, NamedCurve.secp384r1};
             this.clientECPointFormats = new short[]{ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
@@ -175,8 +177,8 @@ public abstract class AbstractTlsClient
     public void processServerExtensions(Hashtable serverExtensions) throws IOException
     {
         /*
-         * TlsProtocol implementation validates that any server extensions received correspond to client extensions
-         * sent. By default, we don't send any, and this method is not called.
+         * TlsProtocol implementation validates that any server extensions received correspond to
+         * client extensions sent. By default, we don't send any, and this method is not called.
          */
         if (serverExtensions != null)
         {
@@ -224,9 +226,9 @@ public abstract class AbstractTlsClient
 
         default:
             /*
-             * Note: internal error here; the TlsProtocol implementation verifies that the server-selected compression
-             * method was in the list of client-offered compression methods, so if we now can't produce an
-             * implementation, we shouldn't have offered it!
+             * Note: internal error here; the TlsProtocol implementation verifies that the
+             * server-selected compression method was in the list of client-offered compression
+             * methods, so if we now can't produce an implementation, we shouldn't have offered it!
              */
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
