@@ -1001,7 +1001,7 @@ public class TlsClientProtocol
         if (sessionTicketExtSupported && sessionTicketPresent)
         {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            sessionTicket.encode(output);
+            sessionTicket.encodeWithoutLifetime(output);
             clientExtensions.put(EXT_SessionTicket, output.toByteArray());
         }
 

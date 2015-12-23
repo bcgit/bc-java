@@ -16,6 +16,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
+    public static final Integer EXT_session_tickets = Integer.valueOf(ExtensionType.session_ticket);
 
     public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
     {
@@ -59,6 +60,11 @@ public class TlsExtensionsUtils
     public static void addTruncatedHMacExtension(Hashtable extensions)
     {
         extensions.put(EXT_truncated_hmac, createTruncatedHMacExtension());
+    }
+    
+    public static void addSessionTicketExtension(Hashtable extensions)
+    {
+        extensions.put(EXT_session_tickets, createEmptyExtensionData());
     }
 
     public static HeartbeatExtension getHeartbeatExtension(Hashtable extensions)

@@ -90,6 +90,7 @@ class MockTlsClient
 //        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
         TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
         TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
+        TlsExtensionsUtils.addSessionTicketExtension(clientExtensions);
         return clientExtensions;
     }
 
@@ -186,7 +187,7 @@ class MockTlsClient
         this.securityParameters = securityParameters;
     }
 
-    public NewSessionTicket getSessionTicket()
+    public NewSessionTicket getNewSessionTicket()
     {
         return sessionTicket;
     }

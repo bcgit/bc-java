@@ -37,6 +37,13 @@ public class NewSessionTicket
         TlsUtils.writeUint32(ticketLifetimeHint, output);
         TlsUtils.writeOpaque16(ticket, output);
     }
+    
+    public void encodeWithoutLifetime(OutputStream output) throws IOException
+    {
+        // just raw ticket bytes
+        // length will be added later
+        output.write(ticket);
+    }
 
     /**
      * Parse a {@link NewSessionTicket} from an {@link InputStream}.

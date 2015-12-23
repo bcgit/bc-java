@@ -60,7 +60,7 @@ public class TlsClientTest
         protocol.close();
         
         // session resumption using session tickets
-        client = new MockTlsClient(client.getSessionTicket(), client.getSecurityParameters());
+        client = new MockTlsClient(client.getNewSessionTicket(), client.getSecurityParameters());
         protocol = openTlsConnection(address, port, client);
         protocol.close();
         
