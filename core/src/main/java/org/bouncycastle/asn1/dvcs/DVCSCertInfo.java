@@ -70,14 +70,11 @@ public class DVCSCertInfo
     {
         int i = 0;
         ASN1Encodable x = seq.getObjectAt(i++);
-        try
+        if (x instanceof ASN1Integer)
         {
             ASN1Integer encVersion = ASN1Integer.getInstance(x);
             this.version = encVersion.getValue().intValue();
             x = seq.getObjectAt(i++);
-        }
-        catch (IllegalArgumentException e)
-        {
         }
 
         this.dvReqInfo = DVCSRequestInformation.getInstance(x);
