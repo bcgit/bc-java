@@ -1,7 +1,7 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
 
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.Vector;
 
 
@@ -40,9 +40,12 @@ public class GF2nPolynomialField
      * elements and characteristic 2.
      *
      * @param deg the extention degree of this field
+     * @param random     source of randomness for generating new polynomials.
      */
-    public GF2nPolynomialField(int deg)
+    public GF2nPolynomialField(int deg, SecureRandom random)
     {
+        super(random);
+
         if (deg < 3)
         {
             throw new IllegalArgumentException("k must be at least 3");
@@ -59,12 +62,15 @@ public class GF2nPolynomialField
      * elements and characteristic 2.
      *
      * @param deg  the degree of this field
+     * @param random     source of randomness for generating new polynomials.
      * @param file true if you want to read the field polynomial from the
      *             file false if you want to use a random fielpolynomial
      *             (this can take very long for huge degrees)
      */
-    public GF2nPolynomialField(int deg, boolean file)
+    public GF2nPolynomialField(int deg, SecureRandom random, boolean file)
     {
+        super(random);
+
         if (deg < 3)
         {
             throw new IllegalArgumentException("k must be at least 3");
@@ -89,11 +95,14 @@ public class GF2nPolynomialField
      * whether it is irreducible. This can take some time if <i>i</i> is huge!
      *
      * @param deg        degree of the GF2nField
+     * @param random     source of randomness for generating new polynomials.
      * @param polynomial the field polynomial to use
      */
-    public GF2nPolynomialField(int deg, GF2Polynomial polynomial)
+    public GF2nPolynomialField(int deg, SecureRandom random, GF2Polynomial polynomial)
         throws RuntimeException
     {
+        super(random);
+
         if (deg < 3)
         {
             throw new IllegalArgumentException("degree must be at least 3");
@@ -231,7 +240,7 @@ public class GF2nPolynomialField
             do
             {
                 // 2.1 choose random u (element of) GF(2^m)
-                u = new GF2nPolynomialElement(this, new Random());
+                u = new GF2nPolynomialElement(this, random);
                 ut = new GF2nPolynomial(2, GF2nPolynomialElement.ZERO(this));
                 // 2.2 Set c(t) <- ut
                 ut.set(1, u);
