@@ -180,7 +180,7 @@ public class VMPCMac implements Mac
 
         for (int i = 0; i < len; i++)
         {
-            update(in[i]);
+            update(in[inOff + i]);
         }
     }
 }

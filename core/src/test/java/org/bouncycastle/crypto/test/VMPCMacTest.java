@@ -29,16 +29,18 @@ public class VMPCMacTest extends SimpleTest
         CipherParameters kpwiv = new ParametersWithIV(kp,
             Hex.decode("4B5C2F003E67F39557A8D26F3DA2B155"));
 
-        byte[] m = new byte[256];
+        byte[] m = new byte[512];
+
+        int offset = 117;
         for (int i = 0; i < 256; i++)
         {
-            m[i] = (byte) i;
+            m[offset + i] = (byte) i;
         }
 
         VMPCMac mac = new VMPCMac();
         mac.init(kpwiv);
 
-        mac.update(m, 0, m.length);
+        mac.update(m, offset, 256);
 
         byte[] out = new byte[20];
         mac.doFinal(out, 0);
