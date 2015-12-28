@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.util.Integers;
 
 public class TraceOptimizer
 {
@@ -73,7 +74,7 @@ public class TraceOptimizer
                 int tr = calculateTrace(fe);
                 if (tr != 0)
                 {
-                    nonZeroTraceBits.add(i);
+                    nonZeroTraceBits.add(Integers.valueOf(i));
                     System.out.print(" " + i);
                 }
             }

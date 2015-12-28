@@ -757,7 +757,7 @@ public abstract class TlsProtocol
         catch (IOException e)
         {
             // readApplicationData() only throws if there is no data available, so this should never happen
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.toString()); // early JDK fix.
         }
     }
 
