@@ -119,7 +119,7 @@ public class Blake2bDigest
 		this.bufferPos = digest.bufferPos;
 		this.buffer = Arrays.clone(digest.buffer);
 		this.keyLength = digest.keyLength;
-		this.key = Arrays.clone(key);
+		this.key = Arrays.clone(digest.key);
 		this.digestLength = digest.digestLength;
 		this.chainValue = Arrays.clone(digest.chainValue);
 		this.personalization = Arrays.clone(personalization);
