@@ -34,7 +34,7 @@ public class PKCS7TypedStream
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to convert content to stream: " + e.getMessage(), e);
+            throw new CMSRuntimeException("unable to convert content to stream: " + e.getMessage(), e);
         }
     }
 
