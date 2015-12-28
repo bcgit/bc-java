@@ -146,6 +146,7 @@
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
                 <exclude name="**/BcCertTest.java" />
+                <exclude name="**/AlgorithmParametersTest.java" />
                 <exclude name="**/provider/test/DSTU4145Test.java" />
                 <exclude name="**/PGPUnicodeTest.java" />
                 <exclude name="**/pqc/**/EncryptionKeyTest.java" />
