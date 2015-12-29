@@ -52,6 +52,12 @@ public class CMSTypedStream
         _in = new FullReaderStream(in);
     }
 
+    protected CMSTypedStream(
+         ASN1ObjectIdentifier oid)
+    {
+        _oid = oid;
+    }
+
     public ASN1ObjectIdentifier getContentType()
     {
         return _oid;
