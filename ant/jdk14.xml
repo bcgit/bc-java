@@ -76,6 +76,7 @@
                 <exclude name="**/X509StoreTest.java" />
                 <exclude name="**/MQVTest.java" />
                 <exclude name="**/pem/AllTests.java" />
+                <exclude name="**/AlgorithmParametersTest.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
