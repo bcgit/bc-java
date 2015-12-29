@@ -13,7 +13,7 @@ public class CMSTypedStream
     private static final int BUF_SIZ = 32 * 1024;
     
     private final ASN1ObjectIdentifier      _oid;
-    private final InputStream _in;
+    protected InputStream _in;
 
     public CMSTypedStream(
         InputStream in)

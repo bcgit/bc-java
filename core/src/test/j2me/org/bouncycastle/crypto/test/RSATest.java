@@ -438,7 +438,7 @@ public class RSATest
         }
 
         genParam = new RSAKeyGenerationParameters(
-            BigInteger.valueOf(0x11), new SecureRandom(), 16, 25);
+            BigInteger.valueOf(0x11), new SecureRandom(), 128, 25);
         pGen.init(genParam);
 
         for (int i = 0; i < 100; ++i)
