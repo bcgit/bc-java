@@ -87,6 +87,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/CRL5Test.java
     rm -rf org/bouncycastle/jce/provider/test/X509LDAP*.java
     rm -rf org/bouncycastle/jce/provider/test/MQVTest*.java
+    rm -rf org/bouncycastle/jce/provider/test/AlgorithmParametersTest.java
     rm -rf org/bouncycastle/jce/spec/ECNamedCurveSpec.java
     rm -rf org/bouncycastle/util/encoders/test/*.java
     rm -rf org/bouncycastle/x509/PKIXCertPathReviewer.java
@@ -103,6 +104,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/rsa3
     rm -rf org/bouncycastle/jce/provider/test/DSTU4145Test.java
     rm -rf org/bouncycastle/jce/provider/test/JceTestUtil.java
+    rm -f  org/bouncycastle/math/ec/tools/F2mSqrtOptimizer.java
+    rm -f  org/bouncycastle/math/ec/tools/TraceOptimizer.java
     rm -rf org/bouncycastle/x509/PKIXAttrCert*.java
     rm -rf org/bouncycastle/jce/provider/RFC3281*.java
     rm -rf org/bouncycastle/jcajce/PKCS12StoreParameter.java
