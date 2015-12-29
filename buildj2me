@@ -130,6 +130,7 @@ then
         rm -r src/org/bouncycastle/openssl
         rm -r src/org/bouncycastle/apache
         rm -r src/org/bouncycastle/voms
+        rm -r src/org/bouncycastle/math/ec/tools
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
     )
 
