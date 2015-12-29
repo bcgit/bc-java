@@ -30,8 +30,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.crypto.Cipher;
@@ -266,7 +268,8 @@ public class PKCS12KeyStoreSpi
 
     /**
      * this is not quite complete - we should follow up on the chain, a bit
-     * tricky if a certificate appears in more than one chain...
+     * tricky if a certificate appears in more than one chain... the store method
+     * now prunes out unused certificates from the chain map if they are present.
      */
     public void engineDeleteEntry(
         String alias)
@@ -1220,7 +1223,6 @@ public class PKCS12KeyStoreSpi
         //
         ASN1EncodableVector keyS = new ASN1EncodableVector();
 
-
         Enumeration ks = keys.keys();
 
         while (ks.hasMoreElements())
@@ -1470,6 +1472,8 @@ public class PKCS12KeyStoreSpi
             }
         }
 
+        Set usedSet = getUsedCertificateSet();
+
         cs = chainCerts.keys();
         while (cs.hasMoreElements())
         {
@@ -1477,6 +1481,11 @@ public class PKCS12KeyStoreSpi
             {
                 CertId certId = (CertId)cs.nextElement();
                 Certificate cert = (Certificate)chainCerts.get(certId);
+
+                if (!usedSet.contains(cert))
+                {
+                    continue;
+                }
 
                 if (doneCerts.get(cert) != null)
                 {
@@ -1596,6 +1605,34 @@ public class PKCS12KeyStoreSpi
         asn1Out.writeObject(pfx);
     }
 
+    private Set getUsedCertificateSet()
+    {
+        Set usedSet = new HashSet();
+
+        for (Enumeration en = keys.keys(); en.hasMoreElements();)
+        {
+            String alias = (String)en.nextElement();
+
+                Certificate[] certs = engineGetCertificateChain(alias);
+
+                for (int i = 0; i != certs.length; i++)
+                {
+                    usedSet.add(certs[i]);
+                }
+        }
+
+        for (Enumeration en = certs.keys(); en.hasMoreElements();)
+        {
+            String alias = (String)en.nextElement();
+
+            Certificate cert = engineGetCertificate(alias);
+
+            usedSet.add(cert);
+        }
+
+        return usedSet;
+    }
+
     private byte[] calculatePbeMac(
         ASN1ObjectIdentifier oid,
         byte[] salt,
@@ -1711,7 +1748,7 @@ public class PKCS12KeyStoreSpi
 
             keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
 
-            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
+            keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
 
             keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
             keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));

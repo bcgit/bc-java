@@ -87,6 +87,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/CRL5Test.java
     rm -rf org/bouncycastle/jce/provider/test/X509LDAP*.java
     rm -rf org/bouncycastle/jce/provider/test/MQVTest*.java
+    rm -rf org/bouncycastle/jce/provider/test/AlgorithmParametersTest.java
     rm -rf org/bouncycastle/jce/spec/ECNamedCurveSpec.java
     rm -rf org/bouncycastle/util/encoders/test/*.java
     rm -rf org/bouncycastle/x509/PKIXCertPathReviewer.java
