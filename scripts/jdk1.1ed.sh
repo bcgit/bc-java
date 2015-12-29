@@ -104,4 +104,21 @@ w
 q
 %
 
+ed org/bouncycastle/cms/CMSTypedStream.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/ASN1InputStream.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/ASN1StreamParser.java <<%
+g/private final .*;/s/final//
+w
+q
+%
 
