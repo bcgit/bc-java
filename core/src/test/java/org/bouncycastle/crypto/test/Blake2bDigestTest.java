@@ -150,6 +150,59 @@ public class Blake2bDigestTest
 						new String(Hex.encode(unkeyedHash)));
 			}
 		}
+
+		cloneTest();
+	}
+
+	private void cloneTest()
+	{
+		Blake2bDigest blake2bCloneSource = new Blake2bDigest(Hex.decode(keyedTestVectors[3][1]), 16, Hex.decode("000102030405060708090a0b0c0d0e0f"), Hex.decode("101112131415161718191a1b1c1d1e1f"));
+		byte[] expected = Hex.decode("b6d48ed5771b17414c4e08bd8d8a3bc4");
+
+		checkClone(blake2bCloneSource, expected);
+
+		// just digest size
+		blake2bCloneSource = new Blake2bDigest(160);
+		expected = Hex.decode("64202454e538279b21cea0f5a7688be656f8f484");
+		checkClone(blake2bCloneSource, expected);
+
+		// null salt and personalisation
+		blake2bCloneSource = new Blake2bDigest(Hex.decode(keyedTestVectors[3][1]), 16, null, null);
+		expected = Hex.decode("2b4a081fae2d7b488f5eed7e83e42a20");
+		checkClone(blake2bCloneSource, expected);
+
+		// null personalisation
+		blake2bCloneSource = new Blake2bDigest(Hex.decode(keyedTestVectors[3][1]), 16, Hex.decode("000102030405060708090a0b0c0d0e0f"), null);
+		expected = Hex.decode("00c3a2a02fcb9f389857626e19d706f6");
+		checkClone(blake2bCloneSource, expected);
+
+		// null salt
+		blake2bCloneSource = new Blake2bDigest(Hex.decode(keyedTestVectors[3][1]), 16, null, Hex.decode("101112131415161718191a1b1c1d1e1f"));
+		expected = Hex.decode("f445ec9c062a3c724f8fdef824417abb");
+		checkClone(blake2bCloneSource, expected);
+	}
+
+	private void checkClone(Blake2bDigest blake2bCloneSource, byte[] expected)
+	{
+		byte[] message = Hex.decode(keyedTestVectors[3][0]);
+
+		blake2bCloneSource.update(message, 0, message.length);
+
+		byte[] hash = new byte[blake2bCloneSource.getDigestSize()];
+
+		Blake2bDigest digClone = new Blake2bDigest(blake2bCloneSource);
+
+		blake2bCloneSource.doFinal(hash, 0);
+		if (!areEqual(expected, hash))
+		{           System.err.println(Hex.toHexString(hash));
+			fail("clone source not correct");
+		}
+
+		digClone.doFinal(hash, 0);
+		if (!areEqual(expected, hash))
+		{
+			fail("clone not correct");
+		}
 	}
 
 	public static void main(String[] args) throws Exception
