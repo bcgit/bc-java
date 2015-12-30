@@ -122,7 +122,7 @@ public class Blake2bDigest
 		this.key = Arrays.clone(digest.key);
 		this.digestLength = digest.digestLength;
 		this.chainValue = Arrays.clone(digest.chainValue);
-		this.personalization = Arrays.clone(personalization);
+		this.personalization = Arrays.clone(digest.personalization);
 	}
 
 	public Blake2bDigest(int digestLength)
