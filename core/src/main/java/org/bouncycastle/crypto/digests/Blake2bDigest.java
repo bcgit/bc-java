@@ -122,19 +122,28 @@ public class Blake2bDigest
 		this.key = Arrays.clone(digest.key);
 		this.digestLength = digest.digestLength;
 		this.chainValue = Arrays.clone(digest.chainValue);
-		this.personalization = Arrays.clone(personalization);
+		this.personalization = Arrays.clone(digest.personalization);
+		this.salt = Arrays.clone(digest.salt);
+		this.t0 = digest.t0;
+		this.t1 = digest.t1;
+		this.f0 = digest.f0;
 	}
 
-	public Blake2bDigest(int digestLength)
+	/**
+	 * Basic sized constructor - size in bits.
+	 *
+	 * @param digestSize size of the digest in bits
+     */
+	public Blake2bDigest(int digestSize)
 	{
-		if (digestLength != 160 && digestLength != 256 && digestLength != 384 && digestLength != 512)
+		if (digestSize != 160 && digestSize != 256 && digestSize != 384 && digestSize != 512)
 		{
 			throw new IllegalArgumentException("Blake2b digest restricted to one of [160, 256, 384, 512]");
 		}
 
 		buffer = new byte[BLOCK_LENGTH_BYTES];
 		keyLength = 0;
-		this.digestLength = digestLength / 8;
+		this.digestLength = digestSize / 8;
 		init();
 	}
 
@@ -169,7 +178,7 @@ public class Blake2bDigest
 	}
 
 	/**
-	 * Blake2b with key, required digest length, salt and personalization.
+	 * Blake2b with key, required digest length (in bytes), salt and personalization.
 	 * After calling the doFinal() method, the key, the salt and the personal string
 	 * will remain and might be used for further computations with this instance.
 	 * The key can be overwritten using the clearKey() method, the salt (pepper)
@@ -177,11 +186,10 @@ public class Blake2bDigest
 	 * 
 	 * @param key A key up to 64 bytes or null
 	 * @param digestLength from 1 up to 64 bytes
-	 * @param salt up to 16 bytes or null
-	 * @param personalization up to 16 bytes or null
+	 * @param salt 16 bytes or null
+	 * @param personalization 16 bytes or null
 	 */
-	public Blake2bDigest(byte[] key, int digestLength, byte[] salt,
-			byte[] personalization)
+	public Blake2bDigest(byte[] key, int digestLength, byte[] salt, byte[] personalization)
 	{
 
 		buffer = new byte[BLOCK_LENGTH_BYTES];
