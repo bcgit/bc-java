@@ -152,6 +152,7 @@ public class Blake2bDigestTest
 		}
 
 		cloneTest();
+		resetTest();
 	}
 
 	private void cloneTest()
@@ -194,7 +195,7 @@ public class Blake2bDigestTest
 
 		blake2bCloneSource.doFinal(hash, 0);
 		if (!areEqual(expected, hash))
-		{           System.err.println(Hex.toHexString(hash));
+		{
 			fail("clone source not correct");
 		}
 
@@ -202,6 +203,40 @@ public class Blake2bDigestTest
 		if (!areEqual(expected, hash))
 		{
 			fail("clone not correct");
+		}
+	}
+
+	private void resetTest()
+	{
+		// Generate a non-zero key
+		byte[] key = new byte[32];
+		for (byte i = 0; i < key.length; i++)
+		{
+			key[i] = i;
+		}
+		// Generate some non-zero input longer than the key
+		byte[] input = new byte[key.length + 1];
+		for (byte i = 0; i < input.length; i++)
+		{
+			input[i] = i;
+		}
+		// Hash the input
+		Blake2bDigest digest = new Blake2bDigest(key);
+		digest.update(input, 0, input.length);
+		byte[] hash = new byte[digest.getDigestSize()];
+		digest.doFinal(hash, 0);
+		// Using a second instance, hash the input without calling doFinal()
+		Blake2bDigest digest1 = new Blake2bDigest(key);
+		digest1.update(input, 0, input.length);
+		// Reset the second instance and hash the input again
+		digest1.reset();
+		digest1.update(input, 0, input.length);
+		byte[] hash1 = new byte[digest.getDigestSize()];
+		digest1.doFinal(hash1, 0);
+		// The hashes should be identical
+		if (!Arrays.areEqual(hash, hash1))
+		{
+			fail("state was not reset");
 		}
 	}
 
