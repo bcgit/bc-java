@@ -133,7 +133,8 @@ public class Blake2bDigestTest
 				{
 					blake2bunkeyed.update(unkeyedInput[j]);
 				}
-			} catch (UnsupportedEncodingException e)
+			}
+            catch (UnsupportedEncodingException e)
 			{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
