@@ -434,6 +434,7 @@ public class Blake2bDigest
 		chainValue = null;
 		if (key != null)
 		{
+			Arrays.fill(buffer, (byte) 0);
 			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
 		}
