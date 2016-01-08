@@ -10,7 +10,7 @@ import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceKTSKeyUnwrapper;
 
-public interface JcaJceExtHelper
+interface JcaJceExtHelper
     extends JcaJceHelper
 {
     JceAsymmetricKeyUnwrapper createAsymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey);

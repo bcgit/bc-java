@@ -1,17 +1,12 @@
 package org.bouncycastle.cert.crmf.jcajce;
 
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.ProviderException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -21,12 +16,16 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.InputDecryptor;
+import org.bouncycastle.operator.OperatorException;
+import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 
 public class JceAsymmetricValueDecryptorGenerator
     implements ValueDecryptorGenerator
 {
     private PrivateKey recipientKey;
     private CRMFHelper helper = new CRMFHelper(new DefaultJcaJceHelper());
+    private Provider provider = null;
+    private String providerName = null;
 
     public JceAsymmetricValueDecryptorGenerator(PrivateKey recipientKey)
     {
@@ -36,6 +35,8 @@ public class JceAsymmetricValueDecryptorGenerator
     public JceAsymmetricValueDecryptorGenerator setProvider(Provider provider)
     {
         this.helper = new CRMFHelper(new ProviderJcaJceHelper(provider));
+        this.provider = provider;
+        this.providerName = null;
 
         return this;
     }
@@ -43,6 +44,8 @@ public class JceAsymmetricValueDecryptorGenerator
     public JceAsymmetricValueDecryptorGenerator setProvider(String providerName)
     {
         this.helper = new CRMFHelper(new NamedJcaJceHelper(providerName));
+        this.provider = null;
+        this.providerName = providerName;
 
         return this;
     }
@@ -52,48 +55,21 @@ public class JceAsymmetricValueDecryptorGenerator
     {
         try
         {
-            Key sKey = null;
-
-            Cipher keyCipher = helper.createCipher(keyEncryptionAlgorithm.getAlgorithm());
-
-            try
+            JceAsymmetricKeyUnwrapper unwrapper = new JceAsymmetricKeyUnwrapper(keyEncryptionAlgorithm, recipientKey);
+            if (provider != null)
             {
-                keyCipher.init(Cipher.UNWRAP_MODE, recipientKey);
-                sKey = keyCipher.unwrap(encryptedContentEncryptionKey, contentEncryptionAlgorithm.getAlgorithm().getId(), Cipher.SECRET_KEY);
+                unwrapper.setProvider(provider);
             }
-            catch (GeneralSecurityException e)
+            if (providerName != null)
             {
-            }
-            catch (IllegalStateException e)
-            {
-            }
-            catch (UnsupportedOperationException e)
-            {
-            }
-            catch (ProviderException e)
-            {
+                unwrapper.setProvider(providerName);
             }
 
-            // some providers do not support UNWRAP (this appears to be only for asymmetric algorithms)
-            if (sKey == null)
-            {
-                keyCipher.init(Cipher.DECRYPT_MODE, recipientKey);
-                sKey = new SecretKeySpec(keyCipher.doFinal(encryptedContentEncryptionKey), contentEncryptionAlgorithm.getAlgorithm().getId());
-            }
-
-            return sKey;
+            return new SecretKeySpec((byte[])unwrapper.generateUnwrappedKey(contentEncryptionAlgorithm, encryptedContentEncryptionKey).getRepresentation(), contentEncryptionAlgorithm.getAlgorithm().getId());
         }
-        catch (InvalidKeyException e)
+        catch (OperatorException e)
         {
-            throw new CRMFException("key invalid in message.", e);
-        }
-        catch (IllegalBlockSizeException e)
-        {
-            throw new CRMFException("illegal blocksize in message.", e);
-        }
-        catch (BadPaddingException e)
-        {
-            throw new CRMFException("bad padding in message.", e);
+            throw new CRMFException("key invalid in message: " + e.getMessage(), e);
         }
     }
 
