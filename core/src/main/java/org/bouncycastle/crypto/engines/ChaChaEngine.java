@@ -4,9 +4,22 @@ import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of Daniel J. Bernstein's ChaCha stream cipher.
+ * <p>
+ * ChaCha uses a 128 or 256 bit key and a 64 bit nonce.
+ * <p>
+ * ChaCha as specified by DJB uses a 64 bit nonce and 64 bit counter. This implementation also
+ * supports the 96 bit nonce, 32 bit counter split described in <a
+ * href="tools.ietf.org/html/draft-irtf-cfrg-chacha20-poly1305#section-2.4"
+ * >draft-irtf-cfrg-chacha20-poly1305</a>, and will select the split automatically based on the size
+ * of the provided nonce.
  */
 public class ChaChaEngine extends Salsa20Engine
 {
+    /** Whether a long nonce/short counter split is being used */
+    private boolean longNonce = false;
+
+    // TODO: Extend 96bit nonce to Salsa20?
+
     /**
      * Creates a 20 rounds ChaCha engine.
      */
@@ -51,7 +64,7 @@ public class ChaChaEngine extends Salsa20Engine
 
     protected void advanceCounter()
     {
-        if (++engineState[12] == 0)
+        if (++engineState[12] == 0 && !longNonce)
         {
             ++engineState[13];
         }
@@ -99,7 +112,7 @@ public class ChaChaEngine extends Salsa20Engine
             throw new IllegalStateException("attempt to reduce counter past zero.");
         }
 
-        if (--engineState[12] == -1)
+        if (--engineState[12] == -1 && !longNonce)
         {
             --engineState[13];
         }
@@ -107,12 +120,28 @@ public class ChaChaEngine extends Salsa20Engine
 
     protected long getCounter()
     {
+        if (longNonce)
+        {
+            return engineState[12];
+        }
         return ((long)engineState[13] << 32) | (engineState[12] & 0xffffffffL);
     }
 
     protected void resetCounter()
     {
-        engineState[12] = engineState[13] = 0;
+        engineState[12] = 0;
+        if (!longNonce)
+        {
+            engineState[13] = 0;
+        }
+    }
+
+    protected void validateNonce(byte[] ivBytes)
+    {
+        if (ivBytes.length != 8 && ivBytes.length != 12)
+        {
+            throw new IllegalArgumentException(getAlgorithmName() + " requires a 64/96 bit IV");
+        }
     }
 
     protected void setKey(byte[] keyBytes, byte[] ivBytes)
@@ -154,9 +183,17 @@ public class ChaChaEngine extends Salsa20Engine
             engineState[3] = Pack.littleEndianToInt(constants, 12);
         }
 
-        // IV
-        engineState[14] = Pack.littleEndianToInt(ivBytes, 0);
-        engineState[15] = Pack.littleEndianToInt(ivBytes, 4);
+        // Nonce
+        longNonce = (ivBytes.length == 12);
+
+        int nonceOffset = 0;
+        if (longNonce)
+        {
+            engineState[13] = Pack.littleEndianToInt(ivBytes, 0);
+            nonceOffset = 4;
+        }
+        engineState[14] = Pack.littleEndianToInt(ivBytes, nonceOffset);
+        engineState[15] = Pack.littleEndianToInt(ivBytes, nonceOffset + 4);
     }
 
     protected void generateKeyStream(byte[] output)
@@ -180,6 +217,7 @@ public class ChaChaEngine extends Salsa20Engine
         {
             throw new IllegalArgumentException();
         }
+        // TODO: Check if this is optimised to bitmask?
         if (rounds % 2 != 0)
         {
             throw new IllegalArgumentException("Number of rounds must be even");

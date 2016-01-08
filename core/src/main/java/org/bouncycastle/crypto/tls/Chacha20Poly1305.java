@@ -11,6 +11,11 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
+/**
+ * Implementation of the ChaCha20/Poly1305 AEAD construction described in <a
+ * href="http://tools.ietf.org/html/draft-mavrogiannopoulos-chacha-tls-02"
+ * >draft-mavrogiannopoulos-chacha-tls</a> using 96 bit nonce/32 bit counter split.
+ */
 public class Chacha20Poly1305 implements TlsCipher
 {
     protected TlsContext context;

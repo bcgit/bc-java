@@ -12,6 +12,8 @@ import org.bouncycastle.util.Strings;
 
 /**
  * Implementation of Daniel J. Bernstein's Salsa20 stream cipher, Snuffle 2005
+ * <p>
+ * Salsa20 uses a 128 or 256 bit key and a 64 bit nonce.
  */
 public class Salsa20Engine
     implements SkippingStreamCipher
@@ -65,12 +67,11 @@ public class Salsa20Engine
     }
 
     /**
-     * initialise a Salsa20 cipher.
-     *
+     * Initialise the cipher.
+     * 
      * @param forEncryption whether or not we are for encryption.
-     * @param params the parameters required to set up the cipher.
-     * @exception IllegalArgumentException if the params argument is
-     * inappropriate.
+     * @param params a {@link ParametersWithIV} with a {@link KeyParameter} and nonce.
+     * @exception IllegalArgumentException if the params argument is inappropriate.
      */
     public void init(
         boolean             forEncryption, 
@@ -90,11 +91,11 @@ public class Salsa20Engine
         ParametersWithIV ivParams = (ParametersWithIV) params;
 
         byte[] iv = ivParams.getIV();
-        if (iv == null || iv.length != getNonceSize())
+        if (iv == null)
         {
-            throw new IllegalArgumentException(getAlgorithmName() + " requires exactly " + getNonceSize()
-                    + " bytes of IV");
+            throw new IllegalArgumentException(getAlgorithmName() + " requires an IV");
         }
+        validateNonce(iv);
 
         CipherParameters keyParam = ivParams.getParameters();
         if (keyParam == null)
@@ -120,9 +121,12 @@ public class Salsa20Engine
         initialised = true;
     }
 
-    protected int getNonceSize()
+    protected void validateNonce(byte[] ivBytes)
     {
-        return 8;
+        if (ivBytes.length != 8)
+        {
+            throw new IllegalArgumentException(getAlgorithmName() + " requires a 64 bit IV");
+        }
     }
 
     public String getAlgorithmName()

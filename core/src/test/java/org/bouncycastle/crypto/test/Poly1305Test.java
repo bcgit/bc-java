@@ -2,10 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESFastEngine;
@@ -23,51 +20,6 @@ public class Poly1305Test
     extends SimpleTest
 {
     private static final int MAXLEN = 1000;
-
-    private static class KeyEngine
-        implements BlockCipher
-    {
-
-        private byte[] key;
-        private final int blockSize;
-
-        public KeyEngine(int blockSize)
-        {
-            this.blockSize = blockSize;
-        }
-
-        public void init(boolean forEncryption, CipherParameters params)
-            throws IllegalArgumentException
-        {
-            if (params instanceof KeyParameter)
-            {
-                this.key = ((KeyParameter)params).getKey();
-            }
-        }
-
-        public String getAlgorithmName()
-        {
-            return "Key";
-        }
-
-        public int getBlockSize()
-        {
-            return blockSize;
-        }
-
-        public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
-            throws DataLengthException,
-            IllegalStateException
-        {
-            System.arraycopy(key, 0, out, outOff, key.length);
-            return key.length;
-        }
-
-        public void reset()
-        {
-        }
-
-    }
 
     private static class TestCase
     {
@@ -167,8 +119,8 @@ public class Poly1305Test
         if (tc.nonce == null)
         {
             // Raw Poly1305 test - don't do any transform on AES key part
-            mac = new Poly1305(new KeyEngine(16));
-            mac.init(new ParametersWithIV(new KeyParameter(tc.key), new byte[16]));
+            mac = new Poly1305();
+            mac.init(new KeyParameter(tc.key));
         }
         else
         {
@@ -204,29 +156,6 @@ public class Poly1305Test
                 mac.init(new ParametersWithIV(new KeyParameter(kr), n));
                 mac.update(m, 0, len);
                 mac.doFinal(out, 0);
-
-                // if (c == 678)
-                // {
-                // TestCase tc = CASES[0];
-                //
-                // if (!Arrays.areEqual(tc.key, kr))
-                // {
-                // System.err.println("Key bad");
-                // System.err.println(new String(Hex.encode(tc.key)));
-                // System.err.println(new String(Hex.encode(kr)));
-                // System.exit(1);
-                // }
-                // if (!Arrays.areEqual(tc.nonce, n))
-                // {
-                // System.err.println("Nonce bad");
-                // System.exit(1);
-                // }
-                // System.out.printf("[%d] m: %s\n", c, new String(Hex.encode(m, 0, len)));
-                // System.out.printf("[%d] K: %s\n", c, new String(Hex.encodje(kr)));
-                // System.out.printf("[%d] N: %s\n", c, new String(Hex.encode(n)));
-                // System.out.printf("[%d] M: ", c);
-                // }
-                // System.out.printf("%d/%s\n", c, new String(Hex.encode(out)));
 
                 if (len >= MAXLEN)
                     break;

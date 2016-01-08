@@ -176,6 +176,11 @@ public class Poly1305
         throws DataLengthException,
         IllegalStateException
     {
+        if (in.length < (inOff + len))
+        {
+            throw new DataLengthException("Input buffer too short");
+        }
+
         int copied = 0;
         while (len > copied)
         {

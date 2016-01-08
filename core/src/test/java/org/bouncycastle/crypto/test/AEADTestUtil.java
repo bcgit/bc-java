@@ -14,6 +14,8 @@ import org.bouncycastle.util.test.TestFailedException;
 
 public class AEADTestUtil
 {
+    private static final int MAX_PLAINTEXT = 5 * 1024;
+
     public static void testTampering(Test test, AEADBlockCipher cipher, CipherParameters params)
         throws InvalidCipherTextException
     {
@@ -194,9 +196,8 @@ public class AEADTestUtil
         throws IllegalStateException,
         InvalidCipherTextException
     {
-        int maxPlaintext = cipher.getUnderlyingCipher().getBlockSize() * 10;
-        byte[] plaintext = new byte[maxPlaintext];
-        byte[] ciphertext = new byte[maxPlaintext * 2];
+        byte[] plaintext = new byte[MAX_PLAINTEXT];
+        byte[] ciphertext = new byte[MAX_PLAINTEXT * 2];
 
         // Check output size calculations for truncated ciphertext lengths
         cipher.init(true, params);
@@ -282,10 +283,7 @@ public class AEADTestUtil
         throws IllegalStateException,
         InvalidCipherTextException
     {
-        int blockSize = cipher.getUnderlyingCipher().getBlockSize();
-        int maxPlaintext = (blockSize * 10);
-        byte[] plaintext = new byte[maxPlaintext];
-
+        byte[] plaintext = new byte[MAX_PLAINTEXT];
 
         cipher.init(true, params);
 
@@ -294,7 +292,7 @@ public class AEADTestUtil
 
         try
         {
-            cipher.processBytes(new byte[maxPlaintext - 1], 0, maxPlaintext, new byte[expectedUpdateOutputSize], 0);
+            cipher.processBytes(new byte[plaintext.length - 1], 0, plaintext.length, new byte[expectedUpdateOutputSize], 0);
             fail(test, "processBytes should validate input buffer length");
         }
         catch (DataLengthException e)

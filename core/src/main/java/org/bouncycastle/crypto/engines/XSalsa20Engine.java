@@ -14,9 +14,12 @@ public class XSalsa20Engine extends Salsa20Engine
         return "XSalsa20";
     }
 
-    protected int getNonceSize()
+    protected void validateNonce(byte[] ivBytes)
     {
-        return 24;
+        if (ivBytes.length != 24)
+        {
+            throw new IllegalArgumentException(getAlgorithmName() + " requires a 192 bit IV");
+        }
     }
 
     /**
