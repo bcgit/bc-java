@@ -11,8 +11,11 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.Date;
 
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.security.auth.x500.X500Principal;
 
 import junit.framework.Assert;
@@ -20,13 +23,17 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
 import org.bouncycastle.asn1.crmf.EncKeyWithID;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
@@ -316,6 +323,65 @@ public class AllTests
 
         JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(cert.getPublicKey()).setProvider(BC), new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
         EncryptedValue value = build.build(cert);
+        ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
+
+        // try direct
+        encryptedValueParserTest(value, decGen, cert);
+
+        // try indirect
+        encryptedValueParserTest(EncryptedValue.getInstance(value.getEncoded()), decGen, cert);
+    }
+
+    public void testEncryptedValueOAEP1()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(2048);
+
+        KeyPair kp = kGen.generateKeyPair();
+        X509Certificate cert = makeV1Certificate(kp, "CN=Test", kp, "CN=Test");
+
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+
+        JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP,
+                new RSAESOAEPparams(sha256, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256),
+                    RSAESOAEPparams.DEFAULT_P_SOURCE_ALGORITHM)),
+            cert.getPublicKey()).setProvider(BC),
+            new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        EncryptedValue value = build.build(cert);
+        ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
+
+        // try direct
+        encryptedValueParserTest(value, decGen, cert);
+
+        // try indirect
+        encryptedValueParserTest(EncryptedValue.getInstance(value.getEncoded()), decGen, cert);
+    }
+
+    public void testEncryptedValueOAEP2()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(2048);
+
+        KeyPair kp = kGen.generateKeyPair();
+        X509Certificate cert = makeV1Certificate(kp, "CN=Test", kp, "CN=Test");
+
+        JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(
+            new OAEPParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), new PSource.PSpecified(new byte[2])),
+            cert.getPublicKey()).setProvider(BC),
+            new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        EncryptedValue value = build.build(cert);
+
+        Assert.assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, value.getKeyAlg().getAlgorithm());
+        Assert.assertEquals(NISTObjectIdentifiers.id_sha256, RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getHashAlgorithm().getAlgorithm());
+        Assert.assertEquals(new DEROctetString(new byte[2]), RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getPSourceAlgorithm().getParameters());
+
         ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
 
         // try direct
