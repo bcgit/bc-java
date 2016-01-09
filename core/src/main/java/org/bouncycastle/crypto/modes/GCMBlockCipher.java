@@ -43,6 +43,7 @@ public class GCMBlockCipher
     private byte[]      macBlock;
     private byte[]      S, S_at, S_atPre;
     private byte[]      counter;
+    private int         blocksRemaining;
     private int         bufOff;
     private long        totalLength;
     private byte[]      atBlock;
@@ -176,6 +177,7 @@ public class GCMBlockCipher
         this.atLength = 0;
         this.atLengthPre = 0;
         this.counter = Arrays.clone(J0);
+        this.blocksRemaining = -1;
         this.bufOff = 0;
         this.totalLength = 0;
 
@@ -456,6 +458,7 @@ public class GCMBlockCipher
         atLength = 0;
         atLengthPre = 0;
         counter = Arrays.clone(J0);
+        blocksRemaining = -1;
         bufOff = 0;
         totalLength = 0;
 
@@ -522,6 +525,12 @@ public class GCMBlockCipher
 
     private byte[] getNextCounterBlock()
     {
+        if (blocksRemaining == 0)
+        {
+            throw new IllegalStateException("Attempt to process too many blocks");
+        }
+        blocksRemaining--;
+
         int c = 1;
         c += counter[15] & 0xFF; counter[15] = (byte)c; c >>>= 8;
         c += counter[14] & 0xFF; counter[14] = (byte)c; c >>>= 8;
