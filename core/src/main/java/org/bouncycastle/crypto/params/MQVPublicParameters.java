@@ -14,6 +14,11 @@ public class MQVPublicParameters
     {
         this.staticPublicKey = staticPublicKey;
         this.ephemeralPublicKey = ephemeralPublicKey;
+
+        if (!staticPublicKey.getParameters().equals(ephemeralPublicKey.getParameters()))
+        {
+            throw new IllegalArgumentException("Static and ephemeral keys have different domain parameters");
+        }
     }
 
     public ECPublicKeyParameters getStaticPublicKey()

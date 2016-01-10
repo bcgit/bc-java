@@ -42,6 +42,11 @@ public class ECDHBasicAgreement
         CipherParameters pubKey)
     {
         ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
+        if (!pub.getParameters().equals(key.getParameters()))
+        {
+            throw new IllegalStateException("ECDH public key has wrong domain parameters");
+        }
+
         ECPoint P = pub.getQ().multiply(key.getD()).normalize();
 
         if (P.isInfinity())

@@ -23,7 +23,14 @@ public class MQVPrivateParameters
     {
         this.staticPrivateKey = staticPrivateKey;
         this.ephemeralPrivateKey = ephemeralPrivateKey;
-        this.ephemeralPublicKey = ephemeralPublicKey;
+        this.ephemeralPublicKey = (ephemeralPublicKey != null) ?
+            ephemeralPublicKey : new ECPublicKeyParameters(ephemeralPrivateKey.getParameters().getG().multiply(ephemeralPrivateKey.getD()), ephemeralPrivateKey.getParameters());
+
+        if (!staticPrivateKey.getParameters().equals(ephemeralPrivateKey.getParameters())
+            || !staticPrivateKey.getParameters().equals(this.ephemeralPublicKey.getParameters()))
+        {
+            throw new IllegalArgumentException("Static and ephemeral keys have different domain parameters");
+        }
     }
 
     public ECPrivateKeyParameters getStaticPrivateKey()
