@@ -71,4 +71,33 @@ public class ECDomainParameters
     {
         return Arrays.clone(seed);
     }
+
+    public boolean equals(
+        Object  obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+
+        if ((obj instanceof ECDomainParameters))
+        {
+            ECDomainParameters other = (ECDomainParameters)obj;
+
+            return this.curve.equals(other.curve) && this.G.equals(other.G) && this.n.equals(other.n) && this.h.equals(other.h);
+        }
+
+        return false;
+    }
+
+    public int hashCode()
+    {
+        int hc = curve.hashCode();
+
+        hc += 37 * G.hashCode();
+        hc += 37 * n.hashCode();
+        hc += 37 * h.hashCode();
+
+        return hc;
+    }
 }
