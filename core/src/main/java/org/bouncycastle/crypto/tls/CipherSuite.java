@@ -358,6 +358,22 @@ public class CipherSuite
     public static final int TLS_DHE_RSA_WITH_SALSA20_SHA1 = 0xE41F;
 
     /*
+     * draft-zauner-tls-aes-ocb-03 (code points TBD)
+     */
+    public static final int DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB = 0xFF00;
+    public static final int DRAFT_TLS_DHE_RSA_WITH_AES_256_OCB = 0xFF01;
+    public static final int DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB = 0xFF02;
+    public static final int DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB = 0xFF03;
+    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_AES_128_OCB = 0xFF04;
+    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_AES_256_OCB = 0xFF05;
+    public static final int DRAFT_TLS_PSK_WITH_AES_128_OCB = 0xFF10;
+    public static final int DRAFT_TLS_PSK_WITH_AES_256_OCB = 0xFF11;
+    public static final int DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB = 0xFF12;
+    public static final int DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB = 0xFF13;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB = 0xFF14;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB = 0xFF15;
+
+    /*
      * draft-ietf-tls-downgrade-scsv-00
      */
     public static final int TLS_FALLBACK_SCSV = 0x5600;
