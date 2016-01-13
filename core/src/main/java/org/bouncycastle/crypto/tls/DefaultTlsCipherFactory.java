@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.OCBBlockCipher;
 
 public class DefaultTlsCipherFactory
     extends AbstractTlsCipherFactory
@@ -26,9 +27,6 @@ public class DefaultTlsCipherFactory
         {
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return createDESedeCipher(context, macAlgorithm);
-        case EncryptionAlgorithm.AEAD_CHACHA20_POLY1305:
-            // NOTE: Ignores macAlgorithm
-            return createChaCha20Poly1305(context);
         case EncryptionAlgorithm.AES_128_CBC:
             return createAESCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CCM:
@@ -46,11 +44,17 @@ public class DefaultTlsCipherFactory
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(context, 16, 16);
+        case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_OCB(context, 16, 12);
         case EncryptionAlgorithm.AES_256_CBC:
             return createAESCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.AES_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(context, 32, 16);
+        case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_OCB(context, 32, 12);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return createCamelliaCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
@@ -61,6 +65,9 @@ public class DefaultTlsCipherFactory
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_Camellia_GCM(context, 32, 16);
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+            // NOTE: Ignores macAlgorithm
+            return createChaCha20Poly1305(context);
         case EncryptionAlgorithm.ESTREAM_SALSA20:
             return createSalsa20Cipher(context, 12, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
@@ -108,6 +115,13 @@ public class DefaultTlsCipherFactory
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(),
             createAEADBlockCipher_AES_GCM(), cipherKeySize, macSize);
+    }
+
+    protected TlsAEADCipher createCipher_AES_OCB(TlsContext context, int cipherKeySize, int macSize)
+        throws IOException
+    {
+        return new TlsAEADCipher(context, createAEADBlockCipher_AES_OCB(),
+            createAEADBlockCipher_AES_OCB(), cipherKeySize, macSize, TlsAEADCipher.NONCE_DRAFT_ZAUNER_TLS_AES_OCB);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsContext context, int cipherKeySize, int macSize)
@@ -182,6 +196,11 @@ public class DefaultTlsCipherFactory
     {
         // TODO Consider allowing custom configuration of multiplier
         return new GCMBlockCipher(createCamelliaEngine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
+    {
+        return new OCBBlockCipher(createAESEngine(), createAESEngine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()

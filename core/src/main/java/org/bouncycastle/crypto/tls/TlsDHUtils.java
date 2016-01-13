@@ -408,6 +408,14 @@ public class TlsDHUtils
         case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
         case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_SHA1:
 
+        /*
+         * draft-zauner-tls-aes-ocb-03
+         */
+        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB:
+        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_256_OCB:
+        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB:
+        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB:
+
             return true;
 
         default:
