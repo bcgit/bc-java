@@ -177,7 +177,7 @@ public class GCMBlockCipher
         this.atLength = 0;
         this.atLengthPre = 0;
         this.counter = Arrays.clone(J0);
-        this.blocksRemaining = -1;      // page 8, len(P) <= 2^39 - 256  (1 block used by tag)
+        this.blocksRemaining = -2;      // page 8, len(P) <= 2^39 - 256, 1 block used by tag but done on J0
         this.bufOff = 0;
         this.totalLength = 0;
 
@@ -458,7 +458,7 @@ public class GCMBlockCipher
         atLength = 0;
         atLengthPre = 0;
         counter = Arrays.clone(J0);
-        blocksRemaining = -1;
+        blocksRemaining = -2;
         bufOff = 0;
         totalLength = 0;
 
