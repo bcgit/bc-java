@@ -40,4 +40,9 @@ public class HashAlgorithm
     {
         return getName(hashAlgorithm) + "(" + hashAlgorithm + ")";
     }
+
+    public static boolean isPrivate(short hashAlgorithm)
+    {
+        return 224 <= hashAlgorithm && hashAlgorithm <= 255; 
+    }
 }
