@@ -124,39 +124,15 @@ public class ChaChaEngine extends Salsa20Engine
                 throw new IllegalArgumentException(getAlgorithmName() + " requires 128 bit or 256 bit key");
             }
 
+            packTauOrSigma(keyBytes.length, engineState, 0);
+
             // Key
-            engineState[4] = Pack.littleEndianToInt(keyBytes, 0);
-            engineState[5] = Pack.littleEndianToInt(keyBytes, 4);
-            engineState[6] = Pack.littleEndianToInt(keyBytes, 8);
-            engineState[7] = Pack.littleEndianToInt(keyBytes, 12);
-
-            byte[] constants;
-            int offset;
-            if (keyBytes.length == 32)
-            {
-                constants = sigma;
-                offset = 16;
-            }
-            else
-            {
-                constants = tau;
-                offset = 0;
-            }
-
-            engineState[8] = Pack.littleEndianToInt(keyBytes, offset);
-            engineState[9] = Pack.littleEndianToInt(keyBytes, offset + 4);
-            engineState[10] = Pack.littleEndianToInt(keyBytes, offset + 8);
-            engineState[11] = Pack.littleEndianToInt(keyBytes, offset + 12);
-
-            engineState[0] = Pack.littleEndianToInt(constants, 0);
-            engineState[1] = Pack.littleEndianToInt(constants, 4);
-            engineState[2] = Pack.littleEndianToInt(constants, 8);
-            engineState[3] = Pack.littleEndianToInt(constants, 12);
+            Pack.littleEndianToInt(keyBytes, 0, engineState, 4, 4);
+            Pack.littleEndianToInt(keyBytes, keyBytes.length - 16, engineState, 8, 4);
         }
 
         // IV
-        engineState[14] = Pack.littleEndianToInt(ivBytes, 0);
-        engineState[15] = Pack.littleEndianToInt(ivBytes, 4);
+        Pack.littleEndianToInt(ivBytes, 0, engineState, 14, 2);
     }
 
     protected void generateKeyStream(byte[] output)
@@ -166,7 +142,7 @@ public class ChaChaEngine extends Salsa20Engine
     }
 
     /**
-     * ChacCha function
+     * ChaCha function
      *
      * @param   input   input data
      */    
