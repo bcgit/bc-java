@@ -21,6 +21,18 @@ public class Salsa20Engine
     /** Constants */
     private final static int STATE_SIZE = 16; // 16, 32 bit ints = 64 bytes
 
+    private final static int[] TAU_SIGMA = Pack.littleEndianToInt(Strings.toByteArray("expand 16-byte k" + "expand 32-byte k"), 0, 8);
+
+    protected void packTauOrSigma(int keyLength, int[] state, int stateOffset)
+    {
+        int tsOff = (keyLength - 16) / 4;
+        state[stateOffset    ] = TAU_SIGMA[tsOff    ];
+        state[stateOffset + 1] = TAU_SIGMA[tsOff + 1];
+        state[stateOffset + 2] = TAU_SIGMA[tsOff + 2];
+        state[stateOffset + 3] = TAU_SIGMA[tsOff + 3];
+    }
+
+    /** @deprecated */
     protected final static byte[]
         sigma = Strings.toByteArray("expand 32-byte k"),
         tau   = Strings.toByteArray("expand 16-byte k");
@@ -365,39 +377,19 @@ public class Salsa20Engine
                 throw new IllegalArgumentException(getAlgorithmName() + " requires 128 bit or 256 bit key");
             }
 
+            int tsOff = (keyBytes.length - 16) / 4;
+            engineState[0 ] = TAU_SIGMA[tsOff    ];
+            engineState[5 ] = TAU_SIGMA[tsOff + 1];
+            engineState[10] = TAU_SIGMA[tsOff + 2];
+            engineState[15] = TAU_SIGMA[tsOff + 3];
+
             // Key
-            engineState[1] = Pack.littleEndianToInt(keyBytes, 0);
-            engineState[2] = Pack.littleEndianToInt(keyBytes, 4);
-            engineState[3] = Pack.littleEndianToInt(keyBytes, 8);
-            engineState[4] = Pack.littleEndianToInt(keyBytes, 12);
-
-            byte[] constants;
-            int offset;
-            if (keyBytes.length == 32)
-            {
-                constants = sigma;
-                offset = 16;
-            }
-            else
-            {
-                constants = tau;
-                offset = 0;
-            }
-
-            engineState[11] = Pack.littleEndianToInt(keyBytes, offset);
-            engineState[12] = Pack.littleEndianToInt(keyBytes, offset + 4);
-            engineState[13] = Pack.littleEndianToInt(keyBytes, offset + 8);
-            engineState[14] = Pack.littleEndianToInt(keyBytes, offset + 12);
-    
-            engineState[0 ] = Pack.littleEndianToInt(constants, 0);
-            engineState[5 ] = Pack.littleEndianToInt(constants, 4);
-            engineState[10] = Pack.littleEndianToInt(constants, 8);
-            engineState[15] = Pack.littleEndianToInt(constants, 12);
+            Pack.littleEndianToInt(keyBytes, 0, engineState, 1, 4);
+            Pack.littleEndianToInt(keyBytes, keyBytes.length - 16, engineState, 11, 4);
         }
 
         // IV
-        engineState[6] = Pack.littleEndianToInt(ivBytes, 0);
-        engineState[7] = Pack.littleEndianToInt(ivBytes, 4);
+        Pack.littleEndianToInt(ivBytes, 0, engineState, 6, 2);
     }
 
     protected void generateKeyStream(byte[] output)
