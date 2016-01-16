@@ -402,14 +402,6 @@ public class TlsDHUtils
         case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
 
         /*
-         * draft-josefsson-salsa20-tls-04
-         */
-        case CipherSuite.TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_DHE_PSK_WITH_SALSA20_SHA1:
-        case CipherSuite.TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1:
-        case CipherSuite.TLS_DHE_RSA_WITH_SALSA20_SHA1:
-
-        /*
          * draft-zauner-tls-aes-ocb-03
          */
         case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB:
