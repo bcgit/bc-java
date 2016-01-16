@@ -68,14 +68,10 @@ public class DefaultTlsCipherFactory
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             // NOTE: Ignores macAlgorithm
             return createChaCha20Poly1305(context);
-        case EncryptionAlgorithm.ESTREAM_SALSA20:
-            return createSalsa20Cipher(context, 12, 32, macAlgorithm);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(context, macAlgorithm);
         case EncryptionAlgorithm.RC4_128:
             return createRC4Cipher(context, 16, macAlgorithm);
-        case EncryptionAlgorithm.SALSA20:
-            return createSalsa20Cipher(context, 20, 32, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(context, macAlgorithm);
         default:
@@ -152,13 +148,6 @@ public class DefaultTlsCipherFactory
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
     }
 
-    protected TlsStreamCipher createSalsa20Cipher(TlsContext context, int rounds, int cipherKeySize, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsStreamCipher(context, createSalsa20StreamCipher(rounds), createSalsa20StreamCipher(rounds),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, true);
-    }
-
     protected TlsBlockCipher createSEEDCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
@@ -216,11 +205,6 @@ public class DefaultTlsCipherFactory
     protected StreamCipher createRC4StreamCipher()
     {
         return new RC4Engine();
-    }
-
-    protected StreamCipher createSalsa20StreamCipher(int rounds)
-    {
-        return new Salsa20Engine(rounds);
     }
 
     protected BlockCipher createSEEDBlockCipher()

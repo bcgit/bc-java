@@ -342,26 +342,6 @@ public class CipherSuite
     public static final int DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAE;
 
     /*
-     * draft-josefsson-salsa20-tls-04
-     */
-    public static final int TLS_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE410;
-    public static final int TLS_RSA_WITH_SALSA20_SHA1 = 0xE411;
-    public static final int TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE412;
-    public static final int TLS_ECDHE_RSA_WITH_SALSA20_SHA1 = 0xE413;
-    public static final int TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE414;
-    public static final int TLS_ECDHE_ECDSA_WITH_SALSA20_SHA1 = 0xE415;
-    public static final int TLS_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE416;
-    public static final int TLS_PSK_WITH_SALSA20_SHA1 = 0xE417;
-    public static final int TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE418;
-    public static final int TLS_ECDHE_PSK_WITH_SALSA20_SHA1 = 0xE419;
-    public static final int TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE41A;
-    public static final int TLS_RSA_PSK_WITH_SALSA20_SHA1 = 0xE41B;
-    public static final int TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE41C;
-    public static final int TLS_DHE_PSK_WITH_SALSA20_SHA1 = 0xE41D;
-    public static final int TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE41E;
-    public static final int TLS_DHE_RSA_WITH_SALSA20_SHA1 = 0xE41F;
-
-    /*
      * draft-zauner-tls-aes-ocb-03 (code points TBD)
      */
     public static final int DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB = 0xFF00;

@@ -49,10 +49,6 @@ public class MockDTLSServer
             new int[]
             {
                 CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
-                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
-                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
-                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
             });
     }
 

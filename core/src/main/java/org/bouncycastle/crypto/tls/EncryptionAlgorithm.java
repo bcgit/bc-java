@@ -55,12 +55,6 @@ public class EncryptionAlgorithm
     public static final int CAMELLIA_256_GCM = 20;
 
     /*
-     * draft-josefsson-salsa20-tls-04 
-     */
-    public static final int ESTREAM_SALSA20 = 100;
-    public static final int SALSA20 = 101;
-
-    /*
      * draft-ietf-tls-chacha20-poly1305-04
      */
     public static final int CHACHA20_POLY1305 = 102;
