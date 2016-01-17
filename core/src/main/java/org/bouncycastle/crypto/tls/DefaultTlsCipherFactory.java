@@ -35,12 +35,6 @@ public class DefaultTlsCipherFactory
         case EncryptionAlgorithm.AES_128_CCM_8:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_CCM(context, 16, 8);
-        case EncryptionAlgorithm.AES_256_CCM:
-            // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(context, 32, 16);
-        case EncryptionAlgorithm.AES_256_CCM_8:
-            // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(context, 32, 8);
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(context, 16, 16);
@@ -49,6 +43,12 @@ public class DefaultTlsCipherFactory
             return createCipher_AES_OCB(context, 16, 12);
         case EncryptionAlgorithm.AES_256_CBC:
             return createAESCipher(context, 32, macAlgorithm);
+        case EncryptionAlgorithm.AES_256_CCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 32, 16);
+        case EncryptionAlgorithm.AES_256_CCM_8:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_AES_CCM(context, 32, 8);
         case EncryptionAlgorithm.AES_256_GCM:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_GCM(context, 32, 16);
@@ -181,15 +181,15 @@ public class DefaultTlsCipherFactory
         return new GCMBlockCipher(createAESEngine());
     }
 
+    protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
+    {
+        return new OCBBlockCipher(createAESEngine(), createAESEngine());
+    }
+
     protected AEADBlockCipher createAEADBlockCipher_Camellia_GCM()
     {
         // TODO Consider allowing custom configuration of multiplier
         return new GCMBlockCipher(createCamelliaEngine());
-    }
-
-    protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
-    {
-        return new OCBBlockCipher(createAESEngine(), createAESEngine());
     }
 
     protected BlockCipher createCamelliaBlockCipher()
