@@ -446,10 +446,11 @@ public class DTLSClientProtocol
             }
 
             /*
-             * draft-ietf-tls-downgrade-scsv-00 4. If a client sends a ClientHello.client_version
-             * containing a lower value than the latest (highest-valued) version supported by the
-             * client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite value in
-             * ClientHello.cipher_suites.
+             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+             * than the latest (highest-valued) version supported by the client, it SHOULD include
+             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+             * to negotiate.)
              */
             if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
             {
