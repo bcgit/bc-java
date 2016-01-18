@@ -68,17 +68,17 @@ public class Poly1305KeyGenerator
         /*
          * r[3], r[7], r[11], r[15] have top four bits clear (i.e., are {0, 1, . . . , 15})
          */
-        key[19] &= R_MASK_HIGH_4;
-        key[23] &= R_MASK_HIGH_4;
-        key[27] &= R_MASK_HIGH_4;
-        key[31] &= R_MASK_HIGH_4;
+        key[3] &= R_MASK_HIGH_4;
+        key[7] &= R_MASK_HIGH_4;
+        key[11] &= R_MASK_HIGH_4;
+        key[15] &= R_MASK_HIGH_4;
 
         /*
          * r[4], r[8], r[12] have bottom two bits clear (i.e., are in {0, 4, 8, . . . , 252}).
          */
-        key[20] &= R_MASK_LOW_2;
-        key[24] &= R_MASK_LOW_2;
-        key[28] &= R_MASK_LOW_2;
+        key[4] &= R_MASK_LOW_2;
+        key[8] &= R_MASK_LOW_2;
+        key[12] &= R_MASK_LOW_2;
     }
 
     /**
@@ -96,14 +96,14 @@ public class Poly1305KeyGenerator
             throw new IllegalArgumentException("Poly1305 key must be 256 bits.");
         }
 
-        checkMask(key[19], R_MASK_HIGH_4);
-        checkMask(key[23], R_MASK_HIGH_4);
-        checkMask(key[27], R_MASK_HIGH_4);
-        checkMask(key[31], R_MASK_HIGH_4);
+        checkMask(key[3], R_MASK_HIGH_4);
+        checkMask(key[7], R_MASK_HIGH_4);
+        checkMask(key[11], R_MASK_HIGH_4);
+        checkMask(key[15], R_MASK_HIGH_4);
 
-        checkMask(key[20], R_MASK_LOW_2);
-        checkMask(key[24], R_MASK_LOW_2);
-        checkMask(key[28], R_MASK_LOW_2);
+        checkMask(key[4], R_MASK_LOW_2);
+        checkMask(key[8], R_MASK_LOW_2);
+        checkMask(key[12], R_MASK_LOW_2);
     }
 
     private static void checkMask(byte b, byte mask)
