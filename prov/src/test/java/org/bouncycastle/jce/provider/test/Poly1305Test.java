@@ -23,7 +23,7 @@ public class Poly1305Test
     extends SimpleTest
 {
     private static final byte[] MASTER_KEY = Hex
-        .decode("95cc0e44d0b79a8856afcae1bec4fe3c01bcb20bfc8b6e03609ddd09f44b060f");
+        .decode("01bcb20bfc8b6e03609ddd09f44b060f"+"95cc0e44d0b79a8856afcae1bec4fe3c");
 
     public String getName()
     {

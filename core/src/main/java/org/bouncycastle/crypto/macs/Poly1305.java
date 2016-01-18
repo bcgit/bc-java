@@ -116,13 +116,13 @@ public class Poly1305
             throw new IllegalArgumentException("Poly1305 requires a 128 bit IV.");
         }
 
-        Poly1305KeyGenerator.checkKey(key);
+        Poly1305KeyGenerator.clamp(key);
 
         // Extract r portion of key
-        int t0 = Pack.littleEndianToInt(key, BLOCK_SIZE + 0);
-        int t1 = Pack.littleEndianToInt(key, BLOCK_SIZE + 4);
-        int t2 = Pack.littleEndianToInt(key, BLOCK_SIZE + 8);
-        int t3 = Pack.littleEndianToInt(key, BLOCK_SIZE + 12);
+        int t0 = Pack.littleEndianToInt(key, 0);
+        int t1 = Pack.littleEndianToInt(key, 4);
+        int t2 = Pack.littleEndianToInt(key, 8);
+        int t3 = Pack.littleEndianToInt(key, 12);
 
         r0 = t0 & 0x3ffffff; t0 >>>= 26; t0 |= t1 << 6;
         r1 = t0 & 0x3ffff03; t1 >>>= 20; t1 |= t2 << 12;
@@ -140,19 +140,24 @@ public class Poly1305
         if (cipher == null)
         {
             kBytes = key;
+
+            k0 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 0);
+            k1 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 4);
+            k2 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 8);
+            k3 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 12);
         }
         else
         {
             // Compute encrypted nonce
             kBytes = new byte[BLOCK_SIZE];
-            cipher.init(true, new KeyParameter(key, 0, BLOCK_SIZE));
+            cipher.init(true, new KeyParameter(key, BLOCK_SIZE, BLOCK_SIZE));
             cipher.processBlock(nonce, 0, kBytes, 0);
-        }
 
-        k0 = Pack.littleEndianToInt(kBytes, 0);
-        k1 = Pack.littleEndianToInt(kBytes, 4);
-        k2 = Pack.littleEndianToInt(kBytes, 8);
-        k3 = Pack.littleEndianToInt(kBytes, 12);
+            k0 = Pack.littleEndianToInt(kBytes, 0);
+            k1 = Pack.littleEndianToInt(kBytes, 4);
+            k2 = Pack.littleEndianToInt(kBytes, 8);
+            k3 = Pack.littleEndianToInt(kBytes, 12);
+        }
     }
 
     public String getAlgorithmName()

@@ -150,9 +150,7 @@ public class Chacha20Poly1305 implements TlsCipher
         byte[] firstBlock = new byte[64];
         cipher.processBytes(firstBlock, 0, firstBlock.length, firstBlock, 0);
 
-        // NOTE: The BC implementation puts 'r' after 'k'
-        System.arraycopy(firstBlock, 0, firstBlock, 32, 16);
-        KeyParameter macKey = new KeyParameter(firstBlock, 16, 32);
+        KeyParameter macKey = new KeyParameter(firstBlock, 0, 32);
         Arrays.fill(firstBlock, (byte)0);
         Poly1305KeyGenerator.clamp(macKey.getKey());
         return macKey;
