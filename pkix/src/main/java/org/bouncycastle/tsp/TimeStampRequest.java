@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
@@ -148,12 +149,12 @@ public class TimeStampRequest
 
         if (!algorithms.contains(this.getMessageImprintAlgOID()))
         {
-            throw new TSPValidationException("request contains unknown algorithm.", PKIFailureInfo.badAlg);
+            throw new TSPValidationException("request contains unknown algorithm", PKIFailureInfo.badAlg);
         }
 
         if (policies != null && this.getReqPolicy() != null && !policies.contains(this.getReqPolicy()))
         {
-            throw new TSPValidationException("request contains unknown policy.", PKIFailureInfo.unacceptedPolicy);
+            throw new TSPValidationException("request contains unknown policy", PKIFailureInfo.unacceptedPolicy);
         }
 
         if (this.getExtensions() != null && extensions != null)
@@ -161,10 +162,10 @@ public class TimeStampRequest
             Enumeration en = this.getExtensions().oids();
             while(en.hasMoreElements())
             {
-                String  oid = ((ASN1ObjectIdentifier)en.nextElement()).getId();
+                ASN1ObjectIdentifier  oid = (ASN1ObjectIdentifier)en.nextElement();
                 if (!extensions.contains(oid))
                 {
-                    throw new TSPValidationException("request contains unknown extension.", PKIFailureInfo.unacceptedExtension);
+                    throw new TSPValidationException("request contains unknown extension", PKIFailureInfo.unacceptedExtension);
                 }
             }
         }
