@@ -7,6 +7,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.dane.DANEEntry;
 import org.bouncycastle.cert.dane.DANEEntryFactory;
 import org.bouncycastle.cert.dane.DANEException;
+import org.bouncycastle.cert.dane.TruncatingDigestCalculator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -44,7 +45,7 @@ public class DANETest
     private void shouldCreateDANEEntry()
         throws IOException, DANEException
     {
-        DANEEntryFactory daneEntryFactory = new DANEEntryFactory(new SHA224DigestCalculator());
+        DANEEntryFactory daneEntryFactory = new DANEEntryFactory(new TruncatingDigestCalculator(new SHA256DigestCalculator()));
 
         DANEEntry entry = daneEntryFactory.createEntry("test@test.com", new X509CertificateHolder(randomCert));
 
@@ -53,7 +54,7 @@ public class DANETest
             fail("encoding error in RDATA");
         }
 
-        if (!"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809._smimecert.test.com".equals(entry.getDomainName()))
+        if (!"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15._smimecert.test.com".equals(entry.getDomainName()))
         {
             fail("domain name associated with entry wrong");
         }

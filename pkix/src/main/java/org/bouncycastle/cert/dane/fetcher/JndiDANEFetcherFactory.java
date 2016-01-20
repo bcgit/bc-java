@@ -26,7 +26,7 @@ import org.bouncycastle.cert.dane.DANEException;
 public class JndiDANEFetcherFactory
     implements DANEEntryFetcherFactory
 {
-    private static final String DANE_TYPE = "65500";
+    private static final String DANE_TYPE = "53";
 
     private List dnsServerList = new ArrayList();
     private boolean isAuthoritative;
@@ -45,7 +45,7 @@ public class JndiDANEFetcherFactory
     }
 
     /**
-     * Specify requests must be authoritative.
+     * Specify requests must be authoritative, or not (default false).
      *
      * @param isAuthoritative true if requests must be authoritative, false otherwise.
      * @return the current factory..
