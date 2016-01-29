@@ -15,7 +15,7 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.util.*;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
 
 /**
@@ -104,9 +104,9 @@ public class PGPPublicKeyRing
     /**
      * Return the public key referred to by the passed in keyID if it
      * is present.
-     * 
-     * @param keyID
-     * @return PGPPublicKey
+     *
+     * @param keyID the full keyID of the key of interest.
+     * @return PGPPublicKey with matching keyID, null if it is not present.
      */
     public PGPPublicKey getPublicKey(
         long        keyID)
@@ -123,7 +123,54 @@ public class PGPPublicKeyRing
     
         return null;
     }
-    
+
+    /**
+     * Return the public key with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPPublicKey with the matching fingerprint, null if it is not present.
+     */
+    public PGPPublicKey getPublicKey(byte[] fingerprint)
+    {
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+
+            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return any keys carrying a signature issued by the key represented by keyID.
+     *
+     * @param keyID the key id to be matched against.
+     * @return an iterator (possibly empty) of PGPPublicKey objects carrying signatures from keyID.
+     */
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID)
+    {
+        List keysWithSigs = new ArrayList();
+
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+
+            Iterator sigIt = k.getSignaturesForKeyID(keyID);
+
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
+
+        return keysWithSigs.iterator();
+    }
+
     /**
      * Return an iterator containing all the public keys.
      * 

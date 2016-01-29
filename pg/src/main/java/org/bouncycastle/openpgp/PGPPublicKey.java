@@ -456,7 +456,7 @@ public class PGPPublicKey
      * @param id the id to be matched.
      * @return an iterator of PGPSignature objects.
      */
-    public Iterator getSignaturesForID(
+    public Iterator<PGPSignature> getSignaturesForID(
         String   id)
     {
         return getSignaturesForID(new UserIDPacket(id));
@@ -468,10 +468,34 @@ public class PGPPublicKey
      * @param rawID the id to be matched in raw byte form.
      * @return an iterator of PGPSignature objects.
      */
-    public Iterator getSignaturesForID(
+    public Iterator<PGPSignature> getSignaturesForID(
         byte[]   rawID)
     {
         return getSignaturesForID(new UserIDPacket(rawID));
+    }
+
+    /**
+     * Return any signatures associated with the passed in key identifier keyID.
+     *
+     * @param keyID the key id to be matched.
+     * @return an iterator of PGPSignature objects issued by the key with keyID.
+     */
+    public Iterator<PGPSignature> getSignaturesForKeyID(
+        long   keyID)
+    {
+        List sigs = new ArrayList();
+
+        for (Iterator it = getSignatures(); it.hasNext();)
+        {
+            PGPSignature sig = (PGPSignature)it.next();
+
+            if (sig.getKeyID() == keyID)
+            {
+                sigs.add(sig);
+            }
+        }
+
+        return sigs.iterator();
     }
 
     private Iterator getSignaturesForID(
