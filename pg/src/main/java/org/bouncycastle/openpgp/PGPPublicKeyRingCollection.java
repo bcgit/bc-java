@@ -256,7 +256,84 @@ public class PGPPublicKeyRingCollection
     
         return null;
     }
-    
+
+    /**
+     * Return the PGP public key associated with the given key fingerprint.
+     *
+     * @param fingerprint the public key fingerprint to match against.
+     * @return the PGP public key matching fingerprint.
+     * @throws PGPException
+     */
+    public PGPPublicKey getPublicKey(
+        byte[] fingerprint)
+        throws PGPException
+    {
+        Iterator    it = this.getKeyRings();
+
+        while (it.hasNext())
+        {
+            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey        pub = pubRing.getPublicKey(fingerprint);
+
+            if (pub != null)
+            {
+                return pub;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return the PGP public key associated with the given key fingerprint.
+     *
+     * @param fingerprint the public key fingerprint to match against.
+     * @return the PGP public key ring containing the PGP public key matching fingerprint.
+     * @throws PGPException
+     */
+    public PGPPublicKeyRing getPublicKeyRing(
+        byte[] fingerprint)
+        throws PGPException
+    {
+        Iterator    it = this.getKeyRings();
+
+        while (it.hasNext())
+        {
+            PGPPublicKeyRing    pubRing = (PGPPublicKeyRing)it.next();
+            PGPPublicKey        pub = pubRing.getPublicKey(fingerprint);
+
+            if (pub != null)
+            {
+                return pubRing;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return any keys carrying a signature issued by the key represented by keyID.
+     *
+     * @param keyID the key id to be matched against.
+     * @return an iterator (possibly empty) of PGPPublicKey objects carrying signatures from keyID.
+     */
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID)
+    {
+        List keysWithSigs = new ArrayList();
+
+        for (Iterator it = this.iterator(); it.hasNext();)
+        {
+            PGPPublicKeyRing    k = (PGPPublicKeyRing)it.next();
+
+            for (Iterator keyIt = k.getKeysWithSignaturesBy(keyID); keyIt.hasNext();)
+            {
+                keysWithSigs.add(keyIt.next());
+            }
+        }
+
+        return keysWithSigs.iterator();
+    }
+
     /**
      * Return true if a key matching the passed in key ID is present, false otherwise.
      *
@@ -267,6 +344,18 @@ public class PGPPublicKeyRingCollection
         throws PGPException
     {
         return getPublicKey(keyID) != null;
+    }
+
+    /**
+     * Return true if a key matching the passed in fingerprint is present, false otherwise.
+     *
+     * @param fingerprint hte key fingerprint to look for.
+     * @return true if keyID present, false otherwise.
+     */
+    public boolean contains(byte[] fingerprint)
+        throws PGPException
+    {
+        return getPublicKey(fingerprint) != null;
     }
 
     public byte[] getEncoded() 

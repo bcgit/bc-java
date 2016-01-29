@@ -2161,6 +2161,42 @@ public class PGPKeyRingTest
                 }
             }
         }
+
+        Iterator kIt = pubRing.getKeysWithSignaturesBy(vKey.getKeyID());
+        if (kIt.hasNext())
+        {
+            while (kIt.hasNext())
+            {
+                PGPPublicKey pub = (PGPPublicKey)kIt.next();
+
+                if (pub.isMasterKey())
+                {
+                    Iterator sigIt = pub.getSignaturesForKeyID(vKey.getKeyID());
+
+                    PGPSignature sig = (PGPSignature)sigIt.next();
+
+                    if (sig.getSignatureType() != PGPSignature.POSITIVE_CERTIFICATION || sigIt.hasNext())
+                    {
+                        fail("master sig check failed");
+                    }
+                }
+                else
+                {
+                    Iterator sigIt = pub.getSignaturesForKeyID(vKey.getKeyID());
+
+                    PGPSignature sig = (PGPSignature)sigIt.next();
+
+                    if (sig.getSignatureType() != PGPSignature.SUBKEY_BINDING || sigIt.hasNext())
+                    {
+                        fail("sub sig check failed");
+                    }
+                }
+            }
+        }
+        else
+        {
+            fail("no keys found in iterator");
+        }
     }
 
     private void insertMasterTest()

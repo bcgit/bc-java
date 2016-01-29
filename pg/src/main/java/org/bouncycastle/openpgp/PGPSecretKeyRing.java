@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
 
 /**
@@ -137,12 +138,12 @@ public class PGPSecretKeyRing
         return ((PGPSecretKey)keys.get(0)).getPublicKey();
     }
 
-  /**
+    /**
      * Return the public key referred to by the passed in keyID if it
      * is present.
      *
-     * @param keyID
-     * @return PGPPublicKey
+     * @param keyID the full keyID of the key of interest.
+     * @return PGPPublicKey with matching keyID, null if it is not present.
      */
     public PGPPublicKey getPublicKey(
         long        keyID)
@@ -164,6 +165,59 @@ public class PGPSecretKeyRing
         }
 
         return null;
+    }
+
+    /**
+     * Return the public key with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPPublicKey with the matching fingerprint, null if it is not present.
+     */
+    public PGPPublicKey getPublicKey(byte[] fingerprint)
+    {
+        PGPSecretKey key = getSecretKey(fingerprint);
+        if (key != null)
+        {
+            return key.getPublicKey();
+        }
+
+        for (int i = 0; i != extraPubKeys.size(); i++)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+
+            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return any keys carrying a signature issued by the key represented by keyID.
+     *
+     * @param keyID the key id to be matched against.
+     * @return an iterator (possibly empty) of PGPPublicKey objects carrying signatures from keyID.
+     */
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID)
+    {
+        List keysWithSigs = new ArrayList();
+
+        for (Iterator keyIt = getPublicKeys(); keyIt.hasNext();)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keyIt.next();
+
+            Iterator sigIt = k.getSignaturesForKeyID(keyID);
+
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
+
+        return keysWithSigs.iterator();
     }
 
     /**
@@ -204,20 +258,49 @@ public class PGPSecretKeyRing
     {
         return Collections.unmodifiableList(keys).iterator();
     }
-    
+
+    /**
+     * Return the secret key referred to by the passed in keyID if it
+     * is present.
+     *
+     * @param keyID the full keyID of the key of interest.
+     * @return PGPSecretKey with matching keyID, null if it is not present.
+     */
     public PGPSecretKey getSecretKey(
-        long        keyId)
+        long        keyID)
     {    
         for (int i = 0; i != keys.size(); i++)
         {
             PGPSecretKey    k = (PGPSecretKey)keys.get(i);
             
-            if (keyId == k.getKeyID())
+            if (keyID == k.getKeyID())
             {
                 return k;
             }
         }
     
+        return null;
+    }
+
+    /**
+     * Return the secret key associated with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPSecretKey with the matching fingerprint, null if it is not present.
+     */
+    public PGPSecretKey getSecretKey(byte[] fingerprint)
+    {
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPSecretKey    k = (PGPSecretKey)keys.get(i);
+
+            if (Arrays.areEqual(fingerprint, k.getPublicKey().getFingerprint()))
+            {
+                return k;
+            }
+        }
+
         return null;
     }
 

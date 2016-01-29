@@ -15,6 +15,9 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 
+/**
+ * Parent class for PGP public and secret key rings.
+ */
 public abstract class PGPKeyRing
 {
     PGPKeyRing()
@@ -93,28 +96,44 @@ public abstract class PGPKeyRing
     }
 
     /**
-        * Return the first public key in the ring.  In the case of a {@link PGPSecretKeyRing}
-        * this is also the public key of the master key pair.
-        *
-        * @return PGPPublicKey
-        */
+     * Return the first public key in the ring.  In the case of a {@link PGPSecretKeyRing}
+     * this is also the public key of the master key pair.
+     *
+     * @return PGPPublicKey
+     */
     public abstract PGPPublicKey getPublicKey();
 
     /**
-        * Return an iterator containing all the public keys.
-        *
-        * @return Iterator
-        */
+     * Return an iterator containing all the public keys.
+     *
+     * @return Iterator
+     */
     public abstract Iterator getPublicKeys();
 
     /**
-        * Return the public key referred to by the passed in keyID if it
-        * is present.
-        *
-        * @param keyID
-        * @return PGPPublicKey
-        */
+     * Return the public key referred to by the passed in keyID if it
+     * is present.
+     *
+     * @param keyID the full keyID of the key of interest.
+     * @return PGPPublicKey with matching keyID.
+     */
     public abstract PGPPublicKey getPublicKey(long keyID);
+
+    /**
+     * Return the public key with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPPublicKey with the matching fingerprint.
+     */
+    public abstract PGPPublicKey getPublicKey(byte[] fingerprint);
+
+    /**
+     * Return an iterator containing all the public keys carrying signatures issued from key keyID.
+     *
+     * @return a an iterator (possibly empty) of the public keys associated with keyID.
+     */
+    public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID);
 
     public abstract void encode(OutputStream outStream)
         throws IOException;
