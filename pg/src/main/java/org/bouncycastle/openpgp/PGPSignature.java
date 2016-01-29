@@ -104,6 +104,16 @@ public class PGPSignature
         return sigPck.getHashAlgorithm();
     }
 
+    /**
+     * Return true if this signature represents a certification.
+     *
+     * @return true if this signature represents a certification, false otherwise.
+     */
+    public boolean isCertification()
+    {
+        return isCertification(getSignatureType());
+    }
+
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
@@ -555,5 +565,19 @@ public class PGPSignature
         }
         
         return keyBytes;
+    }
+
+    /**
+     * Return true if the passed in signature type represents a certification, false if the signature type is not.
+     *
+     * @param signatureType
+     * @return true if signatureType is a certification, false otherwise.
+     */
+    public static boolean isCertification(int signatureType)
+    {
+        return PGPSignature.DEFAULT_CERTIFICATION == signatureType
+                || PGPSignature.NO_CERTIFICATION == signatureType
+                || PGPSignature.CASUAL_CERTIFICATION == signatureType
+                || PGPSignature.POSITIVE_CERTIFICATION == signatureType;
     }
 }
