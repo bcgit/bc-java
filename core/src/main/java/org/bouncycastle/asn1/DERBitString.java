@@ -26,6 +26,17 @@ public class DERBitString
         {
             return new DERBitString(((DLBitString)obj).data, ((DLBitString)obj).padBits);
         }
+        if (obj instanceof byte[])
+        {
+            try
+            {
+                return (DERBitString)fromByteArray((byte[])obj);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
+            }
+        }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }

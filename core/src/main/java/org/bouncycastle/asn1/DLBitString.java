@@ -26,6 +26,17 @@ public class DLBitString
         {
             return (DERBitString)obj;
         }
+        if (obj instanceof byte[])
+        {
+            try
+            {
+                return (ASN1BitString)fromByteArray((byte[])obj);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
+            }
+        }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
     }

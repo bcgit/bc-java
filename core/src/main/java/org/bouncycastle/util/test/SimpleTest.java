@@ -19,6 +19,16 @@ public abstract class SimpleTest
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message));
     }
+
+    protected void isTrue(
+        String message,
+        boolean value)
+    {
+        if (!value)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
     
     protected void fail(
         String    message,
