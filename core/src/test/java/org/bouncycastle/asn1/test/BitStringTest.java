@@ -2,9 +2,11 @@ package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -100,10 +102,24 @@ public class BitStringTest
         {
             fail("failed DL check");
         }
+        ASN1BitString dl = DLBitString.getInstance(dlData);
+
+        isTrue("DL test failed", dl instanceof DLBitString);
         if (!Arrays.areEqual(derData, ASN1Primitive.fromByteArray(dlData).getEncoded(ASN1Encoding.DER)))
         {
             fail("failed DER check");
         }
+        try
+        {
+            DERBitString.getInstance(dlData);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // ignore
+        }
+        ASN1BitString der = DERBitString.getInstance(derData);
+        isTrue("DER test failed", der instanceof DERBitString);
     }
 
     public void performTest()
