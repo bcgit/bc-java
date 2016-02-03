@@ -173,7 +173,7 @@ public class OpenBSDBCrypt
         }
         catch (NumberFormatException nfe)
         {
-            throw new IllegalArgumentException("Invalid cost factor:"
+            throw new IllegalArgumentException("Invalid cost factor: "
                 + bcryptString.substring(4, 6));
         }
         if (cost < 4 || cost > 31)
