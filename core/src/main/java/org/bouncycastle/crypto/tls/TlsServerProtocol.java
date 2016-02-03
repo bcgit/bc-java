@@ -640,6 +640,9 @@ public class TlsServerProtocol
 
         if (clientExtensions != null)
         {
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(clientExtensions);
+
             tlsServer.processClientExtensions(clientExtensions);
         }
     }
