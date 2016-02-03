@@ -151,13 +151,6 @@ public class TlsExtensionsUtils
         return buf.toByteArray();
     }
 
-    public static byte[] createPaddingExtension(int dataLength)
-        throws IOException
-    {
-        TlsUtils.checkUint16(dataLength);
-        return new byte[dataLength];
-    }
-
     public static byte[] createMaxFragmentLengthExtension(short maxFragmentLength)
         throws IOException
     {
@@ -166,6 +159,13 @@ public class TlsExtensionsUtils
         byte[] extensionData = new byte[1];
         TlsUtils.writeUint8(maxFragmentLength, extensionData, 0);
         return extensionData;
+    }
+
+    public static byte[] createPaddingExtension(int dataLength)
+        throws IOException
+    {
+        TlsUtils.checkUint16(dataLength);
+        return new byte[dataLength];
     }
 
     public static byte[] createServerNameExtension(ServerNameList serverNameList)
