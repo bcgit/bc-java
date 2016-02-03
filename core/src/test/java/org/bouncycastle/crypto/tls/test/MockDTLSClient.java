@@ -86,6 +86,7 @@ public class MockDTLSClient
              * NOTE: If you are copying test code, do not blindly set these extensions in your own client.
              */
             TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+            TlsExtensionsUtils.addPaddingExtension(clientExtensions, context.getSecureRandom().nextInt(16));
             TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         }
         return clientExtensions;

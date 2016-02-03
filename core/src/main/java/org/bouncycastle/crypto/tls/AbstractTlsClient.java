@@ -199,6 +199,11 @@ public abstract class AbstractTlsClient
             {
                 checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_ec_point_formats);
             }
+
+            /*
+             * RFC 7685 3. The server MUST NOT echo the extension.
+             */
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
         }
     }
 
