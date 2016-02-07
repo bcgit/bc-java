@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -54,6 +55,8 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.OCSPResp;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAttributeTableGenerationException;
+import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
@@ -1149,6 +1152,64 @@ public class NewSignedDataTest
         // compute expected content digest
         //
 
+        verifySignatures(s, md.digest("Hello world!".getBytes()));
+        verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    public void testRemoveAttribute()
+        throws Exception
+    {
+        MessageDigest       md = MessageDigest.getInstance("SHA1", BC);
+        List                certList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        Attribute attr = new Attribute(CMSAttributes.messageDigest,
+                                       new DERSet(
+                                            new DEROctetString(
+                                                md.digest("Hello world!".getBytes()))));
+
+        final ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(attr);
+
+        JcaSignerInfoGeneratorBuilder builder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        builder.setSignedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                AttributeTable table = new DefaultSignedAttributeTableGenerator().getAttributes(parameters);
+
+                return table.remove(CMSAttributes.cmsAlgorithmProtect);
+            }
+        });
+
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_origKP.getPrivate());
+
+        gen.addSignerInfoGenerator(builder.build(sha1Signer, _origCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
+
+        //
+        // the signature is detached, so need to add msg before passing on
+        //
+        s = new CMSSignedData(msg, s.getEncoded());
+
+        Assert.assertNull(s.getSignerInfos().iterator().next().getSignedAttributes().get(CMSAttributes.cmsAlgorithmProtect));
+
+        //
+        // compute expected content digest
+        //
         verifySignatures(s, md.digest("Hello world!".getBytes()));
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
     }
