@@ -23,7 +23,7 @@ public interface MessageSigner
     public byte[] generateSignature(byte[] message);
 
     /**
-     * verify the message message against the signature values r and s.
+     * verify the message message against the signature value.
      *
      * @param message the message that was supposed to have been signed.
      * @param signature the signature of the message
