@@ -214,6 +214,47 @@ public class SHAKEDigestTest
 //            System.err.println(v.getAlgorithm() + " " + v.getBits() + "-bit test vector hash mismatch");
 //            System.err.println(Hex.toHexString(output).toUpperCase());
         }
+
+        if (partialBits == 0)
+        {
+            d = createDigest(v.getAlgorithm());
+
+            m = v.getMessage();
+
+            d.update(m, 0, m.length);
+            d.doOutput(output, 0, outLen / 2);
+            d.doOutput(output, outLen / 2, output.length - outLen / 2);
+
+            if (!Arrays.areEqual(expected, output))
+            {
+                fail(v.getAlgorithm() + " " + v.getBits() + "-bit test vector extended hash mismatch");
+            }
+
+            try
+            {
+                d.update((byte)0x01);
+                fail("no exception");
+            }
+            catch (IllegalStateException e)
+            {
+                isTrue("wrong exception", "attempt to absorb while squeezing".equals(e.getMessage()));
+            }
+
+            d = createDigest(v.getAlgorithm());
+
+            m = v.getMessage();
+
+            d.update(m, 0, m.length);
+            d.doOutput(output, 0, outLen / 2);
+            d.doFinal(output, outLen / 2, output.length - outLen / 2);
+
+            if (!Arrays.areEqual(expected, output))
+            {
+                fail(v.getAlgorithm() + " " + v.getBits() + "-bit test vector extended doFinal hash mismatch");
+            }
+
+            d.update((byte)0x01); // this should be okay as we've reset on doFinal()
+        }
     }
 
     private void skipUntil(BufferedReader r, String header) throws IOException
