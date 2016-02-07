@@ -660,6 +660,9 @@ public class DTLSServerProtocol
 
         if (state.clientExtensions != null)
         {
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(state.clientExtensions);
+
             state.server.processClientExtensions(state.clientExtensions);
         }
     }
