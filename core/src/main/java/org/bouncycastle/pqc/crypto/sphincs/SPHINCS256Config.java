@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.sphincs;
 
-class Sphincs256Config
+class SPHINCS256Config
 {
     static final int SUBTREE_HEIGHT = 5;
     static final int TOTALTREE_HEIGHT = 60;

@@ -10,13 +10,13 @@ class Wots
     //#define WOTS_L 90  // for WOTS_W == 8
     static final int WOTS_L = 67;  // for WOTS_W == 16
     static final int WOTS_LOG_L = 7; // for WOTS_W == 16
-    static final int WOTS_SIGBYTES = (WOTS_L * Sphincs256Config.HASH_BYTES);
+    static final int WOTS_SIGBYTES = (WOTS_L * SPHINCS256Config.HASH_BYTES);
     
     static void expand_seed(byte[] outseeds, int outOff, byte[] inseed, int inOff)
     {
-        clear(outseeds, outOff, WOTS_L * Sphincs256Config.HASH_BYTES);
+        clear(outseeds, outOff, WOTS_L * SPHINCS256Config.HASH_BYTES);
 
-        Seed.prg(outseeds, outOff, WOTS_L * Sphincs256Config.HASH_BYTES, inseed, inOff);
+        Seed.prg(outseeds, outOff, WOTS_L * SPHINCS256Config.HASH_BYTES, inseed, inOff);
     }
 
     private static void clear(byte[] bytes, int offSet, int length)
@@ -30,11 +30,11 @@ class Wots
     static void gen_chain(HashFunctions hs, byte[] out, int outOff, byte[] seed, int seedOff, byte[] masks, int masksOff, int chainlen)
     {
         int i, j;
-        for (j = 0; j < Sphincs256Config.HASH_BYTES; j++)
+        for (j = 0; j < SPHINCS256Config.HASH_BYTES; j++)
             out[j + outOff] = seed[j + seedOff];
 
         for (i = 0; i < chainlen && i < WOTS_W; i++)
-            hs.hash_n_n_mask(out, outOff, out, outOff, masks, masksOff + (i * Sphincs256Config.HASH_BYTES));
+            hs.hash_n_n_mask(out, outOff, out, outOff, masks, masksOff + (i * SPHINCS256Config.HASH_BYTES));
     }
 
 
@@ -43,7 +43,7 @@ class Wots
         int i;
         expand_seed(pk, pkOff, sk, skOff);
         for (i = 0; i < WOTS_L; i++)
-            gen_chain(hs, pk, pkOff + i * Sphincs256Config.HASH_BYTES, pk, pkOff + i * Sphincs256Config.HASH_BYTES, masks, masksOff, WOTS_W - 1);
+            gen_chain(hs, pk, pkOff + i * SPHINCS256Config.HASH_BYTES, pk, pkOff + i * SPHINCS256Config.HASH_BYTES, masks, masksOff, WOTS_W - 1);
     }
 
 
@@ -69,7 +69,7 @@ class Wots
         expand_seed(sig, sigOff, sk, 0);
 
         for (i = 0; i < WOTS_L; i++)
-            gen_chain(hs, sig, sigOff + i * Sphincs256Config.HASH_BYTES, sig, sigOff + i * Sphincs256Config.HASH_BYTES, masks, 0, basew[i]);
+            gen_chain(hs, sig, sigOff + i * SPHINCS256Config.HASH_BYTES, sig, sigOff + i * SPHINCS256Config.HASH_BYTES, masks, 0, basew[i]);
     }
 
     void wots_verify(HashFunctions hs, byte[] pk, byte[] sig, int sigOff, byte[] msg, byte[] masks)
@@ -92,6 +92,6 @@ class Wots
         }
 
         for (i = 0; i < WOTS_L; i++)
-            gen_chain(hs, pk, i * Sphincs256Config.HASH_BYTES, sig, sigOff + i * Sphincs256Config.HASH_BYTES, masks, (basew[i] * Sphincs256Config.HASH_BYTES), WOTS_W - 1 - basew[i]);
+            gen_chain(hs, pk, i * SPHINCS256Config.HASH_BYTES, sig, sigOff + i * SPHINCS256Config.HASH_BYTES, masks, (basew[i] * SPHINCS256Config.HASH_BYTES), WOTS_W - 1 - basew[i]);
     }
 }

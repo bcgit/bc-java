@@ -7,11 +7,11 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.sphincs.Sphincs256KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.sphincs.Sphincs256KeyPairGenerator;
-import org.bouncycastle.pqc.crypto.sphincs.Sphincs256Signer;
-import org.bouncycastle.pqc.crypto.sphincs.SphincsPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincs.SphincsPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256KeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256KeyPairGenerator;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256Signer;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1555,20 +1555,20 @@ public class Sphincs256Test
 
     private void doSHA2KatTest()
     {
-        Sphincs256KeyPairGenerator generator = new Sphincs256KeyPairGenerator();
+        SPHINCS256KeyPairGenerator generator = new SPHINCS256KeyPairGenerator();
 
-        generator.init(new Sphincs256KeyGenerationParameters(new RiggedRandom(), new SHA512tDigest(256)));
+        generator.init(new SPHINCS256KeyGenerationParameters(new RiggedRandom(), new SHA512tDigest(256)));
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        SphincsPrivateKeyParameters priv = (SphincsPrivateKeyParameters)kp.getPrivate();
+        SPHINCSPrivateKeyParameters priv = (SPHINCSPrivateKeyParameters)kp.getPrivate();
 
-        SphincsPublicKeyParameters pub = (SphincsPublicKeyParameters)kp.getPublic();
+        SPHINCSPublicKeyParameters pub = (SPHINCSPublicKeyParameters)kp.getPublic();
 
         isTrue("sha2 pub mismatch", areEqual(expSha2Pub, pub.getKeyData()));
         isTrue("sha2 priv mismatch", areEqual(expSha2Priv, priv.getKeyData()));
 
-        MessageSigner sphincsSigner = new Sphincs256Signer(new SHA512tDigest(256), new SHA512Digest());
+        MessageSigner sphincsSigner = new SPHINCS256Signer(new SHA512tDigest(256), new SHA512Digest());
 
         sphincsSigner.init(true, priv);
 
@@ -1584,20 +1584,20 @@ public class Sphincs256Test
 
     private void doSHA3KatTest()
     {
-        Sphincs256KeyPairGenerator generator = new Sphincs256KeyPairGenerator();
+        SPHINCS256KeyPairGenerator generator = new SPHINCS256KeyPairGenerator();
 
-        generator.init(new Sphincs256KeyGenerationParameters(new RiggedRandom(), new SHA3Digest(256)));
+        generator.init(new SPHINCS256KeyGenerationParameters(new RiggedRandom(), new SHA3Digest(256)));
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        SphincsPrivateKeyParameters priv = (SphincsPrivateKeyParameters)kp.getPrivate();
+        SPHINCSPrivateKeyParameters priv = (SPHINCSPrivateKeyParameters)kp.getPrivate();
 
-        SphincsPublicKeyParameters pub = (SphincsPublicKeyParameters)kp.getPublic();
+        SPHINCSPublicKeyParameters pub = (SPHINCSPublicKeyParameters)kp.getPublic();
 
         isTrue("sha3 pub mismatch", areEqual(expSha3Pub, pub.getKeyData()));
         isTrue("sha3 priv mismatch", areEqual(expSha3Priv, priv.getKeyData()));
 
-        MessageSigner sphincsSigner = new Sphincs256Signer(new SHA3Digest(256), new SHA3Digest(512));
+        MessageSigner sphincsSigner = new SPHINCS256Signer(new SHA3Digest(256), new SHA3Digest(512));
 
         sphincsSigner.init(true, priv);
 
@@ -1613,17 +1613,17 @@ public class Sphincs256Test
 
     private void doSHA2RandomTest()
     {
-        Sphincs256KeyPairGenerator generator = new Sphincs256KeyPairGenerator();
+        SPHINCS256KeyPairGenerator generator = new SPHINCS256KeyPairGenerator();
 
-        generator.init(new Sphincs256KeyGenerationParameters(new SecureRandom(), new SHA512tDigest(256)));
+        generator.init(new SPHINCS256KeyGenerationParameters(new SecureRandom(), new SHA512tDigest(256)));
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        SphincsPrivateKeyParameters priv = (SphincsPrivateKeyParameters)kp.getPrivate();
+        SPHINCSPrivateKeyParameters priv = (SPHINCSPrivateKeyParameters)kp.getPrivate();
 
-        SphincsPublicKeyParameters pub = (SphincsPublicKeyParameters)kp.getPublic();
+        SPHINCSPublicKeyParameters pub = (SPHINCSPublicKeyParameters)kp.getPublic();
 
-        MessageSigner sphincsSigner = new Sphincs256Signer(new SHA512tDigest(256), new SHA512Digest());
+        MessageSigner sphincsSigner = new SPHINCS256Signer(new SHA512tDigest(256), new SHA512Digest());
 
         sphincsSigner.init(true, priv);
 
@@ -1637,17 +1637,17 @@ public class Sphincs256Test
 
     private void doSHA3RandomTest()
     {
-        Sphincs256KeyPairGenerator generator = new Sphincs256KeyPairGenerator();
+        SPHINCS256KeyPairGenerator generator = new SPHINCS256KeyPairGenerator();
 
-        generator.init(new Sphincs256KeyGenerationParameters(new SecureRandom(), new SHA3Digest(256)));
+        generator.init(new SPHINCS256KeyGenerationParameters(new SecureRandom(), new SHA3Digest(256)));
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
 
-        SphincsPrivateKeyParameters priv = (SphincsPrivateKeyParameters)kp.getPrivate();
+        SPHINCSPrivateKeyParameters priv = (SPHINCSPrivateKeyParameters)kp.getPrivate();
 
-        SphincsPublicKeyParameters pub = (SphincsPublicKeyParameters)kp.getPublic();
+        SPHINCSPublicKeyParameters pub = (SPHINCSPublicKeyParameters)kp.getPublic();
 
-        MessageSigner sphincsSigner = new Sphincs256Signer(new SHA3Digest(256), new SHA3Digest(512));
+        MessageSigner sphincsSigner = new SPHINCS256Signer(new SHA3Digest(256), new SHA3Digest(512));
 
         sphincsSigner.init(true, priv);
 

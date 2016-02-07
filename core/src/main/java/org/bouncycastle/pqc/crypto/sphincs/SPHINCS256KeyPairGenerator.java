@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
-public class Sphincs256KeyPairGenerator
+public class SPHINCS256KeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
     private SecureRandom random;
@@ -16,23 +16,23 @@ public class Sphincs256KeyPairGenerator
     public void init(KeyGenerationParameters param)
     {
         random = param.getRandom();
-        treeDigest = ((Sphincs256KeyGenerationParameters)param).getTreeDigest();
+        treeDigest = ((SPHINCS256KeyGenerationParameters)param).getTreeDigest();
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         Tree.leafaddr a = new Tree.leafaddr();
 
-        byte[] sk = new byte[Sphincs256Config.CRYPTO_SECRETKEYBYTES];
+        byte[] sk = new byte[SPHINCS256Config.CRYPTO_SECRETKEYBYTES];
 
         random.nextBytes(sk);
 
-        byte[] pk = new byte[Sphincs256Config.CRYPTO_PUBLICKEYBYTES];
+        byte[] pk = new byte[SPHINCS256Config.CRYPTO_PUBLICKEYBYTES];
 
-        System.arraycopy(sk, Sphincs256Config.SEED_BYTES, pk, 0, Horst.N_MASKS * Sphincs256Config.HASH_BYTES);
+        System.arraycopy(sk, SPHINCS256Config.SEED_BYTES, pk, 0, Horst.N_MASKS * SPHINCS256Config.HASH_BYTES);
 
         // Initialization of top-subtree address
-        a.level = Sphincs256Config.N_LEVELS - 1;
+        a.level = SPHINCS256Config.N_LEVELS - 1;
         a.subtree = 0;
         a.subleaf = 0;
 
@@ -40,8 +40,8 @@ public class Sphincs256KeyPairGenerator
 
         // Format pk: [|N_MASKS*params.HASH_BYTES| Bitmasks || root]
         // Construct top subtree
-        Tree.treehash(hs, pk, (Horst.N_MASKS * Sphincs256Config.HASH_BYTES), Sphincs256Config.SUBTREE_HEIGHT, sk, a, pk, 0);
+        Tree.treehash(hs, pk, (Horst.N_MASKS * SPHINCS256Config.HASH_BYTES), SPHINCS256Config.SUBTREE_HEIGHT, sk, a, pk, 0);
 
-        return new AsymmetricCipherKeyPair(new SphincsPublicKeyParameters(pk), new SphincsPrivateKeyParameters(sk));
+        return new AsymmetricCipherKeyPair(new SPHINCSPublicKeyParameters(pk), new SPHINCSPrivateKeyParameters(sk));
     }
 }
