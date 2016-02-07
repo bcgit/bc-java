@@ -24,7 +24,8 @@ public class AllTests
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
-        
+
+        suite.addTestSuite(Sphincs256Test.class);
         suite.addTestSuite(RainbowSignatureTest.class);
         suite.addTestSuite(McElieceFujisakiCipherTest.class);
         suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
