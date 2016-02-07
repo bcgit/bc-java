@@ -64,9 +64,9 @@ class HashFunctions
 
     int hash_2n_n_mask(byte[] out, int outOff, byte[] in, int inOff, byte[] mask, int maskOff)
     {
-        byte[] buf = new byte[2 * Sphincs256Config.HASH_BYTES];
+        byte[] buf = new byte[2 * SPHINCS256Config.HASH_BYTES];
         int i;
-        for (i = 0; i < 2 * Sphincs256Config.HASH_BYTES; i++)
+        for (i = 0; i < 2 * SPHINCS256Config.HASH_BYTES; i++)
         {
             buf[i] = (byte)(in[inOff + i] ^ mask[maskOff + i]);
         }
@@ -98,9 +98,9 @@ class HashFunctions
 
     int hash_n_n_mask(byte[] out, int outOff, byte[] in, int inOff,  byte[] mask, int maskOff)
     {
-        byte[] buf = new byte[Sphincs256Config.HASH_BYTES];
+        byte[] buf = new byte[SPHINCS256Config.HASH_BYTES];
         int i;
-        for (i = 0; i < Sphincs256Config.HASH_BYTES; i++)
+        for (i = 0; i < SPHINCS256Config.HASH_BYTES; i++)
         {
             buf[i] = (byte)(in[inOff + i] ^ mask[maskOff + i]);
         }

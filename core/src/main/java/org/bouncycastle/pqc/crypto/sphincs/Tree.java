@@ -29,12 +29,12 @@ class Tree
         {
             for (j = 0; j < (l >>> 1); j++)
             {
-                hs.hash_2n_n_mask(wots_pk, pkOff + j * Sphincs256Config.HASH_BYTES, wots_pk, pkOff + j * 2 * Sphincs256Config.HASH_BYTES, masks, masksOff + i * 2 * Sphincs256Config.HASH_BYTES);
+                hs.hash_2n_n_mask(wots_pk, pkOff + j * SPHINCS256Config.HASH_BYTES, wots_pk, pkOff + j * 2 * SPHINCS256Config.HASH_BYTES, masks, masksOff + i * 2 * SPHINCS256Config.HASH_BYTES);
             }
 
             if ((l & 1) != 0)
             {
-                System.arraycopy(wots_pk, pkOff + (l - 1) * Sphincs256Config.HASH_BYTES, wots_pk, pkOff + (l >>> 1) * Sphincs256Config.HASH_BYTES, Sphincs256Config.HASH_BYTES);
+                System.arraycopy(wots_pk, pkOff + (l - 1) * SPHINCS256Config.HASH_BYTES, wots_pk, pkOff + (l >>> 1) * SPHINCS256Config.HASH_BYTES, SPHINCS256Config.HASH_BYTES);
                 l = (l >>> 1) + 1;
             }
             else
@@ -42,14 +42,14 @@ class Tree
                 l = (l >>> 1);
             }
         }
-        System.arraycopy(wots_pk, pkOff, leaf, leafOff, Sphincs256Config.HASH_BYTES);
+        System.arraycopy(wots_pk, pkOff, leaf, leafOff, SPHINCS256Config.HASH_BYTES);
     }
 
     static void treehash(HashFunctions hs, byte[] node, int nodeOff, int height, byte[] sk, leafaddr leaf, byte[] masks, int masksOff)
     {
         leafaddr a = new leafaddr(leaf);
         int lastnode, i;
-        byte[] stack = new byte[(height + 1) * Sphincs256Config.HASH_BYTES];
+        byte[] stack = new byte[(height + 1) * SPHINCS256Config.HASH_BYTES];
         int[] stacklevels = new int[height + 1];
         int stackoffset = 0;
 
@@ -57,21 +57,21 @@ class Tree
 
         for (; a.subleaf < lastnode; a.subleaf++)
         {
-            gen_leaf_wots(hs, stack, stackoffset * Sphincs256Config.HASH_BYTES, masks, masksOff, sk, a);
+            gen_leaf_wots(hs, stack, stackoffset * SPHINCS256Config.HASH_BYTES, masks, masksOff, sk, a);
             stacklevels[stackoffset] = 0;
             stackoffset++;
             while (stackoffset > 1 && stacklevels[stackoffset - 1] == stacklevels[stackoffset - 2])
             {
                 //MASKS
-                int maskoffset = 2 * (stacklevels[stackoffset - 1] + Wots.WOTS_LOG_L) * Sphincs256Config.HASH_BYTES;
+                int maskoffset = 2 * (stacklevels[stackoffset - 1] + Wots.WOTS_LOG_L) * SPHINCS256Config.HASH_BYTES;
 
-                hs.hash_2n_n_mask(stack, (stackoffset - 2) * Sphincs256Config.HASH_BYTES, stack, (stackoffset - 2) * Sphincs256Config.HASH_BYTES,
+                hs.hash_2n_n_mask(stack, (stackoffset - 2) * SPHINCS256Config.HASH_BYTES, stack, (stackoffset - 2) * SPHINCS256Config.HASH_BYTES,
                     masks, masksOff + maskoffset);
                 stacklevels[stackoffset - 2]++;
                 stackoffset--;
             }
         }
-        for (i = 0; i < Sphincs256Config.HASH_BYTES; i++)
+        for (i = 0; i < SPHINCS256Config.HASH_BYTES; i++)
         {
             node[nodeOff + i] = stack[i];
         }
@@ -79,8 +79,8 @@ class Tree
 
     static void gen_leaf_wots(HashFunctions hs, byte[] leaf, int leafOff, byte[] masks, int masksOff, byte[] sk, leafaddr a)
     {
-        byte[] seed = new byte[Sphincs256Config.SEED_BYTES];
-        byte[] pk = new byte[Wots.WOTS_L * Sphincs256Config.HASH_BYTES];
+        byte[] seed = new byte[SPHINCS256Config.SEED_BYTES];
+        byte[] pk = new byte[Wots.WOTS_L * SPHINCS256Config.HASH_BYTES];
 
         Wots w = new Wots();
 

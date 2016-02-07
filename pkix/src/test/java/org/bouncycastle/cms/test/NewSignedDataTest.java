@@ -1170,15 +1170,6 @@ public class NewSignedDataTest
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
 
-        Attribute attr = new Attribute(CMSAttributes.messageDigest,
-                                       new DERSet(
-                                            new DEROctetString(
-                                                md.digest("Hello world!".getBytes()))));
-
-        final ASN1EncodableVector v = new ASN1EncodableVector();
-
-        v.add(attr);
-
         JcaSignerInfoGeneratorBuilder builder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
 
         builder.setSignedAttributeGenerator(new CMSAttributeTableGenerator()
@@ -1198,7 +1189,7 @@ public class NewSignedDataTest
 
         gen.addCertificates(certs);
 
-        CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
+        CMSSignedData s = gen.generate(msg, false);
 
         //
         // the signature is detached, so need to add msg before passing on

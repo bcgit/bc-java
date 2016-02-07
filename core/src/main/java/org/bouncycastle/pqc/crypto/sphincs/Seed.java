@@ -11,11 +11,11 @@ class Seed
 
     static void get_seed(HashFunctions hs, byte[] seed, int seedOff, byte[] sk, Tree.leafaddr a)
     {
-        byte[] buffer = new byte[Sphincs256Config.SEED_BYTES + 8];
+        byte[] buffer = new byte[SPHINCS256Config.SEED_BYTES + 8];
         long t;
         int i;
 
-        for (i = 0; i < Sphincs256Config.SEED_BYTES; i++)
+        for (i = 0; i < SPHINCS256Config.SEED_BYTES; i++)
         {
             buffer[i] = sk[i];
         }
@@ -27,7 +27,7 @@ class Seed
         //5 bits to encode leaf
         t |= a.subleaf << 59;
 
-        Pack.longToLittleEndian(t, buffer, Sphincs256Config.SEED_BYTES);
+        Pack.longToLittleEndian(t, buffer, SPHINCS256Config.SEED_BYTES);
 
         hs.varlen_hash(seed, seedOff, buffer, buffer.length);
     }
