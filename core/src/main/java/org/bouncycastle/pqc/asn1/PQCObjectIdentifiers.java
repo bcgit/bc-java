@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.asn1;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 
 /**
  * PQC:
@@ -43,4 +44,8 @@ public interface PQCObjectIdentifiers
     /** 1.3.6.1.4.1.8301.3.1.3.4.2 */
     public static final ASN1ObjectIdentifier mcElieceCca2   = new ASN1ObjectIdentifier("1.3.6.1.4.1.8301.3.1.3.4.2");
 
+    public static final ASN1ObjectIdentifier sphincs256                      = BCObjectIdentifiers.sphincs256;
+    public static final ASN1ObjectIdentifier sphincs256_Blake512_Blake256    = BCObjectIdentifiers.sphincs256_Blake512_Blake256;
+    public static final ASN1ObjectIdentifier sphincs256_Sha512_Sha512_256    = BCObjectIdentifiers.sphincs256_Sha512_Sha512_256;
+    public static final ASN1ObjectIdentifier sphincs256_Sha3_512_Sha3_256    = BCObjectIdentifiers.sphincs256_Sha3_512_Sha3_256;
 }
