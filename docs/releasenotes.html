@@ -28,6 +28,13 @@ Release: 1.55 <br/>
 <ul>
 <li>Issues with cloning of blake digests with salts and personalisation strings have been fixed.</li>
 <li>The JceAsymmetricValueDecryptor in the CRMF package now attempts to recognise a wider range of parameters for the key wrapping algorithm, rather than relying on a default.</li>
+<li>GCM now fails if an attempt is made to go past 2^32-1 blocks.</li>
+<li>(r, k) ordering for Poly1305 has been modified to be brought into line with RFC 7539.</li>
+<li>TimeStampRequest was always faling to validate if extensions were present. This has been fixed.</li>
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>The DANE API has been updated to reflect the latest standard changes.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
