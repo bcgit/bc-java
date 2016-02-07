@@ -50,11 +50,26 @@ public class SHAKEDigest
 
     public int doFinal(byte[] out, int outOff, int outLen)
     {
-        absorb(new byte[]{ 0x0F }, 0, 4);
+        if (!squeezing)
+        {
+            absorb(new byte[]{0x0F}, 0, 4);
+        }
 
         squeeze(out, outOff, ((long)outLen) * 8);
 
         reset();
+
+        return outLen;
+    }
+
+    public int doOutput(byte[] out, int outOff, int outLen)
+    {
+        if (!squeezing)
+        {
+            absorb(new byte[]{0x0F}, 0, 4);
+        }
+
+        squeeze(out, outOff, ((long)outLen) * 8);
 
         return outLen;
     }
