@@ -18,9 +18,26 @@ public class ExtensionType
     public static final int user_mapping = 6;
 
     /*
+     * RFC 5878
+     */
+    public static final int client_authz = 7;
+    public static final int server_authz = 8;
+
+    /*
+     * RFC RFC6091
+     */
+    public static final int cert_type = 9;
+
+    /*
+     * draft-ietf-tls-negotiated-ff-dhe-10
+     */
+    public static final int supported_groups = 10;
+
+    /*
      * RFC 4492 5.1.
      */
-    public static final int elliptic_curves = 10;
+    /** @deprecated Use {@link #supported_groups} instead */
+    public static final int elliptic_curves = supported_groups;
     public static final int ec_point_formats = 11;
 
     /*
@@ -44,14 +61,38 @@ public class ExtensionType
     public static final int heartbeat = 15;
 
     /*
+     * RFC 7301
+     */
+    public static final int application_layer_protocol_negotiation = 16;
+
+    /*
+     * RFC 6961
+     */
+    public static final int status_request_v2 = 17;
+
+    /*
+     * RFC 6962
+     */
+    public static final int signed_certificate_timestamp = 18;
+
+    /*
+     * RFC 7250
+     */
+    public static final int client_certificate_type = 19;
+    public static final int server_certificate_type = 20;
+
+    /*
+     * RFC 7685
+     */
+    public static final int padding = 21;
+
+    /*
      * RFC 7366
      */
     public static final int encrypt_then_mac = 22;
 
     /*
-     * draft-ietf-tls-session-hash-04
-     * 
-     * NOTE: Early code-point assignment
+     * RFC 7627
      */
     public static final int extended_master_secret = 23;
 

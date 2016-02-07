@@ -449,7 +449,7 @@ public class TlsUtils
 
     public static short readUint8(byte[] buf, int offset)
     {
-        return (short)buf[offset];
+        return (short)(buf[offset] & 0xff);
     }
 
     public static int readUint16(InputStream input)
@@ -461,7 +461,7 @@ public class TlsUtils
         {
             throw new EOFException();
         }
-        return i1 << 8 | i2;
+        return (i1 << 8) | i2;
     }
 
     public static int readUint16(byte[] buf, int offset)
@@ -503,7 +503,7 @@ public class TlsUtils
         {
             throw new EOFException();
         }
-        return ((i1 << 2) | (i2 << 16) | (i3 << 8) | i4) & 0xFFFFFFFFL;
+        return ((i1 << 24) | (i2 << 16) | (i3 << 8) | i4) & 0xFFFFFFFFL;
     }
 
     public static long readUint32(byte[] buf, int offset)

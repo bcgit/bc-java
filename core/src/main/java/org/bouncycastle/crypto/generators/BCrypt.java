@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.generators;
 
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Core of password hashing scheme Bcrypt,
@@ -388,22 +389,6 @@ public final class BCrypt
 
     }
 
-    private int BytesTo32bits(byte[] b, int i)
-    {
-        return ((b[i] & 0xff) << 24) |
-            ((b[i + 1] & 0xff) << 16) |
-            ((b[i + 2] & 0xff) << 8) |
-            ((b[i + 3] & 0xff));
-    }
-
-    private void Bits32ToBytes(int in, byte[] b, int offset)
-    {
-        b[offset + 3] = (byte)in;
-        b[offset + 2] = (byte)(in >> 8);
-        b[offset + 1] = (byte)(in >> 16);
-        b[offset] = (byte)(in >> 24);
-    }
-
     /*
      * XOR P with key cyclic.
      * This is the first part of ExpandKey function
@@ -464,10 +449,7 @@ public final class BCrypt
             }
         }
         byte[] result = new byte[24]; // holds 192 bit key
-        for (int i = 0; i < text.length; i++)
-        {
-            Bits32ToBytes(text[i], result, i * 4);
-        }
+        Pack.intToBigEndian(text, result, 0);
         Arrays.fill(text, 0);
         Arrays.fill(P, 0);
         Arrays.fill(S, 0);
@@ -564,10 +546,7 @@ public final class BCrypt
         initState();
 
         int[] salt32Bit = new int[4]; // holds 16 byte salt
-        salt32Bit[0] = BytesTo32bits(salt, 0);
-        salt32Bit[1] = BytesTo32bits(salt, 4);
-        salt32Bit[2] = BytesTo32bits(salt, 8);
-        salt32Bit[3] = BytesTo32bits(salt, 12);
+        Pack.bigEndianToInt(salt, 0, salt32Bit);
 
         int[] salt32Bit2 = new int[salt.length]; // swapped values
         salt32Bit2[0] = salt32Bit[2];
