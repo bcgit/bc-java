@@ -26,7 +26,7 @@ public class SPHINCS256KeyParams
         this.treeDigest = AlgorithmIdentifier.getInstance(sequence.getObjectAt(1));
     }
 
-    public static SPHINCS256KeyParams getInstance(Object o)
+    public static final SPHINCS256KeyParams getInstance(Object o)
     {
         if (o instanceof SPHINCS256KeyParams)
         {
