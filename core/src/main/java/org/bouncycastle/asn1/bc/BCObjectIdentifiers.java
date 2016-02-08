@@ -76,7 +76,7 @@ public interface BCObjectIdentifiers
      * Sphincs-256
      */
     public static final ASN1ObjectIdentifier sphincs256                      = bc_sig.branch("1");
-    public static final ASN1ObjectIdentifier sphincs256_Blake512_Blake256    = sphincs256.branch("1");
-    public static final ASN1ObjectIdentifier sphincs256_Sha512_Sha512_256    = sphincs256.branch("2");
-    public static final ASN1ObjectIdentifier sphincs256_Sha3_512_Sha3_256    = sphincs256.branch("3");
+    public static final ASN1ObjectIdentifier sphincs256_with_BLAKE512        = sphincs256.branch("1");
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA512          = sphincs256.branch("2");
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA3_512        = sphincs256.branch("3");
 }
