@@ -44,8 +44,8 @@ public interface PQCObjectIdentifiers
     /** 1.3.6.1.4.1.8301.3.1.3.4.2 */
     public static final ASN1ObjectIdentifier mcElieceCca2   = new ASN1ObjectIdentifier("1.3.6.1.4.1.8301.3.1.3.4.2");
 
-    public static final ASN1ObjectIdentifier sphincs256                      = BCObjectIdentifiers.sphincs256;
-    public static final ASN1ObjectIdentifier sphincs256_Blake512_Blake256    = BCObjectIdentifiers.sphincs256_Blake512_Blake256;
-    public static final ASN1ObjectIdentifier sphincs256_Sha512_Sha512_256    = BCObjectIdentifiers.sphincs256_Sha512_Sha512_256;
-    public static final ASN1ObjectIdentifier sphincs256_Sha3_512_Sha3_256    = BCObjectIdentifiers.sphincs256_Sha3_512_Sha3_256;
+    public static final ASN1ObjectIdentifier sphincs256 = BCObjectIdentifiers.sphincs256;
+    public static final ASN1ObjectIdentifier sphincs256_with_BLAKE512 = BCObjectIdentifiers.sphincs256_with_BLAKE512;
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA512 = BCObjectIdentifiers.sphincs256_with_SHA512;
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA3_512 = BCObjectIdentifiers.sphincs256_with_SHA3_512;
 }
