@@ -16,7 +16,7 @@ class Horst
     }
 
     static int horst_sign(HashFunctions hs,
-                          byte[] sig, int sigOff, byte[] pk, long[] sigbytes,
+                          byte[] sig, int sigOff, byte[] pk,
                    byte[] seed,
                    byte[] masks,
                    byte[] m_hash)
@@ -34,7 +34,9 @@ class Horst
 
         // Generate pk leaves
         for (i = 0; i < HORST_T; i++)
+        {
             hs.hash_n_n(tree, (HORST_T - 1 + i) * SPHINCS256Config.HASH_BYTES, sk, i * HORST_SKBYTES);
+        }
 
         long offset_in, offset_out;
         for (i = 0; i < HORST_LOGT; i++)
@@ -42,12 +44,16 @@ class Horst
             offset_in = (1 << (HORST_LOGT - i)) - 1;
             offset_out = (1 << (HORST_LOGT - i - 1)) - 1;
             for (j = 0; j < (1 << (HORST_LOGT - i - 1)); j++)
+            {
                 hs.hash_2n_n_mask(tree, (int)((offset_out + j) * SPHINCS256Config.HASH_BYTES), tree, (int)((offset_in + 2 * j) * SPHINCS256Config.HASH_BYTES), masks, 2 * i * SPHINCS256Config.HASH_BYTES);
+            }
         }
 
         // First write 64 hashes from level 10 to the signature
         for (j = 63 * SPHINCS256Config.HASH_BYTES; j < 127 * SPHINCS256Config.HASH_BYTES; j++)
+        {
             sig[sigpos++] = tree[j];
+        }
 
         // Signature consists of HORST_K parts; each part of secret key and HORST_LOGT-4 auth-path hashes
         for (i = 0; i < HORST_K; i++)
@@ -68,10 +74,11 @@ class Horst
         }
 
         for (i = 0; i < SPHINCS256Config.HASH_BYTES; i++)
+        {
             pk[i] = tree[i];
+        }
 
-        sigbytes[0] = HORST_SIGBYTES;
-        return 0;
+        return HORST_SIGBYTES;
     }
 
     static int horst_verify(HashFunctions hs, byte[] pk, byte[] sig, int sigOff, byte[] masks, byte[] m_hash)
@@ -135,21 +142,35 @@ class Horst
 
         // Compute root from level10
         for (j = 0; j < 32; j++)
+        {
             hs.hash_2n_n_mask(buffer, j * SPHINCS256Config.HASH_BYTES, sig, sigOff + 2 * j * SPHINCS256Config.HASH_BYTES, masks, 2 * (HORST_LOGT - 6) * SPHINCS256Config.HASH_BYTES);
+        }
+
         // Hash from level 11 to 12
         for (j = 0; j < 16; j++)
+        {
             hs.hash_2n_n_mask(buffer, j * SPHINCS256Config.HASH_BYTES, buffer, 2 * j * SPHINCS256Config.HASH_BYTES, masks, 2 * (HORST_LOGT - 5) * SPHINCS256Config.HASH_BYTES);
+        }
+
         // Hash from level 12 to 13
         for (j = 0; j < 8; j++)
+        {
             hs.hash_2n_n_mask(buffer, j * SPHINCS256Config.HASH_BYTES, buffer, 2 * j * SPHINCS256Config.HASH_BYTES, masks, 2 * (HORST_LOGT - 4) * SPHINCS256Config.HASH_BYTES);
+        }
+
         // Hash from level 13 to 14
         for (j = 0; j < 4; j++)
+        {
             hs.hash_2n_n_mask(buffer, j * SPHINCS256Config.HASH_BYTES, buffer, 2 * j * SPHINCS256Config.HASH_BYTES, masks, 2 * (HORST_LOGT - 3) * SPHINCS256Config.HASH_BYTES);
+        }
+
         // Hash from level 14 to 15
         for (j = 0; j < 2; j++)
+        {
             hs.hash_2n_n_mask(buffer, j * SPHINCS256Config.HASH_BYTES, buffer, 2 * j * SPHINCS256Config.HASH_BYTES, masks, 2 * (HORST_LOGT - 2) * SPHINCS256Config.HASH_BYTES);
-        // Hash from level 15 to 16
+        }
 
+        // Hash from level 15 to 16
         hs.hash_2n_n_mask(pk, 0, buffer, 0, masks, 2 * (HORST_LOGT - 1) * SPHINCS256Config.HASH_BYTES);
 
         return 0;
