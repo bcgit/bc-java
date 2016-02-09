@@ -9,7 +9,8 @@ import org.bouncycastle.util.Pack;
  * SPHINCS-256 signer.
  * <p>
  * This implementation is heavily based on the reference implementation in SUPERCOP, the main difference being the digests used
- * for message hashing and tree construction are now configurable (within limits...)
+ * for message hashing and tree construction are now configurable (within limits...) and that the implementation produces
+ * detached signatures.
  * </p>
  */
 public class SPHINCS256Signer
@@ -251,15 +252,12 @@ public class SPHINCS256Signer
         a.subleaf = (int)(leafidx & ((1 << SPHINCS256Config.SUBTREE_HEIGHT) - 1));
         a.subtree = leafidx >>> SPHINCS256Config.SUBTREE_HEIGHT;
 
-        int smlen = 0;
-
         for (i = 0; i < SPHINCS256Config.MESSAGE_HASH_SEED_BYTES; i++)
         {
             sm[i] = R[i];
         }
 
         int smOff = SPHINCS256Config.MESSAGE_HASH_SEED_BYTES;
-        smlen += SPHINCS256Config.MESSAGE_HASH_SEED_BYTES;
 
         System.arraycopy(tsk, SPHINCS256Config.SEED_BYTES, masks, 0, Horst.N_MASKS * SPHINCS256Config.HASH_BYTES);
         for (i = 0; i < (SPHINCS256Config.TOTALTREE_HEIGHT + 7) / 8; i++)
@@ -268,17 +266,13 @@ public class SPHINCS256Signer
         }
 
         smOff += (SPHINCS256Config.TOTALTREE_HEIGHT + 7) / 8;
-        smlen += (SPHINCS256Config.TOTALTREE_HEIGHT + 7) / 8;
 
         Seed.get_seed(hs, seed, 0, tsk, a);
         Horst ht = new Horst();
 
-        long[] horst_sigbytes = new long[1];
+        int horst_sigbytes = ht.horst_sign(hs, sm, smOff, root, seed, masks, m_h);
 
-        ht.horst_sign(hs, sm, smOff, root, horst_sigbytes, seed, masks, m_h);
-
-        smOff += horst_sigbytes[0];
-        smlen += horst_sigbytes[0];
+        smOff += horst_sigbytes;
 
         Wots w = new Wots();
 
@@ -291,11 +285,9 @@ public class SPHINCS256Signer
             w.wots_sign(hs, sm, smOff, root, seed, masks);
 
             smOff += Wots.WOTS_SIGBYTES;
-            smlen += Wots.WOTS_SIGBYTES;
 
             compute_authpath_wots(hs, root, sm, smOff, a, tsk, masks, SPHINCS256Config.SUBTREE_HEIGHT);
             smOff += SPHINCS256Config.SUBTREE_HEIGHT * SPHINCS256Config.HASH_BYTES;
-            smlen += SPHINCS256Config.SUBTREE_HEIGHT * SPHINCS256Config.HASH_BYTES;
 
             a.subleaf = (int)(a.subtree & ((1 << SPHINCS256Config.SUBTREE_HEIGHT) - 1));
             a.subtree >>>= SPHINCS256Config.SUBTREE_HEIGHT;
