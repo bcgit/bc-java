@@ -111,6 +111,7 @@ public class SignatureSpi
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
     {
+        // TODO
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
