@@ -149,8 +149,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         AlgorithmIdentifier sha512AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
         params.put("SHA512WITHRSAANDMGF1", createPSSParams(sha512AlgId, 64));
 
-        AlgorithmIdentifier sphincsSha256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-        params.put("SHA512WITHSPHINCS256", new SPHINCS256SigParams(new SPHINCS256KeyParams(sphincsSha256AlgId)));
+        AlgorithmIdentifier sphincsSha512_256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
+        params.put("SHA512WITHSPHINCS256", new SPHINCS256SigParams(new SPHINCS256KeyParams(sphincsSha512_256AlgId)));
 
         AlgorithmIdentifier sphincsSha3_256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
         params.put("SHA3-512WITHSPHINCS256", new SPHINCS256SigParams(new SPHINCS256KeyParams(sphincsSha3_256AlgId)));
