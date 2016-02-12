@@ -10,8 +10,10 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 
 public class AlgorithmParametersSpi
@@ -46,8 +48,14 @@ public class AlgorithmParametersSpi
         {
             ASN1EncodableVector v = new ASN1EncodableVector();
 
-            v.add(new DEROctetString(currentSpec.getDerivationV()));
-            v.add(new DEROctetString(currentSpec.getEncodingV()));
+            if (currentSpec.getDerivationV() != null)
+            {
+                v.add(new DERTaggedObject(false, 0, new DEROctetString(currentSpec.getDerivationV())));
+            }
+            if (currentSpec.getEncodingV() != null)
+            {
+                v.add(new DERTaggedObject(false, 1, new DEROctetString(currentSpec.getEncodingV())));
+            }
             v.add(new ASN1Integer(currentSpec.getMacKeySize()));
 
             return new DERSequence(v).getEncoded(ASN1Encoding.DER);
@@ -101,10 +109,30 @@ public class AlgorithmParametersSpi
         {
             ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(params);
 
-            this.currentSpec = new IESParameterSpec(
-                ((ASN1OctetString)s.getObjectAt(0)).getOctets(),
-                ((ASN1OctetString)s.getObjectAt(0)).getOctets(),
-                ((ASN1Integer)s.getObjectAt(0)).getValue().intValue());
+            if (s.size() == 1)
+            {
+                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(0).getValue().intValue());
+            }
+            else if (s.size() == 2)
+            {
+                ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(s.getObjectAt(0));
+
+                if (tagged.getTagNo() == 0)
+                {
+                    this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged, false).getOctets(), null, ASN1Integer.getInstance(s.getObjectAt(1)).getValue().intValue());
+                }
+                else
+                {
+                    this.currentSpec = new IESParameterSpec(null, ASN1OctetString.getInstance(tagged, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(1)).getValue().intValue());
+                }
+            }
+            else
+            {
+                ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
+                ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
+
+                this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged1, false).getOctets(), ASN1OctetString.getInstance(tagged2, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(2)).getValue().intValue());
+            }
         }
         catch (ClassCastException e)
         {
