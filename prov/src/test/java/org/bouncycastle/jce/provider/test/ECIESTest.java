@@ -5,8 +5,10 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
 
 import javax.crypto.Cipher;
+import javax.crypto.SealedObject;
 
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -148,6 +150,33 @@ public class ECIESTest
                 fail("AES wrong message!");
             }
         }
+
+        sealedObjectTest();
+    }
+
+    private void sealedObjectTest()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECIES");
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
+        KeyPair keyPair = kpg.generateKeyPair();
+
+        Cipher cipher = Cipher.getInstance("ECIES");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
+
+        String toEncrypt = "Hello";
+
+        // Check that cipher works ok
+        cipher.doFinal(toEncrypt.getBytes());
+
+        // Using a SealedObject to encrypt the same string fails with a NullPointerException
+        SealedObject sealedObject = new SealedObject(toEncrypt, cipher);
+
+        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+
+        String result = (String)sealedObject.getObject(cipher);
+
+        isTrue("result wrong", result.equals(toEncrypt));
     }
 
     public void doTest(
