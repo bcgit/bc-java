@@ -114,7 +114,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
         try
         {
-            if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
+            if (isPKCS12(algorithm))
             {
                 cipher = helper.createCipher(algorithm.getId());
 
