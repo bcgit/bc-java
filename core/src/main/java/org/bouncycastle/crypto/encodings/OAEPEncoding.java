@@ -282,7 +282,7 @@ public class OAEPEncoding
             }
         }
 
-        if (start >= (block.length - 1) || block[start] != 1)
+        if (start > (block.length - 1) || block[start] != 1)
         {
             throw new InvalidCipherTextException("data start wrong " + start);
         }

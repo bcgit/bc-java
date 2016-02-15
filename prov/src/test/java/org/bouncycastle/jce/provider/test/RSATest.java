@@ -704,6 +704,32 @@ public class RSATest
         c.init(Cipher.ENCRYPT_MODE, pubKey, rand);
 
         out = c.update(new byte[40]);
+
+        zeroMessageTest();
+    }
+
+    public void zeroMessageTest()
+        throws Exception
+    {
+        KeyPairGenerator kgen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        RSAKeyGenParameterSpec rsaSpec = new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4);
+
+        kgen.initialize(rsaSpec);
+
+        KeyPair kp = kgen.generateKeyPair();
+
+        byte[] plain = new byte[0];
+
+        Cipher rsaCipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA1AndMGF1Padding", "BC");
+        rsaCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] encrypted = rsaCipher.doFinal(plain);
+
+        rsaCipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA1AndMGF1Padding", "BC");
+        rsaCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+        byte[] decrypted  = rsaCipher.doFinal(encrypted);
+
+        isTrue("zero mismatch", Arrays.areEqual(plain, decrypted));
     }
 
     private void oaepCompatibilityTest(String digest, PrivateKey privKey, PublicKey pubKey)
