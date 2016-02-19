@@ -3,6 +3,9 @@ package org.bouncycastle.pqc.crypto;
 
 import org.bouncycastle.crypto.CipherParameters;
 
+/**
+ * Base interface for a PQC encryption algorithm.
+ */
 public interface MessageEncryptor
 {
 

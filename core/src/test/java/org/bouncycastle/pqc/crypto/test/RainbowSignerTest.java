@@ -53,7 +53,7 @@ extends SimpleTest
 
         rainbowSigner.init(false, pair.getPublic());
         rainbowSigner.update(message, 0, message.length);
-        if (!rainbowSigner.verify(sig))
+        if (!rainbowSigner.verifySignature(sig))
         {
             fail("verification fails");
         }

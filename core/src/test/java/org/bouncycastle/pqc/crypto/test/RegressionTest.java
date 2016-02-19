@@ -12,7 +12,8 @@ public class RegressionTest
         new McEliecePKCSCipherTest(),
         new McEliecePointchevalCipherTest(),
         new RainbowSignerTest() ,
-        new Sphincs256Test()
+        new Sphincs256Test(),
+        new NewHopeTest()
     };
 
     public static void main(
