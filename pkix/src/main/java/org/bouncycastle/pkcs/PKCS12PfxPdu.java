@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -29,11 +28,11 @@ public class PKCS12PfxPdu
         }
         catch (ClassCastException e)
         {
-            throw new CertIOException("malformed data: " + e.getMessage(), e);
+            throw new PKCSIOException("malformed data: " + e.getMessage(), e);
         }
         catch (IllegalArgumentException e)
         {
-            throw new CertIOException("malformed data: " + e.getMessage(), e);
+            throw new PKCSIOException("malformed data: " + e.getMessage(), e);
         }
     }
 
