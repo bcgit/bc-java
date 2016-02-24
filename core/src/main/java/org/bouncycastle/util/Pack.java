@@ -99,6 +99,14 @@ public abstract class Pack
         }
     }
 
+    public static short littleEndianToShort(byte[] bs, int off)
+    {
+        int n = bs[  off] & 0xff;
+        n |= (bs[++off] & 0xff) << 8;
+
+        return (short)n;
+    }
+
     public static int littleEndianToInt(byte[] bs, int off)
     {
         int n = bs[  off] & 0xff;
@@ -135,6 +143,19 @@ public abstract class Pack
             off += 4;
         }
         return ns;
+    }
+
+    public static byte[] shortToLittleEndian(short n)
+    {
+        byte[] bs = new byte[2];
+        shortToLittleEndian(n, bs, 0);
+        return bs;
+    }
+
+    public static void shortToLittleEndian(short n, byte[] bs, int off)
+    {
+        bs[  off] = (byte)(n       );
+        bs[++off] = (byte)(n >>>  8);
     }
 
     public static byte[] intToLittleEndian(int n)

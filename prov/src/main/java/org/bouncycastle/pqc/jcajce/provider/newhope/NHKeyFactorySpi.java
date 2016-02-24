@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.sphincs;
+package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 
-public class Sphincs256KeyFactorySpi
+public class NHKeyFactorySpi
     extends KeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
@@ -67,14 +67,14 @@ public class Sphincs256KeyFactorySpi
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
         throws InvalidKeySpecException
     {
-        if (key instanceof BCSphincs256PrivateKey)
+        if (key instanceof BCNHPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
         }
-        else if (key instanceof BCSphincs256PublicKey)
+        else if (key instanceof BCNHPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
@@ -94,7 +94,7 @@ public class Sphincs256KeyFactorySpi
     public final Key engineTranslateKey(Key key)
         throws InvalidKeyException
     {
-        if (key instanceof BCSphincs256PrivateKey || key instanceof BCSphincs256PublicKey)
+        if (key instanceof BCNHPrivateKey || key instanceof BCNHPublicKey)
         {
             return key;
         }
@@ -105,12 +105,12 @@ public class Sphincs256KeyFactorySpi
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        return new BCSphincs256PrivateKey(keyInfo);
+        return new BCNHPrivateKey(keyInfo);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        return new BCSphincs256PublicKey(keyInfo);
+        return new BCNHPublicKey(keyInfo);
     }
 }
