@@ -14,4 +14,9 @@ public class NHPrivateKeyParameters
 
         this.secData = Arrays.clone(secData);
     }
+
+    public short[] getSecData()
+    {
+        return Arrays.clone(secData);
+    }
 }

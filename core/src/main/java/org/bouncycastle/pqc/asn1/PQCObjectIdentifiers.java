@@ -48,4 +48,6 @@ public interface PQCObjectIdentifiers
     public static final ASN1ObjectIdentifier sphincs256_with_BLAKE512 = BCObjectIdentifiers.sphincs256_with_BLAKE512;
     public static final ASN1ObjectIdentifier sphincs256_with_SHA512 = BCObjectIdentifiers.sphincs256_with_SHA512;
     public static final ASN1ObjectIdentifier sphincs256_with_SHA3_512 = BCObjectIdentifiers.sphincs256_with_SHA3_512;
+
+    public static final ASN1ObjectIdentifier newHope = BCObjectIdentifiers.newHope;
 }
