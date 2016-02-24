@@ -31,10 +31,13 @@ Release: 1.55 <br/>
 <li>GCM now fails if an attempt is made to go past 2^32-1 blocks.</li>
 <li>(r, k) ordering for Poly1305 has been modified to be brought into line with RFC 7539.</li>
 <li>TimeStampRequest was always faling to validate if extensions were present. This has been fixed.</li>
+<li>ECIES/IES algorithm parameters encoding failed on default parameters. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>The DANE API has been updated to reflect the latest standard changes.</li>
+<li>The signature algorithm SPHINCS-256 has been added to the post-quantum provider (BCPQC). Support is in place for SHA-512 and SHA3-512 (using trees based around SHA512_256 and SHA3_256 respectively).</li>
+<li>The key exchange algorithm NewHope has been added to the post-quantum provider (BCPQC). Support is in place for the regular configuration using SHA3-256 as the flattening algorithm for the agreed value.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
