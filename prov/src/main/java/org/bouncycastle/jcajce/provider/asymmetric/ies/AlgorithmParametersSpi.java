@@ -111,7 +111,7 @@ public class AlgorithmParametersSpi
 
             if (s.size() == 1)
             {
-                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(0).getValue().intValue());
+                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(s.getObjectAt(0)).getValue().intValue());
             }
             else if (s.size() == 2)
             {
