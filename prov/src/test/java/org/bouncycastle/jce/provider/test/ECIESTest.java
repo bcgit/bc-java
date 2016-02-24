@@ -177,6 +177,10 @@ public class ECIESTest
         String result = (String)sealedObject.getObject(cipher);
 
         isTrue("result wrong", result.equals(toEncrypt));
+
+        result = (String)sealedObject.getObject(keyPair.getPrivate());
+
+        isTrue("result wrong", result.equals(toEncrypt));
     }
 
     public void doTest(
