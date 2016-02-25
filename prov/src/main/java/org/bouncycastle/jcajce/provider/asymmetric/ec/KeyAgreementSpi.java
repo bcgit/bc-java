@@ -54,6 +54,7 @@ public class KeyAgreementSpi
     private BasicAgreement         agreement;
 
     private MQVParameterSpec       mqvParameters;
+    private BigInteger             result;
 
     protected KeyAgreementSpi(
         String kaAlgorithm,
@@ -228,6 +229,12 @@ public class KeyAgreementSpi
         String fullName = clazz.getName();
 
         return fullName.substring(fullName.lastIndexOf('.') + 1);
+    }
+
+
+    protected byte[] calcSecret()
+    {
+        return bigIntToBytes(result);
     }
 
     public static class DH
