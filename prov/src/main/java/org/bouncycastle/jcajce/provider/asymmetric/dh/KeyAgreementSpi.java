@@ -33,6 +33,8 @@ public class KeyAgreementSpi
     private BigInteger      p;
     private BigInteger      g;
 
+    private BigInteger     result;
+
     public KeyAgreementSpi()
     {
         super("Diffie-Hellman", null);
@@ -212,6 +214,11 @@ public class KeyAgreementSpi
         this.p = privKey.getParams().getP();
         this.g = privKey.getParams().getG();
         this.x = this.result = privKey.getX();
+    }
+
+    protected byte[] calcSecret()
+    {
+        return bigIntToBytes(result);
     }
 
     public static class DHwithRFC2631KDF

@@ -3,14 +3,13 @@ package org.bouncycastle.pqc.jcajce.provider.newhope;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
-import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.pqc.crypto.ExchangePair;
 import org.bouncycastle.pqc.crypto.newhope.NHAgreement;
 import org.bouncycastle.pqc.crypto.newhope.NHExchangePairGenerator;
@@ -18,13 +17,18 @@ import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 public class KeyAgreementSpi
-    extends javax.crypto.KeyAgreementSpi
+    extends BaseAgreementSpi
 {
     private NHAgreement agreement;
     private BCNHPublicKey otherPartyKey;
     private NHExchangePairGenerator exchangePairGenerator;
 
     private byte[] shared;
+
+    public KeyAgreementSpi()
+    {
+        super("NH", null);
+    }
 
     protected void engineInit(Key key, SecureRandom secureRandom)
         throws InvalidKeyException
@@ -93,9 +97,8 @@ public class KeyAgreementSpi
         return shared.length;
     }
 
-    protected SecretKey engineGenerateSecret(String s)
-        throws IllegalStateException, NoSuchAlgorithmException, InvalidKeyException
+    protected byte[] calcSecret()
     {
-        return null;
+        return engineGenerateSecret();
     }
 }
