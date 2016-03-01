@@ -328,35 +328,6 @@ public class AllTests
         encryptedValueParserTest(EncryptedValue.getInstance(value.getEncoded()), decGen, cert);
     }
 
-    public void testEncryptedValueOAEP1()
-        throws Exception
-    {
-        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
-
-        kGen.initialize(2048);
-
-        KeyPair kp = kGen.generateKeyPair();
-        X509Certificate cert = makeV1Certificate(kp, "CN=Test", kp, "CN=Test");
-
-        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
-
-        JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP,
-                new RSAESOAEPparams(sha256, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256),
-                    RSAESOAEPparams.DEFAULT_P_SOURCE_ALGORITHM)),
-            cert.getPublicKey()).setProvider(BC),
-            new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
-
-        EncryptedValue value = build.build(cert);
-        ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
-
-        // try direct
-        encryptedValueParserTest(value, decGen, cert);
-
-        // try indirect
-        encryptedValueParserTest(EncryptedValue.getInstance(value.getEncoded()), decGen, cert);
-    }
-
     private void encryptedValueParserTest(EncryptedValue value, ValueDecryptorGenerator decGen, X509Certificate cert)
         throws Exception
     {
