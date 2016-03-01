@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,6 +42,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             this.tlsSigner = new TlsECDSASigner();
             break;
+        case KeyExchangeAlgorithm.ECDH_anon:
         case KeyExchangeAlgorithm.ECDH_RSA:
         case KeyExchangeAlgorithm.ECDH_ECDSA:
             this.tlsSigner = null;
@@ -66,11 +68,18 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void skipServerCredentials() throws IOException
     {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        if (keyExchange != KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
         if (serverCertificate.isEmpty())
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
@@ -118,13 +127,47 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         switch (keyExchange)
         {
+        case KeyExchangeAlgorithm.ECDH_anon:
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
-        case KeyExchangeAlgorithm.ECDH_anon:
             return true;
         default:
             return false;
         }
+    }
+
+    public byte[] generateServerKeyExchange()
+        throws IOException
+    {
+        if (!requiresServerKeyExchange())
+        {
+            return null;
+        }
+
+        // ECDH_anon is handled here, ECDHE_* in a subclass
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(), namedCurves,
+            clientECPointFormats, buf);
+        return buf.toByteArray();
+    }
+
+    public void processServerKeyExchange(InputStream input)
+        throws IOException
+    {
+        if (!requiresServerKeyExchange())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        // ECDH_anon is handled here, ECDHE_* in a subclass
+
+        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, input);
+
+        byte[] point = TlsUtils.readOpaque8(input);
+
+        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
+            clientECPointFormats, curve_params, point));
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
@@ -154,6 +197,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         if (clientCredentials instanceof TlsAgreementCredentials)
         {
             // TODO Validate client cert has matching parameters (see 'TlsECCUtils.areOnSameCurve')?
@@ -181,6 +229,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
         // TODO Extract the public key
         // TODO If the certificate is 'fixed', take the public key as ecAgreeClientPublicKey
     }
