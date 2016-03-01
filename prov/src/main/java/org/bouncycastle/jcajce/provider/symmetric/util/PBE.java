@@ -14,7 +14,10 @@ import org.bouncycastle.crypto.digests.MD2Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
@@ -36,6 +39,9 @@ public interface PBE
     static final int        SHA256       = 4;
     static final int        MD2          = 5;
     static final int        GOST3411     = 6;
+    static final int        SHA224       = 7;
+    static final int        SHA384       = 8;
+    static final int        SHA512       = 9;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
@@ -96,6 +102,15 @@ public interface PBE
                     break;
                 case GOST3411:
                     generator = new PKCS5S2ParametersGenerator(new GOST3411Digest());
+                    break;
+                case SHA224:
+                    generator = new PKCS5S2ParametersGenerator(new SHA224Digest());
+                    break;
+                case SHA384:
+                    generator = new PKCS5S2ParametersGenerator(new SHA384Digest());
+                    break;
+                case SHA512:
+                    generator = new PKCS5S2ParametersGenerator(new SHA512Digest());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");
