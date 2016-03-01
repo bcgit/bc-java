@@ -1196,7 +1196,8 @@ public class NewSignedDataTest
         //
         s = new CMSSignedData(msg, s.getEncoded());
 
-        Assert.assertNull(s.getSignerInfos().iterator().next().getSignedAttributes().get(CMSAttributes.cmsAlgorithmProtect));
+        // for JDK1.4 build
+        Assert.assertNull(((SignerInformation)s.getSignerInfos().iterator().next()).getSignedAttributes().get(CMSAttributes.cmsAlgorithmProtect));
 
         //
         // compute expected content digest
