@@ -235,6 +235,19 @@ public class PSSSignatureSpi
                 case 64:
                     this.mgfDigest = new SHA512Digest();
                     break;
+                default:
+                    if (saltLength <= 20)
+                    {
+                        this.mgfDigest = new SHA1Digest();
+                    }
+                    else if (saltLength <= 28)
+                    {
+                        this.mgfDigest = new SHA224Digest();
+                    }
+                    else if (saltLength <= 32)
+                    {
+                         this.mgfDigest = new SHA256Digest();
+                    }
                 }
                 setupContentDigest();
             }
