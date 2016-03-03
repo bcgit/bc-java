@@ -70,6 +70,7 @@ import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.SimpleAttributeTableGenerator;
 import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.bc.BcPasswordEnvelopedRecipient;
 import org.bouncycastle.cms.bc.BcRSAKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKEKEnvelopedRecipient;
@@ -1854,6 +1855,10 @@ public class NewEnvelopedDataTest
             assertEquals(PBKDF2Params.getInstance(recipient.getKeyDerivationAlgorithm().getParameters()).getPrf(), prf.getAlgorithmID());
 
             byte[] recData = recipient.getContent(new JcePasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()).setProvider(BC));
+            assertEquals(true, Arrays.equals(data, recData));
+
+            // try lightweight recipient
+            recData = recipient.getContent(new BcPasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()));
             assertEquals(true, Arrays.equals(data, recData));
         }
         else
