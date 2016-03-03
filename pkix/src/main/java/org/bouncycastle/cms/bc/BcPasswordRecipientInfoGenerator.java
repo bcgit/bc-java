@@ -28,11 +28,18 @@ public class BcPasswordRecipientInfoGenerator
         PBKDF2Params params = PBKDF2Params.getInstance(derivationAlgorithm.getParameters());
         byte[] encodedPassword = (schemeID == PasswordRecipient.PKCS5_SCHEME2) ? PBEParametersGenerator.PKCS5PasswordToBytes(password) : PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password);
 
-        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator();
+        try
+        {
+            PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(EnvelopedDataHelper.getPRF(params.getPrf()));
 
-        gen.init(encodedPassword, params.getSalt(), params.getIterationCount().intValue());
+            gen.init(encodedPassword, params.getSalt(), params.getIterationCount().intValue());
 
-        return ((KeyParameter)gen.generateDerivedParameters(keySize)).getKey();
+            return ((KeyParameter)gen.generateDerivedParameters(keySize)).getKey();
+        }
+        catch (Exception e)
+        {
+            throw new CMSException("exception creating derived key: " + e.getMessage(), e);
+        }
     }
 
     public byte[] generateEncryptedBytes(AlgorithmIdentifier keyEncryptionAlgorithm, byte[] derivedKey, GenericKey contentEncryptionKey)
