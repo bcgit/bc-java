@@ -71,6 +71,7 @@ import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.SimpleAttributeTableGenerator;
 import org.bouncycastle.cms.bc.BcCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.bc.BcPasswordEnvelopedRecipient;
+import org.bouncycastle.cms.bc.BcPasswordRecipientInfoGenerator;
 import org.bouncycastle.cms.bc.BcRSAKeyTransRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKEKEnvelopedRecipient;
@@ -1875,6 +1876,42 @@ public class NewEnvelopedDataTest
 
         byte[] recData = recipient.getContent(new JcePasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()).setProvider(BC));
         assertEquals(true, Arrays.equals(data, recData));
+
+        // try lightweight generator.
+        edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new BcPasswordRecipientInfoGenerator(new ASN1ObjectIdentifier(algorithm), "abc\u5639\u563b".toCharArray()).setPRF(prf).setSaltAndIterationCount(new byte[20], 5));
+
+        ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(),
+            CMSEnvelopedDataGenerator.AES128_CBC);
+
+        c = recipients.getRecipients();
+        it = c.iterator();
+
+        if (it.hasNext())
+        {
+            PasswordRecipientInformation recipient1 = (PasswordRecipientInformation)it.next();
+
+            assertEquals(AlgorithmIdentifier.getInstance(recipient1.getKeyEncryptionAlgorithm().getParameters()).getAlgorithm().getId(), algorithm);
+            assertEquals(PBKDF2Params.getInstance(recipient1.getKeyDerivationAlgorithm().getParameters()).getPrf(), prf.getAlgorithmID());
+
+            recData = recipient1.getContent(new JcePasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()).setProvider(BC));
+            assertEquals(true, Arrays.equals(data, recData));
+
+            // try lightweight recipient
+            recData = recipient1.getContent(new BcPasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()));
+            assertEquals(true, Arrays.equals(data, recData));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
     }
 
     private void verifyECKeyAgreeVectors(PrivateKey privKey, String wrapAlg, byte[] message)
