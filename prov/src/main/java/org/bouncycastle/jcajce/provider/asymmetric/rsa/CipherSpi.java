@@ -232,6 +232,22 @@ public class CipherSpi
         {
             initFromSpec(new OAEPParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
         }
+        else if (pad.equals("OAEPWITHSHA3-224ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-224", "MGF1", new MGF1ParameterSpec("SHA3-224"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-256ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-256", "MGF1", new MGF1ParameterSpec("SHA3-256"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-384ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-384", "MGF1", new MGF1ParameterSpec("SHA3-384"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-512ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-512", "MGF1", new MGF1ParameterSpec("SHA3-512"), PSource.PSpecified.DEFAULT));
+        }
         else
         {
             throw new NoSuchPaddingException(padding + " unavailable with RSA.");
@@ -304,7 +320,7 @@ public class CipherSpi
                 {
                     throw new InvalidAlgorithmParameterException("no match on MGF digest algorithm: "+ mgfParams.getDigestAlgorithm());
                 }
-                
+
                 cipher = new OAEPEncoding(new RSABlindedEngine(), digest, mgfDigest, ((PSource.PSpecified)spec.getPSource()).getValue());
             }
         }

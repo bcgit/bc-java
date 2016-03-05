@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.util.Strings;
@@ -29,6 +30,10 @@ public class DigestFactory
     private static Set sha512 = new HashSet();
     private static Set sha512_224 = new HashSet();
     private static Set sha512_256 = new HashSet();
+    private static Set sha3_224 = new HashSet();
+    private static Set sha3_256 = new HashSet();
+    private static Set sha3_384 = new HashSet();
+    private static Set sha3_512 = new HashSet();
 
     private static Map oids = new HashMap();
     
@@ -65,6 +70,18 @@ public class DigestFactory
         sha512_256.add("SHA-512(256)");
         sha512_256.add(NISTObjectIdentifiers.id_sha512_256.getId());
 
+        sha3_224.add("SHA3-224");
+        sha3_224.add(NISTObjectIdentifiers.id_sha3_224.getId());
+
+        sha3_256.add("SHA3-256");
+        sha3_256.add(NISTObjectIdentifiers.id_sha3_256.getId());
+
+        sha3_384.add("SHA3-384");
+        sha3_384.add(NISTObjectIdentifiers.id_sha3_384.getId());
+
+        sha3_512.add("SHA3-512");
+        sha3_512.add(NISTObjectIdentifiers.id_sha3_512.getId());
+
         oids.put("MD5", PKCSObjectIdentifiers.md5);
         oids.put(PKCSObjectIdentifiers.md5.getId(), PKCSObjectIdentifiers.md5);
         
@@ -95,6 +112,18 @@ public class DigestFactory
         oids.put("SHA512(256)", NISTObjectIdentifiers.id_sha512_256);
         oids.put("SHA-512(256)", NISTObjectIdentifiers.id_sha512_256);
         oids.put(NISTObjectIdentifiers.id_sha512_256.getId(), NISTObjectIdentifiers.id_sha512_256);
+
+        oids.put("SHA3-224", NISTObjectIdentifiers.id_sha3_224);
+        oids.put(NISTObjectIdentifiers.id_sha3_224.getId(), NISTObjectIdentifiers.id_sha3_224);
+
+        oids.put("SHA3-256", NISTObjectIdentifiers.id_sha3_256);
+        oids.put(NISTObjectIdentifiers.id_sha3_256.getId(), NISTObjectIdentifiers.id_sha3_256);
+
+        oids.put("SHA3-384", NISTObjectIdentifiers.id_sha3_384);
+        oids.put(NISTObjectIdentifiers.id_sha3_384.getId(), NISTObjectIdentifiers.id_sha3_384);
+
+        oids.put("SHA3-512", NISTObjectIdentifiers.id_sha3_512);
+        oids.put(NISTObjectIdentifiers.id_sha3_512.getId(), NISTObjectIdentifiers.id_sha3_512);
     }
     
     public static Digest getDigest(
@@ -135,6 +164,23 @@ public class DigestFactory
             return new SHA512tDigest(256);
         }
 
+        if (sha3_224.contains(digestName))
+        {
+            return new SHA3Digest(224);
+        }
+        if (sha3_256.contains(digestName))
+        {
+            return new SHA3Digest(256);
+        }
+        if (sha3_384.contains(digestName))
+        {
+            return new SHA3Digest(384);
+        }
+        if (sha3_512.contains(digestName))
+        {
+            return new SHA3Digest(512);
+        }
+
         return null;
     }
     
@@ -149,6 +195,10 @@ public class DigestFactory
             || (sha512.contains(digest1) && sha512.contains(digest2))
             || (sha512_224.contains(digest1) && sha512_224.contains(digest2))
             || (sha512_256.contains(digest1) && sha512_256.contains(digest2))
+            || (sha3_224.contains(digest1) && sha3_224.contains(digest2))
+            || (sha3_256.contains(digest1) && sha3_256.contains(digest2))
+            || (sha3_384.contains(digest1) && sha3_384.contains(digest2))
+            || (sha3_512.contains(digest1) && sha3_512.contains(digest2))
             || (md5.contains(digest1) && md5.contains(digest2));
     }
     
