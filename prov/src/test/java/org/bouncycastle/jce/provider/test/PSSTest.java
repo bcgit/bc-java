@@ -148,6 +148,16 @@ public class PSSTest
             fail("PSS Sign test expected " + new String(Hex.encode(sig1b)) + " got " + new String(Hex.encode(sig)));
         }
 
+        AlgorithmParameters pParams = AlgorithmParameters.getInstance("PSS", "BC");
+
+        pParams.init(pss.getEncoded());
+
+        PSSParameterSpec spec = (PSSParameterSpec)pParams.getParameterSpec(PSSParameterSpec.class);
+
+        isTrue("Digest mismatch", "SHA-256".equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", PSSParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", "SHA-256".equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
+
         s = Signature.getInstance("SHA256withRSAandMGF1", "BC");
         
         s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
@@ -176,6 +186,16 @@ public class PSSTest
         {
             fail("PSS Sign test expected " + new String(Hex.encode(sig1c)) + " got " + new String(Hex.encode(sig)));
         }
+
+        pParams = AlgorithmParameters.getInstance("PSS", "BC");
+
+        pParams.init(pss.getEncoded());
+
+        spec = (PSSParameterSpec)pParams.getParameterSpec(PSSParameterSpec.class);
+
+        isTrue("Digest mismatch", "SHA-512".equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", PSSParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", "SHA-512".equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
 
         s = Signature.getInstance("SHA512withRSAandMGF1", "BC");
         

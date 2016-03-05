@@ -745,6 +745,17 @@ public class RSATest
         byte[] dec = c.doFinal(out);
 
         isTrue("OAEP decrypt failed", Arrays.areEqual(input, dec));
+
+        AlgorithmParameters parameters = AlgorithmParameters.getInstance("OAEP", "BC");
+
+        parameters.init(oaepP.getEncoded());
+
+        OAEPParameterSpec spec = (OAEPParameterSpec)parameters.getParameterSpec(OAEPParameterSpec.class);
+
+        isTrue("Digest mismatch", digest.equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", OAEPParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", digest.equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
+
     }
 
     public void zeroMessageTest()
