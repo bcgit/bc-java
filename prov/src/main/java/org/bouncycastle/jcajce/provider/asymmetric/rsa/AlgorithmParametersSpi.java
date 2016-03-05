@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.util.MessageDigestUtils;
 
 public abstract class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -118,10 +119,15 @@ public abstract class AlgorithmParametersSpi
             {
                 RSAESOAEPparams oaepP = RSAESOAEPparams.getInstance(params);
 
+                if (!oaepP.getMaskGenAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1))
+                {
+                    throw new IOException("unknown mask generation function: " + oaepP.getMaskGenAlgorithm().getAlgorithm());
+                }
+
                 currentSpec = new OAEPParameterSpec(
-                                       oaepP.getHashAlgorithm().getAlgorithm().getId(),
-                                       oaepP.getMaskGenAlgorithm().getAlgorithm().getId(), 
-                                       new MGF1ParameterSpec(AlgorithmIdentifier.getInstance(oaepP.getMaskGenAlgorithm().getParameters()).getAlgorithm().getId()),
+                                       MessageDigestUtils.getDigestName(oaepP.getHashAlgorithm().getAlgorithm()),
+                                       OAEPParameterSpec.DEFAULT.getMGFAlgorithm(),
+                                       new MGF1ParameterSpec(MessageDigestUtils.getDigestName(AlgorithmIdentifier.getInstance(oaepP.getMaskGenAlgorithm().getParameters()).getAlgorithm())),
                                        new PSource.PSpecified(ASN1OctetString.getInstance(oaepP.getPSourceAlgorithm().getParameters()).getOctets()));
             }
             catch (ClassCastException e)
@@ -133,7 +139,7 @@ public abstract class AlgorithmParametersSpi
                 throw new IOException("Not a valid OAEP Parameter encoding.");
             }
         }
-    
+
         protected void engineInit(
             byte[] params,
             String format)
@@ -225,10 +231,15 @@ public abstract class AlgorithmParametersSpi
             {
                 RSASSAPSSparams pssP = RSASSAPSSparams.getInstance(params);
 
+                if (!pssP.getMaskGenAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1))
+                {
+                    throw new IOException("unknown mask generation function: " + pssP.getMaskGenAlgorithm().getAlgorithm());
+                }
+
                 currentSpec = new PSSParameterSpec(
-                                       pssP.getHashAlgorithm().getAlgorithm().getId(), 
-                                       pssP.getMaskGenAlgorithm().getAlgorithm().getId(), 
-                                       new MGF1ParameterSpec(AlgorithmIdentifier.getInstance(pssP.getMaskGenAlgorithm().getParameters()).getAlgorithm().getId()),
+                                       MessageDigestUtils.getDigestName(pssP.getHashAlgorithm().getAlgorithm()),
+                                       PSSParameterSpec.DEFAULT.getMGFAlgorithm(),
+                                       new MGF1ParameterSpec(MessageDigestUtils.getDigestName(AlgorithmIdentifier.getInstance(pssP.getMaskGenAlgorithm().getParameters()).getAlgorithm())),
                                        pssP.getSaltLength().intValue(),
                                        pssP.getTrailerField().intValue());
             }
