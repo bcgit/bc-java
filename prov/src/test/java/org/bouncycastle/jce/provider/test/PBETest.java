@@ -29,6 +29,7 @@ import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -614,6 +615,8 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+
+        testMixedKeyTypes();
     }
 
     private void testPKCS12Interop()
@@ -689,6 +692,42 @@ public class PBETest
         {
             fail(baseAlg + " wrong PBKDF2 k2 8bit key generated");
         }
+    }
+
+    // for regression testing only - don't try this at home.
+    public void testMixedKeyTypes()
+        throws Exception
+    {
+        String provider = "BC";
+        SecretKeyFactory skf =
+            SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA1", provider);
+        PBEKeySpec pbeks = new PBEKeySpec("password".toCharArray(), Strings.toByteArray("salt"), 100, 128);
+        SecretKey secretKey = skf.generateSecret(pbeks);
+        PBEParameterSpec paramSpec = new PBEParameterSpec(pbeks.getSalt(), pbeks.getIterationCount());
+
+        // in this case pbeSpec picked up from internal class representing key
+        Cipher cipher =
+            Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        byte[] plain = new byte[]{0, 1, 2, 3, 4,
+                    5, 6, 7, 8, 9} ;
+        byte[] encrypted = cipher.doFinal(plain);
+
+        cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+
+        byte[] unencrypted = cipher.doFinal(encrypted);
+        isTrue("text mismatch", Arrays.areEqual(plain, unencrypted));
+
+        // this needs the pbe spec as the internal information is now lost.
+        cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
+
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(secretKey.getEncoded(), "AES"), paramSpec);
+
+        unencrypted = cipher.doFinal(encrypted);
+        isTrue("text mismatch", Arrays.areEqual(plain, unencrypted));
     }
 
     public String getName()

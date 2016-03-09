@@ -209,11 +209,6 @@ public interface PBE
                 }
             }
 
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
-
             return param;
         }
 
