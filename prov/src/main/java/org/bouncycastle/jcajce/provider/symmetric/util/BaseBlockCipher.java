@@ -520,9 +520,12 @@ public class BaseBlockCipher
             {
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
+
             if (key instanceof BCPBEKey)
             {
-                if (((BCPBEKey)key).getParam() != null)
+                // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to forget about the fact
+                // it's a BCPBEKey
+                if (((BCPBEKey)key).getParam() != null && ((BCPBEKey)key).getParam() instanceof ParametersWithIV)
                 {
                     param = ((BCPBEKey)key).getParam();
                 }
