@@ -1843,6 +1843,7 @@ public class NewSignedDataTest
             if (sigAlgOid != null)
             {
                 assertEquals(sigAlgOid.getId(), signer.getEncryptionAlgOID());
+                assertEquals(DERNull.INSTANCE, ASN1Primitive.fromByteArray(signer.getEncryptionAlgParams()));
             }
 
             digestAlgorithms.remove(signer.getDigestAlgorithmID());
