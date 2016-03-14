@@ -20,10 +20,6 @@ public class DefaultCMSSignatureEncryptionAlgorithmFinder
         RSA_PKCS1d5.add(PKCSObjectIdentifiers.md4WithRSAEncryption);
         RSA_PKCS1d5.add(PKCSObjectIdentifiers.md5WithRSAEncryption);
         RSA_PKCS1d5.add(PKCSObjectIdentifiers.sha1WithRSAEncryption);
-        RSA_PKCS1d5.add(PKCSObjectIdentifiers.sha224WithRSAEncryption);
-        RSA_PKCS1d5.add(PKCSObjectIdentifiers.sha256WithRSAEncryption);
-        RSA_PKCS1d5.add(PKCSObjectIdentifiers.sha384WithRSAEncryption);
-        RSA_PKCS1d5.add(PKCSObjectIdentifiers.sha512WithRSAEncryption);
         RSA_PKCS1d5.add(OIWObjectIdentifiers.md4WithRSAEncryption);
         RSA_PKCS1d5.add(OIWObjectIdentifiers.md4WithRSA);
         RSA_PKCS1d5.add(OIWObjectIdentifiers.md5WithRSA);
@@ -35,7 +31,7 @@ public class DefaultCMSSignatureEncryptionAlgorithmFinder
 
     public AlgorithmIdentifier findEncryptionAlgorithm(AlgorithmIdentifier signatureAlgorithm)
     {
-               // RFC3370 section 3.2
+               // RFC3370 section 3.2 with RFC 5754 update
         if (RSA_PKCS1d5.contains(signatureAlgorithm.getAlgorithm()))
         {
             return new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
