@@ -6,6 +6,8 @@ import java.security.cert.X509Certificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
+import org.bouncycastle.cms.CMSSignatureEncryptionAlgorithmFinder;
+import org.bouncycastle.cms.DefaultCMSSignatureEncryptionAlgorithmFinder;
 import org.bouncycastle.cms.SignerInfoGenerator;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.operator.ContentSigner;
@@ -16,9 +18,25 @@ public class JcaSignerInfoGeneratorBuilder
 {
     private SignerInfoGeneratorBuilder builder;
 
+    /**
+     *  Base constructor.
+     *
+     * @param digestProvider  a provider of digest calculators for the algorithms required in the signature and attribute calculations.
+     */
     public JcaSignerInfoGeneratorBuilder(DigestCalculatorProvider digestProvider)
     {
-        builder = new SignerInfoGeneratorBuilder(digestProvider);
+        this(digestProvider, new DefaultCMSSignatureEncryptionAlgorithmFinder());
+    }
+
+    /**
+     * Base constructor with a particular finder for signature algorithms.
+     *
+     * @param digestProvider a provider of digest calculators for the algorithms required in the signature and attribute calculations.
+     * @param sigEncAlgFinder finder for algorithm IDs to store for the signature encryption/signature algorithm field.
+     */
+    public JcaSignerInfoGeneratorBuilder(DigestCalculatorProvider digestProvider, CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder)
+    {
+        builder = new SignerInfoGeneratorBuilder(digestProvider, sigEncAlgFinder);
     }
 
     /**
