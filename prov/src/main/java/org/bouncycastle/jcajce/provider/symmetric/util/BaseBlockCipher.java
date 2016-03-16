@@ -513,7 +513,12 @@ public class BaseBlockCipher
 
             if (k instanceof PBEKey && pbeSpec == null)
             {
-                pbeSpec = new PBEParameterSpec(((PBEKey)k).getSalt(), ((PBEKey)k).getIterationCount());
+                PBEKey pbeKey = (PBEKey)k;
+                if (pbeKey.getSalt() == null)
+                {
+                    throw new InvalidAlgorithmParameterException("PBEKey requires parameters to specify salt");
+                }
+                pbeSpec = new PBEParameterSpec(pbeKey.getSalt(), pbeKey.getIterationCount());
             }
 
             if (pbeSpec == null && !(k instanceof PBEKey))
