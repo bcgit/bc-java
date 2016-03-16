@@ -1,8 +1,11 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 
@@ -459,6 +462,25 @@ public class PBETest
         }
     }
 
+    public void testNullSalt()
+        throws Exception
+    {
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+        Key key = skf.generateSecret(new PBEKeySpec("secret".toCharArray()));
+
+        Cipher cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, key, (AlgorithmParameterSpec)null);
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("wrong message", "PBEKey requires parameters to specify salt".equals(e.getMessage()));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -617,6 +639,7 @@ public class PBETest
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
 
         testMixedKeyTypes();
+        testNullSalt();
     }
 
     private void testPKCS12Interop()
