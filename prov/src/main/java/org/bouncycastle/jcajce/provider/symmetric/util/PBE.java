@@ -263,11 +263,6 @@ public interface PBE
                 }
             }
 
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
-
             return param;
         }
 
@@ -293,11 +288,6 @@ public interface PBE
             generator.init(key, pbeParam.getSalt(), pbeParam.getIterationCount());
 
             param = generator.generateDerivedMacParameters(pbeKey.getKeySize());
-    
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
 
             return param;
         }
