@@ -396,7 +396,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Dominik Sch&uuml;rmann&lt;https://github.com/dschuermann&gt; method for returning signatures/verifications without user IDs on PGPPublicKey, method for exposing S2K in PGPSecretKey, constants for GNU protection modes in S2K classes.</li>
 <li>Michael &lt;MSKnete&#064web.de&gt; initial fix for bitStrength issue for OpenPGP EC keys.</li>
 <li>Tobias Wagner &lt;tobias.wagner&#064n-design.de&gt; Fix SecureRandom handling in BcAsymmetricKeyWrapper [#BJA-536].</li>
-<li>Sergio Giro &lt;sgiro&#064google.com&gt; Fixed adding of additional stores from CRL distribution point [#BJA-537]. Fixed missing null check for CRL certificate issuer [#BJA-538].</li>
+<li>Sergio Giro &lt;sgiro&#064google.com&gt; Fixed adding of additional stores from CRL distribution point [#BJA-537]. Fixed missing null check for CRL certificate issuer [#BJA-538], removal of risky zeroisation code in PBE.java, check for salt in PBEKeys that require it.</li>
 <li>bschuette&lt;https://github.com/bschuette&gt; Fixed typo in DefaultSignatureAlgorithmIdentifierFinder, additional methods on CMSSignedDataParser.</li>
 <li>Leonard Dallot&lt;https://github.com/dallotTazTag&gt; Fix to S2K usage of none on changing passwords on keys without passwords originally.</li>
 <li>Jan Willem Janssen &lt;j.w.janssen+bouncycastle&#064lxtreme.nl&gt; Support for DSAParameters in lightweight SubjectPublicKeyInfoFactory, initial content signer verifier for BC lightweight EC.</li>
