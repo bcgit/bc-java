@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Security;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Random;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -75,7 +76,75 @@ public class PGPPacketTest
             }
         }
     }
-    
+
+    private void iteratorTest()
+        throws IOException
+    {
+        int packets = 5, packetsRead = 0;
+        int packetLength = 50, totalLength = packets * packetLength;
+        ByteArrayOutputStream msg = new ByteArrayOutputStream();
+
+        byte[] src = new byte[totalLength];
+        byte[] dst = new byte[totalLength];
+        // deterministic content, so tests will fail with exact same error
+        for (int i = 0; i < totalLength; i++)
+        {
+            src[i] = (byte) (i - 1);
+        }
+
+        // read from src into n literal data packets
+        for (int i = 0; i < packets; i++)
+        {
+            PGPLiteralDataGenerator generator = new PGPLiteralDataGenerator();
+            OutputStream out = generator.open(
+                new UncloseableOutputStream(msg),
+                PGPLiteralData.BINARY,
+                PGPLiteralData.CONSOLE,
+                packetLength,
+                new Date());
+            out.write(src, packetLength * i, packetLength);
+            generator.close();
+        }
+
+        // write to dst from n literal data packets
+        JcaPGPObjectFactory fact = new JcaPGPObjectFactory(msg.toByteArray());
+        Iterator iterator = fact.iterator();
+        while (iterator.hasNext())
+        {
+            PGPLiteralData data = (PGPLiteralData)iterator.next();
+            InputStream in = data.getInputStream();
+
+            int bytesRead = in.read(dst, packetsRead * packetLength, packetLength);
+            if (bytesRead != packetLength)
+            {
+                fail("not enough bytes read in iterator test: " + bytesRead);
+            }
+
+            int moreRead = in.read();
+            if (moreRead != -1)
+            {
+                fail("too many bytes read in iterator test");
+            }
+
+            packetsRead++;
+        }
+
+        // verify n packets read
+        if (packetsRead != packets)
+        {
+            fail("wrong number of packets read in iterator test: " + packetsRead);
+        }
+
+        // verify passed content correct
+        for (int i = 0; i < totalLength; i++)
+        {
+            if (src[i] != dst[i])
+            {
+                fail("wrong content in iterator test");
+            }
+        }
+    }
+
     public void performTest()
         throws IOException
     {
@@ -86,6 +155,8 @@ public class PGPPacketTest
         PGPLiteralDataGenerator newGenerator = new PGPLiteralDataGenerator(false);
         
         readBackTest(newGenerator);
+
+        iteratorTest();
     }
 
     public String getName()
