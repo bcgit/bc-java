@@ -1206,6 +1206,21 @@ public abstract class TlsProtocol
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+        /*
+         * NOTE: There are reports of servers that don't accept a zero-length extension as the last
+         * one, so we write out any zero-length ones first as a best-effort workaround.
+         */
+        writeSelectedExtensions(buf, extensions, true);
+        writeSelectedExtensions(buf, extensions, false);
+
+        byte[] extBytes = buf.toByteArray();
+
+        TlsUtils.writeOpaque16(extBytes, output);
+    }
+
+    protected static void writeSelectedExtensions(OutputStream output, Hashtable extensions, boolean selectEmpty)
+        throws IOException
+    {
         Enumeration keys = extensions.keys();
         while (keys.hasMoreElements())
         {
@@ -1213,14 +1228,13 @@ public abstract class TlsProtocol
             int extension_type = key.intValue();
             byte[] extension_data = (byte[])extensions.get(key);
 
-            TlsUtils.checkUint16(extension_type);
-            TlsUtils.writeUint16(extension_type, buf);
-            TlsUtils.writeOpaque16(extension_data, buf);
+            if (selectEmpty == (extension_data.length == 0))
+            {
+                TlsUtils.checkUint16(extension_type);
+                TlsUtils.writeUint16(extension_type, output);
+                TlsUtils.writeOpaque16(extension_data, output);
+            }
         }
-
-        byte[] extBytes = buf.toByteArray();
-
-        TlsUtils.writeOpaque16(extBytes, output);
     }
 
     protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
