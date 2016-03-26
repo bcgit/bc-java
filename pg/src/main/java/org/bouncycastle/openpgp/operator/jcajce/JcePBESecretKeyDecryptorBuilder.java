@@ -9,6 +9,8 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.IvParameterSpec;
 
+import static org.bouncycastle.openpgp.PGPUtil.getSymmetricCipherName;
+
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -72,7 +74,7 @@ public class JcePBESecretKeyDecryptorBuilder
             {
                 try
                 {
-                    Cipher c = helper.createCipher(PGPUtil.getSymmetricCipherName(encAlgorithm) + "/CFB/NoPadding");
+                    Cipher c = helper.createCipher(getSymmetricCipherName(encAlgorithm) + "/CFB/NoPadding");
 
                     c.init(Cipher.DECRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, key), new IvParameterSpec(iv));
 
