@@ -34,6 +34,11 @@ public class MD5DigestTest
     {
         return new MD5Digest((MD5Digest)digest);
     }
+
+    protected Digest cloneDigest(byte[] encodedState)
+    {
+        return new MD5Digest(encodedState);
+    }
     
     public static void main(
         String[]    args)
