@@ -6,7 +6,6 @@ import java.security.PublicKey;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mceliece.McEliecePrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePublicKeyParameters;
 
 /**
  * utility class for converting jce/jca McEliece objects
@@ -24,7 +23,7 @@ public class McElieceKeysToParams
         {
             BCMcEliecePublicKey k = (BCMcEliecePublicKey)key;
 
-            return new McEliecePublicKeyParameters(k.getOIDString(), k.getN(), k.getT(), k.getG(), k.getMcElieceParameters());
+            return k.getKeyParams();
         }
 
         throw new InvalidKeyException("can't identify McEliece public key: " + key.getClass().getName());
@@ -38,8 +37,8 @@ public class McElieceKeysToParams
         if (key instanceof BCMcEliecePrivateKey)
         {
             BCMcEliecePrivateKey k = (BCMcEliecePrivateKey)key;
-            return new McEliecePrivateKeyParameters(k.getOIDString(), k.getN(), k.getK(), k.getField(), k.getGoppaPoly(),
-                k.getSInv(), k.getP1(), k.getP2(), k.getH(), k.getQInv(), k.getMcElieceParameters());
+            return new McEliecePrivateKeyParameters(k.getN(), k.getK(), k.getField(), k.getGoppaPoly(),
+                 k.getP1(), k.getP2(), k.getSInv());
         }
 
         throw new InvalidKeyException("can't identify McEliece private key.");

@@ -5,7 +5,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2KeyGenParameterSpec;
 
 public class McEliecePointchevalCipherTest
     extends AsymmetricHybridCipherTest
@@ -17,7 +17,7 @@ public class McEliecePointchevalCipherTest
         try
         {
             kpg = KeyPairGenerator.getInstance("McEliecePointcheval");
-            cipher = Cipher.getInstance("McEliecePointchevalWithSHA256");
+            cipher = Cipher.getInstance("McEliecePointcheval");
         }
         catch (Exception e)
         {
@@ -33,7 +33,7 @@ public class McEliecePointchevalCipherTest
         throws Exception
     {
         // initialize key pair generator
-        AlgorithmParameterSpec kpgParams = new ECCKeyGenParameterSpec(11, 50);
+        AlgorithmParameterSpec kpgParams = new McElieceCCA2KeyGenParameterSpec(11, 50);
         kpg.initialize(kpgParams);
 
         // perform test

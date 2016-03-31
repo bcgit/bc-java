@@ -4,9 +4,9 @@ import java.security.KeyPairGenerator;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
 
-public class McEliecePKCSCipherTest
+public class McElieceCipherTest
     extends AsymmetricBlockCipherTest
 {
 
@@ -16,8 +16,8 @@ public class McEliecePKCSCipherTest
 
         try
         {
-            kpg = KeyPairGenerator.getInstance("McEliecePKCS");
-            cipher = Cipher.getInstance("McEliecePKCSwithSHA256");
+            kpg = KeyPairGenerator.getInstance("McEliece");
+            cipher = Cipher.getInstance("McEliece");
         }
         catch (Exception e)
         {
@@ -30,7 +30,7 @@ public class McEliecePKCSCipherTest
     public void testEnDecryption_9_33()
         throws Exception
     {
-        ECCKeyGenParameterSpec params = new ECCKeyGenParameterSpec(9, 33);
+        McElieceKeyGenParameterSpec params = new McElieceKeyGenParameterSpec(9, 33);
         kpg.initialize(params);
         performEnDecryptionTest(2, 10, params);
     }
@@ -38,7 +38,7 @@ public class McEliecePKCSCipherTest
     public void testEnDecryption_11_50()
         throws Exception
     {
-        ECCKeyGenParameterSpec params = new ECCKeyGenParameterSpec(11, 50);
+        McElieceKeyGenParameterSpec params = new McElieceKeyGenParameterSpec(11, 50);
         kpg.initialize(params);
         performEnDecryptionTest(2, 10, params);
     }

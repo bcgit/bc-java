@@ -9,7 +9,7 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2;
  * This class provides a specification for the parameters that are used by the
  * McEliece, McElieceCCA2, and Niederreiter key pair generators.
  */
-public class ECCKeyGenParameterSpec
+public class McElieceKeyGenParameterSpec
     implements AlgorithmParameterSpec
 {
 
@@ -46,7 +46,7 @@ public class ECCKeyGenParameterSpec
     /**
      * Constructor. Set the default parameters: extension degree.
      */
-    public ECCKeyGenParameterSpec()
+    public McElieceKeyGenParameterSpec()
     {
         this(DEFAULT_M, DEFAULT_T);
     }
@@ -57,7 +57,7 @@ public class ECCKeyGenParameterSpec
      * @param keysize the length of a Goppa code
      * @throws InvalidParameterException if <tt>keysize &lt; 1</tt>.
      */
-    public ECCKeyGenParameterSpec(int keysize)
+    public McElieceKeyGenParameterSpec(int keysize)
         throws InvalidParameterException
     {
         if (keysize < 1)
@@ -84,7 +84,7 @@ public class ECCKeyGenParameterSpec
      * @throws InvalidParameterException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt>.
      */
-    public ECCKeyGenParameterSpec(int m, int t)
+    public McElieceKeyGenParameterSpec(int m, int t)
         throws InvalidParameterException
     {
         if (m < 1)
@@ -119,7 +119,7 @@ public class ECCKeyGenParameterSpec
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt> or
      * <tt>poly</tt> is not an irreducible field polynomial.
      */
-    public ECCKeyGenParameterSpec(int m, int t, int poly)
+    public McElieceKeyGenParameterSpec(int m, int t, int poly)
         throws InvalidParameterException
     {
         this.m = m;

@@ -5,7 +5,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2KeyGenParameterSpec;
 
 
 public class McElieceKobaraImaiCipherTest
@@ -18,7 +18,7 @@ public class McElieceKobaraImaiCipherTest
         try
         {
             kpg = KeyPairGenerator.getInstance("McElieceKobaraImai");
-            cipher = Cipher.getInstance("McElieceKobaraImaiWithSHA256");
+            cipher = Cipher.getInstance("McElieceKobaraImai");
         }
         catch (Exception e)
         {
@@ -34,7 +34,7 @@ public class McElieceKobaraImaiCipherTest
         throws Exception
     {
         // initialize key pair generator
-        AlgorithmParameterSpec kpgParams = new ECCKeyGenParameterSpec(11, 50);
+        AlgorithmParameterSpec kpgParams = new McElieceCCA2KeyGenParameterSpec(11, 50);
         kpg.initialize(kpgParams);
 
         performEnDecryptionTest(0, 10, 32, null);       // TODO:  McElieceKobaraImai is broken
