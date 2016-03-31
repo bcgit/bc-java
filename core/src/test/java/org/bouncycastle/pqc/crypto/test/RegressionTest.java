@@ -9,7 +9,7 @@ public class RegressionTest
         new GMSSSignerTest(),
         new McElieceFujisakiCipherTest(),
         new McElieceKobaraImaiCipherTest(),
-        new McEliecePKCSCipherTest(),
+        new McElieceCipherTest(),
         new McEliecePointchevalCipherTest(),
         new RainbowSignerTest() ,
         new Sphincs256Test(),

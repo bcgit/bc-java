@@ -5,16 +5,16 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.mceliece.McElieceCipher;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePKCSCipher;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePKCSDigestCipher;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceParameters;
 import org.bouncycastle.util.test.SimpleTest;
 
-public class McEliecePKCSCipherTest
+public class McElieceCipherTest
     extends SimpleTest
 {
 
@@ -28,6 +28,7 @@ public class McEliecePKCSCipherTest
 
 
     public void performTest()
+        throws InvalidCipherTextException
     {
         int numPassesKPG = 1;
         int numPassesEncDec = 10;
@@ -45,7 +46,7 @@ public class McEliecePKCSCipherTest
 
             ParametersWithRandom param = new ParametersWithRandom(pair.getPublic(), keyRandom);
             Digest msgDigest = new SHA256Digest();
-            McEliecePKCSDigestCipher mcEliecePKCSDigestCipher = new McEliecePKCSDigestCipher(new McEliecePKCSCipher(), msgDigest);
+            McElieceCipher mcEliecePKCSDigestCipher = new McElieceCipher();
 
 
             for (int k = 1; k <= numPassesEncDec; k++)
@@ -60,17 +61,16 @@ public class McEliecePKCSCipherTest
                 rand.nextBytes(mBytes);
 
                 // encrypt
-                mcEliecePKCSDigestCipher.update(mBytes, 0, mBytes.length);
-                byte[] enc = mcEliecePKCSDigestCipher.messageEncrypt();
+                msgDigest.update(mBytes, 0, mBytes.length);
+                byte[] hash = new byte[msgDigest.getDigestSize()];
+
+                msgDigest.doFinal(hash, 0);
+
+                byte[] enc = mcEliecePKCSDigestCipher.messageEncrypt(hash);
 
                 // initialize for decryption
                 mcEliecePKCSDigestCipher.init(false, pair.getPrivate());
                 byte[] constructedmessage = mcEliecePKCSDigestCipher.messageDecrypt(enc);
-
-                // XXX write in McElieceFujisakiDigestCipher?
-                msgDigest.update(mBytes, 0, mBytes.length);
-                byte[] hash = new byte[msgDigest.getDigestSize()];
-                msgDigest.doFinal(hash, 0);
 
                 boolean verified = true;
                 for (int i = 0; i < hash.length; i++)
@@ -96,7 +96,7 @@ public class McEliecePKCSCipherTest
     public static void main(
         String[] args)
     {
-        runTest(new McEliecePKCSCipherTest());
+        runTest(new McElieceCipherTest());
     }
 
 }

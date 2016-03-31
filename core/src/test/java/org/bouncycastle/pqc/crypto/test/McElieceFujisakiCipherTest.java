@@ -35,8 +35,7 @@ public class McElieceFujisakiCipherTest
         byte[] mBytes;
         for (int j = 0; j < numPassesKPG; j++)
         {
-
-            McElieceCCA2Parameters params = new McElieceCCA2Parameters();
+            McElieceCCA2Parameters params = new McElieceCCA2Parameters(new SHA256Digest());
             McElieceCCA2KeyPairGenerator mcElieceCCA2KeyGen = new McElieceCCA2KeyPairGenerator();
             McElieceCCA2KeyGenerationParameters genParam = new McElieceCCA2KeyGenerationParameters(keyRandom, params);
 

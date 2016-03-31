@@ -108,7 +108,7 @@ public class McEliecePointchevalCipher
     public void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
-        this.messDigest = pubKey.getParameters().getDigest();
+        this.messDigest = pubKey.getDigest();
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -116,7 +116,7 @@ public class McEliecePointchevalCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getParameters().getDigest();
+        this.messDigest = privKey.getDigest();
         n = privKey.getN();
         k = privKey.getK();
         t = privKey.getT();
