@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.mceliece;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageEncryptor;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
@@ -21,7 +22,7 @@ import org.bouncycastle.pqc.math.linearalgebra.Vector;
  * codes. The trapdoor for the McEliece cryptosystem using Goppa codes is the
  * knowledge of the Goppa polynomial used to generate the code.
  */
-public class McEliecePKCSCipher
+public class McElieceCipher
     implements MessageEncryptor
 {
 
@@ -155,7 +156,7 @@ public class McEliecePKCSCipher
      * @throws Exception if the cipher text is invalid.
      */
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
         GF2Vector vec = GF2Vector.OS2VP(n, input);
         McEliecePrivateKeyParameters privKey = (McEliecePrivateKeyParameters)key;
@@ -198,7 +199,7 @@ public class McEliecePKCSCipher
     }
 
     private byte[] computeMessage(GF2Vector mr)
-        throws Exception
+        throws InvalidCipherTextException
     {
         byte[] mrBytes = mr.getEncoded();
         // find first non-zero byte
@@ -211,7 +212,7 @@ public class McEliecePKCSCipher
         // check if padding byte is valid
         if (index<0 || mrBytes[index] != 0x01)
         {
-            throw new Exception("Bad Padding: invalid ciphertext");
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         // extract and return message

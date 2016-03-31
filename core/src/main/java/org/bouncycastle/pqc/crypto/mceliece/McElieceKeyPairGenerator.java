@@ -129,9 +129,8 @@ public class McElieceKeyPairGenerator
 
 
         // generate keys
-        McEliecePublicKeyParameters pubKey = new McEliecePublicKeyParameters(OID, n, t, g, mcElieceParams.getParameters());
-        McEliecePrivateKeyParameters privKey = new McEliecePrivateKeyParameters(OID, n, k,
-            field, gp, matrixSandInverse[1], p1, p2, h, sqRootMatrix, mcElieceParams.getParameters());
+        McEliecePublicKeyParameters pubKey = new McEliecePublicKeyParameters(n, t, g);
+        McEliecePrivateKeyParameters privKey = new McEliecePrivateKeyParameters(n, k, field, gp, p1, p2, matrixSandInverse[1]);
 
         // return key pair
         return new AsymmetricCipherKeyPair(pubKey, privKey);

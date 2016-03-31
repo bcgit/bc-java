@@ -11,7 +11,7 @@ import org.bouncycastle.pqc.math.linearalgebra.Vector;
 /**
  * Core operations for the CCA-secure variants of McEliece.
  */
-public final class McElieceCCA2Primitives
+final class McElieceCCA2Primitives
 {
 
     /**
@@ -35,7 +35,7 @@ public final class McElieceCCA2Primitives
                                                 GF2Vector m, GF2Vector z)
     {
 
-        GF2Matrix matrixG = pubKey.getMatrixG();
+        GF2Matrix matrixG = pubKey.getG();
         Vector mG = matrixG.leftMultiplyLeftCompactForm(m);
         return (GF2Vector)mG.add(z);
     }

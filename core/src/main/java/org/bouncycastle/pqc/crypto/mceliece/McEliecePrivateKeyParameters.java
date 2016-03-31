@@ -2,8 +2,10 @@ package org.bouncycastle.pqc.crypto.mceliece;
 
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
+import org.bouncycastle.pqc.math.linearalgebra.GoppaCode;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
+import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2m;
 
 
 public class McEliecePrivateKeyParameters
@@ -43,43 +45,39 @@ public class McEliecePrivateKeyParameters
     /**
      * Constructor.
      *
-     * @param oid
      * @param n         the length of the code
      * @param k         the dimension of the code
      * @param field     the field polynomial defining the finite field
-     *                  <tt>GF(2<sup>m</sup>)</tt>
-     * @param goppaPoly the irreducible Goppa polynomial
-     * @param sInv      the matrix <tt>S<sup>-1</sup></tt>
+*                  <tt>GF(2<sup>m</sup>)</tt>
+     * @param gp the irreducible Goppa polynomial
      * @param p1        the permutation used to generate the systematic check
-     *                  matrix
+*                  matrix
      * @param p2        the permutation used to compute the public generator
-     *                  matrix
-     * @param h         the canonical check matrix
-     * @param qInv      the matrix used to compute square roots in
-     *                  <tt>(GF(2<sup>m</sup>))<sup>t</sup></tt>
-     * @param params    McElieceParameters
+*                  matrix
+     * @param sInv      the matrix <tt>S<sup>-1</sup></tt>
      */
-    public McEliecePrivateKeyParameters(String oid, int n, int k, GF2mField field,
-                                        PolynomialGF2mSmallM goppaPoly, GF2Matrix sInv, Permutation p1,
-                                        Permutation p2, GF2Matrix h, PolynomialGF2mSmallM[] qInv, McElieceParameters params)
+    public McEliecePrivateKeyParameters(int n, int k, GF2mField field,
+                                        PolynomialGF2mSmallM gp, Permutation p1, Permutation p2, GF2Matrix sInv)
     {
-        super(true, params);
-        this.oid = oid;
+        super(true, null);
         this.k = k;
         this.n = n;
         this.field = field;
-        this.goppaPoly = goppaPoly;
+        this.goppaPoly = gp;
         this.sInv = sInv;
         this.p1 = p1;
         this.p2 = p2;
-        this.h = h;
-        this.qInv = qInv;
+        this.h = GoppaCode.createCanonicalCheckMatrix(field, gp);
+
+        PolynomialRingGF2m ring = new PolynomialRingGF2m(field, gp);
+
+          // matrix used to compute square roots in (GF(2^m))^t
+        this.qInv = ring.getSquareRootMatrix();
     }
 
     /**
      * Constructor.
      *
-     * @param oid
      * @param n            the length of the code
      * @param k            the dimension of the code
      * @param encField     the encoded field polynomial defining the finite field
@@ -93,14 +91,12 @@ public class McEliecePrivateKeyParameters
      * @param encH         the encoded canonical check matrix
      * @param encQInv      the encoded matrix used to compute square roots in
      *                     <tt>(GF(2<sup>m</sup>))<sup>t</sup></tt>
-     * @param params       McElieceParameters
      */
-    public McEliecePrivateKeyParameters(String oid, int n, int k, byte[] encField,
+    public McEliecePrivateKeyParameters(int n, int k, byte[] encField,
                                         byte[] encGoppaPoly, byte[] encSInv, byte[] encP1, byte[] encP2,
-                                        byte[] encH, byte[][] encQInv, McElieceParameters params)
+                                        byte[] encH, byte[][] encQInv)
     {
-        super(true, params);
-        this.oid = oid;
+        super(true, null);
         this.n = n;
         this.k = k;
         field = new GF2mField(encField);
@@ -189,9 +185,5 @@ public class McEliecePrivateKeyParameters
         return qInv;
     }
 
-    public String getOIDString()
-    {
-        return oid;
-    }
 
 }

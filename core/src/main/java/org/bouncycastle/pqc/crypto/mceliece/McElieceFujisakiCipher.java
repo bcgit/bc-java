@@ -23,8 +23,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
 public class McElieceFujisakiCipher
     implements MessageEncryptor
 {
-
-
     /**
      * The OID of the algorithm.
      */
@@ -44,11 +42,11 @@ public class McElieceFujisakiCipher
     McElieceCCA2KeyParameters key;
 
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncrypting,
                      CipherParameters param)
     {
 
-        if (forSigning)
+        if (forEncrypting)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -71,7 +69,6 @@ public class McElieceFujisakiCipher
             this.key = (McElieceCCA2PrivateKeyParameters)param;
             this.initCipherDecrypt((McElieceCCA2PrivateKeyParameters)key);
         }
-
     }
 
 
@@ -82,7 +79,6 @@ public class McElieceFujisakiCipher
         if (key instanceof McElieceCCA2PublicKeyParameters)
         {
             return ((McElieceCCA2PublicKeyParameters)key).getN();
-
         }
         if (key instanceof McElieceCCA2PrivateKeyParameters)
         {
@@ -96,7 +92,7 @@ public class McElieceFujisakiCipher
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
-        this.messDigest = pubKey.getParameters().getDigest();
+        this.messDigest = pubKey.getDigest();
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -105,7 +101,7 @@ public class McElieceFujisakiCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getParameters().getDigest();
+        this.messDigest = privKey.getDigest();
         n = privKey.getN();
         t = privKey.getT();
     }
@@ -114,7 +110,6 @@ public class McElieceFujisakiCipher
     public byte[] messageEncrypt(byte[] input)
         throws Exception
     {
-
         // generate random vector r of length k bits
         GF2Vector r = new GF2Vector(k, sr);
 
@@ -159,7 +154,6 @@ public class McElieceFujisakiCipher
     public byte[] messageDecrypt(byte[] input)
         throws Exception
     {
-
         int c1Len = (n + 7) >> 3;
         int c2Len = input.length - c1Len;
 
@@ -170,8 +164,7 @@ public class McElieceFujisakiCipher
 
         // decrypt c1 ...
         GF2Vector hrmVec = GF2Vector.OS2VP(n, c1);
-        GF2Vector[] decC1 = McElieceCCA2Primitives.decryptionPrimitive((McElieceCCA2PrivateKeyParameters)key,
-            hrmVec);
+        GF2Vector[] decC1 = McElieceCCA2Primitives.decryptionPrimitive((McElieceCCA2PrivateKeyParameters)key, hrmVec);
         byte[] rBytes = decC1[0].getEncoded();
         // ... and obtain error vector z
         GF2Vector z = decC1[1];
@@ -213,6 +206,4 @@ public class McElieceFujisakiCipher
         // return plaintext m
         return mBytes;
     }
-
-
 }
