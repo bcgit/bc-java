@@ -15,6 +15,22 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 
+/**
+ * Return the keyData to encode in the PrivateKeyInfo structure.
+ * <p>
+ * The ASN.1 definition of the key structure is
+ * <pre>
+ *   McElieceCCA2PrivateKey ::= SEQUENCE {
+ *     m             INTEGER                  -- extension degree of the field
+ *     k             INTEGER                  -- dimension of the code
+ *     field         OCTET STRING             -- field polynomial
+ *     goppaPoly     OCTET STRING             -- irreducible Goppa polynomial
+ *     p             OCTET STRING             -- permutation vector
+ *     digest        AlgorithmIdentifier      -- algorithm identifier for CCA2 digest
+ *   }
+ * </pre>
+ * </p>
+ */
 public class McElieceCCA2PrivateKey
     extends ASN1Object
 {
