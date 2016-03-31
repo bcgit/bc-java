@@ -111,7 +111,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public int hashCode()
     {
-        return params.getN() + 37 * params.getT() + params.getG().hashCode();
+        return 37 * (params.getN() + 37 * params.getT()) + params.getG().hashCode();
     }
 
     /**

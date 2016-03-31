@@ -145,8 +145,14 @@ public class BCMcElieceCCA2PrivateKey
      */
     public int hashCode()
     {
-        return getK() + getN() + getField().hashCode() + getGoppaPoly().hashCode() + getP().hashCode()
-            + getH().hashCode();
+        int code = params.getK();
+
+        code = code * 37 + params.getN();
+        code = code * 37 + params.getField().hashCode();
+        code = code * 37 + params.getGoppaPoly().hashCode();
+        code = code * 37 + params.getP().hashCode();
+
+        return code * 37 + params.getH().hashCode();
     }
 
     /**
@@ -165,24 +171,25 @@ public class BCMcElieceCCA2PrivateKey
      *   }
      * </pre>
      * </p>
+     *
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()
     {
         PrivateKeyInfo pki;
-          try
-          {
-              McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(getN(), getK(), getField(), getGoppaPoly(), getP(), Utils.getDigAlgId(params.getDigest().getAlgorithmName()));
-              AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
+        try
+        {
+            McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(getN(), getK(), getField(), getGoppaPoly(), getP(), Utils.getDigAlgId(params.getDigest().getAlgorithmName()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
 
-              pki = new PrivateKeyInfo(algorithmIdentifier, privateKey);
+            pki = new PrivateKeyInfo(algorithmIdentifier, privateKey);
 
-              return pki.getEncoded();
-          }
-          catch (IOException e)
-          {
-              return null;
-          }
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     public String getFormat()
