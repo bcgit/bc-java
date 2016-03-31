@@ -30,7 +30,9 @@ public class AllTests
         suite.addTestSuite(McElieceFujisakiCipherTest.class);
         suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
         suite.addTestSuite(McEliecePointchevalCipherTest.class);
-        suite.addTestSuite(McEliecePKCSCipherTest.class);
+        suite.addTestSuite(McElieceCipherTest.class);
+        suite.addTestSuite(McElieceKeyPairGeneratorTest.class);
+        suite.addTestSuite(McElieceCCA2KeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }

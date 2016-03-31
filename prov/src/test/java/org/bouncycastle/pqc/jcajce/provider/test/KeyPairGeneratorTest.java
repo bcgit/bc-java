@@ -28,8 +28,7 @@ public abstract class KeyPairGeneratorTest
             byte[] encPrivKey = privKey.getEncoded();
 
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encPubKey);
-            PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(
-                encPrivKey);
+            PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(encPrivKey);
 
             PublicKey decPubKey = kf.generatePublic(pubKeySpec);
             PrivateKey decPrivKey = kf.generatePrivate(privKeySpec);

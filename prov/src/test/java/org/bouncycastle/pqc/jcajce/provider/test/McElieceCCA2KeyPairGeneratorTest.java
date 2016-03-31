@@ -2,9 +2,9 @@ package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2KeyGenParameterSpec;
 
 
 public class McElieceCCA2KeyPairGeneratorTest
@@ -14,22 +14,24 @@ public class McElieceCCA2KeyPairGeneratorTest
     protected void setUp()
     {
         super.setUp();
-        try
-        {
-            kf = KeyFactory.getInstance("McElieceCCA2");
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            e.printStackTrace();
-        }
     }
 
+    public void testKeyFactory()
+        throws Exception
+    {
+        kf = KeyFactory.getInstance("McElieceKobaraImai");
+        kf = KeyFactory.getInstance("McEliecePointcheval");
+        kf = KeyFactory.getInstance("McElieceFujisaki");
+        kf = KeyFactory.getInstance(PQCObjectIdentifiers.mcElieceCca2.getId());
+    }
 
     public void testKeyPairEncoding_9_33()
         throws Exception
     {
+        kf = KeyFactory.getInstance(PQCObjectIdentifiers.mcElieceCca2.getId());
+
         kpg = KeyPairGenerator.getInstance("McElieceKobaraImai");
-        ECCKeyGenParameterSpec params = new ECCKeyGenParameterSpec(9, 33);
+        McElieceCCA2KeyGenParameterSpec params = new McElieceCCA2KeyGenParameterSpec(9, 33);
         kpg.initialize(params);
         performKeyPairEncodingTest();
     }

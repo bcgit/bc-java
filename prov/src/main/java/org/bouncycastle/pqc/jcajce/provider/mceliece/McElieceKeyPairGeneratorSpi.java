@@ -7,140 +7,55 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McEliecePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McEliecePublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2ParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
 
-public abstract class McElieceKeyPairGeneratorSpi
+public class McElieceKeyPairGeneratorSpi
     extends KeyPairGenerator
 {
-    public McElieceKeyPairGeneratorSpi(
-        String algorithmName)
+    McElieceKeyPairGenerator kpg;
+
+    public McElieceKeyPairGeneratorSpi()
     {
-        super(algorithmName);
+        super("McEliece");
     }
 
-    /**
-     *
-     *
-     *
-     */
-
-    public static class McElieceCCA2
-        extends McElieceKeyPairGeneratorSpi
+    public void initialize(AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
     {
+        kpg = new McElieceKeyPairGenerator();
+        super.initialize(params);
+        McElieceKeyGenParameterSpec ecc = (McElieceKeyGenParameterSpec)params;
 
-        McElieceCCA2KeyPairGenerator kpg;
-
-
-        public McElieceCCA2()
-        {
-            super("McElieceCCA-2");
-        }
-
-        public McElieceCCA2(String s)
-        {
-            super(s);
-        }
-
-        public void initialize(AlgorithmParameterSpec params)
-            throws InvalidAlgorithmParameterException
-        {
-            kpg = new McElieceCCA2KeyPairGenerator();
-            super.initialize(params);
-            ECCKeyGenParameterSpec ecc = (ECCKeyGenParameterSpec)params;
-
-            McElieceCCA2KeyGenerationParameters mccca2KGParams = new McElieceCCA2KeyGenerationParameters(new SecureRandom(), new McElieceCCA2Parameters(ecc.getM(), ecc.getT()));
-            kpg.init(mccca2KGParams);
-        }
-
-        public void initialize(int keySize, SecureRandom random)
-        {
-            McElieceCCA2ParameterSpec paramSpec = new McElieceCCA2ParameterSpec();
-
-            // call the initializer with the chosen parameters
-            try
-            {
-                this.initialize(paramSpec);
-            }
-            catch (InvalidAlgorithmParameterException ae)
-            {
-            }
-        }
-
-        public KeyPair generateKeyPair()
-        {
-            AsymmetricCipherKeyPair generateKeyPair = kpg.generateKeyPair();
-            McElieceCCA2PrivateKeyParameters sk = (McElieceCCA2PrivateKeyParameters)generateKeyPair.getPrivate();
-            McElieceCCA2PublicKeyParameters pk = (McElieceCCA2PublicKeyParameters)generateKeyPair.getPublic();
-
-            return new KeyPair(new BCMcElieceCCA2PublicKey(pk), new BCMcElieceCCA2PrivateKey(sk));
-
-        }
-
+        McElieceKeyGenerationParameters mccKGParams = new McElieceKeyGenerationParameters(new SecureRandom(), new McElieceParameters(ecc.getM(), ecc.getT()));
+        kpg.init(mccKGParams);
     }
 
-    /**
-     *
-     *
-     *
-     */
-
-    public static class McEliece
-        extends McElieceKeyPairGeneratorSpi
+    public void initialize(int keySize, SecureRandom random)
     {
+        McElieceKeyGenParameterSpec paramSpec = new McElieceKeyGenParameterSpec();
 
-        McElieceKeyPairGenerator kpg;
-
-
-        public McEliece()
+        // call the initializer with the chosen parameters
+        try
         {
-            super("McEliece");
+            this.initialize(paramSpec);
         }
-
-        public void initialize(AlgorithmParameterSpec params)
-            throws InvalidAlgorithmParameterException
+        catch (InvalidAlgorithmParameterException ae)
         {
-            kpg = new McElieceKeyPairGenerator();
-            super.initialize(params);
-            ECCKeyGenParameterSpec ecc = (ECCKeyGenParameterSpec)params;
-
-            McElieceKeyGenerationParameters mccKGParams = new McElieceKeyGenerationParameters(new SecureRandom(), new McElieceParameters(ecc.getM(), ecc.getT()));
-            kpg.init(mccKGParams);
         }
+    }
 
-        public void initialize(int keySize, SecureRandom random)
-        {
-            ECCKeyGenParameterSpec paramSpec = new ECCKeyGenParameterSpec();
+    public KeyPair generateKeyPair()
+    {
+        AsymmetricCipherKeyPair generateKeyPair = kpg.generateKeyPair();
+        McEliecePrivateKeyParameters sk = (McEliecePrivateKeyParameters)generateKeyPair.getPrivate();
+        McEliecePublicKeyParameters pk = (McEliecePublicKeyParameters)generateKeyPair.getPublic();
 
-            // call the initializer with the chosen parameters
-            try
-            {
-                this.initialize(paramSpec);
-            }
-            catch (InvalidAlgorithmParameterException ae)
-            {
-            }
-        }
-
-        public KeyPair generateKeyPair()
-        {
-            AsymmetricCipherKeyPair generateKeyPair = kpg.generateKeyPair();
-            McEliecePrivateKeyParameters sk = (McEliecePrivateKeyParameters)generateKeyPair.getPrivate();
-            McEliecePublicKeyParameters pk = (McEliecePublicKeyParameters)generateKeyPair.getPublic();
-
-            return new KeyPair(new BCMcEliecePublicKey(pk), new BCMcEliecePrivateKey(sk));
-        }
-
+        return new KeyPair(new BCMcEliecePublicKey(pk), new BCMcEliecePrivateKey(sk));
     }
 
 }

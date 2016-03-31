@@ -4,7 +4,7 @@ import java.security.KeyPairGenerator;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2KeyGenParameterSpec;
 
 
 public class McElieceFujisakiCipherTest
@@ -17,7 +17,7 @@ public class McElieceFujisakiCipherTest
         try
         {
             kpg = KeyPairGenerator.getInstance("McElieceFujisaki");
-            cipher = Cipher.getInstance("McElieceFujisakiWithSHA256");
+            cipher = Cipher.getInstance("McElieceFujisaki");
         }
         catch (Exception e)
         {
@@ -34,7 +34,7 @@ public class McElieceFujisakiCipherTest
         throws Exception
     {
         // initialize key pair generator
-        ECCKeyGenParameterSpec kpgParams = new ECCKeyGenParameterSpec(11, 50);
+        McElieceCCA2KeyGenParameterSpec kpgParams = new McElieceCCA2KeyGenParameterSpec(11, 50);
         kpg.initialize(kpgParams);
 
         // perform test
