@@ -1,17 +1,17 @@
 package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
-import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.jcajce.interfaces.NHPublicKey;
 import org.bouncycastle.util.Arrays;
 
 public class BCNHPublicKey
-    implements PublicKey
+    implements NHPublicKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -79,7 +79,7 @@ public class BCNHPublicKey
         return "X.509";
     }
 
-    public byte[] getPubData()
+    public byte[] getPublicData()
     {
         return params.getPubData();
     }

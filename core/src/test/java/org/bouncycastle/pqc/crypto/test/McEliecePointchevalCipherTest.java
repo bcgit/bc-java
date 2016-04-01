@@ -11,7 +11,6 @@ import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
 import org.bouncycastle.pqc.crypto.mceliece.McEliecePointchevalCipher;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePointchevalDigestCipher;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class McEliecePointchevalCipherTest
@@ -28,6 +27,7 @@ public class McEliecePointchevalCipherTest
 
 
     public void performTest()
+        throws Exception
     {
         int numPassesKPG = 1;
         int numPassesEncDec = 10;
@@ -45,7 +45,7 @@ public class McEliecePointchevalCipherTest
 
             ParametersWithRandom param = new ParametersWithRandom(pair.getPublic(), keyRandom);
             Digest msgDigest = new SHA256Digest();
-            McEliecePointchevalDigestCipher mcEliecePointchevalDigestCipher = new McEliecePointchevalDigestCipher(new McEliecePointchevalCipher(), msgDigest);
+            McEliecePointchevalCipher mcEliecePointchevalDigestCipher = new McEliecePointchevalCipher();
 
 
             for (int k = 1; k <= numPassesEncDec; k++)
@@ -59,18 +59,18 @@ public class McEliecePointchevalCipherTest
                 mBytes = new byte[mLength];
                 rand.nextBytes(mBytes);
 
+                msgDigest.update(mBytes, 0, mBytes.length);
+                byte[] hash = new byte[msgDigest.getDigestSize()];
+                msgDigest.doFinal(hash, 0);
+
                 // encrypt
-                mcEliecePointchevalDigestCipher.update(mBytes, 0, mBytes.length);
-                byte[] enc = mcEliecePointchevalDigestCipher.messageEncrypt();
+                byte[] enc = mcEliecePointchevalDigestCipher.messageEncrypt(hash);
 
                 // initialize for decryption
                 mcEliecePointchevalDigestCipher.init(false, pair.getPrivate());
                 byte[] constructedmessage = mcEliecePointchevalDigestCipher.messageDecrypt(enc);
 
                 // XXX write in McElieceFujisakiDigestCipher?
-                msgDigest.update(mBytes, 0, mBytes.length);
-                byte[] hash = new byte[msgDigest.getDigestSize()];
-                msgDigest.doFinal(hash, 0);
 
                 boolean verified = true;
                 for (int i = 0; i < hash.length; i++)

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -116,9 +117,7 @@ public class McElieceKobaraImaiCipher
     }
 
     public byte[] messageEncrypt(byte[] input)
-        throws Exception
     {
-
         int c2Len = messDigest.getDigestSize();
         int c4Len = k >> 3;
         int c5Len = (IntegerFunctions.binomial(n, t).bitLength() - 1) >> 3;
@@ -212,14 +211,14 @@ public class McElieceKobaraImaiCipher
 
 
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
 
         int nDiv8 = n >> 3;
 
         if (input.length < nDiv8)
         {
-            throw new Exception("Bad Padding: Ciphertext too short.");
+            throw new InvalidCipherTextException("Bad Padding: Ciphertext too short.");
         }
 
         int c2Len = messDigest.getDigestSize();
@@ -299,7 +298,7 @@ public class McElieceKobaraImaiCipher
 
         if (mConstPrime.length < c1Len)
         {
-            throw new Exception("Bad Padding: invalid ciphertext");
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         byte[][] temp = ByteUtils.split(mConstPrime, c1Len
@@ -309,11 +308,9 @@ public class McElieceKobaraImaiCipher
 
         if (!ByteUtils.equals(constPrime, PUBLIC_CONSTANT))
         {
-            throw new Exception("Bad Padding: invalid ciphertext");
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         return mr;
     }
-
-
 }
