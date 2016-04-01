@@ -15,7 +15,28 @@ class Utils
 {
     static AlgorithmIdentifier getDigAlgId(String digestName)
     {
-        return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        if (digestName.equals("SHA-1"))
+        {
+            return new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+        }
+        if (digestName.equals("SHA-224"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE);
+        }
+        if (digestName.equals("SHA-256"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        }
+        if (digestName.equals("SHA-384"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
+        }
+        if (digestName.equals("SHA-512"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
+        }
+
+        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
     }
 
     static Digest getDigest(AlgorithmIdentifier digest)

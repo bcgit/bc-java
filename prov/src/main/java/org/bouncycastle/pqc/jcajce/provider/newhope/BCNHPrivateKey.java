@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.io.IOException;
-import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -10,11 +9,12 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
+import org.bouncycastle.pqc.jcajce.interfaces.NHPrivateKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class BCNHPrivateKey
-    implements PrivateKey
+    implements NHPrivateKey
 {
     private static final long serialVersionUID = 1L;
     ;
@@ -92,7 +92,7 @@ public class BCNHPrivateKey
         return "PKCS#8";
     }
 
-    public short[] getKeyData()
+    public short[] getSecretData()
     {
         return params.getSecData();
     }

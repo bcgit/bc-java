@@ -5,7 +5,13 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
 import org.bouncycastle.pqc.math.linearalgebra.GoppaCode;
@@ -104,10 +110,36 @@ public class McElieceCCA2KeyPairGenerator
         int k = shortG.getNumRows();
 
         // generate keys
-        McElieceCCA2PublicKeyParameters pubKey = new McElieceCCA2PublicKeyParameters(n, t, shortG, mcElieceCCA2Params.getParameters().getDigest());
-        McElieceCCA2PrivateKeyParameters privKey = new McElieceCCA2PrivateKeyParameters(n, k, field, gp, p, mcElieceCCA2Params.getParameters().getDigest());
+        McElieceCCA2PublicKeyParameters pubKey = new McElieceCCA2PublicKeyParameters(n, t, shortG, getDigest(mcElieceCCA2Params.getParameters().getDigest().getAlgorithmName()));
+        McElieceCCA2PrivateKeyParameters privKey = new McElieceCCA2PrivateKeyParameters(n, k, field, gp, p, getDigest(mcElieceCCA2Params.getParameters().getDigest().getAlgorithmName()));
 
         // return key pair
         return new AsymmetricCipherKeyPair(pubKey, privKey);
+    }
+
+    static Digest getDigest(String digestName)
+    {
+        if (digestName.equals("SHA-1"))
+        {
+            return new SHA1Digest();
+        }
+        if (digestName.equals("SHA-224"))
+        {
+            return new SHA224Digest();
+        }
+        if (digestName.equals("SHA-256"))
+        {
+            return new SHA256Digest();
+        }
+        if (digestName.equals("SHA-384"))
+        {
+            return new SHA384Digest();
+        }
+        if (digestName.equals("SHA-512"))
+        {
+            return new SHA512Digest();
+        }
+
+        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
     }
 }

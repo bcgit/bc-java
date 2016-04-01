@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -108,7 +109,6 @@ public class McElieceFujisakiCipher
 
 
     public byte[] messageEncrypt(byte[] input)
-        throws Exception
     {
         // generate random vector r of length k bits
         GF2Vector r = new GF2Vector(k, sr);
@@ -152,7 +152,7 @@ public class McElieceFujisakiCipher
     }
 
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
         int c1Len = (n + 7) >> 3;
         int c2Len = input.length - c1Len;
@@ -198,9 +198,7 @@ public class McElieceFujisakiCipher
         // check that Conv(H(m||r)) = z
         if (!hrmVec.equals(z))
         {
-
-            throw new Exception("Bad Padding: invalid ciphertext");
-
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         // return plaintext m
