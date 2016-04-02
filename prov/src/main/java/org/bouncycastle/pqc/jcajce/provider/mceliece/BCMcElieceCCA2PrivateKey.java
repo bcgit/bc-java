@@ -179,7 +179,7 @@ public class BCMcElieceCCA2PrivateKey
         PrivateKeyInfo pki;
         try
         {
-            McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(getN(), getK(), getField(), getGoppaPoly(), getP(), Utils.getDigAlgId(params.getDigest().getAlgorithmName()));
+            McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(getN(), getK(), getField(), getGoppaPoly(), getP(), Utils.getDigAlgId(params.getDigest()));
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
 
             pki = new PrivateKeyInfo(algorithmIdentifier, privateKey);

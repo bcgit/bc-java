@@ -41,13 +41,14 @@ public class McElieceFujisakiCipher
     private int n, k, t;
 
     McElieceCCA2KeyParameters key;
+    private boolean forEncryption;
 
 
-    public void init(boolean forEncrypting,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
-
-        if (forEncrypting)
+        this.forEncryption = forEncryption;
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -93,7 +94,7 @@ public class McElieceFujisakiCipher
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
-        this.messDigest = pubKey.getDigest();
+        this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -102,7 +103,7 @@ public class McElieceFujisakiCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getDigest();
+        this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
         t = privKey.getT();
     }
@@ -110,6 +111,11 @@ public class McElieceFujisakiCipher
 
     public byte[] messageEncrypt(byte[] input)
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
+
         // generate random vector r of length k bits
         GF2Vector r = new GF2Vector(k, sr);
 
@@ -154,6 +160,11 @@ public class McElieceFujisakiCipher
     public byte[] messageDecrypt(byte[] input)
         throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
+
         int c1Len = (n + 7) >> 3;
         int c2Len = input.length - c1Len;
 

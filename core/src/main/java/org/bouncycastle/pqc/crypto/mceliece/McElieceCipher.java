@@ -44,14 +44,15 @@ public class McElieceCipher
     // The maximum number of bytes the cipher can encrypt
     public int cipherTextSize;
 
-    McElieceKeyParameters key;
+    private McElieceKeyParameters key;
+    private boolean forEncryption;
 
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
-
-        if (forSigning)
+        this.forEncryption = forEncryption;
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -76,7 +77,6 @@ public class McElieceCipher
         }
 
     }
-
 
     /**
      * Return the key size of the given key object.
@@ -130,6 +130,10 @@ public class McElieceCipher
      */
     public byte[] messageEncrypt(byte[] input)
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
         GF2Vector m = computeMessageRepresentative(input);
         GF2Vector z = new GF2Vector(n, t, sr);
 
@@ -158,6 +162,11 @@ public class McElieceCipher
     public byte[] messageDecrypt(byte[] input)
         throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
+
         GF2Vector vec = GF2Vector.OS2VP(n, input);
         McEliecePrivateKeyParameters privKey = (McEliecePrivateKeyParameters)key;
         GF2mField field = privKey.getField();

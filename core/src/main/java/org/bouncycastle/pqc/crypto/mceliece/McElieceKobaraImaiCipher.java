@@ -47,13 +47,14 @@ public class McElieceKobaraImaiCipher
      * The McEliece main parameters
      */
     private int n, k, t;
+    private boolean forEncryption;
 
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
-
-        if (forSigning)
+        this.forEncryption = forEncryption;
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -101,7 +102,7 @@ public class McElieceKobaraImaiCipher
 
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
-        this.messDigest = pubKey.getDigest();
+        this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -110,7 +111,7 @@ public class McElieceKobaraImaiCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getDigest();
+        this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
         k = privKey.getK();
         t = privKey.getT();
@@ -118,6 +119,11 @@ public class McElieceKobaraImaiCipher
 
     public byte[] messageEncrypt(byte[] input)
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
+
         int c2Len = messDigest.getDigestSize();
         int c4Len = k >> 3;
         int c5Len = (IntegerFunctions.binomial(n, t).bitLength() - 1) >> 3;
@@ -213,6 +219,10 @@ public class McElieceKobaraImaiCipher
     public byte[] messageDecrypt(byte[] input)
         throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int nDiv8 = n >> 3;
 

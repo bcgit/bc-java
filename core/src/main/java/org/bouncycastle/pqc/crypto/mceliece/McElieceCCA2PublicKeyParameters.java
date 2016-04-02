@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 
 /**
@@ -27,7 +26,7 @@ public class McElieceCCA2PublicKeyParameters
      * @param matrix generator matrix
      * @param digest McElieceCCA2Parameters
      */
-    public McElieceCCA2PublicKeyParameters(int n, int t, GF2Matrix matrix, Digest digest)
+    public McElieceCCA2PublicKeyParameters(int n, int t, GF2Matrix matrix, String digest)
     {
         super(false, digest);
 
