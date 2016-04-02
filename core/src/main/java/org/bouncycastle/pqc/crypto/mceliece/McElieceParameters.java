@@ -227,14 +227,4 @@ public class McElieceParameters
     {
         return fieldPoly;
     }
-
-    /**
-     * Return the CCA2 mode digest if set.
-     *
-     * @return the CCA2 digest to use, null if not present.
-     */
-    public Digest getDigest()
-    {
-        return digest;
-    }
 }

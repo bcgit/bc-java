@@ -1,22 +1,19 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-
 public class McElieceCCA2Parameters
     extends McElieceParameters
 {
-    private Digest digest;
+    private final String digest;
 
     /**
      * Constructor. Set the default parameters: extension degree.
      */
     public McElieceCCA2Parameters()
     {
-        this(DEFAULT_M, DEFAULT_T, new SHA256Digest());
+        this(DEFAULT_M, DEFAULT_T, "SHA-256");
     }
 
-    public McElieceCCA2Parameters(Digest digest)
+    public McElieceCCA2Parameters(String digest)
     {
         this(DEFAULT_M, DEFAULT_T, digest);
     }
@@ -29,7 +26,7 @@ public class McElieceCCA2Parameters
      */
     public McElieceCCA2Parameters(int keysize)
     {
-        this(keysize, new SHA256Digest());
+        this(keysize, "SHA-256");
     }
 
     /**
@@ -39,7 +36,7 @@ public class McElieceCCA2Parameters
      * @param digest CCA2 mode digest
      * @throws IllegalArgumentException if <tt>keysize &lt; 1</tt>.
      */
-    public McElieceCCA2Parameters(int keysize, Digest digest)
+    public McElieceCCA2Parameters(int keysize, String digest)
     {
         super(keysize);
         this.digest = digest;
@@ -55,7 +52,7 @@ public class McElieceCCA2Parameters
      */
     public McElieceCCA2Parameters(int m, int t)
     {
-        this(m, t, new SHA256Digest());
+        this(m, t, "SHA-256");
     }
 
     /**
@@ -66,7 +63,7 @@ public class McElieceCCA2Parameters
      * @throws IllegalArgumentException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt>.
      */
-    public McElieceCCA2Parameters(int m, int t, Digest digest)
+    public McElieceCCA2Parameters(int m, int t, String digest)
     {
         super(m, t);
         this.digest = digest;
@@ -84,7 +81,7 @@ public class McElieceCCA2Parameters
      */
     public McElieceCCA2Parameters(int m, int t, int poly)
     {
-        this(m, t, poly, new SHA256Digest());
+        this(m, t, poly, "SHA-256");
     }
 
     /**
@@ -98,7 +95,7 @@ public class McElieceCCA2Parameters
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt> or
      * <tt>poly</tt> is not an irreducible field polynomial.
      */
-    public McElieceCCA2Parameters(int m, int t, int poly, Digest digest)
+    public McElieceCCA2Parameters(int m, int t, int poly, String digest)
     {
         super(m, t, poly);
         this.digest = digest;
@@ -109,7 +106,7 @@ public class McElieceCCA2Parameters
      *
      * @return the CCA2 digest to use, null if not present.
      */
-    public Digest getDigest()
+    public String getDigest()
     {
         return digest;
     }

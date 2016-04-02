@@ -90,14 +90,6 @@ public class DigestingMessageSigner
     }
 
     /**
-     * @deprecated use verifySignature
-     */
-    public boolean verify(byte[] signature)
-    {
-        return verifySignature(signature);
-    }
-
-    /**
      * This function verifies the signature of the message that has been
      * updated, with the aid of the public key.
      *

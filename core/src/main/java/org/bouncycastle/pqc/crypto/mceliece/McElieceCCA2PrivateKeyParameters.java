@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
 import org.bouncycastle.pqc.math.linearalgebra.GoppaCode;
@@ -49,7 +48,7 @@ public class McElieceCCA2PrivateKeyParameters
      * @param digest McElieceCCA2Parameters
      */
     public McElieceCCA2PrivateKeyParameters(int n, int k, GF2mField field,
-                                            PolynomialGF2mSmallM gp, Permutation p, Digest digest)
+                                            PolynomialGF2mSmallM gp, Permutation p, String digest)
     {
         super(true, digest);
         this.n = n;

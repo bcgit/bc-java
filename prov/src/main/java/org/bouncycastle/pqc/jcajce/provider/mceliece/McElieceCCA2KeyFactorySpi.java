@@ -72,7 +72,7 @@ public class McElieceCCA2KeyFactorySpi
                 {
                     McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(pki.parsePublicKey());
 
-                    return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest())));
+                    return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
                 }
                 else
                 {
@@ -127,7 +127,7 @@ public class McElieceCCA2KeyFactorySpi
                 {
                     McElieceCCA2PrivateKey key = McElieceCCA2PrivateKey.getInstance(pki.parsePrivateKey());
 
-                    return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), Utils.getDigest(key.getDigest())));
+                    return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
                 }
                 else
                 {
@@ -213,7 +213,7 @@ public class McElieceCCA2KeyFactorySpi
         {
             ASN1Primitive innerType = pki.parsePublicKey();
             McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(innerType);
-            return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest())));
+            return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
         }
         catch (IOException cce)
         {

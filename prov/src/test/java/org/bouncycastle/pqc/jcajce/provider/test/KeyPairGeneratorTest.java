@@ -16,11 +16,10 @@ public abstract class KeyPairGeneratorTest
 
     protected KeyFactory kf;
 
-    protected final void performKeyPairEncodingTest()
+    protected final void performKeyPairEncodingTest(KeyPair keyPair)
     {
         try
-        {
-            KeyPair keyPair = kpg.genKeyPair();
+        {;
             PublicKey pubKey = keyPair.getPublic();
             PrivateKey privKey = keyPair.getPrivate();
 

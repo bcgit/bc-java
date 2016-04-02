@@ -33,7 +33,6 @@ public class McElieceCCA2KeyPairGeneratorTest
         kpg = KeyPairGenerator.getInstance("McElieceKobaraImai");
         McElieceCCA2KeyGenParameterSpec params = new McElieceCCA2KeyGenParameterSpec(9, 33);
         kpg.initialize(params);
-        performKeyPairEncodingTest();
+        performKeyPairEncodingTest(kpg.generateKeyPair());
     }
-
 }

@@ -12,6 +12,11 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2;
 public class McElieceCCA2KeyGenParameterSpec
     implements AlgorithmParameterSpec
 {
+    public static final String SHA1 = "SHA-1";
+    public static final String SHA224 = "SHA-224";
+    public static final String SHA256 = "SHA-256";
+    public static final String SHA384 = "SHA-384";
+    public static final String SHA512 = "SHA-512";
 
     /**
      * The default extension degree
@@ -26,54 +31,63 @@ public class McElieceCCA2KeyGenParameterSpec
     /**
      * extension degree of the finite field GF(2^m)
      */
-    private int m;
+    private final int m;
 
     /**
      * error correction capability of the code
      */
-    private int t;
+    private final int t;
 
     /**
      * length of the code
      */
-    private int n;
+    private final int n;
 
     /**
      * the field polynomial
      */
     private int fieldPoly;
 
+    private final String digest;
+
     /**
      * Constructor. Set the default parameters: extension degree.
      */
     public McElieceCCA2KeyGenParameterSpec()
     {
-        this(DEFAULT_M, DEFAULT_T);
+        this(DEFAULT_M, DEFAULT_T, SHA256);
     }
 
     /**
      * Constructor.
      *
      * @param keysize the length of a Goppa code
-     * @throws InvalidParameterException if <tt>keysize &lt; 1</tt>.
+     * @throws IllegalArgumentException if <tt>keysize &lt; 1</tt>.
      */
     public McElieceCCA2KeyGenParameterSpec(int keysize)
-        throws InvalidParameterException
+    {
+        this(keysize, SHA256);
+    }
+
+    public McElieceCCA2KeyGenParameterSpec(int keysize, String digest)
     {
         if (keysize < 1)
         {
-            throw new InvalidParameterException("key size must be positive");
+            throw new IllegalArgumentException("key size must be positive");
         }
-        m = 0;
-        n = 1;
+        int m = 0;
+        int n = 1;
         while (n < keysize)
         {
             n <<= 1;
             m++;
         }
-        t = n >>> 1;
-        t /= m;
-        fieldPoly = PolynomialRingGF2.getIrreduciblePolynomial(m);
+        t = (n >>> 1) / m;
+
+        this.m = m;
+        this.n = n;
+        this.fieldPoly = PolynomialRingGF2.getIrreduciblePolynomial(m);
+        this.digest = digest;
     }
 
     /**
@@ -85,28 +99,33 @@ public class McElieceCCA2KeyGenParameterSpec
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt>.
      */
     public McElieceCCA2KeyGenParameterSpec(int m, int t)
-        throws InvalidParameterException
+    {
+        this(m, t, SHA256);
+    }
+
+    public McElieceCCA2KeyGenParameterSpec(int m, int t, String digest)
     {
         if (m < 1)
         {
-            throw new InvalidParameterException("m must be positive");
+            throw new IllegalArgumentException("m must be positive");
         }
         if (m > 32)
         {
-            throw new InvalidParameterException("m is too large");
+            throw new IllegalArgumentException("m is too large");
         }
         this.m = m;
         n = 1 << m;
         if (t < 0)
         {
-            throw new InvalidParameterException("t must be positive");
+            throw new IllegalArgumentException("t must be positive");
         }
         if (t > n)
         {
-            throw new InvalidParameterException("t must be less than n = 2^m");
+            throw new IllegalArgumentException("t must be less than n = 2^m");
         }
         this.t = t;
         fieldPoly = PolynomialRingGF2.getIrreduciblePolynomial(m);
+        this.digest = digest;
     }
 
     /**
@@ -115,31 +134,35 @@ public class McElieceCCA2KeyGenParameterSpec
      * @param m    degree of the finite field GF(2^m)
      * @param t    error correction capability of the code
      * @param poly the field polynomial
-     * @throws InvalidParameterException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
+     * @throws IllegalArgumentException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt> or
      * <tt>poly</tt> is not an irreducible field polynomial.
      */
     public McElieceCCA2KeyGenParameterSpec(int m, int t, int poly)
-        throws InvalidParameterException
+    {
+        this(m, t, poly, SHA256);
+    }
+
+    public McElieceCCA2KeyGenParameterSpec(int m, int t, int poly, String digest)
     {
         this.m = m;
         if (m < 1)
         {
-            throw new InvalidParameterException("m must be positive");
+            throw new IllegalArgumentException("m must be positive");
         }
         if (m > 32)
         {
-            throw new InvalidParameterException(" m is too large");
+            throw new IllegalArgumentException(" m is too large");
         }
         this.n = 1 << m;
         this.t = t;
         if (t < 0)
         {
-            throw new InvalidParameterException("t must be positive");
+            throw new IllegalArgumentException("t must be positive");
         }
         if (t > n)
         {
-            throw new InvalidParameterException("t must be less than n = 2^m");
+            throw new IllegalArgumentException("t must be less than n = 2^m");
         }
         if ((PolynomialRingGF2.degree(poly) == m)
             && (PolynomialRingGF2.isIrreducible(poly)))
@@ -148,9 +171,10 @@ public class McElieceCCA2KeyGenParameterSpec
         }
         else
         {
-            throw new InvalidParameterException(
+            throw new IllegalArgumentException(
                 "polynomial is not a field polynomial for GF(2^m)");
         }
+        this.digest = digest;
     }
 
     /**
@@ -185,4 +209,11 @@ public class McElieceCCA2KeyGenParameterSpec
         return fieldPoly;
     }
 
+    /**
+     * Return CCA-2 digest.
+     */
+    public String getDigest()
+    {
+        return digest;
+    }
 }

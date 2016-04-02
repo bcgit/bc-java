@@ -1,24 +1,23 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 
 public class McElieceCCA2KeyParameters
     extends AsymmetricKeyParameter
 {
-    private Digest params;
+    private String params;
 
     public McElieceCCA2KeyParameters(
         boolean isPrivate,
-        Digest params)
+        String params)
     {
         super(isPrivate);
         this.params = params;
     }
 
 
-    public Digest getDigest()
+    public String getDigest()
     {
         return params;
     }
