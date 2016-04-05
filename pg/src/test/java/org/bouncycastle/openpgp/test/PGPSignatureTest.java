@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
@@ -43,7 +44,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -673,6 +676,7 @@ public class PGPSignatureTest
         testKeyFlagsValues();
 
         testSubpacketGenerator();
+        testSignatureTarget();
         testUserAttributeEncoding();
     }
 
@@ -708,6 +712,38 @@ public class PGPSignatureTest
                 }
             }
         }
+    }
+
+    private void testSignatureTarget()
+    {
+        byte[] hash = Hex.decode("0001020304050607080910111213141516171819");
+        PGPSignatureSubpacketGenerator sGen = new PGPSignatureSubpacketGenerator();
+
+        sGen.setSignatureTarget(true, PublicKeyAlgorithmTags.ECDSA, HashAlgorithmTags.SHA1, hash);
+
+        PGPSignatureSubpacketVector sVec = sGen.generate();
+
+        isTrue("no sig target", sVec.hasSubpacket(SignatureSubpacketTags.SIGNATURE_TARGET));
+
+        SignatureTarget sigTarg = sVec.getSignatureTarget();
+
+        isTrue("wrong critical", sigTarg.isCritical());
+        isTrue("wrong key alg", PublicKeyAlgorithmTags.ECDSA == sigTarg.getPublicKeyAlgorithm());
+        isTrue("wrong hash alg", HashAlgorithmTags.SHA1 == sigTarg.getHashAlgorithm());
+        isTrue("wrong hash data", Arrays.areEqual(hash, sigTarg.getHashData()));
+
+        sGen = new PGPSignatureSubpacketGenerator();
+
+        sGen.setSignatureTarget(false, PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256, hash);
+
+        sVec = sGen.generate();
+
+        sigTarg = sVec.getSignatureTarget();
+
+        isTrue("wrong critical", !sigTarg.isCritical());
+        isTrue("wrong key alg", PublicKeyAlgorithmTags.RSA_SIGN == sigTarg.getPublicKeyAlgorithm());
+        isTrue("wrong hash alg", HashAlgorithmTags.SHA256 == sigTarg.getHashAlgorithm());
+        isTrue("wrong hash data", Arrays.areEqual(hash, sigTarg.getHashData()));
     }
 
     private void testSubpacketGenerator()
