@@ -22,6 +22,7 @@ import org.bouncycastle.bcpg.sig.RevocationKeyTags;
 import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 import org.bouncycastle.bcpg.sig.TrustSignature;
 
@@ -192,11 +193,19 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
-     * Sets issuer key sub packe
+     * Sets issuer key sub packet
      */
     public void setIssuerKeyID(boolean isCritical, long keyID)
     {
         list.add(new IssuerKeyID(isCritical, keyID));
+    }
+
+    /**
+     * Sets a signature target sub packet.
+     */
+    public void setSignatureTarget(boolean isCritical, int publicKeyAlgorithm, int hashAlgorithm, byte[] hashData)
+    {
+        list.add(new SignatureTarget(isCritical, publicKeyAlgorithm, hashAlgorithm, hashData));
     }
 
     public PGPSignatureSubpacketVector generate()
