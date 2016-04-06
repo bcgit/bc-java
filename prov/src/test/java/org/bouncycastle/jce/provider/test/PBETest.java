@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -731,26 +732,16 @@ public class PBETest
         // in this case pbeSpec picked up from internal class representing key
         Cipher cipher =
             Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-        byte[] plain = new byte[]{0, 1, 2, 3, 4,
-                    5, 6, 7, 8, 9} ;
-        byte[] encrypted = cipher.doFinal(plain);
-
-        cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
-
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-
-        byte[] unencrypted = cipher.doFinal(encrypted);
-        isTrue("text mismatch", Arrays.areEqual(plain, unencrypted));
-
-        // this needs the pbe spec as the internal information is now lost.
-        cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
-
-        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(secretKey.getEncoded(), "AES"), paramSpec);
-
-        unencrypted = cipher.doFinal(encrypted);
-        isTrue("text mismatch", Arrays.areEqual(plain, unencrypted));
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong exception", "Algorithm requires a PBE key suitable for PKCS12".equals(e.getMessage()));
+        }
     }
 
     public String getName()
