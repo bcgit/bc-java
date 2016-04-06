@@ -528,15 +528,20 @@ public class BaseBlockCipher
 
             if (key instanceof BCPBEKey)
             {
-                // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to forget about the fact
-                // it's a BCPBEKey
-                if (((BCPBEKey)key).getParam() != null && ((BCPBEKey)key).getParam() instanceof ParametersWithIV)
+                // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to reject it. If the
+                // key has no parameters it means it's an old-school JCE PBE Key - we use getEncoded() on it.
+                CipherParameters pbeKeyParam = ((BCPBEKey)key).getParam();
+                if (pbeKeyParam instanceof ParametersWithIV)
                 {
-                    param = ((BCPBEKey)key).getParam();
+                    param = pbeKeyParam;
+                }
+                else if (pbeKeyParam == null)
+                {
+                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
                 }
                 else
                 {
-                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+                    throw new InvalidKeyException("Algorithm requires a PBE key suitable for PKCS12");
                 }
             }
             else
