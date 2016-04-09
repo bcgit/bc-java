@@ -18,6 +18,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
+import static org.bouncycastle.openpgp.PGPUtil.getSymmetricCipherName;
+
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -119,7 +121,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
                 byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo);
 
-                byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
+                byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, getSymmetricCipherName(sessionInfo[0])));
 
                 SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
 

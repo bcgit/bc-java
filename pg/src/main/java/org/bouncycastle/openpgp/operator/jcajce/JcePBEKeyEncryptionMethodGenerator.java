@@ -12,6 +12,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import static org.bouncycastle.openpgp.PGPUtil.getSymmetricCipherName;
+
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -114,9 +116,9 @@ public class JcePBEKeyEncryptionMethodGenerator
     {
         try
         {
-            String cName = PGPUtil.getSymmetricCipherName(encAlgorithm);
+            String cName = getSymmetricCipherName(encAlgorithm);
             Cipher c = helper.createCipher(cName + "/CFB/NoPadding");
-            SecretKey sKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+            SecretKey sKey = new SecretKeySpec(key, getSymmetricCipherName(encAlgorithm));
 
             c.init(Cipher.ENCRYPT_MODE, sKey, new IvParameterSpec(new byte[c.getBlockSize()]));
 

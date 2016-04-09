@@ -6,6 +6,8 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import static org.bouncycastle.openpgp.PGPUtil.getSymmetricCipherName;
+
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -76,7 +78,7 @@ public class JcePBEDataDecryptorFactoryBuilder
                  {
                      if (secKeyData != null && secKeyData.length > 0)
                      {
-                         String cipherName = PGPUtil.getSymmetricCipherName(keyAlgorithm);
+                         String cipherName = getSymmetricCipherName(keyAlgorithm);
                          Cipher keyCipher = helper.createCipher(cipherName + "/CFB/NoPadding");
 
                          keyCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherName), new IvParameterSpec(new byte[keyCipher.getBlockSize()]));

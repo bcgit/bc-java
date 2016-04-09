@@ -17,6 +17,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import static org.bouncycastle.openpgp.PGPUtil.getDigestName;
+import static org.bouncycastle.openpgp.PGPUtil.getSymmetricCipherName;
+
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -39,7 +42,7 @@ class OperatorHelper
     {
         MessageDigest dig;
 
-        dig = helper.createDigest(PGPUtil.getDigestName(algorithm));
+        dig = helper.createDigest(getDigestName(algorithm));
 
         return dig;
     }
@@ -67,7 +70,7 @@ class OperatorHelper
     {
         try
         {
-            SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+            SecretKey secretKey = new SecretKeySpec(key, getSymmetricCipherName(encAlgorithm));
 
             final Cipher c = createStreamCipher(encAlgorithm, withIntegrityPacket);
 
@@ -117,7 +120,7 @@ class OperatorHelper
             ? "CFB"
             : "OpenPGPCFB";
 
-        String cName = PGPUtil.getSymmetricCipherName(encAlgorithm)
+        String cName = getSymmetricCipherName(encAlgorithm)
             + "/" + mode + "/NoPadding";
 
         return createCipher(cName);
@@ -219,7 +222,7 @@ class OperatorHelper
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
         }
 
-        return createSignature(PGPUtil.getDigestName(hashAlgorithm) + "with" + encAlg);
+        return createSignature(getDigestName(hashAlgorithm) + "with" + encAlg);
     }
 
     public AlgorithmParameters createAlgorithmParameters(String algorithm)
