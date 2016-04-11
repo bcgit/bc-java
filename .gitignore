@@ -9,3 +9,8 @@
 bin/
 build/
 .settings/
+
+pg/*.asc
+pg/*.bak
+pg/*.bpg
+pg/*.txt
