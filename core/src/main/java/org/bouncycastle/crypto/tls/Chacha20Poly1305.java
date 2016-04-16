@@ -152,7 +152,6 @@ public class Chacha20Poly1305 implements TlsCipher
 
         KeyParameter macKey = new KeyParameter(firstBlock, 0, 32);
         Arrays.fill(firstBlock, (byte)0);
-        Poly1305KeyGenerator.clamp(macKey.getKey());
         return macKey;
     }
 
