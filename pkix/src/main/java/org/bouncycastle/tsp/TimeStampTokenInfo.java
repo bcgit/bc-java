@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.tsp.Accuracy;
 import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 
 public class TimeStampTokenInfo
@@ -69,6 +70,11 @@ public class TimeStampTokenInfo
     public GeneralName getTsa()
     {
         return tstInfo.getTsa();
+    }
+
+    public Extensions getExtensions()
+    {
+        return tstInfo.getExtensions();
     }
 
     /**

@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.tsp.TimeStampResp;
+import org.bouncycastle.asn1.x509.Extensions;
 
 /**
  * Generator for RFC 3161 Time Stamp Responses.
@@ -214,6 +215,30 @@ public class TimeStampResponseGenerator
         String              statusString)
         throws TSPException
     {
+        return generateGrantedResponse(request, serialNumber, genTime, statusString, null);
+    }
+
+    /**
+     * Return a granted response, if the passed in request passes validation with the passed in status string and extra extensions.
+     * <p>
+     * If genTime is null a timeNotAvailable or a validation exception occurs a TSPValidationException will
+     * be thrown. The parent TSPException will only occur on some sort of system failure.
+     * </p>
+     * @param request the request this response is for.
+     * @param serialNumber serial number for the response token.
+     * @param genTime generation time for the response token.
+     * @param additionalExtensions extra extensions to be added to the response token.
+     * @return  the TimeStampResponse with a status of  PKIStatus.GRANTED
+     * @throws TSPException on validation exception or internal error.
+     */
+    public TimeStampResponse generateGrantedResponse(
+        TimeStampRequest    request,
+        BigInteger          serialNumber,
+        Date                genTime,
+        String              statusString,
+        Extensions          additionalExtensions)
+        throws TSPException
+    {
         if (genTime == null)
         {
             throw new TSPValidationException("The time source is not available.", PKIFailureInfo.timeNotAvailable);
@@ -234,7 +259,7 @@ public class TimeStampResponseGenerator
         ContentInfo tstTokenContentInfo;
         try
         {
-            tstTokenContentInfo = tokenGenerator.generate(request, serialNumber, genTime).toCMSSignedData().toASN1Structure();
+            tstTokenContentInfo = tokenGenerator.generate(request, serialNumber, genTime, additionalExtensions).toCMSSignedData().toASN1Structure();
         }
         catch (TSPException e)
         {
