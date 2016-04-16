@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +29,8 @@ import org.bouncycastle.asn1.tsp.Accuracy;
 import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
@@ -285,6 +288,26 @@ public class TimeStampTokenGenerator
         Date                genTime)
         throws TSPException
     {
+        return generate(request, serialNumber, genTime, null);
+    }
+
+    /**
+     * Generate a TimeStampToken for the passed in request and serialNumber marking it with the passed in genTime.
+     *
+     * @param request the originating request.
+     * @param serialNumber serial number for the TimeStampToken
+     * @param genTime token generation time.
+     * @param additionalExtensions extra extensions to be added to the response token.
+     * @return a TimeStampToken
+     * @throws TSPException
+     */
+    public TimeStampToken generate(
+        TimeStampRequest    request,
+        BigInteger          serialNumber,
+        Date                genTime,
+        Extensions          additionalExtensions)
+        throws TSPException
+    {
         ASN1ObjectIdentifier digestAlgOID = request.getMessageImprintAlgOID();
 
         AlgorithmIdentifier algID = new AlgorithmIdentifier(digestAlgOID, DERNull.INSTANCE);
@@ -332,10 +355,30 @@ public class TimeStampTokenGenerator
             tsaPolicy = request.getReqPolicy();
         }
 
+        Extensions respExtensions = request.getExtensions();
+        if (additionalExtensions != null)
+        {
+            ExtensionsGenerator extGen = new ExtensionsGenerator();
+
+            if (respExtensions != null)
+            {
+                for (Enumeration en = respExtensions.oids(); en.hasMoreElements(); )
+                {
+                    extGen.addExtension(respExtensions.getExtension(ASN1ObjectIdentifier.getInstance(en.nextElement())));
+                }
+            }
+            for (Enumeration en = additionalExtensions.oids(); en.hasMoreElements(); )
+            {
+                extGen.addExtension(additionalExtensions.getExtension(ASN1ObjectIdentifier.getInstance(en.nextElement())));
+            }
+
+            respExtensions = extGen.generate();
+        }
+
         TSTInfo tstInfo = new TSTInfo(tsaPolicy,
                 messageImprint, new ASN1Integer(serialNumber),
                 new ASN1GeneralizedTime(genTime), accuracy, derOrdering,
-                nonce, tsa, request.getExtensions());
+                nonce, tsa, respExtensions);
 
         try
         {

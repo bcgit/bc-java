@@ -17,6 +17,7 @@ import java.util.Set;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -27,6 +28,8 @@ import org.bouncycastle.asn1.ess.SigningCertificateV2;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
@@ -101,6 +104,7 @@ public class NewTSPTest
         testAccuracyWithCertsAndOrdering(origKP.getPrivate(), origCert, certs);
         testNoNonse(origKP.getPrivate(), origCert, certs);
         extensionTest(origKP.getPrivate(), origCert, certs);
+        additionalExtensionTest(origKP.getPrivate(), origCert, certs);
     }
 
     private void basicTest(
@@ -288,6 +292,45 @@ public class NewTSPTest
         AttributeTable table = tsToken.getSignedAttributes();
 
         assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    private void additionalExtensionTest(
+        PrivateKey privateKey,
+        X509Certificate cert,
+        Store certs)
+        throws Exception
+    {
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA1withRSA", privateKey, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+        tsTokenGen.setTSA(new GeneralName(new X500Name("CN=Test")));
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, new byte[20], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+
+        extGen.addExtension(Extension.auditIdentity, false, new DERUTF8String("Test"));
+
+        TimeStampResponse tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date(), "Okay", extGen.generate());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert));
+
+        AttributeTable table = tsToken.getSignedAttributes();
+
+        assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+
+        Extensions ext = tsToken.getTimeStampInfo().getExtensions();
+
+        assertEquals(1, ext.getExtensionOIDs().length);
+        assertEquals(new Extension(Extension.auditIdentity, false, new DERUTF8String("Test").getEncoded()), ext.getExtension(Extension.auditIdentity));
     }
 
     private void responseValidationTest(
