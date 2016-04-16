@@ -5,6 +5,13 @@ package org.bouncycastle.util;
  */
 public abstract class Pack
 {
+    public static short bigEndianToShort(byte[] bs, int off)
+    {
+        int n = (bs[  off] & 0xff) << 8;
+        n |= (bs[++off] & 0xff);
+        return (short)n;
+    }
+
     public static int bigEndianToInt(byte[] bs, int off)
     {
         int n = bs[  off] << 24;
@@ -103,7 +110,6 @@ public abstract class Pack
     {
         int n = bs[  off] & 0xff;
         n |= (bs[++off] & 0xff) << 8;
-
         return (short)n;
     }
 

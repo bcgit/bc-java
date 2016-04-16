@@ -13,7 +13,8 @@ class NewHope
 
     public static final int AGREEMENT_SIZE = 32;
     public static final int POLY_SIZE = Params.N;
-    public static final int SEND_SIZE = POLY_SIZE * 2;
+    public static final int SENDA_BYTES = Params.POLY_BYTES + Params.SEED_BYTES;
+    public static final int SENDB_BYTES = Params.POLY_BYTES + Params.REC_BYTES;
 
     public static void keygen(SecureRandom rand, byte[] send, short[] sk)
     {
@@ -68,7 +69,6 @@ class NewHope
 
         short[] v = new short[Params.N];
         Poly.pointWise(pkA, sp, v);
-        Poly.bitReverse(v);
         Poly.fromNTT(v);
 
         short[] epp = new short[Params.N];
@@ -96,7 +96,6 @@ class NewHope
 
         short[] v = new short[Params.N];
         Poly.pointWise(sk, bp, v);
-        Poly.bitReverse(v);
         Poly.fromNTT(v);
 
         ErrorCorrection.rec(sharedKey, v, c);
@@ -110,52 +109,38 @@ class NewHope
     static void decodeA(short[] pk, byte[] seed, byte[] r)
     {
         Poly.fromBytes(pk, r);
-
-        for (int i = 0; i < 32; ++i)
-        {
-            int seedVal = 0;
-            for (int j = 0; j < 4; ++j)
-            {
-                int rVal = r[2 * (4 * i + j) + 1] & 0xFF;
-                seedVal |= (rVal >>> 6) << (2 * j);
-            }
-            seed[i] = (byte)seedVal;
-        }
+        System.arraycopy(r, Params.POLY_BYTES, seed, 0, Params.SEED_BYTES);
     }
 
     static void decodeB(short[] b, short[] c, byte[] r)
     {
         Poly.fromBytes(b, r);
 
-        for (int i = 0; i < 1024; ++i)
+        for (int i = 0; i < Params.N / 4; ++i)
         {
-            int rVal = r[2 * i + 1] & 0xFF;
-            c[i] = (short)(rVal >>> 6);
+            int j = 4 * i;
+            int ri = r[Params.POLY_BYTES + i] & 0xFF;
+            c[j + 0] = (short)(ri & 0x03);
+            c[j + 1] = (short)((ri >>> 2) & 0x03);
+            c[j + 2] = (short)((ri >>> 4) & 0x03);
+            c[j + 3] = (short)(ri >>> 6);
         }
     }
 
     static void encodeA(byte[] r, short[] pk, byte[] seed)
     {
         Poly.toBytes(r, pk);
-        
-        for (int i = 0; i < Params.SEED_BYTES; ++i)
-        {
-            int seedVal = seed[i] & 0xFF;
-            for (int j = 0; j < 4; ++j)
-            {
-                r[2 * (4 * i + j) + 1] |= seedVal << 6;
-                seedVal >>>= 2;
-            }
-        }
+        System.arraycopy(seed, 0, r, Params.POLY_BYTES, Params.SEED_BYTES);        
     }
 
     static void encodeB(byte[] r, short[] b, short[] c)
     {
         Poly.toBytes(r, b);
-        
-        for (int i = 0; i < 1024; ++i)
+
+        for (int i = 0; i < Params.N / 4; ++i)
         {
-            r[2 * i + 1] |= c[i] << 6;
+            int j = 4 * i;
+            r[Params.POLY_BYTES + i] = (byte)(c[j] | (c[j + 1] << 2) | (c[j + 2] << 4) | (c[j + 3] << 6));
         }
     }
 

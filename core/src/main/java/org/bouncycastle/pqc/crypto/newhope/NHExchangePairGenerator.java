@@ -21,11 +21,9 @@ public class NHExchangePairGenerator
         NHPublicKeyParameters pubKey = (NHPublicKeyParameters)senderPublicKey;
 
         byte[] sharedValue = new byte[NewHope.AGREEMENT_SIZE];
-        byte[] publicKeyValue = new byte[NewHope.SEND_SIZE];
+        byte[] publicKeyValue = new byte[NewHope.SENDB_BYTES];
 
         NewHope.sharedB(random, sharedValue, publicKeyValue, pubKey.pubData);
-
-        byte[] aliceReceived = publicKeyValue;
 
         return new ExchangePair(new NHPublicKeyParameters(publicKeyValue), sharedValue);
     }

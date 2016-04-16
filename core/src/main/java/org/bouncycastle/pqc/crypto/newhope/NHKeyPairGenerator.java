@@ -18,7 +18,7 @@ public class NHKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        byte[] pubData = new byte[NewHope.SEND_SIZE];
+        byte[] pubData = new byte[NewHope.SENDA_BYTES];
         short[] secData = new short[NewHope.POLY_SIZE];
 
         NewHope.keygen(random, pubData, secData);
