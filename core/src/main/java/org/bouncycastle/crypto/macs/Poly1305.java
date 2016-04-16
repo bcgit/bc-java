@@ -111,24 +111,27 @@ public class Poly1305
 
     private void setKey(final byte[] key, final byte[] nonce)
     {
+        if (key.length != 32)
+        {
+            throw new IllegalArgumentException("Poly1305 key must be 256 bits.");
+        }
         if (cipher != null && (nonce == null || nonce.length != BLOCK_SIZE))
         {
             throw new IllegalArgumentException("Poly1305 requires a 128 bit IV.");
         }
 
-        Poly1305KeyGenerator.clamp(key);
-
-        // Extract r portion of key
+        // Extract r portion of key (and "clamp" the values)
         int t0 = Pack.littleEndianToInt(key, 0);
         int t1 = Pack.littleEndianToInt(key, 4);
         int t2 = Pack.littleEndianToInt(key, 8);
         int t3 = Pack.littleEndianToInt(key, 12);
 
-        r0 = t0 & 0x3ffffff; t0 >>>= 26; t0 |= t1 << 6;
-        r1 = t0 & 0x3ffff03; t1 >>>= 20; t1 |= t2 << 12;
-        r2 = t1 & 0x3ffc0ff; t2 >>>= 14; t2 |= t3 << 18;
-        r3 = t2 & 0x3f03fff; t3 >>>= 8;
-        r4 = t3 & 0x00fffff;
+        // NOTE: The masks perform the key "clamping" implicitly
+        r0 =   t0                       & 0x03FFFFFF;
+        r1 = ((t0 >>> 26) | (t1 <<  6)) & 0x03FFFF03;
+        r2 = ((t1 >>> 20) | (t2 << 12)) & 0x03FFC0FF;
+        r3 = ((t2 >>> 14) | (t3 << 18)) & 0x03F03FFF;
+        r4 =  (t3 >>>  8)               & 0x000FFFFF;
 
         // Precompute multipliers
         s1 = r1 * 5;
@@ -137,27 +140,27 @@ public class Poly1305
         s4 = r4 * 5;
 
         final byte[] kBytes;
+        final int kOff;
+
         if (cipher == null)
         {
             kBytes = key;
-
-            k0 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 0);
-            k1 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 4);
-            k2 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 8);
-            k3 = Pack.littleEndianToInt(kBytes, BLOCK_SIZE + 12);
+            kOff = BLOCK_SIZE;
         }
         else
         {
             // Compute encrypted nonce
             kBytes = new byte[BLOCK_SIZE];
+            kOff = 0;
+
             cipher.init(true, new KeyParameter(key, BLOCK_SIZE, BLOCK_SIZE));
             cipher.processBlock(nonce, 0, kBytes, 0);
-
-            k0 = Pack.littleEndianToInt(kBytes, 0);
-            k1 = Pack.littleEndianToInt(kBytes, 4);
-            k2 = Pack.littleEndianToInt(kBytes, 8);
-            k3 = Pack.littleEndianToInt(kBytes, 12);
         }
+
+        k0 = Pack.littleEndianToInt(kBytes, kOff + 0);
+        k1 = Pack.littleEndianToInt(kBytes, kOff + 4);
+        k2 = Pack.littleEndianToInt(kBytes, kOff + 8);
+        k3 = Pack.littleEndianToInt(kBytes, kOff + 12);
     }
 
     public String getAlgorithmName()
