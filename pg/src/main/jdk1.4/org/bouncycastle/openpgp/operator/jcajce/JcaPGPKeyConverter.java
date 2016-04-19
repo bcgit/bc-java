@@ -114,8 +114,8 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(elSpec);
             case PublicKeyAlgorithmTags.ECDH:
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
-                X9ECParameters ecdhParams = PGPUtil.getX9Parameters(ecdhK.getCurveOID());
-                ECPoint ecdhPoint = PGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
+                X9ECParameters ecdhParams = JcaJcePGPUtil.getX9Parameters(ecdhK.getCurveOID());
+                ECPoint ecdhPoint = JcaJcePGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
                 ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
                     ecdhPoint,
                     convertX9Parameters(ecdhK.getCurveOID(), ecdhParams));
@@ -124,8 +124,8 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(ecDhSpec);
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
-                X9ECParameters ecdsaParams = PGPUtil.getX9Parameters(ecdsaK.getCurveOID());
-                ECPoint ecdsaPoint = PGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
+                X9ECParameters ecdsaParams = JcaJcePGPUtil.getX9Parameters(ecdsaK.getCurveOID());
+                ECPoint ecdsaPoint = JcaJcePGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
                 ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
                     ecdsaPoint,
                     convertX9Parameters(ecdsaK.getCurveOID(), ecdsaParams));
