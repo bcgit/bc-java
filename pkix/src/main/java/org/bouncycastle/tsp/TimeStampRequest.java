@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.tsp.TimeStampReq;
@@ -174,7 +173,7 @@ public class TimeStampRequest
 
         if (digestLength != this.getMessageImprintDigest().length)
         {
-            throw new TSPValidationException("imprint digest the wrong length.", PKIFailureInfo.badDataFormat);
+            throw new TSPValidationException("imprint digest the wrong length", PKIFailureInfo.badDataFormat);
         }
     }
 
