@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
-import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
