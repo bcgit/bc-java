@@ -372,7 +372,7 @@ public class DTLSClientProtocol
                 .setPSKIdentity(securityParameters.getPSKIdentity())
                 .setSRPIdentity(securityParameters.getSRPIdentity())
                 // TODO Consider filtering extensions that aren't relevant to resumed sessions
-                .setServerExtensions(state.serverExtensions)
+                .setPeerExtensions(state.serverExtensions)
                 .build();
 
             state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
@@ -759,7 +759,7 @@ public class DTLSClientProtocol
             }
 
             sessionClientExtensions = null;
-            sessionServerExtensions = state.sessionParameters.readServerExtensions();
+            sessionServerExtensions = state.sessionParameters.readPeerExtensions();
         }
 
         securityParameters.cipherSuite = selectedCipherSuite;

@@ -17,7 +17,7 @@ public final class SessionParameters
         private Certificate peerCertificate = null;
         private byte[] pskIdentity = null;
         private byte[] srpIdentity = null;
-        private byte[] encodedServerExtensions = null;
+        private byte[] encodedPeerExtensions = null;
 
         public Builder()
         {
@@ -29,7 +29,7 @@ public final class SessionParameters
             validate(this.compressionAlgorithm >= 0, "compressionAlgorithm");
             validate(this.masterSecret != null, "masterSecret");
             return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate, pskIdentity,
-                srpIdentity, encodedServerExtensions);
+                srpIdentity, encodedPeerExtensions);
         }
 
         public Builder setCipherSuite(int cipherSuite)
@@ -77,17 +77,17 @@ public final class SessionParameters
             return this;
         }
 
-        public Builder setServerExtensions(Hashtable serverExtensions) throws IOException
+        public Builder setPeerExtensions(Hashtable peerExtensions) throws IOException
         {
-            if (serverExtensions == null)
+            if (peerExtensions == null)
             {
-                encodedServerExtensions = null;
+                encodedPeerExtensions = null;
             }
             else
             {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                TlsProtocol.writeExtensions(buf, serverExtensions);
-                encodedServerExtensions = buf.toByteArray();
+                TlsProtocol.writeExtensions(buf, peerExtensions);
+                encodedPeerExtensions = buf.toByteArray();
             }
             return this;
         }
@@ -107,10 +107,10 @@ public final class SessionParameters
     private Certificate peerCertificate;
     private byte[] pskIdentity = null;
     private byte[] srpIdentity = null;
-    private byte[] encodedServerExtensions;
+    private byte[] encodedPeerExtensions;
 
     private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret,
-        Certificate peerCertificate, byte[] pskIdentity, byte[] srpIdentity, byte[] encodedServerExtensions)
+        Certificate peerCertificate, byte[] pskIdentity, byte[] srpIdentity, byte[] encodedPeerExtensions)
     {
         this.cipherSuite = cipherSuite;
         this.compressionAlgorithm = compressionAlgorithm;
@@ -118,7 +118,7 @@ public final class SessionParameters
         this.peerCertificate = peerCertificate;
         this.pskIdentity = Arrays.clone(pskIdentity);
         this.srpIdentity = Arrays.clone(srpIdentity);
-        this.encodedServerExtensions = encodedServerExtensions;
+        this.encodedPeerExtensions = encodedPeerExtensions;
     }
 
     public void clear()
@@ -132,7 +132,7 @@ public final class SessionParameters
     public SessionParameters copy()
     {
         return new SessionParameters(cipherSuite, compressionAlgorithm, masterSecret, peerCertificate, pskIdentity,
-            srpIdentity, encodedServerExtensions);
+            srpIdentity, encodedPeerExtensions);
     }
 
     public int getCipherSuite()
@@ -173,14 +173,14 @@ public final class SessionParameters
         return srpIdentity;
     }
 
-    public Hashtable readServerExtensions() throws IOException
+    public Hashtable readPeerExtensions() throws IOException
     {
-        if (encodedServerExtensions == null)
+        if (encodedPeerExtensions == null)
         {
             return null;
         }
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(encodedServerExtensions);
+        ByteArrayInputStream buf = new ByteArrayInputStream(encodedPeerExtensions);
         return TlsProtocol.readExtensions(buf);
     }
 }

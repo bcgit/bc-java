@@ -753,7 +753,7 @@ public class TlsClientProtocol
             }
 
             sessionClientExtensions = null;
-            sessionServerExtensions = this.sessionParameters.readServerExtensions();
+            sessionServerExtensions = this.sessionParameters.readPeerExtensions();
         }
 
         this.securityParameters.cipherSuite = selectedCipherSuite;
