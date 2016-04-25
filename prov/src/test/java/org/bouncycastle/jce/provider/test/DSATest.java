@@ -23,6 +23,8 @@ import java.security.SignatureException;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.DSAPrivateKeySpec;
+import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -426,6 +428,110 @@ public class DSATest
         ASN1Sequence sig = ASN1Sequence.getInstance(encSig);
 
         BigInteger r = new BigInteger("97354732615802252173078420023658453040116611318111190383344590814578738210384");
+
+        BigInteger sigR = ASN1Integer.getInstance(sig.getObjectAt(0)).getValue();
+        if (!r.equals(sigR))
+        {
+            fail("r component wrong." + Strings.lineSeparator()
+                + " expecting: " + r.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigR.toString(16));
+        }
+
+        BigInteger sigS = ASN1Integer.getInstance(sig.getObjectAt(1)).getValue();
+        if (!s.equals(sigS))
+        {
+            fail("s component wrong." + Strings.lineSeparator()
+                + " expecting: " + s.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigS.toString(16));
+        }
+
+        // Verify the signature
+        dsa.initVerify(ecKeyFact.generatePublic(pubKey));
+
+        dsa.update(M, 0, M.length);
+
+        if (!dsa.verify(encSig))
+        {
+            fail("signature fails");
+        }
+    }
+
+    private void testDSAsha3(ASN1ObjectIdentifier sigOid, int size, BigInteger s)
+        throws Exception
+    {
+        DSAParameterSpec dsaParams = new DSAParameterSpec(
+            new BigInteger(
+                        "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+                        "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+                        "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+                        "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+                        "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+                        "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+                        "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+                        "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+                        "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+                        "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+                        "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16),
+            new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16),
+            new BigInteger(
+                        "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+                        "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+                        "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+                        "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+                        "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+                        "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+                        "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+                        "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+                        "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+                        "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+                        "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)
+        );
+
+        BigInteger x = new BigInteger("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C", 16);
+
+        BigInteger y = new BigInteger(
+                    "2828003D7C747199143C370FDD07A286" +
+                    "1524514ACC57F63F80C38C2087C6B795B62DE1C224BF8D1D" +
+                    "1424E60CE3F5AE3F76C754A2464AF292286D873A7A30B7EA" +
+                    "CBBC75AAFDE7191D9157598CDB0B60E0C5AA3F6EBE425500" +
+                    "C611957DBF5ED35490714A42811FDCDEB19AF2AB30BEADFF" +
+                    "2907931CEE7F3B55532CFFAEB371F84F01347630EB227A41" +
+                    "9B1F3F558BC8A509D64A765D8987D493B007C4412C297CAF" +
+                    "41566E26FAEE475137EC781A0DC088A26C8804A98C23140E" +
+                    "7C936281864B99571EE95C416AA38CEEBB41FDBFF1EB1D1D" +
+                    "C97B63CE1355257627C8B0FD840DDB20ED35BE92F08C49AE" +
+                    "A5613957D7E5C7A6D5A5834B4CB069E0831753ECF65BA02B", 16);
+
+        DSAPrivateKeySpec priKey = new DSAPrivateKeySpec(
+                x, dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
+
+        DSAPublicKeySpec pubKey = new DSAPublicKeySpec(
+            y, dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
+
+        KeyFactory dsaKeyFact = KeyFactory.getInstance("DSA", "BC");
+
+        doDsaTest("SHA3-" + size + "withDSA", s, dsaKeyFact, pubKey, priKey);
+        doDsaTest(sigOid.getId(), s, dsaKeyFact, pubKey, priKey);
+    }
+
+    private void doDsaTest(String sigName, BigInteger s, KeyFactory ecKeyFact, DSAPublicKeySpec pubKey, DSAPrivateKeySpec priKey)
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException, SignatureException
+    {
+        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+
+        byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
+
+        Signature dsa = Signature.getInstance(sigName, "BC");
+
+        dsa.initSign(ecKeyFact.generatePrivate(priKey), k);
+
+        dsa.update(M, 0, M.length);
+
+        byte[] encSig = dsa.sign();
+
+        ASN1Sequence sig = ASN1Sequence.getInstance(encSig);
+
+        BigInteger r = new BigInteger("4864074fe30e6601268ee663440e4d9b703f62673419864e91e9edb0338ce510", 16);
 
         BigInteger sigR = ASN1Integer.getInstance(sig.getObjectAt(0)).getValue();
         if (!r.equals(sigR))
@@ -1022,6 +1128,12 @@ public class DSATest
     {
         testCompat();
         testNONEwithDSA();
+
+        testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_224, 224, new BigInteger("613202af2a7f77e02b11b5c3a5311cf6b412192bc0032aac3ec127faebfc6bd0", 16));
+        testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_256, 256, new BigInteger("2450755c5e15a691b121bc833b97864e34a61ee025ecec89289c949c1858091e", 16));
+        testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_384, 384, new BigInteger("7aad97c0b71bb1e1a6483b6948a03bbe952e4780b0cee699a11731f90d84ddd1", 16));
+        testDSAsha3(NISTObjectIdentifiers.id_dsa_with_sha3_512, 512, new BigInteger("725ad64d923c668e64e7c3898b5efde484cab49ce7f98c2885d2a13a9e355ad4", 16));
+
         testECDSA239bitPrime();
         testNONEwithECDSA239bitPrime();
         testECDSA239bitBinary();
