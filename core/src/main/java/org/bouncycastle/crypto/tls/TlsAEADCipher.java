@@ -10,8 +10,14 @@ import org.bouncycastle.util.Arrays;
 public class TlsAEADCipher
     implements TlsCipher
 {
+    // TODO[draft-zauner-tls-aes-ocb-04] Apply data volume limit described in section 8.4
+
     public static final int NONCE_RFC5288 = 1;
-    static final int NONCE_DRAFT_ZAUNER_TLS_AES_OCB = 2;
+    
+    /*
+     * draft-zauner-tls-aes-ocb-04 specifies the nonce construction from draft-ietf-tls-chacha20-poly1305-04
+     */
+    static final int NONCE_DRAFT_CHACHA20_POLY1305 = 2;
 
     protected TlsContext context;
     protected int macSize;
@@ -22,6 +28,8 @@ public class TlsAEADCipher
     protected AEADBlockCipher decryptCipher;
 
     protected byte[] encryptImplicitNonce, decryptImplicitNonce;
+    
+    protected int nonceMode;
 
     public TlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
         int cipherKeySize, int macSize) throws IOException
@@ -36,12 +44,20 @@ public class TlsAEADCipher
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+
+        this.nonceMode = nonceMode;
+
+        // TODO SecurityParameters.fixed_iv_length
+        int fixed_iv_length;
+
         switch (nonceMode)
         {
         case NONCE_RFC5288:
+            fixed_iv_length = 4;
             this.record_iv_length = 8;
             break;
-        case NONCE_DRAFT_ZAUNER_TLS_AES_OCB:
+        case NONCE_DRAFT_CHACHA20_POLY1305:
+            fixed_iv_length = 12;
             this.record_iv_length = 0;
             break;
         default:
@@ -50,9 +66,6 @@ public class TlsAEADCipher
 
         this.context = context;
         this.macSize = macSize;
-
-        // TODO SecurityParameters.fixed_iv_length
-        int fixed_iv_length = 4;
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
@@ -94,7 +107,7 @@ public class TlsAEADCipher
             decryptKey = server_write_key;
         }
 
-        byte[] dummyNonce = new byte[fixed_iv_length + 8];
+        byte[] dummyNonce = new byte[fixed_iv_length + record_iv_length];
 
         this.encryptCipher.init(true, new AEADParameters(encryptKey, 8 * macSize, dummyNonce));
         this.decryptCipher.init(false, new AEADParameters(decryptKey, 8 * macSize, dummyNonce));
@@ -109,16 +122,25 @@ public class TlsAEADCipher
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
         throws IOException
     {
-        byte[] nonce = new byte[this.encryptImplicitNonce.length + 8];
-        System.arraycopy(encryptImplicitNonce, 0, nonce, 0, encryptImplicitNonce.length);
+        byte[] nonce = new byte[encryptImplicitNonce.length + record_iv_length];
 
-        /*
-         * RFC 5288/6655: The nonce_explicit MAY be the 64-bit sequence number.
-         * draft-zauner-tls-aes-ocb-03: uses the sequence number (not included in message).
-         * 
-         * (May need review for other AEAD ciphers).
-         */
-        TlsUtils.writeUint64(seqNo, nonce, encryptImplicitNonce.length);
+        switch (nonceMode)
+        {
+        case NONCE_RFC5288:
+            System.arraycopy(encryptImplicitNonce, 0, nonce, 0, encryptImplicitNonce.length);
+            // RFC 5288/6655: The nonce_explicit MAY be the 64-bit sequence number.
+            TlsUtils.writeUint64(seqNo, nonce, encryptImplicitNonce.length);
+            break;
+        case NONCE_DRAFT_CHACHA20_POLY1305:
+            TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
+            for (int i = 0; i < encryptImplicitNonce.length; ++i)
+            {
+                nonce[i] ^= encryptImplicitNonce[i];
+            }
+            break;
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         int plaintextOffset = offset;
         int plaintextLength = len;
@@ -162,15 +184,23 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        byte[] nonce = new byte[this.decryptImplicitNonce.length + 8];
-        System.arraycopy(decryptImplicitNonce, 0, nonce, 0, decryptImplicitNonce.length);
-        if (record_iv_length == 0)
+        byte[] nonce = new byte[decryptImplicitNonce.length + record_iv_length];
+
+        switch (nonceMode)
         {
-            TlsUtils.writeUint64(seqNo, nonce, decryptImplicitNonce.length);
-        }
-        else
-        {
+        case NONCE_RFC5288:
+            System.arraycopy(decryptImplicitNonce, 0, nonce, 0, decryptImplicitNonce.length);
             System.arraycopy(ciphertext, offset, nonce, nonce.length - record_iv_length, record_iv_length);
+            break;
+        case NONCE_DRAFT_CHACHA20_POLY1305:
+            TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
+            for (int i = 0; i < decryptImplicitNonce.length; ++i)
+            {
+                nonce[i] ^= decryptImplicitNonce[i];
+            }
+            break;
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         int ciphertextOffset = offset + record_iv_length;
