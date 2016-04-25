@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -161,6 +162,78 @@ public class SignatureSpi
         public ecDetDSA512()
         {
             super(new SHA512Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA512Digest())), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_224
+        extends SignatureSpi
+    {
+        public ecDSASha3_224()
+        {
+            super(new SHA3Digest(224), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_224
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_224()
+        {
+            super(new SHA3Digest(224), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(224))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_256
+        extends SignatureSpi
+    {
+        public ecDSASha3_256()
+        {
+            super(new SHA3Digest(256), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_256
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_256()
+        {
+            super(new SHA3Digest(256), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(256))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_384
+        extends SignatureSpi
+    {
+        public ecDSASha3_384()
+        {
+            super(new SHA3Digest(384), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_384
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_384()
+        {
+            super(new SHA3Digest(384), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(384))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_512
+        extends SignatureSpi
+    {
+        public ecDSASha3_512()
+        {
+            super(new SHA3Digest(512), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_512
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_512()
+        {
+            super(new SHA3Digest(512), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(512))), new StdDSAEncoder());
         }
     }
 
