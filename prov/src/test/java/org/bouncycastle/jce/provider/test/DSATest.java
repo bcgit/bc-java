@@ -12,6 +12,8 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -21,6 +23,7 @@ import java.security.SignatureException;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -30,10 +33,14 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -372,6 +379,79 @@ public class DSATest
         sig = Hex.decode("3040021e2cb7f36803ebb9c427c58d8265f11fc5084747133078fc279de874fbecb0021e7d5be84b22937a1691859a3c6fe45ed30b108574431d01b34025825ec17a");
 
         checkMessage(sgr, sKey, vKey, message, sig);
+    }
+
+    private void testECDSAP256sha3(ASN1ObjectIdentifier sigOid, int size, BigInteger s)
+        throws Exception
+    {
+        X9ECParameters p = NISTNamedCurves.getByName("P-256");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        ECDomainParameters params = new ECDomainParameters(p.getCurve(), p.getG(), p.getN(), p.getH());
+
+        ECCurve curve = p.getCurve();
+
+        ECParameterSpec spec = new ECParameterSpec(
+                curve,
+                p.getG(), // G
+                p.getN()); // n
+
+        ECPrivateKeySpec priKey = new ECPrivateKeySpec(
+                new BigInteger("20186677036482506117540275567393538695075300175221296989956723148347484984008"), // d
+                spec);
+
+        ECPublicKeySpec pubKey = new ECPublicKeySpec(
+            params.getCurve().decodePoint(Hex.decode("03596375E6CE57E0F20294FC46BDFCFD19A39F8161B58695B3EC5B3D16427C274D")), // Q
+            spec);
+
+        doEcDsaTest("SHA3-" + size + "withECDSA", s, ecKeyFact, pubKey, priKey);
+        doEcDsaTest(sigOid.getId(), s, ecKeyFact, pubKey, priKey);
+    }
+
+    private void doEcDsaTest(String sigName, BigInteger s, KeyFactory ecKeyFact, ECPublicKeySpec pubKey, ECPrivateKeySpec priKey)
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException, SignatureException
+    {
+        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+
+        byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
+
+        Signature dsa = Signature.getInstance(sigName, "BC");
+
+        dsa.initSign(ecKeyFact.generatePrivate(priKey), k);
+
+        dsa.update(M, 0, M.length);
+
+        byte[] encSig = dsa.sign();
+
+        ASN1Sequence sig = ASN1Sequence.getInstance(encSig);
+
+        BigInteger r = new BigInteger("97354732615802252173078420023658453040116611318111190383344590814578738210384");
+
+        BigInteger sigR = ASN1Integer.getInstance(sig.getObjectAt(0)).getValue();
+        if (!r.equals(sigR))
+        {
+            fail("r component wrong." + Strings.lineSeparator()
+                + " expecting: " + r.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigR.toString(16));
+        }
+
+        BigInteger sigS = ASN1Integer.getInstance(sig.getObjectAt(1)).getValue();
+        if (!s.equals(sigS))
+        {
+            fail("s component wrong." + Strings.lineSeparator()
+                + " expecting: " + s.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigS.toString(16));
+        }
+
+        // Verify the signature
+        dsa.initVerify(ecKeyFact.generatePublic(pubKey));
+
+        dsa.update(M, 0, M.length);
+
+        if (!dsa.verify(encSig))
+        {
+            fail("signature fails");
+        }
     }
 
     private void checkMessage(Signature sgr, PrivateKey sKey, PublicKey vKey, byte[] message, byte[] sig)
@@ -956,6 +1036,11 @@ public class DSATest
         testECDSA239bitBinary("SHA256withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_256);
         testECDSA239bitBinary("SHA384withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_384);
         testECDSA239bitBinary("SHA512withCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
+
+        testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_224, 224, new BigInteger("84d7d8e68e405064109cd9fc3e3026d74d278aada14ce6b7a9dd0380c154dc94", 16));
+        testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_256, 256, new BigInteger("99a43bdab4af989aaf2899079375642f2bae2dce05bcd8b72ec8c4a8d9a143f", 16));
+        testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_384, 384, new BigInteger("aa27726509c37aaf601de6f7e01e11c19add99530c9848381c23365dc505b11a", 16));
+        testECDSAP256sha3(NISTObjectIdentifiers.id_ecdsa_with_sha3_512, 512, new BigInteger("f8306b57a1f5068bf12e53aabaae39e2658db39bc56747eaefb479995130ad16", 16));
 
         testGeneration();
         testParameters();

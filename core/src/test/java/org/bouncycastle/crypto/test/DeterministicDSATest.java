@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -123,6 +124,11 @@ public class DeterministicDSATest
         doTestHMACDetECDSATest(new SHA256Digest(), privKey, new BigInteger("3A718BD8B4926C3B52EE6BBE67EF79B18CB6EB62B1AD97AE", 16), new BigInteger("5662E6848A4A19B1F1AE2F72ACD4B8BBE50F1EAC65D9124F", 16));
         doTestHMACDetECDSATest(new SHA384Digest(), privKey, new BigInteger("B234B60B4DB75A733E19280A7A6034BD6B1EE88AF5332367", 16), new BigInteger("7994090B2D59BB782BE57E74A44C9A1C700413F8ABEFE77A", 16));
         doTestHMACDetECDSATest(new SHA512Digest(), privKey, new BigInteger("FE4F4AE86A58B6507946715934FE2D8FF9D95B6B098FE739", 16), new BigInteger("74CF5605C98FBA0E1EF34D4B5A1577A7DCF59457CAE52290", 16));
+
+        doTestHMACDetECDSATest(new SHA3Digest(224), privKey, new BigInteger("abfcb817d04cc223f0d9c02c6db9230a91f955bf4556e0c6", 16), new BigInteger("ec2c29065a50d8ea39533d49472ccf538a5388cb31900e8f", 16));
+        doTestHMACDetECDSATest(new SHA3Digest(256), privKey, new BigInteger("a2c2d5362d3cea77191edb239bf22a14dcc59d6500a744fc", 16), new BigInteger("6c63f3012353082026be7e2c6f37e6d7811066ddc9b9ee47", 16));
+        doTestHMACDetECDSATest(new SHA3Digest(384), privKey, new BigInteger("2ff2c37d48cd6691c8adb9d2b1c1af203a1a6b8769c588dd", 16), new BigInteger("79c8171097f845c608dafd218ba096a51e0e4882faf2c08d", 16));
+        doTestHMACDetECDSATest(new SHA3Digest(512), privKey, new BigInteger("384619b82461f4cc852dfa1e87cd87105e8eb3cfd0fb6461", 16), new BigInteger("d0aac03f72e90942821e3af1f77fd8a6ae82d1ed31b8ed06", 16));
 
         x9ECParameters = NISTNamedCurves.getByName("P-224");
         ecDomainParameters = new ECDomainParameters(x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN());

@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.asymmetric;
 
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -170,6 +171,10 @@ public class EC
             provider.addAlgorithm("Signature.SHA256WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA256");
             provider.addAlgorithm("Signature.SHA384WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA384");
             provider.addAlgorithm("Signature.SHA512WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA512");
+            provider.addAlgorithm("Signature.SHA3-224WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_224");
+            provider.addAlgorithm("Signature.SHA3-256WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_256");
+            provider.addAlgorithm("Signature.SHA3-384WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_384");
+            provider.addAlgorithm("Signature.SHA3-512WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_512");
 
             provider.addAlgorithm("Alg.Alias.Signature.DETECDSA", "ECDDSA");
             provider.addAlgorithm("Alg.Alias.Signature.SHA1WITHDETECDSA", "SHA1WITHECDDSA");
@@ -182,6 +187,11 @@ public class EC
             addSignatureAlgorithm(provider, "SHA256", "ECDSA", PREFIX + "SignatureSpi$ecDSA256", X9ObjectIdentifiers.ecdsa_with_SHA256);
             addSignatureAlgorithm(provider, "SHA384", "ECDSA", PREFIX + "SignatureSpi$ecDSA384", X9ObjectIdentifiers.ecdsa_with_SHA384);
             addSignatureAlgorithm(provider, "SHA512", "ECDSA", PREFIX + "SignatureSpi$ecDSA512", X9ObjectIdentifiers.ecdsa_with_SHA512);
+            addSignatureAlgorithm(provider, "SHA3-224", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_224", NISTObjectIdentifiers.id_ecdsa_with_sha3_224);
+            addSignatureAlgorithm(provider, "SHA3-256", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_256", NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
+            addSignatureAlgorithm(provider, "SHA3-384", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_384", NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
+            addSignatureAlgorithm(provider, "SHA3-512", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_512", NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+
             addSignatureAlgorithm(provider, "RIPEMD160", "ECDSA", PREFIX + "SignatureSpi$ecDSARipeMD160",TeleTrusTObjectIdentifiers.ecSignWithRipemd160);
 
             provider.addAlgorithm("Signature.SHA1WITHECNR", PREFIX + "SignatureSpi$ecNR");
