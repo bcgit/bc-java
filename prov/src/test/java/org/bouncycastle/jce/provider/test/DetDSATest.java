@@ -50,17 +50,28 @@ public class DetDSATest
 
         PrivateKey privKey = keyFact.generatePrivate(privKeySpec);
 
-        doTestHMACDetDSASample("SHA1withDETDSA", privKey, new BigInteger("2E1A0C2562B2912CAAF89186FB0F42001585DA55", 16), new BigInteger("29EFB6B0AFF2D7A68EB70CA313022253B9A88DF5", 16));
-        doTestHMACDetDSASample("SHA224withDETDSA", privKey, new BigInteger("4BC3B686AEA70145856814A6F1BB53346F02101E", 16), new BigInteger("410697B92295D994D21EDD2F4ADA85566F6F94C1", 16));
-        doTestHMACDetDSASample("SHA256withDETDSA", privKey, new BigInteger("81F2F5850BE5BC123C43F71A3033E9384611C545", 16), new BigInteger("4CDD914B65EB6C66A8AAAD27299BEE6B035F5E89", 16));
-        doTestHMACDetDSASample("SHA384withDETDSA", privKey, new BigInteger("07F2108557EE0E3921BC1774F1CA9B410B4CE65A", 16), new BigInteger("54DF70456C86FAC10FAB47C1949AB83F2C6F7595", 16));
-        doTestHMACDetDSASample("SHA512withDETDSA", privKey, new BigInteger("16C3491F9B8C3FBBDD5E7A7B667057F0D8EE8E1B", 16), new BigInteger("02C36A127A7B89EDBB72E4FFBC71DABC7D4FC69C", 16));
+        doTestHMACDetDSASample("SHA1withDDSA", privKey, new BigInteger("2E1A0C2562B2912CAAF89186FB0F42001585DA55", 16), new BigInteger("29EFB6B0AFF2D7A68EB70CA313022253B9A88DF5", 16));
+        doTestHMACDetDSASample("SHA224withDDSA", privKey, new BigInteger("4BC3B686AEA70145856814A6F1BB53346F02101E", 16), new BigInteger("410697B92295D994D21EDD2F4ADA85566F6F94C1", 16));
+        doTestHMACDetDSASample("SHA256withDDSA", privKey, new BigInteger("81F2F5850BE5BC123C43F71A3033E9384611C545", 16), new BigInteger("4CDD914B65EB6C66A8AAAD27299BEE6B035F5E89", 16));
+        doTestHMACDetDSASample("SHA384withDDSA", privKey, new BigInteger("07F2108557EE0E3921BC1774F1CA9B410B4CE65A", 16), new BigInteger("54DF70456C86FAC10FAB47C1949AB83F2C6F7595", 16));
+        doTestHMACDetDSASample("SHA512withDDSA", privKey, new BigInteger("16C3491F9B8C3FBBDD5E7A7B667057F0D8EE8E1B", 16), new BigInteger("02C36A127A7B89EDBB72E4FFBC71DABC7D4FC69C", 16));
+
+        doTestHMACDetDSATest("SHA3-224withDDSA", privKey, new BigInteger("58748b6ca41d25e41f7bfa51fed204a10a1bd1d3", 16), new BigInteger("86de2fdad0bc848dd20ddd9dc6253fc6d7553268", 16));
+        doTestHMACDetDSATest("SHA3-256withDDSA", privKey, new BigInteger("98c7a7906ada494285b3ab15cf9188a425f26bd4", 16), new BigInteger("21c5ed876037470d3959fa12f918674a4bf190e9", 16));
+        doTestHMACDetDSATest("SHA3-384withDDSA", privKey, new BigInteger("445ec584ec15c14abc67c99886a30a286cc83b33", 16), new BigInteger("21f564d5bb4b175e89a1a6fb2f27cd34c861142d", 16));
+        doTestHMACDetDSATest("SHA3-512withDDSA", privKey, new BigInteger("16918083f4c3ff4fc9b327e9e120a30ec39faaf6", 16), new BigInteger("1e9183a1dc7c20dbb596920cd94da3844a087203", 16));
     }
 
     private void doTestHMACDetDSASample(String algName, PrivateKey privKey, BigInteger r, BigInteger s)
         throws Exception
     {
         doTestHMACDetECDSA(Signature.getInstance(algName, "BC"), SAMPLE, privKey, r, s);
+    }
+
+    private void doTestHMACDetDSATest(String algName, PrivateKey privKey, BigInteger r, BigInteger s)
+        throws Exception
+    {
+        doTestHMACDetECDSA(Signature.getInstance(algName, "BC"), TEST, privKey, r, s);
     }
 
     // test vectors from appendix in RFC 6979
@@ -122,10 +133,9 @@ public class DetDSATest
 
         ASN1Sequence seq = ASN1Sequence.getInstance(m);
 
-
         if (!r.equals(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue()))
         {
-            fail("r value wrong, got " + ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().toString(16));
+            fail("r value wrong, got " + ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().toString(16) + " expected " + r.toString(16));
         }
         if (!s.equals(ASN1Integer.getInstance(seq.getObjectAt(1)).getValue()))
         {

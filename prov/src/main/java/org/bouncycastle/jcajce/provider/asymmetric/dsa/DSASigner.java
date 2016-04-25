@@ -27,6 +27,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
@@ -299,6 +300,78 @@ public class DSASigner
         public detDSA512()
         {
             super(new SHA512Digest(), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(new SHA512Digest())));
+        }
+    }
+
+    static public class dsaSha3_224
+        extends DSASigner
+    {
+        public dsaSha3_224()
+        {
+            super(new SHA3Digest(224), new org.bouncycastle.crypto.signers.DSASigner());
+        }
+    }
+
+    static public class detDSASha3_224
+        extends DSASigner
+    {
+        public detDSASha3_224()
+        {
+            super(new SHA3Digest(224), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(new SHA3Digest(224))));
+        }
+    }
+
+    static public class dsaSha3_256
+        extends DSASigner
+    {
+        public dsaSha3_256()
+        {
+            super(new SHA3Digest(256), new org.bouncycastle.crypto.signers.DSASigner());
+        }
+    }
+
+    static public class detDSASha3_256
+        extends DSASigner
+    {
+        public detDSASha3_256()
+        {
+            super(new SHA3Digest(256), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(new SHA3Digest(256))));
+        }
+    }
+
+    static public class dsaSha3_384
+        extends DSASigner
+    {
+        public dsaSha3_384()
+        {
+            super(new SHA3Digest(384), new org.bouncycastle.crypto.signers.DSASigner());
+        }
+    }
+
+    static public class detDSASha3_384
+        extends DSASigner
+    {
+        public detDSASha3_384()
+        {
+            super(new SHA3Digest(384), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(new SHA3Digest(384))));
+        }
+    }
+
+    static public class dsaSha3_512
+        extends DSASigner
+    {
+        public dsaSha3_512()
+        {
+            super(new SHA3Digest(512), new org.bouncycastle.crypto.signers.DSASigner());
+        }
+    }
+
+    static public class detDSASha3_512
+        extends DSASigner
+    {
+        public detDSASha3_512()
+        {
+            super(new SHA3Digest(512), new org.bouncycastle.crypto.signers.DSASigner(new HMacDSAKCalculator(new SHA3Digest(512))));
         }
     }
 
