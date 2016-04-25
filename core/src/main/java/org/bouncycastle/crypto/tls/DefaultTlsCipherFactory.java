@@ -117,7 +117,7 @@ public class DefaultTlsCipherFactory
         throws IOException
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_OCB(),
-            createAEADBlockCipher_AES_OCB(), cipherKeySize, macSize, TlsAEADCipher.NONCE_DRAFT_ZAUNER_TLS_AES_OCB);
+            createAEADBlockCipher_AES_OCB(), cipherKeySize, macSize, TlsAEADCipher.NONCE_DRAFT_CHACHA20_POLY1305);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsContext context, int cipherKeySize, int macSize)

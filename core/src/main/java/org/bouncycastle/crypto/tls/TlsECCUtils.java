@@ -292,7 +292,7 @@ public class TlsECCUtils
         case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
 
         /*
-         * draft-zauner-tls-aes-ocb-03
+         * draft-zauner-tls-aes-ocb-04
          */
         case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB:
         case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB:
