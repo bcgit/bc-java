@@ -840,8 +840,6 @@ public class TlsServerProtocol
          */
         securityParameters.verifyDataLength = 12;
 
-        applyMaxFragmentLengthExtension();
-
         /*
          * RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
          * extensions appearing in the client hello, and send a server hello containing no
@@ -850,6 +848,8 @@ public class TlsServerProtocol
 
         if (this.resumedSession)
         {
+            applyMaxFragmentLengthExtension();
+
             // we don't need the serverExtensions for resumed sessions. So we can leave here...
             message.writeToRecordStream();
             return;
@@ -913,6 +913,8 @@ public class TlsServerProtocol
 
             writeExtensions(message, serverExtensions);
         }
+
+        applyMaxFragmentLengthExtension();
 
         message.writeToRecordStream();
     }
