@@ -28,6 +28,12 @@ public class SigNameTest
         checkName("SHA256withRSA");
         checkName("SHA384withRSA");
         checkName("SHA512withRSA");
+
+        checkName("SHA3-224withRSA");
+        checkName("SHA3-256withRSA");
+        checkName("SHA3-384withRSA");
+        checkName("SHA3-512withRSA");
+
         checkName("MD2withRSA");
         checkName("MD4withRSA");
         checkName("MD5withRSA");

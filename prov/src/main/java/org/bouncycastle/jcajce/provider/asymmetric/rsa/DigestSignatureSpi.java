@@ -34,6 +34,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
@@ -310,6 +311,42 @@ public class DigestSignatureSpi
         public SHA512_256()
         {
             super(NISTObjectIdentifiers.id_sha512_256, new SHA512tDigest(256), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA3_224
+        extends DigestSignatureSpi
+    {
+        public SHA3_224()
+        {
+            super(NISTObjectIdentifiers.id_sha3_224, new SHA3Digest(224), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA3_256
+        extends DigestSignatureSpi
+    {
+        public SHA3_256()
+        {
+            super(NISTObjectIdentifiers.id_sha3_256, new SHA3Digest(256), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA3_384
+        extends DigestSignatureSpi
+    {
+        public SHA3_384()
+        {
+            super(NISTObjectIdentifiers.id_sha3_384, new SHA3Digest(384), new PKCS1Encoding(new RSABlindedEngine()));
+        }
+    }
+
+    static public class SHA3_512
+        extends DigestSignatureSpi
+    {
+        public SHA3_512()
+        {
+            super(NISTObjectIdentifiers.id_sha3_512, new SHA3Digest(512), new PKCS1Encoding(new RSABlindedEngine()));
         }
     }
 

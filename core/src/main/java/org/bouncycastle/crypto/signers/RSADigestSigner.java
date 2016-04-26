@@ -51,6 +51,11 @@ public class RSADigestSigner
         oidMap.put("SHA-512/224", NISTObjectIdentifiers.id_sha512_224);
         oidMap.put("SHA-512/256", NISTObjectIdentifiers.id_sha512_256);
 
+        oidMap.put("SHA3-224", NISTObjectIdentifiers.id_sha3_224);
+        oidMap.put("SHA3-256", NISTObjectIdentifiers.id_sha3_256);
+        oidMap.put("SHA3-384", NISTObjectIdentifiers.id_sha3_384);
+        oidMap.put("SHA3-512", NISTObjectIdentifiers.id_sha3_512);
+
         oidMap.put("MD2", PKCSObjectIdentifiers.md2);
         oidMap.put("MD4", PKCSObjectIdentifiers.md4);
         oidMap.put("MD5", PKCSObjectIdentifiers.md5);
