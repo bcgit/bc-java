@@ -347,6 +347,42 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-224", "MGF1", new MGF1ParameterSpec("SHA3-224"), 28, 1));
+        }
+    }
+
+    static public class SHA3_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-256", "MGF1", new MGF1ParameterSpec("SHA3-256"), 32, 1));
+        }
+    }
+
+    static public class SHA3_384withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-384", "MGF1", new MGF1ParameterSpec("SHA3-384"), 48, 1));
+        }
+    }
+
+    static public class SHA3_512withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("SHA3-512", "MGF1", new MGF1ParameterSpec("SHA3-512"), 64, 1));
+        }
+    }
+
     private class NullPssDigest
         implements Digest
     {
