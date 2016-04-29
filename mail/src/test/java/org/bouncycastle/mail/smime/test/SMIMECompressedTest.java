@@ -49,35 +49,40 @@ public class SMIMECompressedTest
 
     private static final JcaX509CertSelectorConverter selectorConverter = new JcaX509CertSelectorConverter();
 
+    private static MimeBodyPart    msg;
+
+    private static String          signDN;
+    private static KeyPair         signKP;
+    private static X509Certificate signCert;
+
+    private static String          origDN;
+    private static KeyPair         origKP;
+    private static X509Certificate origCert;
+
     static
     {
-        if (Security.getProvider("BC") == null)
+        try
         {
-            Security.addProvider(new BouncyCastleProvider());
+            if (Security.getProvider("BC") == null)
+            {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+
+            msg      = SMIMETestUtil.makeMimeBodyPart("Hello world!");
+
+            signDN   = "O=Bouncy Castle, C=AU";
+            signKP   = CMSTestUtil.makeKeyPair();
+            signCert = CMSTestUtil.makeCertificate(signKP, signDN, signKP, signDN);
+
+            origDN   = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+            origKP   = CMSTestUtil.makeKeyPair();
+            origCert = CMSTestUtil.makeCertificate(origKP, origDN, signKP, signDN);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("problem setting up signed test class: " + e);
         }
     }
-
-    boolean DEBUG = true;
-
-    MimeBodyPart    msg;
-
-    String          signDN;
-    KeyPair         signKP;
-    X509Certificate signCert;
-
-    String          origDN;
-    KeyPair         origKP;
-    X509Certificate origCert;
-
-    String          reciDN;
-    KeyPair         reciKP;
-    X509Certificate reciCert;
-
-    KeyPair         dsaSignKP;
-    X509Certificate dsaSignCert;
-
-    KeyPair         dsaOrigKP;
-    X509Certificate dsaOrigCert;
 
     /*
      *
@@ -85,21 +90,10 @@ public class SMIMECompressedTest
      *
      */
 
-    public SMIMECompressedTest(
-         String name)
+    public SMIMECompressedTest(String name)
         throws Exception
     {
         super(name);
-        
-        msg      = SMIMETestUtil.makeMimeBodyPart("Hello world!");
-
-        signDN   = "O=Bouncy Castle, C=AU";
-        signKP   = CMSTestUtil.makeKeyPair();
-        signCert = CMSTestUtil.makeCertificate(signKP, signDN, signKP, signDN);
-
-        origDN   = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
-        origKP   = CMSTestUtil.makeKeyPair();
-        origCert = CMSTestUtil.makeCertificate(origKP, origDN, signKP, signDN);
     }
 
     public static void main(String args[]) 
