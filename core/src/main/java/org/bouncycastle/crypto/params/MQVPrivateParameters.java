@@ -21,16 +21,35 @@ public class MQVPrivateParameters
         ECPrivateKeyParameters  ephemeralPrivateKey,
         ECPublicKeyParameters   ephemeralPublicKey)
     {
+        if (staticPrivateKey == null)
+        {
+            throw new NullPointerException("staticPrivateKey cannot be null");
+        }
+        if (ephemeralPrivateKey == null)
+        {
+            throw new NullPointerException("ephemeralPrivateKey cannot be null");
+        }
+
+        ECDomainParameters parameters = staticPrivateKey.getParameters();
+        if (!parameters.equals(ephemeralPrivateKey.getParameters()))
+        {
+            throw new IllegalArgumentException("Static and ephemeral private keys have different domain parameters");
+        }
+
+        if (ephemeralPublicKey == null)
+        {
+            ephemeralPublicKey = new ECPublicKeyParameters(
+                parameters.getG().multiply(ephemeralPrivateKey.getD()),
+                parameters);
+        }
+        else if (!parameters.equals(ephemeralPublicKey.getParameters()))
+        {
+            throw new IllegalArgumentException("Ephemeral public key has different domain parameters");
+        }
+
         this.staticPrivateKey = staticPrivateKey;
         this.ephemeralPrivateKey = ephemeralPrivateKey;
-        this.ephemeralPublicKey = (ephemeralPublicKey != null) ?
-            ephemeralPublicKey : new ECPublicKeyParameters(ephemeralPrivateKey.getParameters().getG().multiply(ephemeralPrivateKey.getD()), ephemeralPrivateKey.getParameters());
-
-        if (!staticPrivateKey.getParameters().equals(ephemeralPrivateKey.getParameters())
-            || !staticPrivateKey.getParameters().equals(this.ephemeralPublicKey.getParameters()))
-        {
-            throw new IllegalArgumentException("Static and ephemeral keys have different domain parameters");
-        }
+        this.ephemeralPublicKey = ephemeralPublicKey;
     }
 
     public ECPrivateKeyParameters getStaticPrivateKey()
