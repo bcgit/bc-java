@@ -310,9 +310,7 @@ public class TlsECCUtils
 
     public static boolean areOnSameCurve(ECDomainParameters a, ECDomainParameters b)
     {
-        // TODO Move to ECDomainParameters.equals() or other utility method?
-        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG()) && a.getN().equals(b.getN())
-            && a.getH().equals(b.getH());
+        return a != null && a.equals(b);
     }
 
     public static boolean isSupportedNamedCurve(int namedCurve)

@@ -48,12 +48,11 @@ public class ECDHCBasicAgreement
         CipherParameters pubKey)
     {
         ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
-        if (!pub.getParameters().equals(key.getParameters()))
+        ECDomainParameters params = pub.getParameters();
+        if (!params.equals(key.getParameters()))
         {
             throw new IllegalStateException("ECDHC public key has wrong domain parameters");
         }
-
-        ECDomainParameters params = pub.getParameters();
 
         BigInteger hd = params.getH().multiply(key.getD()).mod(params.getN());
 
