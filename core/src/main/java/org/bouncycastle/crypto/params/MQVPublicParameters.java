@@ -12,13 +12,21 @@ public class MQVPublicParameters
         ECPublicKeyParameters   staticPublicKey,
         ECPublicKeyParameters   ephemeralPublicKey)
     {
-        this.staticPublicKey = staticPublicKey;
-        this.ephemeralPublicKey = ephemeralPublicKey;
-
+        if (staticPublicKey == null)
+        {
+            throw new NullPointerException("staticPublicKey cannot be null");
+        }
+        if (ephemeralPublicKey == null)
+        {
+            throw new NullPointerException("ephemeralPublicKey cannot be null");
+        }
         if (!staticPublicKey.getParameters().equals(ephemeralPublicKey.getParameters()))
         {
-            throw new IllegalArgumentException("Static and ephemeral keys have different domain parameters");
+            throw new IllegalArgumentException("Static and ephemeral public keys have different domain parameters");
         }
+
+        this.staticPublicKey = staticPublicKey;
+        this.ephemeralPublicKey = ephemeralPublicKey;
     }
 
     public ECPublicKeyParameters getStaticPublicKey()
