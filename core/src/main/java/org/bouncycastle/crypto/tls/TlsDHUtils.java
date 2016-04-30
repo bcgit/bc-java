@@ -418,7 +418,8 @@ public class TlsDHUtils
 
     public static boolean areCompatibleParameters(DHParameters a, DHParameters b)
     {
-        return a.getP().equals(b.getP()) && a.getG().equals(b.getG());
+        return a.getP().equals(b.getP()) && a.getG().equals(b.getG())
+            && (a.getQ() == null || b.getQ() == null || a.getQ().equals(b.getQ()));
     }
 
     public static byte[] calculateDHBasicAgreement(DHPublicKeyParameters publicKey, DHPrivateKeyParameters privateKey)

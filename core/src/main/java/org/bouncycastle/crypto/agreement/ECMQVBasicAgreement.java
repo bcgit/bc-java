@@ -41,13 +41,14 @@ public class ECMQVBasicAgreement
         MQVPublicParameters pubParams = (MQVPublicParameters)pubKey;
 
         ECPrivateKeyParameters staticPrivateKey = privParams.getStaticPrivateKey();
+        ECDomainParameters parameters = staticPrivateKey.getParameters();
 
-        if (!privParams.getStaticPrivateKey().getParameters().equals(pubParams.getStaticPublicKey().getParameters()))
+        if (!parameters.equals(pubParams.getStaticPublicKey().getParameters()))
         {
             throw new IllegalStateException("ECMQV public key components have wrong domain parameters");
         }
 
-        ECPoint agreement = calculateMqvAgreement(staticPrivateKey.getParameters(), staticPrivateKey,
+        ECPoint agreement = calculateMqvAgreement(parameters, staticPrivateKey,
             privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
             pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey()).normalize();
 
