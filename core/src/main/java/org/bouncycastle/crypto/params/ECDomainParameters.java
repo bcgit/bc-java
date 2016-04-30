@@ -94,9 +94,9 @@ public class ECDomainParameters
     {
         int hc = curve.hashCode();
 
-        hc += 37 * G.hashCode();
-        hc += 37 * n.hashCode();
-        hc += 37 * h.hashCode();
+        hc += hc * 37 + G.hashCode();
+        hc += hc * 37 + n.hashCode();
+        hc += hc * 37 + h.hashCode();
 
         return hc;
     }
