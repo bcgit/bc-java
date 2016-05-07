@@ -93,11 +93,12 @@ public class ECDomainParameters
     public int hashCode()
     {
         int hc = curve.hashCode();
-
-        hc += hc * 37 + G.hashCode();
-        hc += hc * 37 + n.hashCode();
-        hc += hc * 37 + h.hashCode();
-
+        hc *= 37;
+        hc ^= G.hashCode();
+        hc *= 37;
+        hc ^= n.hashCode();
+        hc *= 37;
+        hc ^= h.hashCode();
         return hc;
     }
 }
