@@ -47,9 +47,9 @@ public abstract class TlsProtocol
     /*
      * Different modes to handle the known IV weakness
      */
-    protected static final short SADR_MODE_1_Nsub1 = 0; // 1/n-1 record splitting
-    protected static final short SADR_MODE_0_N = 1; // 0/n record splitting
-    protected static final short SADR_MODE_0_N_FIRSTONLY = 2; // 0/n record splitting on first data fragment only
+    protected static final short ADS_MODE_1_Nsub1 = 0; // 1/n-1 record splitting
+    protected static final short ADS_MODE_0_N = 1; // 0/n record splitting
+    protected static final short ADS_MODE_0_N_FIRSTONLY = 2; // 0/n record splitting on first data fragment only
 
     /*
      * Queues for data from some protocols.
@@ -71,8 +71,8 @@ public abstract class TlsProtocol
     private volatile boolean closed = false;
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
-    private volatile boolean splitApplicationDataRecords = true;
-    private int splitApplicationDataRecordMode = SADR_MODE_1_Nsub1;
+    private volatile boolean appDataSplitEnabled = true;
+    private volatile int appDataSplitMode = ADS_MODE_1_Nsub1;
     private byte[] expected_verify_data = null;
 
     protected TlsSession tlsSession = null;
@@ -200,7 +200,7 @@ public abstract class TlsProtocol
         {
             this.recordStream.finaliseHandshake();
 
-            this.splitApplicationDataRecords = !TlsUtils.isTLSv11(getContext());
+            this.appDataSplitEnabled = !TlsUtils.isTLSv11(getContext());
 
             /*
              * If this was an initial handshake, we are now ready to send and receive application data.
@@ -614,21 +614,21 @@ public abstract class TlsProtocol
              * NOTE: Actually, implementations appear to have settled on 1/n-1 record splitting.
              */
 
-            if (this.splitApplicationDataRecords)
+            if (this.appDataSplitEnabled)
             {
                 /*
                  * Protect against known IV attack!
                  * 
                  * DO NOT REMOVE THIS CODE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
                  */
-                switch (splitApplicationDataRecordMode) {
-                    case SADR_MODE_0_N_FIRSTONLY:
-                        this.splitApplicationDataRecords = false;
+                switch (appDataSplitMode) {
+                    case ADS_MODE_0_N_FIRSTONLY:
+                        this.appDataSplitEnabled = false;
                         // fall through intended!
-                    case SADR_MODE_0_N:
+                    case ADS_MODE_0_N:
                         safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
                         break;
-                    case SADR_MODE_1_Nsub1:
+                    case ADS_MODE_1_Nsub1:
                     default:
                         safeWriteRecord(ContentType.application_data, buf, offset, 1);
                         ++offset;
@@ -648,13 +648,13 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void setSplitApplicationDataRecordMode(int splitApplicationDataRecordMode) {
-        if (splitApplicationDataRecordMode < SADR_MODE_1_Nsub1 ||
-            splitApplicationDataRecordMode > SADR_MODE_0_N_FIRSTONLY)
+    protected void setAppDataSplitMode(int appDataSplitMode) {
+        if (appDataSplitMode < ADS_MODE_1_Nsub1 ||
+            appDataSplitMode > ADS_MODE_0_N_FIRSTONLY)
         {
-            throw new IllegalArgumentException("Illegal splitApplicationDataRecord mode: " + splitApplicationDataRecordMode);
+            throw new IllegalArgumentException("Illegal appDataSplitMode mode: " + appDataSplitMode);
         }
-        this.splitApplicationDataRecordMode = splitApplicationDataRecordMode;
+        this.appDataSplitMode = appDataSplitMode;
 	}
 
     protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
