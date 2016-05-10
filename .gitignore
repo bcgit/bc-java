@@ -1,11 +1,4 @@
-.classpath
-.gradle
-.project
-
-*.class
-*.gen
-*.swp
-
-bin/
-build/
-.settings/
+/.classpath
+/.project
+/.settings/
+/target/

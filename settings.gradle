@@ -1,5 +1,0 @@
-include "core"
-include "mail"
-include "pg"
-include "pkix"
-include "prov"
