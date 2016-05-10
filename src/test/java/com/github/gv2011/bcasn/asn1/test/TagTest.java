@@ -3,10 +3,10 @@ package com.github.gv2011.bcasn.asn1.test;
 import java.io.IOException;
 import java.security.SecureRandom;
 
-import com.github.gv2011.bcasn.asn1.ASN1InputStream;
-import com.github.gv2011.bcasn.asn1.ASN1Primitive;
-import com.github.gv2011.bcasn.asn1.ASN1TaggedObject;
-import com.github.gv2011.bcasn.asn1.DERApplicationSpecific;
+import com.github.gv2011.bcasn.ASN1InputStream;
+import com.github.gv2011.bcasn.ASN1Primitive;
+import com.github.gv2011.bcasn.ASN1TaggedObject;
+import com.github.gv2011.bcasn.DERApplicationSpecific;
 import com.github.gv2011.bcasn.util.encoders.Base64;
 import com.github.gv2011.bcasn.util.encoders.Hex;
 import com.github.gv2011.bcasn.util.test.SimpleTest;

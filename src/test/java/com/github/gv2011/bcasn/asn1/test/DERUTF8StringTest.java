@@ -1,7 +1,7 @@
 package com.github.gv2011.bcasn.asn1.test;
 
-import com.github.gv2011.bcasn.asn1.DEROctetString;
-import com.github.gv2011.bcasn.asn1.DERUTF8String;
+import com.github.gv2011.bcasn.DEROctetString;
+import com.github.gv2011.bcasn.DERUTF8String;
 import com.github.gv2011.bcasn.util.Arrays;
 import com.github.gv2011.bcasn.util.Strings;
 import com.github.gv2011.bcasn.util.test.SimpleTestResult;

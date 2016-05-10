@@ -1,6 +1,6 @@
 package com.github.gv2011.bcasn.asn1.test;
 
-import com.github.gv2011.bcasn.asn1.ASN1ObjectIdentifier;
+import com.github.gv2011.bcasn.ASN1ObjectIdentifier;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 import com.github.gv2011.bcasn.util.test.TestResult;
 

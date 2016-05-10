@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import com.github.gv2011.bcasn.asn1.ASN1Integer;
-import com.github.gv2011.bcasn.asn1.ASN1Null;
-import com.github.gv2011.bcasn.asn1.ASN1ObjectIdentifier;
-import com.github.gv2011.bcasn.asn1.ASN1SequenceParser;
-import com.github.gv2011.bcasn.asn1.ASN1StreamParser;
-import com.github.gv2011.bcasn.asn1.BERSequenceGenerator;
-import com.github.gv2011.bcasn.asn1.DERSequenceGenerator;
+import com.github.gv2011.bcasn.ASN1Integer;
+import com.github.gv2011.bcasn.ASN1Null;
+import com.github.gv2011.bcasn.ASN1ObjectIdentifier;
+import com.github.gv2011.bcasn.ASN1SequenceParser;
+import com.github.gv2011.bcasn.ASN1StreamParser;
+import com.github.gv2011.bcasn.BERSequenceGenerator;
+import com.github.gv2011.bcasn.DERSequenceGenerator;
 import com.github.gv2011.bcasn.util.encoders.Hex;
 
 import junit.framework.Test;

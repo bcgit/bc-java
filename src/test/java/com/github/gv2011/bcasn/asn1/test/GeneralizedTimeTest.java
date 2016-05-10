@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
-import com.github.gv2011.bcasn.asn1.DERGeneralizedTime;
+import com.github.gv2011.bcasn.DERGeneralizedTime;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 
 /**

@@ -1,12 +1,12 @@
 package com.github.gv2011.bcasn.asn1.test;
 
-import com.github.gv2011.bcasn.asn1.ASN1Encoding;
-import com.github.gv2011.bcasn.asn1.ASN1Integer;
-import com.github.gv2011.bcasn.asn1.ASN1Primitive;
-import com.github.gv2011.bcasn.asn1.BERTags;
-import com.github.gv2011.bcasn.asn1.DERApplicationSpecific;
-import com.github.gv2011.bcasn.asn1.DERTaggedObject;
-import com.github.gv2011.bcasn.asn1.DERVisibleString;
+import com.github.gv2011.bcasn.ASN1Encoding;
+import com.github.gv2011.bcasn.ASN1Integer;
+import com.github.gv2011.bcasn.ASN1Primitive;
+import com.github.gv2011.bcasn.BERTags;
+import com.github.gv2011.bcasn.DERApplicationSpecific;
+import com.github.gv2011.bcasn.DERTaggedObject;
+import com.github.gv2011.bcasn.DERVisibleString;
 import com.github.gv2011.bcasn.util.Arrays;
 import com.github.gv2011.bcasn.util.encoders.Hex;
 import com.github.gv2011.bcasn.util.test.SimpleTest;

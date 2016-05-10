@@ -2,18 +2,18 @@ package com.github.gv2011.bcasn.asn1.test;
 
 import java.io.IOException;
 
-import com.github.gv2011.bcasn.asn1.ASN1Primitive;
-import com.github.gv2011.bcasn.asn1.ASN1String;
-import com.github.gv2011.bcasn.asn1.DERBMPString;
-import com.github.gv2011.bcasn.asn1.DERBitString;
-import com.github.gv2011.bcasn.asn1.DERGeneralString;
-import com.github.gv2011.bcasn.asn1.DERIA5String;
-import com.github.gv2011.bcasn.asn1.DERNumericString;
-import com.github.gv2011.bcasn.asn1.DERPrintableString;
-import com.github.gv2011.bcasn.asn1.DERT61String;
-import com.github.gv2011.bcasn.asn1.DERUTF8String;
-import com.github.gv2011.bcasn.asn1.DERUniversalString;
-import com.github.gv2011.bcasn.asn1.DERVisibleString;
+import com.github.gv2011.bcasn.ASN1Primitive;
+import com.github.gv2011.bcasn.ASN1String;
+import com.github.gv2011.bcasn.DERBMPString;
+import com.github.gv2011.bcasn.DERBitString;
+import com.github.gv2011.bcasn.DERGeneralString;
+import com.github.gv2011.bcasn.DERIA5String;
+import com.github.gv2011.bcasn.DERNumericString;
+import com.github.gv2011.bcasn.DERPrintableString;
+import com.github.gv2011.bcasn.DERT61String;
+import com.github.gv2011.bcasn.DERUTF8String;
+import com.github.gv2011.bcasn.DERUniversalString;
+import com.github.gv2011.bcasn.DERVisibleString;
 import com.github.gv2011.bcasn.util.Strings;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 

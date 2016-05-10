@@ -2,11 +2,11 @@ package com.github.gv2011.bcasn.asn1.test;
 
 import java.io.IOException;
 
-import com.github.gv2011.bcasn.asn1.ASN1Boolean;
-import com.github.gv2011.bcasn.asn1.ASN1Enumerated;
-import com.github.gv2011.bcasn.asn1.ASN1ObjectIdentifier;
-import com.github.gv2011.bcasn.asn1.ASN1Primitive;
-import com.github.gv2011.bcasn.asn1.ASN1Sequence;
+import com.github.gv2011.bcasn.ASN1Boolean;
+import com.github.gv2011.bcasn.ASN1Enumerated;
+import com.github.gv2011.bcasn.ASN1ObjectIdentifier;
+import com.github.gv2011.bcasn.ASN1Primitive;
+import com.github.gv2011.bcasn.ASN1Sequence;
 import com.github.gv2011.bcasn.util.encoders.Hex;
 
 import junit.framework.TestCase;

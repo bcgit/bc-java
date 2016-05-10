@@ -3,7 +3,7 @@ package com.github.gv2011.bcasn.asn1.test;
 import java.text.SimpleDateFormat;
 import java.util.SimpleTimeZone;
 
-import com.github.gv2011.bcasn.asn1.DERUTCTime;
+import com.github.gv2011.bcasn.DERUTCTime;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 
 /**

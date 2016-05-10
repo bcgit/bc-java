@@ -2,7 +2,7 @@ package com.github.gv2011.bcasn.asn1.test;
 
 import java.math.BigInteger;
 
-import com.github.gv2011.bcasn.asn1.ASN1Encodable;
+import com.github.gv2011.bcasn.ASN1Encodable;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 
 public abstract class ASN1UnitTest

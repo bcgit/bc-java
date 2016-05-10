@@ -2,8 +2,8 @@ package com.github.gv2011.bcasn.asn1.test;
 
 import java.io.IOException;
 
-import com.github.gv2011.bcasn.asn1.ASN1InputStream;
-import com.github.gv2011.bcasn.asn1.ASN1StreamParser;
+import com.github.gv2011.bcasn.ASN1InputStream;
+import com.github.gv2011.bcasn.ASN1StreamParser;
 import com.github.gv2011.bcasn.util.encoders.Base64;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 

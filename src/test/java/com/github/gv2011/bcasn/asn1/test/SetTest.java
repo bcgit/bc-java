@@ -1,16 +1,16 @@
 package com.github.gv2011.bcasn.asn1.test;
 
-import com.github.gv2011.bcasn.asn1.ASN1Boolean;
-import com.github.gv2011.bcasn.asn1.ASN1EncodableVector;
-import com.github.gv2011.bcasn.asn1.ASN1Integer;
-import com.github.gv2011.bcasn.asn1.ASN1Set;
-import com.github.gv2011.bcasn.asn1.ASN1TaggedObject;
-import com.github.gv2011.bcasn.asn1.BERSet;
-import com.github.gv2011.bcasn.asn1.DERBitString;
-import com.github.gv2011.bcasn.asn1.DEROctetString;
-import com.github.gv2011.bcasn.asn1.DERSequence;
-import com.github.gv2011.bcasn.asn1.DERSet;
-import com.github.gv2011.bcasn.asn1.DERTaggedObject;
+import com.github.gv2011.bcasn.ASN1Boolean;
+import com.github.gv2011.bcasn.ASN1EncodableVector;
+import com.github.gv2011.bcasn.ASN1Integer;
+import com.github.gv2011.bcasn.ASN1Set;
+import com.github.gv2011.bcasn.ASN1TaggedObject;
+import com.github.gv2011.bcasn.BERSet;
+import com.github.gv2011.bcasn.DERBitString;
+import com.github.gv2011.bcasn.DEROctetString;
+import com.github.gv2011.bcasn.DERSequence;
+import com.github.gv2011.bcasn.DERSet;
+import com.github.gv2011.bcasn.DERTaggedObject;
 import com.github.gv2011.bcasn.util.test.SimpleTest;
 
 /**
