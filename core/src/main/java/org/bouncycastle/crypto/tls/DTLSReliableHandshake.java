@@ -12,7 +12,10 @@ class DTLSReliableHandshake
 {
     private final static int MAX_RECEIVE_AHEAD = 10;
 
-    private final DTLSRecordLayer recordLayer;
+    /*
+     * No 'final' modifiers so that it works in earlier JDKs
+     */
+    private DTLSRecordLayer recordLayer;
 
     private TlsHandshakeHash handshakeHash;
 
