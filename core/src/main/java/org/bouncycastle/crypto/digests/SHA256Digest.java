@@ -63,6 +63,11 @@ public class SHA256Digest
         xOff = t.xOff;
     }
 
+    /**
+     * State constructor - create a digest initialised with the state of a previous one.
+     *
+     * @param encodedState the encoded state from the originating digest.
+     */
     public SHA256Digest(byte[] encodedState)
     {
         super(encodedState);
