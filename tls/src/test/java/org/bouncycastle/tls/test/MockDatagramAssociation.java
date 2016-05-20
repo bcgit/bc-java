@@ -1,10 +1,10 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.tls.DatagramTransport;
+import org.bouncycastle.tls.DatagramTransport;
 
 public class MockDatagramAssociation
 {

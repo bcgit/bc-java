@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

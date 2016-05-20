@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls;
+package org.bouncycastle.tls;
 
 /*
  * draft-ietf-tls-negotiated-ff-dhe-01

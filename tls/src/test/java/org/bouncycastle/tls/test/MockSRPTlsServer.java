@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -7,17 +7,17 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
-import org.bouncycastle.crypto.tls.AlertDescription;
-import org.bouncycastle.crypto.tls.AlertLevel;
-import org.bouncycastle.crypto.tls.HashAlgorithm;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.SRPTlsServer;
-import org.bouncycastle.crypto.tls.SignatureAlgorithm;
-import org.bouncycastle.crypto.tls.SimulatedTlsSRPIdentityManager;
-import org.bouncycastle.crypto.tls.TlsSRPIdentityManager;
-import org.bouncycastle.crypto.tls.TlsSRPLoginParameters;
-import org.bouncycastle.crypto.tls.TlsSignerCredentials;
-import org.bouncycastle.crypto.tls.TlsUtils;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SRPTlsServer;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
+import org.bouncycastle.tls.TlsSRPIdentityManager;
+import org.bouncycastle.tls.TlsSRPLoginParameters;
+import org.bouncycastle.tls.TlsSignerCredentials;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 

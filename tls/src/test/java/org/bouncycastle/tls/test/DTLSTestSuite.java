@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
-import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.tls.ProtocolVersion;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;

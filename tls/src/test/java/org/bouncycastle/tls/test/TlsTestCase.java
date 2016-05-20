@@ -1,11 +1,11 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.tls.ProtocolVersion;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 

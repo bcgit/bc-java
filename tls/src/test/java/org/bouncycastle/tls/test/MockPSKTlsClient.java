@@ -1,21 +1,21 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.crypto.tls.AlertDescription;
-import org.bouncycastle.crypto.tls.AlertLevel;
-import org.bouncycastle.crypto.tls.BasicTlsPSKIdentity;
-import org.bouncycastle.crypto.tls.CipherSuite;
-import org.bouncycastle.crypto.tls.PSKTlsClient;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
-import org.bouncycastle.crypto.tls.TlsPSKIdentity;
-import org.bouncycastle.crypto.tls.TlsSession;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.BasicTlsPSKIdentity;
+import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.PSKTlsClient;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
+import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsPSKIdentity;
+import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -116,7 +116,7 @@ class MockPSKTlsClient
     {
         return new ServerOnlyTlsAuthentication()
         {
-            public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate)
+            public void notifyServerCertificate(org.bouncycastle.tls.Certificate serverCertificate)
                 throws IOException
             {
                 Certificate[] chain = serverCertificate.getCertificateList();

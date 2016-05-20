@@ -1,9 +1,7 @@
-package org.bouncycastle.crypto.tls;
+package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.bouncycastle.crypto.tls.ByteQueue;
 
 public class ByteQueueOutputStream
     extends OutputStream

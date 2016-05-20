@@ -1,10 +1,10 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.util.Vector;
 
-import org.bouncycastle.crypto.tls.ConnectionEnd;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.ConnectionEnd;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 public class TlsTestConfig
 {

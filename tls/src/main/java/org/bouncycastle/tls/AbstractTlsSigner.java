@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls;
+package org.bouncycastle.tls;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;

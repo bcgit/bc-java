@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import org.bouncycastle.util.encoders.Base64;
 

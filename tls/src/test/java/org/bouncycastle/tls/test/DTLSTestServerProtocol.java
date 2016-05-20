@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.tls.DTLSServerProtocol;
+import org.bouncycastle.tls.DTLSServerProtocol;
 
 class DTLSTestServerProtocol extends DTLSServerProtocol
 {

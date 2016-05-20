@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls;
+package org.bouncycastle.tls;
 
 /**
  * RFC 5764 4.1.1

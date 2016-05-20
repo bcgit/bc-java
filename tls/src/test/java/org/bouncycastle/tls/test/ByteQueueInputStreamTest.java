@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
-import org.bouncycastle.crypto.tls.ByteQueueInputStream;
+import org.bouncycastle.tls.ByteQueueInputStream;
 import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;

@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.tls;
+package org.bouncycastle.tls;
 
 import java.io.ByteArrayOutputStream;
 

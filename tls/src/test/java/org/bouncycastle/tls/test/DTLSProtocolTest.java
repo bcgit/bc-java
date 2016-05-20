@@ -1,13 +1,13 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.crypto.tls.DTLSClientProtocol;
-import org.bouncycastle.crypto.tls.DTLSServerProtocol;
-import org.bouncycastle.crypto.tls.DTLSTransport;
-import org.bouncycastle.crypto.tls.DatagramTransport;
+import org.bouncycastle.tls.DTLSClientProtocol;
+import org.bouncycastle.tls.DTLSServerProtocol;
+import org.bouncycastle.tls.DTLSTransport;
+import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSProtocolTest

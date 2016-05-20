@@ -1,15 +1,15 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.bouncycastle.crypto.tls.AlertDescription;
-import org.bouncycastle.crypto.tls.AlertLevel;
-import org.bouncycastle.crypto.tls.CipherSuite;
-import org.bouncycastle.crypto.tls.PSKTlsServer;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.TlsEncryptionCredentials;
-import org.bouncycastle.crypto.tls.TlsPSKIdentityManager;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.PSKTlsServer;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsEncryptionCredentials;
+import org.bouncycastle.tls.TlsPSKIdentityManager;
 import org.bouncycastle.util.Strings;
 
 class MockPSKTlsServer

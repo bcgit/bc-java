@@ -1,11 +1,11 @@
-package org.bouncycastle.crypto.tls.test;
+package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.tls.TlsClientProtocol;
-import org.bouncycastle.crypto.tls.TlsProtocol;
-import org.bouncycastle.crypto.tls.TlsServerProtocol;
+import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsProtocol;
+import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
