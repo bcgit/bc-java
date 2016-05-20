@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 public class ServerNameList
 {
@@ -61,7 +62,7 @@ public class ServerNameList
 
         TlsUtils.checkUint16(buf.size());
         TlsUtils.writeUint16(buf.size(), output);
-        buf.writeTo(output);
+        Streams.writeBufTo(buf, output);
     }
 
     /**

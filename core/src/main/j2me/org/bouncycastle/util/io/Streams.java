@@ -146,6 +146,6 @@ public final class Streams
     public static void writeBufTo(ByteArrayOutputStream buf, OutputStream output)
         throws IOException
     {
-        buf.writeTo(output);
+        output.write(buf.toByteArray());
     }
 }
