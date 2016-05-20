@@ -10,6 +10,7 @@ import java.util.Vector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ocsp.ResponderID;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * RFC 3546 3.6
@@ -73,7 +74,7 @@ public class OCSPStatusRequest
             }
             TlsUtils.checkUint16(buf.size());
             TlsUtils.writeUint16(buf.size(), output);
-            buf.writeTo(output);
+            Streams.writeBufTo(buf, output);
         }
 
         if (requestExtensions == null)
