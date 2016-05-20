@@ -4,8 +4,11 @@ import java.util.Vector;
 
 class DTLSReassembler
 {
-    private final short msg_type;
-    private final byte[] body;
+    /*
+     * No 'final' modifiers so that it works in earlier JDKs
+     */
+    private short msg_type;
+    private byte[] body;
 
     private Vector missing = new Vector();
 
