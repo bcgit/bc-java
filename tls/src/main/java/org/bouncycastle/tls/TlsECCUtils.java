@@ -22,6 +22,7 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -575,6 +576,51 @@ public class TlsECCUtils
             checkNamedCurve(namedCurves, namedCurve);
 
             return getParametersForNamedCurve(namedCurve);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    public static TlsECConfig readECConfig(int[] namedCurves, short[] ecPointFormats, InputStream input)
+        throws IOException
+    {
+        try
+        {
+            short curveType = TlsUtils.readUint8(input);
+            if (curveType != ECCurveType.named_curve)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            int namedCurve = TlsUtils.readUint16(input);
+            if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
+            {
+                /*
+                 * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
+                 * specific curve. Values of NamedCurve that indicate support for a class of
+                 * explicitly defined curves are not allowed here [...].
+                 */
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            checkNamedCurve(namedCurves, namedCurve);
+
+            boolean compressed = false;
+            if (NamedCurve.isPrime(namedCurve))
+            {
+                compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_prime);
+            }
+            else if (NamedCurve.isChar2(namedCurve))
+            {
+                compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
+            }
+
+            TlsECConfig result = new TlsECConfig();
+            result.setNamedCurve(namedCurve);
+            result.setPointCompression(compressed);
+            return result;
         }
         catch (RuntimeException e)
         {
