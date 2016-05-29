@@ -35,7 +35,7 @@ public class DTLSClientProtocol
 
         ClientHandshakeState state = new ClientHandshakeState();
         state.client = client;
-        state.clientContext = new TlsClientContextImpl(secureRandom, securityParameters);
+        state.clientContext = new TlsClientContextImpl(client.getCrypto(), secureRandom, securityParameters);
 
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(),
             state.clientContext.getNonceRandomGenerator());

@@ -49,7 +49,7 @@ public class DTLSServerProtocol
 
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
-        state.serverContext = new TlsServerContextImpl(secureRandom, securityParameters);
+        state.serverContext = new TlsServerContextImpl(server.getCrypto(), secureRandom, securityParameters);
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(),
             state.serverContext.getNonceRandomGenerator());

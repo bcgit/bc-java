@@ -2,8 +2,12 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+
 public interface TlsPeer
 {
+    TlsCrypto getCrypto();
+
     /**
      * draft-mathewson-no-gmtunixtime-00 2. "If existing users of a TLS implementation may rely on
      * gmt_unix_time containing the current time, we recommend that implementors MAY provide the

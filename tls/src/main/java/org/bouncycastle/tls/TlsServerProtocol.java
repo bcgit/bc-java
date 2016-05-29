@@ -83,7 +83,7 @@ public class TlsServerProtocol
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.server;
 
-        this.tlsServerContext = new TlsServerContextImpl(secureRandom, securityParameters);
+        this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto(), secureRandom, securityParameters);
 
         this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(),
             tlsServerContext.getNonceRandomGenerator());

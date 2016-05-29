@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
     implements TlsClient

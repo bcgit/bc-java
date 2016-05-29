@@ -2,9 +2,17 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
+    public TlsCrypto getCrypto()
+    {
+        return new BcTlsCrypto();
+    }
+
     public boolean shouldUseGMTUnixTime()
     {
         /*

@@ -9,6 +9,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 
 public class TlsClientProtocol
@@ -82,7 +84,7 @@ public class TlsClientProtocol
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.client;
 
-        this.tlsClientContext = new TlsClientContextImpl(secureRandom, securityParameters);
+        this.tlsClientContext = new TlsClientContextImpl(tlsClient.getCrypto(), secureRandom, securityParameters);
 
         this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(),
             tlsClientContext.getNonceRandomGenerator());
