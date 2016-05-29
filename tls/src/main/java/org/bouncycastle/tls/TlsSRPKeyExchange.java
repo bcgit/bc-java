@@ -57,14 +57,6 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     protected TlsSignerCredentials serverCredentials = null;
 
-    /**
-     * @deprecated Use constructor taking an explicit 'groupVerifier' argument
-     */
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity, byte[] password)
-    {
-        this(keyExchange, supportedSignatureAlgorithms, new DefaultTlsSRPGroupVerifier(), identity, password);
-    }
-
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPGroupVerifier groupVerifier,
         byte[] identity, byte[] password)
     {
