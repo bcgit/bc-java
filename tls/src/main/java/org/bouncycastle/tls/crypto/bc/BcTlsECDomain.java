@@ -37,10 +37,10 @@ public class BcTlsECDomain implements TlsECDomain
     {
         this.context = context;
         this.ecConfig = ecConfig;
-        this.ecDomain = getParametersForNamedCurve(ecConfig.getNamedCurve());
+        this.ecDomain = getParameters(ecConfig);
     }
 
-    public byte[] calculateAgreement(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey)
+    public byte[] calculateECDHAgreement(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey)
     {
         ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
         basicAgreement.init(privateKey);
@@ -69,6 +69,11 @@ public class BcTlsECDomain implements TlsECDomain
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
         keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, context.getSecureRandom()));
         return keyPairGenerator.generateKeyPair();
+    }
+
+    public ECDomainParameters getParameters(TlsECConfig ecConfig)
+    {
+        return getParametersForNamedCurve(ecConfig.getNamedCurve());
     }
 
     public ECDomainParameters getParametersForNamedCurve(int namedCurve)
@@ -119,7 +124,7 @@ public class BcTlsECDomain implements TlsECDomain
 
     public void writeECPoint(ECPoint point, OutputStream output) throws IOException
     {
-        TlsUtils.writeOpaque8(point.getEncoded(ecConfig.compressPoints()), output);
+        TlsUtils.writeOpaque8(point.getEncoded(ecConfig.getPointCompression()), output);
     }
 
     public void writeECPublicKey(ECPublicKeyParameters publicKey, OutputStream output) throws IOException
