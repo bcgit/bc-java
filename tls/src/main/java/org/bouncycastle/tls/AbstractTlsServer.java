@@ -11,6 +11,7 @@ public abstract class AbstractTlsServer
     implements TlsServer
 {
     protected TlsCipherFactory cipherFactory;
+    protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsServerContext context;
 
@@ -34,12 +35,13 @@ public abstract class AbstractTlsServer
 
     public AbstractTlsServer()
     {
-        this(new DefaultTlsCipherFactory());
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsServer(TlsCipherFactory cipherFactory)
+    public AbstractTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
     {
         this.cipherFactory = cipherFactory;
+        this.keyExchangeFactory = keyExchangeFactory;
     }
 
     protected boolean allowEncryptThenMAC()

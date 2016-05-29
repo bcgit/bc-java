@@ -15,18 +15,13 @@ public class SRPTlsClient
 
     public SRPTlsClient(byte[] identity, byte[] password)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
     }
 
-    public SRPTlsClient(TlsCipherFactory cipherFactory, byte[] identity, byte[] password)
-    {
-        this(cipherFactory, new DefaultTlsSRPGroupVerifier(), identity, password);
-    }
-
-    public SRPTlsClient(TlsCipherFactory cipherFactory, TlsSRPGroupVerifier groupVerifier,
+    public SRPTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPGroupVerifier groupVerifier,
         byte[] identity, byte[] password)
     {
-        super(cipherFactory);
+        super(cipherFactory, keyExchangeFactory);
         this.groupVerifier = groupVerifier;
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
@@ -100,8 +95,8 @@ public class SRPTlsClient
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
+    protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, groupVerifier, identity, password);
+        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, groupVerifier, identity, password);
     }
 }

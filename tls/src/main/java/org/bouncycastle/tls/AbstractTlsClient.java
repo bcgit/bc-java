@@ -9,6 +9,7 @@ public abstract class AbstractTlsClient
     implements TlsClient
 {
     protected TlsCipherFactory cipherFactory;
+    protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsClientContext context;
 
@@ -21,12 +22,13 @@ public abstract class AbstractTlsClient
 
     public AbstractTlsClient()
     {
-        this(new DefaultTlsCipherFactory());
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsClient(TlsCipherFactory cipherFactory)
+    public AbstractTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
     {
         this.cipherFactory = cipherFactory;
+        this.keyExchangeFactory = keyExchangeFactory;
     }
 
     protected boolean allowUnexpectedServerExtension(Integer extensionType, byte[] extensionData)

@@ -9,12 +9,12 @@ public class PSKTlsClient
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        this(new DefaultTlsCipherFactory(), pskIdentity);
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), pskIdentity);
     }
 
-    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsPSKIdentity pskIdentity)
+    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentity pskIdentity)
     {
-        super(cipherFactory);
+        super(cipherFactory, keyExchangeFactory);
         this.pskIdentity = pskIdentity;
     }
 
@@ -60,9 +60,9 @@ public class PSKTlsClient
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, null, namedCurves,
+        return keyExchangeFactory.createPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, null, namedCurves,
             clientECPointFormats, serverECPointFormats);
     }
 }

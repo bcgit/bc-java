@@ -10,9 +10,9 @@ public abstract class DefaultTlsClient
         super();
     }
 
-    public DefaultTlsClient(TlsCipherFactory cipherFactory)
+    public DefaultTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
     {
-        super(cipherFactory);
+        super(cipherFactory, keyExchangeFactory);
     }
 
     public int[] getCipherSuites()
@@ -74,30 +74,30 @@ public abstract class DefaultTlsClient
         }
     }
 
-    protected TlsKeyExchange createDHKeyExchange(int keyExchange)
+    protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
+        return keyExchangeFactory.createDHKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
-    protected TlsKeyExchange createDHEKeyExchange(int keyExchange)
+    protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
+        return keyExchangeFactory.createDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
     }
 
-    protected TlsKeyExchange createECDHKeyExchange(int keyExchange)
+    protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange)
+    protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
             serverECPointFormats);
     }
 
-    protected TlsKeyExchange createRSAKeyExchange()
+    protected TlsKeyExchange createRSAKeyExchange() throws IOException
     {
-        return new TlsRSAKeyExchange(supportedSignatureAlgorithms);
+        return keyExchangeFactory.createRSAKeyExchange(supportedSignatureAlgorithms);
     }
 }

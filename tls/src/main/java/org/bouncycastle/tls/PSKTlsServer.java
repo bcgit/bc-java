@@ -12,12 +12,12 @@ public class PSKTlsServer
 
     public PSKTlsServer(TlsPSKIdentityManager pskIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), pskIdentityManager);
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
     }
 
-    public PSKTlsServer(TlsCipherFactory cipherFactory, TlsPSKIdentityManager pskIdentityManager)
+    public PSKTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
     {
-        super(cipherFactory);
+        super(cipherFactory, keyExchangeFactory);
         this.pskIdentityManager = pskIdentityManager;
     }
 
@@ -84,9 +84,9 @@ public class PSKTlsServer
         }
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager,
+        return keyExchangeFactory.createPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager,
             getDHParameters(), namedCurves, clientECPointFormats, serverECPointFormats);
     }
 }

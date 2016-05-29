@@ -13,12 +13,12 @@ public class SRPTlsServer
 
     public SRPTlsServer(TlsSRPIdentityManager srpIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), srpIdentityManager);
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
     }
 
-    public SRPTlsServer(TlsCipherFactory cipherFactory, TlsSRPIdentityManager srpIdentityManager)
+    public SRPTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
     {
-        super(cipherFactory);
+        super(cipherFactory, keyExchangeFactory);
         this.srpIdentityManager = srpIdentityManager;
     }
 
@@ -117,8 +117,8 @@ public class SRPTlsServer
         }
     }
 
-    protected TlsKeyExchange createSRPKeyExchange(int keyExchange)
+    protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, srpIdentity, loginParameters);
+        return keyExchangeFactory.createSRPKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, srpIdentity, loginParameters);
     }
 }
