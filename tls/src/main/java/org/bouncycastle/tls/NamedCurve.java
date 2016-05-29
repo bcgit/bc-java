@@ -51,6 +51,16 @@ public class NamedCurve
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
+    public static boolean isChar2(int namedCurve)
+    {
+        return (namedCurve >= sect163k1 && namedCurve <= sect571r1);
+    }
+
+    public static boolean isPrime(int namedCurve)
+    {
+        return (namedCurve >= secp160k1 && namedCurve <= brainpoolP512r1);
+    }
+
     public static boolean isValid(int namedCurve)
     {
         return (namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1)
