@@ -11,5 +11,6 @@ public interface TlsCrypto
     byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException;
 
     TlsECDomain createECDomain(TlsECConfig ecConfig);
-    
+
+    TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
 }

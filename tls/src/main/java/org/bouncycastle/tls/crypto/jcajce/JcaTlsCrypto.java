@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 
@@ -17,6 +19,11 @@ public class JcaTlsCrypto implements TlsCrypto
     }
 
     public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
         throw new UnsupportedOperationException();
     }
