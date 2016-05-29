@@ -1,8 +1,27 @@
 package org.bouncycastle.tls.crypto;
 
-public interface TlsECConfig
+public class TlsECConfig
 {
-    int getNamedCurve();
+    protected int namedCurve;
+    protected boolean pointCompression;
 
-    boolean compressPoints();
+    public int getNamedCurve()
+    {
+        return namedCurve;
+    }
+
+    public void setNamedCurve(int namedCurve)
+    {
+        this.namedCurve = namedCurve;
+    }
+
+    public boolean getPointCompression()
+    {
+        return pointCompression;
+    }
+
+    public void setPointCompression(boolean pointCompression)
+    {
+        this.pointCompression = pointCompression;
+    }
 }
