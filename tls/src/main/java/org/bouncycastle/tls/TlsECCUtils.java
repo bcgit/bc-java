@@ -22,7 +22,6 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.field.PolynomialExtensionField;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
@@ -505,18 +504,6 @@ public class TlsECCUtils
         {
             ecParams = getParametersForNamedCurve(namedCurve);
         }
-        else
-        {
-            /* If no named curves are suitable, check if the client supports explicit curves. */
-            if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_prime_curves))
-            {
-                ecParams = getParametersForNamedCurve(NamedCurve.secp256r1);
-            }
-            else if (Arrays.contains(namedCurves, NamedCurve.arbitrary_explicit_char2_curves))
-            {
-                ecParams = getParametersForNamedCurve(NamedCurve.sect283r1);
-            }
-        }
 
         if (ecParams == null)
         {
@@ -527,14 +514,7 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (namedCurve < 0)
-        {
-            writeExplicitECParameters(ecPointFormats, ecParams, output);
-        }
-        else
-        {
-            writeNamedECParameters(namedCurve, output);
-        }
+        writeNamedECParameters(namedCurve, output);
 
         return generateEphemeralClientKeyExchange(random, ecPointFormats, ecParams, output);
     }
@@ -576,75 +556,25 @@ public class TlsECCUtils
         try
         {
             short curveType = TlsUtils.readUint8(input);
-
-            switch (curveType)
+            if (curveType != ECCurveType.named_curve)
             {
-            case ECCurveType.explicit_prime:
-            {
-                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_prime_curves);
-
-                BigInteger prime_p = readECParameter(input);
-                BigInteger a = readECFieldElement(prime_p.bitLength(), input);
-                BigInteger b = readECFieldElement(prime_p.bitLength(), input);
-                byte[] baseEncoding = TlsUtils.readOpaque8(input);
-                BigInteger order = readECParameter(input);
-                BigInteger cofactor = readECParameter(input);
-                ECCurve curve = new ECCurve.Fp(prime_p, a, b, order, cofactor);
-                ECPoint base = deserializeECPoint(ecPointFormats, curve, baseEncoding);
-                return new ECDomainParameters(curve, base, order, cofactor);
-            }
-            case ECCurveType.explicit_char2:
-            {
-                checkNamedCurve(namedCurves, NamedCurve.arbitrary_explicit_char2_curves);
-
-                int m = TlsUtils.readUint16(input);
-                short basis = TlsUtils.readUint8(input);
-                if (!ECBasisType.isValid(basis))
-                {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
-
-                int k1 = readECExponent(m, input), k2 = -1, k3 = -1;
-                if (basis == ECBasisType.ec_basis_pentanomial)
-                {
-                    k2 = readECExponent(m, input);
-                    k3 = readECExponent(m, input);
-                }
-
-                BigInteger a = readECFieldElement(m, input);
-                BigInteger b = readECFieldElement(m, input);
-                byte[] baseEncoding = TlsUtils.readOpaque8(input);
-                BigInteger order = readECParameter(input);
-                BigInteger cofactor = readECParameter(input);
-
-                ECCurve curve = (basis == ECBasisType.ec_basis_pentanomial)
-                    ? new ECCurve.F2m(m, k1, k2, k3, a, b, order, cofactor)
-                    : new ECCurve.F2m(m, k1, a, b, order, cofactor);
-
-                ECPoint base = deserializeECPoint(ecPointFormats, curve, baseEncoding);
-
-                return new ECDomainParameters(curve, base, order, cofactor);
-            }
-            case ECCurveType.named_curve:
-            {
-                int namedCurve = TlsUtils.readUint16(input);
-                if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
-                {
-                    /*
-                     * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
-                     * specific curve. Values of NamedCurve that indicate support for a class of
-                     * explicitly defined curves are not allowed here [...].
-                     */
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
-
-                checkNamedCurve(namedCurves, namedCurve);
-
-                return getParametersForNamedCurve(namedCurve);
-            }
-            default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
+
+            int namedCurve = TlsUtils.readUint16(input);
+            if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
+            {
+                /*
+                 * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
+                 * specific curve. Values of NamedCurve that indicate support for a class of
+                 * explicitly defined curves are not allowed here [...].
+                 */
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            checkNamedCurve(namedCurves, namedCurve);
+
+            return getParametersForNamedCurve(namedCurve);
         }
         catch (RuntimeException e)
         {
@@ -684,57 +614,6 @@ public class TlsECCUtils
     public static void writeECParameter(BigInteger x, OutputStream output) throws IOException
     {
         TlsUtils.writeOpaque8(BigIntegers.asUnsignedByteArray(x), output);
-    }
-
-    public static void writeExplicitECParameters(short[] ecPointFormats, ECDomainParameters ecParameters,
-        OutputStream output) throws IOException
-    {
-        ECCurve curve = ecParameters.getCurve();
-
-        if (ECAlgorithms.isFpCurve(curve))
-        {
-            TlsUtils.writeUint8(ECCurveType.explicit_prime, output);
-
-            writeECParameter(curve.getField().getCharacteristic(), output);
-        }
-        else if (ECAlgorithms.isF2mCurve(curve))
-        {
-            PolynomialExtensionField field = (PolynomialExtensionField)curve.getField();
-            int[] exponents = field.getMinimalPolynomial().getExponentsPresent();
-
-            TlsUtils.writeUint8(ECCurveType.explicit_char2, output);
-
-            int m = exponents[exponents.length - 1];
-            TlsUtils.checkUint16(m);
-            TlsUtils.writeUint16(m, output);
-
-            if (exponents.length == 3)
-            {
-                TlsUtils.writeUint8(ECBasisType.ec_basis_trinomial, output);
-                writeECExponent(exponents[1], output);
-            }
-            else if (exponents.length == 5)
-            {
-                TlsUtils.writeUint8(ECBasisType.ec_basis_pentanomial, output);
-                writeECExponent(exponents[1], output);
-                writeECExponent(exponents[2], output);
-                writeECExponent(exponents[3], output);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Only trinomial and pentomial curves are supported");
-            }
-        }
-        else
-        {
-            throw new IllegalArgumentException("'ecParameters' not a known curve type");
-        }
-
-        writeECFieldElement(curve.getA(), output);
-        writeECFieldElement(curve.getB(), output);
-        TlsUtils.writeOpaque8(serializeECPoint(ecPointFormats, ecParameters.getG()), output);
-        writeECParameter(ecParameters.getN(), output);
-        writeECParameter(ecParameters.getH(), output);
     }
 
     public static void writeECPoint(short[] ecPointFormats, ECPoint point, OutputStream output) throws IOException

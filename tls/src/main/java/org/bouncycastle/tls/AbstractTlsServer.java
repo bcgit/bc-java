@@ -91,8 +91,7 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < namedCurves.length; ++i)
         {
             int namedCurve = namedCurves[i];
-            if (NamedCurve.isValid(namedCurve)
-                && (!NamedCurve.refersToASpecificNamedCurve(namedCurve) || TlsECCUtils.isSupportedNamedCurve(namedCurve)))
+            if (NamedCurve.isValid(namedCurve) && TlsECCUtils.isSupportedNamedCurve(namedCurve))
             {
                 return true;
             }
