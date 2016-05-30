@@ -2,7 +2,6 @@ package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -28,15 +27,15 @@ public class BcTlsECDH implements TlsAgreement
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public void generateEphemeral(OutputStream output) throws IOException
+    public byte[] generateEphemeral() throws IOException
     {
-        this.localKeyPair = domain.generateECKeyPair();
-        domain.writeECPublicKey((ECPublicKeyParameters)localKeyPair.getPublic(), output);
+        this.localKeyPair = domain.generateKeyPair();
+        return domain.encodePublicKey((ECPublicKeyParameters)localKeyPair.getPublic());
     }
 
-    public void receivePeerValue(InputStream input) throws IOException
+    public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = domain.readECPublicKey(input);
+        this.peerPublicKey = domain.decodePublicKey(peerValue);
     }
 
     public TlsSecret calculateSecret() throws IOException

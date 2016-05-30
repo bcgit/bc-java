@@ -1,8 +1,6 @@
 package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
@@ -20,7 +18,6 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsECCUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
@@ -64,7 +61,38 @@ public class BcTlsECDomain implements TlsECDomain
         return new BcTlsECDSA(this);
     }
 
-    public AsymmetricCipherKeyPair generateECKeyPair()
+    public ECPoint decodePoint(byte[] encoding) throws IOException
+    {
+        return ecDomain.getCurve().decodePoint(encoding);
+    }
+
+    public ECPublicKeyParameters decodePublicKey(byte[] encoding) throws IOException
+    {
+        try
+        {
+            ECPoint point = decodePoint(encoding);
+
+            // TODO Check RFCs for any validation that could/should be done here
+
+            return new ECPublicKeyParameters(point, ecDomain);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    public byte[] encodePoint(ECPoint point) throws IOException
+    {
+        return point.getEncoded(ecConfig.getPointCompression());
+    }
+
+    public byte[] encodePublicKey(ECPublicKeyParameters publicKey) throws IOException
+    {
+        return encodePoint(publicKey.getQ());
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
     {
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
         keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, context.getSecureRandom()));
@@ -98,37 +126,5 @@ public class BcTlsECDomain implements TlsECDomain
 
         // It's a bit inefficient to do this conversion every time
         return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
-    }
-
-    public ECPoint readECPoint(InputStream input) throws IOException
-    {
-        byte[] encoding = TlsUtils.readOpaque8(input);
-        return ecDomain.getCurve().decodePoint(encoding);
-    }
-
-    public ECPublicKeyParameters readECPublicKey(InputStream input) throws IOException
-    {
-        try
-        {
-            ECPoint point = readECPoint(input);
-
-            // TODO Check RFCs for any validation that could/should be done here
-
-            return new ECPublicKeyParameters(point, ecDomain);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-        }
-    }
-
-    public void writeECPoint(ECPoint point, OutputStream output) throws IOException
-    {
-        TlsUtils.writeOpaque8(point.getEncoded(ecConfig.getPointCompression()), output);
-    }
-
-    public void writeECPublicKey(ECPublicKeyParameters publicKey, OutputStream output) throws IOException
-    {
-        writeECPoint(publicKey.getQ(), output);
     }
 }

@@ -1,8 +1,6 @@
 package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -14,9 +12,7 @@ import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -53,7 +49,38 @@ public class BcTlsDHDomain implements TlsDHDomain
         return new BcTlsDH(this);
     }
 
-    public AsymmetricCipherKeyPair generateDHKeyPair()
+    public static BigInteger decodeParameter(byte[] encoding) throws IOException
+    {
+        return new BigInteger(1, encoding);
+    }
+
+    public DHPublicKeyParameters decodePublicKey(byte[] encoding) throws IOException
+    {
+        try
+        {
+            BigInteger y = decodeParameter(encoding);
+
+            // TODO Check RFCs for any validation that could/should be done here
+
+            return new DHPublicKeyParameters(y, dhDomain);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    public byte[] encodeParameter(BigInteger x) throws IOException
+    {
+        return BigIntegers.asUnsignedByteArray(x);
+    }
+
+    public byte[] encodePublicKey(DHPublicKeyParameters publicKey) throws IOException
+    {
+        return encodeParameter(publicKey.getY());
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
     {
         DHBasicKeyPairGenerator keyPairGenerator = new DHBasicKeyPairGenerator();
         keyPairGenerator.init(new DHKeyGenerationParameters(context.getSecureRandom(), dhDomain));
@@ -71,36 +98,5 @@ public class BcTlsDHDomain implements TlsDHDomain
         }
 
         throw new IllegalStateException("No DH configuration provided");
-    }
-
-    public static BigInteger readDHParameter(InputStream input) throws IOException
-    {
-        return new BigInteger(1, TlsUtils.readOpaque16(input));
-    }
-
-    public DHPublicKeyParameters readDHPublicKey(InputStream input) throws IOException
-    {
-        try
-        {
-            BigInteger y = TlsDHUtils.readDHParameter(input);
-
-            // TODO Check RFCs for any validation that could/should be done here
-
-            return new DHPublicKeyParameters(y, dhDomain);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-        }
-    }
-
-    public static void writeDHParameter(BigInteger x, OutputStream output) throws IOException
-    {
-        TlsUtils.writeOpaque16(BigIntegers.asUnsignedByteArray(x), output);
-    }
-
-    public void writeDHPublicKey(DHPublicKeyParameters publicKey, OutputStream output) throws IOException
-    {
-        writeDHParameter(publicKey.getY(), output);
     }
 }
