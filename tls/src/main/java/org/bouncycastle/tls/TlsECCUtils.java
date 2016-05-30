@@ -318,9 +318,45 @@ public class TlsECCUtils
         return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
     }
 
+    public static short getCompressionFormat(ECCurve curve)
+    {
+        if (ECAlgorithms.isFpCurve(curve))
+        {
+            return ECPointFormat.ansiX962_compressed_prime;
+        }
+        if (ECAlgorithms.isF2mCurve(curve))
+        {
+            return ECPointFormat.ansiX962_compressed_char2;
+        }
+        return ECPointFormat.uncompressed;
+    }
+
+    public static short getCompressionFormat(int namedCurve)
+    {
+        if (NamedCurve.isPrime(namedCurve))
+        {
+            return ECPointFormat.ansiX962_compressed_prime;
+        }
+        if (NamedCurve.isChar2(namedCurve))
+        {
+            return ECPointFormat.ansiX962_compressed_char2;
+        }
+        return ECPointFormat.uncompressed;
+    }
+
+    private static boolean isCompressionPreferred(short[] peerECPointFormats, ECCurve curve)
+    {
+        return isCompressionPreferred(peerECPointFormats, getCompressionFormat(curve));
+    }
+
+    private static boolean isCompressionPreferred(short[] peerECPointFormats, int namedCurve)
+    {
+        return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedCurve));
+    }
+
     public static boolean isCompressionPreferred(short[] ecPointFormats, short compressionFormat)
     {
-        if (ecPointFormats == null)
+        if (ecPointFormats == null || compressionFormat == ECPointFormat.uncompressed)
         {
             return false;
         }
@@ -346,23 +382,14 @@ public class TlsECCUtils
 
     public static byte[] serializeECPoint(short[] ecPointFormats, ECPoint point) throws IOException
     {
-        ECCurve curve = point.getCurve();
-
         /*
          * RFC 4492 5.7. ...an elliptic curve point in uncompressed or compressed format. Here, the
          * format MUST conform to what the server has requested through a Supported Point Formats
          * Extension if this extension was used, and MUST be uncompressed if this extension was not
          * used.
          */
-        boolean compressed = false;
-        if (ECAlgorithms.isFpCurve(curve))
-        {
-            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_prime);
-        }
-        else if (ECAlgorithms.isF2mCurve(curve))
-        {
-            compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
-        }
+        boolean compressed = isCompressionPreferred(ecPointFormats, point.getCurve());
+
         return point.getEncoded(compressed);
     }
 
@@ -480,25 +507,7 @@ public class TlsECCUtils
     static ECPrivateKeyParameters generateEphemeralServerKeyExchange(SecureRandom random, int[] namedCurves,
         short[] ecPointFormats, OutputStream output) throws IOException
     {
-        /* First we try to find a supported named curve from the client's list. */
-        int namedCurve = -1;
-        if (namedCurves == null)
-        {
-            // TODO Let the peer choose the default named curve
-            namedCurve = NamedCurve.secp256r1;
-        }
-        else
-        {
-            for (int i = 0; i < namedCurves.length; ++i)
-            {
-                int entry = namedCurves[i];
-                if (NamedCurve.isValid(entry) && isSupportedNamedCurve(entry))
-                {
-                    namedCurve = entry;
-                    break;
-                }
-            }
-        }
+        int namedCurve = chooseNamedCurve(namedCurves);
 
         ECDomainParameters ecParams = null;
         if (namedCurve >= 0)
@@ -583,7 +592,7 @@ public class TlsECCUtils
         }
     }
 
-    public static TlsECConfig readECConfig(int[] namedCurves, short[] ecPointFormats, InputStream input)
+    public static TlsECConfig readECConfig(int[] namedCurves, short[] serverECPointFormats, InputStream input)
         throws IOException
     {
         try
@@ -607,15 +616,7 @@ public class TlsECCUtils
 
             checkNamedCurve(namedCurves, namedCurve);
 
-            boolean compressed = false;
-            if (NamedCurve.isPrime(namedCurve))
-            {
-                compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_prime);
-            }
-            else if (NamedCurve.isChar2(namedCurve))
-            {
-                compressed = isCompressionPreferred(ecPointFormats, ECPointFormat.ansiX962_compressed_char2);
-            }
+            boolean compressed = isCompressionPreferred(serverECPointFormats, namedCurve);
 
             TlsECConfig result = new TlsECConfig();
             result.setNamedCurve(namedCurve);
@@ -625,19 +626,6 @@ public class TlsECCUtils
         catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-        }
-    }
-
-    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
-    {
-        if (namedCurves != null && !Arrays.contains(namedCurves, namedCurve))
-        {
-            /*
-             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
-             * unless they can complete the handshake while respecting the choice of curves
-             * and compression techniques specified by the client.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
 
@@ -682,5 +670,39 @@ public class TlsECCUtils
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
         TlsUtils.checkUint16(namedCurve);
         TlsUtils.writeUint16(namedCurve, output);
+    }
+
+    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
+    {
+        if (namedCurves != null && !Arrays.contains(namedCurves, namedCurve))
+        {
+            /*
+             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
+             * unless they can complete the handshake while respecting the choice of curves
+             * and compression techniques specified by the client.
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    private static int chooseNamedCurve(int[] namedCurves)
+    {
+        /* First we try to find a supported named curve from the client's list. */
+        if (namedCurves == null)
+        {
+            // TODO Let the peer choose the default named curve
+            return NamedCurve.secp256r1;
+        }
+
+        for (int i = 0; i < namedCurves.length; ++i)
+        {
+            int entry = namedCurves[i];
+            if (NamedCurve.isValid(entry) && isSupportedNamedCurve(entry))
+            {
+                return entry;
+            }
+        }
+
+        return -1;
     }
 }
