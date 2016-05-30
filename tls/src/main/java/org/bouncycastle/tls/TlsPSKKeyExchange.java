@@ -193,7 +193,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            ECDomainParameters ecParams = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, input);
+            ECDomainParameters ecParams = TlsECCUtils.readECParameters(namedCurves, input);
 
             byte[] point = TlsUtils.readOpaque8(input);
 

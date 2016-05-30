@@ -6,7 +6,6 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -41,8 +40,11 @@ public class TlsECDHEKeyExchange
     {
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(), namedCurves,
-            clientECPointFormats, buf);
+        this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+
+        this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
+
+        generateEphemeral(buf);
 
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
@@ -76,7 +78,7 @@ public class TlsECDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, teeIn);
+        this.ecConfig = TlsECCUtils.readECConfig(namedCurves, serverECPointFormats, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
@@ -89,8 +91,9 @@ public class TlsECDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
-            clientECPointFormats, curve_params, point));
+        this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
+
+        processEphemeral(clientECPointFormats, point);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

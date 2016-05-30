@@ -318,7 +318,7 @@ public class TlsECCUtils
         return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
     }
 
-    public static short getCompressionFormat(ECCurve curve)
+    public static short getCompressionFormat(ECCurve curve) throws IOException
     {
         if (ECAlgorithms.isFpCurve(curve))
         {
@@ -328,10 +328,10 @@ public class TlsECCUtils
         {
             return ECPointFormat.ansiX962_compressed_char2;
         }
-        return ECPointFormat.uncompressed;
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
-    public static short getCompressionFormat(int namedCurve)
+    public static short getCompressionFormat(int namedCurve) throws IOException
     {
         if (NamedCurve.isPrime(namedCurve))
         {
@@ -341,15 +341,15 @@ public class TlsECCUtils
         {
             return ECPointFormat.ansiX962_compressed_char2;
         }
-        return ECPointFormat.uncompressed;
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
-    private static boolean isCompressionPreferred(short[] peerECPointFormats, ECCurve curve)
+    private static boolean isCompressionPreferred(short[] peerECPointFormats, ECCurve curve) throws IOException
     {
         return isCompressionPreferred(peerECPointFormats, getCompressionFormat(curve));
     }
 
-    private static boolean isCompressionPreferred(short[] peerECPointFormats, int namedCurve)
+    private static boolean isCompressionPreferred(short[] peerECPointFormats, int namedCurve) throws IOException
     {
         return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedCurve));
     }
@@ -409,50 +409,15 @@ public class TlsECCUtils
         return new BigInteger(1, encoding);
     }
 
-    public static ECPoint deserializeECPoint(short[] ecPointFormats, ECCurve curve, byte[] encoding) throws IOException
+    public static ECPoint deserializeECPoint(short[] localECPointFormats, ECCurve curve, byte[] encoding) throws IOException
     {
         if (encoding == null || encoding.length < 1)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        short actualFormat;
-        switch (encoding[0])
-        {
-        case 0x02: // compressed
-        case 0x03: // compressed
-        {
-            if (ECAlgorithms.isF2mCurve(curve))
-            {
-                actualFormat = ECPointFormat.ansiX962_compressed_char2;
-            }
-            else if (ECAlgorithms.isFpCurve(curve))
-            {
-                actualFormat = ECPointFormat.ansiX962_compressed_prime;
-            }
-            else
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-            break;
-        }
-        case 0x04: // uncompressed
-        {
-            actualFormat = ECPointFormat.uncompressed;
-            break;
-        }
-        case 0x00: // infinity
-        case 0x06: // hybrid
-        case 0x07: // hybrid
-        default:
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        if (actualFormat != ECPointFormat.uncompressed
-            && (ecPointFormats == null || !Arrays.contains(ecPointFormats, actualFormat)))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        short actualFormat = getActualFormat(curve, encoding);
+        checkActualFormat(localECPointFormats, actualFormat);
 
         return curve.decodePoint(encoding);
     }
@@ -468,6 +433,68 @@ public class TlsECCUtils
         catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    public static void checkPointEncoding(short[] localECPointFormats, int namedCurve, byte[] encoding) throws IOException
+    {
+        if (encoding == null || encoding.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        short actualFormat = getActualFormat(namedCurve, encoding);
+        checkActualFormat(localECPointFormats, actualFormat);
+    }
+
+    public static void checkActualFormat(short[] localECPointFormats, short actualFormat) throws IOException
+    {
+        if (actualFormat != ECPointFormat.uncompressed
+            && (localECPointFormats == null || !Arrays.contains(localECPointFormats, actualFormat)))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    public static short getActualFormat(int namedCurve, byte[] encoding) throws IOException
+    {
+        switch (encoding[0])
+        {
+        case 0x02: // compressed
+        case 0x03: // compressed
+        {
+            return getCompressionFormat(namedCurve);
+        }
+        case 0x04: // uncompressed
+        {
+            return ECPointFormat.uncompressed;
+        }
+        case 0x00: // infinity
+        case 0x06: // hybrid
+        case 0x07: // hybrid
+        default:
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    public static short getActualFormat(ECCurve curve, byte[] encoding) throws IOException
+    {
+        switch (encoding[0])
+        {
+        case 0x02: // compressed
+        case 0x03: // compressed
+        {
+            return getCompressionFormat(curve);
+        }
+        case 0x04: // uncompressed
+        {
+            return ECPointFormat.uncompressed;
+        }
+        case 0x00: // infinity
+        case 0x06: // hybrid
+        case 0x07: // hybrid
+        default:
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
     }
 
@@ -560,7 +587,7 @@ public class TlsECCUtils
         return new BigInteger(1, TlsUtils.readOpaque8(input));
     }
 
-    public static ECDomainParameters readECParameters(int[] namedCurves, short[] ecPointFormats, InputStream input)
+    public static ECDomainParameters readECParameters(int[] namedCurves, InputStream input)
         throws IOException
     {
         try
@@ -595,38 +622,50 @@ public class TlsECCUtils
     public static TlsECConfig readECConfig(int[] namedCurves, short[] serverECPointFormats, InputStream input)
         throws IOException
     {
-        try
+        short curveType = TlsUtils.readUint8(input);
+        if (curveType != ECCurveType.named_curve)
         {
-            short curveType = TlsUtils.readUint8(input);
-            if (curveType != ECCurveType.named_curve)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
-            int namedCurve = TlsUtils.readUint16(input);
-            if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
-            {
-                /*
-                 * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
-                 * specific curve. Values of NamedCurve that indicate support for a class of
-                 * explicitly defined curves are not allowed here [...].
-                 */
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
-            checkNamedCurve(namedCurves, namedCurve);
-
-            boolean compressed = isCompressionPreferred(serverECPointFormats, namedCurve);
-
-            TlsECConfig result = new TlsECConfig();
-            result.setNamedCurve(namedCurve);
-            result.setPointCompression(compressed);
-            return result;
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        catch (RuntimeException e)
+
+        int namedCurve = TlsUtils.readUint16(input);
+        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+            /*
+             * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
+             * specific curve. Values of NamedCurve that indicate support for a class of
+             * explicitly defined curves are not allowed here [...].
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
+
+        checkNamedCurve(namedCurves, namedCurve);
+
+        boolean compressed = isCompressionPreferred(serverECPointFormats, namedCurve);
+
+        TlsECConfig result = new TlsECConfig();
+        result.setNamedCurve(namedCurve);
+        result.setPointCompression(compressed);
+        return result;
+    }
+
+    public static TlsECConfig selectECConfig(int[] namedCurves, short[] clientECPointFormats, OutputStream output)
+        throws IOException
+    {
+        int namedCurve = chooseNamedCurve(namedCurves);
+        if (namedCurve < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        writeNamedECParameters(namedCurve, output);
+
+        boolean compressed = isCompressionPreferred(clientECPointFormats, namedCurve);
+
+        TlsECConfig result = new TlsECConfig();
+        result.setNamedCurve(namedCurve);
+        result.setPointCompression(compressed);
+        return result;
     }
 
     public static void writeECExponent(int k, OutputStream output) throws IOException

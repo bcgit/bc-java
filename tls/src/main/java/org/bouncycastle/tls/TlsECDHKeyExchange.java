@@ -9,10 +9,12 @@ import java.util.Vector;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
  * (D)TLS ECDH key exchange (see RFC 4492).
@@ -26,8 +28,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
 
-    protected ECPrivateKeyParameters ecAgreePrivateKey;
-    protected ECPublicKeyParameters ecAgreePublicKey;
+    protected ECPrivateKeyParameters ecFixedAgreePrivateKey;
+    protected ECPublicKeyParameters ecFixedAgreePublicKey;
+
+    protected TlsECConfig ecConfig;
+    protected TlsAgreement agreement;
 
     public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
         short[] clientECPointFormats, short[] serverECPointFormats)
@@ -101,7 +106,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         {
             try
             {
-                this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey((ECPublicKeyParameters) this.serverPublicKey);
+                this.ecFixedAgreePublicKey = TlsECCUtils.validateECPublicKey((ECPublicKeyParameters)this.serverPublicKey);
             }
             catch (ClassCastException e)
             {
@@ -147,8 +152,13 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         // ECDH_anon is handled here, ECDHE_* in a subclass
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(), namedCurves,
-            clientECPointFormats, buf);
+
+        this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+
+        this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
+
+        generateEphemeral(buf);
+
         return buf.toByteArray();
     }
 
@@ -162,12 +172,13 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         // ECDH_anon is handled here, ECDHE_* in a subclass
 
-        ECDomainParameters curve_params = TlsECCUtils.readECParameters(namedCurves, clientECPointFormats, input);
+        this.ecConfig = TlsECCUtils.readECConfig(namedCurves, serverECPointFormats, input);
 
         byte[] point = TlsUtils.readOpaque8(input);
 
-        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
-            clientECPointFormats, curve_params, point));
+        this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
+
+        processEphemeral(clientECPointFormats, point);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
@@ -222,8 +233,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         if (agreementCredentials == null)
         {
-            this.ecAgreePrivateKey = TlsECCUtils.generateEphemeralClientKeyExchange(context.getSecureRandom(),
-                serverECPointFormats, ecAgreePublicKey.getParameters(), output);
+            generateEphemeral(output);
         }
     }
 
@@ -235,12 +245,12 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         }
 
         // TODO Extract the public key
-        // TODO If the certificate is 'fixed', take the public key as ecAgreeClientPublicKey
+        // TODO If the certificate is 'fixed', take the public key as ecFixedAgreePublicKey
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        if (ecAgreePublicKey != null)
+        if (ecFixedAgreePublicKey != null)
         {
             // For ecdsa_fixed_ecdh and rsa_fixed_ecdh, the key arrived in the client certificate
             return;
@@ -248,24 +258,37 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(input);
 
-        ECDomainParameters curve_params = this.ecAgreePrivateKey.getParameters();
-
-        this.ecAgreePublicKey = TlsECCUtils.validateECPublicKey(TlsECCUtils.deserializeECPublicKey(
-            serverECPointFormats, curve_params, point));
+        processEphemeral(serverECPointFormats, point);
     }
 
     public byte[] generatePremasterSecret() throws IOException
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(ecAgreePublicKey);
+            return agreementCredentials.generateAgreement(ecFixedAgreePublicKey);
         }
 
-        if (ecAgreePrivateKey != null)
+        if (agreement != null)
         {
-            return TlsECCUtils.calculateECDHBasicAgreement(ecAgreePublicKey, ecAgreePrivateKey);
+            TlsSecret premasterSecret = agreement.calculateSecret();
+
+            // TODO[tls-ops] Return as TlsSecret instead of exporting
+            return premasterSecret.extract();
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected void generateEphemeral(OutputStream output) throws IOException
+    {
+        byte[] point = agreement.generateEphemeral();
+        TlsUtils.writeOpaque8(point, output);
+    }
+
+    protected void processEphemeral(short[] localECPointFormats, byte[] point) throws IOException
+    {
+        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedCurve(), point);
+
+        this.agreement.receivePeerValue(point);
     }
 }
