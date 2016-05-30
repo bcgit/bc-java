@@ -1,8 +1,5 @@
 package org.bouncycastle.tls.crypto.bc;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class BcTlsSecret implements TlsSecret
@@ -14,8 +11,10 @@ public class BcTlsSecret implements TlsSecret
         this.data = data;
     }
 
-    public void export(OutputStream output) throws IOException
+    public synchronized byte[] extract()
     {
-        output.write(data);
+        byte[] result = data;
+        this.data = null;
+        return result;
     }
 }
