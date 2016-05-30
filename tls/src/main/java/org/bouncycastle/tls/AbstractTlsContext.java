@@ -31,6 +31,7 @@ abstract class AbstractTlsContext
     AbstractTlsContext(TlsCrypto crypto, SecureRandom secureRandom, SecurityParameters securityParameters)
     {
         this.crypto = crypto;
+        this.crypto.init(this);
 
         Digest d = TlsUtils.createHash(HashAlgorithm.sha256);
         byte[] seed = new byte[d.getDigestSize()];
