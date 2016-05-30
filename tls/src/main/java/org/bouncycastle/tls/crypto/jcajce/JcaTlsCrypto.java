@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 
 import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -23,6 +24,11 @@ public class JcaTlsCrypto implements TlsCrypto
         throw new UnsupportedOperationException();
     }
 
+    public TlsCertificate createCertificate(byte[] encoding)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
         throw new UnsupportedOperationException();

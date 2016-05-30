@@ -10,6 +10,8 @@ public interface TlsCrypto
 
     byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException;
 
+    TlsCertificate createCertificate(byte[] encoding);
+
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 
     TlsDHDomain createDHDomain(TlsDHConfig dhConfig);

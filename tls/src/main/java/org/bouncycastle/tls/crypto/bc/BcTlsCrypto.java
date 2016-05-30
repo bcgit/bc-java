@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -33,6 +34,11 @@ public class BcTlsCrypto implements TlsCrypto
         byte[] result = new byte[d.getDigestSize()];
         d.doFinal(result, 0);
         return result;
+    }
+
+    public TlsCertificate createCertificate(byte[] encoding)
+    {
+        return new BcTlsCertificate(encoding);
     }
 
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)

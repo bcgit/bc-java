@@ -6,16 +6,25 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 
 public class BcTlsCertificate implements TlsCertificate
 {
+    public static BcTlsCertificate convert(TlsCertificate certificate) throws IOException
+    {
+        if (certificate instanceof BcTlsCertificate)
+        {
+            return (BcTlsCertificate)certificate;
+        }
+
+        return new BcTlsCertificate(certificate.getEncoded());
+    }
+
     protected Certificate certificate;
 
-    public short getCertificateType()
+    public BcTlsCertificate(byte[] encoding)
     {
-        return CertificateType.X509;
+        this.certificate = Certificate.getInstance(encoding);
     }
 
     public byte[] getEncoded() throws IOException
