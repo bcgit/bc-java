@@ -191,8 +191,7 @@ public class BasicTlsTest
         public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS client raised alert (AlertLevel." + alertLevel + ", AlertDescription." + alertDescription
-                + ")");
+            out.println("TLS client raised alert: " + AlertLevel.getText(alertLevel) + ", " + AlertDescription.getText(alertDescription));
             if (message != null)
             {
                 out.println(message);
@@ -206,8 +205,7 @@ public class BasicTlsTest
         public void notifyAlertReceived(short alertLevel, short alertDescription)
         {
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-            out.println("TLS client received alert (AlertLevel." + alertLevel + ", AlertDescription."
-                + alertDescription + ")");
+            out.println("TLS client received alert: " + AlertLevel.getText(alertLevel) + ", " + AlertDescription.getText(alertDescription));
         }
 
         private final TlsAuthentication authentication;
