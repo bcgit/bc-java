@@ -33,6 +33,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
@@ -941,7 +942,7 @@ public class TlsUtils
         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
-    public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int size)
+    public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
         ProtocolVersion version = context.getServerVersion();
 
@@ -955,42 +956,12 @@ public class TlsUtils
 
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
-        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
-        {
-            return PRF_legacy(secret, label, labelSeed, size);
-        }
-
-        Digest prfDigest = createPRFHash(prfAlgorithm);
-        byte[] buf = new byte[size];
-        hmac_hash(prfDigest, secret, labelSeed, buf);
-        return buf;
+        return secret.prf(prfAlgorithm, labelSeed, length);
     }
 
-    public static byte[] PRF_legacy(byte[] secret, String asciiLabel, byte[] seed, int size)
+    public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int length)
     {
-        byte[] label = Strings.toByteArray(asciiLabel);
-        byte[] labelSeed = concat(label, seed);
-
-        return PRF_legacy(secret, label, labelSeed, size);
-    }
-
-    static byte[] PRF_legacy(byte[] secret, byte[] label, byte[] labelSeed, int size)
-    {
-        int s_half = (secret.length + 1) / 2;
-        byte[] s1 = new byte[s_half];
-        byte[] s2 = new byte[s_half];
-        System.arraycopy(secret, 0, s1, 0, s_half);
-        System.arraycopy(secret, secret.length - s_half, s2, 0, s_half);
-
-        byte[] b1 = new byte[size];
-        byte[] b2 = new byte[size];
-        hmac_hash(createHash(HashAlgorithm.md5), s1, labelSeed, b1);
-        hmac_hash(createHash(HashAlgorithm.sha1), s2, labelSeed, b2);
-        for (int i = 0; i < size; i++)
-        {
-            b1[i] ^= b2[i];
-        }
-        return b1;
+        return PRF(context, context.getCrypto().createSecret(secret), asciiLabel, seed, length).extract();
     }
 
     static byte[] concat(byte[] a, byte[] b)
@@ -999,27 +970,6 @@ public class TlsUtils
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
-    }
-
-    static void hmac_hash(Digest digest, byte[] secret, byte[] seed, byte[] out)
-    {
-        HMac mac = new HMac(digest);
-        mac.init(new KeyParameter(secret));
-        byte[] a = seed;
-        int size = digest.getDigestSize();
-        int iterations = (out.length + size - 1) / size;
-        byte[] buf = new byte[mac.getMacSize()];
-        byte[] buf2 = new byte[mac.getMacSize()];
-        for (int i = 0; i < iterations; i++)
-        {
-            mac.update(a, 0, a.length);
-            mac.doFinal(buf, 0);
-            a = buf;
-            mac.update(a, 0, a.length);
-            mac.update(seed, 0, seed.length);
-            mac.doFinal(buf2, 0);
-            System.arraycopy(buf2, 0, out, (size * i), Math.min(size, out.length - (size * i)));
-        }
     }
 
     static void validateKeyUsage(org.bouncycastle.asn1.x509.Certificate c, int keyUsageBits)

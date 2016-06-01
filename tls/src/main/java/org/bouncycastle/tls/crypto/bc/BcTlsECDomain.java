@@ -15,7 +15,6 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsECCUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -26,13 +25,13 @@ import org.bouncycastle.util.BigIntegers;
 
 public class BcTlsECDomain implements TlsECDomain
 {
-    protected TlsContext context;
+    protected BcTlsCrypto crypto;
     protected TlsECConfig ecConfig;
     protected ECDomainParameters ecDomain;
 
-    public BcTlsECDomain(TlsContext context, TlsECConfig ecConfig)
+    public BcTlsECDomain(BcTlsCrypto crypto, TlsECConfig ecConfig)
     {
-        this.context = context;
+        this.crypto = crypto;
         this.ecConfig = ecConfig;
         this.ecDomain = getParameters(ecConfig);
     }
@@ -95,8 +94,13 @@ public class BcTlsECDomain implements TlsECDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, context.getSecureRandom()));
+        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, crypto.getContext().getSecureRandom()));
         return keyPairGenerator.generateKeyPair();
+    }
+
+    public BcTlsCrypto getCrypto()
+    {
+        return crypto;
     }
 
     public ECDomainParameters getParameters(TlsECConfig ecConfig)

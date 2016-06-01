@@ -20,13 +20,13 @@ import org.bouncycastle.util.BigIntegers;
 
 public class BcTlsDHDomain implements TlsDHDomain
 {
-    protected TlsContext context;
+    protected BcTlsCrypto crypto;
     protected TlsDHConfig dhConfig;
     protected DHParameters dhDomain;
 
-    public BcTlsDHDomain(TlsContext context, TlsDHConfig dhConfig)
+    public BcTlsDHDomain(BcTlsCrypto crypto, TlsDHConfig dhConfig)
     {
-        this.context = context;
+        this.crypto = crypto;
         this.dhConfig = dhConfig;
         this.dhDomain = getParameters(dhConfig);
     }
@@ -83,8 +83,13 @@ public class BcTlsDHDomain implements TlsDHDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         DHBasicKeyPairGenerator keyPairGenerator = new DHBasicKeyPairGenerator();
-        keyPairGenerator.init(new DHKeyGenerationParameters(context.getSecureRandom(), dhDomain));
+        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getContext().getSecureRandom(), dhDomain));
         return keyPairGenerator.generateKeyPair();
+    }
+
+    public BcTlsCrypto getCrypto()
+    {
+        return crypto;
     }
 
     public DHParameters getParameters(TlsDHConfig dhConfig)

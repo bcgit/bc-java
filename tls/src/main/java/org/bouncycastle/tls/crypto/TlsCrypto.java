@@ -15,4 +15,6 @@ public interface TlsCrypto
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 
     TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
+
+    TlsSecret createSecret(byte[] data);
 }

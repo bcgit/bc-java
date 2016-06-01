@@ -5,20 +5,20 @@ import org.bouncycastle.crypto.Digest;
 /**
  * A combined hash, which implements md5(m) || sha1(m).
  */
-class CombinedHash
+public class CombinedHash
     implements TlsHandshakeHash
 {
     protected TlsContext context;
     protected Digest md5;
     protected Digest sha1;
 
-    CombinedHash()
+    public CombinedHash()
     {
         this.md5 = TlsUtils.createHash(HashAlgorithm.md5);
         this.sha1 = TlsUtils.createHash(HashAlgorithm.sha1);
     }
 
-    CombinedHash(CombinedHash t)
+    public CombinedHash(CombinedHash t)
     {
         this.context = t.context;
         this.md5 = TlsUtils.cloneHash(HashAlgorithm.md5, t.md5);

@@ -9,6 +9,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class JcaTlsCrypto implements TlsCrypto
 {
@@ -35,6 +36,11 @@ public class JcaTlsCrypto implements TlsCrypto
     }
 
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public TlsSecret createSecret(byte[] data)
     {
         throw new UnsupportedOperationException();
     }
