@@ -42,7 +42,7 @@ public class BrokenKDF2BytesGenerator
     {
         if (!(param instanceof KDFParameters))
         {
-            throw new IllegalArgumentException("KDF parameters required for KDF2Generator");
+            throw new IllegalArgumentException("KDF parameters required for generator");
         }
 
         KDFParameters   p = (KDFParameters)param;
