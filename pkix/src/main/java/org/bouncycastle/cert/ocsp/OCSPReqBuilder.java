@@ -75,9 +75,9 @@ public class OCSPReqBuilder
     }
 
     /**
-     * Set the requestor name to the passed in X500Principal
+     * Set the requestor name to the passed in X500Name
      * 
-     * @param requestorName a X500Principal representing the requestor name.
+     * @param requestorName an X500Name representing the requestor name.
      */
     public OCSPReqBuilder setRequestorName(
         X500Name requestorName)
@@ -176,7 +176,7 @@ public class OCSPReqBuilder
      * Generate an unsigned request
      * 
      * @return the OCSPReq
-     * @throws org.bouncycastle.ocsp.OCSPException
+     * @throws org.bouncycastle.cert.ocsp.OCSPException
      */
     public OCSPReq build()
         throws OCSPException
