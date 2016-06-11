@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -46,13 +47,30 @@ class ProvX509KeyManager
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
-    {
+    {                System.err.println("EEeeek");
         return new String[0];
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        return null;
+        System.err.println(Arrays.asList(keyTypes));
+        System.err.println(Arrays.asList(issuers));
+        try
+        {
+            // TODO
+            List<String> aliases = findAlias(keyTypes[0], principalToIssuers(issuers));
+
+            if (aliases.isEmpty())
+            {
+                return null;
+            }
+
+            return aliases.get(0);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
@@ -74,7 +92,7 @@ class ProvX509KeyManager
             return aliases.get(0);
         }
         catch (Exception e)
-        {      e.printStackTrace();
+        {
             return null;
         }
     }
@@ -163,29 +181,40 @@ class ProvX509KeyManager
                 continue;
             }
 
-            X509Certificate x509Cert = (X509Certificate)chain[0];
-
-            org.bouncycastle.asn1.x509.Certificate asn1Cert = org.bouncycastle.asn1.x509.Certificate.getInstance(x509Cert.getEncoded());
-
-            if (!issuers.isEmpty() && !issuers.contains(asn1Cert.getIssuer()))   // not the right issuer
+            // scan back along the list of certificates
+            boolean found = false;
+            for (int i = chain.length - 1; i >= 0; i--)
             {
-                continue;
-            }
+                X509Certificate x509Cert = (X509Certificate)chain[i];
 
-            if (!x509Cert.getPublicKey().getAlgorithm().equals(keyType))
-            {
-                continue;
-            }
+                org.bouncycastle.asn1.x509.Certificate asn1Cert = org.bouncycastle.asn1.x509.Certificate.getInstance(x509Cert.getEncoded());
 
+                if (!issuers.isEmpty() && !issuers.contains(asn1Cert.getIssuer()))   // not the right issuer
+                {
+                    continue;
+                }
+
+                if (!x509Cert.getPublicKey().getAlgorithm().equals(keyType))
+                {
+                    continue;
+                }
+
+                found = true;
+                break;
+
+            }
             // TODO: manage two key/certs in one store that matches
 
-            KeyStore.PrivateKeyEntry kEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(eName, storeBuilder.getProtectionParameter(eName));
+            if (found)
+            {
+                KeyStore.PrivateKeyEntry kEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(eName, storeBuilder.getProtectionParameter(eName));
 
-            String alias = index + "." + eName + "." + version.getAndIncrement();
+                String alias = index + "." + eName + "." + version.getAndIncrement();
 
-            keys.put(alias, kEntry);
+                keys.put(alias, kEntry);
 
-            return alias;
+                return alias;
+            }
         }
 
         return null;

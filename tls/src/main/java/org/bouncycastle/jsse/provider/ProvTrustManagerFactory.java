@@ -6,16 +6,17 @@ import java.security.KeyStoreException;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManagerFactorySpi;
 
 class ProvTrustManagerFactory
     extends TrustManagerFactorySpi
 {
-    protected void engineInit(KeyStore keyStore)
+    private ProvX509TrustManager trustManager;
+
+    protected void engineInit(KeyStore trustStore)
         throws KeyStoreException
     {
-
+        trustManager = new ProvX509TrustManager(trustStore);
     }
 
     protected void engineInit(ManagerFactoryParameters managerFactoryParameters)
@@ -26,6 +27,6 @@ class ProvTrustManagerFactory
 
     protected TrustManager[] engineGetTrustManagers()
     {
-        return new TrustManager[0];
+        return new TrustManager[] { trustManager };
     }
 }

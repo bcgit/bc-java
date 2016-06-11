@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
