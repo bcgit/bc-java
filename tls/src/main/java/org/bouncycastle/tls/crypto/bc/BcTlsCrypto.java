@@ -15,8 +15,8 @@ import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -24,18 +24,11 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-public class BcTlsCrypto implements TlsCrypto
+public class BcTlsCrypto extends AbstractTlsCrypto
 {
-    protected TlsContext context;
-
     public BcTlsSecret adoptSecret(byte[] data)
     {
         return new BcTlsSecret(this, data);
-    }
-
-    public void init(TlsContext context)
-    {
-        this.context = context;
     }
 
     public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException
