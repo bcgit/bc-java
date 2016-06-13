@@ -26,11 +26,9 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -990,48 +988,18 @@ public class TlsUtils
         }
     }
 
-    static byte[] calculateKeyBlock(TlsContext context, int size)
+    static byte[] calculateKeyBlock(TlsContext context, int length)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] master_secret = securityParameters.getMasterSecret();
-        byte[] seed = concat(securityParameters.getServerRandom(),
-            securityParameters.getClientRandom());
+        byte[] seed = concat(securityParameters.getServerRandom(), securityParameters.getClientRandom());
 
         if (isSSL(context))
         {
-            return calculateKeyBlock_SSL(master_secret, seed, size);
+            return context.getCrypto().createSecret(master_secret).deriveSSLKeyBlock(seed, length).extract();
         }
 
-        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, size);
-    }
-
-    static byte[] calculateKeyBlock_SSL(byte[] master_secret, byte[] random, int size)
-    {
-        Digest md5 = createHash(HashAlgorithm.md5);
-        Digest sha1 = createHash(HashAlgorithm.sha1);
-        int md5Size = md5.getDigestSize();
-        byte[] shatmp = new byte[sha1.getDigestSize()];
-        byte[] tmp = new byte[size + md5Size];
-
-        int i = 0, pos = 0;
-        while (pos < size)
-        {
-            byte[] ssl3Const = SSL3_CONST[i];
-
-            sha1.update(ssl3Const, 0, ssl3Const.length);
-            sha1.update(master_secret, 0, master_secret.length);
-            sha1.update(random, 0, random.length);
-            sha1.doFinal(shatmp, 0);
-
-            md5.update(master_secret, 0, master_secret.length);
-            md5.update(shatmp, 0, shatmp.length);
-            md5.doFinal(tmp, pos);
-
-            pos += md5Size;
-            ++i;
-        }
-
-        return Arrays.copyOfRange(tmp, 0, size);
+        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length);
     }
 
     static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
@@ -1050,7 +1018,7 @@ public class TlsUtils
 
         if (isSSL(context))
         {
-            return calculateMasterSecret_SSL(pre_master_secret, seed);
+            return context.getCrypto().createSecret(pre_master_secret).deriveSSLMasterSecret(seed).extract();
         }
 
         String asciiLabel = securityParameters.extendedMasterSecret
@@ -1058,35 +1026,6 @@ public class TlsUtils
             :   ExporterLabel.master_secret;
 
         return PRF(context, pre_master_secret, asciiLabel, seed, 48);
-    }
-
-    static byte[] calculateMasterSecret_SSL(byte[] pre_master_secret, byte[] random)
-    {
-        Digest md5 = createHash(HashAlgorithm.md5);
-        Digest sha1 = createHash(HashAlgorithm.sha1);
-        int md5Size = md5.getDigestSize();
-        byte[] shatmp = new byte[sha1.getDigestSize()];
-
-        byte[] rval = new byte[md5Size * 3];
-        int pos = 0;
-
-        for (int i = 0; i < 3; ++i)
-        {
-            byte[] ssl3Const = SSL3_CONST[i];
-
-            sha1.update(ssl3Const, 0, ssl3Const.length);
-            sha1.update(pre_master_secret, 0, pre_master_secret.length);
-            sha1.update(random, 0, random.length);
-            sha1.doFinal(shatmp, 0);
-
-            md5.update(pre_master_secret, 0, pre_master_secret.length);
-            md5.update(shatmp, 0, shatmp.length);
-            md5.doFinal(rval, pos);
-
-            pos += md5Size;
-        }
-
-        return rval;
     }
 
     static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
@@ -1330,22 +1269,6 @@ public class TlsUtils
 
     static final byte[] SSL_CLIENT = {0x43, 0x4C, 0x4E, 0x54};
     static final byte[] SSL_SERVER = {0x53, 0x52, 0x56, 0x52};
-
-    // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    static final byte[][] SSL3_CONST = genSSL3Const();
-
-    private static byte[][] genSSL3Const()
-    {
-        int n = 10;
-        byte[][] arr = new byte[n][];
-        for (int i = 0; i < n; i++)
-        {
-            byte[] b = new byte[i + 1];
-            Arrays.fill(b, (byte)('A' + i));
-            arr[i] = b;
-        }
-        return arr;
-    }
 
     private static Vector vectorOfOne(Object obj)
     {
