@@ -122,7 +122,7 @@ class ProvX509KeyManager
             return Collections.emptySet();
         }
 
-        Set<X500Name> issuers = new HashSet<>(principals.length);
+        Set<X500Name> issuers = new HashSet<X500Name>(principals.length);
 
         for (int i = 0; i != principals.length; i++)
         {
