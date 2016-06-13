@@ -654,10 +654,19 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
+        if (TlsUtils.isSSL(getContext()))
+        {
+            establishMasterSecret(getContext(), keyExchange);
+        }
+
         this.prepareFinishHash = recordStream.prepareToFinish();
         this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
 
-        establishMasterSecret(getContext(), keyExchange);
+        if (!TlsUtils.isSSL(getContext()))
+        {
+            establishMasterSecret(getContext(), keyExchange);
+        }
+
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
         if (!expectSessionTicket)
