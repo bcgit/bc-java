@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -46,7 +47,7 @@ public class TlsPSKKeyExchange
     protected AsymmetricKeyParameter serverPublicKey = null;
     protected RSAKeyParameters rsaServerPublicKey = null;
     protected TlsEncryptionCredentials serverCredentials = null;
-    protected byte[] premasterSecret;
+    protected TlsSecret premasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
         TlsPSKIdentityManager pskIdentityManager, DHParameters dhParameters, int[] namedCurves,
@@ -296,11 +297,11 @@ public class TlsPSKKeyExchange
                 encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
             }
 
-            this.premasterSecret = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+            this.premasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
         }
     }
 
-    public byte[] generatePremasterSecret() throws IOException
+    public TlsSecret generatePremasterSecret() throws IOException
     {
         byte[] other_secret = generateOtherSecret(psk.length);
 
@@ -311,19 +312,22 @@ public class TlsPSKKeyExchange
         Arrays.fill(psk, (byte)0);
         this.psk = null;
 
-        return buf.toByteArray();
+        return context.getCrypto().createSecret(buf.toByteArray());
     }
 
     protected byte[] generateOtherSecret(int pskLength) throws IOException
     {
+        if (this.keyExchange == KeyExchangeAlgorithm.PSK)
+        {
+            return new byte[pskLength];
+        }
+
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
             if (dhAgreePrivateKey != null)
             {
                 return TlsDHUtils.calculateDHBasicAgreement(dhAgreePublicKey, dhAgreePrivateKey);
             }
-
-            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
@@ -332,16 +336,17 @@ public class TlsPSKKeyExchange
             {
                 return TlsECCUtils.calculateECDHBasicAgreement(ecAgreePublicKey, ecAgreePrivateKey);
             }
-
-            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            return this.premasterSecret;
+            if (premasterSecret != null)
+            {
+                return this.premasterSecret.extract();
+            }
         }
 
-        return new byte[pskLength];
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key) throws IOException

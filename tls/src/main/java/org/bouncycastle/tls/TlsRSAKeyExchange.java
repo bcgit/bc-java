@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -24,7 +25,7 @@ public class TlsRSAKeyExchange
 
     protected TlsEncryptionCredentials serverCredentials = null;
 
-    protected byte[] premasterSecret;
+    protected TlsSecret premasterSecret;
 
     public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms)
     {
@@ -130,10 +131,10 @@ public class TlsRSAKeyExchange
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        this.premasterSecret = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+        this.premasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
     }
 
-    public byte[] generatePremasterSecret()
+    public TlsSecret generatePremasterSecret()
         throws IOException
     {
         if (this.premasterSecret == null)
@@ -141,7 +142,7 @@ public class TlsRSAKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        byte[] tmp = this.premasterSecret;
+        TlsSecret tmp = this.premasterSecret;
         this.premasterSecret = null;
         return tmp;
     }

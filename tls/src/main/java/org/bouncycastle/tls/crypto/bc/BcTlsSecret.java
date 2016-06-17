@@ -60,6 +60,7 @@ public class BcTlsSecret implements TlsSecret
     {
         if (data != null)
         {
+            // TODO Is there a way to ensure the data is really overwritten?
             Arrays.fill(data, (byte)0);
             this.data = null;
         }

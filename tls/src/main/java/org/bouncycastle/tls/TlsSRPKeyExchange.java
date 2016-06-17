@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.TeeInputStream;
@@ -277,7 +278,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
     }
 
-    public byte[] generatePremasterSecret() throws IOException
+    public TlsSecret generatePremasterSecret() throws IOException
     {
         try
         {
@@ -286,7 +287,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
                 :   srpClient.calculateSecret(srpPeerCredentials);
 
             // TODO Check if this needs to be a fixed size
-            return BigIntegers.asUnsignedByteArray(S);
+            return context.getCrypto().createSecret(BigIntegers.asUnsignedByteArray(S));
         }
         catch (CryptoException e)
         {

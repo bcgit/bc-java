@@ -1002,7 +1002,7 @@ public class TlsUtils
         return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length);
     }
 
-    static byte[] calculateMasterSecret(TlsContext context, byte[] pre_master_secret)
+    static byte[] calculateMasterSecret(TlsContext context, TlsSecret pre_master_secret)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
 
@@ -1018,14 +1018,14 @@ public class TlsUtils
 
         if (isSSL(context))
         {
-            return context.getCrypto().createSecret(pre_master_secret).deriveSSLMasterSecret(seed).extract();
+            return pre_master_secret.deriveSSLMasterSecret(seed).extract();
         }
 
         String asciiLabel = securityParameters.extendedMasterSecret
             ?   ExporterLabel.extended_master_secret
             :   ExporterLabel.master_secret;
 
-        return PRF(context, pre_master_secret, asciiLabel, seed, 48);
+        return PRF(context, pre_master_secret, asciiLabel, seed, 48).extract();
     }
 
     static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)

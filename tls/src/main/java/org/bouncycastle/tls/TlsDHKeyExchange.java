@@ -270,20 +270,17 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public byte[] generatePremasterSecret()
+    public TlsSecret generatePremasterSecret()
         throws IOException
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(dhFixedAgreePublicKey);
+            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(dhFixedAgreePublicKey));
         }
 
         if (agreement != null)
         {
-            TlsSecret premasterSecret = agreement.calculateSecret();
-
-            // TODO[tls-ops] Return as TlsSecret instead of exporting
-            return premasterSecret.extract();
+            return agreement.calculateSecret();
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);

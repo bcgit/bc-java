@@ -261,19 +261,16 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         processEphemeral(serverECPointFormats, point);
     }
 
-    public byte[] generatePremasterSecret() throws IOException
+    public TlsSecret generatePremasterSecret() throws IOException
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(ecFixedAgreePublicKey);
+            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(ecFixedAgreePublicKey));
         }
 
         if (agreement != null)
         {
-            TlsSecret premasterSecret = agreement.calculateSecret();
-
-            // TODO[tls-ops] Return as TlsSecret instead of exporting
-            return premasterSecret.extract();
+            return agreement.calculateSecret();
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);

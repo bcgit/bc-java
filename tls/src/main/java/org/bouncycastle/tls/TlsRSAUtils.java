@@ -8,11 +8,12 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class TlsRSAUtils
 {
-    public static byte[] generateEncryptedPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPublicKey,
+    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPublicKey,
         OutputStream output) throws IOException
     {
         /*
@@ -47,7 +48,7 @@ public class TlsRSAUtils
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
 
-        return premasterSecret;
+        return context.getCrypto().createSecret(premasterSecret);
     }
 
     public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,

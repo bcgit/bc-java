@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.prng.RandomGenerator;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -1136,7 +1137,7 @@ public abstract class TlsProtocol
     protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
         throws IOException
     {
-        byte[] pre_master_secret = keyExchange.generatePremasterSecret();
+        TlsSecret pre_master_secret = keyExchange.generatePremasterSecret();
 
         try
         {
@@ -1144,14 +1145,13 @@ public abstract class TlsProtocol
         }
         finally
         {
-            // TODO Is there a way to ensure the data is really overwritten?
             /*
              * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
              * master_secret has been computed.
              */
             if (pre_master_secret != null)
             {
-                Arrays.fill(pre_master_secret, (byte)0);
+                pre_master_secret.destroy();
             }
         }
     }
