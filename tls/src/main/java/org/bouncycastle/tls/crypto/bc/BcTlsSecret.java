@@ -39,6 +39,8 @@ public class BcTlsSecret implements TlsSecret
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
     {
+        checkAlive();
+
         int md5Count = (length + MD5_SIZE - 1) / MD5_SIZE;
         byte[] md5Buf = prf_SSL(seed, md5Count);
 
@@ -49,17 +51,24 @@ public class BcTlsSecret implements TlsSecret
 
     public synchronized TlsSecret deriveSSLMasterSecret(byte[] seed)
     {
+        checkAlive();
+
         return crypto.adoptSecret(prf_SSL(seed, 3));
     }
 
     public synchronized void destroy()
     {
-        Arrays.fill(data, (byte)0);
-        this.data = null;
+        if (data != null)
+        {
+            Arrays.fill(data, (byte)0);
+            this.data = null;
+        }
     }
 
     public synchronized byte[] extract()
     {
+        checkAlive();
+
         byte[] result = data;
         this.data = null;
         return result;
@@ -67,11 +76,21 @@ public class BcTlsSecret implements TlsSecret
 
     public synchronized TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length)
     {
+        checkAlive();
+
         byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
             ?   prf_1_0(data, labelSeed, length)
             :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
 
         return crypto.adoptSecret(result);
+    }
+
+    protected void checkAlive()
+    {
+        if (data == null)
+        {
+            throw new IllegalStateException("Secret has already been extracted or destroyed");
+        }
     }
 
     protected void hmacHash(Digest digest, byte[] secret, byte[] seed, byte[] output)
