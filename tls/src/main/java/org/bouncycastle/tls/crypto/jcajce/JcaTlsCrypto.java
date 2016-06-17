@@ -2,24 +2,16 @@ package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
-public class JcaTlsCrypto implements TlsCrypto
+public class JcaTlsCrypto extends AbstractTlsCrypto
 {
-    protected TlsContext context;
-
-    public void init(TlsContext context)
-    {
-        this.context = context;
-    }
-
     public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException
     {
         throw new UnsupportedOperationException();
