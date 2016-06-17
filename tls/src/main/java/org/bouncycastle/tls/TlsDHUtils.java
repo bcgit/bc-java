@@ -491,16 +491,20 @@ public class TlsDHUtils
         return result;
     }
 
-    public static DHParameters validateDHParameters(DHParameters params) throws IOException
+    public static DHParameters validateDHParameters(DHParameters params, int minimumPrimeBits) throws IOException
     {
         BigInteger p = params.getP();
         BigInteger g = params.getG();
 
-        if (!p.isProbablePrime(2))
+        if (p.bitLength() < minimumPrimeBits)
+        {
+            throw new TlsFatalAlert(AlertDescription.insufficient_security);
+        }
+        if (g.compareTo(TWO) < 0 || g.compareTo(p.subtract(TWO)) > 0)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        if (g.compareTo(TWO) < 0 || g.compareTo(p.subtract(TWO)) > 0)
+        if (!p.isProbablePrime(2))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -508,9 +512,9 @@ public class TlsDHUtils
         return params;
     }
 
-    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException
+    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key, int minimumPrimeBits) throws IOException
     {
-        DHParameters params = validateDHParameters(key.getParameters());
+        DHParameters params = validateDHParameters(key.getParameters(), minimumPrimeBits);
 
         BigInteger Y = key.getY();
         if (Y.compareTo(TWO) < 0 || Y.compareTo(params.getP().subtract(TWO)) > 0)

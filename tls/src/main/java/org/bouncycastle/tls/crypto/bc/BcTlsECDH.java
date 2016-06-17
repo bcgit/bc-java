@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsECCUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -35,7 +36,7 @@ public class BcTlsECDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = domain.decodePublicKey(peerValue);
+        this.peerPublicKey = TlsECCUtils.validateECPublicKey(domain.decodePublicKey(peerValue));
     }
 
     public TlsSecret calculateSecret() throws IOException

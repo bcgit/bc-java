@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -35,12 +36,17 @@ public class BcTlsDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = domain.decodePublicKey(peerValue);
+        this.peerPublicKey = TlsDHUtils.validateDHPublicKey(domain.decodePublicKey(peerValue), getMinimumPrimeBits());
     }
 
     public TlsSecret calculateSecret() throws IOException
     {
         byte[] data = domain.calculateDHAgreement(peerPublicKey, (DHPrivateKeyParameters)localKeyPair.getPrivate());
         return domain.getCrypto().adoptSecret(data);
+    }
+
+    protected int getMinimumPrimeBits()
+    {
+        return 1024;
     }
 }

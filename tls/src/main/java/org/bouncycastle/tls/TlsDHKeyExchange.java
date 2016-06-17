@@ -106,8 +106,8 @@ public class TlsDHKeyExchange
         {
             try
             {
-                this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
-                this.dhParameters = validateDHParameters(dhFixedAgreePublicKey.getParameters());
+                this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey, getMinimumPrimeBits());
+                this.dhParameters = dhFixedAgreePublicKey.getParameters();
             }
             catch (ClassCastException e)
             {
@@ -300,15 +300,5 @@ public class TlsDHKeyExchange
     protected void processEphemeral(byte[] y) throws IOException
     {
         this.agreement.receivePeerValue(y);
-    }
-
-    protected DHParameters validateDHParameters(DHParameters params) throws IOException
-    {
-        if (params.getP().bitLength() < getMinimumPrimeBits())
-        {
-            throw new TlsFatalAlert(AlertDescription.insufficient_security);
-        }
-
-        return TlsDHUtils.validateDHParameters(params);
     }
 }
