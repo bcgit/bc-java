@@ -42,8 +42,11 @@ public class TlsDHEKeyExchange
 
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
-            this.dhParameters, buf);
+        this.dhConfig = TlsDHUtils.selectDHConfig(this.dhParameters, buf);
+
+        this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
+
+        generateEphemeral(buf);
 
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
@@ -77,7 +80,9 @@ public class TlsDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        ServerDHParams dhParams = ServerDHParams.parse(teeIn);
+        this.dhConfig = TlsDHUtils.readDHConfig(teeIn);
+
+        byte[] y = TlsUtils.readOpaque16(teeIn);
 
         DigitallySigned signed_params = parseSignature(input);
 
@@ -88,8 +93,9 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
 
-        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
-        this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
+        this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
+
+        processEphemeral(y);
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)

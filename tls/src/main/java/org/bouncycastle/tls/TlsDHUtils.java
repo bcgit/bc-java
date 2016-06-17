@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
@@ -464,6 +465,32 @@ public class TlsDHUtils
         return (DHPrivateKeyParameters)kp.getPrivate();
     }
 
+    public static TlsDHConfig readDHConfig(InputStream input) throws IOException
+    {
+        BigInteger p = readDHParameter(input);
+        BigInteger g = readDHParameter(input);
+
+        TlsDHConfig result = new TlsDHConfig();
+        result.setExplicitPG(new BigInteger[]{ p, g });
+        return result;
+    }
+
+    public static BigInteger readDHParameter(InputStream input) throws IOException
+    {
+        return new BigInteger(1, TlsUtils.readOpaque16(input));
+    }
+
+    public static TlsDHConfig selectDHConfig(DHParameters dhParameters, OutputStream output)
+        throws IOException
+    {
+        writeDHParameter(dhParameters.getP(), output);
+        writeDHParameter(dhParameters.getG(), output);
+
+        TlsDHConfig result = new TlsDHConfig();
+        result.setExplicitPG(new BigInteger[]{ dhParameters.getP(), dhParameters.getG() });
+        return result;
+    }
+
     public static DHParameters validateDHParameters(DHParameters params) throws IOException
     {
         BigInteger p = params.getP();
@@ -494,11 +521,6 @@ public class TlsDHUtils
         // TODO See RFC 2631 for more discussion of Diffie-Hellman validation
 
         return key;
-    }
-
-    public static BigInteger readDHParameter(InputStream input) throws IOException
-    {
-        return new BigInteger(1, TlsUtils.readOpaque16(input));
     }
 
     public static void writeDHParameter(BigInteger x, OutputStream output) throws IOException
