@@ -17,4 +17,6 @@ public interface TlsCrypto
     TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
 
     TlsSecret createSecret(byte[] data);
+
+    TlsSecret generateRandomSecret(int length);
 }

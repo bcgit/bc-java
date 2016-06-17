@@ -60,6 +60,13 @@ public class BcTlsCrypto extends AbstractTlsCrypto
         return adoptSecret(Arrays.clone(data));
     }
 
+    public TlsSecret generateRandomSecret(int length)
+    {
+        byte[] data = new byte[length];
+        getContext().getSecureRandom().nextBytes(data);
+        return adoptSecret(data);
+    }
+
     public TlsContext getContext()
     {
         return context;

@@ -36,4 +36,9 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     {
         throw new UnsupportedOperationException();
     }
+
+    public TlsSecret generateRandomSecret(int length)
+    {
+        throw new UnsupportedOperationException();
+    }
 }
