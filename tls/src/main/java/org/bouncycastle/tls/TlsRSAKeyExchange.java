@@ -19,8 +19,6 @@ import org.bouncycastle.util.io.Streams;
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected AsymmetricKeyParameter serverPublicKey = null;
-
     protected RSAKeyParameters rsaServerPublicKey = null;
 
     protected TlsEncryptionCredentials serverCredentials = null;
@@ -62,9 +60,10 @@ public class TlsRSAKeyExchange
         org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
 
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+        AsymmetricKeyParameter serverPublicKey = null;
         try
         {
-            this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
+            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
         }
         catch (RuntimeException e)
         {
@@ -72,12 +71,12 @@ public class TlsRSAKeyExchange
         }
 
         // Sanity check the PublicKeyFactory
-        if (this.serverPublicKey.isPrivate())
+        if (serverPublicKey.isPrivate())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters)this.serverPublicKey);
+        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters)serverPublicKey);
 
         TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyEncipherment);
 
