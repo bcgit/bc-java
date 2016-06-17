@@ -37,7 +37,7 @@ public class BcTlsSecret implements TlsSecret
         this.data = data;
     }
 
-    public TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
+    public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
     {
         int md5Count = (length + MD5_SIZE - 1) / MD5_SIZE;
         byte[] md5Buf = prf_SSL(seed, md5Count);
@@ -47,9 +47,15 @@ public class BcTlsSecret implements TlsSecret
         return result;
     }
 
-    public TlsSecret deriveSSLMasterSecret(byte[] seed)
+    public synchronized TlsSecret deriveSSLMasterSecret(byte[] seed)
     {
         return crypto.adoptSecret(prf_SSL(seed, 3));
+    }
+
+    public synchronized void destroy()
+    {
+        Arrays.fill(data, (byte)0);
+        this.data = null;
     }
 
     public synchronized byte[] extract()

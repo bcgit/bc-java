@@ -6,6 +6,8 @@ public interface TlsSecret
 
     TlsSecret deriveSSLMasterSecret(byte[] seed);
 
+    void destroy();
+
     byte[] extract();
 
     TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length);
