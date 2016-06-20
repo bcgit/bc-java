@@ -261,7 +261,8 @@ public class DTLSClientProtocol
 
         if (state.certificateRequest != null)
         {
-            state.clientCredentials = state.authentication.getClientCredentials(state.certificateRequest);
+            state.clientCredentials = TlsProtocol.validateCredentials(
+                state.authentication.getClientCredentials(state.certificateRequest));
 
             /*
              * RFC 5246 If no suitable certificate is available, the client MUST send a certificate

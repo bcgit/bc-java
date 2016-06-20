@@ -15,9 +15,16 @@ public interface TlsAuthentication
         throws IOException;
 
     /**
-     * Return client credentials in response to server's certificate request
+     * Return client credentials in response to server's certificate request. The returned value may
+     * be null, or else it MUST implement <em>exactly one</em> of {@link TlsAgreementCredentials},
+     * {@link TlsEncryptionCredentials}, or {@link TlsSignerCredentials}, depending on the key
+     * exchange that was negotiated and the details of the {@link CertificateRequest}.
+     * 
+     * @see {@link DefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
+     *      {@link DefaultTlsSignerCredentials}
      *
-     * @param certificateRequest details of the certificate request
+     * @param certificateRequest
+     *            details of the certificate request
      * @return a TlsCredentials object or null for no client authentication
      * @throws IOException
      */

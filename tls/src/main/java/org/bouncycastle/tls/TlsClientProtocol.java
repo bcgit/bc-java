@@ -355,7 +355,7 @@ public class TlsClientProtocol
                 }
                 else
                 {
-                    clientCreds = this.authentication.getClientCredentials(certificateRequest);
+                    clientCreds = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
 
                     if (clientCreds == null)
                     {

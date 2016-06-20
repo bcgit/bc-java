@@ -40,6 +40,19 @@ public interface TlsServer
     Vector getServerSupplementalData()
         throws IOException;
 
+    /**
+     * Return server credentials to use. The returned value may be null, or else it MUST implement
+     * <em>exactly one</em> of {@link TlsAgreementCredentials}, {@link TlsEncryptionCredentials}, or
+     * {@link TlsSignerCredentials}, depending on the key exchange that was negotiated.
+     * 
+     * @see {@link DefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
+     *      {@link DefaultTlsSignerCredentials}
+     *
+     * @param certificateRequest
+     *            details of the certificate request
+     * @return a TlsCredentials object or null for anonymous key exchanges
+     * @throws IOException
+     */
     TlsCredentials getCredentials()
         throws IOException;
 

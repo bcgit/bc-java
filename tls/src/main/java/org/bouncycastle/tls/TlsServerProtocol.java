@@ -152,7 +152,7 @@ public class TlsServerProtocol
                 this.keyExchange = tlsServer.getKeyExchange();
                 this.keyExchange.init(getContext());
 
-                this.serverCredentials = tlsServer.getCredentials();
+                this.serverCredentials = validateCredentials(tlsServer.getCredentials());
 
                 Certificate serverCertificate = null;
 

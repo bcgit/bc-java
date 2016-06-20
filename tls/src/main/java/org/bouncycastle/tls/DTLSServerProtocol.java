@@ -125,7 +125,7 @@ public class DTLSServerProtocol
         state.keyExchange = state.server.getKeyExchange();
         state.keyExchange.init(state.serverContext);
 
-        state.serverCredentials = state.server.getCredentials();
+        state.serverCredentials = TlsProtocol.validateCredentials(state.server.getCredentials());
 
         Certificate serverCertificate = null;
 
