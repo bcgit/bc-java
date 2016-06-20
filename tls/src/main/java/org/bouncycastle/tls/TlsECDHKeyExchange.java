@@ -9,7 +9,6 @@ import java.util.Vector;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -28,7 +27,6 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
 
-    protected ECPrivateKeyParameters ecFixedAgreePrivateKey;
     protected ECPublicKeyParameters ecFixedAgreePublicKey;
 
     protected TlsECConfig ecConfig;
@@ -215,9 +213,9 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         if (clientCredentials instanceof TlsAgreementCredentials)
         {
-            // TODO Validate client cert has matching parameters (see 'TlsECCUtils.areOnSameCurve')?
-
             this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
+
+            // TODO Check that the client certificate's domain parameters match the server's?
         }
         else if (clientCredentials instanceof TlsSignerCredentials)
         {
@@ -244,8 +242,10 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        // TODO Extract the public key
-        // TODO If the certificate is 'fixed', take the public key as ecFixedAgreePublicKey
+        /*
+         * TODO For non-ephemeral key exchanges, take the public key as ecFixedAgreePublicKey and check
+         * that the domain parameters match the server's.
+         */
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException

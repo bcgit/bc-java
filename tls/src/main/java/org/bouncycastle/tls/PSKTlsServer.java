@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 
 public class PSKTlsServer
     extends AbstractTlsServer
@@ -29,6 +30,11 @@ public class PSKTlsServer
     protected DHParameters getDHParameters()
     {
         return DHStandardGroups.rfc5114_2048_256;
+    }
+
+    protected TlsDHConfig getDHConfig() throws IOException
+    {
+        return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }
 
     protected int[] getCipherSuites()
@@ -86,7 +92,7 @@ public class PSKTlsServer
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager,
-            getDHParameters(), namedCurves, clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, pskIdentityManager,
+            getDHConfig(), namedCurves, clientECPointFormats, serverECPointFormats);
     }
 }

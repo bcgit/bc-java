@@ -6,7 +6,7 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
@@ -14,9 +14,9 @@ public class TlsDHEKeyExchange
 {
     protected TlsSignerCredentials serverCredentials = null;
 
-    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
     {
-        super(keyExchange, supportedSignatureAlgorithms, dhParameters);
+        super(keyExchange, supportedSignatureAlgorithms, dhConfig);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials)
@@ -35,14 +35,14 @@ public class TlsDHEKeyExchange
     public byte[] generateServerKeyExchange()
         throws IOException
     {
-        if (this.dhParameters == null)
+        if (this.dhConfig == null)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        this.dhConfig = TlsDHUtils.selectDHConfig(this.dhParameters, buf);
+        TlsDHUtils.writeDHConfig(dhConfig, buf);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

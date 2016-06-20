@@ -9,8 +9,6 @@ import java.util.Vector;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -24,18 +22,16 @@ public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
     protected TlsSigner tlsSigner;
-    protected DHParameters dhParameters;
 
     protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
 
-    protected DHPrivateKeyParameters dhFixedAgreePrivateKey;
     protected DHPublicKeyParameters dhFixedAgreePublicKey;
 
     protected TlsDHConfig dhConfig;
     protected TlsAgreement agreement;
 
-    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -56,7 +52,7 @@ public class TlsDHKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.dhParameters = dhParameters;
+        this.dhConfig = dhConfig;
     }
 
     public void init(TlsContext context)
@@ -107,7 +103,7 @@ public class TlsDHKeyExchange
             try
             {
                 this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey, getMinimumPrimeBits());
-                this.dhParameters = dhFixedAgreePublicKey.getParameters();
+                this.dhConfig = TlsDHUtils.selectDHConfig(dhFixedAgreePublicKey.getParameters());
             }
             catch (ClassCastException e)
             {
@@ -154,7 +150,7 @@ public class TlsDHKeyExchange
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        this.dhConfig = TlsDHUtils.selectDHConfig(dhParameters, buf);
+        TlsDHUtils.writeDHConfig(dhConfig, buf);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
@@ -212,9 +208,9 @@ public class TlsDHKeyExchange
 
         if (clientCredentials instanceof TlsAgreementCredentials)
         {
-            // TODO Validate client cert has matching parameters (see 'areCompatibleParameters')?
-
             this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
+
+            // TODO Check that the client certificate's domain parameters match the server's?
         }
         else if (clientCredentials instanceof TlsSignerCredentials)
         {
@@ -242,18 +238,14 @@ public class TlsDHKeyExchange
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
     {
-        // TODO Extract the public key and validate
-
         if (keyExchange == KeyExchangeAlgorithm.DH_anon)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        // TODO Extract the public key and validate
-
         /*
-         * TODO If the certificate is 'fixed', take the public key as dhFixedAgreePublicKey and check
-         * that the parameters match the server's (see 'areCompatibleParameters').
+         * TODO For non-ephemeral key exchanges, take the public key as dhFixedAgreePublicKey and check
+         * that the domain parameters match the server's.
          */
     }
 

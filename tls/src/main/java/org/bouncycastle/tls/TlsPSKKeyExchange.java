@@ -28,7 +28,6 @@ public class TlsPSKKeyExchange
     protected TlsPSKIdentity pskIdentity;
     protected TlsPSKIdentityManager pskIdentityManager;
 
-    protected DHParameters dhParameters;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
@@ -44,7 +43,7 @@ public class TlsPSKKeyExchange
     protected TlsSecret premasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, DHParameters dhParameters, int[] namedCurves,
+        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, int[] namedCurves,
         short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms);
@@ -62,7 +61,7 @@ public class TlsPSKKeyExchange
 
         this.pskIdentity = pskIdentity;
         this.pskIdentityManager = pskIdentityManager;
-        this.dhParameters = dhParameters;
+        this.dhConfig = dhConfig;
         this.namedCurves = namedCurves;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
@@ -110,12 +109,12 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            if (this.dhParameters == null)
+            if (this.dhConfig == null)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            this.dhConfig = TlsDHUtils.selectDHConfig(this.dhParameters, buf);
+            TlsDHUtils.writeDHConfig(dhConfig, buf);
 
             this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

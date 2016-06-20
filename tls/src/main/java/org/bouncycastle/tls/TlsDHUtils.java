@@ -480,12 +480,9 @@ public class TlsDHUtils
         return new BigInteger(1, TlsUtils.readOpaque16(input));
     }
 
-    public static TlsDHConfig selectDHConfig(DHParameters dhParameters, OutputStream output)
+    public static TlsDHConfig selectDHConfig(DHParameters dhParameters)
         throws IOException
     {
-        writeDHParameter(dhParameters.getP(), output);
-        writeDHParameter(dhParameters.getG(), output);
-
         TlsDHConfig result = new TlsDHConfig();
         result.setExplicitPG(new BigInteger[]{ dhParameters.getP(), dhParameters.getG() });
         return result;
@@ -525,6 +522,14 @@ public class TlsDHUtils
         // TODO See RFC 2631 for more discussion of Diffie-Hellman validation
 
         return key;
+    }
+
+    public static void writeDHConfig(TlsDHConfig dhConfig, OutputStream output)
+        throws IOException
+    {
+        BigInteger[] pg = dhConfig.getExplicitPG();
+        writeDHParameter(pg[0], output);
+        writeDHParameter(pg[1], output);
     }
 
     public static void writeDHParameter(BigInteger x, OutputStream output) throws IOException

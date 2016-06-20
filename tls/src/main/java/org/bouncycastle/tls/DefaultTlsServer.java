@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
@@ -45,6 +46,11 @@ public abstract class DefaultTlsServer
     protected DHParameters getDHParameters()
     {
         return DHStandardGroups.rfc5114_2048_256;
+    }
+
+    protected TlsDHConfig getDHConfig() throws IOException
+    {
+        return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }
 
     protected int[] getCipherSuites()
@@ -142,12 +148,12 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHParameters());
+        return keyExchangeFactory.createDHKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHConfig());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHParameters());
+        return keyExchangeFactory.createDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHConfig());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException

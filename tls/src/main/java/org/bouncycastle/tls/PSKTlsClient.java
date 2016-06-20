@@ -62,7 +62,7 @@ public class PSKTlsClient
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, null, namedCurves,
+        return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity, namedCurves,
             clientECPointFormats, serverECPointFormats);
     }
 }
