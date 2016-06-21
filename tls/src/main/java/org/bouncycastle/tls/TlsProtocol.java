@@ -1232,7 +1232,7 @@ public abstract class TlsProtocol
     protected static TlsCredentials validateCredentials(TlsCredentials credentials)
         throws IOException
     {
-        if (credentials == null)
+        if (credentials != null)
         {
             int count = 0;
             count += (credentials instanceof TlsAgreementCredentials) ? 1 : 0;
