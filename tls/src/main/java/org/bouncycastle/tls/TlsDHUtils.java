@@ -427,46 +427,34 @@ public class TlsDHUtils
         return result;
     }
 
+    public static TlsDHConfig receiveDHConfig(TlsDHConfigVerifier dhConfigVerifier, InputStream input) throws IOException
+    {
+        TlsDHConfig dhConfig = TlsDHUtils.readDHConfig(input);
+        if (!dhConfigVerifier.accept(dhConfig))
+        {
+            throw new TlsFatalAlert(AlertDescription.insufficient_security);
+        }
+        return dhConfig;
+    }
+
     public static BigInteger readDHParameter(InputStream input) throws IOException
     {
         return new BigInteger(1, TlsUtils.readOpaque16(input));
     }
 
     public static TlsDHConfig selectDHConfig(DHParameters dhParameters)
-        throws IOException
     {
         TlsDHConfig result = new TlsDHConfig();
         result.setExplicitPG(new BigInteger[]{ dhParameters.getP(), dhParameters.getG() });
         return result;
     }
 
-    public static DHParameters validateDHParameters(DHParameters params, int minimumPrimeBits) throws IOException
-    {
-        BigInteger p = params.getP();
-        BigInteger g = params.getG();
-
-        if (p.bitLength() < minimumPrimeBits)
-        {
-            throw new TlsFatalAlert(AlertDescription.insufficient_security);
-        }
-        if (g.compareTo(TWO) < 0 || g.compareTo(p.subtract(TWO)) > 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-        if (!p.isProbablePrime(2))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        return params;
-    }
-
     public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key, int minimumPrimeBits) throws IOException
     {
-        DHParameters params = validateDHParameters(key.getParameters(), minimumPrimeBits);
-
         BigInteger Y = key.getY();
-        if (Y.compareTo(TWO) < 0 || Y.compareTo(params.getP().subtract(TWO)) > 0)
+        BigInteger p = key.getParameters().getP();
+
+        if (Y.compareTo(TWO) < 0 || Y.compareTo(p.subtract(TWO)) > 0)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }

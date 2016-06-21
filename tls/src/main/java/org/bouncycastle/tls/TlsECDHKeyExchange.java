@@ -170,7 +170,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         // ECDH_anon is handled here, ECDHE_* in a subclass
 
-        this.ecConfig = TlsECCUtils.readECConfig(namedCurves, serverECPointFormats, input);
+        this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, input);
 
         byte[] point = TlsUtils.readOpaque8(input);
 

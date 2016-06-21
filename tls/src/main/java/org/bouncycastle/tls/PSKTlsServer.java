@@ -32,7 +32,7 @@ public class PSKTlsServer
         return DHStandardGroups.rfc5114_2048_256;
     }
 
-    protected TlsDHConfig getDHConfig() throws IOException
+    protected TlsDHConfig getDHConfig()
     {
         return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }

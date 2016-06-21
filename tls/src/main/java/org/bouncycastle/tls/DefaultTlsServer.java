@@ -48,7 +48,7 @@ public abstract class DefaultTlsServer
         return DHStandardGroups.rfc5114_2048_256;
     }
 
-    protected TlsDHConfig getDHConfig() throws IOException
+    protected TlsDHConfig getDHConfig()
     {
         return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }
@@ -148,12 +148,12 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException

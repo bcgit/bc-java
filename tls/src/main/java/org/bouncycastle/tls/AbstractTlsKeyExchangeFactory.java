@@ -5,15 +5,28 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 
-public class AbstractTlsKeyExchangeFactory implements TlsKeyExchangeFactory
+public class AbstractTlsKeyExchangeFactory
+    implements TlsKeyExchangeFactory
 {
-    public TlsKeyExchange createDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+    public TlsKeyExchange createDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsDHConfigVerifier dhConfigVerifier) throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    public TlsKeyExchange createDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsDHConfig dhConfig) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+    public TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsDHConfigVerifier dhConfigVerifier) throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    public TlsKeyExchange createDHEKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsDHConfig dhConfig) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -32,15 +45,15 @@ public class AbstractTlsKeyExchangeFactory implements TlsKeyExchangeFactory
     }
 
     public TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsPSKIdentity pskIdentity, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats)
-            throws IOException
+        TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier, int[] namedCurves,
+        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig,
-        int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, int[] namedCurves, short[] clientECPointFormats,
+        short[] serverECPointFormats) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
@@ -49,7 +62,7 @@ public class AbstractTlsKeyExchangeFactory implements TlsKeyExchangeFactory
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
-    
+
     public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsSRPGroupVerifier groupVerifier, byte[] identity, byte[] password) throws IOException
     {

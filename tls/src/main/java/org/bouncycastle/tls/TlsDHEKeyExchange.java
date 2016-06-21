@@ -14,6 +14,11 @@ public class TlsDHEKeyExchange
 {
     protected TlsSignerCredentials serverCredentials = null;
 
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
+    {
+        super(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
+    }
+
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
     {
         super(keyExchange, supportedSignatureAlgorithms, dhConfig);
@@ -80,7 +85,7 @@ public class TlsDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        this.dhConfig = TlsDHUtils.readDHConfig(teeIn);
+        this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, teeIn);
 
         byte[] y = TlsUtils.readOpaque16(teeIn);
 

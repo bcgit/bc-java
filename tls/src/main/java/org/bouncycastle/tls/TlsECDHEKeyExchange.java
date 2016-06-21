@@ -78,7 +78,7 @@ public class TlsECDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        this.ecConfig = TlsECCUtils.readECConfig(namedCurves, serverECPointFormats, teeIn);
+        this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 

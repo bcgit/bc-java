@@ -5,16 +5,19 @@ import java.io.IOException;
 public class PSKTlsClient
     extends AbstractTlsClient
 {
+    protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsPSKIdentity pskIdentity;
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), pskIdentity);
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
     }
 
-    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentity pskIdentity)
+    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory,
+        TlsDHConfigVerifier dhConfigVerifier, TlsPSKIdentity pskIdentity)
     {
         super(cipherFactory, keyExchangeFactory);
+        this.dhConfigVerifier = dhConfigVerifier;
         this.pskIdentity = pskIdentity;
     }
 
@@ -62,7 +65,7 @@ public class PSKTlsClient
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity, namedCurves,
-            clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity,
+            dhConfigVerifier, namedCurves, clientECPointFormats, serverECPointFormats);
     }
 }

@@ -365,13 +365,13 @@ public class TlsECCUtils
         return key;
     }
 
-    public static TlsECConfig readECConfig(int[] namedCurves, short[] serverECPointFormats, InputStream input)
+    public static TlsECConfig readECConfig(short[] peerECPointFormats, InputStream input)
         throws IOException
     {
         short curveType = TlsUtils.readUint8(input);
         if (curveType != ECCurveType.named_curve)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
         int namedCurve = TlsUtils.readUint16(input);
@@ -385,13 +385,19 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        checkNamedCurve(namedCurves, namedCurve);
-
-        boolean compressed = isCompressionPreferred(serverECPointFormats, namedCurve);
+        boolean compressed = isCompressionPreferred(peerECPointFormats, namedCurve);
 
         TlsECConfig result = new TlsECConfig();
         result.setNamedCurve(namedCurve);
         result.setPointCompression(compressed);
+        return result;
+    }
+
+    public static TlsECConfig receiveECConfig(int[] namedCurves, short[] peerECPointFormats, InputStream input)
+        throws IOException
+    {
+        TlsECConfig result = readECConfig(peerECPointFormats, input);
+        checkNamedCurve(namedCurves, result.getNamedCurve());
         return result;
     }
 

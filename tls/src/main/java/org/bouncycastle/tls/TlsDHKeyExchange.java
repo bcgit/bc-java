@@ -22,6 +22,7 @@ public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
     protected TlsSigner tlsSigner;
+    protected TlsDHConfigVerifier dhConfigVerifier;
 
     protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
@@ -31,7 +32,18 @@ public class TlsDHKeyExchange
     protected TlsDHConfig dhConfig;
     protected TlsAgreement agreement;
 
+    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier, null);
+    }
+
     public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, null, dhConfig);
+    }
+
+    private TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier,
+        TlsDHConfig dhConfig)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -52,6 +64,7 @@ public class TlsDHKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
+        this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;
     }
 
@@ -169,7 +182,7 @@ public class TlsDHKeyExchange
 
         // DH_anon is handled here, DHE_* in a subclass
 
-        this.dhConfig = TlsDHUtils.readDHConfig(input);
+        this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, input);
 
         byte[] y = TlsUtils.readOpaque16(input);
 

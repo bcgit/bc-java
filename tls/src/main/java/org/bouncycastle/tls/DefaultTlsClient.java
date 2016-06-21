@@ -5,14 +5,17 @@ import java.io.IOException;
 public abstract class DefaultTlsClient
     extends AbstractTlsClient
 {
+    protected TlsDHConfigVerifier dhConfigVerifier;
+
     public DefaultTlsClient()
     {
-        super();
+        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
     }
 
-    public DefaultTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
+    public DefaultTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
     {
         super(cipherFactory, keyExchangeFactory);
+        this.dhConfigVerifier = dhConfigVerifier;
     }
 
     public int[] getCipherSuites()
@@ -77,12 +80,12 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
+        return keyExchangeFactory.createDHKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, null);
+        return keyExchangeFactory.createDHEKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
