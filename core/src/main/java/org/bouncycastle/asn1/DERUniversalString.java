@@ -79,7 +79,7 @@ public class DERUniversalString
     public DERUniversalString(
         byte[]   string)
     {
-        this.string = string;
+        this.string = Arrays.clone(string);
     }
 
     public String getString()
@@ -94,7 +94,7 @@ public class DERUniversalString
         }
         catch (IOException e)
         {
-           throw new RuntimeException("internal error encoding BitString");
+           throw new ASN1ParsingException("internal error encoding BitString");
         }
         
         byte[]    string = bOut.toByteArray();
@@ -115,7 +115,7 @@ public class DERUniversalString
 
     public byte[] getOctets()
     {
-        return string;
+        return Arrays.clone(string);
     }
 
     boolean isConstructed()

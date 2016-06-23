@@ -21,7 +21,7 @@ public abstract class ASN1ApplicationSpecific
     {
         this.isConstructed = isConstructed;
         this.tag = tag;
-        this.octets = octets;
+        this.octets = Arrays.clone(octets);
     }
 
     /**
@@ -93,7 +93,7 @@ public abstract class ASN1ApplicationSpecific
      */
     public byte[] getContents()
     {
-        return octets;
+        return Arrays.clone(octets);
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class ASN1ApplicationSpecific
     public ASN1Primitive getObject()
         throws IOException 
     {
-        return new ASN1InputStream(getContents()).readObject();
+        return ASN1Primitive.fromByteArray(getContents());
     }
 
     /**
@@ -141,7 +141,7 @@ public abstract class ASN1ApplicationSpecific
             tmp[0] |= BERTags.CONSTRUCTED;
         }
 
-        return new ASN1InputStream(tmp).readObject();
+        return ASN1Primitive.fromByteArray(tmp);
     }
 
     int encodedLength()

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 /**
- * A DER encoded set object
+ * A DER encoded SET object
  */
 public class DERSet
     extends ASN1Set
