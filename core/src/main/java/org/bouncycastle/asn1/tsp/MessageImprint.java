@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 public class MessageImprint
     extends ASN1Object
@@ -46,7 +47,7 @@ public class MessageImprint
         byte[]              hashedMessage)
     {
         this.hashAlgorithm = hashAlgorithm;
-        this.hashedMessage = hashedMessage;
+        this.hashedMessage = Arrays.clone(hashedMessage);
     }
     
     public AlgorithmIdentifier getHashAlgorithm()
@@ -56,7 +57,7 @@ public class MessageImprint
     
     public byte[] getHashedMessage()
     {
-        return hashedMessage;
+        return Arrays.clone(hashedMessage);
     }
     
     /**

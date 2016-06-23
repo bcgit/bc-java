@@ -3,9 +3,19 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * A generator for indefinite-length OCTET STRINGs
+ */
 public class BEROctetStringGenerator
     extends BERGenerator
 {
+    /**
+     * Use the passed in stream as the target for the generator, writing out the header tag
+     * for a constructed OCTET STRING.
+     *
+     * @param out target stream
+     * @throws IOException if the target stream cannot be written to.
+     */
     public BEROctetStringGenerator(OutputStream out) 
         throws IOException
     {
@@ -14,6 +24,15 @@ public class BEROctetStringGenerator
         writeBERHeader(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
     }
 
+    /**
+     * Use the passed in stream as the target for the generator, writing out the header tag
+     * for a tagged constructed OCTET STRING (possibly implicit).
+     *
+     * @param out target stream
+     * @param tagNo the tag number to introduce
+     * @param isExplicit true if this is an explicitly tagged object, false otherwise.
+     * @throws IOException if the target stream cannot be written to.
+     */
     public BEROctetStringGenerator(
         OutputStream out,
         int tagNo,
@@ -24,12 +43,23 @@ public class BEROctetStringGenerator
         
         writeBERHeader(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
     }
-    
+
+    /**
+     * Return a stream representing the content target for this OCTET STRING
+     *
+     * @return an OutputStream which chunks data in blocks of 1000 (CER limit).
+     */
     public OutputStream getOctetOutputStream()
     {
         return getOctetOutputStream(new byte[1000]); // limit for CER encoding.
     }
 
+    /**
+     * Return a stream representing the content target for this OCTET STRING
+     *
+     * @param buf the buffer to use for chunking the data.
+     * @return an OutputStream which chunks data in blocks of buf length.
+     */
     public OutputStream getOctetOutputStream(
         byte[] buf)
     {

@@ -115,6 +115,7 @@ public class CertificateBody
                 throw new IOException("Not a valid iso7816 DERApplicationSpecific tag " + aSpe.getApplicationTag());
             }
         }
+        aIS.close();
     }
 
     /**

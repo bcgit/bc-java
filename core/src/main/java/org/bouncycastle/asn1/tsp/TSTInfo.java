@@ -72,7 +72,7 @@ public class TSTInfo
 
             if (o instanceof ASN1TaggedObject)
             {
-                DERTaggedObject tagged = (DERTaggedObject) o;
+                ASN1TaggedObject tagged = (ASN1TaggedObject) o;
 
                 switch (tagged.getTagNo())
                 {

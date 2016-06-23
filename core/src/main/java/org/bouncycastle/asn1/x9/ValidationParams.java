@@ -12,10 +12,13 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
+ * Diffie-Hellman domain validation parameters.
+ * <pre>
  * ValidationParams ::= SEQUENCE {
  *    seed         BIT STRING,
  *    pgenCounter  INTEGER
  * }
+ * </pre>
  */
 public class ValidationParams
     extends ASN1Object

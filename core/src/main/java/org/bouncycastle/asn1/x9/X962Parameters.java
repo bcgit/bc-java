@@ -37,7 +37,7 @@ public class X962Parameters
             {
                 return new X962Parameters(ASN1Primitive.fromByteArray((byte[])obj));
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 throw new IllegalArgumentException("unable to parse encoded data: " + e.getMessage());
             }
@@ -107,6 +107,6 @@ public class X962Parameters
      */
     public ASN1Primitive toASN1Primitive()
     {
-        return (ASN1Primitive)params;
+        return params;
     }
 }
