@@ -13,7 +13,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * elliptic curves defined in "ECC Brainpool Standard Curves and Curve Generation"
+ * Elliptic curves defined in "ECC Brainpool Standard Curves and Curve Generation"
  * http://www.ecc-brainpool.org/download/draft_pkix_additional_ecc_dp.txt
  */
 public class TeleTrusTNamedCurves
@@ -307,34 +307,40 @@ public class TeleTrusTNamedCurves
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        objIds.put(name.toLowerCase(), oid);
+        objIds.put(name, oid);
         names.put(oid, name);
         curves.put(oid, holder);
     }
 
     static
     {
-        defineCurve("brainpoolP160r1", TeleTrusTObjectIdentifiers.brainpoolP160r1, brainpoolP160r1);
-        defineCurve("brainpoolP160t1", TeleTrusTObjectIdentifiers.brainpoolP160t1, brainpoolP160t1);
-        defineCurve("brainpoolP192r1", TeleTrusTObjectIdentifiers.brainpoolP192r1, brainpoolP192r1);
-        defineCurve("brainpoolP192t1", TeleTrusTObjectIdentifiers.brainpoolP192t1, brainpoolP192t1);
-        defineCurve("brainpoolP224r1", TeleTrusTObjectIdentifiers.brainpoolP224r1, brainpoolP224r1);
-        defineCurve("brainpoolP224t1", TeleTrusTObjectIdentifiers.brainpoolP224t1, brainpoolP224t1);
-        defineCurve("brainpoolP256r1", TeleTrusTObjectIdentifiers.brainpoolP256r1, brainpoolP256r1);
-        defineCurve("brainpoolP256t1", TeleTrusTObjectIdentifiers.brainpoolP256t1, brainpoolP256t1);
-        defineCurve("brainpoolP320r1", TeleTrusTObjectIdentifiers.brainpoolP320r1, brainpoolP320r1);
-        defineCurve("brainpoolP320t1", TeleTrusTObjectIdentifiers.brainpoolP320t1, brainpoolP320t1);
-        defineCurve("brainpoolP384r1", TeleTrusTObjectIdentifiers.brainpoolP384r1, brainpoolP384r1);
-        defineCurve("brainpoolP384t1", TeleTrusTObjectIdentifiers.brainpoolP384t1, brainpoolP384t1);
-        defineCurve("brainpoolP512r1", TeleTrusTObjectIdentifiers.brainpoolP512r1, brainpoolP512r1);
-        defineCurve("brainpoolP512t1", TeleTrusTObjectIdentifiers.brainpoolP512t1, brainpoolP512t1);
+        defineCurve("brainpoolp160r1", TeleTrusTObjectIdentifiers.brainpoolP160r1, brainpoolP160r1);
+        defineCurve("brainpoolp160t1", TeleTrusTObjectIdentifiers.brainpoolP160t1, brainpoolP160t1);
+        defineCurve("brainpoolp192r1", TeleTrusTObjectIdentifiers.brainpoolP192r1, brainpoolP192r1);
+        defineCurve("brainpoolp192t1", TeleTrusTObjectIdentifiers.brainpoolP192t1, brainpoolP192t1);
+        defineCurve("brainpoolp224r1", TeleTrusTObjectIdentifiers.brainpoolP224r1, brainpoolP224r1);
+        defineCurve("brainpoolp224t1", TeleTrusTObjectIdentifiers.brainpoolP224t1, brainpoolP224t1);
+        defineCurve("brainpoolp256r1", TeleTrusTObjectIdentifiers.brainpoolP256r1, brainpoolP256r1);
+        defineCurve("brainpoolp256t1", TeleTrusTObjectIdentifiers.brainpoolP256t1, brainpoolP256t1);
+        defineCurve("brainpoolp320r1", TeleTrusTObjectIdentifiers.brainpoolP320r1, brainpoolP320r1);
+        defineCurve("brainpoolp320t1", TeleTrusTObjectIdentifiers.brainpoolP320t1, brainpoolP320t1);
+        defineCurve("brainpoolp384r1", TeleTrusTObjectIdentifiers.brainpoolP384r1, brainpoolP384r1);
+        defineCurve("brainpoolp384t1", TeleTrusTObjectIdentifiers.brainpoolP384t1, brainpoolP384t1);
+        defineCurve("brainpoolp512r1", TeleTrusTObjectIdentifiers.brainpoolP512r1, brainpoolP512r1);
+        defineCurve("brainpoolp512t1", TeleTrusTObjectIdentifiers.brainpoolP512t1, brainpoolP512t1);
     }
 
     public static X9ECParameters getByName(
         String name)
     {
-        ASN1ObjectIdentifier oid = getOID(name);
-        return oid == null ? null : getByOID(oid);
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+
+        if (oid != null)
+        {
+            return getByOID(oid);
+        }
+
+        return null;
     }
 
     /**
@@ -347,7 +353,13 @@ public class TeleTrusTNamedCurves
         ASN1ObjectIdentifier oid)
     {
         X9ECParametersHolder holder = (X9ECParametersHolder)curves.get(oid);
-        return holder == null ? null : holder.getParameters();
+
+        if (holder != null)
+        {
+            return holder.getParameters();
+        }
+
+        return null;
     }
 
     /**
@@ -377,7 +389,7 @@ public class TeleTrusTNamedCurves
      */
     public static Enumeration getNames()
     {
-        return names.elements();
+        return objIds.keys();
     }
 
     public static ASN1ObjectIdentifier getOID(short curvesize, boolean twisted)

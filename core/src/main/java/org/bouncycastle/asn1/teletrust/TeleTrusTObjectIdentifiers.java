@@ -3,9 +3,11 @@ package org.bouncycastle.asn1.teletrust;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
+ * Object identifiers based on the TeleTrust branch.
+ * <pre>
  * TeleTrusT:
  *   { iso(1) identifier-organization(3) teleTrust(36) algorithm(3)
- *
+ * </pre>
  */
 public interface TeleTrusTObjectIdentifiers
 {

@@ -11,7 +11,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 
 /**
- * table of the current named curves defined in X.962 EC-DSA.
+ * Table of the current named curves defined in X.962 EC-DSA.
  */
 public class X962NamedCurves
 {
@@ -546,7 +546,7 @@ public class X962NamedCurves
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        objIds.put(name.toLowerCase(), oid);
+        objIds.put(name, oid);
         names.put(oid, name);
         curves.put(oid, holder);
     }
@@ -581,8 +581,14 @@ public class X962NamedCurves
     public static X9ECParameters getByName(
         String name)
     {
-        ASN1ObjectIdentifier oid = getOID(name);
-        return oid == null ? null : getByOID(oid);
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+
+        if (oid != null)
+        {
+            return getByOID(oid);
+        }
+
+        return null;
     }
 
     /**
@@ -595,7 +601,13 @@ public class X962NamedCurves
         ASN1ObjectIdentifier oid)
     {
         X9ECParametersHolder holder = (X9ECParametersHolder)curves.get(oid);
-        return holder == null ? null : holder.getParameters();
+
+        if (holder != null)
+        {
+            return holder.getParameters();
+        }
+
+        return null;
     }
 
     /**
@@ -625,6 +637,6 @@ public class X962NamedCurves
      */
     public static Enumeration getNames()
     {
-        return names.elements();
+        return objIds.keys();
     }
 }

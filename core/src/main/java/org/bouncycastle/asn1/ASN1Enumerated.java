@@ -99,7 +99,7 @@ public class ASN1Enumerated
     public ASN1Enumerated(
         byte[]   bytes)
     {
-        this.bytes = bytes;
+        this.bytes = Arrays.clone(bytes);
     }
 
     public BigInteger getValue()
@@ -148,7 +148,7 @@ public class ASN1Enumerated
     {
         if (enc.length > 1)
         {
-            return new ASN1Enumerated(Arrays.clone(enc));
+            return new ASN1Enumerated(enc);
         }
 
         if (enc.length == 0)

@@ -6,16 +6,13 @@ import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DEROctetString;
-
-//import java.math.BigInteger;
-
+import org.bouncycastle.util.Arrays;
 
 public class CVCertificateRequest
     extends ASN1Object
@@ -25,10 +22,8 @@ public class CVCertificateRequest
     private byte[] innerSignature = null;
     private byte[] outerSignature = null;
 
-    private int valid;
-
-    private static int bodyValid = 0x01;
-    private static int signValid = 0x02;
+    private static final int bodyValid = 0x01;
+    private static final int signValid = 0x02;
 
     private CVCertificateRequest(ASN1ApplicationSpecific request)
         throws IOException
@@ -52,6 +47,7 @@ public class CVCertificateRequest
     {
         if (request.getApplicationTag() == EACTags.CARDHOLDER_CERTIFICATE)
         {
+            int valid = 0;
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
             for (Enumeration en = seq.getObjects(); en.hasMoreElements();)
             {
@@ -69,6 +65,10 @@ public class CVCertificateRequest
                 default:
                     throw new IOException("Invalid tag, not an CV Certificate Request element:" + obj.getApplicationTag());
                 }
+            }
+            if ((valid & (bodyValid | signValid)) == 0)
+            {
+                throw new IOException("Invalid CARDHOLDER_CERTIFICATE in request:" + request.getApplicationTag());
             }
         }
         else
@@ -98,18 +98,6 @@ public class CVCertificateRequest
         return null;
     }
 
-    ASN1ObjectIdentifier signOid = null;
-    ASN1ObjectIdentifier keyOid = null;
-
-    public static byte[] ZeroArray = new byte[]{0};
-
-
-    String strCertificateHolderReference;
-
-    byte[] encodedAuthorityReference;
-
-    int ProfileId;
-
     /**
      * Returns the body of the certificate template
      *
@@ -131,25 +119,18 @@ public class CVCertificateRequest
 
     public byte[] getInnerSignature()
     {
-        return innerSignature;
+        return Arrays.clone(innerSignature);
     }
 
     public byte[] getOuterSignature()
     {
-        return outerSignature;
+        return Arrays.clone(outerSignature);
     }
-
-    byte[] certificate = null;
-    protected String overSignerReference = null;
 
     public boolean hasOuterSignature()
     {
         return outerSignature != null;
     }
-
-    byte[] encoded;
-
-    PublicKeyDataObject iso7816PubKey = null;
 
     public ASN1Primitive toASN1Primitive()
     {

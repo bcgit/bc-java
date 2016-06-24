@@ -149,6 +149,6 @@ public abstract class DSTU4145PointEncoder
             throw new IllegalArgumentException("Invalid point compression");
         }
 
-        return curve.createPoint(xp.toBigInteger(), yp.toBigInteger());
+        return curve.validatePoint(xp.toBigInteger(), yp.toBigInteger());
     }
 }

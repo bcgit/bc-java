@@ -17,38 +17,42 @@ public class NISTNamedCurves
     static final Hashtable objIds = new Hashtable();
     static final Hashtable names = new Hashtable();
 
-    static void defineCurveAlias(String name, ASN1ObjectIdentifier oid)
+    static void defineCurve(String name, ASN1ObjectIdentifier oid)
     {
-        objIds.put(name.toUpperCase(), oid);
+        objIds.put(name, oid);
         names.put(oid, name);
     }
 
     static
     {
-        defineCurveAlias("B-163", SECObjectIdentifiers.sect163r2);
-        defineCurveAlias("B-233", SECObjectIdentifiers.sect233r1);
-        defineCurveAlias("B-283", SECObjectIdentifiers.sect283r1);
-        defineCurveAlias("B-409", SECObjectIdentifiers.sect409r1);
-        defineCurveAlias("B-571", SECObjectIdentifiers.sect571r1);
-
-        defineCurveAlias("K-163", SECObjectIdentifiers.sect163k1);
-        defineCurveAlias("K-233", SECObjectIdentifiers.sect233k1);
-        defineCurveAlias("K-283", SECObjectIdentifiers.sect283k1);
-        defineCurveAlias("K-409", SECObjectIdentifiers.sect409k1);
-        defineCurveAlias("K-571", SECObjectIdentifiers.sect571k1);
-
-        defineCurveAlias("P-192", SECObjectIdentifiers.secp192r1);
-        defineCurveAlias("P-224", SECObjectIdentifiers.secp224r1);
-        defineCurveAlias("P-256", SECObjectIdentifiers.secp256r1);
-        defineCurveAlias("P-384", SECObjectIdentifiers.secp384r1);
-        defineCurveAlias("P-521", SECObjectIdentifiers.secp521r1);
+        defineCurve("B-571", SECObjectIdentifiers.sect571r1);
+        defineCurve("B-409", SECObjectIdentifiers.sect409r1);
+        defineCurve("B-283", SECObjectIdentifiers.sect283r1);
+        defineCurve("B-233", SECObjectIdentifiers.sect233r1);
+        defineCurve("B-163", SECObjectIdentifiers.sect163r2);
+        defineCurve("K-571", SECObjectIdentifiers.sect571k1);
+        defineCurve("K-409", SECObjectIdentifiers.sect409k1);
+        defineCurve("K-283", SECObjectIdentifiers.sect283k1);
+        defineCurve("K-233", SECObjectIdentifiers.sect233k1);
+        defineCurve("K-163", SECObjectIdentifiers.sect163k1);
+        defineCurve("P-521", SECObjectIdentifiers.secp521r1);
+        defineCurve("P-384", SECObjectIdentifiers.secp384r1);
+        defineCurve("P-256", SECObjectIdentifiers.secp256r1);
+        defineCurve("P-224", SECObjectIdentifiers.secp224r1);
+        defineCurve("P-192", SECObjectIdentifiers.secp192r1);
     }
 
     public static X9ECParameters getByName(
         String  name)
     {
-        ASN1ObjectIdentifier oid = getOID(name);
-        return oid == null ? null : getByOID(oid);
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(Strings.toUpperCase(name));
+
+        if (oid != null)
+        {
+            return getByOID(oid);
+        }
+
+        return null;
     }
 
     /**
@@ -90,6 +94,6 @@ public class NISTNamedCurves
      */
     public static Enumeration getNames()
     {
-        return names.elements();
+        return objIds.keys();
     }
 }

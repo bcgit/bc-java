@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+/**
+ * Parser class for DER SEQUENCEs.
+ */
 public class DERSequenceParser
     implements ASN1SequenceParser
 {
@@ -12,18 +15,35 @@ public class DERSequenceParser
         this._parser = parser;
     }
 
+    /**
+     * Return the next object in the SEQUENCE.
+     *
+     * @return next object in SEQUENCE.
+     * @throws IOException if there is an issue loading the object.
+     */
     public ASN1Encodable readObject()
         throws IOException
     {
         return _parser.readObject();
     }
 
+    /**
+     * Return an in memory, encodable, representation of the SEQUENCE.
+     *
+     * @return a DERSequence.
+     * @throws IOException if there is an issue loading the data.
+     */
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
          return new DERSequence(_parser.readVector());
     }
 
+    /**
+     * Return a DERSequence representing this parser and its contents.
+     *
+     * @return a DERSequence.
+     */
     public ASN1Primitive toASN1Primitive()
     {
         try

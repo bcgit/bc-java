@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Arrays;
 
 /**
  * an Iso7816ECDSAPublicKeyStructure structure.
@@ -129,7 +130,7 @@ public class ECDSAPublicKey
     {
         if ((options & G) != 0)
         {
-            return basePointG;
+            return Arrays.clone(basePointG);
         }
         else
         {
@@ -258,7 +259,7 @@ public class ECDSAPublicKey
     {
         if ((options & Y) != 0)
         {
-            return publicPointY;
+            return Arrays.clone(publicPointY);
         }
         else
         {

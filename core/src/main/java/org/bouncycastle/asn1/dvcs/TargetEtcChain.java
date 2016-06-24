@@ -60,35 +60,35 @@ public class TargetEtcChain
         ASN1Encodable obj = seq.getObjectAt(i++);
         this.target = CertEtcToken.getInstance(obj);
 
-        try
+        if (seq.size() > 1)
         {
             obj = seq.getObjectAt(i++);
-            this.chain = ASN1Sequence.getInstance(obj);
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            return;
-        }
-
-        try
-        {
-            obj = seq.getObjectAt(i++);
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(obj);
-            switch (tagged.getTagNo())
+            if (obj instanceof ASN1TaggedObject)
             {
-            case 0:
-                this.pathProcInput = PathProcInput.getInstance(tagged, false);
-                break;
+                extractPathProcInput(obj);
+            }
+            else
+            {
+                this.chain = ASN1Sequence.getInstance(obj);
+                if (seq.size() > 2)
+                {
+                    obj = seq.getObjectAt(i);
+                    extractPathProcInput(obj);
+                }
             }
         }
-        catch (IllegalArgumentException e)
+    }
+
+    private void extractPathProcInput(ASN1Encodable obj)
+    {
+        ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(obj);
+        switch (tagged.getTagNo())
         {
-        }
-        catch (IndexOutOfBoundsException e)
-        {
+        case 0:
+            this.pathProcInput = PathProcInput.getInstance(tagged, false);
+            break;
+        default:
+            throw new IllegalArgumentException("Unknown tag encountered: " + tagged.getTagNo());
         }
     }
 
@@ -162,19 +162,9 @@ public class TargetEtcChain
         return null;
     }
 
-    private void setChain(ASN1Sequence chain)
-    {
-        this.chain = chain;
-    }
-
     public PathProcInput getPathProcInput()
     {
         return pathProcInput;
-    }
-
-    private void setPathProcInput(PathProcInput pathProcInput)
-    {
-        this.pathProcInput = pathProcInput;
     }
 
     public static TargetEtcChain[] arrayFromSequence(ASN1Sequence seq)

@@ -69,7 +69,9 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes128_GCM           = aes.branch("6");
     /** 2.16.840.1.101.3.4.1.7 */
     static final ASN1ObjectIdentifier    id_aes128_CCM           = aes.branch("7");
-    
+    /** 2.16.840.1.101.3.4.1.28 */
+    static final ASN1ObjectIdentifier    id_aes128_wrap_pad      = aes.branch("8");
+
     /** 2.16.840.1.101.3.4.1.21 */
     static final ASN1ObjectIdentifier    id_aes192_ECB           = aes.branch("21"); 
     /** 2.16.840.1.101.3.4.1.22 */
@@ -84,7 +86,9 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes192_GCM           = aes.branch("26");
     /** 2.16.840.1.101.3.4.1.27 */
     static final ASN1ObjectIdentifier    id_aes192_CCM           = aes.branch("27");
-    
+    /** 2.16.840.1.101.3.4.1.28 */
+    static final ASN1ObjectIdentifier    id_aes192_wrap_pad      = aes.branch("28");
+
     /** 2.16.840.1.101.3.4.1.41 */
     static final ASN1ObjectIdentifier    id_aes256_ECB           = aes.branch("41"); 
     /** 2.16.840.1.101.3.4.1.42 */
@@ -99,6 +103,8 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes256_GCM           = aes.branch("46");
     /** 2.16.840.1.101.3.4.1.47 */
     static final ASN1ObjectIdentifier    id_aes256_CCM           = aes.branch("47");
+    /** 2.16.840.1.101.3.4.1.48 */
+    static final ASN1ObjectIdentifier    id_aes256_wrap_pad      = aes.branch("48");
 
     //
     // signatures

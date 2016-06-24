@@ -53,7 +53,7 @@ public class X9ECPoint
         return Arrays.clone(encoding.getOctets());
     }
 
-    public ECPoint getPoint()
+    public synchronized ECPoint getPoint()
     {
         if (p == null)
         {

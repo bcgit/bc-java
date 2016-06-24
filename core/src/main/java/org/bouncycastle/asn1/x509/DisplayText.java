@@ -125,6 +125,26 @@ public class DisplayText
    private DisplayText(ASN1String de)
    {
       contents = de;
+      if (de instanceof DERUTF8String)
+      {
+         contentType = CONTENT_TYPE_UTF8STRING;
+      }
+      else if (de instanceof DERBMPString)
+      {
+         contentType = CONTENT_TYPE_BMPSTRING;
+      }
+      else if (de instanceof DERIA5String)
+      {
+         contentType = CONTENT_TYPE_IA5STRING;
+      }
+      else if (de instanceof DERVisibleString)
+      {
+         contentType = CONTENT_TYPE_VISIBLESTRING;
+      }
+      else
+      {
+         throw new IllegalArgumentException("unknown STRING type in DisplayText");
+      }
    }
 
    public static DisplayText getInstance(Object obj) 

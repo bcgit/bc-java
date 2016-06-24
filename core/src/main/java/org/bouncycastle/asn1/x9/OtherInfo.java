@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -67,7 +68,7 @@ public class OtherInfo
 
         while (e.hasMoreElements())
         {
-            DERTaggedObject o = (DERTaggedObject)e.nextElement();
+            ASN1TaggedObject o = (ASN1TaggedObject)e.nextElement();
 
             if (o.getTagNo() == 0)
             {

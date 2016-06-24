@@ -119,6 +119,6 @@ public class PackedDate
 
     public byte[] getEncoding()
     {
-        return time;
+        return Arrays.clone(time);
     }
 }
