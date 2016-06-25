@@ -1596,7 +1596,7 @@ public class CertTest
 
         Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain.txt"));
 
-        isTrue("certs wrong", 2 == certs1.size());
+        isTrue("certs wrong <cr><nl>", 2 == certs1.size());
 
         InputStream in = this.getClass().getResourceAsStream("cert_chain.txt");
 
@@ -1628,9 +1628,9 @@ public class CertTest
     {
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
 
-        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain.txt"));
+        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain_nl.txt"));
 
-        isTrue("certs wrong", 2 == certs1.size());
+        isTrue("certs wrong <nl>", 2 == certs1.size());
 
         InputStream in = this.getClass().getResourceAsStream("cert_chain_nl.txt");
 
