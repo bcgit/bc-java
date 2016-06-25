@@ -21,7 +21,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -1587,6 +1589,74 @@ public class CertTest
         }
     }
 
+    private void pemFileTest()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain.txt"));
+
+        isTrue("certs wrong", 2 == certs1.size());
+
+        InputStream in = this.getClass().getResourceAsStream("cert_chain.txt");
+
+        Set certs2 = new HashSet();
+        while ((in.available() > 0))
+        {
+            Certificate c = certFact.generateCertificate(in);
+
+            // this isn't strictly correct with the way it's defined in the Java JavaDoc - need it for backward
+            // compatibility.
+            if (c != null)
+            {
+                certs2.add(c);
+            }
+        }
+
+        isTrue("certs size", certs1.size() == certs2.size());
+
+        for (Certificate cert : certs1)
+        {
+            certs2.remove(cert);
+        }
+
+        isTrue("collection not empty", certs2.isEmpty());
+    }
+
+    private void pemFileTestWithNl()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain.txt"));
+
+        isTrue("certs wrong", 2 == certs1.size());
+
+        InputStream in = this.getClass().getResourceAsStream("cert_chain_nl.txt");
+
+        Set certs2 = new HashSet();
+        while ((in.available() > 0))
+        {
+            Certificate c = certFact.generateCertificate(in);
+
+            // this isn't strictly correct with the way it's defined in the Java JavaDoc - need it for backward
+            // compatibility.
+            if (c != null)
+            {
+                certs2.add(c);
+            }
+        }
+
+        isTrue("certs size", certs1.size() == certs2.size());
+
+        for (Certificate cert : certs1)
+        {
+            certs2.remove(cert);
+        }
+
+        isTrue("collection not empty", certs2.isEmpty());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1633,6 +1703,8 @@ public class CertTest
         checkCRL(1, crl1);
 
         pemTest();
+        pemFileTest();
+        pemFileTestWithNl();
         pkcs7Test();
         rfc4491Test();
         

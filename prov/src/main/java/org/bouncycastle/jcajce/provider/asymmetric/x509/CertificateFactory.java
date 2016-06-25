@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -200,7 +201,18 @@ public class CertificateFactory
                 }
             }
 
-            PushbackInputStream pis = new PushbackInputStream(in);
+            InputStream pis;
+
+            if (in.markSupported())
+            {
+                pis = in;
+            }
+            else
+            {
+                pis = new BufferedInputStream(in);
+            }
+
+            pis.mark(1);
             int tag = pis.read();
 
             if (tag == -1)
@@ -208,8 +220,7 @@ public class CertificateFactory
                 return null;
             }
 
-            pis.unread(tag);
-
+            pis.reset();
             if (tag != 0x30)  // assume ascii PEM encoded.
             {
                 return readPEMCertificate(pis);
@@ -249,18 +260,18 @@ public class CertificateFactory
      * it with the data read from the input stream inStream.
      */
     public CRL engineGenerateCRL(
-        InputStream inStream)
+        InputStream in)
         throws CRLException
     {
         if (currentCrlStream == null)
         {
-            currentCrlStream = inStream;
+            currentCrlStream = in;
             sCrlData = null;
             sCrlDataObjectCount = 0;
         }
-        else if (currentCrlStream != inStream) // reset if input stream has changed
+        else if (currentCrlStream != in) // reset if input stream has changed
         {
-            currentCrlStream = inStream;
+            currentCrlStream = in;
             sCrlData = null;
             sCrlDataObjectCount = 0;
         }
@@ -281,7 +292,18 @@ public class CertificateFactory
                 }
             }
 
-            PushbackInputStream pis = new PushbackInputStream(inStream);
+            InputStream pis;
+
+            if (in.markSupported())
+            {
+                pis = in;
+            }
+            else
+            {
+                pis = new BufferedInputStream(in);
+            }
+
+            pis.mark(1);
             int tag = pis.read();
 
             if (tag == -1)
@@ -289,8 +311,7 @@ public class CertificateFactory
                 return null;
             }
 
-            pis.unread(tag);
-
+            pis.reset();
             if (tag != 0x30)  // assume ascii PEM encoded.
             {
                 return readPEMCRL(pis);
