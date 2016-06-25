@@ -245,9 +245,11 @@ public class CertificateFactory
         throws CertificateException
     {
         java.security.cert.Certificate     cert;
+        BufferedInputStream in = new BufferedInputStream(inStream);
+
         List certs = new ArrayList();
 
-        while ((cert = engineGenerateCertificate(inStream)) != null)
+        while ((cert = engineGenerateCertificate(in)) != null)
         {
             certs.add(cert);
         }
@@ -346,8 +348,9 @@ public class CertificateFactory
     {
         CRL crl;
         List crls = new ArrayList();
+        BufferedInputStream in = new BufferedInputStream(inStream);
 
-        while ((crl = engineGenerateCRL(inStream)) != null)
+        while ((crl = engineGenerateCRL(in)) != null)
         {
             crls.add(crl);
         }
