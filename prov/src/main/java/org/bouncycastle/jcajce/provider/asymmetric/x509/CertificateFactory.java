@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.x509;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -27,6 +28,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * class for dealing with X509 certificates.
@@ -209,7 +211,7 @@ public class CertificateFactory
             }
             else
             {
-                pis = new BufferedInputStream(in);
+                pis = new ByteArrayInputStream(Streams.readAll(in));
             }
 
             pis.mark(1);
@@ -302,7 +304,7 @@ public class CertificateFactory
             }
             else
             {
-                pis = new BufferedInputStream(in);
+                pis = new ByteArrayInputStream(Streams.readAll(in));
             }
 
             pis.mark(1);
