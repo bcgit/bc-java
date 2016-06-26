@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -1598,7 +1599,7 @@ public class CertTest
 
         isTrue("certs wrong <cr><nl>", 2 == certs1.size());
 
-        InputStream in = this.getClass().getResourceAsStream("cert_chain.txt");
+        BufferedInputStream in = new BufferedInputStream(this.getClass().getResourceAsStream("cert_chain.txt"));
 
         Set certs2 = new HashSet();
         while ((in.available() > 0))
@@ -1613,7 +1614,7 @@ public class CertTest
             }
         }
 
-        isTrue("certs size", certs1.size() == certs2.size());
+        isTrue("certs size <cr><nl>", certs1.size() == certs2.size());
 
         for (Certificate cert : certs1)
         {
@@ -1632,7 +1633,7 @@ public class CertTest
 
         isTrue("certs wrong <nl>", 2 == certs1.size());
 
-        InputStream in = this.getClass().getResourceAsStream("cert_chain_nl.txt");
+        BufferedInputStream in = new BufferedInputStream(this.getClass().getResourceAsStream("cert_chain_nl.txt"));
 
         Set certs2 = new HashSet();
         while ((in.available() > 0))
@@ -1647,7 +1648,7 @@ public class CertTest
             }
         }
 
-        isTrue("certs size", certs1.size() == certs2.size());
+        isTrue("certs size <nl>", certs1.size() == certs2.size());
 
         for (Certificate cert : certs1)
         {
