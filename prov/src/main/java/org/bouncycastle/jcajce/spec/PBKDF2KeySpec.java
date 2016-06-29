@@ -2,6 +2,8 @@ package org.bouncycastle.jcajce.spec;
 
 import javax.crypto.spec.PBEKeySpec;
 
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -10,6 +12,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class PBKDF2KeySpec
     extends PBEKeySpec
 {
+    private static final AlgorithmIdentifier defaultPRF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA1, DERNull.INSTANCE);
+
     private AlgorithmIdentifier prf;
 
     /**
@@ -28,6 +32,21 @@ public class PBKDF2KeySpec
         this.prf = prf;
     }
 
+    /**
+     * Return true if this spec is for the default PRF (HmacSHA1), false otherwise.
+     *
+     * @return true if this spec uses the default PRF, false otherwise.
+     */
+    public boolean isDefaultPrf()
+    {
+        return defaultPRF.equals(prf);
+    }
+
+    /**
+     * Return an AlgorithmIdentifier representing the PRF.
+     *
+     * @return the PRF's AlgorithmIdentifier.
+     */
     public AlgorithmIdentifier getPrf()
     {
         return prf;

@@ -78,7 +78,8 @@ public class RegressionTest
         new Shacal2Test(),
         new DetDSATest(),
         new ThreefishTest(),
-        new SM4Test()
+        new SM4Test(),
+        new TLSKDFTest()
     };
 
     public static void main(
