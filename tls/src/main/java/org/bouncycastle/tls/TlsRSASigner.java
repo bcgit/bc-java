@@ -36,11 +36,6 @@ public class TlsRSASigner
         return signer.verifySignature(sigBytes);
     }
 
-    public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
-    {
-        return makeSigner(algorithm, false, true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
-    }
-
     public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
         return makeSigner(algorithm, false, false, publicKey);

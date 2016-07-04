@@ -48,11 +48,6 @@ public abstract class TlsDSASigner
         return signer.verifySignature(sigBytes);
     }
 
-    public Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey)
-    {
-        return makeSigner(algorithm, false, true, privateKey);
-    }
-
     public Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey)
     {
         return makeSigner(algorithm, false, false, publicKey);

@@ -14,12 +14,6 @@ public interface TlsSigner
     boolean verifyRawSignature(SignatureAndHashAlgorithm algorithm, byte[] sigBytes, AsymmetricKeyParameter publicKey,
         byte[] hash) throws CryptoException;
 
-    Signer createSigner(AsymmetricKeyParameter privateKey);
-
-    Signer createSigner(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey);
-
-    Signer createVerifyer(AsymmetricKeyParameter publicKey);
-
     Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey);
 
     boolean isValidPublicKey(AsymmetricKeyParameter publicKey);
