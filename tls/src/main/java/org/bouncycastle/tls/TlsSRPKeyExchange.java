@@ -181,7 +181,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
             byte[] hash = new byte[d.getDigestSize()];
             d.doFinal(hash, 0);
 
-            byte[] signature = serverCredentials.generateCertificateSignature(hash);
+            byte[] signature = serverCredentials.generateRawSignature(hash);
 
             DigitallySigned signed_params = new DigitallySigned(signatureAndHashAlgorithm, signature);
             signed_params.encode(buf);

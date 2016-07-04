@@ -202,9 +202,9 @@ class TlsTestClientImpl
 
                 return new TlsSignerCredentials()
                 {
-                    public byte[] generateCertificateSignature(byte[] hash) throws IOException
+                    public byte[] generateRawSignature(byte[] hash) throws IOException
                     {
-                        byte[] sig = signerCredentials.generateCertificateSignature(hash);
+                        byte[] sig = signerCredentials.generateRawSignature(hash);
 
                         if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_INVALID_VERIFY)
                         {

@@ -322,7 +322,7 @@ public class DTLSClientProtocol
                 hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
             }
 
-            byte[] signature = signerCredentials.generateCertificateSignature(hash);
+            byte[] signature = signerCredentials.generateRawSignature(hash);
             DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);

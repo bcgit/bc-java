@@ -77,7 +77,7 @@ public class DefaultTlsSignerCredentials
         return certificate;
     }
 
-    public byte[] generateCertificateSignature(byte[] hash)
+    public byte[] generateRawSignature(byte[] hash)
         throws IOException
     {
         try
