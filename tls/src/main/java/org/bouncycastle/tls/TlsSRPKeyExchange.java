@@ -278,7 +278,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
     }
 
-    public TlsSecret generatePremasterSecret() throws IOException
+    public TlsSecret generatePreMasterSecret() throws IOException
     {
         try
         {

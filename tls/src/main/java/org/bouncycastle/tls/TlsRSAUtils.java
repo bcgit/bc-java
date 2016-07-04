@@ -3,52 +3,43 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class TlsRSAUtils
 {
-    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPublicKey,
+    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate rsaServerCert,
         OutputStream output) throws IOException
     {
+        // TODO[tls-ops] RSA pre_master_secret generation should be delegated to TlsCrypto
+
         /*
-         * Choose a PremasterSecret and send it encrypted to the server
+         * Choose a pre_master_secret and send it encrypted to the server
          */
-        byte[] premasterSecret = new byte[48];
-        context.getSecureRandom().nextBytes(premasterSecret);
-        TlsUtils.writeVersion(context.getClientVersion(), premasterSecret, 0);
+        TlsSecret preMasterSecret = context.getCrypto().generateRandomSecret(48);
 
-        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-        encoding.init(true, new ParametersWithRandom(rsaServerPublicKey, context.getSecureRandom()));
+        byte[] version = new byte[2];
+        TlsUtils.writeVersion(context.getClientVersion(), version, 0);
+        preMasterSecret.replace(0, version, 0, 2);
 
-        try
+        byte[] encryptedPreMasterSecret = preMasterSecret.encryptRSA(rsaServerCert);
+
+        if (TlsUtils.isSSL(context))
         {
-            byte[] encryptedPreMasterSecret = encoding.processBlock(premasterSecret, 0, premasterSecret.length);
-
-            if (TlsUtils.isSSL(context))
-            {
-                // TODO Do any SSLv3 servers actually expect the length?
-                output.write(encryptedPreMasterSecret);
-            }
-            else
-            {
-                TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
-            }
+            // TODO Do any SSLv3 servers actually expect the length?
+            output.write(encryptedPreMasterSecret);
         }
-        catch (InvalidCipherTextException e)
+        else
         {
-            /*
-             * This should never happen, only during decryption.
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+            TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
         }
 
-        return context.getCrypto().createSecret(premasterSecret);
+        return preMasterSecret;
     }
 
     public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,

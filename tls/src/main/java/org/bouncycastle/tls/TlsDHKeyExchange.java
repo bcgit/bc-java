@@ -275,7 +275,7 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public TlsSecret generatePremasterSecret()
+    public TlsSecret generatePreMasterSecret()
         throws IOException
     {
         if (agreementCredentials != null)
