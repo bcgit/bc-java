@@ -36,17 +36,12 @@ public class BcTlsDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = TlsDHUtils.validateDHPublicKey(domain.decodePublicKey(peerValue), getMinimumPrimeBits());
+        this.peerPublicKey = TlsDHUtils.validateDHPublicKey(domain.decodePublicKey(peerValue));
     }
 
     public TlsSecret calculateSecret() throws IOException
     {
         byte[] data = domain.calculateDHAgreement(peerPublicKey, (DHPrivateKeyParameters)localKeyPair.getPrivate());
         return domain.getCrypto().adoptSecret(data);
-    }
-
-    protected int getMinimumPrimeBits()
-    {
-        return 1024;
     }
 }

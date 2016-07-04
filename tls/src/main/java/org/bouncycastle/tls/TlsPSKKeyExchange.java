@@ -316,11 +316,6 @@ public class TlsPSKKeyExchange
         TlsUtils.writeOpaque8(point, output);
     }
 
-    protected int getMinimumPrimeBits()
-    {
-        return 1024;
-    }
-
     protected byte[] generateOtherSecret(int pskLength) throws IOException
     {
         if (this.keyExchange == KeyExchangeAlgorithm.PSK)
