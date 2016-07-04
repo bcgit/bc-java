@@ -155,7 +155,7 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA);
+        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA_PSK);
 
         super.processServerCertificate(serverCertificate);
     }
