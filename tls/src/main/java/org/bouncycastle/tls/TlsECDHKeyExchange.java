@@ -261,7 +261,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         processEphemeral(serverECPointFormats, point);
     }
 
-    public TlsSecret generatePremasterSecret() throws IOException
+    public TlsSecret generatePreMasterSecret() throws IOException
     {
         if (agreementCredentials != null)
         {

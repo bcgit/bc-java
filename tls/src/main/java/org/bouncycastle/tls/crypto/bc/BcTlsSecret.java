@@ -1,10 +1,20 @@
 package org.bouncycastle.tls.crypto.bc;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.encodings.PKCS1Encoding;
+import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -66,6 +76,26 @@ public class BcTlsSecret implements TlsSecret
         }
     }
 
+    public synchronized byte[] encryptRSA(TlsCertificate certificate) throws IOException
+    {
+        RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(certificate).getPubKeyRSA();
+
+        PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
+        encoding.init(true, new ParametersWithRandom(pubKeyRSA, crypto.getContext().getSecureRandom()));
+
+        try
+        {
+            return encoding.processBlock(data, 0, data.length);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            /*
+             * This should never happen, only during decryption.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
     public synchronized byte[] extract()
     {
         checkAlive();
@@ -84,6 +114,16 @@ public class BcTlsSecret implements TlsSecret
             :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
 
         return crypto.adoptSecret(result);
+    }
+
+    public synchronized void replace(int pos, byte[] buf, int bufPos, int bufLen)
+    {
+        checkAlive();
+
+        for (int i = 0; i < bufLen; ++i)
+        {
+            data[pos + i] = buf[bufPos + i];
+        }
     }
 
     protected void checkAlive()

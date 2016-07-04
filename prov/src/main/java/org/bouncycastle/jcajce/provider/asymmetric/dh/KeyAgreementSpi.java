@@ -150,6 +150,7 @@ public class KeyAgreementSpi
         byte[] res = bigIntToBytes(result);
 
         // for JSSE compatibility
+        // TODO[tls-ops] Check spelling (compare 'TlsPreMasterSecret')
         if (algorithm.equals("TlsPremasterSecret"))
         {
             return new SecretKeySpec(trimZeroes(res), algorithm);

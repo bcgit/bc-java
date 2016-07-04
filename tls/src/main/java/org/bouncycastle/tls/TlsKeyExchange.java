@@ -51,6 +51,6 @@ public interface TlsKeyExchange
     void processClientKeyExchange(InputStream input)
         throws IOException;
 
-    TlsSecret generatePremasterSecret()
+    TlsSecret generatePreMasterSecret()
         throws IOException;
 }

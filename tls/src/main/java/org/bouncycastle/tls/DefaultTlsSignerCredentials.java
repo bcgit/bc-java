@@ -77,19 +77,14 @@ public class DefaultTlsSignerCredentials
         return certificate;
     }
 
-    public byte[] generateCertificateSignature(byte[] hash)
+    public byte[] generateRawSignature(byte[] hash)
         throws IOException
     {
         try
         {
-            if (TlsUtils.isTLSv12(context))
-            {
-                return signer.generateRawSignature(signatureAndHashAlgorithm, privateKey, hash);
-            }
-            else
-            {
-                return signer.generateRawSignature(privateKey, hash);
-            }
+            SignatureAndHashAlgorithm algorithm = TlsUtils.isTLSv12(context) ? getSignatureAndHashAlgorithm() : null;
+
+            return signer.generateRawSignature(algorithm, privateKey, hash);
         }
         catch (CryptoException e)
         {

@@ -6,12 +6,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -38,9 +34,9 @@ public class TlsPSKKeyExchange
     protected TlsECConfig ecConfig;
     protected TlsAgreement agreement;
 
-    protected RSAKeyParameters rsaServerPublicKey = null;
+    protected TlsCertificate serverCertificate = null;
     protected TlsEncryptionCredentials serverCredentials = null;
-    protected TlsSecret premasterSecret;
+    protected TlsSecret preMasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
         TlsDHConfigVerifier dhConfigVerifier, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats)
@@ -159,28 +155,7 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
-
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        AsymmetricKeyParameter serverPublicKey = null;
-        try
-        {
-            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        // Sanity check the PublicKeyFactory
-        if (serverPublicKey.isPrivate())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters)serverPublicKey);
-
-        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyEncipherment);
+        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA_PSK);
 
         super.processServerCertificate(serverCertificate);
     }
@@ -270,8 +245,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, this.rsaServerPublicKey,
-                output);
+            this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, serverCertificate, output);
         }
     }
 
@@ -312,11 +286,11 @@ public class TlsPSKKeyExchange
                 encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
             }
 
-            this.premasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
+            this.preMasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
         }
     }
 
-    public TlsSecret generatePremasterSecret() throws IOException
+    public TlsSecret generatePreMasterSecret() throws IOException
     {
         byte[] other_secret = generateOtherSecret(psk.length);
 
@@ -342,11 +316,6 @@ public class TlsPSKKeyExchange
         TlsUtils.writeOpaque8(point, output);
     }
 
-    protected int getMinimumPrimeBits()
-    {
-        return 1024;
-    }
-
     protected byte[] generateOtherSecret(int pskLength) throws IOException
     {
         if (this.keyExchange == KeyExchangeAlgorithm.PSK)
@@ -365,9 +334,9 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            if (premasterSecret != null)
+            if (preMasterSecret != null)
             {
-                return this.premasterSecret.extract();
+                return this.preMasterSecret.extract();
             }
         }
 
@@ -384,18 +353,5 @@ public class TlsPSKKeyExchange
         TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedCurve(), point);
 
         this.agreement.receivePeerValue(point);
-    }
-
-    protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key) throws IOException
-    {
-        // TODO What is the minimum bit length required?
-        // key.getModulus().bitLength();
-
-        if (!key.getExponent().isProbablePrime(2))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        return key;
     }
 }

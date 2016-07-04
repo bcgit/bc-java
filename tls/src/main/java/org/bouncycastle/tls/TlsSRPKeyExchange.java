@@ -9,8 +9,6 @@ import java.util.Vector;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
@@ -165,26 +163,9 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
         if (serverCredentials != null)
         {
-            /*
-             * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-             */
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
-                context, serverCredentials);
+            DigitallySigned signedParams = TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, buf);
 
-            Digest d = TlsUtils.createHash(signatureAndHashAlgorithm);
-
-            SecurityParameters securityParameters = context.getSecurityParameters();
-            d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
-            d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
-            buf.updateDigest(d);
-
-            byte[] hash = new byte[d.getDigestSize()];
-            d.doFinal(hash, 0);
-
-            byte[] signature = serverCredentials.generateCertificateSignature(hash);
-
-            DigitallySigned signed_params = new DigitallySigned(signatureAndHashAlgorithm, signature);
-            signed_params.encode(buf);
+            signedParams.encode(buf);
         }
 
         return buf.toByteArray();
@@ -192,14 +173,12 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParameters();
-
-        SignerInputBuffer buf = null;
+        DigestInputBuffer buf = null;
         InputStream teeIn = input;
 
         if (tlsSigner != null)
         {
-            buf = new SignerInputBuffer();
+            buf = new DigestInputBuffer();
             teeIn = new TeeInputStream(input, buf);
         }
 
@@ -207,14 +186,9 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
         if (buf != null)
         {
-            DigitallySigned signed_params = parseSignature(input);
+            DigitallySigned signedParams = parseSignature(input);
 
-            Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
-            buf.updateSigner(signer);
-            if (!signer.verifySignature(signed_params.getSignature()))
-            {
-                throw new TlsFatalAlert(AlertDescription.decrypt_error);
-            }
+            TlsUtils.verifyServerKeyExchangeSignature(context, tlsSigner, serverPublicKey, buf, signedParams);
         }
 
         this.srpGroup = new SRP6GroupParameters(srpParams.getN(), srpParams.getG());
@@ -278,7 +252,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
     }
 
-    public TlsSecret generatePremasterSecret() throws IOException
+    public TlsSecret generatePreMasterSecret() throws IOException
     {
         try
         {
@@ -293,13 +267,5 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
-    }
-
-    protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)
-    {
-        Signer signer = tlsSigner.createVerifyer(algorithm, this.serverPublicKey);
-        signer.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
-        signer.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
-        return signer;
     }
 }

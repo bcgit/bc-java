@@ -1137,11 +1137,15 @@ public abstract class TlsProtocol
     protected static void establishMasterSecret(TlsContext context, TlsKeyExchange keyExchange)
         throws IOException
     {
-        TlsSecret pre_master_secret = keyExchange.generatePremasterSecret();
+        TlsSecret preMasterSecret = keyExchange.generatePreMasterSecret();
+        if (preMasterSecret == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         try
         {
-            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context, pre_master_secret);
+            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context, preMasterSecret);
         }
         finally
         {
@@ -1149,9 +1153,9 @@ public abstract class TlsProtocol
              * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
              * master_secret has been computed.
              */
-            if (pre_master_secret != null)
+            if (preMasterSecret != null)
             {
-                pre_master_secret.destroy();
+                preMasterSecret.destroy();
             }
         }
     }

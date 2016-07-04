@@ -421,7 +421,7 @@ public class TlsClientProtocol
                         hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
                     }
 
-                    byte[] signature = signerCredentials.generateCertificateSignature(hash);
+                    byte[] signature = signerCredentials.generateRawSignature(hash);
                     DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
                     sendCertificateVerifyMessage(certificateVerify);
 

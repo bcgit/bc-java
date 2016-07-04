@@ -449,7 +449,7 @@ public class TlsDHUtils
         return result;
     }
 
-    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key, int minimumPrimeBits) throws IOException
+    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException
     {
         BigInteger Y = key.getY();
         BigInteger p = key.getParameters().getP();

@@ -115,7 +115,7 @@ public class TlsDHKeyExchange
         {
             try
             {
-                this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey, getMinimumPrimeBits());
+                this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
                 this.dhConfig = TlsDHUtils.selectDHConfig(dhFixedAgreePublicKey.getParameters());
             }
             catch (ClassCastException e)
@@ -275,7 +275,7 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public TlsSecret generatePremasterSecret()
+    public TlsSecret generatePreMasterSecret()
         throws IOException
     {
         if (agreementCredentials != null)
@@ -295,11 +295,6 @@ public class TlsDHKeyExchange
     {
         byte[] y = agreement.generateEphemeral();
         TlsUtils.writeOpaque16(y, output);
-    }
-
-    protected int getMinimumPrimeBits()
-    {
-        return 1024;
     }
 
     protected void processEphemeral(byte[] y) throws IOException

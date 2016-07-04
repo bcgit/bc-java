@@ -5,11 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.Streams;
 
@@ -19,11 +15,11 @@ import org.bouncycastle.util.io.Streams;
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected RSAKeyParameters rsaServerPublicKey = null;
+    protected TlsCertificate serverCertificate = null;
 
     protected TlsEncryptionCredentials serverCredentials = null;
 
-    protected TlsSecret premasterSecret;
+    protected TlsSecret preMasterSecret;
 
     public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms)
     {
@@ -57,28 +53,7 @@ public class TlsRSAKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
-
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        AsymmetricKeyParameter serverPublicKey = null;
-        try
-        {
-            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        // Sanity check the PublicKeyFactory
-        if (serverPublicKey.isPrivate())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        this.rsaServerPublicKey = validateRSAPublicKey((RSAKeyParameters)serverPublicKey);
-
-        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyEncipherment);
+        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA);
 
         super.processServerCertificate(serverCertificate);
     }
@@ -113,7 +88,7 @@ public class TlsRSAKeyExchange
     public void generateClientKeyExchange(OutputStream output)
         throws IOException
     {
-        this.premasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, rsaServerPublicKey, output);
+        this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, serverCertificate, output);
     }
 
     public void processClientKeyExchange(InputStream input)
@@ -130,62 +105,14 @@ public class TlsRSAKeyExchange
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        this.premasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
+        this.preMasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
     }
 
-    public TlsSecret generatePremasterSecret()
+    public TlsSecret generatePreMasterSecret()
         throws IOException
     {
-        if (this.premasterSecret == null)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        TlsSecret tmp = this.premasterSecret;
-        this.premasterSecret = null;
+        TlsSecret tmp = this.preMasterSecret;
+        this.preMasterSecret = null;
         return tmp;
-    }
-
-    // Would be needed to process RSA_EXPORT server key exchange
-    // protected void processRSAServerKeyExchange(InputStream is, Signer signer) throws IOException
-    // {
-    // InputStream sigIn = is;
-    // if (signer != null)
-    // {
-    // sigIn = new SignerInputStream(is, signer);
-    // }
-    //
-    // byte[] modulusBytes = TlsUtils.readOpaque16(sigIn);
-    // byte[] exponentBytes = TlsUtils.readOpaque16(sigIn);
-    //
-    // if (signer != null)
-    // {
-    // byte[] sigByte = TlsUtils.readOpaque16(is);
-    //
-    // if (!signer.verifySignature(sigByte))
-    // {
-    // handler.failWithError(AlertLevel.fatal, AlertDescription.bad_certificate);
-    // }
-    // }
-    //
-    // BigInteger modulus = new BigInteger(1, modulusBytes);
-    // BigInteger exponent = new BigInteger(1, exponentBytes);
-    //
-    // this.rsaServerPublicKey = validateRSAPublicKey(new RSAKeyParameters(false, modulus,
-    // exponent));
-    // }
-
-    protected RSAKeyParameters validateRSAPublicKey(RSAKeyParameters key)
-        throws IOException
-    {
-        // TODO What is the minimum bit length required?
-        // key.getModulus().bitLength();
-
-        if (!key.getExponent().isProbablePrime(2))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        return key;
     }
 }

@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 
 /**
  * Parsing and encoding of a <i>Certificate</i> struct from RFC 4346.
@@ -50,6 +51,20 @@ public class Certificate
     public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index)
     {
         return certificateList[index];
+    }
+
+    public TlsCertificate getCertificateAt(TlsContext context, int index)
+    {
+        byte[] encoding;
+        try
+        {
+            encoding = certificateList[index].getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+        return context.getCrypto().createCertificate(encoding);
     }
 
     public int getLength()
