@@ -1,7 +1,6 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 public interface TlsSigner
@@ -13,8 +12,6 @@ public interface TlsSigner
 
     boolean verifyRawSignature(SignatureAndHashAlgorithm algorithm, byte[] sigBytes, AsymmetricKeyParameter publicKey,
         byte[] hash) throws CryptoException;
-
-    Signer createVerifyer(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter publicKey);
 
     boolean isValidPublicKey(AsymmetricKeyParameter publicKey);
 }

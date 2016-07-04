@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -1146,6 +1147,53 @@ public class TlsUtils
             return NISTObjectIdentifiers.id_sha512;
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
+        }
+    }
+
+    static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
+    {
+        Digest d = TlsUtils.createHash(algorithm);
+
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
+        d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
+        buf.updateDigest(d);
+
+        byte[] hash = new byte[d.getDigestSize()];
+        d.doFinal(hash, 0);
+        return hash;
+    }
+
+    static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsSignerCredentials credentials,
+        DigestInputBuffer buf) throws IOException
+    {
+        /*
+         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+         */
+        SignatureAndHashAlgorithm algorithm = TlsUtils.getSignatureAndHashAlgorithm(context, credentials);
+        byte[] hash = TlsUtils.calculateSignatureHash(context, algorithm, buf);
+        byte[] signature = credentials.generateRawSignature(hash);
+        return new DigitallySigned(algorithm, signature);
+    }
+
+    static void verifyServerKeyExchangeSignature(TlsContext context, TlsSigner tlsSigner,
+        AsymmetricKeyParameter serverPublicKey, DigestInputBuffer buf, DigitallySigned signedParams) throws IOException
+    {
+        byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
+
+        boolean verified = false;
+        try
+        {
+            verified = tlsSigner.verifyRawSignature(signedParams.getAlgorithm(), signedParams.getSignature(),
+                serverPublicKey, hash);
+        }
+        catch (CryptoException e)
+        {
+        }
+
+        if (!verified)
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
     }
 
