@@ -11,5 +11,7 @@ public interface TlsAgreement
 
     void receivePeerValue(byte[] peerValue) throws IOException;
 
+    void usePeerCertificate(TlsCertificate certificate) throws IOException;
+
     TlsSecret calculateSecret() throws IOException;
 }

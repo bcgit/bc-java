@@ -10,6 +10,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class BcTlsDH implements TlsAgreement
@@ -37,6 +38,13 @@ public class BcTlsDH implements TlsAgreement
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
         this.peerPublicKey = TlsDHUtils.validateDHPublicKey(domain.decodePublicKey(peerValue));
+    }
+
+    public void usePeerCertificate(TlsCertificate certificate) throws IOException
+    {
+        // TODO[tls-ops] Check the domains match (although the agreement implementation enforces it anyway)
+        // TODO[tls-ops] Is there a use-case where the TlsDHDomain is determined from the certificate?
+        this.peerPublicKey = BcTlsCertificate.convert(certificate).getPubKeyDH();
     }
 
     public TlsSecret calculateSecret() throws IOException
