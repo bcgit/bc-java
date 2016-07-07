@@ -1153,10 +1153,7 @@ public abstract class TlsProtocol
              * RFC 2246 8.1. The pre_master_secret should be deleted from memory once the
              * master_secret has been computed.
              */
-            if (preMasterSecret != null)
-            {
-                preMasterSecret.destroy();
-            }
+            preMasterSecret.destroy();
         }
     }
 
