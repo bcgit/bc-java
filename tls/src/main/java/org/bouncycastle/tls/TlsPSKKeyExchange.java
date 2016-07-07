@@ -287,7 +287,7 @@ public class TlsPSKKeyExchange
                 encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
             }
 
-            this.preMasterSecret = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+            this.preMasterSecret = serverCredentials.decrypt(encryptedPreMasterSecret);
         }
     }
 

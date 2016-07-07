@@ -106,7 +106,7 @@ public class TlsRSAKeyExchange
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        this.preMasterSecret = serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret);
+        this.preMasterSecret = serverCredentials.decrypt(encryptedPreMasterSecret);
     }
 
     public TlsSecret generatePreMasterSecret()

@@ -51,8 +51,9 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
         return certificate;
     }
 
-    public TlsSecret decryptPreMasterSecret(byte[] encryptedPreMasterSecret) throws IOException
+    public TlsSecret decrypt(byte[] ciphertext) throws IOException
     {
-        return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, encryptedPreMasterSecret);
+        // TODO Keep only the decryption itself here - move error handling outside 
+        return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, ciphertext);
     }
 }
