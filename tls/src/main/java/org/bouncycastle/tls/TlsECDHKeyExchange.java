@@ -265,7 +265,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(ecFixedAgreePublicKey));
+            return agreementCredentials.generateAgreement(ecFixedAgreePublicKey);
         }
 
         if (agreement != null)

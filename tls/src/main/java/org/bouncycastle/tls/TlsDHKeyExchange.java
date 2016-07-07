@@ -283,7 +283,7 @@ public class TlsDHKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(dhFixedAgreePublicKey));
+            return agreementCredentials.generateAgreement(dhFixedAgreePublicKey);
         }
 
         if (agreement != null)

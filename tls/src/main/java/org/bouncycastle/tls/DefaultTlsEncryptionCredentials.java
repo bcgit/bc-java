@@ -15,6 +15,10 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
     public DefaultTlsEncryptionCredentials(TlsContext context, Certificate certificate,
         AsymmetricKeyParameter privateKey)
     {
+        if (context == null)
+        {
+            throw new IllegalArgumentException("'context' cannot be null");
+        }
         if (certificate == null)
         {
             throw new IllegalArgumentException("'certificate' cannot be null");

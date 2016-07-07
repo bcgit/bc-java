@@ -83,7 +83,7 @@ public class TlsTestUtils
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new DefaultTlsAgreementCredentials(certificate, privateKey);
+        return new DefaultTlsAgreementCredentials(context, certificate, privateKey);
     }
 
     static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context,
