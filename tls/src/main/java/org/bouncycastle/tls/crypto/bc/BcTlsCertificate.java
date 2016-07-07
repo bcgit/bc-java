@@ -263,12 +263,14 @@ public class BcTlsCertificate implements TlsCertificate
 
     protected DSAPublicKeyParameters validatePubKeyDSS(DSAPublicKeyParameters pubKeyDSS) throws IOException
     {
+        // TODO[tls-ops]
         return pubKeyDSS;
     }
 
     protected ECPublicKeyParameters validatePubKeyEC(ECPublicKeyParameters pubKeyEC) throws IOException
     {
-        return TlsECCUtils.validateECPublicKey(pubKeyEC);
+        // TODO[tls-ops]
+        return pubKeyEC;
     }
 
     protected RSAKeyParameters validatePubKeyRSA(RSAKeyParameters pubKeyRSA) throws IOException

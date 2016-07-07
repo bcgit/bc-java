@@ -6,8 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
 
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -269,11 +267,6 @@ public class TlsECCUtils
         }
     }
 
-    public static boolean areOnSameCurve(ECDomainParameters a, ECDomainParameters b)
-    {
-        return a != null && a.equals(b);
-    }
-
     public static boolean isSupportedNamedCurve(int namedCurve)
     {
         return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
@@ -357,12 +350,6 @@ public class TlsECCUtils
         default:
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-    }
-
-    public static ECPublicKeyParameters validateECPublicKey(ECPublicKeyParameters key) throws IOException
-    {
-        // TODO Check RFC 4492 for validation
-        return key;
     }
 
     public static TlsECConfig readECConfig(short[] peerECPointFormats, InputStream input)
