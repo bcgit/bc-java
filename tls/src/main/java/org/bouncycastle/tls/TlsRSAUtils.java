@@ -42,7 +42,7 @@ public class TlsRSAUtils
         return preMasterSecret;
     }
 
-    public static byte[] safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
+    public static TlsSecret safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
         byte[] encryptedPreMasterSecret)
     {
         /*
@@ -118,6 +118,6 @@ public class TlsRSAUtils
                 M[i] = (byte)((M[i] & (~mask)) | (fallback[i] & mask));
             }
         }
-        return M;
+        return context.getCrypto().createSecret(M);
     }
 }

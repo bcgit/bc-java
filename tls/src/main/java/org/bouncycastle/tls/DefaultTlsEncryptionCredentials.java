@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCredentials
 {
@@ -50,8 +51,7 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
         return certificate;
     }
 
-    public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret)
-        throws IOException
+    public TlsSecret decryptPreMasterSecret(byte[] encryptedPreMasterSecret) throws IOException
     {
         return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, encryptedPreMasterSecret);
     }
