@@ -121,6 +121,7 @@ public abstract class AbstractTlsKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
+        // TODO[tls-ops] Process the server certificate differently on the server side 
         processServerCertificate(serverCredentials.getCertificate());
     }
 

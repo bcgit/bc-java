@@ -94,6 +94,7 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        // TODO[tls-ops] Process the server certificate differently on the server side 
         processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
