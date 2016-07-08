@@ -8,19 +8,25 @@ import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.BigIntegers;
 
 public class DefaultTlsAgreementCredentials
     extends AbstractTlsAgreementCredentials
 {
+    protected TlsContext context;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
 
     protected BasicAgreement basicAgreement;
     protected boolean truncateAgreement;
 
-    public DefaultTlsAgreementCredentials(Certificate certificate, AsymmetricKeyParameter privateKey)
+    public DefaultTlsAgreementCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
     {
+        if (context == null)
+        {
+            throw new IllegalArgumentException("'context' cannot be null");
+        }
         if (certificate == null)
         {
             throw new IllegalArgumentException("'certificate' cannot be null");
@@ -54,6 +60,7 @@ public class DefaultTlsAgreementCredentials
                 + privateKey.getClass().getName());
         }
 
+        this.context = context;
         this.certificate = certificate;
         this.privateKey = privateKey;
     }
@@ -63,11 +70,15 @@ public class DefaultTlsAgreementCredentials
         return certificate;
     }
 
-    public byte[] generateAgreement(AsymmetricKeyParameter peerPublicKey)
+    public TlsSecret generateAgreement(AsymmetricKeyParameter peerPublicKey)
     {
         basicAgreement.init(privateKey);
         BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
+        return context.getCrypto().createSecret(toByteArray(agreementValue));
+    }
 
+    protected byte[] toByteArray(BigInteger agreementValue)
+    {
         if (truncateAgreement)
         {
             return BigIntegers.asUnsignedByteArray(agreementValue);

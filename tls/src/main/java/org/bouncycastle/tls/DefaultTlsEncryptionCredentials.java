@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCredentials
 {
@@ -14,6 +15,10 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
     public DefaultTlsEncryptionCredentials(TlsContext context, Certificate certificate,
         AsymmetricKeyParameter privateKey)
     {
+        if (context == null)
+        {
+            throw new IllegalArgumentException("'context' cannot be null");
+        }
         if (certificate == null)
         {
             throw new IllegalArgumentException("'certificate' cannot be null");
@@ -50,9 +55,9 @@ public class DefaultTlsEncryptionCredentials extends AbstractTlsEncryptionCreden
         return certificate;
     }
 
-    public byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret)
-        throws IOException
+    public TlsSecret decrypt(byte[] ciphertext) throws IOException
     {
-        return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, encryptedPreMasterSecret);
+        // TODO Keep only the decryption itself here - move error handling outside 
+        return TlsRSAUtils.safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, ciphertext);
     }
 }

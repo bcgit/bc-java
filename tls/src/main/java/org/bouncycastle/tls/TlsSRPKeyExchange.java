@@ -140,6 +140,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        // TODO[tls-ops] Process the server certificate differently on the server side 
         processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsSignerCredentials)serverCredentials;

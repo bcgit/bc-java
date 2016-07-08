@@ -37,7 +37,7 @@ public class BcTlsECDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = TlsECCUtils.validateECPublicKey(domain.decodePublicKey(peerValue));
+        this.peerPublicKey = domain.decodePublicKey(peerValue);
     }
 
     public void usePeerCertificate(TlsCertificate certificate) throws IOException

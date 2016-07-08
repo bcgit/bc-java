@@ -113,6 +113,9 @@ public class TlsDHKeyExchange
 
         if (tlsSigner == null)
         {
+            // TODO[tls-ops] Extract TlsDHConfig and/or initialize TlsAgreement directly from certificate
+//            this.dhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
+
             try
             {
                 this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
@@ -280,7 +283,7 @@ public class TlsDHKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(dhFixedAgreePublicKey));
+            return agreementCredentials.generateAgreement(dhFixedAgreePublicKey);
         }
 
         if (agreement != null)

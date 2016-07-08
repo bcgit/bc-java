@@ -102,9 +102,12 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         if (tlsSigner == null)
         {
+            // TODO[tls-ops] Extract TlsECConfig and/or initialize TlsAgreement directly from certificate
+//          this.ecdhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
+
             try
             {
-                this.ecFixedAgreePublicKey = TlsECCUtils.validateECPublicKey((ECPublicKeyParameters)this.serverPublicKey);
+                this.ecFixedAgreePublicKey = (ECPublicKeyParameters)this.serverPublicKey;
             }
             catch (ClassCastException e)
             {
@@ -265,7 +268,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return context.getCrypto().createSecret(agreementCredentials.generateAgreement(ecFixedAgreePublicKey));
+            return agreementCredentials.generateAgreement(ecFixedAgreePublicKey);
         }
 
         if (agreement != null)

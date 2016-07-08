@@ -2,8 +2,10 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-public interface TlsEncryptionCredentials extends TlsCredentials
+import org.bouncycastle.tls.crypto.TlsSecret;
+
+public interface TlsEncryptionCredentials
+    extends TlsCredentials
 {
-    byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret)
-        throws IOException;
+    TlsSecret decrypt(byte[] ciphertext) throws IOException;
 }

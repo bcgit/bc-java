@@ -26,6 +26,10 @@ public class DefaultTlsSignerCredentials
     public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
+        if (context == null)
+        {
+            throw new IllegalArgumentException("'context' cannot be null");
+        }
         if (certificate == null)
         {
             throw new IllegalArgumentException("'certificate' cannot be null");

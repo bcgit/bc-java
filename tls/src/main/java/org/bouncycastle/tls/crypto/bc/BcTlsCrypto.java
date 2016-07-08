@@ -57,7 +57,18 @@ public class BcTlsCrypto extends AbstractTlsCrypto
 
     public TlsSecret createSecret(byte[] data)
     {
-        return adoptSecret(Arrays.clone(data));
+        try
+        {
+            return adoptSecret(Arrays.clone(data));
+        }
+        finally
+        {
+            // TODO[tls-ops] Add this after checking all callers
+//            if (data != null)
+//            {
+//                Arrays.fill(data, (byte)0);
+//            }
+        }
     }
 
     public TlsSecret generateRandomSecret(int length)

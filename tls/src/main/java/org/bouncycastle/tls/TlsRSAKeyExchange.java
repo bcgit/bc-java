@@ -40,6 +40,7 @@ public class TlsRSAKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        // TODO[tls-ops] Process the server certificate differently on the server side 
         processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
@@ -105,7 +106,7 @@ public class TlsRSAKeyExchange
             encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
         }
 
-        this.preMasterSecret = context.getCrypto().createSecret(serverCredentials.decryptPreMasterSecret(encryptedPreMasterSecret));
+        this.preMasterSecret = serverCredentials.decrypt(encryptedPreMasterSecret);
     }
 
     public TlsSecret generatePreMasterSecret()
