@@ -93,7 +93,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void skipServerCredentials() throws IOException
     {
-        if (tlsSigner != null)
+        if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -101,7 +101,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (tlsSigner == null)
+        if (keyExchange == KeyExchangeAlgorithm.SRP)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -177,7 +177,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         DigestInputBuffer buf = null;
         InputStream teeIn = input;
 
-        if (tlsSigner != null)
+        if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
             buf = new DigestInputBuffer();
             teeIn = new TeeInputStream(input, buf);
