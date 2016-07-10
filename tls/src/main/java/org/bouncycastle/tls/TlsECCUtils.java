@@ -15,12 +15,6 @@ public class TlsECCUtils
     public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.elliptic_curves);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
 
-    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
-        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
-        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
-        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
-        "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"};
-
     public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves) throws IOException
     {
         extensions.put(EXT_elliptic_curves, createSupportedEllipticCurvesExtension(namedCurves));
@@ -123,16 +117,6 @@ public class TlsECCUtils
         return ecPointFormats;
     }
 
-    public static String getNameOfNamedCurve(int namedCurve)
-    {
-        return isSupportedNamedCurve(namedCurve) ? CURVE_NAMES[namedCurve - 1] : null;
-    }
-
-    public static boolean hasAnySupportedNamedCurves()
-    {
-        return CURVE_NAMES.length > 0;
-    }
-
     public static boolean containsECCCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
@@ -143,6 +127,33 @@ public class TlsECCUtils
             }
         }
         return false;
+    }
+
+    public static int getMinimumCurveBits(int cipherSuite)
+    {
+        switch (cipherSuite)
+        {
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
+            return 255;
+
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
+            return 384;
+
+        default:
+        {
+            if (!isECCCipherSuite(cipherSuite))
+            {
+                return 0;
+            }
+
+            // TODO Is there a de facto rule to require a curve of similar size to the PRF hash?
+            return 1;
+        }
+        }
     }
 
     public static boolean isECCCipherSuite(int cipherSuite)
@@ -260,16 +271,21 @@ public class TlsECCUtils
         case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB:
         case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB:
 
+        /*
+         * draft-ietf-tls-ecdhe-psk-aead-00
+         */
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384:
+
             return true;
 
         default:
             return false;
         }
-    }
-
-    public static boolean isSupportedNamedCurve(int namedCurve)
-    {
-        return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
     }
 
     public static short getCompressionFormat(int namedCurve) throws IOException
@@ -391,7 +407,14 @@ public class TlsECCUtils
     public static TlsECConfig selectECConfig(int[] namedCurves, short[] clientECPointFormats, OutputStream output)
         throws IOException
     {
-        int namedCurve = chooseNamedCurve(namedCurves);
+        /*
+         * TODO[draft-ietf-tls-ecdhe-psk-aead-00] This draft introduced (AFAIK, the first explicit mention of) a
+         * per-ciphersuite (or perhaps PRF-dependent) minimum curve bits
+         *  
+         */
+        int minCurveBits = 1;
+
+        int namedCurve = chooseNamedCurve(minCurveBits, namedCurves);
         if (namedCurve < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -437,21 +460,24 @@ public class TlsECCUtils
         }
     }
 
-    private static int chooseNamedCurve(int[] namedCurves)
+    private static int chooseNamedCurve(int minCurveBits, int[] namedCurves)
     {
-        /* First we try to find a supported named curve from the client's list. */
         if (namedCurves == null)
         {
-            // TODO Let the peer choose the default named curve
-            return NamedCurve.secp256r1;
+            // TODO Let the peer select a curve of the required size (and validate the selection)
+            return minCurveBits <= 256 ? NamedCurve.secp256r1
+                :  minCurveBits <= 384 ? NamedCurve.secp384r1
+                :  minCurveBits <= 521 ? NamedCurve.secp521r1
+                :                        NamedCurve.sect571r1;
         }
 
+        // Try to find a supported named curve of the required size from the client's list.
         for (int i = 0; i < namedCurves.length; ++i)
         {
-            int entry = namedCurves[i];
-            if (NamedCurve.isValid(entry) && isSupportedNamedCurve(entry))
+            int namedCurve = namedCurves[i];
+            if (NamedCurve.getCurveBits(namedCurve) >= minCurveBits)
             {
-                return entry;
+                return namedCurve;
             }
         }
 

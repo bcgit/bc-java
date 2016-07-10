@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsECCUtils;
+import org.bouncycastle.tls.NamedCurve;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -110,7 +110,7 @@ public class BcTlsECDomain implements TlsECDomain
 
     public ECDomainParameters getParametersForNamedCurve(int namedCurve)
     {
-        String curveName = TlsECCUtils.getNameOfNamedCurve(namedCurve);
+        String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
         if (curveName == null)
         {
             return null;
