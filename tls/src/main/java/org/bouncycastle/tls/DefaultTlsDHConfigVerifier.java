@@ -51,7 +51,7 @@ public class DefaultTlsDHConfigVerifier
      */
     public DefaultTlsDHConfigVerifier()
     {
-        this(1024);
+        this(DEFAULT_MINIMUM_PRIME_BITS);
     }
 
     /**
