@@ -90,14 +90,14 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
-            serverECPointFormats);
+        return keyExchangeFactory.createECDHKeyExchangeClient(keyExchange, supportedSignatureAlgorithms,
+            createECConfigVerifier(), clientECPointFormats, serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
-            serverECPointFormats);
+        return keyExchangeFactory.createECDHEKeyExchangeClient(keyExchange, supportedSignatureAlgorithms,
+            createECConfigVerifier(), clientECPointFormats, serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() throws IOException

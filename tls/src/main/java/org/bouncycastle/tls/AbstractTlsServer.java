@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 
 public abstract class AbstractTlsServer
@@ -65,6 +69,11 @@ public abstract class AbstractTlsServer
         return new short[]{CompressionMethod._null};
     }
 
+    protected DHParameters getDHParameters()
+    {
+        return DHStandardGroups.rfc5114_2048_256;
+    }
+
     protected ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.TLSv11;
@@ -97,6 +106,57 @@ public abstract class AbstractTlsServer
         return maxBits;
     }
 
+    protected int selectCurve(int minimumCurveBits)
+    {
+        if (namedCurves == null)
+        {
+            return selectDefaultCurve(minimumCurveBits);
+        }
+
+        // Try to find a supported named curve of the required size from the client's list.
+        for (int i = 0; i < namedCurves.length; ++i)
+        {
+            int namedCurve = namedCurves[i];
+            if (NamedCurve.getCurveBits(namedCurve) >= minimumCurveBits)
+            {
+                return namedCurve;
+            }
+        }
+
+        return -1;
+    }
+
+    protected int selectDefaultCurve(int minimumCurveBits)
+    {
+        return minimumCurveBits <= 256 ? NamedCurve.secp256r1
+            :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
+            :  minimumCurveBits <= 521 ? NamedCurve.secp521r1
+            :  -1;
+    }
+
+    protected TlsDHConfig selectDHConfig()
+    {
+        return TlsDHUtils.selectDHConfig(getDHParameters()); 
+    }
+
+    protected TlsECConfig selectECConfig() throws IOException
+    {
+        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
+
+        int namedCurve = selectCurve(minimumCurveBits);
+        if (namedCurve < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        boolean compressed = TlsECCUtils.isCompressionPreferred(clientECPointFormats, namedCurve);
+
+        TlsECConfig ecConfig = new TlsECConfig();
+        ecConfig.setNamedCurve(namedCurve);
+        ecConfig.setPointCompression(compressed);
+        return ecConfig;
+    }
+    
     public void init(TlsServerContext context)
     {
         this.context = context;

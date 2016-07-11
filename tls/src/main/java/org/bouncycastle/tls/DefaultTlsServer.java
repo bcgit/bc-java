@@ -2,10 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
-
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
@@ -41,16 +37,6 @@ public abstract class DefaultTlsServer
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected DHParameters getDHParameters()
-    {
-        return DHStandardGroups.rfc5114_2048_256;
-    }
-
-    protected TlsDHConfig getDHConfig()
-    {
-        return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }
 
     protected int[] getCipherSuites()
@@ -148,23 +134,23 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECConfig(),
             serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECConfig(),
             serverECPointFormats);
     }
 

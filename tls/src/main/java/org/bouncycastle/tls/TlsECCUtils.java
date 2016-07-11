@@ -396,38 +396,20 @@ public class TlsECCUtils
         return result;
     }
 
-    public static TlsECConfig receiveECConfig(int[] namedCurves, short[] peerECPointFormats, InputStream input)
+    public static TlsECConfig receiveECConfig(TlsECConfigVerifier ecConfigVerifier, short[] peerECPointFormats, InputStream input)
         throws IOException
     {
-        TlsECConfig result = readECConfig(peerECPointFormats, input);
-        checkNamedCurve(namedCurves, result.getNamedCurve());
-        return result;
+        TlsECConfig ecConfig = readECConfig(peerECPointFormats, input);
+        if (!ecConfigVerifier.accept(ecConfig))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+        return ecConfig;
     }
 
-    public static TlsECConfig selectECConfig(int[] namedCurves, short[] clientECPointFormats, OutputStream output)
-        throws IOException
+    public static void writeECConfig(TlsECConfig ecConfig, OutputStream output) throws IOException
     {
-        /*
-         * TODO[draft-ietf-tls-ecdhe-psk-aead-00] This draft introduced (AFAIK, the first explicit mention of) a
-         * per-ciphersuite (or perhaps PRF-dependent) minimum curve bits
-         *  
-         */
-        int minCurveBits = 1;
-
-        int namedCurve = chooseNamedCurve(minCurveBits, namedCurves);
-        if (namedCurve < 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        writeNamedECParameters(namedCurve, output);
-
-        boolean compressed = isCompressionPreferred(clientECPointFormats, namedCurve);
-
-        TlsECConfig result = new TlsECConfig();
-        result.setNamedCurve(namedCurve);
-        result.setPointCompression(compressed);
-        return result;
+        writeNamedECParameters(ecConfig.getNamedCurve(), output);
     }
 
     public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException
@@ -445,42 +427,5 @@ public class TlsECCUtils
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
         TlsUtils.checkUint16(namedCurve);
         TlsUtils.writeUint16(namedCurve, output);
-    }
-
-    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
-    {
-        if (namedCurves != null && !Arrays.contains(namedCurves, namedCurve))
-        {
-            /*
-             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
-             * unless they can complete the handshake while respecting the choice of curves
-             * and compression techniques specified by the client.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-    }
-
-    private static int chooseNamedCurve(int minCurveBits, int[] namedCurves)
-    {
-        if (namedCurves == null)
-        {
-            // TODO Let the peer select a curve of the required size (and validate the selection)
-            return minCurveBits <= 256 ? NamedCurve.secp256r1
-                :  minCurveBits <= 384 ? NamedCurve.secp384r1
-                :  minCurveBits <= 521 ? NamedCurve.secp521r1
-                :                        NamedCurve.sect571r1;
-        }
-
-        // Try to find a supported named curve of the required size from the client's list.
-        for (int i = 0; i < namedCurves.length; ++i)
-        {
-            int namedCurve = namedCurves[i];
-            if (NamedCurve.getCurveBits(namedCurve) >= minCurveBits)
-            {
-                return namedCurve;
-            }
-        }
-
-        return -1;
     }
 }

@@ -21,7 +21,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 {
     protected TlsSigner tlsSigner;
-    protected int[] namedCurves;
+    protected TlsECConfigVerifier ecConfigVerifier;
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected AsymmetricKeyParameter serverPublicKey;
@@ -32,8 +32,20 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
     protected TlsECConfig ecConfig;
     protected TlsAgreement agreement;
 
-    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
+    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfigVerifier ecConfigVerifier,
         short[] clientECPointFormats, short[] serverECPointFormats)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, null, clientECPointFormats, serverECPointFormats);
+    }
+
+    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
+        short[] serverECPointFormats)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, null, ecConfig, null, serverECPointFormats);
+    }
+
+    private TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfigVerifier ecConfigVerifier,
+        TlsECConfig ecConfig, short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -54,7 +66,8 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
-        this.namedCurves = namedCurves;
+        this.ecConfigVerifier = ecConfigVerifier;
+        this.ecConfig = ecConfig;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
     }
@@ -154,7 +167,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+        TlsECCUtils.writeECConfig(ecConfig, buf);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -173,7 +186,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         // ECDH_anon is handled here, ECDHE_* in a subclass
 
-        this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, input);
+        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
 
         byte[] point = TlsUtils.readOpaque8(input);
 

@@ -39,10 +39,14 @@ public class PSKTlsClient
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, dhConfigVerifier, null);
+
         case KeyExchangeAlgorithm.ECDHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, createECConfigVerifier());
+
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm);
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, null);
 
         default:
             /*
@@ -63,9 +67,10 @@ public class PSKTlsClient
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier,
+        TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
         return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity,
-            dhConfigVerifier, namedCurves, clientECPointFormats, serverECPointFormats);
+            dhConfigVerifier, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
     }
 }

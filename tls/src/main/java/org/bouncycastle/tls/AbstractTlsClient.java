@@ -59,6 +59,12 @@ public abstract class AbstractTlsClient
         }
     }
 
+    protected TlsECConfigVerifier createECConfigVerifier()
+    {
+        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
+        return new DefaultTlsECConfigVerifier(minimumCurveBits, namedCurves);
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;

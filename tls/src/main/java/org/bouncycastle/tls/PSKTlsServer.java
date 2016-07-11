@@ -2,9 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 
 public class PSKTlsServer
     extends AbstractTlsServer
@@ -25,16 +24,6 @@ public class PSKTlsServer
     protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected DHParameters getDHParameters()
-    {
-        return DHStandardGroups.rfc5114_2048_256;
-    }
-
-    protected TlsDHConfig getDHConfig()
-    {
-        return TlsDHUtils.selectDHConfig(getDHParameters()); 
     }
 
     protected int[] getCipherSuites()
@@ -75,10 +64,14 @@ public class PSKTlsServer
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, selectDHConfig(), null);
+
         case KeyExchangeAlgorithm.ECDHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, selectECConfig());
+
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm);
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, null);
 
         default:
             /*
@@ -90,9 +83,9 @@ public class PSKTlsServer
         }
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
     {
         return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, pskIdentityManager,
-            getDHConfig(), namedCurves, clientECPointFormats, serverECPointFormats);
+            dhConfig, ecConfig, serverECPointFormats);
     }
 }

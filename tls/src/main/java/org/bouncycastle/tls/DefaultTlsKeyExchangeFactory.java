@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 
 public class DefaultTlsKeyExchangeFactory
     extends AbstractTlsKeyExchangeFactory
@@ -32,34 +33,48 @@ public class DefaultTlsKeyExchangeFactory
         return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, dhConfig);
     }
 
-    public TlsKeyExchange createECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
+        throws IOException
     {
-        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats,
             serverECPointFormats);
     }
 
-    public TlsKeyExchange createECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
-        int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException
     {
-        return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
-            serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
+    }
+
+    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
+        throws IOException
+    {
+        return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier,
+            clientECPointFormats, serverECPointFormats);
+    }
+
+    public TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException
+    {
+        return new TlsECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
     }
 
     public TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier, int[] namedCurves,
+        TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier,
         short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
     {
         return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, pskIdentity, dhConfigVerifier,
-            namedCurves, clientECPointFormats, serverECPointFormats);
+            ecConfigVerifier, clientECPointFormats, serverECPointFormats);
     }
 
     public TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, int[] namedCurves, short[] clientECPointFormats,
+        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, TlsECConfig ecConfig,
         short[] serverECPointFormats) throws IOException
     {
         return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager, dhConfig,
-            namedCurves, clientECPointFormats, serverECPointFormats);
+            ecConfig, serverECPointFormats);
     }
 
     public TlsKeyExchange createRSAKeyExchange(Vector supportedSignatureAlgorithms) throws IOException

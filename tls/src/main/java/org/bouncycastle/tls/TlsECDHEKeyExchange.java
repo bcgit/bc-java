@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -14,10 +15,16 @@ public class TlsECDHEKeyExchange
 {
     protected TlsSignerCredentials serverCredentials = null;
 
-    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
+    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfigVerifier ecConfigVerifier,
         short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats, serverECPointFormats);
+        super(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+    }
+
+    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
+        short[] serverECPointFormats)
+    {
+        super(keyExchange, supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials)
@@ -38,7 +45,7 @@ public class TlsECDHEKeyExchange
     {
         DigestInputBuffer buf = new DigestInputBuffer();
 
-        this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+        TlsECCUtils.writeECConfig(ecConfig, buf);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -56,7 +63,7 @@ public class TlsECDHEKeyExchange
         DigestInputBuffer buf = new DigestInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, teeIn);
+        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
