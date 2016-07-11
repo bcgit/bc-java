@@ -336,7 +336,7 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
         }
 
-        if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+        if (this.clientECPointFormats != null && TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
         {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
@@ -407,6 +407,11 @@ public abstract class AbstractTlsServer
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
+
+        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
     }

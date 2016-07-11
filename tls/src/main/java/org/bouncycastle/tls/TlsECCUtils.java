@@ -117,11 +117,11 @@ public class TlsECCUtils
         return ecPointFormats;
     }
 
-    public static boolean containsECCCipherSuites(int[] cipherSuites)
+    public static boolean containsECCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
         {
-            if (isECCCipherSuite(cipherSuites[i]))
+            if (isECCipherSuite(cipherSuites[i]))
             {
                 return true;
             }
@@ -145,7 +145,7 @@ public class TlsECCUtils
 
         default:
         {
-            if (!isECCCipherSuite(cipherSuite))
+            if (!isECCipherSuite(cipherSuite))
             {
                 return 0;
             }
@@ -156,133 +156,18 @@ public class TlsECCUtils
         }
     }
 
-    public static boolean isECCCipherSuite(int cipherSuite)
+    public static boolean isECCipherSuite(int cipherSuite)
     {
-        switch (cipherSuite)
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
-        /*
-         * RFC 4492
-         */
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA:
-
-        /*
-         * RFC 5289
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
-
-        /*
-         * RFC 5489
-         */
-        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
-
-        /*
-         * RFC 6367
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384:
-
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-
-        case CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384:
-
-        /*
-         * RFC 7251
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8:
-
-        /*
-         * RFC 7905
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
-
-        /*
-         * draft-zauner-tls-aes-ocb-04
-         */
-        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_256_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB:
-
-        /*
-         * draft-ietf-tls-ecdhe-psk-aead-00
-         */
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384:
-
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
             return true;
-
+            
         default:
             return false;
         }

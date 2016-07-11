@@ -1325,9 +1325,9 @@ public class TlsUtils
         return v;
     }
 
-    public static int getCipherType(int ciphersuite) throws IOException
+    public static int getCipherType(int cipherSuite)
     {
-        switch (getEncryptionAlgorithm(ciphersuite))
+        switch (getEncryptionAlgorithm(cipherSuite))
         {
         case EncryptionAlgorithm.AES_128_CCM:
         case EncryptionAlgorithm.AES_128_CCM_8:
@@ -1359,13 +1359,13 @@ public class TlsUtils
             return CipherType.stream;
 
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return -1;
         }
     }
 
-    public static int getEncryptionAlgorithm(int ciphersuite) throws IOException
+    public static int getEncryptionAlgorithm(int cipherSuite)
     {
-        switch (ciphersuite)
+        switch (cipherSuite)
         {
         case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
@@ -1671,13 +1671,13 @@ public class TlsUtils
             return EncryptionAlgorithm.SEED_CBC;
 
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return -1;
         }
     }
 
-    public static int getKeyExchangeAlgorithm(int ciphersuite) throws IOException
+    public static int getKeyExchangeAlgorithm(int cipherSuite)
     {
-        switch (ciphersuite)
+        switch (cipherSuite)
         {
         case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA:
@@ -1973,13 +1973,13 @@ public class TlsUtils
             return KeyExchangeAlgorithm.SRP_RSA;
 
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return -1;
         }
     }
 
-    public static int getMACAlgorithm(int ciphersuite) throws IOException
+    public static int getMACAlgorithm(int cipherSuite)
     {
-        switch (ciphersuite)
+        switch (cipherSuite)
         {
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
@@ -2249,13 +2249,13 @@ public class TlsUtils
             return MACAlgorithm.hmac_sha384;
 
         default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            return -1;
         }
     }
 
-    public static ProtocolVersion getMinimumVersion(int ciphersuite)
+    public static ProtocolVersion getMinimumVersion(int cipherSuite)
     {
-        switch (ciphersuite)
+        switch (cipherSuite)
         {
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
@@ -2402,19 +2402,19 @@ public class TlsUtils
         }
     }
 
-    public static boolean isAEADCipherSuite(int ciphersuite) throws IOException
+    public static boolean isAEADCipherSuite(int cipherSuite) throws IOException
     {
-        return CipherType.aead == getCipherType(ciphersuite);
+        return CipherType.aead == getCipherType(cipherSuite);
     }
 
-    public static boolean isBlockCipherSuite(int ciphersuite) throws IOException
+    public static boolean isBlockCipherSuite(int cipherSuite) throws IOException
     {
-        return CipherType.block == getCipherType(ciphersuite);
+        return CipherType.block == getCipherType(cipherSuite);
     }
 
-    public static boolean isStreamCipherSuite(int ciphersuite) throws IOException
+    public static boolean isStreamCipherSuite(int cipherSuite) throws IOException
     {
-        return CipherType.stream == getCipherType(ciphersuite);
+        return CipherType.stream == getCipherType(cipherSuite);
     }
 
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)

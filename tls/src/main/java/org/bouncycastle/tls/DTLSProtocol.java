@@ -92,6 +92,7 @@ public abstract class DTLSProtocol
         {
         case EncryptionAlgorithm.RC4_40:
         case EncryptionAlgorithm.RC4_128:
+        case -1:
             throw new TlsFatalAlert(alertDescription);
         }
     }

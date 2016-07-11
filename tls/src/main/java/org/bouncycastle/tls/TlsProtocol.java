@@ -1303,11 +1303,11 @@ public abstract class TlsProtocol
         TlsUtils.writeOpaque24(supp_data, output);
     }
 
-    protected static int getPRFAlgorithm(TlsContext context, int ciphersuite) throws IOException
+    protected static int getPRFAlgorithm(TlsContext context, int cipherSuite) throws IOException
     {
         boolean isTLSv12 = TlsUtils.isTLSv12(context);
 
-        switch (ciphersuite)
+        switch (cipherSuite)
         {
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
