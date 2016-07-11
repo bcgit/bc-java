@@ -43,15 +43,6 @@ class MockTlsServer
             + ", " + AlertDescription.getText(alertDescription));
     }
 
-    protected int[] getCipherSuites()
-    {
-        return Arrays.concatenate(super.getCipherSuites(),
-            new int[]
-            {
-                CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-            });
-    }
-
     protected ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.TLSv12;

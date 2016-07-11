@@ -336,15 +336,15 @@ public class CipherSuite
     public static final int TLS_FALLBACK_SCSV = 0x5600;
 
     /*
-     * draft-ietf-tls-chacha20-poly1305-04
+     * RFC 7905
      */
-    public static final int DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA8;
-    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA9;
-    public static final int DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAA;
-    public static final int DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAB;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAC;
-    public static final int DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAD;
-    public static final int DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAE;
+    public static final int TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA8;
+    public static final int TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA9;
+    public static final int TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAA;
+    public static final int TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAB;
+    public static final int TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAC;
+    public static final int TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAD;
+    public static final int TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAE;
 
     /*
      * draft-zauner-tls-aes-ocb-04 (code points TBD)

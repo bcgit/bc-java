@@ -12,7 +12,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
- * draft-ietf-tls-chacha20-poly1305-04
+ * RFC 7905
  */
 public class Chacha20Poly1305 implements TlsCipher
 {
