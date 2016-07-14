@@ -165,7 +165,7 @@ public class TlsPSKKeyExchange
 
         this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA_PSK);
 
-        super.processServerCertificate(serverCertificate);
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()

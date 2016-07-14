@@ -19,7 +19,6 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -33,6 +32,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
@@ -798,6 +798,50 @@ public class TlsUtils
         extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
     }
 
+    public static short getSignatureAlgorithm(int keyExchangeAlgorithm)
+    {
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return SignatureAlgorithm.dsa;
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return SignatureAlgorithm.ecdsa;
+
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return SignatureAlgorithm.rsa;
+
+        default:
+            return -1;
+        }
+    }
+
+    public static short getSignatureAlgorithmClient(short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+            return SignatureAlgorithm.dsa;
+        case ClientCertificateType.ecdsa_sign:
+            return SignatureAlgorithm.ecdsa;
+        case ClientCertificateType.rsa_sign:
+            return SignatureAlgorithm.rsa;
+        default:
+            return -1;
+        }
+    }
+
     /**
      * Get a 'signature_algorithms' extension from extensions.
      *
@@ -1176,22 +1220,12 @@ public class TlsUtils
         return new DigitallySigned(algorithm, signature);
     }
 
-    static void verifyServerKeyExchangeSignature(TlsContext context, TlsSigner tlsSigner,
-        AsymmetricKeyParameter serverPublicKey, DigestInputBuffer buf, DigitallySigned signedParams) throws IOException
+    static void verifyServerKeyExchangeSignature(TlsContext context, TlsVerifier tlsVerifier, DigestInputBuffer buf,
+        DigitallySigned signedParams) throws IOException
     {
         byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
 
-        boolean verified = false;
-        try
-        {
-            verified = tlsSigner.verifyRawSignature(signedParams.getAlgorithm(), signedParams.getSignature(),
-                serverPublicKey, hash);
-        }
-        catch (CryptoException e)
-        {
-        }
-
-        if (!verified)
+        if (!tlsVerifier.verifySignature(signedParams, hash))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
@@ -1297,21 +1331,6 @@ public class TlsUtils
             return true;
         default:
             return false;
-        }
-    }
-
-    public static TlsSigner createTlsSigner(short clientCertificateType)
-    {
-        switch (clientCertificateType)
-        {
-        case ClientCertificateType.dss_sign:
-            return new TlsDSSSigner();
-        case ClientCertificateType.ecdsa_sign:
-            return new TlsECDSASigner();
-        case ClientCertificateType.rsa_sign:
-            return new TlsRSASigner();
-        default:
-            throw new IllegalArgumentException("'clientCertificateType' is not a type with signing capability");
         }
     }
 

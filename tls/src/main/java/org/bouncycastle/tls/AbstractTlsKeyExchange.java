@@ -18,6 +18,25 @@ public abstract class AbstractTlsKeyExchange
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
     }
 
+    protected void checkServerCertSigAlg(Certificate serverCertificate) throws IOException
+    {
+        if (supportedSignatureAlgorithms == null)
+        {
+            /*
+             * TODO RFC 2264 7.4.2. Unless otherwise specified, the signing algorithm for the
+             * certificate must be the same as the algorithm for the certificate key.
+             */
+        }
+        else
+        {
+            /*
+             * TODO RFC 5264 7.4.2. If the client provided a "signature_algorithms" extension, then
+             * all certificates provided by the server MUST be signed by a hash/signature algorithm
+             * pair that appears in that extension.
+             */
+        }
+    }
+
     protected DigitallySigned parseSignature(InputStream input) throws IOException
     {
         DigitallySigned signature = DigitallySigned.parse(context, input);
@@ -98,24 +117,9 @@ public abstract class AbstractTlsKeyExchange
         }
     }
 
-    public void processServerCertificate(Certificate serverCertificate)
-        throws IOException
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (supportedSignatureAlgorithms == null)
-        {
-            /*
-             * TODO RFC 2264 7.4.2. Unless otherwise specified, the signing algorithm for the
-             * certificate must be the same as the algorithm for the certificate key.
-             */
-        }
-        else
-        {
-            /*
-             * TODO RFC 5264 7.4.2. If the client provided a "signature_algorithms" extension, then
-             * all certificates provided by the server MUST be signed by a hash/signature algorithm
-             * pair that appears in that extension.
-             */
-        }
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials)

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -13,22 +14,35 @@ import org.bouncycastle.util.io.TeeInputStream;
 public class TlsECDHEKeyExchange
     extends TlsECDHKeyExchange
 {
-    protected TlsSignerCredentials serverCredentials = null;
-
-    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+    private static int checkKeyExchange(int keyExchange)
     {
-        super(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
+    protected TlsSignerCredentials serverCredentials = null;
+    protected TlsVerifier verifier = null;
+
+    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
+    {
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats,
+            serverECPointFormats);
     }
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
         short[] serverECPointFormats)
     {
-        super(keyExchange, supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials)
-        throws IOException
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
         if (!(serverCredentials instanceof TlsSignerCredentials))
         {
@@ -39,6 +53,19 @@ public class TlsECDHEKeyExchange
         processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsSignerCredentials)serverCredentials;
+    }
+
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
+    {
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        this.verifier = serverCertificate.getCertificateAt(context, 0)
+            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
+
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -69,15 +96,14 @@ public class TlsECDHEKeyExchange
 
         DigitallySigned signedParams = parseSignature(input);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, tlsSigner, serverPublicKey, buf, signedParams);
+        TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
         processEphemeral(clientECPointFormats, point);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
     {
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
@@ -90,9 +116,9 @@ public class TlsECDHEKeyExchange
         {
             switch (types[i])
             {
-            case ClientCertificateType.rsa_sign:
             case ClientCertificateType.dss_sign:
             case ClientCertificateType.ecdsa_sign:
+            case ClientCertificateType.rsa_sign:
                 break;
             default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -100,8 +126,7 @@ public class TlsECDHEKeyExchange
         }
     }
 
-    public void processClientCredentials(TlsCredentials clientCredentials)
-        throws IOException
+    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         if (clientCredentials instanceof TlsSignerCredentials)
         {

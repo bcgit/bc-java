@@ -78,6 +78,9 @@ public class BcTlsSecret implements TlsSecret
 
     public synchronized byte[] encryptRSA(TlsCertificate certificate) throws IOException
     {
+        checkAlive();
+
+        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
         RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(certificate).getPubKeyRSA();
 
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());

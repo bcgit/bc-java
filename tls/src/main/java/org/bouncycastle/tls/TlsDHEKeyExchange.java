@@ -5,25 +5,38 @@ import java.io.InputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
     extends TlsDHKeyExchange
 {
+    private static int checkKeyExchange(int keyExchange)
+    {
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
     protected TlsSignerCredentials serverCredentials = null;
+    protected TlsVerifier verifier = null;
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
     {
-        super(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, dhConfigVerifier);
     }
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
     {
-        super(keyExchange, supportedSignatureAlgorithms, dhConfig);
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, dhConfig);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials)
-        throws IOException
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
         if (!(serverCredentials instanceof TlsSignerCredentials))
         {
@@ -34,6 +47,19 @@ public class TlsDHEKeyExchange
         processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsSignerCredentials)serverCredentials;
+    }
+
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
+    {
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        this.verifier = serverCertificate.getCertificateAt(context, 0)
+            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
+
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -69,10 +95,39 @@ public class TlsDHEKeyExchange
 
         DigitallySigned signedParams = parseSignature(input);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, tlsSigner, serverPublicKey, buf, signedParams);
+        TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
         processEphemeral(y);
+    }
+
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
+    {
+        short[] types = certificateRequest.getCertificateTypes();
+        for (int i = 0; i < types.length; ++i)
+        {
+            switch (types[i])
+            {
+            case ClientCertificateType.dss_sign:
+            case ClientCertificateType.ecdsa_sign:
+            case ClientCertificateType.rsa_sign:
+                break;
+            default:
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+    }
+
+    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
+    {
+        if (clientCredentials instanceof TlsSignerCredentials)
+        {
+            // OK
+        }
+        else
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 }

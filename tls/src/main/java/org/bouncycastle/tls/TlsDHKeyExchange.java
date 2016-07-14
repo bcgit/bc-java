@@ -21,12 +21,24 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected TlsSigner tlsSigner;
+    private static int checkKeyExchange(int keyExchange)
+    {
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
     protected TlsDHConfigVerifier dhConfigVerifier;
 
-    protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
-
     protected DHPublicKeyParameters dhFixedAgreePublicKey;
 
     protected TlsDHConfig dhConfig;
@@ -45,41 +57,13 @@ public class TlsDHKeyExchange
     private TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier,
         TlsDHConfig dhConfig)
     {
-        super(keyExchange, supportedSignatureAlgorithms);
-
-        switch (keyExchange)
-        {
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_DSS:
-            this.tlsSigner = null;
-            break;
-        case KeyExchangeAlgorithm.DHE_RSA:
-            this.tlsSigner = new TlsRSASigner();
-            break;
-        case KeyExchangeAlgorithm.DHE_DSS:
-            this.tlsSigner = new TlsDSSSigner();
-            break;
-        default:
-            throw new IllegalArgumentException("unsupported key exchange algorithm");
-        }
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;
     }
 
-    public void init(TlsContext context)
-    {
-        super.init(context);
-
-        if (this.tlsSigner != null)
-        {
-            this.tlsSigner.init(context);
-        }
-    }
-
-    public void skipServerCredentials()
-        throws IOException
+    public void skipServerCredentials() throws IOException
     {
         if (keyExchange != KeyExchangeAlgorithm.DH_anon)
         {
@@ -87,8 +71,7 @@ public class TlsDHKeyExchange
         }
     }
 
-    public void processServerCertificate(Certificate serverCertificate)
-        throws IOException
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
         if (keyExchange == KeyExchangeAlgorithm.DH_anon)
         {
@@ -102,43 +85,32 @@ public class TlsDHKeyExchange
         org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
 
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+        AsymmetricKeyParameter serverPublicKey;
         try
         {
-            this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
+            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
         }
         catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
-        if (tlsSigner == null)
+        // TODO[tls-ops] Extract TlsDHConfig and/or initialize TlsAgreement directly from certificate
+        //this.dhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
+
+        try
         {
-            // TODO[tls-ops] Extract TlsDHConfig and/or initialize TlsAgreement directly from certificate
-//            this.dhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
-
-            try
-            {
-                this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
-                this.dhConfig = TlsDHUtils.selectDHConfig(dhFixedAgreePublicKey.getParameters());
-            }
-            catch (ClassCastException e)
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-            }
-
-            TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
+            this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)serverPublicKey);
+            this.dhConfig = TlsDHUtils.selectDHConfig(dhFixedAgreePublicKey.getParameters());
         }
-        else
+        catch (ClassCastException e)
         {
-            if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-            }
-
-            TlsUtils.validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        super.processServerCertificate(serverCertificate);
+        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
+
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()
@@ -154,8 +126,7 @@ public class TlsDHKeyExchange
         }
     }
 
-    public byte[] generateServerKeyExchange()
-        throws IOException
+    public byte[] generateServerKeyExchange() throws IOException
     {
         if (!requiresServerKeyExchange())
         {
@@ -175,8 +146,7 @@ public class TlsDHKeyExchange
         return buf.toByteArray();
     }
 
-    public void processServerKeyExchange(InputStream input)
-        throws IOException
+    public void processServerKeyExchange(InputStream input) throws IOException
     {
         if (!requiresServerKeyExchange())
         {
@@ -194,19 +164,20 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException
+    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         short[] types = certificateRequest.getCertificateTypes();
         for (int i = 0; i < types.length; ++i)
         {
             switch (types[i])
             {
-            case ClientCertificateType.rsa_sign:
-            case ClientCertificateType.dss_sign:
-            case ClientCertificateType.rsa_fixed_dh:
             case ClientCertificateType.dss_fixed_dh:
-            case ClientCertificateType.ecdsa_sign:
+            case ClientCertificateType.rsa_fixed_dh:
                 break;
             default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -214,8 +185,7 @@ public class TlsDHKeyExchange
         }
     }
 
-    public void processClientCredentials(TlsCredentials clientCredentials)
-        throws IOException
+    public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         if (keyExchange == KeyExchangeAlgorithm.DH_anon)
         {
@@ -228,18 +198,13 @@ public class TlsDHKeyExchange
 
             // TODO Check that the client certificate's domain parameters match the server's?
         }
-        else if (clientCredentials instanceof TlsSignerCredentials)
-        {
-            // OK
-        }
         else
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    public void generateClientKeyExchange(OutputStream output)
-        throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
         /*
          * RFC 2246 7.4.7.2 If the client certificate already contains a suitable Diffie-Hellman
@@ -260,8 +225,8 @@ public class TlsDHKeyExchange
         }
 
         /*
-         * TODO For non-ephemeral key exchanges, take the public key as dhFixedAgreePublicKey and check
-         * that the domain parameters match the server's.
+         * TODO For non-ephemeral key exchanges, take the public key as dhFixedAgreePublicKey and
+         * check that the domain parameters match the server's.
          */
     }
 
@@ -278,8 +243,7 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public TlsSecret generatePreMasterSecret()
-        throws IOException
+    public TlsSecret generatePreMasterSecret() throws IOException
     {
         if (agreementCredentials != null)
         {
