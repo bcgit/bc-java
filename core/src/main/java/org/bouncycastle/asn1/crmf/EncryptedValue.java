@@ -46,6 +46,8 @@ public class EncryptedValue
             case 4:
                 valueHint = ASN1OctetString.getInstance(tObj, false);
                 break;
+            default:
+                throw new IllegalArgumentException("Unknown tag encountered: " + tObj.getTagNo());
             }
             index++;
         }

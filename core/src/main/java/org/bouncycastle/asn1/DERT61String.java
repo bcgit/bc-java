@@ -13,7 +13,7 @@ public class DERT61String
     extends ASN1Primitive
     implements ASN1String
 {
-    private final byte[] string;
+    private byte[] string;
 
     /**
      * return a T61 string from the passed in object.
@@ -79,7 +79,7 @@ public class DERT61String
     public DERT61String(
         byte[]   string)
     {
-        this.string = string;
+        this.string = Arrays.clone(string);
     }
 
     /**
@@ -90,7 +90,7 @@ public class DERT61String
     public DERT61String(
         String   string)
     {
-        this(Strings.toByteArray(string));
+        this.string = Strings.toByteArray(string);
     }
 
     /**

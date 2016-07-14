@@ -77,7 +77,7 @@ public class TBSCertificate
         //
         // some certficates don't include a version number - we assume v1
         //
-        if (seq.getObjectAt(0) instanceof DERTaggedObject)
+        if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
         {
             version = ASN1Integer.getInstance((ASN1TaggedObject)seq.getObjectAt(0), true);
         }
@@ -109,7 +109,7 @@ public class TBSCertificate
 
         for (int extras = seq.size() - (seqStart + 6) - 1; extras > 0; extras--)
         {
-            DERTaggedObject extra = (DERTaggedObject)seq.getObjectAt(seqStart + 6 + extras);
+            ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
 
             switch (extra.getTagNo())
             {

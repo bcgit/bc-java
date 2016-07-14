@@ -38,6 +38,9 @@ import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * Utility class for dumping ASN.1 objects as (hopefully) human friendly strings.
+ */
 public class ASN1Dump
 {
     private static final String  TAB = "    ";
@@ -319,7 +322,7 @@ public class ASN1Dump
             return buf.toString();
         }
 
-        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + new String(Hex.encode(app.getContents())) + ")" + nl;
+        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + Strings.fromByteArray(Hex.encode(app.getContents())) + ")" + nl;
     }
 
     /**
@@ -376,7 +379,7 @@ public class ASN1Dump
             if (bytes.length - i > SAMPLE_SIZE)
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, SAMPLE_SIZE)));
+                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, SAMPLE_SIZE)));
                 buf.append(TAB);
                 buf.append(calculateAscString(bytes, i, SAMPLE_SIZE));
                 buf.append(nl);
@@ -384,7 +387,7 @@ public class ASN1Dump
             else
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, bytes.length - i)));
+                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, bytes.length - i)));
                 for (int j = bytes.length - i; j != SAMPLE_SIZE; j++)
                 {
                     buf.append("  ");

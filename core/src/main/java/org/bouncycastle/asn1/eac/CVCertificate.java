@@ -72,6 +72,7 @@ public class CVCertificate
                     throw new IOException("Invalid Object, not an Iso7816CertificateStructure");
                 }
             }
+            content.close();
         }
         else
         {
@@ -137,7 +138,7 @@ public class CVCertificate
         throws IOException
     {
         certificateBody = body;
-        this.signature = signature;
+        this.signature = Arrays.clone(signature);
         // patch remi
         valid |= bodyValid;
         valid |= signValid;

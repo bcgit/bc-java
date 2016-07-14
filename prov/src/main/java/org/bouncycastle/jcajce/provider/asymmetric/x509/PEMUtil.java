@@ -43,6 +43,22 @@ class PEMUtil
             return null;
         }
 
+        // make sure we parse to end of line.
+        if (c == '\r')
+        {
+            // a '\n' may follow
+            in.mark(1);
+            if (((c = in.read()) == '\n'))
+            {
+                in.mark(1);
+            }
+
+            if (c > 0)
+            {
+                in.reset();
+            }
+        }
+
         return l.toString();
     }
 

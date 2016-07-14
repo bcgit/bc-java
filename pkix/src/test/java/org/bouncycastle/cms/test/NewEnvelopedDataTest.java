@@ -1601,6 +1601,47 @@ public class NewEnvelopedDataTest
         passwordUTF8Test(CMSEnvelopedDataGenerator.AES256_CBC, PasswordRecipient.PRF.HMacSHA512);
     }
 
+    public void testNoSaltOrIterationCount()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JcePasswordRecipientInfoGenerator(CMSAlgorithm.AES256_CBC, "abc\u5639\u563b".toCharArray()).setProvider(BC).setPRF(PasswordRecipient.PRF.HMacSHA1));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(),
+            CMSEnvelopedDataGenerator.AES128_CBC);
+
+        Collection c = recipients.getRecipients();
+        Iterator it = c.iterator();
+
+        if (it.hasNext())
+        {
+            PasswordRecipientInformation recipient = (PasswordRecipientInformation)it.next();
+
+            assertEquals(AlgorithmIdentifier.getInstance(recipient.getKeyEncryptionAlgorithm().getParameters()).getAlgorithm(), CMSAlgorithm.AES256_CBC);
+            assertEquals(PBKDF2Params.getInstance(recipient.getKeyDerivationAlgorithm().getParameters()).getPrf(), PasswordRecipient.PRF.HMacSHA1.getAlgorithmID());
+
+            byte[] recData = recipient.getContent(new JcePasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()).setProvider(BC));
+            assertEquals(true, Arrays.equals(data, recData));
+
+            // try lightweight recipient
+            recData = recipient.getContent(new BcPasswordEnvelopedRecipient("abc\u5639\u563b".toCharArray()));
+            assertEquals(true, Arrays.equals(data, recData));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
+    }
+
     public void testRFC4134ex5_1()
         throws Exception
     {

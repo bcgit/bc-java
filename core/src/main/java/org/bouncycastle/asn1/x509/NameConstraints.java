@@ -37,12 +37,14 @@ public class NameConstraints
             ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
             switch (o.getTagNo())
             {
-                case 0:
-                    permitted = createArray(ASN1Sequence.getInstance(o, false));
-                    break;
-                case 1:
-                    excluded = createArray(ASN1Sequence.getInstance(o, false));
-                    break;
+            case 0:
+                permitted = createArray(ASN1Sequence.getInstance(o, false));
+                break;
+            case 1:
+                excluded = createArray(ASN1Sequence.getInstance(o, false));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown tag encountered: " + o.getTagNo());
             }
         }
     }
@@ -62,15 +64,8 @@ public class NameConstraints
         GeneralSubtree[] permitted,
         GeneralSubtree[] excluded)
     {
-        if (permitted != null)
-        {
-            this.permitted = permitted;
-        }
-
-        if (excluded != null)
-        {
-            this.excluded = excluded;
-        }
+        this.permitted = cloneSubtree(permitted);
+        this.excluded = cloneSubtree(excluded);
     }
 
     private GeneralSubtree[] createArray(ASN1Sequence subtree)
@@ -87,12 +82,12 @@ public class NameConstraints
 
     public GeneralSubtree[] getPermittedSubtrees()
     {
-        return permitted;
+        return cloneSubtree(permitted);
     }
 
     public GeneralSubtree[] getExcludedSubtrees()
     {
-        return excluded;
+        return cloneSubtree(excluded);
     }
 
     /*
@@ -114,5 +109,19 @@ public class NameConstraints
         }
 
         return new DERSequence(v);
+    }
+
+    private static GeneralSubtree[] cloneSubtree(GeneralSubtree[] subtrees)
+    {
+        if (subtrees != null)
+        {
+            GeneralSubtree[] rv = new GeneralSubtree[subtrees.length];
+
+            System.arraycopy(subtrees, 0, rv, 0, rv.length);
+
+            return rv;
+        }
+
+        return null;
     }
 }

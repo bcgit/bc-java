@@ -61,7 +61,7 @@ public class LDSVersionInfo
      *    unicodeVersion PRINTABLE STRING
      *  }
      * </pre>
-     * @return a DERSequence representing the value in this object.
+     * @return  an ASN.1 primitive composition of this LDSVersionInfo.
      */
     public ASN1Primitive toASN1Primitive()
     {

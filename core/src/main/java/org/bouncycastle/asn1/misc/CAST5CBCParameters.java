@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 public class CAST5CBCParameters
     extends ASN1Object
@@ -34,7 +35,7 @@ public class CAST5CBCParameters
         byte[]  iv,
         int     keyLength)
     {
-        this.iv = new DEROctetString(iv);
+        this.iv = new DEROctetString(Arrays.clone(iv));
         this.keyLength = new ASN1Integer(keyLength);
     }
 
@@ -47,7 +48,7 @@ public class CAST5CBCParameters
 
     public byte[] getIV()
     {
-        return iv.getOctets();
+        return Arrays.clone(iv.getOctets());
     }
 
     public int getKeyLength()

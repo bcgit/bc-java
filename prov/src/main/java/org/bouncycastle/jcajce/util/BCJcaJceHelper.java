@@ -11,15 +11,23 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public class BCJcaJceHelper
     extends ProviderJcaJceHelper
 {
+    private static volatile Provider bcProvider;
+
     private static Provider getBouncyCastleProvider()
     {
         if (Security.getProvider("BC") != null)
         {
             return Security.getProvider("BC");
         }
+        else if (bcProvider != null)
+        {
+            return bcProvider;
+        }
         else
         {
-            return new BouncyCastleProvider();
+            bcProvider = new BouncyCastleProvider();
+
+            return bcProvider;
         }
     }
 

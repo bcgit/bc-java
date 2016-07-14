@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -78,9 +79,9 @@ public class Accuracy
             {
                 seconds = (ASN1Integer) seq.getObjectAt(i);
             }
-            else if (seq.getObjectAt(i) instanceof DERTaggedObject)
+            else if (seq.getObjectAt(i) instanceof ASN1TaggedObject)
             {
-                DERTaggedObject extra = (DERTaggedObject) seq.getObjectAt(i);
+                ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(i);
 
                 switch (extra.getTagNo())
                 {

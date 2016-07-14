@@ -101,7 +101,7 @@ public abstract class PasswordRecipientInfoGenerator
 
         if (salt == null)
         {
-            byte[] salt = new byte[20];
+            salt = new byte[20];
 
             random.nextBytes(salt);
         }
