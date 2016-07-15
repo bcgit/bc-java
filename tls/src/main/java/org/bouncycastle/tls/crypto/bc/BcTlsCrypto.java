@@ -142,15 +142,4 @@ public class BcTlsCrypto extends AbstractTlsCrypto
             return createHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
     }
-
-    public Digest clonePRFHash(int prfAlgorithm, Digest hash)
-    {
-        switch (prfAlgorithm)
-        {
-        case PRFAlgorithm.tls_prf_legacy:
-            return new CombinedHash((CombinedHash)hash);
-        default:
-            return cloneHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm), hash);
-        }
-    }
 }

@@ -232,7 +232,7 @@ public abstract class TlsProtocol
                         .setServerExtensions(this.serverExtensions)
                         .build();
 
-                    this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
+                    this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
                 }
 
                 getContextAdmin().setResumableSession(this.tlsSession);

@@ -5,7 +5,6 @@ import java.io.PrintStream;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
-import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.PSKTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsEncryptionCredentials;

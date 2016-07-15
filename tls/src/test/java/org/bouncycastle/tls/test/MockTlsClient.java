@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
-import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.MaxFragmentLength;
